@@ -1,0 +1,168 @@
+{
+ "L": {
+  "cases": [
+   {
+    "name": "A phone enquiry",
+    "stall": "Add Lead opens a menu with no chevron; the created snackbar has no Open; the stage pill’s Contacted stalled on the required screenshot (L2); the dated follow-up then lands well."
+   },
+   {
+    "name": "Morning triage",
+    "stall": "No attention view; Overdue lives on the Filters modal’s second tab and mixes in Lost leads; “stuck in stage” can’t be answered from the list (L3)."
+   },
+   {
+    "name": "New → Quote Sent over a week",
+    "stall": "The brief guides each step; Create Quote leaves the window; after Send the lead is still Met and the move is redone by hand (Q1)."
+   },
+   {
+    "name": "A lead goes quiet, then returns",
+    "stall": "On Hold + Undo work; Resume at Won skipped every step (L1); the old follow-up stays live under the hold."
+   },
+   {
+    "name": "An expo import",
+    "stall": "Column matching and the duplicate merge are good; values changed silently (L4); it ends at Done (L5)."
+   },
+   {
+    "name": "A client calls back",
+    "stall": "Searching the caller ID with +65 finds nothing (L11)."
+   }
+  ],
+  "good": "A contact log’s schedule becomes a dated follow-up on its own; the Maison AI brief changes with the stage and offers two concrete next actions; stage gates say why they refuse; On Hold and Lost are compact with Undo."
+ },
+ "T": {
+  "cases": [
+   {
+    "name": "After a site visit",
+    "stall": "The contact log with a photo wouldn’t save (T1); without it, saving stopped there (T3); the new tasks had no owner or date (T4); the photos never reached Files."
+   },
+   {
+    "name": "A designer’s day on /tasks",
+    "stall": "Opened on All with My Tasks nearly empty (T4); the red badge led nowhere (T5); the title click renamed (T6); completing had no Undo (T7); comments notified nobody (T8)."
+   },
+   {
+    "name": "Collect requirements",
+    "stall": "Answering inline works; Ask Client doesn’t say what it asks (T12); no question just for this lead."
+   },
+   {
+    "name": "Find last week’s drawing",
+    "stall": "Search found it in its folder; Filters is Coming soon and the file can’t be shared (T9)."
+   },
+   {
+    "name": "Back from leave",
+    "stall": "The bell opens the right task; Activity is one lead at a time, credits “You” for others’ work and can’t filter (T10)."
+   },
+   {
+    "name": "Hand a leaving designer’s tasks on",
+    "stall": "The bulk bar can’t assign (T11)."
+   }
+  ],
+  "good": "Empty states carry both actions; the add row chains on Enter; Files search reaches every folder; the phone’s task sheet keeps Mark as Completed in thumb reach."
+ },
+ "Q": {
+  "cases": [
+   {
+    "name": "A first quote from a template",
+    "stall": "Price book picks landed outside the sections (Q7); Preview’s main button sent nothing (Q2); the lead stayed at Met (Q1)."
+   },
+   {
+    "name": "The client asks for changes",
+    "stall": "Revise → Version History → Preview works; no reason recorded, rows unmarked, the same message (Q10); the client had no way to ask in the app (Q6)."
+   },
+   {
+    "name": "The client confirms",
+    "stall": "Send for signature opened an empty picker (Q9); Convert to Project refused with no way on (Q1)."
+   },
+   {
+    "name": "What’s waiting or expiring",
+    "stall": "No validity column or filter; three expired quotes unflagged (Q5)."
+   },
+   {
+    "name": "Approve a designer’s quote",
+    "stall": "Found only through the bell (Q4); marked from the list, no bell at all (Q3). The approval bar itself works well."
+   }
+  ],
+  "good": "Preview’s “Worth a look before you send” list; the send dialog arrives filled in and opens WhatsApp on the press; the sent, confirmed and approval banners each name the next step."
+ },
+ "C": {
+  "cases": [
+   {
+    "name": "Confirmed quote → contract → WhatsApp",
+    "stall": "Nine presses; the folder-only picker (C6) and placeholder chips (C7); nothing said the quote was still a Draft (C2)."
+   },
+   {
+    "name": "The client signs on a phone",
+    "stall": "The single signing page is smooth; the bundle dead-ends at each document’s foot (C3); afterwards the studio gets no next step (C1)."
+   },
+   {
+    "name": "Signed on paper",
+    "stall": "Mark as signed works but only via the status pill (C9)."
+   },
+   {
+    "name": "A competitor’s quote in X-Ray",
+    "stall": "Fast; the “Yours” figure (C11) and the missing recipient (C12) cause doubt."
+   },
+   {
+    "name": "Every contract waiting for a signature",
+    "stall": "Five presses; no opened / waiting signal, no reminder (C5)."
+   },
+   {
+    "name": "A variation after signing",
+    "stall": "The studio’s own template can’t be sent (C4)."
+   }
+  ],
+  "good": "The single signing page on a phone; the editor’s state banners (“sent — not opened yet”); X-Ray’s self-confirming setup; refusals that say why with Show me."
+ },
+ "S": {
+  "cases": [
+   {
+    "name": "Day one to a branded first quote",
+    "stall": "Five pages, two homes, four ways of saving; bank edits lost (S2); an internal note printed on the client copy (S1); validity only inside a template (S4)."
+   },
+   {
+    "name": "Add a designer",
+    "stall": "Ends at a snackbar; nothing says how she signs in; four more hunts (S6)."
+   },
+   {
+    "name": "Load the price list",
+    "stall": "The import preview is good; no Undo, Kind guessed, new rows lost in the grid (S7, S8)."
+   },
+   {
+    "name": "Connect a lead source",
+    "stall": "Smooth — one press per channel."
+   },
+   {
+    "name": "Low on AI credits",
+    "stall": "The rail slot’s Plans is clear; Company › Usage has no way to buy (S5)."
+   },
+   {
+    "name": "“Where do I change…?”",
+    "stall": "Lost reasons: found. GST: four places. Validity, default split, the untouched delay, the signature: hunted. Search found none (S3)."
+   }
+  ],
+  "good": "The Plans dialog (price before paying); Integrations’ plain cards and one-press webhook; Settings answers every change by name; the import marks New or In My Items before anything is written."
+ },
+ "V": {
+  "cases": [
+   {
+    "name": "Find your way in the first week",
+    "stall": "Quotes live under Tools, not the rail; Dashboard answers Coming soon (V6); no rail item lights on Tools pages (V7). ⌘K’s Go to helps."
+   },
+   {
+    "name": "Restyle a room with a client on an iPad",
+    "stall": "Rough marking whose warning never shows (V5); an unlabelled Share (V4); the design can’t join the lead (V2)."
+   },
+   {
+    "name": "The client’s render link on a phone",
+    "stall": "Plain and clear for the client; the studio can’t read the note in the editor (V1)."
+   },
+   {
+    "name": "A morning from the keyboard",
+    "stall": "⌘K, G-keys and C work everywhere; search can’t create (V9)."
+   },
+   {
+    "name": "Act on the bell",
+    "stall": "Rows open the right record; no badge on a phone (V3); a count that won’t clear (V8)."
+   }
+  ],
+  "good": "The Visualizer welcome; the keyboard layer lights keys on the page itself; the client link is phone-first; every metered press shows its price and “V1 is ready · Compare” follows."
+ }
+}
