@@ -208,7 +208,8 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   }
   return (
     <>
-    {header ? header({ add: <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} /> }) : null}
+    {/* (REG-735) with no task yet the header's Add Task steps back too — the empty card carries both ways in */}
+    {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} /> }) : null}
     <div className={styles.tab} data-open={openId ? '' : undefined} data-studio={studio || undefined}>
       <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         scope={studio ? { value: scope, onChange: setScope, count: openCount } : undefined}
@@ -216,7 +217,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
         query={query} onQuery={setQuery}
         onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={menuAction} inHeader={!!header}
+        onMenu={menuAction} inHeader={!!header} bare={tasks.length === 0 && !adding}
       />
       {tasks.length === 0 && !adding ? (
         /* No tasks yet → the sibling tabs' empty card (T9); the inline add row takes over as soon as one starts. */

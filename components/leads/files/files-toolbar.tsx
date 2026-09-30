@@ -17,6 +17,9 @@ import styles from './files-toolbar.module.css'
 export type FilesView = 'list' | 'grid'
 
 export type FilesToolbarProps = {
+  /** (REG-735) The list is empty (not filtered): only the title and ⋮ — the empty card carries the ways in, and search, Filters and
+      the columns have nothing to act on yet. The first record brings them back. */
+  bare?: boolean
   /** (REG-664) The way from the top down to the open folder (frame 91) — empty at the root ("All Files"). */
   trail: FileRow[]
   /** A crumb or Back (up one level): the folder to open, null = All Files. */
@@ -49,7 +52,7 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu }: FilesToolbarProps) {
+export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu, bare = false }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
   const folder = trail[trail.length - 1] ?? null
   const folderAnchor = useRef<HTMLElement | null>(null)
@@ -78,6 +81,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
         <h2 className={styles.title}>All Files</h2>
       )}
       <div className={styles.actions}>
+        {bare ? null : (<>
         <Tooltip label="New Folder">
           <IconButton icon="create_new_folder" label="New Folder" className={styles.touchBtn} onClick={onNewFolder} />
         </Tooltip>
@@ -129,6 +133,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             onChange={(v) => onView(v === 'list' ? 'list' : 'grid')}
           />
         </span>
+        </>)}
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton

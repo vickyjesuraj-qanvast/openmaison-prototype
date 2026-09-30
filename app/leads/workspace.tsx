@@ -344,12 +344,14 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               /* (REG-299, 1082:25131) The mobile header: Add Lead as the filled square, Insights and the kebab as
                  outlined squares — the same two menus, the same actions, icon-only. */
               <>
+                {rows.length === 0 ? null : (   /* (REG-735) no lead yet: the empty card carries Create and Import */
                 <div ref={addRef} style={{ position: 'relative' }}>
                   <Tooltip label="Add Lead" disabled={addOpen}>
                     <IconButton icon="add" label="Add Lead" variant="filled" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)} />
                   </Tooltip>
                   {addMenu}
                 </div>
+                )}
                 {canDelete ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' */
                   <Tooltip label="Insights">
                     <IconButton icon="bar_chart_4_bars" label="Insights" onClick={openInsights} />
@@ -365,12 +367,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             ) : (
               /* (REG-305, user 2026-09-02) Add Lead first, then Insights — the order the mobile mock draws (1082:25131). */
               <>
+                {/* (REG-735) no lead yet: one filled button on the screen — the empty card's Create New Lead (it takes C) */}
+                {rows.length === 0 ? null : (
                 <div ref={addRef} style={{ position: 'relative' }} data-kb="create" data-kb-label="Create New Lead">   {/* (REG-713) C: lit here, answered by the create handler */}
                   <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
                     Add Lead
                   </Button>
                   {addMenu}
                 </div>
+                )}
                 {canDelete ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' */
                   <Button variant="secondary" appearance="outlined"
                           iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={openInsights}>
@@ -387,7 +392,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             )}
           />
           <div className={styles.content}>
-            <LeadsToolbar
+            <LeadsToolbar bare={rows.length === 0}
               chipLabel={rows.length === 0 ? 'All Leads' : `${stageScope ?? 'All Leads'} (${filtered.length})`}
               onChipClick={() => setStageMenuOpen((o) => !o)}
               chipOpen={stageMenuOpen}

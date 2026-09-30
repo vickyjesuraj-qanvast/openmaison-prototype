@@ -22,7 +22,7 @@ export function TasksEmpty({ onCreate, onTemplate }: { onCreate: () => void; onT
         </div>
         <div className={styles.buttons}>
           <Button variant="secondary" appearance="outlined" onPress={onTemplate}>Use Template</Button>
-          <Button iconStart={<Icon name="add" size={20} />} onPress={onCreate}>Create New Task</Button>
+          <Button iconStart={<Icon name="add" size={20} />} onPress={onCreate} data-kb="create" data-kb-label="Create New Task">Create New Task</Button>   {/* (REG-735) C, while Add Task steps back */}
         </div>
       </div>
     </div>

@@ -142,7 +142,11 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the line. You can restore the item from Deleted Items.` : 'You can restore it from Deleted Items.')}
       onRestore={(ids) => restorePriceBookItems(ids)} onDeleteForever={(ids) => deletePriceBookItemsForever(ids)} onEmptyTrash={() => emptyPriceBookItemTrash()}
       deletedMeta={{ label: 'Unit price', value: (t) => `${money2(unitPrice(t))} / ${t.unit}` }}
-      empty={{ title: 'Nothing in My Items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Save to My Items).' : 'Propose an item from New ▾ — an Owner or an Admin approves it for the studio.' }}>   {/* (sweep S5 #22) the help offers what this member can do */}
+      empty={{ title: 'Nothing in My Items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Save to My Items).' : 'Propose an item — an Owner or an Admin approves it for the studio.',
+        /* (REG-735) the first run carries New ▾'s rows: a studio moving in has its list already, so Import leads; a Designer proposes */
+        start: () => (runsBook
+          ? { primary: { label: 'Import from a spreadsheet', icon: 'upload_file', onPress: () => setImportOpen(true) }, secondary: { label: 'New item', icon: 'add', onPress: () => setEdit({ open: true, item: null }) } }
+          : { primary: { label: 'Propose an item', icon: 'add', onPress: () => setEdit({ open: true, item: null }) } }) }}>   {/* (sweep S5 #22) the help offers what this member can do */}
       <ItemDialog open={edit.open} item={edit.item} onClose={() => setEdit({ open: false, item: null })} onSave={save} trades={data.trades} now={now}
                   proposing={!runsBook} readOnly={edit.item ? block(edit.item) : null}
                   proposal={edit.item && edit.item.status === 'proposed' ? { by: edit.item.proposer, at: edit.item.createdAt.getTime(), canReview: runsBook, onApprove: (edited) => { if (edit.item) return approve(edit.item, edited) }, onSendBack: () => { if (edit.item) askSendBack(edit.item) } } : null} />

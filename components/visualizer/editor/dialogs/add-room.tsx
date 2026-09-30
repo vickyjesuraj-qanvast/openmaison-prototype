@@ -12,7 +12,7 @@ import { UPLOAD_MAX_BYTES, isHeic } from '../editor-model'
 import styles from './dialogs.module.css'
 
 /** What the pickers offer: JPG, PNG and WebP, and HEIC — the editor opens it where the browser can, and says so where it can't. */
-const ROOM_ACCEPT = `${PHOTO_ACCEPT},image/heic,image/heif,.heic,.heif`
+export const ROOM_ACCEPT = `${PHOTO_ACCEPT},image/heic,image/heif,.heic,.heif`   // (REG-735) the landing's welcome picks with it too
 
 /** (critic 19) Why a file can't be a room photo, in words the studio can act on — or null when it can. A drop skips the picker's accept
     list, so a PDF or a very large export reaches here; each gets its own answer. A HEIC goes on: the editor redraws every room photo as

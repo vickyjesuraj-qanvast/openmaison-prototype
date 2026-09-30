@@ -69,6 +69,7 @@ import { ShareDialog } from './dialogs/share-dialog'
 import { PresentDialog } from './dialogs/present-dialog'
 import { MoodboardDialog } from './dialogs/moodboard-dialog'
 import { DeletedVersionsDialog, DeleteVersionDialog } from './dialogs/deleted-versions'
+import { takePhotos } from '@/lib/visualizer/pending-photos'
 import styles from './editor.module.css'
 
 /* The progress card's steps (1.0's status words, C-20 · C-24, one list per pass). */
@@ -752,6 +753,13 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     if (failed) snack({ message: `${good.length - failed} of ${good.length} rooms added — the others couldn’t be read` })
     landRoom({ roomId: first })
   }
+  /* (REG-735) Photos picked on the landing's welcome ("Upload a room photo") arrive with this new design: each becomes a room, through the
+     same path as a pick here. Once, on arrival — a reload in between lands on "Add the first room". */
+  useEffect(() => {
+    const files = takePhotos(data.design.id)
+    if (!files?.length) return
+    queueMicrotask(() => { if (files.length > 1) void addPhotoRooms(files); else void addPhotoRoom(files[0]!) })
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival
   const addSampleRoom = async (key: string, asSketch: boolean) => { setRoomBusy(true); landRoom(await addRoom(data.design.id, { imageUrl: '', sampleKey: key, asSketch }).catch(() => ({ error: 'Couldn’t add the room — please try again' }))) }
   const addLeadFileRoom = async (f: { id: string; name: string; url: string }) => {
     const s = sampleByImage(f.url)

@@ -26,7 +26,7 @@ export function LeadsEmptyState({
           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={onImport}>
             Import from File
           </Button>
-          <Button iconStart={<Icon name="add" size={20} />} onPress={onCreate}>
+          <Button iconStart={<Icon name="add" size={20} />} onPress={onCreate} data-kb="create" data-kb-label="Create New Lead">   {/* (REG-735) C lights here while the header's Add Lead steps back */}
             Create New Lead
           </Button>
         </div>

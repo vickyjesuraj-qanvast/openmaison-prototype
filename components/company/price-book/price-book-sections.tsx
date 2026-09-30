@@ -77,7 +77,9 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the lines. You can restore the section from Deleted Sections.` : 'You can restore it from Deleted Sections.')}
       onRestore={(ids) => restorePriceBookSections(ids)} onDeleteForever={(ids) => deletePriceBookSectionsForever(ids)} onEmptyTrash={() => emptyPriceBookSectionTrash()}
       deletedMeta={{ label: 'Items', value: (t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'}` }}
-      empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one from New.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.' }}>   {/* (sweep S5 #22) */}
+      empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',
+        /* (REG-735) the first run carries New ▾'s row for whoever runs the book; anyone else reads who does */
+        start: () => (runsBook ? { primary: { label: 'New section', icon: 'add', onPress: () => setEdit({ open: true, section: null }) } } : {}) }}>   {/* (sweep S5 #22) */}
       <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()}
                      onSave={async (input) => { const cur = edit.section; const ok = await run('save the section', async () => { if (cur) await settle(updatePriceBookSection(cur.id, input)); else await settle(createPriceBookSection(input)); router.refresh() }, cur ? 'Section saved' : `${input.name} added to My Sections`); if (ok) setEdit({ open: false, section: null }) }} />   {/* (sweep S5 #3) closed once saved — a failure keeps what was typed */}
     </LibraryGallery>

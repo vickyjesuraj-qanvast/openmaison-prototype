@@ -36,10 +36,11 @@
    copy's size) */
 .usedLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 .kebab { position: absolute; right: var(--om-spacing-3); top: calc(220px + var(--om-spacing-3)); height: 44px; display: inline-flex; align-items: center; }
-.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-2); padding: 80px var(--om-spacing-6); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.emptyGlyph { width: 72px; height: 72px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-2); }
-.emptyTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
-.emptyHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 44ch; }
+/* (REG-735) the house empty state (components/om/empty-state.module.css), composed — one copy */
+.empty { composes: empty from '../../om/empty-state.module.css'; }
+.emptyGlyph { composes: glyph from '../../om/empty-state.module.css'; }
+.emptyTitle { composes: title from '../../om/empty-state.module.css'; }
+.emptyHelp { composes: help from '../../om/empty-state.module.css'; }
 @media (max-width: 767px) {
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
   .thumb { height: 160px; }
@@ -63,3 +64,17 @@
 }
 /* (REG-664) A card that takes a tick (the selection at its top-left) wears its ribbon at the top-right. */
 .card[data-selectable] .ribbon { left: auto; right: var(--om-spacing-3); }
+
+/* (REG-735) The first run's samples: the four ready-made designs as tiles — the page drawn with the studio's brand, its name under it */
+.ready { display: flex; gap: var(--om-spacing-4); flex-wrap: wrap; justify-content: center; }
+.readyTile { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); font: inherit; color: inherit; cursor: pointer; transition: background-color var(--motion-hover), border-color var(--motion-hover); }
+.readyTile:hover { background: var(--om-color-hover-04p); border-color: var(--om-color-on-surface-border); }
+.readyTile:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.readyTile:disabled { cursor: default; opacity: .6; }
+.readyWell { flex: 1; display: flex; align-items: center; justify-content: center; }   /* an A4 page and a Letter one sit in the same well, the names on one line */
+.readyPage { display: flex; box-shadow: var(--om-elevation-level-1); }
+.readyName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+@media (max-width: 767px) {
+  .ready { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: calc(100vw - 64px); padding-bottom: var(--om-spacing-1); }
+  .readyTile { flex-shrink: 0; }
+}

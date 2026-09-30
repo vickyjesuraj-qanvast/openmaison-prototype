@@ -22,6 +22,9 @@ import { designKindLabel } from './kind-label'
 import { VisualizerHomeGhost } from './home-skeleton'
 import { INTRO_PREF, VisualizerIntro } from './intro'
 import { DesignCover } from './design-cover'
+import { VisualizerWelcome } from './welcome'
+import { photoProblem } from '@/components/visualizer/editor/dialogs/add-room'
+import { stashPhotos } from '@/lib/visualizer/pending-photos'
 import styles from './visualizer-home.module.css'
 
 type Item = LibraryItem & { d: DesignCard }
@@ -73,6 +76,20 @@ export function VisualizerHome({ data }: { data: HomeData }) {
     if (busy) return
     setBusy(true)
     try { const r = await createDesign({ folderId: place.folderId }); if ('error' in r) { snackbar({ message: r.error }); return } router.push(withFrom(`/visualizer/${r.id}`, place.here)) } catch { snackbar({ message: 'Couldn’t start a design — please try again' }) } finally { setBusy(false) }
+  }
+  /* (REG-735) The welcome's "Upload a room photo": the picked photos start a design and ride to its editor, which adds each as a room —
+     its own upload path. A pick with no photo it can read says why here, and no empty design is left behind. */
+  const upload = async (files: File[]) => {
+    if (busy) return
+    const good = files.filter((f) => !photoProblem(f))
+    if (!good.length) { snackbar({ message: photoProblem(files[0]!) ?? 'That file isn’t a photo — use a JPG, PNG, WebP or HEIC.' }); return }
+    setBusy(true)
+    try {
+      const r = await createDesign({})
+      if ('error' in r) { snackbar({ message: r.error }); return }
+      stashPhotos(r.id, good)
+      router.push(withFrom(`/visualizer/${r.id}`, here))
+    } catch { snackbar({ message: 'Couldn’t start a design — please try again' }) } finally { setBusy(false) }
   }
   /* (F214) a lead's pick waits like Blank does and says so when it can't open; the lead's design stays unfiled (it may already exist) */
   const forLead = async (leadId: string, place: LibraryPlace) => {
@@ -178,7 +195,10 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         deletedMeta={{ label: 'Rooms', value: (t) => count(t.d.rooms, 'room', 'rooms') }}
         usageWord={(t) => count(t.d.renders, 'render', 'renders')}
         deletedUsageLabel="Renders"
-        empty={{ title: 'No designs yet', help: 'Start with a room photo — a blank design, a lead’s site photos or one of the sample rooms. New ▾ has all three.' }}
+        empty={{ title: 'No designs yet', help: 'Start with a room photo — a blank design, a lead’s site photos or one of the sample rooms. New ▾ has all three.',
+          /* (REG-735) the studio's first visit: one welcome in place of the intro card, the empty state and the toolbar */
+          welcome: <VisualizerWelcome busy={busy} onUpload={(fs) => { void upload(fs) }} onLead={() => setLeadPick({ folderId: null, here })}
+                                      onSample={(key) => { void run('start the design', () => fromSample(key, false, { folderId: null, here })) }} /> }}
         folders={{ library: 'visualizer', list: data.folders, block: null }}
       />
       <PickOneDialog open={!!leadPick} onClose={() => setLeadPick(null)} title="Design for a lead" label="Lead" load={loadLeads} confirmLabel="Open design" onPick={(id) => { const at = leadPick ?? { folderId: null, here }; void forLead(id, at) }} empty="No leads to design for yet" />

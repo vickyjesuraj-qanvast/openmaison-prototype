@@ -231,7 +231,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
 
   return (
     <div className={styles.tab}>
-      <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)}
+      <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)} bare={files.length === 0}   /* (REG-735) the empty card carries Upload and Create Folder */
         trail={trail} onGo={goTo} onNewFolder={() => openName({ mode: 'create' })}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
         query={query} onQuery={setQuery}

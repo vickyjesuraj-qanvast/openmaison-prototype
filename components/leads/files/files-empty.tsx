@@ -25,7 +25,7 @@ export function FilesEmpty({ onCreateFolder, onUpload }: { onCreateFolder: () =>
         <div className={styles.buttons}>
           {/* 931:40356 secondary outlined, leading create_new_folder 20 · 931:40357 primary filled, leading upload 20. */}
           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create Folder</Button>
-          <Button iconStart={<Icon name="upload" size={20} />} onPress={onUpload}>Upload Files</Button>
+          <Button iconStart={<Icon name="upload" size={20} />} onPress={onUpload} data-kb="create" data-kb-label="Upload Files">Upload Files</Button>   {/* (REG-735) C, while New File steps back */}
         </div>
       </div>
     </div>

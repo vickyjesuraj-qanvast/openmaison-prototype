@@ -9,7 +9,7 @@ import styles from './contracts-empty.module.css'
  * asset as Quotes), texts 931:38647, buttons 931:38650 (From Scratch 931:38651 · From Template 931:38652).
  * Copied from components/leads/quotes/quotes-empty.tsx with the contracts' copy.
  */
-export function ContractsEmpty({ onFromScratch, onFromTemplate }: { onFromScratch: () => void; onFromTemplate: () => void }) {
+export function ContractsEmpty({ onFromScratch, onFromTemplate, onImport }: { onFromScratch: () => void; onFromTemplate: () => void; onImport?: () => void }) {
   return (
     <div className={styles.card} data-testid="contracts-empty">
       <div className={styles.inner}>
@@ -22,7 +22,9 @@ export function ContractsEmpty({ onFromScratch, onFromTemplate }: { onFromScratc
         </div>
         <div className={styles.buttons}>
           <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From the studio agreement</Button>   {/* (sweep S2 #20) the mock's "From Scratch" made the full agreement — one name for one action, the picker's */}
-          <Button onPress={onFromTemplate}>From Template</Button>
+          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="New Contract">From Template</Button>   {/* (REG-735) C, while the toolbar's New Contract steps back */}
+          {/* (REG-735) New Contract ▾'s third live way in, kept on the card while the toolbar steps back */}
+          {onImport ? <Button appearance="text" onPress={onImport}>Import from File</Button> : null}
         </div>
       </div>
     </div>

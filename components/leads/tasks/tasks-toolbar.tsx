@@ -14,6 +14,9 @@ import styles from './tasks-toolbar.module.css'
 
 export type TasksMenuAction = 'saveAll' | 'manage' | 'export' | 'deleteAll'
 export type TasksToolbarProps = {
+  /** (REG-735) The list is empty (not filtered): only the title and ⋮ — the empty card carries the ways in, and search, Filters and
+      the columns have nothing to act on yet. The first record brings them back. */
+  bare?: boolean
   query: string
   onQuery: (q: string) => void
   /** Add Task menu (902:26678): Create New Task · Use Template. */
@@ -92,13 +95,13 @@ export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) 
  * "All Tasks" · Add Task (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, searchPlaceholder, inHeader = false }: TasksToolbarProps) {
+export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, searchPlaceholder, inHeader = false, bare = false }: TasksToolbarProps) {
   const [scopeOpen, setScopeOpen] = useState(false)
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
 
   return (
     <div className={styles.bar}>
-      {scope ? (
+      {scope && !bare ? (
         /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count.
            (REG-729) The house scope pill (components/om/scope-pill), as the listing's: the applied dot off "All Tasks" (REG-295), the 4% hover. */
         <span className={styles.scopeWrap}>
@@ -113,6 +116,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
         <h2 className={styles.title}>All Tasks</h2>
       )}
       <div className={styles.actions}>
+        {bare ? null : (<>
         {inHeader ? null : <AddTaskButton onAdd={onAdd} />}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />
         <span className={styles.filterWrap}>
@@ -128,6 +132,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
             <IconButton icon="tune" label="Column settings" onClick={onColumns} className={styles.touchTarget} />
           </Tooltip>
         ) : null}
+        </>)}
         {inHeader ? null : <TasksMoreButton onMenu={onMenu} />}
       </div>
     </div>

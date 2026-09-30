@@ -26,6 +26,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { FolderCard, FolderGroup } from '@/components/om/folders/folder-card'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { FolderEmpty } from '@/components/om/folders/folder-empty'
+import { EmptyState, type EmptyAction } from '@/components/om/empty-state'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { NameDialog } from '@/components/leads/files/name-dialog'
 import { countLine, folderNameProblem, foldersIn, foldersUnder, liveFolder, trailTo } from '@/lib/folders'
@@ -116,7 +117,15 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   /** The sheet's third column: the kind's own fact (kind · steps · split). */
   deletedMeta: { label: string; value: (t: T) => string }
   usageWord: (t: T) => string
-  empty: { title: string; help: string }
+  empty: { title: string; help: string
+    /** (REG-735, owner 2026-09-30) The library's first run — nothing in it and no folders: its ways in as buttons in the empty state, where
+        the eye lands (New ▾'s rows, the usual way filled), while the toolbar keeps only the library's name and ⋮ (rules ② ③). */
+    start?: (place: LibraryPlace) => { primary?: EmptyAction | null; secondary?: EmptyAction | null; link?: EmptyAction | null }
+    /** (REG-735) Under the buttons: the library's samples — its ready-made designs — with their caption. */
+    samples?: { label: string; node: ReactNode }
+    /** (REG-735) A page whose first run is its own welcome (the AI Visualizer): it takes the empty state's, the intro's and the toolbar's
+        place (rule ④ — say it once); ⋮ moves to the page header. */
+    welcome?: ReactNode }
   children?: ReactNode
   /** (REG-594) Another Company section on the same gallery: its shell (title + tab strip) and what an entry is called. */
   /** (REG-677) A section with no peers (Materials) passes no tabs — no strip. */
@@ -252,6 +261,10 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const root = F ? LIBRARY_ROOT[F.library] : ''
   const placeIdOf = (t: T) => (t.folderId && flist.some((f) => f.id === t.folderId) ? t.folderId : null)
   const place: LibraryPlace = { folderId: openId, here: params.toString() ? `${pathname}?${params.toString()}` : pathname }
+  /* (REG-735) First run: the library holds nothing — no entry, no folder — so the page is its start: the empty state carries the ways in,
+     and the toolbar keeps only what can act (the name, ⋮ for Deleted). The first entry brings the whole toolbar back. */
+  const firstRun = items.length === 0 && flist.length === 0 && !openFolderRow
+  const welcome = firstRun ? p.empty.welcome ?? null : null
   const [filter, setFilter] = useState('all')
   const [listPref, setListPref] = useFlagPref(`om.${p.tableKey}.list`, false)
   const view: 'grid' | 'list' = phone || !listPref ? 'grid' : 'list'
@@ -474,18 +487,32 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
       kept.length ? keptLine(kept, '') : null].filter(Boolean).join(' ')
   })()
 
+  const kebab = (
+    <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} label={p.deletedLabel} sheetTitle={p.shell?.title}>
+      {foldColumns || pageRows.length ? (
+        <>
+          {foldColumns ? <DropdownItem onSelect={() => { setKebabOpen(false); setColumnsOpen(true) }}>Column settings</DropdownItem> : null}
+          {pageRows.map((it) => <DropdownItem key={it.label} onSelect={() => { setKebabOpen(false); it.onSelect() }} disabled={it.disabled} help={it.disabled ? it.title : undefined}>{it.label}</DropdownItem>)}
+        </>
+      ) : null}
+    </LibraryKebab>
+  )
+  /* (REG-735) The first run's ways in — the caller's, each waiting with New ▾'s reason when this member may make nothing here. */
+  const starts = firstRun && !welcome ? p.empty.start?.(place) ?? {} : {}
+  const blocked = (a: EmptyAction | null | undefined) => (a ? { ...a, block: a.block ?? p.newBlock ?? null } : null)
   const shellTitle = p.shell?.title ?? 'Templates'   // (F123) a one-page section (Materials) is not crumbed "Materials / Materials"
   const frame = (children: ReactNode) => (p.page ? (
     <PageReveal skeleton={p.page.skeleton}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
-        <PageHeader title={p.page.title} />
+        <PageHeader title={p.page.title} actions={welcome ? kebab : undefined} />
         <div className={pageStyles.content}>{children}</div>
       </div>
     </PageReveal>
   ) : <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell ? p.shell.tabs : templateTabs()} from={p.from} skeleton={p.shell?.skeleton ?? <TemplateLibraryGhost />}>{children}</CompanyShell>)   /* (REG-708) Templates' galleries: the ghost (libraries)/loading.tsx draws */
   return frame(
     <>
-      {p.intro}
+      {welcome ? null : p.intro}
+      {welcome ? null : (
       <div className={`${gallery.toolbar} ${styles.bar}`}>
         {/* (REG-666) Where you are takes the bar's left — the Files tab's toolbar: the library's name at the top, the crumb inside a
             folder (the whole way as links, Back up one level, the folder's own menu). */}
@@ -498,7 +525,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {/* (wave E, gallery-9) Two groups — what narrows the list, and the tools. From 768 up both melt into the one cluster (display:
               contents); on a phone the scope keeps the bar's left and the tools its right, and when the two can't share a line the tools
               take the next one whole — nothing runs off the screen. */}
-          {p.filters?.length ? (
+          {p.filters?.length && !firstRun ? (
           <div className={styles.scopes}>
           {/* (REG-666) A to-do shows only while something here waits for it; a press narrows the list to it. */}
           {(p.filters ?? []).filter((f) => f.attention && (counts[f.key] ?? 0) > 0).map((f) => (
@@ -522,6 +549,8 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           </div>
           ) : null}
           <div className={styles.tools}>
+          {/* (REG-735) On the first run only ⋮ stays — New, the folder, search, Filters and the views have nothing to act on yet. */}
+          {firstRun ? null : (<>
           {/* (REG-541) The tab's own New ▾ leads the cluster; its kebab (Deleted Templates) closes it — the tab toolbars' order. */}
           {F ? (
             /* (REG-664) New Folder, as the Files tab's toolbar has it — in the open folder. (wave E, gallery-9) On a phone it rides New ▾ (its
@@ -549,19 +578,20 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           <span className={gallery.viewToggle} data-kb="view">
             <SegmentedIconToggle label="View" value={view} options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]} onChange={(v) => setListPref(v === 'list')} />
           </span>
-          <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} label={p.deletedLabel} sheetTitle={p.shell?.title}>
-            {foldColumns || pageRows.length ? (
-              <>
-                {foldColumns ? <DropdownItem onSelect={() => { setKebabOpen(false); setColumnsOpen(true) }}>Column settings</DropdownItem> : null}
-                {pageRows.map((it) => <DropdownItem key={it.label} onSelect={() => { setKebabOpen(false); it.onSelect() }} disabled={it.disabled} help={it.disabled ? it.title : undefined}>{it.label}</DropdownItem>)}
-              </>
-            ) : null}
-          </LibraryKebab>
+          </>)}
+          {kebab}
           </div>
         </div>
       </div>
+      )}
 
-      {shown.length === 0 && (query.trim() || activeFacets.length) ? (
+      {firstRun ? (
+        /* (REG-735) The first run: the page's own welcome, else the house empty state with the library's ways in and its samples. */
+        welcome ?? (
+          <EmptyState icon={kind.icon} title={p.empty.title} help={p.empty.help} primary={blocked(starts.primary)} secondary={blocked(starts.secondary)} link={blocked(starts.link)}
+                      extra={p.empty.samples?.node} extraLabel={p.empty.samples?.label} testId="library-empty" />
+        )
+      ) : shown.length === 0 && (query.trim() || activeFacets.length) ? (
         /* (sweep S5 #16) a search or a filter with nothing to show: the house empty state, with the way back */
         <TabSearchEmpty noun={noun.many} searching={query.trim() !== ''} onClearAll={clearAll}
                         widen={openFolderRow && query.trim() ? { label: `Search all of ${root}`, onPress: () => go(null) } : undefined} />

@@ -37,3 +37,6 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .searchWrap .search[data-size='md'] { height: 44px; }
 }
+
+/* (REG-735) The bare row's title (the studio's first visit) — the tab toolbars' */
+.title { composes: title from '../om/tab-toolbar.module.css'; }

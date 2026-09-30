@@ -117,7 +117,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
 
   return (
     <div className={styles.tab}>
-      <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
+      <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={quotes.length === 0}   /* (REG-735) the empty card carries Create */
         query={query} onQuery={setQuery}
         onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}

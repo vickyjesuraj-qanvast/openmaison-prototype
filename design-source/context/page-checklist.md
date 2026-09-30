@@ -72,6 +72,15 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] **A new table's head is the listing's** — `.hCell` 16/24/16/16, the label centred in the 56, grey 12/500 uppercase with an ellipsis, and every column's floor holds its label; a frozen column draws the 1px rule at rest and the shadow only while scrolled. Copying a table's stylesheet, take every `.hCell` rule — some are split in two (REG-723).
 - [ ] **A crumb never repeats itself** — a page opened from another page of its own frame names that page, not the frame twice ("Plan & AI credits / Company", REG-721).
 
+## Empty states (REG-735…737 — owner 2026-09-30; the canvas https://claude.ai/artifact/MM7PBrzXmrJpJQmFcBYSey)
+Three kinds, never mixed: **first run** (a list with nothing in it — `EmptyState`, `components/om/empty-state.tsx`, or the tab's own mocked card), **an empty place** (an open folder — `FolderEmpty`), **no matches** (a search or a filter — `TabSearchEmpty`).
+- [ ] ① **A first run carries its action.** The ways in are buttons on the card, where the eye lands — never "New ▾ has all three". A library passes `empty.start` (New ▾'s rows: the usual way filled, a second outlined, a third as a text button) and `empty.samples` where it has samples (the ready-made designs).
+- [ ] ② **One filled button on the screen.** While the list is empty the toolbar's create (New ▾, Create Quote, Add Task, New File, the listing's Add Lead) steps back; the card's filled button takes C (`data-kb="create"`). The first record brings the toolbar back.
+- [ ] ③ **Nothing that can't act.** Search, Filters, the stage / status / Kind pill, Column settings, the views and New Folder hide on an empty list (`bare` on the tab toolbars, `firstRun` in `LibraryGallery`); ⋮ stays for Deleted / Archived.
+- [ ] ④ **Say it once.** An intro card and an empty state never repeat each other — a page with its own welcome (the AI Visualizer, `empty.welcome`) drops the intro and the toolbar while it shows.
+- [ ] ⑤ **A sample is a door, not a record.** Sample rooms and ready-made designs sit on the first-run card and become the studio's only when opened.
+- [ ] ⑥ **"No results found" only after a search or a filter** — never on a list that is simply new.
+
 ## Rows that can overflow
 - Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).
 - [ ] Horizontal chip / tab / pill rows use `ChipRail` (edge fades, chevron pagers, selected chip scrolls into view).

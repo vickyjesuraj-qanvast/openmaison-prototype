@@ -1,0 +1,53 @@
+/* (REG-735) Tools › AI Visualizer's first run — the welcome (the canvas' direction D). */
+.welcome { display: flex; flex-direction: column; gap: var(--om-spacing-10); padding: var(--om-spacing-2) 0 var(--om-spacing-6); }
+.hero { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: 56px; align-items: center; }
+.lead { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.texts { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.title { margin: 0; font: var(--om-type-heading-h1); color: var(--om-color-on-surface-default); text-wrap: balance; }
+.sub { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.steps li { display: flex; gap: var(--om-spacing-3); align-items: flex-start; }
+.steps b { font: var(--om-type-subheading-m); }
+/* the intro card's numbered step (visualizer-home.module.css .stepN), on the page's white: the primary tint */
+.stepN { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-subheading-s); display: inline-flex; align-items: center; justify-content: center; margin-top: -2px; }
+.buttons { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+
+.figure { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; max-width: 760px; }
+.compare { width: 100%; aspect-ratio: 3 / 2; border-radius: var(--om-radius-2); overflow: hidden; }   /* the sample photos are 3:2; the slider takes its shape from here */
+.caption { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+.samples { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.samplesTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-6); }
+.sample {
+  display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-3); min-width: 0;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default);
+  font: inherit; color: inherit; text-align: left; cursor: pointer; transition: background-color var(--motion-hover), border-color var(--motion-hover);
+}
+.sample:hover { background: var(--om-color-hover-04p); border-color: var(--om-color-on-surface-border); }
+.sample:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.sample:disabled { cursor: default; opacity: .6; }
+.sample img { width: 132px; height: 88px; flex-shrink: 0; object-fit: cover; border-radius: var(--om-radius-1); }
+.sampleText { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.sampleName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.sampleHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sampleGo { flex-shrink: 0; color: var(--om-color-primary-default); }
+
+/* ≤1024 one column: the picture first (what it does), then the words and the buttons; the samples a sideways row */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-6); }
+  .figure { order: -1; max-width: none; }
+  .row { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(340px, 1fr); overflow-x: auto; padding-bottom: var(--om-spacing-1); scroll-snap-type: x mandatory; }
+  .sample { scroll-snap-align: start; }
+}
+@media (max-width: 767px) {
+  .welcome { gap: var(--om-spacing-8); }
+  .title { font: var(--om-type-heading-h2); }
+  .steps { display: none; }   /* a phone keeps the button in reach: the picture says what the steps do (the canvas' phone board) */
+  .buttons { flex-direction: column; align-items: stretch; }
+  .row { grid-auto-columns: 168px; gap: var(--om-spacing-3); }
+  .sample { flex-direction: column; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+  .sample img { width: 100%; height: 96px; border-radius: 0; }
+  .sampleText { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-3); }
+  .sampleHelp, .sampleGo { display: none; }
+}

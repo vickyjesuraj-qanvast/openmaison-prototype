@@ -21,7 +21,7 @@ export function LeadsToolbar({
   filterCount = 0,
   view,
   onViewChange,
-  chipMenu, onColumnsClick}: {
+  chipMenu, onColumnsClick, bare = false }: {
   chipLabel: string
   onChipClick: () => void
   /** The pill's menu is open — chevron points up. */
@@ -39,6 +39,9 @@ export function LeadsToolbar({
   onViewChange: (v: 'table' | 'kanban') => void
   /** Anchored menu rendered under the stage pill. */
   chipMenu?: ReactNode
+  /** (REG-735) The studio has no lead yet: the row says "All Leads" and nothing else — the empty card carries Create and Import, and the
+      stage pill, search, Filters, the columns and the views have nothing to act on. The first lead brings them back. */
+  bare?: boolean
 }) {
   const searchRef = useRef<HTMLInputElement>(null)
   /* (REG-298) ≤767 the mock's toolbar is the pill and the filter glyph (1082:25269); search lives in the top bar.
@@ -54,9 +57,12 @@ export function LeadsToolbar({
       <div className={styles.left}>
         {/* (REG-729) The house scope pill (components/om/scope-pill.tsx) — the listing's own pill, now written once: the chevron turns
             while its menu is open, the applied dot off "All Leads" (REG-295). */}
+        {bare ? <h2 className={styles.title}>All Leads</h2> : (<>
         <ScopePill label={chipLabel} onClick={onChipClick} open={chipOpen} scoped={chipScoped} />
         {chipMenu}
+        </>)}
       </div>
+      {bare ? null : (
       <div className={styles.right}>
         {/* (REG-276) The DS SearchBar, as every other list in the app now uses (owner 2026-09-01: "make it like
             its in the DS SearchBar"). It replaces a hand-rolled label+input that drew the same 280x36 field but
@@ -101,6 +107,7 @@ export function LeadsToolbar({
           />
         </span>
       </div>
+      )}
     </div>
   )
 }

@@ -76,7 +76,10 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
          any, for an Owner or an Admin), the rule said in the row with its author's name; Empty Trash counts only those */
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       deletedMeta={{ label: 'Steps', value: (t) => `${t.tasks.length} ${t.tasks.length === 1 ? 'step' : 'steps'}` }}
-      empty={{ title: 'No task templates yet', help: 'Save a lead’s tasks as a template from its Tasks tab, or start a blank checklist here.' }}>
+      empty={{ title: 'No task templates yet', help: 'Save a lead’s tasks as a template from its Tasks tab, or start a blank checklist here.',
+        /* (REG-735) the first run carries New ▾'s rows */
+        start: () => ({ primary: { label: 'Blank template', icon: 'add', onPress: () => { void create(() => createTaskTemplate({ source: { kind: 'blank' } }), 'create the template') } },
+          secondary: { label: 'From a lead’s tasks…', onPress: () => setFromLead(true) } }) }}>
       <PickLeadDialog open={!!addFor} onClose={() => setAddFor(null)} leads={leads} allowStudio title="Add these tasks to which lead?" confirmLabel="Add tasks"
                       onPick={(leadId) => { const id = addFor; setAddFor(null); if (id) void run('add the tasks', async () => { const v = await settle(addTaskTemplateToLead(id, leadId)); const n = typeof v === 'number' ? v : 0; snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added${leadId ? '' : ' to the studio’s tasks'}`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }) }) }} />
       <PickLeadDialog open={fromLead} onClose={() => setFromLead(false)} leads={leads} allowStudio title="Whose open tasks become the template?" confirmLabel="Create template"

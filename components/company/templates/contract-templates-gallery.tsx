@@ -85,7 +85,11 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
          any, for an Owner or an Admin; lib/contracts/policy canDeleteTemplateForever is the same rule), said in the row as a whole sentence
          with its author's name (it read "Only its creator, an Owner or an Admin"); its person column is whoever saved it last */
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.maker)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.maker)} deletedByLabel="Updated by"
-      empty={{ title: 'No contract templates yet', help: 'Start from the studio agreement, or save any contract as a template from its editor.' }}>
+      empty={{ title: 'No contract templates yet', help: 'Start from the studio agreement, or save any contract as a template from its editor.',
+        /* (REG-735) the first run carries New ▾'s rows: the studio agreement first, a blank one, one of the studio's contracts */
+        start: () => ({ primary: { label: 'From the studio agreement', onPress: () => { void create(() => createContractTemplate({ source: { kind: 'starter' } }), 'create the template') } },
+          secondary: { label: 'Blank template', onPress: () => { void create(() => createContractTemplate({ source: { kind: 'blank' } }), 'create the template') } },
+          link: { label: 'From a contract…', onPress: () => setFromContract(true) } }) }}>
       <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} onPick={(leadId) => { const id = pickFor; setPickFor(null); if (id && leadId) void run('create the contract', async () => { const cid = await newIdOf(contractFromTemplate(id, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) }) }} />
       <PickOneDialog open={fromContract} onClose={() => setFromContract(false)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"
                      onPick={(id) => { setFromContract(false); void run('create the template', async () => open(await newIdOf(createContractTemplate({ source: { kind: 'contract', contractId: id } })))) }} />

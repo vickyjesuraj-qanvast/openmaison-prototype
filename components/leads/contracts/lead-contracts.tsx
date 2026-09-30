@@ -121,7 +121,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
 
   return (
     <div className={styles.tab}>
-      <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
+      <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={contracts.length === 0}   /* (REG-735) the empty card carries New Contract's ways in */
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'blank' ? newBlank() : kind === 'template' ? setPickerOpen(true) : kind === 'import' ? setImportOpen(true) : comingSoon())}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
@@ -129,7 +129,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         bundleCount={bundleable.filter((c) => !sendBlock(c)).length}   /* (sweep S2 #7) what can go out */
       />
       {contracts.length === 0 ? (
-        <ContractsEmpty onFromScratch={newBlank} onFromTemplate={() => setPickerOpen(true)} />
+        <ContractsEmpty onFromScratch={newBlank} onFromTemplate={() => setPickerOpen(true)} onImport={() => setImportOpen(true)} />
       ) : nothingMatches ? (
         <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
       ) : (

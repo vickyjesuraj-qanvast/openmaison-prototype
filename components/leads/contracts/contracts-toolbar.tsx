@@ -11,6 +11,9 @@ import { useSheetLayout } from '@/components/om/sheet'
 import styles from './contracts-toolbar.module.css'
 
 export type ContractsToolbarProps = {
+  /** (REG-735) The list is empty (not filtered): only the title and ⋮ — the empty card carries the ways in, and search, Filters and
+      the columns have nothing to act on yet. The first record brings them back. */
+  bare?: boolean
   query: string
   onQuery: (q: string) => void
   /** New Contract menu — not mocked; the Quotes New Quote menu (910:36664) copied: From Blank · From Template · Import from File · Create with AI. */
@@ -33,7 +36,7 @@ export type ContractsToolbarProps = {
  * Copied from components/leads/quotes/quotes-toolbar.tsx — same geometry, the contracts' copy.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0 }: ContractsToolbarProps) {
+export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0, bare = false }: ContractsToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -42,6 +45,7 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
     <div className={styles.bar}>
       <h2 className={styles.title}>All Contracts</h2>
       <div className={styles.actions}>
+        {bare ? null : (<>
         <span className={styles.menuWrap}>
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
@@ -81,6 +85,7 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
             <IconButton icon="tune" label="Column settings" onClick={onColumns} />
           </Tooltip>
         ) : null}
+        </>)}
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton

@@ -21,7 +21,7 @@ export function QuotesEmpty({ onFromScratch, onFromTemplate }: { onFromScratch: 
         </div>
         <div className={styles.buttons}>
           <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From Scratch</Button>
-          <Button onPress={onFromTemplate}>From Template</Button>
+          <Button onPress={onFromTemplate} data-kb="create" data-kb-label="Create Quote">From Template</Button>   {/* (REG-735) C, while the toolbar's Create steps back */}
         </div>
       </div>
     </div>

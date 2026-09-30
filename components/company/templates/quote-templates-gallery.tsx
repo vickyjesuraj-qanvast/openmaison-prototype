@@ -9,6 +9,7 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { HouseStyleDialog } from './house-style-dialog'
+import { PRESETS } from '@/lib/templates/presets'
 import { RecreateDialog } from './recreate-dialog'
 import { createTemplate, deleteTemplate, deleteTemplatesForever, duplicateTemplate, emptyTemplateTrash, renameTemplate, restoreTemplates, setDefaultTemplate } from '@/app/company/templates-actions'
 import { LibraryGallery, newIdOf, reasonOf, type LibraryColumn, type LibraryItem } from './library-gallery'
@@ -139,7 +140,22 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
       deletedMeta={{ label: 'Version', value: (r) => (r.t.version ? `v${r.t.version}` : 'Never published') }}
       usageWord={(r) => (r.t.usedBy === 0 ? '--' : `${r.t.usedBy} quote${r.t.usedBy === 1 ? '' : 's'}`)}
       deletedByLabel="Deleted by" deletedUsageLabel="On quotes"
-      empty={{ title: 'No templates yet', help: 'Use a ready-made design, or upload the quote you send today and we’ll rebuild it.' }}>
+      empty={{ title: 'No templates yet', help: 'Use a ready-made design, or upload the quote you send today and we’ll rebuild it.',
+        /* (REG-735) the first run carries New ▾'s rows: a studio arriving already sends a quote, so rebuilding it leads; blank second; the
+           ready-made designs are the library's samples, drawn with the studio's brand — a press starts a template on one */
+        start: () => ({ primary: { label: 'Upload my existing quote', icon: 'upload_file', onPress: () => setRecreateOpen(true) },
+          secondary: { label: 'Blank template', onPress: () => { void create(() => createTemplate({ source: { kind: 'blank' } }), 'create the template') } } }),
+        samples: { label: 'Or start from a ready-made design', node: (
+          <div className={styles.ready} role="list" aria-label="Ready-made designs">
+            {PRESETS.map((d) => (
+              <button key={d.key} type="button" role="listitem" className={styles.readyTile} disabled={busy} data-testid="ready-made"
+                      onClick={() => { void create(() => createTemplate({ name: d.name, source: { kind: 'preset', key: d.key } }), 'create the template') }}>
+                <span className={styles.readyWell}><span className={styles.readyPage}><TemplateThumb design={d.design()} brand={brand} data={sample} width={phone ? 104 : 124} /></span></span>
+                <span className={styles.readyName}>{d.name}</span>
+              </button>
+            ))}
+          </div>
+        ) } }}>
       <HouseStyleDialog open={houseOpen} brand={brand} sample={sample} onClose={() => setHouseOpen(false)}
                         onCreate={(key, name) => { setHouseOpen(false); void create(() => createTemplate({ name, source: { kind: 'preset', key } }), 'create the template') }} />
       <RecreateDialog open={recreateOpen} brand={brand} sample={sample} onClose={() => setRecreateOpen(false)}

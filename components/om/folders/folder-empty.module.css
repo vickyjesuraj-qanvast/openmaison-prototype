@@ -1,6 +1,6 @@
-/* (REG-664) The empty folder wears the template gallery's empty state (quote-templates-gallery.module.css .empty), a folder in its well. */
-.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-2); padding: 80px var(--om-spacing-6); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.glyph { width: 72px; height: 72px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-2); }
-.title { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
-.help { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 44ch; text-wrap: balance; }
-.actions { display: inline-flex; gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); flex-wrap: wrap; justify-content: center; }
+/* (REG-664) The empty folder wears the house empty state — (REG-735) composed from components/om/empty-state.module.css, one copy. */
+.empty { composes: empty from '../empty-state.module.css'; }
+.glyph { composes: glyph from '../empty-state.module.css'; }
+.title { composes: title from '../empty-state.module.css'; }
+.help { composes: help from '../empty-state.module.css'; }
+.actions { composes: actions from '../empty-state.module.css'; }

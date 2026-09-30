@@ -64,6 +64,8 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       keepReason={(t) => (t.usedBy > 0 ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults — restore it instead` : null)}
       deletedMeta={{ label: 'Kind', value: (t) => kindWord(t.kind) }}
-      empty={{ title: 'No text templates yet', help: 'Write Terms and Conditions or Additional Notes once, then add them to any quote from its editor’s My Templates.' }} />
+      empty={{ title: 'No text templates yet', help: 'Write Terms and Conditions or Additional Notes once, then add them to any quote from its editor’s My Templates.',
+        /* (REG-735) the first run carries New ▾'s two rows, in the help's verb */
+        start: () => ({ primary: { label: 'Write Terms and Conditions', onPress: () => { void create('terms') } }, secondary: { label: 'Write Additional Notes', onPress: () => { void create('notes') } } }) }} />
   )
 }

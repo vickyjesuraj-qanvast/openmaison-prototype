@@ -10,6 +10,9 @@ import { useSheetLayout } from '@/components/om/sheet'
 import styles from './quotes-toolbar.module.css'
 
 export type QuotesToolbarProps = {
+  /** (REG-735) The list is empty (not filtered): only the title and ⋮ — the empty card carries the ways in, and search, Filters and
+      the columns have nothing to act on yet. The first record brings them back. */
+  bare?: boolean
   query: string
   onQuery: (q: string) => void
   /** The tab's box reads "Search" (910:36319); the studio list names what it matches (REG-422). */
@@ -32,7 +35,7 @@ export type QuotesToolbarProps = {
  * Copied from components/leads/tasks/tasks-toolbar.tsx — same geometry, the quotes' copy and menus.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu }: QuotesToolbarProps) {
+export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu, bare = false }: QuotesToolbarProps) {
   const [menu, setMenu] = useState<'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -41,6 +44,7 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
     <div className={styles.bar}>
       <h2 className={styles.title}>All Quotes</h2>
       <div className={styles.actions}>
+        {bare ? null : (<>
         {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon. */}
         {sheet ? (
           <Tooltip label="Create Quote" shortcut="create">
@@ -62,6 +66,7 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
             <IconButton icon="tune" label="Column settings" onClick={onColumns} />
           </Tooltip>
         ) : null}
+        </>)}
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton

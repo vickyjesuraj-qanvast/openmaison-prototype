@@ -124,7 +124,8 @@ export function MaterialsView({ data, from }: { data: MaterialsData; from?: stri
           waiting.length ? `${waiting.length === 1 ? `${waiting[0]!.name} is` : `${waiting.length} of them are`} picked in a design and not rendered yet — ${waiting.length === 1 ? 'that pick won’t' : 'those picks won’t'} come back.` : null].filter(Boolean).join(' ')
       }}
       deletedMeta={{ label: 'Category', value: (t) => t.category }}
-      empty={{ title: 'No materials yet', help: 'Add the finishes your studio uses most — a swatch photo or a colour. In the AI Visualizer, Upload a swatch saves one here too.' }}>
+      empty={{ title: 'No materials yet', help: 'Add the finishes your studio uses most — a swatch photo or a colour. In the AI Visualizer, Upload a swatch saves one here too.',
+        start: (place) => ({ primary: { label: 'New material', icon: 'add', onPress: () => setEdit({ open: true, m: null, folderId: place.folderId }) } }) }}   /* (REG-735) New ▾'s row, where the eye lands */>
       <MaterialDialog open={edit.open} material={edit.m} onClose={() => setEdit((e) => ({ ...e, open: false, m: null }))} onSave={save} bookItems={data.bookItems} readOnly={edit.m?.mayChange ?? null} />
     </LibraryGallery>
   )

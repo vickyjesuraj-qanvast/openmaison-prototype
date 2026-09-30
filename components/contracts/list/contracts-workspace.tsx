@@ -127,11 +127,11 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
       <div className={pageStyles.body} style={{ position: 'relative' }} data-testid="contracts-workspace">
         <PageHeader title="Contracts" />
         <div className={styles.frame}>
-          <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} onNew={onNew} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
+          <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={contracts.length === 0} query={query} onQuery={setQuery} onNew={onNew} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
                             onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'archived' ? setArchivedOpen(true) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundlePick(true) : comingSoon())}
                             bundleCount={bundleLeads.length ? 2 : 0} />
           {contracts.length === 0 ? (
-            <ContractsEmpty onFromScratch={() => setPending({ kind: 'blank' })} onFromTemplate={() => setPickerOpen(true)} />
+            <ContractsEmpty onFromScratch={() => setPending({ kind: 'blank' })} onFromTemplate={() => setPickerOpen(true)} onImport={() => onNew('import')} />
           ) : nothingMatches ? (
             <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
           ) : (

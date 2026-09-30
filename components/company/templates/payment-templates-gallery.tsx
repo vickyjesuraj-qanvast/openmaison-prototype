@@ -70,6 +70,9 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
       restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       keepReason={(t) => (t.usedBy > 0 ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — restore it instead` : null)}
       deletedMeta={{ label: 'Split', value: (t) => splitWord(t.rows) }}
-      empty={{ title: 'No payment templates yet', help: 'Save a quote’s schedule as a template from its Payment Schedule, or start a split here.' }} />
+      empty={{ title: 'No payment templates yet', help: 'Save a quote’s schedule as a template from its Payment Schedule, or start a split here.',
+        /* (REG-735) the first run carries New ▾'s rows: the studio's default split first */
+        start: () => ({ primary: { label: 'Start from Default 10/30/30/30', onPress: () => { void create(() => createPaymentTemplate({ source: { kind: 'copy', id: DEFAULT_SPLIT_ID } }), 'create the template') } },
+          secondary: { label: 'Blank split', onPress: () => { void create(() => createPaymentTemplate({ source: { kind: 'blank' } }), 'create the template') } } }) }} />
   )
 }
