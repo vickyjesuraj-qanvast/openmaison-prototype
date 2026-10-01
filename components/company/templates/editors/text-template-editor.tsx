@@ -22,13 +22,14 @@ import { isRefusal } from '@/lib/company/template-rules'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import modal from '@/components/quotes/editor/text/templates-modal.module.css'
 import page from '@/components/contracts/editor/contract-editor.module.css'
+import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import styles from './library-editor.module.css'
 
 const AUTOSAVE_MS = 600
 
 /**
  * The Terms / Notes template editor (REG-538): the quote editor's My Templates form (1238:33173) as a page — the title, the
- * framed rich editor whose toolbar ends in Insert Token ▾, autosaved. Header: "Company / Templates / T&Cs & Notes" over the
+ * framed rich editor whose toolbar ends in Insert a field ▾ (Dane UAT 3.19, once Insert Token ▾), autosaved. Header: "Company / Templates / T&Cs & Notes" over the
  * title · kind chip · "Default on n quote templates" · Saved · Done · kebab (Duplicate · Delete) · ✕.
  */
 export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorData; from?: string }) {
@@ -76,19 +77,21 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
                          <DropdownItem tone="danger" onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
-          <input className={page.titleInput} value={title} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setTitle(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
+          <TitleInput value={title} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setTitle(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
           <div className={page.metaEnd}><MetaChip>{label}</MetaChip></div>   {/* (REG-729) the house tag, as the sibling editors' chips */}
         </div>
         <div className={styles.body}>
           <div className={styles.card}>
-            <div className={styles.cardHead}><span className={styles.cardTitle}>Text</span><span className={styles.cardHelp}>Tokens fill in from the quote when a studio adds this to one.</span></div>
+            <div className={styles.cardHead}><span className={styles.cardTitle}>Text</span><span className={styles.cardHelp}>Fields fill in from the quote when a studio adds this to one.</span></div>
             <div className={`${styles.cardBody} ${styles.textEditor}`}>
               <RichEditor ref={editor} value={body} onChange={(html) => { setBody(html); queue() }} placeholder={`Write the ${label.toLowerCase()} this template carries.`} label={`${label} template`} minHeight={520}
                           right={
                             <span className={modal.tokenAnchor}>
                               {/* (REG-729) the house compact select (m), as the quote editor's Templates modal has it (its .tokenBtn copy is gone) */}
-                              <SelectTrigger ref={tokenRef} label="Insert Token" value={<span>Insert Token</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />
-                              <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert Token">   {/* (REG-728) every insert-field menu is 240 */}
+                              {/* (Dane UAT 3.19) One name for every merge-field menu: "Insert a field", as the quote template editor and Settings ›
+                                  Notifications say it. The [Bracket] fields it inserts, and how they resolve, are unchanged. */}
+                              <SelectTrigger ref={tokenRef} label="Insert a field" value={<span>Insert a field</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />
+                              <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert a field">   {/* (REG-728) every insert-field menu is 240 */}
                                 {TOKENS.map((t) => <DropdownItem key={t.key} onSelect={() => { setTokenOpen(false); editor.current?.insertText(tokenText(t.key)) }}>{t.label}</DropdownItem>)}
                               </PortalMenu>
                             </span>

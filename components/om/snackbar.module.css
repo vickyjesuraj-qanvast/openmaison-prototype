@@ -33,6 +33,7 @@
   color: #ccb2ff;   /* 784:110041 — the DS inverse primary token renders too saturated on the dark bar; the mock's literal */
   font: var(--om-type-subheading-m);
   transition: background-color var(--motion-hover);
+  white-space: nowrap; flex-shrink: 0;   /* (REG-898) the action keeps its one line; the message wraps instead of being squeezed into three */
 }
 .action:hover { background: rgba(255, 255, 255, 0.08); }   /* 8% inverse wash — the tokens ship no hover for inverse surfaces (hover-08p is black) */
 .action:focus-visible { outline: var(--om-border-2) solid #ccb2ff; outline-offset: -2px; }

@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { bottomSheet, overlayFade } from '@/lib/motion'
 import { SurfaceFoot, SurfaceHead } from './surface-parts'
+import { IconButton } from './icon-button'
+import { Tooltip } from './tooltip'
 import { useOverflow } from './use-overflow'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
@@ -40,10 +42,13 @@ export function useSheetLayout(): boolean {
  * in on open and returns to the opener on close (components/om/surface.ts) — the same contract as Dialog.
  */
 export function Sheet({
-  open, onClose, title, subtitle, children, footer, headActions, role = 'dialog', label, bodyClassName,
+  open, onClose, onBack, title, subtitle, children, footer, headActions, role = 'dialog', label, bodyClassName,
 }: {
   open: boolean
   onClose: () => void
+  /** (REG-899, Dane UAT 12.04) A sheet opened from another sheet (More › Company · View as · AI credits) leads with the Drawer's back
+   *  arrow: it closes this sheet and brings the one it came from back. Esc, the scrim and the close still close it outright. */
+  onBack?: () => void
   /** Heading line. Omit for a bare list sheet (the grabber and the rows only). */
   title?: string
   /** One secondary line under the title — the canvas' "9123 4567 · Current stage: Contacted". */
@@ -74,7 +79,12 @@ export function Sheet({
                       role={role} aria-modal="true" aria-label={label ?? title} tabIndex={-1}>
             <span className={styles.grabber} aria-hidden />
             {/* (REG-725) the house head and foot, on the sheet's own 12 / 16 padding (REG-308 · REG-372) */}
-            {title ? <SurfaceHead title={title} subtitle={subtitle} actions={headActions} onClose={onClose} className={styles.head} /> : null}
+            {title ? <SurfaceHead title={title} subtitle={subtitle} actions={headActions} onClose={onClose} className={styles.head}
+                                  leading={onBack ? (
+                                    <Tooltip label="Back">
+                                      <IconButton icon="arrow_back" label="Back" size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.back} onClick={onBack} />
+                                    </Tooltip>
+                                  ) : undefined} /> : null}
             <div ref={scrollRef} className={`${styles.body} ${bodyClassName ?? ''}`}>{children}</div>
             {footer ? <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>{footer}</SurfaceFoot> : null}
           </motion.div>

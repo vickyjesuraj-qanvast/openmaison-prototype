@@ -264,9 +264,10 @@ export function ReturnLeadWizard({
                             </div>
                           </div> : null}
 
-                          {/* [V g10] "Attach images/screenshots of all your attempts" · tiles · "Attach Files" primary outlined, full width */}
+                          {/* [V g10] "Attach images/screenshots of all your attempts" · tiles · "Attach Files" primary outlined, full width.
+                              (REG-904, Dane UAT 9.10) Optional, as 1.0 had it (the parity rule) — and now it says so, as Comments does. */}
                           <div className={styles.group}>
-                            <span className={styles.groupLabel}>Attach images/screenshots of all your attempts</span>
+                            <span className={styles.groupLabel}>Attach images/screenshots of all your attempts (optional)</span>
                             {tiles.length ? (
                               <div className={styles.tiles}>
                                 {tiles.map((f) => {

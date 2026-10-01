@@ -26,6 +26,15 @@ const toDraft = (i: PriceBookItem | null): Draft => ({ name: i?.name ?? '', desc
 const toMinor = (s: string) => { const n = Number(s.replace(/,/g, '')); return Number.isFinite(n) ? Math.round(n * 100) : 0 }   // (REG-651) dollars and cents, as typed
 const kindOf = (label: string) => ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === label) ?? 'purchase'
 const HISTORY_SHOWN = 6
+/** (Dane UAT 3.10) The item changed under the open dialog (a Bring back, its Undo): each box the member left alone follows the item; a box
+    they typed in keeps what they typed. */
+const follow = (cur: Draft, was: Draft, next: Draft): Draft => {
+  const out = { ...cur }
+  for (const k of Object.keys(next) as (keyof Draft)[]) if (cur[k] === was[k]) (out as Record<keyof Draft, unknown>)[k] = next[k]
+  return out
+}
+/** Whether a History entry's earlier values differ from the item's now — Bring back would change something. */
+const differs = (item: PriceBookItem, h: ItemChange) => Object.entries(h.changes).some(([f, [before]]) => ((item as Record<string, unknown>)[f] ?? null) !== (before ?? null))
 
 /**
  * (REG-594) One item of My Items, new or edited: what the Add Item popover and a picked line copy — name, description, kind,
@@ -36,7 +45,7 @@ const HISTORY_SHOWN = 6
  * a product or spec page, and its photo — shown, replaced and removed here, on the card and in the Add Item box.
  */
 const NO_CATEGORY = 'No category'
-export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing = false, readOnly = null, proposal = null, now }: {
+export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing = false, readOnly = null, proposal = null, now, onBringBack }: {
   open: boolean; item: PriceBookItem | null; onClose: () => void; onSave: (input: PriceBookItemInput) => void | Promise<unknown>
   /** (REG-651, Q-07) the studio's trades */ trades?: string[]
   /** A new item from someone who doesn't run the book: it is proposed. */ proposing?: boolean
@@ -44,6 +53,8 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
   /** A proposed item: who proposed it, whether the viewer reviews it, and the two answers. */
   proposal?: { by: string | null; at: number; canReview: boolean; onApprove: (edited: PriceBookItemInput | null) => void | Promise<unknown>; onSendBack: () => void } | null
   now: number
+  /** (Dane UAT 3.10) History › Bring back — the entry's earlier values, through the item's own write; absent when the viewer may only read. */
+  onBringBack?: (h: ItemChange) => void | Promise<unknown>
 }) {
   const [d, setD] = useState<Draft>(() => toDraft(item))
   const [touched, setTouched] = useState(false)
@@ -51,9 +62,13 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
   const [seen, setSeen] = useState(item?.id ?? null)
   const [history, setHistory] = useState<{ id: string; rows: ItemChange[] | 'failed' } | null>(null)
   const [historyTry, setHistoryTry] = useState(0)
+  const [bringing, setBringing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [allHistory, setAllHistory] = useState(false)
-  if (open !== wasOpen || (item?.id ?? null) !== seen) { setWasOpen(open); setSeen(item?.id ?? null); if (open) { setD(toDraft(item)); setTouched(false); setAllHistory(false) } }
+  /* (Dane UAT 3.10) the item as last read — a newer one (a Bring back, its Undo) moves the boxes the member left alone and reloads History */
+  const [base, setBase] = useState<PriceBookItem | null>(item)
+  if (open !== wasOpen || (item?.id ?? null) !== seen) { setWasOpen(open); setSeen(item?.id ?? null); setBase(item); if (open) { setD(toDraft(item)); setTouched(false); setAllHistory(false) } }
+  else if (item && base && item !== base && item.id === base.id && (item.updatedAt?.getTime() ?? 0) !== (base.updatedAt?.getTime() ?? 0)) { setBase(item); setD((cur) => follow(cur, toDraft(base), toDraft(item))); setHistoryTry((n) => n + 1) }
   const itemId = open ? item?.id ?? null : null
   useEffect(() => {
     if (!itemId) return
@@ -86,14 +101,17 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
   const dirty = !!item && JSON.stringify(d) !== JSON.stringify(toDraft(item))
   const save = async () => { const v = draftInput(); if (!v || busy) return; setBusy(true); try { await onSave(v) } finally { setBusy(false) } }
   const approveNow = async () => { const v = dirty ? draftInput() : null; if ((dirty && !v) || busy || !proposal) return; setBusy(true); try { await proposal.onApprove(v) } finally { setBusy(false) } }
+  const bringBack = async (h: ItemChange) => { if (!onBringBack || bringing) return; setBringing(h.id); try { await onBringBack(h) } finally { setBringing(null) } }
   const title = readOnly ? 'Item details' : item ? 'Edit item' : proposing ? 'Propose an item' : 'New item'
   const subtitle = readOnly ? undefined : item ? 'Lines already on a quote keep what they copied; new picks take these values.'
     : proposing ? 'It’s on your quotes at once; an Owner or an Admin approves it before the rest of the studio uses it.' : 'What a quote line starts with when this item is picked.'
   return (
-    <Dialog open={open} onClose={onClose} title={title} size="modal" width={600} subtitle={subtitle}
+    /* (Dane UAT 3.10) An item's History sits beside its form, in its own column — the dialog takes the house l (800); a phone keeps it below */
+    <Dialog open={open} onClose={onClose} title={title} size="modal" width={item ? 800 : 600} subtitle={subtitle}
             footer={readOnly ? <Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>
               : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={busy || (!nameOk && touched)} onPress={() => { void save() }}>{busy ? 'Saving…' : item ? 'Save' : proposing ? 'Propose' : 'Add to My Items'}</Button></>}>
-      <div className={styles.fields} data-testid="item-dialog">
+      <div className={item ? styles.withHistory : styles.fields} data-testid="item-dialog">
+      <div className={styles.fields}>
         {proposal ? <ProposalBar by={proposal.by} at={proposal.at} now={now} canReview={proposal.canReview} onApprove={() => { void approveNow() }} onSendBack={proposal.onSendBack} /> : null}
         {readOnly ? <ReadOnlyNote text={`${readOnly}. You can use it on your quotes.`} /> : null}
         <ReadOnlyScope readOnly={!!readOnly}>
@@ -123,6 +141,7 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
             {d.thumb && !readOnly ? <Button appearance="text" variant="secondary" onPress={() => setD((x) => ({ ...x, thumb: null }))}>Remove photo</Button> : null}
           </div>
         </ReadOnlyScope>
+      </div>
         {item ? (
           <section className={styles.history} aria-label="History" data-testid="item-history">
             <span className={styles.eyebrow}>History</span>
@@ -134,6 +153,8 @@ export function ItemDialog({ open, item, onClose, onSave, trades = [], proposing
                     <span className={styles.historyHead}><b>{CHANGE_WORD[h.kind]}</b>{h.by ? ` by ${h.by}` : ''} · {ago(h.at, now)}</span>
                     {Object.entries(h.changes).map(([f, c]) => <span key={f} className={styles.historyLine}>{changeLine(f, c)}</span>)}
                     {h.note ? <span className={styles.historyNote}>“{h.note}”</span> : null}
+                    {/* (Dane UAT 3.10) the values this entry changed, as they were before it — offered while they differ from the item's now */}
+                    {onBringBack && Object.keys(h.changes).length > 0 && differs(item, h) ? <Button appearance="text" className={styles.bringBack} isDisabled={!!bringing} onPress={() => { void bringBack(h) }} data-testid="history-bring-back">Bring back</Button> : null}
                   </li>
                 ))}
               </ul>

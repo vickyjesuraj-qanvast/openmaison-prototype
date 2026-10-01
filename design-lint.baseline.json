@@ -106,7 +106,6 @@
     "inline-style": {
       "components/company/materials/material-dialog.tsx": 2,
       "components/company/materials/materials-view.tsx": 2,
-      "components/company/templates/brand-kit-view.tsx": 2,
       "components/company/templates/editors/library-editor-ghost.tsx": 1,
       "components/company/templates/library-gallery.skeleton.tsx": 1,
       "components/leads/detail/tab-ghosts.tsx": 4,

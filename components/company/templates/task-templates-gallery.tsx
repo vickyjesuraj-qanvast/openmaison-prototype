@@ -31,7 +31,8 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
   const snackbar = useSnackbar()
   const { run, fail } = useRun()
   const [addFor, setAddFor] = useState<string | null>(null)
-  const [fromLead, setFromLead] = useState(false)
+  /* the folder open when "From a lead’s tasks…" was pressed (undefined = closed) — the template made from the lead is filed there */
+  const [fromLead, setFromLead] = useState<string | null | undefined>(undefined)
   const kind = templateKind('tasks')!
   const here = useHere('/company/templates/tasks')   // (round 3) the open folder and search ride along
   const open = useCallback((id: string) => router.push(`/templates/tasks/${id}?from=${encodeURIComponent(here)}`), [router, here])
@@ -41,10 +42,10 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
 
   return (
     <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'tasks', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Task templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="task-templates"
-      newMenu={(close) => (<>
-        <DropdownItem onSelect={() => { close(); void create(() => createTaskTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
+      newMenu={(close, place) => (<>   {/* (Dane UAT 3.03) a template made inside a folder is filed there */}
+        <DropdownItem onSelect={() => { close(); void create(() => createTaskTemplate({ source: { kind: 'blank' }, folderId: place.folderId }), 'create the template') }}>Blank template</DropdownItem>
         <DropdownDivider />
-        <DropdownItem onSelect={() => { close(); setFromLead(true) }}>From a lead’s tasks…</DropdownItem>
+        <DropdownItem onSelect={() => { close(); setFromLead(place.folderId) }}>From a lead’s tasks…</DropdownItem>
       </>)}
       filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]}
       searchText={(t) => t.tasks.map((s) => s.title).join(' ')}
@@ -79,11 +80,11 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
       empty={{ title: 'No task templates yet', help: 'Save a lead’s tasks as a template from its Tasks tab, or start a blank checklist here.',
         /* (REG-735) the first run carries New ▾'s rows */
         start: () => ({ primary: { label: 'Blank template', icon: 'add', onPress: () => { void create(() => createTaskTemplate({ source: { kind: 'blank' } }), 'create the template') } },
-          secondary: { label: 'From a lead’s tasks…', onPress: () => setFromLead(true) } }) }}>
+          secondary: { label: 'From a lead’s tasks…', onPress: () => setFromLead(null) } }) }}>
       <PickLeadDialog open={!!addFor} onClose={() => setAddFor(null)} leads={leads} allowStudio title="Add these tasks to which lead?" confirmLabel="Add tasks"
                       onPick={(leadId) => { const id = addFor; setAddFor(null); if (id) void run('add the tasks', async () => { const v = await settle(addTaskTemplateToLead(id, leadId)); const n = typeof v === 'number' ? v : 0; snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added${leadId ? '' : ' to the studio’s tasks'}`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }) }) }} />
-      <PickLeadDialog open={fromLead} onClose={() => setFromLead(false)} leads={leads} allowStudio title="Whose open tasks become the template?" confirmLabel="Create template"
-                      onPick={(leadId) => { setFromLead(false); void create(() => createTaskTemplate({ source: { kind: 'lead', leadId } }), 'create the template') }} />
+      <PickLeadDialog open={fromLead !== undefined} onClose={() => setFromLead(undefined)} leads={leads} allowStudio title="Whose open tasks become the template?" confirmLabel="Create template"
+                      onPick={(leadId) => { const folderId = fromLead ?? null; setFromLead(undefined); void create(() => createTaskTemplate({ source: { kind: 'lead', leadId }, folderId }), 'create the template') }} />
     </LibraryGallery>
   )
 }

@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { markUsed, useShortcutsHere } from '@/lib/keys/store'
+import { flagOn, markUsed, SINGLE_KEYS, useShortcutsHere } from '@/lib/keys/store'
+import { copyText } from '@/lib/clipboard'
 import { GRID_KEYS } from '@/lib/keys/registry'
 import { withFrom } from '@/lib/nav'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -14,7 +15,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
-import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { PriceBookDialog, type PriceBookPick, type PriceBookTab } from './price-book-dialog'
@@ -22,8 +23,8 @@ import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, PriceBookSection, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, sectionForTrade, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
-import { categoryShares, counts, descendantIds, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, inSavedOrder, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, sectionForTrade, tradeOfSection, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
+import { categoryShares, counts, depthOf, descendantIds, flattenItems, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
 import { scrollParentOf } from '@/components/om/use-stuck'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
 import { ExportDialog } from '@/components/leads/export-dialog'
@@ -48,6 +49,23 @@ import { isRefusal } from '@/lib/company/template-rules'
 import type { LineChanges } from './line-change'
 
 const AUTOSAVE_MS = 600
+
+/* (Dane UAT 6.15, g-expanded) Expand survives Preview and the way back: the press on Preview leaves this tab a note (per tab, half an hour),
+   and the Items card that mounts for the same quote opens expanded again and forgets it. A per-viewer convenience — sessionStorage, guarded. */
+const EXPANDED_KEY = 'om.items.expanded'
+function rememberExpanded(quoteId: string) { try { sessionStorage.setItem(EXPANDED_KEY, JSON.stringify({ quoteId, at: Date.now() })) } catch { /* a private window simply forgets */ } }
+function takeExpanded(quoteId: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(EXPANDED_KEY)
+    if (!raw) return false
+    const v = JSON.parse(raw) as { quoteId?: string; at?: number }
+    if (v.quoteId !== quoteId) return false
+    sessionStorage.removeItem(EXPANDED_KEY)
+    return typeof v.at === 'number' && Date.now() - v.at < 30 * 60_000
+  } catch { return false }
+}
+/** (Dane UAT 6.11) What a template's View by is called in the note: "prints lines by trade". */
+const PRINTS_BY: Record<Exclude<ItemsView, 'none'>, string> = { category: 'trade', room: 'room', section: 'section label' }
 
 /** The Maison AI mark (1262:35630) in the button's leading-icon slot. */
 function AiMark() {
@@ -101,7 +119,14 @@ export type ItemsSeed = {
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, bookTick = 0, exportTick = 0, propertyType = null, commentCounts = {}, onOpenComments, changes }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, bookTick = 0, exportTick = 0, propertyType = null, commentCounts = {}, onOpenComments, changes, printsBy = null, onChangeTemplate, onPreview }: {
+  /** (Dane UAT 6.11, g-sections-trade) The quote's template groups its lines by a label (REG-488 / REG-497): its name and how — the quote's
+   *  own sections then never print, and the card says so in one line. Null = it prints the quote's own sections. */
+  printsBy?: { template: string; view: Exclude<ItemsView, 'none'> } | null
+  /** The note's Change template: the editor's template picker. */
+  onChangeTemplate?: () => void
+  /** (Dane UAT 6.15) Preview from the expanded card (and P there); Expand comes back with the way back. */
+  onPreview?: () => void
   /** (UX audit Q10) On a revision: the lines new or changed since the kept version — tinted and tagged in the table. */
   changes?: LineChanges
   /** (REG-627, parity Q-30) Each line's comment count, and the thread's opener (the editor owns the drawer). */
@@ -168,6 +193,24 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* Expand (REG-434): the whole card as a full-page layer over the editor; Escape (with no menu or dialog up) and the toolbar's
      Collapse bring it back. The page keeps a collapsed stand-in in the section's slot so nothing below it moves. */
   const [expanded, setExpanded] = useState(false)
+  /* (Dane UAT 6.15) Back from a Preview opened while expanded: expanded again (read after mount — the server renders it collapsed). */
+  useEffect(() => { const r = requestAnimationFrame(() => { if (takeExpanded(quoteId)) setExpanded(true) }); return () => cancelAnimationFrame(r) }, [quoteId])
+  const previewNow = () => { if (!onPreview) return; if (expanded) rememberExpanded(quoteId); onPreview() }
+  /* P in the expanded layer: the key layer stands down under any modal layer (the expanded card is one), so the card answers its own P
+     — the same checks the layer makes: not while typing, not in a widget that owns its letters, not under a menu or another dialog, and
+     never with the single-letter keys switched off (REG-711…717). */
+  useEffect(() => {
+    if (!expanded || !onPreview) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'p' || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || e.isComposing) return
+      const t = e.target instanceof HTMLElement ? e.target : null
+      if (t && (t.isContentEditable || t.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]), textarea, select') || t.closest('[data-kb-own]'))) return
+      if (document.querySelector('[role="menu"], [role="listbox"]') || document.querySelectorAll('[role="dialog"]').length > 1 || !flagOn(SINGLE_KEYS)) return
+      e.preventDefault(); markUsed('preview'); rememberExpanded(quoteId); onPreview()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [expanded, onPreview, quoteId])
   useEffect(() => {
     if (!expanded) return
     const prev = document.body.style.overflow
@@ -275,7 +318,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     setItems(fresh.map((i) => { const p = pending.current.get(i.id); return p ? { ...i, ...p.patch } as QuoteItem : i }))
   }
   useEffect(() => { reloadRef.current = reload })
-  const structural = async <T,>(what: string, fn: () => Promise<T>, done?: string, drop?: Set<string>): Promise<{ ok: true; value: T } | { ok: false }> => {
+  const structural = async <T,>(what: string, fn: () => Promise<T>, done?: Parameters<typeof run>[2], drop?: Set<string>): Promise<{ ok: true; value: T } | { ok: false }> => {
     snapshot()
     let value: T | undefined
     const ok = await run(what, async () => { await settle(drop); value = await fn(); await reload() }, done)
@@ -290,7 +333,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const tick = () => {
       const ids = Array.isArray(which) ? which : itemsRef.current.filter((i) => !which.has(i.id)).map((i) => i.id)
       const first = ids[0]
-      const row = first ? bodyRef.current?.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(first)}"]`) ?? null : null
+      /* (Dane UAT, Jump to) a View-by bucket's title row is `bucket:<name>` */
+      const row = first ? bodyRef.current?.querySelector<HTMLElement>(first.startsWith('bucket:') ? `[data-bucket="${CSS.escape(first.slice(7))}"]` : `[data-item-id="${CSS.escape(first)}"]`) ?? null : null
       if (!row) { if (++tries < 60) requestAnimationFrame(tick); return }   // the reload's render lands a frame or two later on a busy thread — wait up to a second
       const r = row.getBoundingClientRect()
       const sc = scrollParentOf(row)
@@ -359,7 +403,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const copyRows = (ids: string[]) => {
     const rows = exportRows(itemsRef.current, new Set(ids))
     if (!rows.length) return
-    void navigator.clipboard?.writeText(toTsv([[...EXPORT_HEAD], ...rows])).then(() => snackbar({ message: `${rows.length} ${rows.length === 1 ? 'row' : 'rows'} copied — paste them into a sheet` }), () => fail('copy the rows'))
+    void copyText(toTsv([[...EXPORT_HEAD], ...rows])).then(() => snackbar({ message: `${rows.length} ${rows.length === 1 ? 'row' : 'rows'} copied — paste them into a sheet` }), () => fail('copy the rows'))
   }
   /** Export As → the house Export dialog (the leads' and the tasks' one, REG-478): every line in table order with the groups' sums,
       as CSV · XLS · XLSX · PDF from the one writer (lib/leads/export.ts). Money prints with its two decimals. */
@@ -516,7 +560,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'description': break
       case 'comment': onOpenComments?.(item.id); break   /* (REG-627) */
       case 'duplicate': void structural('duplicate the item', () => duplicateQuoteItem(item.id), 'Item duplicated').then((r) => { if (r.ok) attention([r.value.id]) }); break
-      case 'copyName': void navigator.clipboard?.writeText(item.name).then(() => snackbar({ message: 'Name copied' }), () => fail('copy the name')); break
+      case 'copyName': void copyText(item.name).then(() => snackbar({ message: 'Name copied' }), () => fail('copy the name')); break
       case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('put the items in a section', () => groupQuoteItems(quoteId, list), 'Section created').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) }); setSelected(new Set()); break }
       case 'showFull': setShowFull((s) => { const n = new Set(s); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n }); break
       case 'optional': patchItem(item.id, { optional: !item.optional }); snackbar({ message: item.optional ? 'Optional mark cleared' : 'Marked as optional — printed in its own section, out of the totals' }); break   /* REG-492 */
@@ -536,10 +580,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const cur = itemsRef.current
     const a = cur.find((i) => i.id === id)
     if (!a) return
+    const before = cur.map((i) => ({ ...i }))
     const target = slot.parentId
     const sibs = cur.filter((i) => (i.parentId ?? null) === target && i.id !== id).sort((x, y) => x.position - y.position).map((i) => i.id)
     let at = 0
-    if (slot.where !== 'inside') { const k = sibs.indexOf(slot.anchorId ?? ''); if (k < 0) return; at = k + (slot.where === 'after' ? 1 : 0) }
+    if (slot.anchorId?.startsWith('bucket:')) {
+      /* (Dane UAT) dropped on a View-by › Category title: the bucket's first place — before its first top-level row, else at the end */
+      const key = slot.anchorId.slice(7)
+      const firstIn = cur.filter((i) => !i.parentId && i.id !== id && (i.category || UNLABELLED.category) === key).sort((x, y) => x.position - y.position)[0]
+      at = firstIn ? Math.max(0, sibs.indexOf(firstIn.id)) : sibs.length
+    } else if (slot.where !== 'inside') { const k = sibs.indexOf(slot.anchorId ?? ''); if (k < 0) return; at = k + (slot.where === 'after' ? 1 : 0) }
     sibs.splice(at, 0, id)
     const from = a.parentId ?? null
     const moved = from !== target
@@ -547,23 +597,42 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const status = moved && host ? host.status : a.status   // a line joining a section carries its answer (setQuoteItemParent's rule)
     const under = moved ? descendantIds(cur, [id]) : new Set<string>()
     const fromSibs = cur.filter((i) => (i.parentId ?? null) === from && i.id !== id).sort((x, y) => x.position - y.position).map((i) => i.id)
+    /* (Dane UAT 6.11 · Figma 1549:34 pt 3) A line's category follows where it lands: into a section that stands for a trade (its own Category,
+       or a studio trade by name — tradeOfSection) it takes that trade, so a template that prints by trade files it there; dropped at the top
+       of another View-by › Category bucket it takes that bucket's. Said with Undo, which takes the whole move back, as ⌘Z does. */
+    const trade = moved && host && a.kind === 'item' ? tradeOfSection(host, seed.trades) : null
+    const recat: { category: string | null } | null = trade && trade !== a.category ? { category: trade }
+      : !host && a.kind === 'item' && slot.bucket !== undefined && view === 'category' ? { category: slot.bucket === UNLABELLED.category ? null : slot.bucket ?? null } : null
+    const recatChanged = !!recat && recat.category !== a.category
     snapshot()
     setItems((c) => c.map((i) => {
-      if (i.id === id) return { ...i, parentId: target, position: sibs.indexOf(id), status }
+      if (i.id === id) return { ...i, parentId: target, position: sibs.indexOf(id), status, ...(recatChanged ? recat : {}) }
       if ((i.parentId ?? null) === target) return { ...i, position: sibs.indexOf(i.id) }
       if (moved && (i.parentId ?? null) === from) return { ...i, position: fromSibs.indexOf(i.id) }
       if (moved && under.has(i.id)) return { ...i, status }
       return i
     }).sort((x, y) => x.position - y.position))   // the array stays in position order, as the store hands it out
     attention([id])
+    const undo = { actionLabel: 'Undo', onAction: () => { void restore(before, true) } }
+    const said = recatChanged && recat
+      ? (host ? { message: `Moved into “${host.name}” — its category is now ${recat.category}`, ...undo } : { message: `Moved to ${recat.category ?? UNLABELLED.category}`, ...undo })
+      : moved ? (host ? `Moved into “${host.name}”` : 'Moved out of the section') : undefined
     void run('move the line', async () => {
       await settle()
       try {
         if (moved) await setQuoteItemParent(id, target)
+        if (recatChanged && recat) { const c = await updateQuoteItem(id, recat); onSaved(c.updatedAt, c.amountMinor) }
         const r = await reorderQuoteItems(quoteId, target, sibs)
         onSaved(r.updatedAt, r.amountMinor)
       } catch (e) { await reload(); throw e }
-    }, moved ? (host ? `Moved into “${host.name}”` : 'Moved out of the section') : undefined)
+    }, said)
+  }
+  /* (Dane UAT, Figma 1549:34 pt 1) The "+" on a View-by › Category title: a new line in that category, first in the bucket — as a section's
+     "+" puts it first in the section — with its name ready to type (REG-573). A folded bucket opens. */
+  const addToBucket = (key: string) => {
+    setCollapsedBuckets((cb) => { if (!cb.has(key)) return cb; const n = new Set(cb); n.delete(key); return n })
+    const first = itemsRef.current.filter((i) => !i.parentId && (i.category || UNLABELLED.category) === key).sort((x, y) => x.position - y.position)[0]
+    void create({ parentId: null, category: key === UNLABELLED.category ? null : key, ...(first ? { beforeId: first.id } : {}) }, true)
   }
 
   /* ── quote-level ── */
@@ -612,7 +681,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   }
   const usedLabels = useMemo(() => ({
     rooms: [...new Set([...labels.rooms, ...items.map((i) => i.room).filter((x): x is string => !!x)])],
-    categories: [...new Set([...seed.trades, ...labels.categories, ...items.map((i) => i.category).filter((x): x is string => !!x)])],   // (REG-561) the studio's trades first
+    categories: inSavedOrder([...new Set([...seed.trades, ...labels.categories, ...items.map((i) => i.category).filter((x): x is string => !!x)])], labels.categoryOrder),   // (REG-561) the studio's trades first · (Dane UAT) the quote's own order once its buckets were dragged
     sections: [...new Set([...labels.sections, ...items.map((i) => i.section).filter((x): x is string => !!x)])],
     /* (REG-623, parity Q-08) The vendors My Items name first, then the ones added on this quote and the ones its lines carry. */
     vendors: [...new Set([...priceBook.map((p) => p.vendor).filter((x): x is string => !!x).sort((a, b) => a.localeCompare(b)), ...labels.vendors, ...items.map((i) => i.vendor).filter((x): x is string => !!x)])],
@@ -623,6 +692,18 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const list = view === 'room' ? usedLabels.rooms : view === 'category' ? usedLabels.categories : usedLabels.sections
     return [...new Set([...list, view === 'category' ? 'Uncategorized' : 'Unassigned'])]
   }, [view, usedLabels])
+  /* (Dane UAT, Figma 1549:34 pt 4) A bucket dragged by its handle: the quote keeps the new order (its Items labels, as the sections keep
+     theirs); Uncategorized stays last. */
+  const moveBucket = (key: string, anchor: string, where: 'before' | 'after') => {
+    const order = bucketKeys.filter((k) => k !== UNLABELLED.category && k !== key)
+    const k = order.indexOf(anchor)
+    if (anchor === UNLABELLED.category) order.push(key)
+    else if (k >= 0) order.splice(k + (where === 'after' ? 1 : 0), 0, key)
+    else return
+    const next = { ...labels, categoryOrder: order }
+    setLabels(next); savePrefs({ itemsLabels: next })
+    attention([`bucket:${key}`])
+  }
   /* (REG-532) A By-category row: View by → Category. The shares count every priced line by its own category, while the view buckets
      top-level rows (a group stays whole under its own label, else Uncategorized — `buildDisplay`), so a share's bucket can be empty:
      the picked bucket is opened alone and scrolled to only when it holds priced lines; otherwise the view simply switches, every bucket open. */
@@ -679,11 +760,37 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   useShortcutsHere(GRID_KEYS)
   const findRef = useRef<HTMLSpanElement>(null)
   useEffect(() => { if (findOpen) findRef.current?.querySelector('input')?.focus() }, [findOpen])
+  /* (Dane UAT, Figma Fix 1 1490:5395 — g-jumpto) While Find is open and empty, a "Jump to" list under it: the quote's sections (View by:
+     None) or the view's buckets (a category, a room, a label); a pick scrolls to that row and pulses it (attention, REG-573) — a section
+     folded inside another opens first. Typing hides the list and Find filters as before. */
+  const [jumpOpen, setJumpOpen] = useState(false)
+  const jumpTargets = useMemo(() => {
+    if (view !== 'none') return bucketKeys.filter((k) => k === UNLABELLED.category || k === UNLABELLED.room || k === UNLABELLED.section ? items.some((i) => !i.parentId && !(i[view] ?? null)) : true).map((k) => ({ id: `bucket:${k}`, name: k, within: null as string | null }))
+    return flattenItems(items).filter((i) => i.kind === 'group').map((g) => ({ id: g.id, name: g.name || 'New section', within: depthOf(items, g.id) ? items.find((p) => p.id === g.parentId)?.name ?? null : null }))
+  }, [view, bucketKeys, items])
+  const jumpTo = (id: string) => {
+    setJumpOpen(false); setFindOpen(false)
+    if (!id.startsWith('bucket:')) { const g = itemsRef.current.find((i) => i.id === id); const parent = g?.parentId ? itemsRef.current.find((i) => i.id === g.parentId) : null; if (parent?.collapsed) patchItem(parent.id, { collapsed: false }) }
+    attention([id])
+  }
   const find = findOpen || query !== '' ? (
     <span ref={findRef} className={styles.find}
-          onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setFindOpen(false) }}
-          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setQuery(''); setFindOpen(false) } }}>
-      <SearchBar appearance="outlined" size="md" placeholder="Find items" aria-label="Find items" value={query} onChange={setQuery} />
+          onFocusCapture={() => setJumpOpen(true)}
+          onBlurCapture={(e) => {
+            const to = e.relatedTarget instanceof Element ? e.relatedTarget : null
+            if (to && (e.currentTarget.contains(to) || to.closest('[data-om-menu]'))) return   // into its own Jump to list
+            setJumpOpen(false)
+            if (query === '') setFindOpen(false)
+          }}
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setQuery(''); setFindOpen(false); setJumpOpen(false) } }}>
+      <SearchBar appearance="outlined" size="md" placeholder="Find items" aria-label="Find items" value={query} onChange={setQuery}
+                 onKeyDown={(e) => { if (e.key === 'ArrowDown' && jumpOpen && query === '' && jumpTargets.length) { e.preventDefault(); document.querySelector<HTMLElement>('[data-testid="jump-to"] [role="menuitem"]')?.focus() } }} />   {/* ↓ into the list; every other key as the box always had it (Escape: clears, then closes) */}
+      <PortalMenu open={jumpOpen && query === '' && jumpTargets.length > 0} anchor={findRef} onClose={() => setJumpOpen(false)} role="menu" width={MENU_WIDTH.wide} autoFocus={false}>
+        <div data-testid="jump-to">
+          <DropdownLabel>Jump to</DropdownLabel>
+          {jumpTargets.map((t) => <DropdownItem key={t.id} help={t.within ? `in ${t.within}` : undefined} onSelect={() => jumpTo(t.id)}>{t.name}</DropdownItem>)}
+        </div>
+      </PortalMenu>
     </span>
   ) : (
     <Tooltip label="Find items" keys="mod+f"><IconButton icon="search" label="Find items" onClick={() => setFindOpen(true)} /></Tooltip>
@@ -737,6 +844,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                 <DropdownItem disabled={history.past.length === 0} keys="mod+z" onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
                 <DropdownItem disabled={history.future.length === 0} keys="mod+shift+z" onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
                 <DropdownDivider />
+                {expanded && onPreview ? <DropdownItem shortcut="preview" onSelect={() => { closeMenus(); previewNow() }}><span className={styles.menuIcon}><Icon name="visibility" size={20} /></span>Preview</DropdownItem> : null}   {/* (Dane UAT 6.15) */}
                 <DropdownItem onSelect={() => { closeMenus(); setExpanded((x) => !x) }}><span className={styles.menuIcon}><Icon name={expanded ? 'collapse_content' : 'expand_content'} size={20} /></span>{expanded ? 'Collapse' : 'Expand'}</DropdownItem>
                 <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem>
                 <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
@@ -787,6 +895,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         </Button>
         {createMenu}
       </span>
+      {/* (Dane UAT 6.15, g-expanded) The expanded card is a layer over the editor and its header's Preview: it carries its own (P too), and
+          Back from Preview returns to it expanded. */}
+      {expanded && onPreview ? <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={previewNow} data-kb="preview">Preview</Button></Tooltip> : null}
       {/* (owner 2026-09-16, REG-458) Expand / Collapse is the row's last control, after Create — the mock (1271:41169) had it among the icon buttons. */}
       <Tooltip label={expanded ? 'Collapse' : 'Expand'}><IconButton icon={expanded ? 'collapse_content' : 'expand_content'} label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpanded((x) => !x)} /></Tooltip>
     </div>
@@ -795,6 +906,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const title = `Items (${lineCount})`
   const body = (
         <div ref={bodyRef} className={styles.body}>
+          {/* (Dane UAT 6.11, g-sections-trade) The template decides how the lines print (REG-488 / REG-497): when it files them by a label,
+              the quote's own sections never reach the paper — said once, above the table, with the way to a template that prints them. */}
+          {printsBy && items.some((i) => i.kind === 'group') ? (
+            <p className={styles.printNote} role="note" data-testid="print-note">
+              <Icon name="info" size={20} weight={300} />
+              <span>{printsBy.template} prints lines by {PRINTS_BY[printsBy.view]}, so these sections don’t show on the printed quote.</span>
+              {onChangeTemplate ? <button type="button" className={styles.printNoteLink} onClick={onChangeTemplate}>Change template</button> : null}
+            </p>
+          ) : null}
           <ItemsTable
             onAddColumn={() => setSettingsOpen(true)}
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
@@ -808,7 +928,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
               onSelectRun: (ids) => setSelected((s) => new Set([...s, ...ids])),
               onInsertBelow: insertBelow,
               onMenu,
-              onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the section' : 'Moved out of the section').then((r) => { if (r.ok) attention([item.id]) }) },
+              onChooseGroup: (item, gid) => {
+                /* (Dane UAT 6.11) Move to section › a section that stands for a trade gives the line that trade, with Undo — as the drag does */
+                const host = gid ? itemsRef.current.find((i) => i.id === gid) ?? null : null
+                const trade = host && item.kind === 'item' ? tradeOfSection(host, seed.trades) : null
+                const recat = trade && trade !== item.category ? trade : null
+                const before = itemsRef.current.map((i) => ({ ...i }))
+                void structural('move the item', async () => { await setQuoteItemParent(item.id, gid); if (recat) await updateQuoteItem(item.id, { category: recat }) },
+                  recat && host ? { message: `Moved into “${host.name}” — its category is now ${recat}`, actionLabel: 'Undo', onAction: () => { void restore(before, true) } } : gid ? 'Moved into the section' : 'Moved out of the section').then((r) => { if (r.ok) attention([item.id]) })
+              },
               onPrintAs: (item, v) => { if (v === 'custom') { setPrintAsFor({ ids: [item.id], text: item.printAs === 'custom' ? item.printAsText : null }); setPrintAsOpen(true) } else setPrintAs([item.id], v) },
               onHighlight: (item, v) => setHighlight([item.id], v),
               onUploadImage: (item) => setImageFor(item),
@@ -828,6 +956,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             bookPlace={bookPlace?.label ?? null} bookPlaceSection={bookPlace?.sectionLabel ?? null} onClearBookPlace={() => setBookPlace(null)}
             onViewPriceBook={() => setBookOpen('items')}   /* (REG-662) the Price book modal, over the editor */
             onExport={() => setExportOpen(true)}
+            onAddToBucket={addToBucket} onMoveBucket={moveBucket}
             addInputRef={addInputRef}
             addOpenTick={addOpenTick + addTick}
           />

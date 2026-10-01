@@ -45,7 +45,7 @@ export function TasksTabGhost({ studio = false, rows = 5 }: { studio?: boolean; 
         ...(studio ? [{ basis: 200, head: 36, cell: (r: number) => cycle([88, 72, 96, 80, 104], r) }] : []),
         { basis: 160, head: 56, cell: { slot: 'avatar' } },
         { basis: 160, head: 52, cell: { node: <><Slot kind="avatar" /><Line w={40} lh={20} h={12} /></> } },
-        { basis: 137, head: 60, cell: 64 },
+        { basis: 240, head: 60, cell: 64 },   /* (Dane UAT 5.13) the Due column's day and time (tasks-table TASK_COLUMN_DEFS) */
         { basis: 118, head: 48, cell: { slot: 'chip', w: 44 } },
         { basis: 191, head: 36, cell: 72 },
       ]} />
@@ -65,9 +65,9 @@ export function QuotesTabGhost({ studio = false, rows = 3 }: { studio?: boolean;
         ...(studio ? [{ basis: 180, head: 44, cell: (r: number) => cycle([84, 96, 72, 88], r) }] : []),
         { basis: 128, head: 46, cell: 56 },
         { basis: 160, head: 56, cell: { node: <><Slot kind="avatar" /><Line w={56} lh={20} h={12} /></> } },
-        ...[58, 45, 75].map((head) => ({ basis: 120, head, cell: 64 as number })),
+        ...[58, 45, 75].map((head, i) => ({ basis: i === 1 ? 160 : 120, head, cell: 64 as number })),   /* (Dane UAT 5.13) Due holds its day at 160 */
         { basis: 168, head: 110, cell: 64 },   /* (UX audit Q5) Sent to client */
-        { basis: 144, head: 92, cell: 64 },   /* (UX audit Q5) Valid until */
+        { basis: 160, head: 92, cell: 64 },   /* (UX audit Q5) Valid until — (Dane UAT 5.13) 160 with its day */
         { basis: 120, head: 76, cell: 64 },
         { basis: 157, head: 64, cell: 72 },   /* Approval Date — the lead's tab draws it too while the studio asks for approval (the default, REG-214) */
       ]} />

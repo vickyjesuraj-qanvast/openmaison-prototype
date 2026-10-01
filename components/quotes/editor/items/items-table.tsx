@@ -140,8 +140,12 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 export function ItemsTable({
   items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, bookPlace = null, bookPlaceSection = null, onClearBookPlace,
-  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes,
+  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes, onAddToBucket, onMoveBucket,
 }: {
+  /** (Dane UAT, Figma 1549:34 pt 1) View by › Category: the "+" on a bucket's row adds a line in that category. */
+  onAddToBucket?: (key: string) => void
+  /** (Dane UAT, Figma 1549:34 pt 4) View by › Category: a bucket dragged by its handle lands before another, or after one's lines. */
+  onMoveBucket?: (key: string, anchorKey: string, where: 'before' | 'after') => void
   /** (REG-627, parity Q-30) Each line's comment count, by id. */
   commentCounts?: Record<string, number>
   /** (UX audit Q10) On a revision: the lines new or changed since the kept version. */
@@ -296,10 +300,17 @@ export function ItemsTable({
   const allOn = allIds.length > 0 && allIds.every((id) => selected.has(id))
   /* (REG-571) The pointer drag over the rows as shown — what the slot rules need per row, refreshed after every render. */
   const dragRows = useRef<DragRow[]>([])
+  /* (Dane UAT, Figma 1549:34 pts 3 · 4) View by › Category takes its bucket rows into the drag: a line may land in another category, and a
+     bucket moves with its lines. Room and Section label keep a line in its own bucket, as before. */
+  const byCategory = view === 'category'
   useEffect(() => {
-    dragRows.current = shown.flatMap((d) => (d.kind === 'row' ? [{ id: d.item.id, parentId: d.item.parentId ?? null, kind: d.item.kind === 'group' ? 'group' as const : 'item' as const, bucket: d.bucket, open: d.item.kind === 'group' && !d.item.collapsed, hasSubs: d.item.kind === 'group' && items.some((x) => x.parentId === d.item.id && x.kind === 'group') }] : []))
+    dragRows.current = shown.flatMap((d): DragRow[] => (d.kind === 'row' ? [{ id: d.item.id, parentId: d.item.parentId ?? null, kind: d.item.kind === 'group' ? 'group' as const : 'item' as const, bucket: d.bucket, open: d.item.kind === 'group' && !d.item.collapsed, hasSubs: d.item.kind === 'group' && items.some((x) => x.parentId === d.item.id && x.kind === 'group') }]
+      : byCategory ? [{ id: `bucket:${d.key}`, parentId: null, kind: 'bucket' as const, bucket: d.key, open: !collapsedBuckets.has(d.key), hasSubs: false, fixed: d.key === UNLABELLED.category }] : []))
   })
-  const R = useRowDrag({ root: wrap, rowsRef: dragRows, onDrop: onDropRow })
+  const R = useRowDrag({ root: wrap, rowsRef: dragRows, crossBucket: byCategory, onDrop: (id, slot) => {
+    if (id.startsWith('bucket:')) { if (slot.anchorId?.startsWith('bucket:')) onMoveBucket?.(id.slice(7), slot.anchorId.slice(7), slot.where === 'after' ? 'after' : 'before'); return }
+    onDropRow(id, slot)
+  } })
   const lastTouched = useRef<string | null>(null)
   const rowH: RowHandlers = {
     ...h,
@@ -379,7 +390,7 @@ export function ItemsTable({
     return (
       <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
         <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
-                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} commentCounts={commentCounts} changes={changes} />
+                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} showMarkup={columns.includes('markup')} commentCounts={commentCounts} changes={changes} />
         {/* (wave E, phone-4) no "#n" before the field on a phone — the cards carry their own numbers, and a lone "2" floated at the edge */}
         <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
       </div>
@@ -420,7 +431,10 @@ export function ItemsTable({
       <div ref={scroller} className={styles.scroller}>
         <div className={styles.table} role="rowgroup">
           {shown.map((d) => d.kind === 'bucket' ? (
-            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)} />
+            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)}
+                       fresh={fresh.has(`bucket:${d.key}`)} drag={byCategory ? R.rowProps(`bucket:${d.key}`) : undefined}
+                       onAdd={byCategory && onAddToBucket ? () => onAddToBucket(d.key) : undefined}
+                       onDragPointerDown={byCategory && onMoveBucket && d.key !== UNLABELLED.category && !found ? (e) => R.start(`bucket:${d.key}`, e) : undefined} />
           ) : (
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
@@ -505,8 +519,10 @@ function SumRow({ sums, priced, columns, colW, colStyle, autonumber, itemStyle }
   )
 }
 
-/** A view bucket's header row (reference "1 · Design Time"): name, fold chevron and the sums of its lines. */
-function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onToggle }: { d: Extract<Display, { kind: 'bucket' }>; all: QuoteItem[]; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; folded: boolean; onToggle: () => void }) {
+/** A view bucket's header row (reference "1 · Design Time"): name, fold chevron and the sums of its lines. (Dane UAT, Figma 1549:34) In
+ *  View by › Category its selection cell holds the drag handle (Uncategorized stays last, so it has none) and the "+" that adds a line in it. */
+function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onToggle, onAdd, onDragPointerDown, drag, fresh = false }: { d: Extract<Display, { kind: 'bucket' }>; all: QuoteItem[]; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; folded: boolean; onToggle: () => void
+  onAdd?: () => void; onDragPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void; drag?: { dragging: boolean; dragStyle?: CSSProperties }; fresh?: boolean }) {
   const counted = new Set(countedLines(all).map((l) => l.id))
   const lines = d.lines.filter((l) => counted.has(l.id))
   const cost = lines.reduce((s, l) => s + lineCostMinor(l), 0)
@@ -515,8 +531,19 @@ function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onTogg
   const total = lines.reduce((s, l) => s + lineTotalMinor(l), 0)
   const sum = (key: ColumnKey) => (key === 'cost' ? money2(cost) : key === 'markup' ? money2(markup) : key === 'unitPrice' ? money2(price) : '')
   return (
-    <div className={styles.bucket} role="row" data-bucket={d.key}>
-      <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
+    <div className={styles.bucket} role="row" data-bucket={d.key} data-drag-id={`bucket:${d.key}`} data-dragging={drag?.dragging || undefined} data-fresh={fresh || undefined} style={drag?.dragStyle}>
+      <div role="cell" className={`${styles.cell} ${styles.colSel}`}>
+        {onDragPointerDown ? (
+          <Tooltip label="Drag to reorder">
+            <button type="button" className={styles.handle} aria-label={`Drag to reorder ${d.name}`} onPointerDown={onDragPointerDown}><Icon name="drag_indicator" size={20} weight={300} /></button>
+          </Tooltip>
+        ) : onAdd ? <span className={styles.handleGap} aria-hidden /> : null}
+        {onAdd ? (
+          <Tooltip label="Add item">
+            <button type="button" className={styles.bucketAdd} aria-label={`Add item to ${d.name}`} onClick={onAdd}><Icon name="add" size={20} weight={300} /></button>
+          </Tooltip>
+        ) : null}
+      </div>
       {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{d.number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
         <span className={styles.bucketName}>{d.name}</span>

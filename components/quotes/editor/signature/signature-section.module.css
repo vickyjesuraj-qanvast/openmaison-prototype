@@ -35,9 +35,20 @@
   .panes { grid-template-columns: 1fr; }
   .pane { padding: 16px; }
   .switchRow { font: var(--om-type-body-s); }
+  /* (Dane UAT 6.23) three choices no longer fit beside their label on a phone: the radios take the next line; the empty box's three
+     buttons wrap rather than run past the box */
+  .modeRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .choose { flex-wrap: wrap; justify-content: center; }
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .link, .clear { position: relative; }
   .link::after, .clear::after { content: ''; position: absolute; inset: -12px; }
 }
 .modeRadios { display: inline-flex; align-items: center; gap: var(--om-spacing-6); }   /* (sweep S1) the DS radios in a row */
+/* (Dane UAT 6.23) Upload: the picture in the same 752×140 box, kept whole and centred; under the box the rule (PNG · JPG on white · 1 MB),
+   or in its place why a file was refused, in the field error's red. */
+.picture { display: block; max-width: calc(100% - 2 * var(--om-spacing-4)); max-height: calc(100% - 2 * var(--om-spacing-4)); object-fit: contain; }
+.box[data-kind='image'] { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+.upload { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.uploadNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.uploadNote[data-error] { color: var(--om-color-tertiary-red-default); }

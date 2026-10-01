@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
+import { Button, Checkbox, Radio, RadioGroup, SearchBar } from '@/components/ds'
 import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
 import { DateField } from '@/components/om/date-field'
@@ -60,6 +60,9 @@ export function TasksFiltersModal({
   const [tab, setTab] = useState<Group>('sort')
   const tabs = leads ? [...TABS, { key: 'leads' as Group, label: 'Lead' }, { key: 'stages' as Group, label: 'Stage' }] : TABS
   const [draft, setDraft] = useState<TaskFilters>(value)
+  /* (Dane UAT 11.03) The Lead pane's search — the listing's Property types / Sources panes (components/leads/filters-modal.tsx): the house
+     filled box at the pane's top, a "No leads match" line; it empties on a new pane and on every opening. */
+  const [q, setQ] = useState('')
   const [wasOpen, setWasOpen] = useState(false)
   const [mountedAt] = useState(() => Date.now())
   /* (REG-287) `aria-modal` promised assistive tech the page behind is inert, but the panel only locked scrolling:
@@ -77,13 +80,15 @@ export function TasksFiltersModal({
   // Render-phase adjust: every opening starts from the applied value on the Sort pane.
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setDraft(value); setTab('sort') }
+    if (open) { setDraft(value); setTab('sort'); setQ('') }
   }
 
   const dots = activeTaskGroups(draft)
   const toggle = (key: 'assignees' | 'creators' | 'tags' | 'leads', v: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
+  const needle = q.trim().toLowerCase()
+  const leadRows = [{ id: 'studio', name: 'Studio', stage: 'No lead' }, ...(leads ?? [])].filter((l) => !needle || l.name.toLowerCase().includes(needle) || l.stage.toLowerCase().includes(needle))
   // DateField only ever holds a picker-chosen date, so the only rule left is the range order.
   const fromD = parseInputDate(draft.from), toD = parseInputDate(draft.to)
   const rangeBad = !!fromD && !!toD && fromD.getTime() > toD.getTime()
@@ -124,7 +129,7 @@ export function TasksFiltersModal({
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {tabs.map((t) => (
                   <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={styles.tab}
-                          data-active={tab === t.key || undefined} onClick={() => setTab(t.key)}>
+                          data-active={tab === t.key || undefined} onClick={() => { setTab(t.key); setQ('') }}>
                     <span>{t.label}</span>
                     {dots[t.key] ? <span className={styles.tabDot} aria-label="Has selections" /> : null}
                   </button>
@@ -152,9 +157,11 @@ export function TasksFiltersModal({
                   </>
                 ) : tab === 'leads' ? (
                   <>
+                    <SearchBar size="md" appearance="filled" placeholder="Search" aria-label="Search leads" value={q} onChange={setQ} className={styles.search} />
                     <span className={styles.sectionTitle}>Lead</span>
                     <div className={styles.list}>
-                      {[{ id: 'studio', name: 'Studio', stage: 'No lead' }, ...(leads ?? [])].map((l) => (
+                      {/* (REG-274) a row is found by what it shows — the lead's name and its stage line */}
+                      {leadRows.map((l) => (
                         <div key={l.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('leads', l.id)}
                              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('leads', l.id) } }}>
                           <span className={styles.rowText}>
@@ -166,6 +173,7 @@ export function TasksFiltersModal({
                           </span>
                         </div>
                       ))}
+                      {leadRows.length === 0 ? <span className={styles.noMatch}>No leads match “{q}”.</span> : null}
                     </div>
                   </>
                 ) : tab === 'stages' ? (

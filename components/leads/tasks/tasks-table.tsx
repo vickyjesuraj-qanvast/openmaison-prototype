@@ -18,7 +18,7 @@ import type { TaskLead } from '@/lib/leads/tasks'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
-import { displayDate, isOverdue } from '@/lib/format'
+import { displayDue, isOverdue } from '@/lib/format'
 import type { TaskRow } from '@/lib/leads/tasks'
 import type { Member } from '@/lib/db/schema'
 import styles from './tasks-table.module.css'
@@ -71,6 +71,8 @@ export type TasksTableProps = {
   onEdit: (task: TaskRow) => void
   /** Bottom bar "+ Add Task" (902:26450). */
   onAddClick?: () => void
+  /** (Dane UAT 11.02) The task the add row just created — brought into view and pulsed once; `n` changes per add. */
+  pulse?: { id: string; n: number } | null
 }
 
 /* Column order + head copy — sentence case, exactly as the mock types it (spec 01). Tags has no sort icon. */
@@ -80,7 +82,7 @@ export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: '320', locked: true },   /* floor 320 (was the mock's 420, owner 2026-09-17: Tags must show below 1440) */
   { key: 'assignees', label: 'Members', track: '160' },   /* REG-290 */
   { key: 'creator', label: 'Creator', track: '160' },
-  { key: 'due', label: 'Due date', track: '137' },
+  { key: 'due', label: 'Due date', track: '240' },   /* (Dane UAT 5.13 · 5.05) the mock's 137 held "17 Jul ’26"; the widest "Wed, 28 May ’26 · 10:00 PM" needs 234 — the table grows, never cuts (REG-430) */
   { key: 'status', label: 'Status', track: '118' },
   { key: 'tags', label: 'Tags', track: '191' },
 ]
@@ -101,10 +103,30 @@ export function TasksTable({
   tasks, now, selected, onSelect, unseen, descriptionMatches,
   adding, onAddSubmit, addKey, onAddCancel, addMembers, onAddAssign,
   renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker, pulse = null,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
+
+  /* (Dane UAT 11.02) The quote editor's attention after an add (REG-573, items-section.tsx `attention`): once the new row exists — a frame or
+     two after the save's refresh — it is centred when it sits off the screen or under the docked Add Task bar, and pulses once
+     (`data-fresh`). The caret stays in the add row, so the next task can follow (REG-257). */
+  const [flash, setFlash] = useState<string | null>(null)
+  const tableEl = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!pulse) return
+    let tries = 0, raf = 0, timer = 0
+    const tick = () => {
+      const row = tableEl.current?.querySelector<HTMLElement>(`[data-kb-row][data-kb-id="${CSS.escape(pulse.id)}"]`) ?? null
+      if (!row) { if (++tries < 60) raf = requestAnimationFrame(tick); return }
+      const r = row.getBoundingClientRect()
+      if (r.top < 0 || r.bottom > window.innerHeight - 64) row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+      setFlash(pulse.id)
+      timer = window.setTimeout(() => setFlash((f) => (f === pulse.id ? null : f)), 1500)
+    }
+    raf = requestAnimationFrame(() => { raf = requestAnimationFrame(tick) })
+    return () => { cancelAnimationFrame(raf); window.clearTimeout(timer) }
+  }, [pulse])
 
   const allSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(tasks.map((t) => t.id)))
@@ -151,7 +173,7 @@ export function TasksTable({
     <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-kb-list="task" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
     <div ref={frame} className={styles.scroller} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-    <div className={styles.table}>
+    <div className={styles.table} ref={tableEl}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div ref={headRow} className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
@@ -184,6 +206,7 @@ export function TasksTable({
           task={task}
           now={now}
           unseen={unseen.has(task.id)}
+          fresh={flash === task.id}
           descriptionMatch={descriptionMatches?.has(task.id) ?? false}
           selected={selected.has(task.id)}
           onToggleSelect={(range) => toggleOne(task.id, idx, range)}
@@ -377,7 +400,7 @@ function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign }: { onSu
 }
 
 function TaskRowView({
-  task, now, unseen, descriptionMatch, selected, onToggleSelect,
+  task, now, unseen, fresh = false, descriptionMatch, selected, onToggleSelect,
   renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
@@ -387,6 +410,8 @@ function TaskRowView({
   L: ReturnType<typeof useColumnLayout>
   now: number
   unseen: boolean
+  /** (Dane UAT 11.02) The task the add row just created: one pulse. */
+  fresh?: boolean
   /** (REG-275) The live search found this row by its description alone — the title cell says so. */
   descriptionMatch: boolean
   selected: boolean
@@ -416,7 +441,7 @@ function TaskRowView({
   const kebab = useRef<HTMLSpanElement>(null)
 
   return (
-    <div className={styles.row} role="row" data-kb-row data-kb-id={task.id} data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined}>
+    <div className={styles.row} role="row" data-kb-row data-kb-id={task.id} data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined} data-fresh={fresh || undefined}>
       {/* Selection cell: checkbox 24/Light secondary → check_box 24 primary when selected.
           The DS Checkbox reports the next checked state, not the event, so Shift is read off the click on its way
           down (capture runs before the input's own change) and handed to the range selector. */}
@@ -451,7 +476,8 @@ function TaskRowView({
               panel with its Task name selected — rename there; the row menu's Rename still edits in place. */}
           <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}
                   onDoubleClick={touch || !onRenameInPanel ? undefined : () => onRenameInPanel(task)} aria-label={`Open ${task.title}`}>
-            <span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span>
+            {/* (Dane UAT 8.16) A cut title says itself in full on hover — REG-820's `whenCut`, as the libraries' names do. */}
+            <Tooltip label={task.title} whenCut><span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span></Tooltip>
           </button>
           {/* The chips sit BESIDE the title button, not inside it: the comment chip is a control of its own now
               (opens the comments panel straight away, user 2026-08-30) and buttons cannot nest — the same reason
@@ -539,13 +565,14 @@ function TaskRowView({
         )}
       </div>
 
-      {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}
+      {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise — (Dane UAT 5.13 · 5.05)
+          with its day and, when the task has one, its time: "Sat, 3 Oct ’26 · 10:00 AM". */}
       <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')} data-inert={inert}>
         {task.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
-                  aria-label={`Due ${displayDate(task.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
+                  aria-label={`Due ${displayDue(task.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
                   onClick={(e) => onDue(task, e.currentTarget)}>
-            {displayDate(task.dueAt)}
+            {displayDue(task.dueAt)}
           </button>
         ) : (
           <Tooltip label="Set due date">

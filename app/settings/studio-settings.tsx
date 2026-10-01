@@ -6,7 +6,7 @@ import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { withFrom } from '@/lib/nav'
-import { permissionRows, REACH_LABEL, ROLE_COLUMNS, type StudioRules } from '@/lib/settings/permissions'
+import { permissionRows, REACH_LABEL, ROLE_COLUMNS, RULE_PLACES, type StudioRules } from '@/lib/settings/permissions'
 import { settingsHref } from '@/lib/settings/modules'
 import { ModuleHead } from './module-head'
 import { leaveThen } from '@/components/company/leave-guard'
@@ -116,7 +116,8 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
           </div>
           {rows.map((row) => (
             <div key={row.key} className={styles.eventRow} role="row" data-testid={`may-${row.key}`}>
-              <span role="cell" className={styles.eventName}><span>{row.action}</span></span>
+              {/* (Dane UAT 2.23 · 10.08) A rule the studio can change says where, as a link that lands on it (with Back here, REG-465). */}
+              <span role="cell" className={styles.eventName}><span><span>{row.action}</span>{RULE_PLACES[row.key] ? <span className={styles.eventHelp}>Set under <HelpLink href={RULE_PLACES[row.key]!.href} testId={`may-link-${row.key}`}>{RULE_PLACES[row.key]!.label}</HelpLink></span> : null}</span></span>
               {ROLE_COLUMNS.map((r) => {
                 const reach = row.reach[r]
                 return (

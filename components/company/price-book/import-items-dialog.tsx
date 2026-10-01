@@ -10,7 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Dropzone } from '@/components/leads/move-stage/fields'
 import { IMPORT_LIMIT, PasteItemsDialog, type BookMatch } from '@/components/quotes/editor/items/paste-items-dialog'
-import { isBlock } from '@/lib/quotes/clipboard'
+import { guessHeader, isBlock } from '@/lib/quotes/clipboard'
 import type { PasteLine } from '@/lib/quotes/clipboard'
 import { parseCsv } from '@/lib/csv'
 import { parseXlsx } from '@/lib/xlsx'
@@ -26,7 +26,7 @@ import styles from './price-book.module.css'
  */
 export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
   open: boolean; onClose: () => void; onImport: (lines: PasteLine[], vendor: string | null, match: BookMatch, kind: ItemKind) => void | Promise<void>
-  book: { name: string; vendor: string | null }[]; trades: string[]
+  book: { name: string; vendor: string | null; status?: string }[]; trades: string[]
 }) {
   const snackbar = useSnackbar()
   const [text, setText] = useState('')
@@ -60,7 +60,8 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
         <div className={styles.fields} data-testid="import-dialog">
           {/* (sweep S5 #6) Back from the mapping keeps the file: it shows here, Next maps it again, ✕ lets it go for pasted rows */}
           {file ? (
-            <div className={styles.fileRow} data-testid="import-file"><Icon name="table" size={20} weight={300} /><span className={styles.fileName}>{file.name} · {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}</span>
+            /* (Dane UAT 3.12) the file's items — its header line is no item (the mapping's caption counts them the same way) */
+            <div className={styles.fileRow} data-testid="import-file"><Icon name="table" size={20} weight={300} /><span className={styles.fileName}>{(() => { const n = file.rows.length - (guessHeader(file.rows) ? 1 : 0); return `${file.name} · ${n} ${n === 1 ? 'item' : 'items'}` })()}</span>
               <Tooltip label="Remove the file"><IconButton icon="close" label={`Remove ${file.name}`} size={24} variant="bare" iconSize={18} onClick={() => setFile(null)} /></Tooltip></div>
           ) : null}
           <Dropzone variant="compact" title={<>Drop a CSV or XLSX file, or <b>browse</b></>} helper="The book’s own export reads back in — the sheet carries no photos" accept=".csv,.xlsx,.xls,text/csv" onPick={(f) => { void read(f) }} />

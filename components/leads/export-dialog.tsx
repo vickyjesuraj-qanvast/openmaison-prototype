@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Button, Radio, RadioGroup } from '@/components/ds'
+import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
@@ -27,7 +27,7 @@ const PERIODS: { key: Period; label: string }[] = [
 ]
 const COLUMN_SETS = ['Everything', 'As the list shows'] as const
 
-export function ExportDialog({ open, rows = [], all, shown, listingColumns, now, onClose, onDone, title = 'Export Leads', download, scope: counts }: {
+export function ExportDialog({ open, rows = [], all, shown, listingColumns, now, onClose, onDone, title = 'Export Leads', download, scope: counts, option }: {
   open: boolean; rows?: LeadRow[]; onClose: () => void; onDone: (fileName: string, format: ExportFormat, count?: number) => void
   /** The statement's two sets — every lead, and what the list shows — plus the listing's visible column keys, in order. */
   all?: LeadRow[]; shown?: LeadRow[]; listingColumns?: string[]
@@ -38,6 +38,8 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
   download?: (format: ExportFormat, scope: 'all' | 'shown') => string
   /** (REG-653, price book parity Q-14) Another list's two sets — every entry and what the list shows — for a caller with its own `download`. */
   scope?: { all: number; shown: number; noun: string }
+  /** (Dane UAT 3.11) One tick under the sets, the caller's to read in its `download` (My Items: "Include proposed items"). */
+  option?: { label: string; checked: boolean; onChange: (on: boolean) => void }
 }) {
   const [format, setFormat] = useState<ExportFormat>('CSV')
   const [scope, setScope] = useState<'all' | 'shown'>('all')
@@ -111,6 +113,7 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
           </RadioGroup>
         </div>
       ) : null}
+      {option ? <div className={styles.row} data-testid="export-option"><Checkbox isSelected={option.checked} onChange={(on: boolean) => option.onChange(on)}>{option.label}</Checkbox></div> : null}
       <TextField label="Choose file format" value={format} mode="select" options={EXPORT_FORMATS} onChange={(v) => setFormat(v as ExportFormat)} />
       {statement ? (
         <span className={styles.helper} data-testid="export-summary">

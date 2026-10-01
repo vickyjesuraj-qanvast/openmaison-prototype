@@ -8,11 +8,11 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { carrySnackbar, useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { useFlagPref } from '@/lib/prefs'
 import { BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type Block, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
-import { docTotals, EMPTY_DATA, type DocData } from '@/lib/templates/data'
+import { docTotals, EMPTY_DATA, lineCount, withNewQuoteDefaults, type DocData, type NewQuoteLibrary } from '@/lib/templates/data'
 import { fieldValues } from '@/lib/templates/fields'
 import { presetByKey } from '@/lib/templates/presets'
 import { parseSourceFile, type SourceFile } from '@/lib/templates/recreate'
@@ -106,7 +106,11 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   const [aiOpen, setAiOpen] = useState(false)   /* (REG-507) the rail-less editor keeps its own Maison AI pair, like the quote editor */
   const [source, setSource] = useState<Source>(() => (origin?.quote ? { kind: 'quote', id: origin.quote.id, data: origin.quote.data } : { kind: 'sample' }))   // (REG-495) opened from a quote, the canvas shows that quote
   const emptyData = useMemo<DocData>(() => ({ ...EMPTY_DATA, studio }), [studio])
-  const docData: DocData = source.kind === 'sample' ? sample : source.kind === 'empty' ? emptyData : source.data
+  /* (Dane UAT 3.30) The Sample and the Empty quote are what a NEW quote from this template looks like: the New quotes choices lie over them
+     (the split priced on the total, GST, Valid until, the chosen Terms and Notes) and follow every change on that tab. A real quote picked
+     in "Preview with" keeps its own records. */
+  const newQuoteLib = useMemo<NewQuoteLibrary>(() => ({ splits: data.paymentSplits, texts: textTemplates }), [data.paymentSplits, textTemplates])
+  const docData: DocData = useMemo(() => (source.kind === 'quote' ? source.data : withNewQuoteDefaults(source.kind === 'sample' ? sample : emptyData, defaults, newQuoteLib)), [source, sample, emptyData, defaults, newQuoteLib])
   const fieldPreview = useMemo(() => fieldValues(docData, docTotals(docData), undefined, design.page.dateFormat), [docData, design.page.dateFormat])   /* (REG-569) what a {field} prints as, under the inspector's boxes */
   const [zoomMode, setZoomMode] = useState<'fit' | number>('fit')
   const areaRef = useRef<HTMLDivElement>(null)
@@ -195,9 +199,19 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   const [matchOpen, setMatchOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [busy, setBusy] = useState(false)
-  const selectAndInspect = (s: Selection) => { setSelection(s); if (compact && s) { setRightTab('inspector'); setRightOpen(true) } }
+  /* (Dane UAT, Figma 1546:29) Picking a part from the Page list brings it into view on the canvas when its start is off screen. */
+  const revealBlock = (id: string) => requestAnimationFrame(() => {
+    const area = areaRef.current
+    const el = area?.querySelector<HTMLElement>(`[data-block-id="${CSS.escape(id)}"]`)
+    if (!area || !el) return
+    const a = area.getBoundingClientRect(), r = el.getBoundingClientRect()
+    if (r.top >= a.top && r.top <= a.bottom - 48) return
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    area.scrollTo({ top: Math.max(0, area.scrollTop + r.top - a.top - 24), behavior: still ? 'auto' : 'smooth' })
+  })
+  const selectAndInspect = (s: Selection) => { setSelection(s); if (s) revealBlock(s.blockId); if (compact && s) { setRightTab('inspector'); setRightOpen(true) } }
 
-  const sources: SourceOption[] = [{ key: 'sample', label: 'Sample quote', sub: `${sample.items.length} lines` }, { key: 'empty', label: 'Empty quote' }, ...(origin?.quote && !quotes.some((q) => q.id === origin.quote!.id) ? [{ key: origin.quote.id, label: `${origin.quote.number} · ${origin.quote.leadName}`, sub: origin.quote.status }] : []), ...quotes.map((q) => ({ key: q.id, label: `${q.number} · ${q.leadName}`, sub: q.status }))]
+  const sources: SourceOption[] = [{ key: 'sample', label: 'Sample quote', sub: `${lineCount(sample)} lines` }, { key: 'empty', label: 'Empty quote' }, ...(origin?.quote && !quotes.some((q) => q.id === origin.quote!.id) ? [{ key: origin.quote.id, label: `${origin.quote.number} · ${origin.quote.leadName}`, sub: origin.quote.status }] : []), ...quotes.map((q) => ({ key: q.id, label: `${q.number} · ${q.leadName}`, sub: q.status }))]
   const pickSource = async (key: string) => {
     if (key === 'sample') { setSource({ kind: 'sample' }); return }
     if (key === 'empty') { setSource({ kind: 'empty' }); return }
@@ -252,14 +266,22 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
     catch { snackbar({ message: 'Couldn’t send the request — please try again' }) }
     finally { setBusy(false) }
   }
-  const back = async () => { await flush(); router.push(origin?.from ?? '/company/templates/quotes') }   // the last edit is written before leaving
+  /* (Dane UAT 3.23) Leaving a template that is not yet live — never published, or edited since — the page you land on says it was kept as a
+     draft and what makes it reach quotes. A designer who still waits on approval leaves without one (the bar said so). */
+  const noteDraft = (to: string) => {
+    if (readOnly || deleted || (meta.status !== 'draft' && !hasChanges) || (gated && meta.submitted)) return
+    const first = meta.status === 'draft'
+    carrySnackbar(to, gated ? (first ? 'Saved as a draft — submit it for approval to use it on quotes' : 'Changes saved as a draft — submit them for approval to use them on quotes')
+      : first ? 'Saved as a draft — publish it to use it on quotes' : 'Changes saved as a draft — publish them to use them on quotes')
+  }
+  const back = async () => { await flush(); const to = origin?.from ?? '/company/templates/quotes'; noteDraft(to); router.push(to) }   // the last edit is written before leaving
   const rollback = async (version: number) => {
     setBusy(true)
     try { const r = await rollbackTemplate(template.id, version); if (isRefusal(r)) { snackbar({ message: couldnt('roll back', refusalOf(r.error)) }); setBusy(false); return } snackbar({ message: `Rolled back to v${version}` }); window.location.reload() }
     catch { snackbar({ message: 'Couldn’t roll back — please try again' }); setBusy(false) }
   }
   const onMenu = async (a: TopbarMenuAction) => {
-    if (a === 'gallery') { await flush(); router.push('/company/templates/quotes'); return }
+    if (a === 'gallery') { await flush(); noteDraft('/company/templates/quotes'); router.push('/company/templates/quotes'); return }
     if (a === 'start') { await flush(); router.push(`/quotes?new=${template.id}`); return }   // (REG-495) Tools › Quotes opens Create Quote on this template
     if (a === 'duplicate') { setBusy(true); try { await flush(); const id = await duplicateTemplate(template.id); router.push(`/templates/${id}`) } catch { snackbar({ message: 'Couldn’t duplicate — please try again' }); setBusy(false) } return }
     if (a === 'match') { setMatchOpen(true); return }
@@ -287,8 +309,12 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   const savedLabel = save.error ? 'Not saved — retrying' : dirty ? 'Unsaved changes' : `Saved ${ago(save.at, now)}`
   /* (REG-542) With nothing to publish the button says so — "Published" — instead of a greyed "Publish changes" that invites a press. */
   const upToDate = !gated && !meta.submitted && meta.status !== 'draft' && !hasChanges
-  const publishLabel = gated ? (meta.submitted ? 'Awaiting approval' : meta.status === 'draft' ? 'Submit for approval' : 'Submit changes') : meta.submitted && data.canApprove ? 'Approve and publish' : meta.status === 'draft' ? 'Publish' : upToDate ? 'Published' : 'Publish changes'
-  const canPublish = !busy && !deleted && (gated ? !meta.submitted && (meta.status === 'draft' || hasChanges) : meta.status === 'draft' || hasChanges || !!meta.submitted)
+  /* (Dane UAT 10.14, Figma 1681:24) While a submission waits, the top bar's primary steps back to what the designer sees — a disabled
+     "Awaiting approval" — and the review bar under it carries the decision (Request changes · Approve and publish), so the choice is made
+     once, in one place. REG-501 otherwise as it was. */
+  const reviewing = !!meta.submitted && data.canApprove
+  const publishLabel = gated || reviewing ? (meta.submitted ? 'Awaiting approval' : meta.status === 'draft' ? 'Submit for approval' : 'Submit changes') : meta.status === 'draft' ? 'Publish' : upToDate ? 'Published' : 'Publish changes'
+  const canPublish = !busy && !deleted && !reviewing && (gated ? !meta.submitted && (meta.status === 'draft' || hasChanges) : meta.status === 'draft' || hasChanges || !!meta.submitted)
   const onPublishPress = () => { if (gated) setSubmitOpen(true); else setPublishOpen(true) }
   const nextVersion = meta.status === 'draft' ? 1 : meta.version + 1
   /* (REG-523) While a submission waits, the designer's canvas is locked — the owner approves what was submitted, not what changed after. Approvers may still edit. */
@@ -324,7 +350,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
       ) : null}
       <div className={styles.paneBody}>
         {rightTab === 'reference' && sourceFile ? <ReferencePane file={sourceFile} underlay={underlay} onUnderlay={setUnderlay} opacity={underlayOpacity} onOpacity={setUnderlayOpacity} onDetach={() => { void detachReference() }} />
-          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} onResetBlock={resetBlock} values={fieldPreview} />}
+          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} onResetBlock={resetBlock} values={fieldPreview} trades={data.trades} />}
       </div>
     </div>
   )
@@ -361,7 +387,9 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
             </div>
           ) : null}
           <div className={styles.stage} onPointerDown={(e) => { if (e.target === e.currentTarget) setSelection(null) }}>
-            <TemplateDocument design={design} brand={brand} data={docData} zoom={zoom} interactive={preview || readOnly ? undefined : interactive} onPaginated={onPaginated}
+            {/* (Dane UAT, Figma g-watermark) the sample wears "Sample" across its pages in the editor alone — never on Preview, the print or the
+                client's pages; a design with its own watermark keeps it */}
+            <TemplateDocument design={design} brand={brand} data={docData} zoom={zoom} interactive={preview || readOnly ? undefined : interactive} onPaginated={onPaginated} watermark={source.kind === 'sample' && !design.page.watermark ? 'Sample' : undefined}
                               underlay={underlay && sourceFile?.data ? { src: sourceFile.data, opacity: underlayOpacity } : null} />
           </div>
         </div>

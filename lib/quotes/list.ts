@@ -7,7 +7,7 @@ import { fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
 import type { QuoteApproval } from '@/lib/settings/types'
 import { fetchBrand, pickerExtras } from '@/lib/templates/queries'
 import type { PickerExtras } from '@/lib/templates/picker'
-import { SAMPLE_DATA, type DocData } from '@/lib/templates/data'
+import { sampleFor, type DocData } from '@/lib/templates/data'
 import type { BrandKit } from '@/lib/templates/model'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { sentToClientDates } from './sent-to-client'
@@ -53,5 +53,5 @@ export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
   if (seen) { rows.splice(0, rows.length, ...rows.filter((r) => seen.has(r.quote.leadId))); clients.splice(0, clients.length, ...clients.filter((c) => seen.has(c.id))) }
   const canApprove = await isApprover(me?.id, me?.role)   // (REG-624)
   const sent = await sentToClientDates(rows.map((r) => r.quote))   // (UX audit Q5)
-  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null, sentToClientAt: sent.get(r.quote.id) ?? null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null, sentToClientAt: sent.get(r.quote.id) ?? null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
 }

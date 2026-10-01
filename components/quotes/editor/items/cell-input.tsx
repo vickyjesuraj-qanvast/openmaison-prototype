@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 import { money2 } from '@/lib/quotes/math'
 import { cleanLink, shortLink } from '@/lib/quotes/items-model'
 import { Icon } from '@/components/om/icon'
@@ -23,6 +23,22 @@ function useCancel() {
   const cancel = (e: KeyboardEvent<HTMLInputElement>) => { e.preventDefault(); cancelled.current = true; e.currentTarget.blur() }
   const takeCancel = () => { const c = cancelled.current; cancelled.current = false; return c }
   return { cancel, takeCancel }
+}
+
+/**
+ * (Dane UAT, Figma Fix 1 1490:5390 — g-zero) A number box a press lands in selects its value, as a cell reached by key does (grid-keys.ts):
+ * "0.00" was a caret inside the figure and took a double-click and a delete before anything could be typed. The selection is made once the
+ * box shows its edit text (a frame after focus) and held through the press's own mouseup, which would otherwise drop the caret where the
+ * pointer let go. A second press in a box that already has the focus places the caret as usual, so part of a figure can still be edited.
+ */
+function useSelectOnPress() {
+  const pressed = useRef(false)
+  const select = (el: HTMLInputElement) => { if (document.activeElement === el) el.select() }
+  return {
+    onMouseDown: (e: MouseEvent<HTMLInputElement>) => { pressed.current = document.activeElement !== e.currentTarget },
+    onFocused: (e: FocusEvent<HTMLInputElement>) => { const el = e.currentTarget; requestAnimationFrame(() => select(el)) },
+    onMouseUp: (e: MouseEvent<HTMLInputElement>) => { if (!pressed.current) return; pressed.current = false; e.preventDefault(); select(e.currentTarget) },
+  }
 }
 
 export function TextCell({ value, placeholder, onCommit, kind = 'text', ariaLabel, autoFocus, inputRef }: {
@@ -64,11 +80,13 @@ export function MoneyCell({ minor, onCommit, ariaLabel, fit, signed = false }: {
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
   const base = (minor / 100).toFixed(2)
   const shown = draft ?? money2(minor)
+  const press = useSelectOnPress()
   return (
     <input className={styles.input} data-edit="" data-money data-fit={fit || undefined} size={fit ? shown.length + 2 : undefined} inputMode="decimal" aria-label={ariaLabel}
            data-dirty={draft !== null && draft !== base ? '' : undefined}
            value={shown}
-           onFocus={() => setDraft(base)}
+           onMouseDown={press.onMouseDown} onMouseUp={press.onMouseUp}
+           onFocus={(e) => { setDraft(base); press.onFocused(e) }}
            onChange={(e) => { const v = e.target.value; setDraft(signed && /^\s*[-−–]/.test(v) && !v.trimStart().startsWith('=') ? `-${filterNumeric(v, ',')}` : filterNumeric(v, ',')) }}
            onBlur={commit} onKeyDown={onKey} />
   )
@@ -86,11 +104,13 @@ export function NumberCell({ value, onCommit, ariaLabel, suffix = '', max = 1_00
     setDraft(null)
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
+  const press = useSelectOnPress()
   return (
     <input className={styles.input} data-edit="" data-money inputMode="decimal" aria-label={ariaLabel}
            data-dirty={draft !== null && draft !== shown ? '' : undefined}
            value={draft ?? `${shown}${suffix}`}
-           onFocus={() => setDraft(shown)}
+           onMouseDown={press.onMouseDown} onMouseUp={press.onMouseUp}
+           onFocus={(e) => { setDraft(shown); press.onFocused(e) }}
            onChange={(e) => setDraft(filterNumeric(e.target.value))}
            onBlur={commit} onKeyDown={onKey} />
   )

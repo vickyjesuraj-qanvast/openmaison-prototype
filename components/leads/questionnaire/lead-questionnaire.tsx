@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
+import { spring } from '@/lib/motion'
 import { Button } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -38,13 +40,37 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
   const [answering, setAnswering] = useState<string | null>(null)   // the one card in `answer` mode
   const [askOpen, setAskOpen] = useState(false)
   const [saving, setSaving] = useState(false)                       // an answer save in flight
+  /* (Dane's UAT 5.17) An answered question moves below the open ones (REG-218) — it used to jump there, and read as gone. The card now
+     travels to its new place (motion `layout`, the house settle spring; none under reduced motion), and once it has landed the page
+     brings it into view and it pulses once (the house attention pulse). `landing` = the card on its way; `fresh` = the one pulsing. */
+  const reduced = useReducedMotion()
+  const [landing, setLanding] = useState<string | null>(null)
+  const [fresh, setFresh] = useState<string | null>(null)
+  useEffect(() => {
+    if (!landing) return
+    const id = landing
+    const t = setTimeout(() => {
+      setLanding(null)
+      const el = document.querySelector<HTMLElement>(`[data-question-id="${CSS.escape(id)}"]`)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.top < 120 || r.bottom > window.innerHeight - 24) el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
+      setFresh(id)
+    }, reduced ? 60 : 560)   // the settle spring has landed by then
+    return () => clearTimeout(t)
+  }, [landing, reduced])
+  useEffect(() => {
+    if (!fresh) return
+    const t = setTimeout(() => setFresh(null), 1600)
+    return () => clearTimeout(t)
+  }, [fresh])
 
   const summary = summarise(questions)
 
   /* ── actions ── */
   const saveAnswer = async (id: string, value: string | string[]) => {
     setSaving(true)
-    try { await answerQuestion(id, value); setAnswering(null); snackbar({ message: 'Answer saved' }) }
+    try { await answerQuestion(id, value); setAnswering(null); setLanding(id); snackbar({ message: 'Answer saved' }) }
     catch { fail('save the answer') }
     finally { setSaving(false) }
   }
@@ -88,8 +114,9 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
         <div className={styles.layout}>
           <div className={styles.questions}>
             {questions.map((q) => (
+              <motion.div key={q.id} className={styles.item} data-question-id={q.id} data-fresh={fresh === q.id || undefined}
+                          layout={reduced ? false : 'position'} transition={spring.settle}>
               <QuestionCard
-                key={q.id}
                 question={q}
                 now={now}
                 mode={answering === q.id ? 'answer' : 'view'}
@@ -99,6 +126,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
                 saving={saving && answering === q.id}
                 askedAt={askedOn[q.id] ?? null}   /* (T12) the card says it was asked, and when */
               />
+              </motion.div>
             ))}
           </div>
           {summary ? (

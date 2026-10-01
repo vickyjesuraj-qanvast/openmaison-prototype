@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
+import { copyText } from '@/lib/clipboard'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -69,6 +70,7 @@ import type { TextContext, TokenValues } from '@/lib/quotes/text'
 import { toRows } from '@/lib/quotes/payments'
 import { scheduleAnchors } from '@/lib/quotes/payments'
 import { EditorSkeleton } from './editor-skeleton'
+import { memberSignatureOf } from '@/lib/quotes/signature'
 import styles from './quote-editor.module.css'
 
 /** Header 76 + tab strip 48: what a section scrolls under when a tab selects it. */
@@ -320,7 +322,7 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
     if (action === 'contract') { quoteSend.openContract(); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
-    if (action === 'confirmLink') { const open = status === 'Approved' || status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed'; void navigator.clipboard?.writeText(confirmLink(quote.id)).then(() => snackbar({ message: open ? 'Confirmation link copied' : 'Confirmation link copied — it opens for the client once the quote is sent' }), () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }   /* (REG-587; REG-626: the link confirms only a sent quote) */
+    if (action === 'confirmLink') { const open = status === 'Approved' || status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed'; void copyText(confirmLink(quote.id)).then(() => snackbar({ message: open ? 'Confirmation link copied' : 'Confirmation link copied — it opens for the client once the quote is sent' }), () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }   /* (REG-587; REG-626: the link confirms only a sent quote) */
     if (action === 'xray') { void flushRef.current(); router.push(`/quote-x-ray?lead=${lead.id}&quote=${quote.id}&from=${encodeURIComponent(withFrom(`/quotes/${quote.id}`, from))}`); return }   /* (REG-529) Quote X-Ray on this quote; (REG-639) the editor keeps its own origin for the way back */
     if (action === 'rename') { setRenameOpen(true); return }
     if (action === 'duplicate') { void flushRef.current(); void run('duplicate the quote', async () => { const id = await duplicateQuote(quote.id); router.push(withFrom(`/quotes/${id}`, from)) }, 'Quote duplicated — this is the copy'); return }
@@ -399,6 +401,11 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   /* (REG-538) The pane's view: the quote's own client view over the design, with the editor's Terms / Notes switches on top — Preview draws the same. */
   const clientPaneView = useMemo(() => ({ ...parseClientView(quote.clientViewJson, clientViewFromDesign(clientPaneDesign)), terms: textVisible.terms, notes: textVisible.notes }), [quote.clientViewJson, clientPaneDesign, textVisible])
   const sendReadiness = useMemo(() => readiness(clientData, clientPaneDesign, clientPaneView), [clientData, clientPaneDesign, clientPaneView])   /* (REG-626) Preview's own rules */
+  /* (Dane UAT 6.11, g-sections-trade) The template the quote prints through (its own, else the studio default — Preview's chain) and how it
+     files the lines: a label view means the quote's own sections never print, and the Items card says so. */
+  const printView = viewForTemplate(clientPaneDesign)
+  const printTemplate = templateState.current?.name ?? templateState.picker.templates.find((t) => t.isDefault)?.name ?? null
+  const printsBy = printView !== 'none' && printTemplate ? { template: printTemplate, view: printView } : null
   /* (UX audit Q1 · Q2 · Q11) Send — every path through the quote's one Send (components/quotes/send/use-quote-send.tsx), Preview's too. */
   const quoteSend = useQuoteSend({
     quote: { id: quote.id, number: quote.number, leadId: lead.id, version }, status: status as QuoteStatus, lead: { name: lead.name, phone: lead.phone }, studioName: studio.name,
@@ -426,7 +433,8 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
         await flushRef.current()
         const id = await saveQuoteAsTemplate(quote.id, name, opts)
         setSaveAsOpen(false)
-        snackbar({ message: `${name.trim()} saved as a draft template`, actionLabel: 'Open', onAction: () => { router.push(`/templates/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}&quote=${quote.id}`) } })
+        /* (Dane UAT 6.26, g-snackbar) where it went, not its name — "{name} saved as a draft template" wrapped to three lines in the 344 snackbar */
+        snackbar({ message: 'Saved as a draft in Company › Templates › Quotes', actionLabel: 'Open', onAction: () => { router.push(`/templates/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}&quote=${quote.id}`) } })
       } catch { fail('save the template') } finally { setTemplateBusy(false) }
     })()
   }
@@ -508,7 +516,7 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   }, [lines, studio.name, studio.gstPct, lead.name, tokens.member, quote.number, quote.createdAt, general.propertyType, general.siteAddress, general.validUntil, amountMinor, scheduleRows, paymentsSeed.anchors.start, paymentsSeed.anchors.weeks, gstOn])
   const [signatureSeed, setSignatureSeed] = useState<SignatureSeed>(() => ({
     quoteId: quote.id, required: quote.clientSignatureRequired, memberName: me?.name ?? '', studioName: studio.name, clientName: lead.name, nric: quote.nric,
-    signature: me?.signatureKind === 'draw' || me?.signatureKind === 'type' ? { kind: me.signatureKind, name: me.signatureName ?? me.name, data: me.signatureData ?? null } : null,
+    signature: memberSignatureOf(me),   // (Dane UAT 6.23) drawn, typed or uploaded
   }))
   /* (UX audit Q10) On a revision the Items table tints what changed since the kept version — live, as the lines change. */
   const lineChangeMap = useMemo(() => lineChanges(data.prevLines, lines, version), [data.prevLines, lines, version])
@@ -557,7 +565,8 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
             <ItemsCard key={`items-${seedNonce}`} seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')} exportTick={exportTick}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
                        onTotal={setAmountMinor} onLines={setLines} onPricing={(p) => setGstOn(p.gstEnabled)} clientColumns={clientColumns} forceView={forceView} bookTick={bookTick} propertyType={general.propertyType || null}
-                       commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} changes={lineChangeMap} />
+                       commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} changes={lineChangeMap}
+                       printsBy={printsBy} onChangeTemplate={() => setPickerOpen(true)} onPreview={() => onMenu('preview')} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}

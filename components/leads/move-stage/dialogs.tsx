@@ -123,7 +123,7 @@ export function SuggestedTasksDialog({
  * (REG-286), measured from `openedAt` — the instant the dialog opened.
  */
 export function OnHoldDialog({
-  open, onClose, onSave, reason, setReason, openedAt, options = DEFAULT_HOLD_REASONS.map((r) => r.name),
+  open, onClose, onSave, reason, setReason, openedAt, options = DEFAULT_HOLD_REASONS.map((r) => r.name), followUpOn = null,
 }: {
   open: boolean; onClose: () => void
   /** `followUpAt` is the ISO date the dialog shows; `duration` the preset it matches or "Until …" — store both (REG-286 / REG-453). */
@@ -133,6 +133,8 @@ export function OnHoldDialog({
   openedAt: number
   /** (REG-607) The studio's live On Hold reasons (Settings › Leads › Reasons), "Others" last. */
   options?: readonly string[]
+  /** (Dane's UAT 9.08) Opened from the Lost dialog's "Put On Hold instead": the dialog opens on Custom with this date (REG-453's field). */
+  followUpOn?: Date | null
 }) {
   // "Other reason" and the date live here — the parent only knows `reason`.
   const [other, setOther] = useState('')
@@ -142,7 +144,7 @@ export function OnHoldDialog({
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) {   // every opening starts on the default preset with nothing carried over from the last lead
     setWasOpen(open)
-    if (open) { setWhen(inputDate(holdFollowUpAt(DEFAULT_HOLD_DURATION, openedAt))); setCustom(false); setOther(''); setShowErrors(false) }
+    if (open) { setWhen(inputDate(followUpOn ?? holdFollowUpAt(DEFAULT_HOLD_DURATION, openedAt))); setCustom(!!followUpOn); setOther(''); setShowErrors(false) }
   }
   const today = new Date(openedAt)
   const picked = parseInputDate(when)
@@ -189,7 +191,7 @@ export type LostDetail = { otherReason?: string; competitor?: string; restartAt?
  * block (the owner's call, 2026-09-24): Save never waits on it.
  */
 export function LostDialog({
-  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today, competitorHint = null,
+  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today, competitorHint = null, onHoldInstead,
 }: {
   open: boolean; onClose: () => void; onSave: (detail: LostDetail) => void
   reason: string; setReason: (v: string) => void
@@ -203,6 +205,8 @@ export function LostDialog({
   today: Date
   /** (REG-640, X-Ray parity Q-18) The lead's latest Quote X-Ray — the competitor starts as its other studio, editable. */
   competitorHint?: { studio: string; at: number } | null
+  /** (Dane's UAT 9.08) The nudge's "Put On Hold instead": the host closes this dialog and opens On Hold with the follow-up on `restart`. */
+  onHoldInstead?: (restart: Date) => void
 }) {
   const [other, setOther] = useState('')
   const [competitor, setCompetitor] = useState(competitorHint?.studio ?? '')
@@ -222,6 +226,9 @@ export function LostDialog({
     ? contactCount >= gate ? `${contactCount} ${contactCount === 1 ? 'contact' : 'contacts'} logged` : `${contactCount} of ${gate} contacts logged — this reason usually follows ${gate}`
     : undefined
   const soon = restartDate ? (startOfDay(restartDate) - startOfDay(today)) / 86_400_000 < 182 : false   // 1.0's nudge: under six months, hold instead
+  /* (Dane's UAT 9.08) The nudge acts: a restart still ahead becomes On Hold's follow-up date. A date already passed keeps only the words —
+     On Hold would refuse it ("Choose a date after today"). */
+  const canHold = !!onHoldInstead && !!restartDate && startOfDay(restartDate) > startOfDay(today)
   const reset = () => { setOther(''); setCompetitor(''); setRestart(''); setShowErrors(false) }   // the dialog stays mounted between leads — never carry text or errors over
   const close = () => { reset(); onClose() }
   const save = () => {
@@ -250,7 +257,21 @@ export function LostDialog({
       ) : null}
       {reason === LOST_POSTPONED ? (<>
         <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />
-        {soon ? <span className={styles.helper}>Under 6 months away — consider On Hold instead.</span> : null}
+        {/* (Dane's UAT 9.08) The nudge in the house warning tone — the grey helper line went unread — with the move it suggests. Save & Move
+            is unchanged: it still never blocks (REG-607). */}
+        {soon ? (
+          <div className={styles.nudge} role="note" data-testid="lost-hold-nudge">
+            <Icon name="warning" size={16} />
+            <span className={styles.nudgeBody}>
+              <span>Under 6 months away — consider On Hold instead.</span>
+              {canHold ? (
+                <button type="button" className={styles.nudgeAction} onClick={() => { const d = restartDate; if (!d) return; reset(); onHoldInstead?.(d) }}>
+                  Put On Hold instead
+                </button>
+              ) : null}
+            </span>
+          </div>
+        ) : null}
       </>) : null}
     </Dialog>
   )

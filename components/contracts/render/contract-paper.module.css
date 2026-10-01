@@ -44,3 +44,6 @@
   .client:not([data-signed='1']) .mark { border-bottom-color: var(--om-color-on-surface-default); }
   .client:not([data-signed='1']) .caption { color: var(--om-color-on-surface-secondary); }
 }
+/* (Dane UAT 6.23) An uploaded signature sits in the drawing's 200×40, kept whole and on its line. */
+.pictured { width: auto; max-width: 200px; object-fit: contain; object-position: left bottom; }
+.initial .pictured { max-width: 100px; height: 28px; }

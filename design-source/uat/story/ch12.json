@@ -52,8 +52,8 @@
   "scene": "Pick up your phone",
   "module": "Phone",
   "try": "Reach the rest of the app from More",
-  "how": "1. Tap \"More\" in the bottom bar\n2. Tap \"Company\"",
-  "expect": "\"More\" slides up with Tasks, Marketplace, Company, Qanvast Ops, Settings and \"View as\" (Dane); Company opens as a sheet, Profile to Integrations",
+  "how": "1. Tap \"More\" in the bottom bar\n2. Tap \"Company\"\n3. Tap the back arrow at the top of the Company sheet",
+  "expect": "\"More\" slides up with Tasks, Marketplace, Company, Qanvast Ops, Settings and \"View as\" (Dane); Company opens as a sheet, Profile to Integrations, and its back arrow returns to \"More\"",
   "in10": "Different from 1.0: 1.0’s phone menu had no studio setup",
   "as": "Dane",
   "covers": [

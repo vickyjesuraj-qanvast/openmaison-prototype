@@ -188,3 +188,10 @@
 @media (hover: none) {
   .switchLabel > label:has(input[role='switch']) { margin-left: 0; }
 }
+
+/* (Dane UAT 6.11, g-sections-trade) One line above the table when the template files the lines by a label: the info glyph, the sentence in
+   the secondary 12, the house text link to the template picker — the section's 24 gutter, a rule under it. */
+.printNote { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--om-spacing-2); row-gap: var(--om-spacing-1); margin: 0; padding: var(--om-spacing-3) var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.printNoteLink { composes: link from '../../../om/text-link.module.css'; font: var(--om-type-subheading-s); white-space: nowrap; }
+/* a phone: the glyph keeps its place beside the words, the link goes under them */
+@media (max-width: 767px) { .printNote { grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: var(--om-spacing-3) var(--om-spacing-4); } .printNoteLink { grid-column: 2; justify-self: start; } }

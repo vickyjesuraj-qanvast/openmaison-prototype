@@ -17,7 +17,7 @@ import { defaultNextNumber, DEFAULT_LEAD_REASONS, DEFAULT_LEAD_SOURCES, formatQu
 import { CustomFieldsCard } from './custom-fields-card'
 import type { CustomFieldDef } from '@/lib/leads/custom-fields-model'
 import { editLeadReason, renameLeadSource, renameTrade, setLeadReasons, setLeadSources, setLeadVisibility, setNumbering, setQuoteApproval, setQuoteRules, setStageMovement, setStudioGst, setTemplateApproval, setTradeNote, setTrades } from './actions'
-import { ListEntryDialog, type EntryEdit } from './list-entry-dialog'
+import { GATE_HELP, GATE_LABEL, ListEntryDialog, type EntryEdit } from './list-entry-dialog'
 import { LOST_COMPETITOR, LOST_POSTPONED, LEAD_VISIBILITY_OPTIONS, intakeAddress, type LeadCapture, type LeadSourceEntry, type LeadVisibility, type LeadReason, type LeadReasons } from '@/lib/settings/types'
 import { simulateArrival } from '@/app/leads/capture-actions'
 import { NotificationsSettings } from './notifications-settings'
@@ -398,7 +398,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               <CustomFieldsCard fields={customFields} canManage={canManage} />   {/* (REG-612) */}
               <div className={styles.setting} data-testid="lead-reasons">
                 <div className={styles.settingHead}>
-                  <span className={styles.settingTitle}>Reasons</span>
+                  <span className={styles.settingTitle}>Lost and On Hold reasons</span>   {/* (Dane UAT 2.21) the card names both lists */}
                   <span className={styles.settingHelp}>What the Lost and On Hold dialogs offer. Retire a reason to keep the leads that carry it and stop offering it; a reason no lead carries can be removed. A Lost reason can expect logged contacts — the dialog then says how many there are. {!reasonsManaged ? 'Not set yet — these are the defaults.' : JSON.stringify(reasons) === JSON.stringify(DEFAULT_LEAD_REASONS) ? 'These are the defaults.' : ''}</span>
                 </div>
                 {(['lost', 'hold'] as const).map((kind) => {
@@ -430,7 +430,8 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                       {canManage ? (
                         <div className={styles.addTrade} data-testid={`add-reason-${kind}`}>
                           <TextField label={kind === 'lost' ? 'Add a Lost reason' : 'Add an On Hold reason'} value={newReason[kind]} onChange={(v) => setNewReason((x) => ({ ...x, [kind]: v }))} maxLength={40} error={taken(reasons[kind].map((x) => x.name), newReason[kind])} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addReason(kind) } }} />
-                          {kind === 'lost' ? <TextField label="Needs logged contacts" value={newGate} onChange={(v) => setNewGate(v.slice(0, 2))} numeric="digits" maxLength={2} trailingIcon={null} className={styles.gateField} /> : null}
+                          {/* (Dane UAT 2.21) the field says what it is — a hint in the Lost dialog, never a block — with the edit dialog's help line */}
+                          {kind === 'lost' ? <TextField label={GATE_LABEL} value={newGate} onChange={(v) => setNewGate(v.slice(0, 2))} numeric="digits" maxLength={2} trailingIcon={null} className={styles.gateField} helper={GATE_HELP} /> : null}
                           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => addReason(kind)} isDisabled={!newReason[kind].trim() || !!taken(reasons[kind].map((x) => x.name), newReason[kind])}>Add</Button>
                         </div>
                       ) : null}
@@ -497,7 +498,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                           links={[{ label: 'Templates', icon: 'style', href: withFrom('/company/templates/quotes', fromHere('quotes')) }, { label: 'Price book', icon: 'list_alt', href: withFrom('/company/price-book', fromHere('quotes')) }]} />
               <ReadOnlyScope readOnly={readOnly}>
               {/* Quote approval (user 2026-08-30) and Template approval (REG-501) lived under Leads until this module was built (REG-561). */}
-              <div className={styles.setting}>
+              <div className={styles.setting} id="quote-approval">   {/* (Dane UAT 2.23) Who may do what's rows land here */}
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Quote approval</span>
                   <span className={styles.settingHelp}>Whether a quote is reviewed inside the studio before it goes to the client. This sets the stages a quote moves through.</span>
@@ -508,7 +509,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                   ))}
                 </div>
               </div>
-              <div className={styles.setting}>
+              <div className={styles.setting} id="template-approval">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Template approval</span>
                   <span className={styles.settingHelp}>Whether a designer’s quote template needs an Owner’s or Admin’s approval before the studio can use it. Applies to <HelpLink href="/company/templates/quotes">Company › Templates</HelpLink>.</span>
@@ -532,13 +533,22 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                   <TextField label="Prefix" value={num.prefix} maxLength={8} onChange={(v) => setNum((n) => ({ ...n, prefix: v.toUpperCase().replace(/[^A-Z0-9]/g, '') }))} helper="Letters and digits, up to 8" />
                   <TextField label="Next number" value={num.next ? String(num.next) : ''} numeric="digits" maxLength={6} onChange={(v) => setNum((n) => ({ ...n, next: v ? Number(v) : 0 }))} helper="Blank continues from the highest number given" />
                   <TextField label="Digits" value={num.digits ? String(num.digits) : ''} numeric="digits" maxLength={1} onChange={(v) => setNum((n) => ({ ...n, digits: v ? Math.min(6, Number(v)) : 0 }))} helper="Pads the number: 4 prints 0012" />
+                </div>
+                {/* (Dane UAT 2.25) The switches are their own group under the fields, one under another — in the fields' grid each fell under a
+                    field and read as that field's own. */}
+                <div className={styles.switchGroup} role="group" aria-labelledby="numbering-also" data-testid="numbering-switches">
+                  <span id="numbering-also" className={styles.reasonLabel}>Also in the number</span>
                   <label className={styles.switchRow}><Switch size="sm" isSelected={num.initials} isDisabled={readOnly} onChange={(v: boolean) => setNum((n) => ({ ...n, initials: v }))} aria-label="Designer’s initials" /><span>Designer’s initials <span className={styles.settingHelp}>· who creates the quote</span></span></label>
                   <label className={styles.switchRow}><Switch size="sm" isSelected={num.yearMonth} isDisabled={readOnly} onChange={(v: boolean) => setNum((n) => ({ ...n, yearMonth: v }))} aria-label="Year and month" /><span>Year and month <span className={styles.settingHelp}>· YYYYMM</span></span></label>
                   {/* (REG-586) Commercial work on its own sequence — the lead's property type decides (Commercial — Office / Retail). */}
                   <label className={styles.switchRow}><Switch size="sm" isSelected={num.commercial.on} isDisabled={readOnly} onChange={(v: boolean) => setNum((n) => ({ ...n, commercial: { ...n.commercial, on: v } }))} aria-label="A separate sequence for commercial work" /><span>Commercial work on its own sequence <span className={styles.settingHelp}>· offices and shops, by the lead’s property type</span></span></label>
-                  {num.commercial.on ? <TextField label="Commercial prefix" value={num.commercial.prefix} maxLength={8} onChange={(v) => setNum((n) => ({ ...n, commercial: { ...n.commercial, prefix: v.toUpperCase().replace(/[^A-Z0-9]/g, '') } }))} helper="Letters and digits, up to 8" /> : null}
-                  {num.commercial.on ? <TextField label="Commercial next number" value={num.commercial.next ? String(num.commercial.next) : ''} numeric="digits" maxLength={6} onChange={(v) => setNum((n) => ({ ...n, commercial: { ...n.commercial, next: v ? Number(v) : 0 } }))} helper="Blank continues from the highest given" /> : null}
                 </div>
+                {num.commercial.on ? (
+                  <div className={styles.numGrid}>
+                    <TextField label="Commercial prefix" value={num.commercial.prefix} maxLength={8} onChange={(v) => setNum((n) => ({ ...n, commercial: { ...n.commercial, prefix: v.toUpperCase().replace(/[^A-Z0-9]/g, '') } }))} helper="Letters and digits, up to 8" />
+                    <TextField label="Commercial next number" value={num.commercial.next ? String(num.commercial.next) : ''} numeric="digits" maxLength={6} onChange={(v) => setNum((n) => ({ ...n, commercial: { ...n.commercial, next: v ? Number(v) : 0 } }))} helper="Blank continues from the highest given" />
+                  </div>
+                ) : null}
                 <div className={styles.example}><span className={styles.settingHelp}>Next quote:</span> <span className={styles.exampleNo} data-testid="number-example">{example}</span>{exampleCom ? <><span className={styles.settingHelp}>· commercial:</span> <span className={styles.exampleNo} data-testid="number-example-commercial">{exampleCom}</span></> : null}</div>
                 {readOnly ? null : <div className={styles.settingActions}>
                   <Button variant="secondary" appearance="outlined" onPress={() => setNum(savedNum)} isDisabled={!numDirty || numBusy}>Discard</Button>
@@ -613,7 +623,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                 </div>
               </div>
               {/* (REG-589) The payment schedule kept to Owners and Admins — Mavid's "the owner fixes it; IDs cannot change it". */}
-              <div className={styles.setting} data-testid="payment-lock">
+              <div className={styles.setting} data-testid="payment-lock" id="payment-lock">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Who may change the payment schedule</span>
                   <span className={styles.settingHelp}>Locked, everyone but Owners and Admins sees a quote’s milestones and cannot edit, reorder, add or replace them. The split a new quote starts with is under New quotes start with.</span>

@@ -9,7 +9,7 @@ import { isRole, type Role } from '@/lib/leads/enums'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { addBlock, deactivateBlock, nextTint, reactivateBlock, roleChangeBlock } from '@/lib/company/member-rules'
-import { isSgPhone, phoneDigits } from '@/lib/format'
+import { isSgPhone, phoneDigits, titleCaseName } from '@/lib/format'
 import { fetchQuoteRules, QUOTE_RULES_KEY } from '@/lib/settings/queries'
 
 /* Company › Members (REG-601): roles and reporting lines. (REG-646, settings parity Q-06) Owners and Admins add, deactivate and
@@ -73,7 +73,7 @@ export async function addMember(input: { name: string; phone: string; email: str
   const role = isRole(input.role) ? input.role : 'Designer'
   const block = addBlock(viewer, role)
   if (block) return { error: block }
-  const name = input.name.trim().replace(/\s+/g, ' ').slice(0, 60)
+  const name = titleCaseName(input.name).slice(0, 60)   // (Dane UAT 2.07) names are saved title-cased, as a lead's are (REG-329)
   if (!name) return { error: 'Give the member a name' }
   const phone = phoneDigits(input.phone)
   if (phone && !isSgPhone(phone)) return { error: 'A Singapore number has 8 digits and starts with 6, 8 or 9' }

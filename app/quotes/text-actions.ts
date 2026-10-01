@@ -4,9 +4,11 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
+import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
+import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
-import { libraryFolders, quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
+import { quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
 import { isBlankHtml, isTextKind, type TextKind } from '@/lib/quotes/text'
 import { stampQuote } from '@/lib/quotes/stamp'
@@ -55,9 +57,11 @@ export async function createTextTemplate(kind: TextKind, o: { title: string; bod
   const { title, body } = o
   const k = kindOf(kind)
   const id = randomUUID(); const now = new Date()
-  /* (REG-664) Made inside a folder of My Templates, it is filed there — when that folder is still one of T&Cs & Notes'. */
-  const [folder] = folderId ? await db.select({ id: libraryFolders.id }).from(libraryFolders).where(and(eq(libraryFolders.id, folderId), eq(libraryFolders.library, 'texts'), isNull(libraryFolders.deletedAt))) : []
-  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: sessionMemberSql, folderId: folder?.id ?? null })
+  /* (REG-664) Made inside a folder of My Templates — or (Dane UAT 3.03) of the T&Cs & Notes gallery — it is filed there, when that folder is
+     still one of T&Cs & Notes' and its maker may file it (its author may). */
+  const viewer = await fetchViewer()
+  const landed = await landingFolder('texts', folderId, templateChangeBlock(viewer, viewer.id))
+  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: sessionMemberSql, folderId: landed.folderId })
   const [row] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
   touch(id)
   return row!

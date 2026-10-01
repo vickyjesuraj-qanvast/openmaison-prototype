@@ -26,6 +26,16 @@
 .eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .addLine { align-self: flex-start; }
 @media (max-width: 767px) { .lineRow { grid-template-columns: 1fr 1fr; } .lineRow > :first-child { grid-column: 1 / -1; } .lineTools { grid-column: 1 / -1; justify-self: end; } }
+/* (Dane UAT 3.38) A line the studio may change leads with the drag handle — the task template editor's (library-editor.module.css), composed,
+   not copied; the lifted line rides above the others as a step does. A phone keeps the handle beside the line's boxes. */
+.lineRow[data-handle] { grid-template-columns: 24px minmax(0, 1fr) 80px 120px 128px auto; }
+.lineRow[data-dragging] { position: relative; z-index: 2; background: var(--om-color-surface-default); border-radius: var(--om-radius-2); box-shadow: var(--om-elevation-level-3); }
+.handle { composes: handle from '../templates/editors/library-editor.module.css'; }
+@media (max-width: 767px) {
+  .lineRow[data-handle] { grid-template-columns: 24px 1fr 1fr; }
+  .lineRow[data-handle] > :first-child { grid-column: 1; grid-row: span 4; align-self: start; }
+  .lineRow[data-handle] > :nth-child(2), .lineRow[data-handle] .lineTools { grid-column: 2 / -1; }
+}
 
 /* (REG-652, price book parity Q-04) The proposal bar at the top of a proposed item's dialog — the quote editor's approval bar (template-bar.module.css .banner) without its page margins. */
 .banner { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); border-radius: var(--om-radius-2); font: var(--om-type-body-m); }
@@ -45,6 +55,15 @@
 .historyLine { font-variant-numeric: tabular-nums; }
 .historyNote { font-style: italic; }
 .historyMore { align-self: flex-start; }
+/* (Dane UAT 3.10) An item's History in its own column beside the form (the house l, 800): a rule between them, no rule above it; a phone
+   keeps it under the form, as before. Each entry that changed values ends on Bring back, as Show all sits under the list. */
+.withHistory { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: var(--om-spacing-6); align-items: start; }
+.withHistory > .history { padding-top: 0; border-top: 0; padding-left: var(--om-spacing-6); border-left: var(--om-border-1) solid var(--om-color-surface-variant); align-self: stretch; }
+@media (max-width: 767px) {
+  .withHistory { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+  .withHistory > .history { padding-left: 0; border-left: 0; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+}
+.bringBack { align-self: flex-start; }
 
 /* (REG-653, price book parity Q-08) The item's formatted description, and its photo well — the Profile's logo well (profile-view.module.css .qrWell). */
 .richBox { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }

@@ -43,7 +43,7 @@ function letter(): TemplateDesign {
         t(0, 61, 174, 'CONTRACT FOR RENOVATION AND CARPENTRY WORKS AT THE ABOVE PREMISES', { role: 'body', weight: 700, underline: true, uppercase: true }),
         t(0, 66, 174, 'We are to submit the following quotation for your kind perusal and consideration', body),
       ] },
-      items({ groupBy: 'category', subGroupBy: 'room', sectionLabel: 'letters', numbering: 'area', bandStyle: 'grey', groupNotes: true, groupNoteStyle: { role: 'table', weight: 700, underline: true }, areaStyle: { role: 'table', weight: 700 },
+      items({ groupBy: 'category', subGroupBy: 'room', sectionLabel: 'letters', numbering: 'lettered' /* (Dane UAT, Figma 1518:77) A1 · A2 · B1 — new templates only; stored designs keep theirs */, bandStyle: 'grey', groupNotes: true, groupNoteStyle: { role: 'table', weight: 700, underline: true }, areaStyle: { role: 'table', weight: 700 },
         columns: cols([['no', '', 8, 'center'], ['item', '', 0, 'left'], ['total', '', 30, 'right']]), headerRow: 'none', descriptions: 'none', subtotals: false, zeroAmount: 'Inclusive', currency: '$ ', ruled: false, density: 'compact', keepGroups: false, optionalTitle: 'Optional Works' }),
       { id: newId(), kind: 'notes', title: '', titleStyle: { role: 'body', weight: 700 }, style: { role: 'small', font: 'Arial', size: 7.5, weight: 700 }, numbered: true, grid: false, spaceBefore: 4 },
       { id: newId(), kind: 'totals', layout: 'right', width: 62, rules: 'double', style: { role: 'body', weight: 700 }, totalStyle: { role: 'body', weight: 700 }, lines: [
@@ -79,7 +79,7 @@ function scope(): TemplateDesign {
         t(0, 44, 182, 'QUOTATION FOR THE PROPOSED INTERIOR DESIGN WORKS', { role: 'body', weight: 700, underline: true, uppercase: true }),
         t(0, 49, 182, 'Thank you for considering {studio_name} for your upcoming renovation. We are pleased to present our quotation for your kind consideration.\nThis quotation is valid for {validity_days} days from the date of issue. Please feel free to contact us should you require any clarification.\nWe look forward to working with you.', { role: 'body', lineHeight: 1.35 }),
       ] },
-      items({ groupBy: 'category', subGroupBy: 'room', sectionLabel: 'letters', numbering: 'area', bandStyle: 'underlined', groupNotes: true, groupNoteStyle: { role: 'table', italic: true, weight: 700, color: red }, areaStyle: { role: 'table', weight: 700, italic: true },
+      items({ groupBy: 'category', subGroupBy: 'room', sectionLabel: 'letters', numbering: 'lettered' /* (Dane UAT, Figma 1518:77) as Letter */, bandStyle: 'underlined', groupNotes: true, groupNoteStyle: { role: 'table', italic: true, weight: 700, color: red }, areaStyle: { role: 'table', weight: 700, italic: true },
         columns: cols([['no', 'No.', 9, 'left'], ['item', 'SCOPE OF WORK', 0, 'left'], ['qtyUnit', 'UNIT', 20, 'right', red], ['total', 'AMOUNT', 30, 'right']]), headerRow: 'band', headerStyle: { role: 'table', weight: 700, uppercase: true, align: 'center' },
         descriptions: 'bullets', descriptionStyle: { role: 'table' }, subtotals: true, subtotalLabel: 'Sub-total for {section}:', zeroAmount: 'FOC', currency: '$ ', density: 'normal', keepGroups: false, optionalTitle: 'Optional Works' }),
       { id: newId(), kind: 'totals', layout: 'right', width: 74, rules: 'grid', style: { role: 'body', weight: 700 }, totalStyle: { role: 'body', weight: 700 }, lines: [

@@ -189,10 +189,12 @@
 .menuWrap { position: relative; display: inline-flex; }
 
 /* Copy-phone affordance in the hovered name cell (779:24696). */
-.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
+/* (REG-905) the row never runs past the cell — the phone line ellipsises (above) and the copy glyph keeps its place; an On Hold row's
+   "· On hold till: Sat, 24 Oct ’26" used to push the glyph out of the 200px cell */
+.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; min-width: 0; max-width: 100%; }
 .copyBtn {
   border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex;
+  display: inline-flex; flex-shrink: 0;
   color: var(--om-color-on-surface-secondary);
   opacity: 0;
   transition: opacity var(--motion-hover), color var(--motion-hover);

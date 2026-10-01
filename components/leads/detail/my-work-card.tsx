@@ -6,7 +6,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import type { LeadTask } from '@/lib/db/schema'
-import { displayDate, displayDayMonth, isDueToday, isOverdue, startOfDay } from '@/lib/format'
+import { displayDayMonth, displayDue, displayTime, hasTime, isDueToday, isOverdue, startOfDay } from '@/lib/format'
 import { Card, CardEmpty, CardRule } from './card'
 import styles from './my-work-card.module.css'
 
@@ -155,21 +155,22 @@ function TaskRow({ task, group, now, onComplete, onOpenTask }: {
         <span className={styles.title}>{task.title}</span>
         <span className={styles.meta}>
           <span>{task.kind}</span>
+          {/* (Dane UAT 5.13 · 5.05) a due wears its day, and its time when it has one: "Sat, 3 Oct ’26 · 10:00 AM" · "Due today · 10:00 AM" */}
           {group === 'overdue' && due ? (
             <>
               <span className={styles.dot}>·</span>
-              <span data-tone="red">{displayDate(due)}</span>
+              <span data-tone="red">{displayDue(due)}</span>
               <span data-tone="red">({overdueDays}d overdue)</span>
             </>
           ) : group === 'today' ? (
             <>
               <span className={styles.dot}>·</span>
-              <span data-tone="yellow">Due today</span>
+              <span data-tone="yellow">{due && hasTime(due) ? `Due today · ${displayTime(due)}` : 'Due today'}</span>
             </>
           ) : due ? (
             <>
               <span className={styles.dot}>·</span>
-              <span>{displayDate(due)}</span>
+              <span>{displayDue(due)}</span>
             </>
           ) : null}
         </span>

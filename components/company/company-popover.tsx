@@ -19,7 +19,7 @@ import { leaveThen } from './leave-guard'
  * shell (REG-422) with the company's sections in two groups; Profile and Templates are pages, the rest answer coming
  * soon. The section you are on is marked. ≤767 (REG-353) it is a bottom sheet titled Company.
  */
-export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed = 0, asks = 0 }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number; /** (REG-703) members waiting for AI credits, for the Owner — on the Plan & AI credits row */ asks?: number }) {
+export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, proposed = 0, asks = 0 }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-899) the phone sheet's back to More */ onBack?: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number; /** (REG-703) members waiting for AI credits, for the Owner — on the Plan & AI credits row */ asks?: number }) {
   const router = useRouter()
   const pathname = usePathname()
   const comingSoon = useComingSoon()
@@ -53,7 +53,7 @@ export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed =
   if (typeof document === 'undefined') return null
   if (sheet) {
     return (
-      <Sheet open={open} onClose={onClose} title="Company" label="Company" role="menu">
+      <Sheet open={open} onClose={onClose} onBack={onBack} title="Company" label="Company" role="menu">
         <div className={styles.sheetBody}>{list}</div>
       </Sheet>
     )

@@ -211,7 +211,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       }
     })()
     return (
-      <div key={key} role="cell" className={cls} style={st} data-col={key} data-fill={(inFill && fillCol === key) || undefined}>
+      <div key={key} role="cell" className={cls} style={st} data-col={key} data-fill={(inFill && fillCol === key) || undefined} data-below={(under && key === 'unitPrice') || undefined}>
         {body}
         {fillable(key) ? <span className={styles.fillHandle} data-fill-handle aria-hidden onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); onFillStart(key, item.id) }} /> : null}
       </div>
@@ -250,7 +250,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{item.noNumber && !isGroup ? <Tooltip label="No number — the numbering skips this line"><span className={styles.muted} aria-label="No number">–</span></Tooltip> : number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
         {isGroup || child ? <span className={styles.groupBar} aria-hidden /> : null}
-        {details.images ? (
+        {/* (Dane UAT 6.11, g-photowell) A section or sub-section never prints a picture (slices.tsx prints line photos only) — no well on its
+            row, so its name has the room; a line keeps the mock's well (1260:31253), as the phone's cards already do. */}
+        {details.images && !isGroup ? (
           <Tooltip label="Image" disabled={menu === 'thumb'}>
             <button ref={thumbRef} type="button" className={styles.thumbBtn} aria-haspopup="menu" aria-expanded={menu === 'thumb'} aria-label={`Image for ${item.name}`} onClick={() => toggle('thumb')}>
               <span className={styles.thumb} data-empty={item.thumb || kind ? undefined : ''}>
@@ -263,8 +265,8 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             </button>
           </Tooltip>
         ) : null}
-        <ThumbMenu open={menu === 'thumb'} anchor={thumbRef} icon={kind} onClose={() => setMenu(null)}
-                   onUpload={() => h.onUploadImage(item)} onIcon={(k) => patch({ icon: k, thumb: null, thumbCount: 0 })} onLogo={h.onComingSoon} />
+        {isGroup ? null : <ThumbMenu open={menu === 'thumb'} anchor={thumbRef} icon={kind} onClose={() => setMenu(null)}
+                   onUpload={() => h.onUploadImage(item)} onIcon={(k) => patch({ icon: k, thumb: null, thumbCount: 0 })} onLogo={h.onComingSoon} />}
         <div className={styles.itemText}>
           {/* The name is text-wide; a press on the row's remaining width still lands the caret in it. */}
           <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) nameRef.current?.focus() }}>
@@ -329,7 +331,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       </div>
       {columns.map(cell)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
-      <div role="cell" className={`${styles.cell} ${styles.colTotal}`}>
+      {/* (Dane UAT 6.15, g-expanded) A line selling under its cost: its Unit Price and Total figures turn the error red beside the tag (REG-623) —
+          only while the Cost column is on, as the tag. */}
+      <div role="cell" className={`${styles.cell} ${styles.colTotal}`} data-below={under || undefined}>
         {word && item.printAs !== 'behalf' ? (
           /* (REG-555) The word the client reads stands where the amount would; the line's own figure stays under it for the studio —
              struck through, as it leaves the totals (REG-623: "S$1,950.00 · not counted" needed 160 px of the cell's 100 and lost its

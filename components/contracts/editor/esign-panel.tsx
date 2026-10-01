@@ -1,8 +1,7 @@
 'use client'
 
-import { Button, Switch } from '@/components/ds'
+import { Button, Switch, TextArea } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
-import { TextField } from '@/components/om/text-field'
 import { SIGN_FIELDS, signField, type SignKey } from '@/lib/contracts/tokens'
 import { DEFAULT_ACCEPT_LABEL } from '@/lib/contracts/policy'
 import styles from './contract-editor.module.css'
@@ -14,6 +13,9 @@ export type SigningGates = { requiresScroll: boolean; requiresAccept: boolean; a
  * into the document at the caret. On the signing page the studio's box prints your saved signature and the client's is
  * where they sign; initials print as small boxes. (REG-633, contracts parity Q-15) Then "Before the client signs": 1.0's per-document
  * gates — read to the end, tick your words (the words editable) — for this contract, or for every contract a template starts.
+ * (Dane UAT 8.05) The words are written in the box, never a placeholder that shows only once it is focused: switching Tick to accept on
+ * fills them with the default the signing page prints, and a document with none says that default too; a two-line box (the Send
+ * dialog's message is the nearest house field), 160 at most, as the server keeps.
  */
 export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates, onGates, uploaded = false, locked = false }: {
   open: boolean; onClose: () => void; onInsert: (html: string) => void; hasStudioSignature: boolean
@@ -47,11 +49,12 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
           </div>
           <div className={styles.autoRow}>
             <span className={styles.autoText}><span className={styles.autoLabel}>Tick to accept</span><span className={styles.autoHelp}>They tick your words before they can go on</span></span>
-            <Switch size="sm" isSelected={gates.requiresAccept} isDisabled={locked} onChange={(v: boolean) => onGates({ requiresAccept: v })} aria-label="Tick to accept" />
+            <Switch size="sm" isSelected={gates.requiresAccept} isDisabled={locked} aria-label="Tick to accept"
+                    onChange={(v: boolean) => onGates(v && !gates.acceptLabel?.trim() ? { requiresAccept: v, acceptLabel: DEFAULT_ACCEPT_LABEL } : { requiresAccept: v })} />
           </div>
           {gates.requiresAccept ? (
-            <div className={styles.gateLabel}>
-              <TextField label="The words they tick" value={gates.acceptLabel ?? ''} placeholder={DEFAULT_ACCEPT_LABEL} maxLength={160} disabled={locked} onChange={(v) => onGates({ acceptLabel: v })} />
+            <div className={styles.gateLabel} data-testid="esign-accept-words">
+              <TextArea className={styles.gateWords} label="The words they tick" value={gates.acceptLabel ?? DEFAULT_ACCEPT_LABEL} maxLength={160} isDisabled={locked} onChange={(v: string) => onGates({ acceptLabel: v })} />
             </div>
           ) : null}
         </div>

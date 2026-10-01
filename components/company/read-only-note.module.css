@@ -1,2 +1,11 @@
-/* (REG-646) The read-only line (app/settings/settings.module.css .readOnlyLine, shared). */
-.note { display: inline-flex; align-items: center; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (REG-646) The read-only line (app/settings/settings.module.css .readOnlyLine, shared). (Dane UAT 10.08) A tinted info strip — the house
+   banner's tint (the quote editor's version banner, template-bar.module.css), r8, a 20 lock, body-m — still one line under the title, so
+   "only Owners and Admins change these" is seen before a disabled control is pressed. One component: every read-only page changes at once. */
+.note {
+  display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0;
+  padding: var(--om-spacing-2) var(--om-spacing-4); min-height: 40px;
+  background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant);
+  border-radius: var(--om-radius-2);
+  font: var(--om-type-body-m);
+}
+.note > :first-child { flex-shrink: 0; }

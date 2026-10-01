@@ -7,6 +7,7 @@
 .img { width: 100%; height: auto; display: block; }
 .none { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: 48px var(--om-spacing-4); text-align: center; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .foot { padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.foot { padding-bottom: var(--fab-clearance); }   /* (Dane UAT, b-fab) the Maison AI button sits over the pane's bottom-right corner (REG-507): the switch and the strength slider stay clear of it */
 .row { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 32px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
 .row input[type='range'] { width: 120px; accent-color: var(--om-color-primary-default); }
 .hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

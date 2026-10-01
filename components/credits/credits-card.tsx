@@ -28,11 +28,13 @@ import { useRailPopover } from '@/components/shell/rail-popover'
  * and — only when it matters — when it runs out at this pace. Only the Owner buys (1.0's rule): one 1,000 pack for now (integration
  * B-05). Everyone else sees their own figures and, when the studio or their monthly amount is out, one action: ask the Owner (B-19).
  */
-export function CreditsCard({ open, anchor, placement, onClose, summary, gstLine }: {
+export function CreditsCard({ open, anchor, placement, onClose, onBack, summary, gstLine }: {
   open: boolean
   anchor: RefObject<HTMLElement | null>
   placement: 'rail' | 'chip'
   onClose: () => void
+  /** (REG-899) The phone sheet opened from More leads with a back to More. */
+  onBack?: () => void
   summary: CreditSummary
   /** The studio's GST line for a purchase (Q-15), from its own GST status. */
   gstLine: string
@@ -42,7 +44,7 @@ export function CreditsCard({ open, anchor, placement, onClose, summary, gstLine
 
   const body = <CardBody summary={summary} gstLine={gstLine} onClose={onClose} />
   if (typeof document === 'undefined') return null
-  if (sheet) return <Sheet open={open} onClose={onClose} title="AI credits" label="AI credits">{<div className={styles.sheetBody}>{body}</div>}</Sheet>
+  if (sheet) return <Sheet open={open} onClose={onClose} onBack={onBack} title="AI credits" label="AI credits">{<div className={styles.sheetBody}>{body}</div>}</Sheet>
   return createPortal(
     <AnimatePresence>
       {open ? (

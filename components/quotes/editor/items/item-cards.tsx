@@ -27,7 +27,7 @@ type CardLabels = { rooms: string[]; categories: string[]; sections: string[]; v
  * on blur through the same patch — so nothing the desktop grid does is lost; the kebab is the row menu, itself a sheet here.
  * Rendered only at ≤767 (items-table.tsx); the desktop and the tablet keep the grid.
  */
-export function ItemCards({ rows, items, selected, groups, labels, brandColors, h, collapsedBuckets, onToggleBucket, showDescription, showCost = true, commentCounts = {}, changes }: {
+export function ItemCards({ rows, items, selected, groups, labels, brandColors, h, collapsedBuckets, onToggleBucket, showDescription, showCost = true, showMarkup = true, commentCounts = {}, changes }: {
   commentCounts?: Record<string, number>
   /** (UX audit Q10) On a revision: the lines new or changed since the kept version. */
   changes?: LineChanges
@@ -43,6 +43,8 @@ export function ItemCards({ rows, items, selected, groups, labels, brandColors, 
   showDescription: boolean
   /** (REG-623) The Cost column is on — a line under its cost says so; off (a screen shown to the client) it never does. */
   showCost?: boolean
+  /** (Dane UAT 12.08, x-phonetabs) The Markup column is on — the line's sheet shows Cost and Markup only as the table's columns do. */
+  showMarkup?: boolean
 }) {
   return (
     <div className={styles.list} role="list" aria-label="Quote items" data-testid="item-cards">
@@ -55,7 +57,7 @@ export function ItemCards({ rows, items, selected, groups, labels, brandColors, 
           </button>
         </div>
       ) : (
-        <ItemCard key={d.item.id} item={d.item} number={d.number} all={items} selected={selected.has(d.item.id)} groups={groups} labels={labels} brandColors={brandColors} h={h} selectedCount={selected.size} showDescription={showDescription} showCost={showCost} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
+        <ItemCard key={d.item.id} item={d.item} number={d.number} all={items} selected={selected.has(d.item.id)} groups={groups} labels={labels} brandColors={brandColors} h={h} selectedCount={selected.size} showDescription={showDescription} showCost={showCost} showMarkup={showMarkup} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
       ))}
     </div>
   )
@@ -66,9 +68,9 @@ export function ItemCards({ rows, items, selected, groups, labels, brandColors, 
 const toMinor = (s: string) => { const n = Number(s.replace(/,/g, '')); return Number.isFinite(n) ? Math.round(n * 100) : 0 }
 const toNum = (s: string, max?: number) => { const n = Number(s.replace(/,/g, '')); const v = Number.isFinite(n) && n >= 0 ? n : 0; return max === undefined ? v : Math.min(max, v) }
 
-function ItemCard({ item, number, all, selected, groups, labels, brandColors, h, selectedCount, showDescription, showCost, comments, change }: {
+function ItemCard({ item, number, all, selected, groups, labels, brandColors, h, selectedCount, showDescription, showCost, showMarkup, comments, change }: {
   item: QuoteItem; number: string; all: QuoteItem[]; selected: boolean; groups: QuoteItem[]; labels: CardLabels
-  brandColors: Record<string, string>; h: Omit<RowHandlers, 'onDragPointerDown'>; selectedCount: number; showDescription: boolean; showCost: boolean; comments: number; change: LineChange | null
+  brandColors: Record<string, string>; h: Omit<RowHandlers, 'onDragPointerDown'>; selectedCount: number; showDescription: boolean; showCost: boolean; showMarkup: boolean; comments: number; change: LineChange | null
 }) {
   const [menu, setMenu] = useState(false)
   const [open, setOpen] = useState(false)
@@ -97,7 +99,7 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
             {number ? <span className={styles.num}>{number}</span> : null}
             <span className={styles.name} data-empty={item.name ? undefined : ''}>{item.name || (isGroup ? 'New section' : 'Type item name')}</span>
           </span>
-          <span className={styles.figures}>
+          <span className={styles.figures} data-below={(!isGroup && showCost && belowCost(item)) || undefined}>   {/* (Dane UAT 6.15) under its cost: the price and the total in the error red, as the grid's */}
             <span className={styles.sub}>
               {isGroup ? `${childCount} ${childCount === 1 ? 'item' : 'items'}` : `${item.qty} ${item.unit ?? ''} × ${money2(unitPriceMinor(item))}`.replace('  ', ' ')}
               {!isGroup && item.discountPct ? ` · −${item.discountPct}%` : ''}
@@ -126,15 +128,17 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
                  onClose={() => setMenu(false)} onAction={(a) => h.onMenu(item, a)} onChooseGroup={(g) => h.onChooseGroup(item, g)}
                  onPrintAs={(v) => h.onPrintAs(item, v)} onHighlight={(v) => h.onHighlight(item, v)} />
       </span>
-      <LineSheet open={open} item={item} labels={labels} onClose={() => setOpen(false)} onPatch={patch} onAddLabel={h.onAddLabel} onNote={h.onNote} onUploadImage={() => h.onUploadImage(item)} total={total} />
+      <LineSheet open={open} item={item} labels={labels} onClose={() => setOpen(false)} onPatch={patch} onAddLabel={h.onAddLabel} onNote={h.onNote} onUploadImage={() => h.onUploadImage(item)} total={total} showCost={showCost} showMarkup={showMarkup} />
     </div>
   )
 }
 
 /** The line's fields as a bottom sheet (the canvas' rule for every form on a phone, REG-353): saved on blur, the way a cell saves on leaving it. */
-function LineSheet({ open, item, labels, onClose, onPatch, onAddLabel, onNote, onUploadImage, total }: {
+function LineSheet({ open, item, labels, onClose, onPatch, onAddLabel, onNote, onUploadImage, total, showCost, showMarkup }: {
   open: boolean; item: QuoteItem; labels: CardLabels; onClose: () => void; onPatch: (p: ItemPatch) => void
   onAddLabel: (kind: 'room' | 'category' | 'section' | 'vendor', itemId?: string) => void; onNote: (message: string) => void; onUploadImage: () => void; total: number
+  /** (Dane UAT 12.08) The Cost and Markup columns: the sheet shows those two boxes only while the table does — a phone turned to the client never shows them. */
+  showCost: boolean; showMarkup: boolean
 }) {
   const isGroup = item.kind === 'group'
   const [descOpen, setDescOpen] = useState(false)
@@ -164,12 +168,14 @@ function LineSheet({ open, item, labels, onClose, onPatch, onAddLabel, onNote, o
                 {field('Qty', String(item.qty), (v) => onPatch({ qty: toNum(v) }), { numeric: 'decimal' })}
                 {select('Unit', item.unit, UNITS, (v) => onPatch({ unit: v }))}
               </div>
+              {showCost || showMarkup ? (
+                <div className={styles.pair}>
+                  {showCost ? field('Cost (S$)', (item.costMinor / 100).toFixed(2), (v) => { const c = toMinor(v); onPatch({ costMinor: c, markupMinor: Math.max(-c, item.markupMinor) }) }, { numeric: 'money' }) : null}
+                  {showMarkup ? field('Markup (S$)', (item.markupMinor / 100).toFixed(2), (v) => onPatch({ markupMinor: Math.max(-item.costMinor, toMinor(v)) }), { numeric: 'money' }) : null}
+                </div>
+              ) : null}
               <div className={styles.pair}>
-                {field('Cost (S$)', (item.costMinor / 100).toFixed(2), (v) => { const c = toMinor(v); onPatch({ costMinor: c, markupMinor: Math.max(-c, item.markupMinor) }) }, { numeric: 'money' })}
-                {field('Markup (S$)', (item.markupMinor / 100).toFixed(2), (v) => onPatch({ markupMinor: Math.max(-item.costMinor, toMinor(v)) }), { numeric: 'money' })}
-              </div>
-              <div className={styles.pair}>
-                {field('Unit price (S$)', (unitPriceMinor(item) / 100).toFixed(2), (v) => onPatch({ markupMinor: Math.max(-item.costMinor, toMinor(v) - item.costMinor) }), { numeric: 'money', helper: 'Cost + markup' })}
+                {field('Unit price (S$)', (unitPriceMinor(item) / 100).toFixed(2), (v) => onPatch({ markupMinor: Math.max(-item.costMinor, toMinor(v) - item.costMinor) }), { numeric: 'money', helper: showCost && showMarkup ? 'Cost + markup' : undefined })}
                 {field('Discount (%)', String(item.discountPct), (v) => onPatch({ discountPct: toNum(v, 100) }), { numeric: 'decimal' })}
               </div>
               <div className={styles.pair}>

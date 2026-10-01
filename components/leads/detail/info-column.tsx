@@ -8,7 +8,8 @@ import { setFlagPref, useFlagPref } from '@/lib/prefs'
 import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
-import { displayDate, groupDigits, money, phoneDigits, phoneLocal } from '@/lib/format'
+import { displayDate, groupDigits, maskNric, money, phoneDigits, phoneLocal } from '@/lib/format'
+import { runsStudio } from '@/lib/leads/assign-policy'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -75,7 +76,8 @@ export type InfoColumnProps = {
   /** (REG-609, parity Q-22) The portal link's invite stamp — the "Portal" row. */
   portal?: { invitedAt: Date | null } | null
   lead: LeadRow
-  /** The studio's members. (UX audit 2026-09-30, L7) The Owner row reads the lead's own assignees now; kept for the callers. */
+  /** The studio's members. (UX audit 2026-09-30, L7) The Owner row reads the lead's own assignees now. (REG-903) The signed-in member
+   *  (`isYou`) among them decides whether the NRIC's Show is offered. */
   team?: Member[]
   onEdit: () => void
   onAssign: (anchor: HTMLElement) => void
@@ -88,7 +90,7 @@ export type InfoColumnProps = {
 const DASH = '--'
 
 export function InfoColumn({
-  lead, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
+  lead, team = [], onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
 }: InfoColumnProps) {
   /* (REG-612) The Custom fields section — after Other info, on the desktop column and the phone's sheet alike. */
   const customSection = customFields.length ? (
@@ -107,6 +109,12 @@ export function InfoColumn({
      It used to read "You" on every lead, beside Members showing only Sarah. */
   const first = assignees[0]
   const owner = first ? (first.isYou ? 'You' : first.name) : DASH
+  /* (REG-903, Dane UAT 5.06 — PDPA) The client's NRIC / FIN reads masked, as a signed document shows it (REG-563: •••••567A); an Owner
+     or an Admin (the signed-in member, `isYou` on the team) may Show it in full on this lead for this view. The stored value, the
+     export and the quote's print are unchanged. */
+  const mayShowNric = runsStudio(team.find((m) => m.isYou)?.role)
+  const [nricShownFor, setNricShownFor] = useState<string | null>(null)
+  const nricShown = mayShowNric && nricShownFor === lead.id
   /* (UX audit 2026-09-30, L11) On a touch screen the number calls: a tel: link beside Copy and WhatsApp (the +65 the column leaves implied). */
   const touch = useMediaQuery(TOUCH_TABLET)
 
@@ -257,7 +265,14 @@ export function InfoColumn({
           <Row k="Budget (S$)" text={lead.budgetMinor > 0 ? money(lead.budgetMinor) : DASH} />   {/* (UX audit 2026-09-30, L8) unknown = "--" */}
           <Row k="Created" text={displayDate(lead.createdAt)} />
           {/* (REG-607, parity Q-35) 1.0's client IC and customer reference, printed on the quotes. */}
-          <Row k="NRIC / FIN" text={lead.icNumber ?? DASH} />
+          <Row k="NRIC / FIN">
+            {lead.icNumber ? (
+              <span className={styles.text} data-testid="lead-nric">
+                {nricShown ? lead.icNumber : maskNric(lead.icNumber)}
+                {mayShowNric && !nricShown ? <>{' '}<button type="button" className={styles.headLink} aria-label="Show NRIC / FIN" onClick={() => setNricShownFor(lead.id)}>Show</button></> : null}
+              </span>
+            ) : <span className={styles.text}>{DASH}</span>}
+          </Row>
           <Row k="Customer ID" text={lead.customerId ?? DASH} />
           {/* (REG-609, parity Q-22) Invite to Portal leaves a record — the link's stamp reads back here. */}
           <Row k="Portal" text={portal?.invitedAt ? `Invited ${displayDate(portal.invitedAt)}` : DASH} />

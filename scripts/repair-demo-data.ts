@@ -1746,6 +1746,43 @@ async function main() {
     console.log(`  ${renamed} contracts named as their paper · ${logs} Won logs follow`)
   }
 
+  /* ── R67 · Default Quote PDF's new quotes open with the Category column (Dane UAT 2026-10-01, Figma 1549:34 pt 3) ───────────────────
+     Category is the column a line moves by under a template that prints by trade, and a View by › Category bucket is its value — so the
+     studio default's New quotes › "Items table opens with" includes it. The defaults live with the template (REG-538 · REG-578: what a new
+     quote takes once published), so the change lands on the published defaults AND on the current version's row that a quote pins to — and
+     on an unpublished draft's defaults, so its next Publish keeps it. A template that already opens with Category is left alone; quotes
+     already made keep their own columns. */
+  console.log('\nR67 Default Quote PDF opens with Category')
+  {
+    const { DEFAULT_COLUMNS } = await import('../lib/quotes/items-model')
+    const id = sid('Default Quote PDF', 'quote_template')
+    const withCategory = (json: string | null): string | null => {
+      if (!json) return null
+      let d: { columns?: string[] | null } & Record<string, unknown>
+      try { d = JSON.parse(json) as typeof d } catch { return null }
+      const cols = Array.isArray(d.columns) ? d.columns : DEFAULT_COLUMNS.columns.filter((c) => c.on).map((c) => c.key)
+      if (cols.includes('category')) return null
+      return JSON.stringify({ ...d, columns: [...cols, 'category'] })
+    }
+    const [t] = rows<{ version: number; defaults_json: string | null; draft_json: string | null }>(await client.execute({ sql: `SELECT version, defaults_json, draft_json FROM quote_templates WHERE id = ? AND deleted_at IS NULL`, args: [id] }))
+    let done = 0
+    if (t) {
+      const pub = withCategory(t.defaults_json)
+      if (pub) { await client.execute({ sql: `UPDATE quote_templates SET defaults_json = ? WHERE id = ?`, args: [pub, id] }); done++ }
+      const [v] = rows<{ id: string; defaults_json: string | null }>(await client.execute({ sql: `SELECT id, defaults_json FROM quote_template_versions WHERE template_id = ? AND version = ?`, args: [id, t.version] }))
+      const ver = v ? withCategory(v.defaults_json) : null
+      if (v && ver) { await client.execute({ sql: `UPDATE quote_template_versions SET defaults_json = ? WHERE id = ?`, args: [ver, v.id] }); done++ }
+      if (t.draft_json) {
+        try {
+          const dr = JSON.parse(t.draft_json) as { defaults?: unknown }
+          const next = dr.defaults ? withCategory(JSON.stringify(dr.defaults)) : null
+          if (next) { await client.execute({ sql: `UPDATE quote_templates SET draft_json = ? WHERE id = ?`, args: [JSON.stringify({ ...dr, defaults: JSON.parse(next) }), id] }); done++ }
+        } catch { /* a draft that does not parse is the editor's to mend */ }
+      }
+    }
+    note(t ? `${done} of Default Quote PDF's defaults given the Category column (published · v${t.version} · draft)` : 'Default Quote PDF not found — nothing to change')
+  }
+
   const checks: [string, string][] = [
     /* (UX audit 2026-09-30) */
     ['the seeded Variation Order with nowhere for the client to sign (C4)', `SELECT title FROM contract_templates WHERE id = '${sid('template', 'contract-variation')}' AND deleted_at IS NULL AND body NOT LIKE '%data-sign="client-signature"%'`],
@@ -1757,6 +1794,7 @@ async function main() {
     ['AI credits: no plan on record, or more than one live (REG-700)', `SELECT 'subscriptions' WHERE (SELECT count(*) FROM subscriptions WHERE cancelled_at IS NULL) <> 1`],
     ['AI credits: balance disagrees with its ledger (REG-700)', `SELECT 'studio' FROM studio_credit_balances b WHERE b.plan_credits + b.topup_credits <> (SELECT coalesce(sum(credits), 0) FROM credit_ledger WHERE reason <> 'shadow_spend')`],
     ['AI credits: a bucket below zero (REG-700)', `SELECT 'studio' FROM studio_credit_balances WHERE plan_credits < 0 OR topup_credits < 0`],
+    ['Default Quote PDF: new quotes open without the Category column (R67, Dane UAT)', `SELECT t.id FROM quote_templates t JOIN quote_template_versions v ON v.template_id = t.id AND v.version = t.version WHERE t.id = '${sid('Default Quote PDF', 'quote_template')}' AND t.deleted_at IS NULL AND (coalesce(json_extract(t.defaults_json, '$.columns'), '') NOT LIKE '%"category"%' OR coalesce(json_extract(v.defaults_json, '$.columns'), '') NOT LIKE '%"category"%')`],
     ['AI credits: a paid plan with no tax invoice (REG-700)', `SELECT s.plan_id FROM subscriptions s WHERE s.plan_id <> 'free' AND s.status = 'active' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.subscription_id = s.id)`],
     ['AI credits: a monthly amount for someone not on the team (REG-700)', `SELECT c.member_id FROM studio_member_credit_caps c WHERE NOT EXISTS (SELECT 1 FROM members m WHERE m.id = c.member_id)`],
     ['AI credits: an Owner asking the Owner (REG-703)', `SELECT r.member_id FROM credit_requests r JOIN members m ON m.id = r.member_id WHERE r.status = 'open' AND m.role = 'Owner'`],

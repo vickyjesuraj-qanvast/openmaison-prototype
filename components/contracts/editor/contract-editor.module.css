@@ -12,6 +12,19 @@
 .titleInput:hover { background: var(--om-color-hover-04p); }
 .titleInput:focus { border-color: var(--om-color-primary-default); background: var(--om-color-surface-default); }
 .titleInput::placeholder { color: var(--om-color-on-surface-disabled); }
+/* (Dane UAT 3.18) TitleInput (title-input.tsx): the input above in a label with a pencil at rest after it, in all five editors. The
+   label takes the input's place on the row; the pencil (20, secondary) follows the words where the box sizes to them, else the box's end,
+   and steps aside while the title is typed or can't be changed. */
+.titleField { flex: 1; min-width: 0; max-width: 560px; display: flex; align-items: center; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-2)); cursor: text; }
+.titleField > .titleInput { flex: 1 1 auto; max-width: none; margin-left: 0; }
+.titleField:hover > .titleInput { background: var(--om-color-hover-04p); }
+.titleField > .titleInput:focus { background: var(--om-color-surface-default); }
+.titlePencil { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); pointer-events: none; transition: opacity var(--motion-hover); }
+.titleInput:focus + .titlePencil { opacity: 0; visibility: hidden; }
+.titleInput:read-only + .titlePencil { display: none; }
+@supports (field-sizing: content) {
+  .titleField > .titleInput { flex: 0 1 auto; field-sizing: content; min-width: 0; }
+}
 .metaEnd { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; margin-left: auto; }
 /* The recipient chip (the reference's "👤 Jonathan Slattery ✎"): a 36px pill-less button — glyph · name · edit glyph on hover. */
 .recipient { display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; max-width: 320px; min-width: 0; transition: background-color var(--motion-hover); }
@@ -132,7 +145,7 @@
 }
 @media (max-width: 767px) {
   .meta { position: relative; top: auto; z-index: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
-  .titleInput { max-width: none; flex-basis: 100%; }
+  .titleInput, .titleField { max-width: none; flex-basis: 100%; }
   .metaEnd { margin-left: 0; flex-wrap: wrap; width: 100%; }
   .recipient, .metaSelect { flex: 1 1 100%; max-width: 100%; }
   .dateBox { width: 168px; }
@@ -143,6 +156,9 @@
   .doc :global(.om-sign) { width: 100%; }
   .phoneRow { flex-direction: column; }
   .phoneCode { width: 100%; }
+  /* (Dane UAT 12.10) A phone copies the signing link by a long press: the whole link shows, wrapped, and a press selects all of it. */
+  .linkRow { align-items: flex-start; }
+  .linkRow code { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .styleBtn, .recipient, .metaSelect { min-height: 44px; }
@@ -164,6 +180,8 @@
 .gates { margin-top: var(--om-spacing-6); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .gates .autoRow { padding-left: 0; padding-right: 0; }
 .gateLabel { padding-top: var(--om-spacing-2); }
+/* (Dane UAT 8.05) The words they tick: the DS text area at two lines (12 + 2 × 20 + 20), growing with the words where the browser can. */
+.gateWords textarea { min-block-size: 72px; field-sizing: content; }
 /* (REG-634, contracts parity Q-22) The Send dialog's "Before it goes": the readiness warnings, not blocking. */
 .sendNotes { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
 .sendNotesHead { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }

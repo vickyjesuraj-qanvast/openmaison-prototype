@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
 import { Button } from '@/components/ds'
 import { useMaisonAi } from '@/lib/maison-ai'
+import { copyText } from '@/lib/clipboard'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, exportFileName, type ExportFormat } from '@/lib/leads/export'
@@ -219,7 +220,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
             <QanvastTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)}
                           onCopyPhone={async (row) => {
                             // (REG-351) The listing's own handler: one copy format (phoneDisplay), one confirmation.
-                            try { await navigator.clipboard.writeText(phoneDisplay(row.phone)); snackbar({ message: 'Copied to clipboard' }) }
+                            try { await copyText(phoneDisplay(row.phone)); snackbar({ message: 'Copied to clipboard' }) }
                             catch { snackbar({ message: phoneDisplay(row.phone) }) }
                           }} />
           )}

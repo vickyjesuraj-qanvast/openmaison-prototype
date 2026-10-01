@@ -96,7 +96,7 @@ export const members = sqliteTable('members', {
   email: text('email'),                      // (REG-560) the member's work email — `{prepared_by_email}` on quotes; seeded on the studio's domain by repair R36
   // Quote editor › Signature (1240:34176, REG-421; owner 2026-09-11: "signature saved per member"): how the member signs —
   // `draw` keeps an SVG path in `signatureData` (viewBox 752×140), `type` prints `signatureName` in the signature face.
-  signatureKind: text('signature_kind'),     // draw | type | null = not set up
+  signatureKind: text('signature_kind'),     // draw | type | image | null = not set up — (Dane UAT 6.23) `image` keeps an uploaded PNG / JPEG ≤ 1 MB as a data URL in `signatureData`
   signatureName: text('signature_name'),
   signatureData: text('signature_data'),
   // (REG-612, parity Q-27) 1.0's studio_members.accepting_leads · lead_preferences · specialty — Open to new leads, the four

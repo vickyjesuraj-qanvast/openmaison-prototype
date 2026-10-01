@@ -3,14 +3,15 @@ import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { leadAssignees, leads, members, quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, settings, type Member, type Quote, type QuoteItem, type QuotePayment, type QuoteTemplate } from '@/lib/db/schema'
-import { fetchQuoteRules, fetchStudio, fetchTemplateApproval, fetchTradeNotes, isApprover } from '@/lib/settings/queries'
+import { fetchQuoteRules, fetchStudio, fetchTemplateApproval, fetchTradeNotes, fetchTrades, isApprover } from '@/lib/settings/queries'
 import type { TemplateApproval } from '@/lib/settings/types'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
+import type { PaymentSplit } from '@/lib/quotes/payments'
 import { isPaper, parseDefaults, parseDesign, isTemplateStatus, type BrandKit, type StudioDetails, type TemplateDefaults, type TemplateDesign, type TemplateRecord, type TemplateSummary, type TemplateVersion } from './model'
 import { BRAND_KEY, DEFAULT_BRAND_SETTING, parseBrandSetting, type BrandSetting } from './brand'
 import { presetByKey } from './presets'
 import { clientViewFromDesign, parseClientView, type ClientView } from './client-view'
-import { docDataFromRecords, SAMPLE_DATA, type DocData, toDocItem } from './data'
+import { docDataFromRecords, sampleFor, type DocData, toDocItem } from './data'
 import type { PickerExtras } from './picker'
 
 /** (REG-538) What every picker names beside a template's defaults: the payment library's names and the live text templates' titles. */
@@ -82,7 +83,7 @@ export async function fetchTemplates(): Promise<TemplatesData> {
   const all = rows.map((r) => summary(r, (usedBy.get(r.id) ?? 0) + (r.isDefault && !r.deletedAt ? blank : 0), team))
   const templates = all.filter((t) => !t.deletedAt)
   const deleted = all.filter((t) => !!t.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0))
-  return { approval, canRun: viewer.role === 'Owner' || viewer.role === 'Admin', templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { approval, canRun: viewer.role === 'Owner' || viewer.role === 'Admin', templates, deleted, brand: brand.kit, studio: brand.details, sample: sampleFor(brand.details), now: Date.now() }
 }
 
 export async function fetchTemplate(id: string): Promise<TemplateRecord | null> {
@@ -115,8 +116,13 @@ export type TemplateEditorData = {
   sample: DocData
   /** Recent live quotes the canvas can render with ("Preview with"). */
   quotes: QuotePick[]
-  textTemplates: { id: string; kind: string; title: string }[]
+  /** (Dane UAT 3.30) with their bodies: the canvas lays the chosen Terms and Notes over the sample quote */
+  textTemplates: { id: string; kind: string; title: string; body: string }[]
   paymentPresets: { key: string; label: string }[]
+  /** (Dane UAT 3.30) the Payments library's splits with their milestones — the canvas prices the chosen one on the sample's total */
+  paymentSplits: PaymentSplit[]
+  /** (Dane UAT, Figma 1517:21) the studio's trades (Settings › Quotes & pricing), named under "Group the items by" */
+  trades: string[]
   me: { id: string; name: string; role: string } | null
   /** (REG-501) The studio's approval policy and whether the viewer can approve (Owner / Admin). */
   approval: TemplateApproval
@@ -127,20 +133,21 @@ export type TemplateEditorData = {
 export async function fetchTemplateEditor(id: string): Promise<TemplateEditorData | null> {
   const template = await fetchTemplate(id)
   if (!template) return null
-  const [brand, recent, texts, team, approval] = await Promise.all([
+  const [brand, recent, texts, team, approval, trades] = await Promise.all([
     fetchBrand(),
     db.select({ id: quotes.id, number: quotes.number, title: quotes.title, leadName: leads.name, status: quotes.status }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
       .where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt), isNull(leads.deletedAt))).orderBy(desc(quotes.updatedAt), desc(quotes.createdAt)).limit(12),
-    db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)).orderBy(asc(quoteTextTemplates.createdAt)),
+    db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title, body: quoteTextTemplates.body }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)).orderBy(asc(quoteTextTemplates.createdAt)),
     db.select().from(members),
     fetchTemplateApproval(),
+    fetchTrades(),
   ])
   const splits = await fetchPaymentSplits()   // (REG-538) the Payment schedule select reads the library
   const me = team.find((m) => m.isYou) ?? null
   return {
     approval, canApprove: await isApprover(me?.id, me?.role),   // (REG-590) the backup approver counts
-    template, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, quotes: recent, textTemplates: texts,
-    paymentPresets: splits.map((p) => ({ key: p.id, label: p.name })), me: me ? { id: me.id, name: me.name, role: me.role } : null, now: Date.now(),
+    template, brand: brand.kit, studio: brand.details, sample: sampleFor(brand.details), quotes: recent, textTemplates: texts,
+    paymentPresets: splits.map((p) => ({ key: p.id, label: p.name })), paymentSplits: splits, trades: trades.trades, me: me ? { id: me.id, name: me.name, role: me.role } : null, now: Date.now(),
   }
 }
 
@@ -260,7 +267,7 @@ export async function fetchQuotePreview(quoteId: string, version?: number): Prom
   return {
     quote: { id: quote.id, number: quote.number, title: quote.title, status: kept ? kept.status : quote.status, leadId: quote.leadId, leadName: leadRows[0]?.name ?? '', templateId: quote.templateId, templateVersion: quote.templateVersion, visibility: quote.visibility, version: quote.version, confirmedAt: quote.confirmedAt ? quote.confirmedAt.getTime() : null, confirmedBy: quote.confirmedBy ?? null },
     kept, changes,
-    data, template, templates: all.map((t) => ({ id: t.id, name: t.name, version: t.version, isDefault: t.isDefault })), picker: { ...(await pickerExtras()), templates: pickerTemplates(all), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } }, brand: brand.kit, baseView, view, readiness: readiness(data, design, view), now: Date.now(),
+    data, template, templates: all.map((t) => ({ id: t.id, name: t.name, version: t.version, isDefault: t.isDefault })), picker: { ...(await pickerExtras()), templates: pickerTemplates(all), brand: brand.kit, sample: sampleFor(brand.details) }, brand: brand.kit, baseView, view, readiness: readiness(data, design, view), now: Date.now(),
   }
 }
 
@@ -288,7 +295,7 @@ export async function fetchQuoteTemplateState(quote: { templateId: string | null
       if (!rows.some((t) => t.id === row.id)) list.push({ id: row.id, name: row.name, version: row.version, isDefault: row.isDefault, status: row.status })
     }
   }
-  return { templates: list, current, picker: { ...(await pickerExtras()), templates: pickerTemplates(rows), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } } }
+  return { templates: list, current, picker: { ...(await pickerExtras()), templates: pickerTemplates(rows), brand: brand.kit, sample: sampleFor(brand.details) } }
 }
 
 /** (REG-501) Templates awaiting an Owner's approval — the rail's Company badge and the panel's "n awaiting". */

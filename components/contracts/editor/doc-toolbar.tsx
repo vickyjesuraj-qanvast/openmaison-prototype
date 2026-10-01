@@ -23,8 +23,11 @@ const MAX_IMAGE = 1_500_000
 
 /**
  * The formatting bar (the reference: undo · redo | Normal Text ▾ | B I U highlight | align ▾ | lists | link · image ·
- * Smart Text ▾ · eSignatures) on the rich editor's 24px tools with 1×28 rules. Smart Text is the two-level menu — a
+ * Insert a field ▾ · eSignatures) on the rich editor's 24px tools with 1×28 rules. Insert a field is the two-level menu — a
  * group row opens its tokens, each with the record's live value as its sample (the reference's grey right column).
+ * (Dane UAT 3.19) "Insert a field" is the house name of every merge-field menu (the template inspector's, Notifications') — it read
+ * "Smart Text" here. (Dane UAT 8.03) Its trigger keeps the caret where the studio clicked: a pointer press leaves focus in the paper, and
+ * the paper puts its last selection back before it inserts (doc-editor.tsx `refocus`).
  */
 export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutline, outlineOpen, disabled }: {
   editor: React.RefObject<DocEditorHandle | null>
@@ -130,11 +133,11 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
           </Tooltip>
         ) : null}
         <span className={styles.anchor}>
-          <Button variant="secondary" appearance="text" isDisabled={disabled} aria-haspopup="menu" aria-expanded={menu === 'smart'}
+          <Button variant="secondary" appearance="text" isDisabled={disabled} aria-haspopup="menu" aria-expanded={menu === 'smart'} preventFocusOnPress
                   iconEnd={<span className={styles.chev} data-open={menu === 'smart' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-                  onPress={() => setMenu((m) => (m === 'smart' ? null : 'smart'))}>Smart Text</Button>
+                  onPress={() => setMenu((m) => (m === 'smart' ? null : 'smart'))}>Insert a field</Button>
           {/* (REG-728) A record's rows carry its sample: 320; the groups' rows a count and a chevron: 240. */}
-          <Dropdown open={menu === 'smart'} onClose={closeSmart} align="right" width={smart ? MENU_WIDTH.detail : MENU_WIDTH.wide} sheetTitle="Smart Text">
+          <Dropdown open={menu === 'smart'} onClose={closeSmart} align="right" width={smart ? MENU_WIDTH.detail : MENU_WIDTH.wide} sheetTitle="Insert a field">
             {smart ? (
               <>
                 <DropdownItem onSelect={() => setSmartGroup(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{smart.label}</DropdownItem>
@@ -149,7 +152,7 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
               </>
             ) : (
               <>
-                <div className={styles.menuHead}>Insert a record</div>
+                <div className={styles.menuHead}>Fields from</div>   {/* (Dane UAT 3.19) it read "Insert a record" — a second name under the button's */}
                 {TOKEN_GROUPS.map((g) => {
                   const empty = g.tokens.filter((t) => !values[t.key]?.trim()).length
                   return (

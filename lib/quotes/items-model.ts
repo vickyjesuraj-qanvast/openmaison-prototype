@@ -75,14 +75,24 @@ export function parseColumns(json: string | null | undefined): ColumnSettings {
   return { details: { description: d.description !== false, images: d.images !== false, autonumber: d.autonumber !== false }, columns }
 }
 
-/** The labels the studio added on this quote; (REG-623) `vendors` = the vendors typed here that My Items does not list. */
-export type ItemLabels = { categories: string[]; rooms: string[]; sections: string[]; vendors: string[] }
+/** The labels the studio added on this quote; (REG-623) `vendors` = the vendors typed here that My Items does not list.
+ *  (Dane UAT, Figma 1549:34 pt 4) `categoryOrder` = the order View by › Category shows its buckets in, once they were dragged — per quote,
+ *  as the editor's sections keep theirs (saveQuoteSections); empty = the studio's trades first, then the categories as they appear. */
+export type ItemLabels = { categories: string[]; rooms: string[]; sections: string[]; vendors: string[]; categoryOrder?: string[] }
 export function parseLabels(json: string | null | undefined): ItemLabels {
   let raw: unknown = null
   if (json) { try { raw = JSON.parse(json) } catch { raw = null } }
   const r = (raw ?? {}) as Partial<Record<keyof ItemLabels, unknown>>
-  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').slice(0, 50) : [])
-  return { categories: list(r.categories), rooms: list(r.rooms), sections: list(r.sections), vendors: list(r.vendors) }
+  const list = (v: unknown, max = 50) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.trim() !== ''))].slice(0, max) : [])
+  return { categories: list(r.categories), rooms: list(r.rooms), sections: list(r.sections), vendors: list(r.vendors), categoryOrder: list(r.categoryOrder, 200) }
+}
+/** `names` in the quote's saved order: the ones the order holds first, as it holds them, then the rest as they came. */
+export function inSavedOrder(names: readonly string[], order: readonly string[] | undefined): string[] {
+  if (!order?.length) return [...names]
+  const have = new Set(names)
+  const first = order.filter((n) => have.has(n))
+  const placed = new Set(first)
+  return [...first, ...names.filter((n) => !placed.has(n))]
 }
 
 /**
@@ -236,9 +246,22 @@ export function htmlToPlain(html: string): string {
  * names — "Carpentry" finds "Carpentry", "Carpentry Works" or "Carpentry work" (a template's starter sections, REG-582) — else nowhere
  * (the caller adds it at the end). Top-level sections only; the first match wins.
  */
+const tradeNorm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/\s+works?$/, '')
 export function sectionForTrade<T extends { name: string }>(sections: readonly T[], category: string | null | undefined): T | null {
-  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/\s+works?$/, '')
-  const want = category ? norm(category) : ''
+  const want = category ? tradeNorm(category) : ''
   if (!want) return null
-  return sections.find((g) => norm(g.name) === want) ?? null
+  return sections.find((g) => tradeNorm(g.name) === want) ?? null
+}
+
+/**
+ * (Dane UAT 6.11, g-sections-trade) The trade a section stands for, read the other way from `sectionForTrade`: its own Category when it
+ * carries one (a template's starter sections do — REG-497 files their lines under it), else the studio trade its name is ("Carpentry",
+ * "Carpentry Works"). Null for anything else — a room ("Bathrooms"), a phase — so a line moved there keeps its own category. A line moved
+ * into a section that stands for a trade takes it, so the quote prints it there when the template groups by trade (slices.tsx `labelOf`).
+ */
+export function tradeOfSection(section: { name: string; category: string | null }, trades: readonly string[]): string | null {
+  const own = section.category?.trim()
+  if (own) return own
+  const want = tradeNorm(section.name)
+  return want ? trades.find((t) => tradeNorm(t) === want) ?? null : null
 }

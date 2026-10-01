@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
+import { copyText } from '@/lib/clipboard'
 import { DateField } from '@/components/om/date-field'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
@@ -49,7 +50,7 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   /* (UX audit C8) A Draft: the copy first, and it is marked Sent only once the link is on the clipboard — never over a copy that failed. */
   const copyLink = () => {
     if (!onCopy) { void copy(); return }
-    const write = navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject(new Error('no clipboard'))
+    const write = copyText(link)
     /* a host that only answers (nothing to share — the quote's confirmation link once sent) leaves the words to the dialog; one that shares says its own */
     void write.then(() => { const r = onCopy(); if (r instanceof Promise) return r; if (r) snackbar({ message: copyDone }); return r }, () => { snackbar({ message: 'Couldn’t copy the link — nothing was sent' }); return false })
       .then((ok) => { if (ok) { const at = Date.now(); setSharedAt(at); setTimeout(() => setSharedAt((x) => (x === at ? 0 : x)), 2000) } })
@@ -171,7 +172,7 @@ export function SaveTemplateDialog({ open, onClose, defaultName, busy, onSave }:
   if (open !== wasOpen) { setWasOpen(open); if (open) setName(defaultName) }
   return (
     <Dialog open={open} onClose={onClose} title="Save as template" size="form" width={400}
-            subtitle="The document, with its Smart Text chips, joins your contract templates."
+            subtitle="The document, with its fields, joins your contract templates."
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!name.trim() || busy} onPress={() => { void onSave(name.trim()) }}>{busy ? 'Saving…' : 'Save template'}</Button></>}>
       <TextField label="Template name" required value={name} onChange={setName} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) { e.preventDefault(); void onSave(name.trim()) } }} />
     </Dialog>

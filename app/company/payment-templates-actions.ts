@@ -4,7 +4,9 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { SPLIT_DEFAULT_DELETE_RULE, TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
+import { SPLIT_DEFAULT_DELETE_RULE, TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
+import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
 import { paymentTemplates, quotePayments, quotes, quoteTemplates } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
@@ -22,7 +24,9 @@ const row = async (id: string) => { const [r] = await db.select().from(paymentTe
 /** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the split gone from under a stale page — else null. */
 const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(eq(paymentTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
 
-export type CreatePaymentTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'quote'; quoteId: string } }
+export type CreatePaymentTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'quote'; quoteId: string }
+  /** (Dane UAT 3.03) The folder open in the gallery — the new split is filed there (its maker may file it). */
+  folderId?: string | null }
 /** Blank (a deposit and a completion), a copy of another split, or the schedule a quote has right now. Returns the id. */
 export async function createPaymentTemplate(input: CreatePaymentTemplateInput): Promise<string> {
   const now = new Date()
@@ -38,7 +42,9 @@ export async function createPaymentTemplate(input: CreatePaymentTemplateInput): 
     rows = pays.map((p) => ({ name: p.name, description: p.description, pct: p.pct }))
     if (!clean(input.name)) { const [q] = await db.select({ title: quotes.title }).from(quotes).where(eq(quotes.id, input.source.quoteId)); name = `${q?.title ?? 'Quote'} split` }
   }
-  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: sessionMemberSql, createdAt: now, updatedAt: now })
+  const viewer = await fetchViewer()
+  const { folderId } = await landingFolder('payments', input.folderId, templateChangeBlock(viewer, viewer.id))
+  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: sessionMemberSql, createdAt: now, updatedAt: now, folderId })
   touch(id)
   return id
 }

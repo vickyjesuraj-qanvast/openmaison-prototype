@@ -27,13 +27,14 @@ import { DocEditor, IDLE_STATE, type DocEditorHandle, type DocState } from './do
 import { DocToolbar } from './doc-toolbar'
 import { OutlinePane } from './outline-pane'
 import { ESignPanel } from './esign-panel'
+import { TitleInput } from './title-input'
 import styles from './contract-editor.module.css'
 
 const AUTOSAVE_MS = 600
 
 /**
  * The contract template editor (REG-534): the contract editor with no recipient, date, status or Send — the document and
- * its Smart Text chips, saved to the library. Header: "Company / Templates / Contracts" over the title · "Used by n" ·
+ * its inserted fields, saved to the library. Header: "Company / Templates / Contracts" over the title · "Used by n" ·
  * Saved · Done (back) · kebab (Duplicate · Delete) · ✕.
  */
 export function ContractTemplateEditor({ data, from }: { data: ContractTemplateEditorData; from?: string }) {
@@ -103,10 +104,11 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
                         </>}
                         onClose={close} />
         <div className={styles.meta} data-testid="contract-meta">
-          <input className={styles.titleInput} value={title} placeholder="Template name" aria-label="Template name" maxLength={120} readOnly={!!changeBlock} title={changeBlock ?? undefined}
-                 onChange={(e) => { if (changeBlock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
+          <TitleInput value={title} placeholder="Template name" aria-label="Template name" maxLength={120} readOnly={!!changeBlock} title={changeBlock ?? undefined}
+                      onChange={(e) => { if (changeBlock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
           <div className={styles.metaEnd}>
-            <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: 'Smart Text chips fill in from the lead, the quote and your studio when a contract starts from this template' })}>How chips fill in</Button>
+            {/* (Dane UAT 3.19) one name for the inserted pieces — fields, as the Insert a field ▾ menu that makes them */}
+            <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: 'Fields fill in from the lead, the quote and your studio when a contract starts from this template' })}>How fields fill in</Button>
           </div>
         </div>
         {noClientSign ? (
@@ -121,7 +123,7 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
           {outlinePref && !narrow ? <OutlinePane items={outline} onPick={(i) => editor.current?.scrollToHeading(i)} onClose={() => setOutlinePref(false)} /> : null}
           <div className={styles.stage}>
             <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
-              <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={setDocState} label="Template document" placeholder="Start writing the template, or insert a record with Smart Text…" />
+              <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={setDocState} label="Template document" placeholder="Start writing the template, or insert a field…" />
             </div>
           </div>
         </div>

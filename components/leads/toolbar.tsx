@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { SearchBar } from '@/components/ds'
+import { Button, SearchBar } from '@/components/ds'
 import { IconButton } from '@/components/om/icon-button'
 import { ScopePill } from '@/components/om/scope-pill'
 import { SegmentedIconToggle } from '@/components/om/segmented'
@@ -21,7 +21,7 @@ export function LeadsToolbar({
   filterCount = 0,
   view,
   onViewChange,
-  chipMenu, onColumnsClick, bare = false }: {
+  chipMenu, onColumnsClick, bare = false, onViewAll }: {
   chipLabel: string
   onChipClick: () => void
   /** The pill's menu is open — chevron points up. */
@@ -39,6 +39,9 @@ export function LeadsToolbar({
   onViewChange: (v: 'table' | 'kanban') => void
   /** Anchored menu rendered under the stage pill. */
   chipMenu?: ReactNode
+  /** (Dane's UAT 1.05) While the pill holds a scope (a stage, Mine or Needs attention): "View all" beside it returns to All Leads in one
+      press — the scope only; search and Filters stay. Hidden at All Leads. */
+  onViewAll?: () => void
   /** (REG-735) The studio has no lead yet: the row says "All Leads" and nothing else — the empty card carries Create and Import, and the
       stage pill, search, Filters, the columns and the views have nothing to act on. The first lead brings them back. */
   bare?: boolean
@@ -52,14 +55,35 @@ export function LeadsToolbar({
   useSearchTarget(searchRef, reveal)
   useEffect(() => { if (searchOpen) searchRef.current?.focus() }, [searchOpen])
   const filterLabel = filterCount ? `Filters (${filterCount} active)` : 'Filters'   // one accessible name for the control and its tooltip (page-checklist › Tooltips)
+  /* (Dane's UAT 1.05 · REG-354) The row stays one row on a phone: where the pill's words leave no room for View all beside it ("Overdue
+     follow-ups (12)" at 390), it folds away — the pill's sheet opens on All Leads, its first row. Measured, never guessed: the pill's and the
+     button's own widths against the room the row gives them; the observer's first call is the first measure. */
+  const leftRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  const viewAllRef = useRef<HTMLSpanElement>(null)
+  const [folded, setFolded] = useState(false)
+  const viewAll = chipScoped && !bare && !!onViewAll
+  useEffect(() => {
+    const left = leftRef.current, pill = pillRef.current, btn = viewAllRef.current
+    if (!viewAll || !left || !pill || !btn) return
+    const gap = parseFloat(getComputedStyle(btn).marginLeft) || 0
+    const ro = new ResizeObserver(() => setFolded(left.clientWidth < pill.offsetWidth + gap + btn.offsetWidth))
+    ro.observe(left); ro.observe(pill); ro.observe(btn)
+    return () => ro.disconnect()
+  }, [viewAll])
   return (
     <div className={styles.bar}>
-      <div className={styles.left}>
+      <div ref={leftRef} className={styles.left}>
         {/* (REG-729) The house scope pill (components/om/scope-pill.tsx) — the listing's own pill, now written once: the chevron turns
             while its menu is open, the applied dot off "All Leads" (REG-295). */}
         {bare ? <h2 className={styles.title}>All Leads</h2> : (<>
-        <ScopePill label={chipLabel} onClick={onChipClick} open={chipOpen} scoped={chipScoped} />
+        <ScopePill ref={pillRef} label={chipLabel} onClick={onChipClick} open={chipOpen} scoped={chipScoped} />
         {chipMenu}
+        {viewAll ? (
+          <span ref={viewAllRef} className={styles.viewAll} data-folded={folded || undefined} inert={folded || undefined} aria-hidden={folded || undefined}>
+            <Button appearance="text" onPress={onViewAll} data-testid="view-all-leads">View all</Button>
+          </span>
+        ) : null}
         </>)}
       </div>
       {bare ? null : (

@@ -11,7 +11,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
-import { displayDate, isOverdue, money, phoneLocal, displayDateTimeDot } from '@/lib/format'
+import { displayDate, displayDateLong, displayDateTimeDot, displayDue, dueDistance, isOverdue, money, phoneLocal } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { BLANK, daysInStage, stageAge, stageSinceText } from '@/lib/leads/row-text'
 import { canReturnLead } from '@/lib/leads/stage-policy'
@@ -41,7 +41,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const WIDTHS: Record<ColumnKey, number> = {
   name: 240, stage: 146, inStage: 180, tasks: 321, assignees: 160,
-  source: 132, budget: 138, propertyType: 158, created: 115, address: 240, lastContact: 200, district: 120, nextFollowUp: 200,
+  source: 132, budget: 138, propertyType: 158, created: 115, address: 240, lastContact: 200, district: 120, nextFollowUp: 240,   /* (Dane UAT 5.13) the widest "Wed, 28 May ’26 · 10:00 PM" uncut — was 200 */
 }
 /* (REG-468, sort audit 2026-09-16: "Remove the 17") A glyph only where ordering answers a question: names, stage, budget, dates.
    Members (several per cell), Source and Property Type (categories the filter serves) lost theirs. */
@@ -277,9 +277,9 @@ export function LeadsTable({
             <span className={styles.phoneRow}>
               <span className={styles.phone}>
                 {hitPhone(phoneLocal(row.phone))}
-                {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) */}
+                {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) — (Dane UAT 5.13) with its day */}
                 {row.stage === 'On Hold' && row.onHoldFollowUp
-                  ? <>{' · On hold till: '}{hit(displayDate(new Date(row.onHoldFollowUp)))}</>
+                  ? <>{' · On hold till: '}{hit(displayDateLong(new Date(row.onHoldFollowUp)))}</>
                   : null}
               </span>
               <Tooltip label="Copy phone number">
@@ -299,7 +299,7 @@ export function LeadsTable({
                data-stage-anchor={row.id === openStageId || undefined}
                onClick={(e) => onStageClick(row, e.currentTarget)}>
             {/* (REG-329) An On Hold row names its follow-up in the DS tooltip; it used to be the browser's own title bubble. */}
-            <Tooltip label={row.onHoldFollowUp ? `Next follow up: ${displayDate(new Date(row.onHoldFollowUp))}` : ''}
+            <Tooltip label={row.onHoldFollowUp ? `Next follow up: ${displayDateLong(new Date(row.onHoldFollowUp))}` : ''}
                      disabled={!row.onHoldFollowUp || row.id === openStageId}>
             <button type="button" className={styles.stageBtn} aria-haspopup="menu" aria-expanded={row.id === openStageId}>
               {hit(row.stage)}
@@ -372,14 +372,15 @@ export function LeadsTable({
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ? hit(row.propertyAddress) : BLANK}</span></div>
       case 'district':   /* (REG-607) */
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.area ? hit(row.area) : BLANK}</span></div>
-      case 'nextFollowUp': {   /* (REG-608) when, then the task; overdue reads red */
+      case 'nextFollowUp': {   /* (REG-608) the earliest dated open task — (Dane UAT 4.22) its WHEN: the day and time, then how far off; the Tasks column already names it */
         const t = nextDue(row)
+        const late = !!t?.dueAt && isOverdue(t.dueAt, now)
         return (
           <div key={col.key} {...cellProps(col, styles.cell)}>
             {t?.dueAt ? (
               <span className={styles.twoLine}>
-                <span className={styles.plain} style={isOverdue(t.dueAt, now) ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(displayDateTimeDot(t.dueAt))}</span>
-                <span className={styles.sub}>{hit(t.title)}</span>
+                <span className={styles.plain} style={late ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(displayDue(t.dueAt))}</span>
+                <span className={styles.sub} style={late ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{dueDistance(t.dueAt, now)}</span>
               </span>
             ) : <span className={styles.plain}>{BLANK}</span>}
           </div>

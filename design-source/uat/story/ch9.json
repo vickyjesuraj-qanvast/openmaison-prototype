@@ -81,7 +81,7 @@
     "module": "Leads",
     "try": "Put a lead on hold until a date you choose",
     "how": "1. On Leads, click Priya Nair's Stage cell, then \"On Hold\"\n2. \"Reason\": Client not ready; under \"Duration\" choose \"Custom\"\n3. \"Follow up on\": a date about two months away\n4. Press \"Save & Move\"",
-    "expect": "The helper reads \"Next follow up date will be\" your date; \"Moved to On Hold\" (with Undo); her row adds \"On hold till:\" that date.",
+    "expect": "The helper reads \"Next follow up date will be\" your date; \"Moved to On Hold\" (with Undo); her row adds \"On hold till:\" that date, with its day (e.g. \"Sat, 28 Nov ’26\").",
     "in10": "Different from 1.0: reason plus date; a reminder comes that day",
     "as": "Dane",
     "covers": [
@@ -136,8 +136,8 @@
     "scene": "When a lead goes cold",
     "module": "Lead details",
     "try": "Mark him lost as postponed, with a restart date",
-    "how": "1. Change \"Reason\" to Project postponed\n2. \"Expected restart (optional)\": a date about three months away\n3. Press \"Save & Move\"",
-    "expect": "\"Under 6 months away — consider On Hold instead.\" appears; then \"Moved to Lost\" with an \"Undo\" button.",
+    "how": "1. Change \"Reason\" to Project postponed\n2. \"Expected restart (optional)\": a date about three months away, and read the warning under it\n3. Press \"Save & Move\"",
+    "expect": "Under the date a warning reads \"Under 6 months away — consider On Hold instead.\" with \"Put On Hold instead\" beside it; Save & Move still moves him: \"Moved to Lost\" with an \"Undo\" button.",
     "in10": "Same as 1.0",
     "as": "Dane",
     "covers": [

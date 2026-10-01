@@ -60,8 +60,8 @@
     "scene": "Give her an owner",
     "module": "Lead details",
     "try": "Assign the member the studio suggests",
-    "how": "1. In the left column, under \"Collaborators\", click \"Assign Member\"\n2. Read the \"Suggested · …\" box\n3. Press \"Assign to Sarah\", then \"Assign\"",
-    "expect": "\"Suggested · Sarah\" explains why (HDB 4-Room, East area); \"Members updated\" and Sarah shows under Collaborators.",
+    "how": "1. In the left column, under \"Collaborators\", click \"Assign Member\"\n2. Read the \"Suggested · …\" box\n3. Press \"Assign to Sarah\"",
+    "expect": "\"Suggested · Sarah\" explains why (HDB 4-Room, East area); one press assigns her: \"Members updated\" and Sarah shows under Collaborators.",
     "in10": "Different from 1.0: a line in Assign, scored the same way",
     "as": "Dane",
     "covers": [
@@ -83,7 +83,7 @@
     "module": "Lead details",
     "try": "Set a reminder to follow up tomorrow",
     "how": "1. In the \"LEAD STAGES\" card click \"Next follow-up\" (None set)\n2. In \"Set a follow-up\", pick tomorrow at 10:00 AM for \"When\"\n3. Keep the \"Task\" name, press \"Save\"",
-    "expect": "\"Follow-up set for …\" appears; Next follow-up now reads \"Follow up with Sophia Wong\" with tomorrow's date.",
+    "expect": "\"Follow-up set for …\" appears; Next follow-up now reads \"Follow up with Sophia Wong\" with tomorrow's day, date and \"10:00 AM\"; open the task and its Due keeps the time — change only the day and 10:00 AM stays.",
     "in10": "Different from 1.0: the follow-up is a task, not a lead date",
     "as": "Dane",
     "covers": [
@@ -105,8 +105,8 @@
     "scene": "Give her an owner",
     "module": "Lead details",
     "try": "Add her NRIC and correct her key collection",
-    "how": "1. Open ⋮ (\"More options\"), then \"Edit\"\n2. \"NRIC / FIN\": S8812345D · \"Key collection\": Collected\n3. Press \"Save\"",
-    "expect": "\"Successfully Updated\"; Lead info shows NRIC / FIN S8812345D and Property info shows Key collection Collected.",
+    "how": "1. Open ⋮ (\"More options\"), then \"Edit\"\n2. \"NRIC / FIN\": S8812345D · \"Key collection\": Collected\n3. Press \"Save\"\n4. In Lead info, press \"Show\" beside NRIC / FIN",
+    "expect": "\"Successfully Updated\"; Lead info shows NRIC / FIN masked as •••••345D, and \"Show\" (Owners and Admins only) reveals S8812345D; Property info shows Key collection Collected.",
     "in10": "Same as 1.0",
     "as": "Dane",
     "covers": [
@@ -227,8 +227,8 @@
     "scene": "Notes and tasks",
     "module": "Lead details",
     "try": "Add a task and give it a due date",
-    "how": "1. Click \"Add Task\", then \"Create New Task\"\n2. Type Send Sophia the HDB renovation checklist, press Enter\n3. In its \"Due date\" cell click the calendar (\"Set due date\") and pick Friday",
-    "expect": "The new task sits in the list with Friday as its due date.",
+    "how": "1. Click \"Add Task\", then \"Create New Task\"\n2. Type Send Sophia the HDB renovation checklist, press Enter\n3. In its \"Due date\" cell click the calendar (\"Set due date\") and pick Friday, then \"Done\"",
+    "expect": "The new task sits at the top of the list, glowing once, with its due date reading \"Fri, … · 10:00 AM\".",
     "in10": "New in 2.0",
     "as": "Dane",
     "covers": [
@@ -312,7 +312,7 @@
     "module": "Lead details",
     "try": "Ask Sophia to answer the rest herself",
     "how": "1. Press \"Ask Client\"\n2. In \"Ask the client\", press \"Copy\" beside the portal link\n3. Press \"Send via WhatsApp\"",
-    "expect": "\"Notification sent to Sophia Wong\" (no WhatsApp tab opens here); the summary now reads \"Client asked on\" with today's date.",
+    "expect": "A message says the questions were sent to Sophia Wong (no WhatsApp tab opens here); the summary now reads \"Client asked on\" with today's date.",
     "in10": "Different from 1.0: the ask is recorded; no 5-minute limit",
     "as": "Dane",
     "covers": [

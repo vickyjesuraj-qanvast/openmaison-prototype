@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
 import { fromLabel, withFrom } from '@/lib/nav'
+import { copyText } from '@/lib/clipboard'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -28,6 +29,10 @@ import { GHOST_MIN_MS } from '@/components/shell/page-reveal'
 import { readMoveParams, type MoveStep } from '@/lib/leads/move-link'
 import { StageDropdown } from '@/components/leads/stage-dropdown'
 import { CREATE_EVENTS } from '@/components/leads/tasks/use-create-intent'
+import { useRun } from '@/components/leads/tasks/use-run'
+import { OverviewTaskPanel } from '@/components/leads/detail/task-panel-host'
+import { pulseRow } from '@/components/leads/detail/pulse'
+import type { LeadTasksData } from '@/lib/leads/tasks'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { AiBrief } from '@/components/leads/detail/ai-brief'
 import { assignHint, assignableIds } from '@/lib/leads/assign-policy'
@@ -56,7 +61,7 @@ import type { LeadDetail } from '@/lib/leads/detail'
 import { returnTags } from '@/lib/leads/return-tags'
 import { type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
-import { displayDateTimeDot, isOverdue, moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
+import { displayDue, isOverdue, moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
 import { DETAIL_TABS, blockedReason, canReturnLead, convertBlock, detailHref, isActiveStage, journeyIdx, nextStageOf, resumeStageOf, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { liveReasonNames } from '@/lib/settings/types'
@@ -88,7 +93,11 @@ const STEP_STAGE: Record<MoveStep, Stage> = { contacted: 'Contacted', met: 'Met'
  * has none). Without either, the frame shows the coming-soon body for tabs that have no mocks yet.
  * `origin` (931:49680's `?from=qanvast`, any in-app path since REG-465): the L2 crumb reads "{section} / Leads" and Back goes there.
  */
-export function LeadOverview({ detail, tab, body, wide = false, origin }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: string }) {
+/**
+ * `taskData` (Dane's UAT 5.05, 2026-10-01): the lead's tasks as the Tasks tab loads them — the Overview opens a pressed task in the tab's own
+ * panel over the page instead of leaving for the Tasks tab (whose Back then left the lead).
+ */
+export function LeadOverview({ detail, tab, body, wide = false, origin, taskData }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: string; taskData?: LeadTasksData }) {
   const { lead, team, now, stageMovement, quoteApproval, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret, leadReasons, portal, returnsCount, responseTime, customFields, customValues, memberStats } = detail
   /* (REG-607) The studio's reasons for the two dialogs, "Others" last; only Owners and Admins delete (parity Q-41). */
   const holdOptions = liveReasonNames(leadReasons.hold)
@@ -102,6 +111,12 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   /** Server actions awaited after their dialog has closed: a failure lands in the snackbar instead of vanishing (audit 2026-08-30). */
   const run = async (work: () => Promise<void>, failure: string) => { try { await work() } catch { snackbar({ message: failure }) } }
 
+  /** Tab / quick-link hrefs keep the origin (931:49680, REG-465): `?from=` rides along so the crumb and Back hold across the tabs. */
+  const href = (slug: DetailTabSlug, query?: string) => {
+    const parts = [query, origin ? `from=${encodeURIComponent(origin)}` : undefined].filter(Boolean)
+    return parts.length ? `${detailHref(lead.id, slug)}?${parts.join('&')}` : detailHref(lead.id, slug)
+  }
+
   /* ── stage movement (shared policy helpers) ── */
   const [stageMenu, setStageMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null)
   const [wizard, setWizard] = useState<Stage | null>(null)
@@ -114,6 +129,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const [confirmMove, setConfirmMove] = useState<{ stage: Stage; step: boolean } | null>(null)
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
+  /* (Dane's UAT 9.08) The Lost dialog's "Put On Hold instead": On Hold opens on its Custom date, set to the expected restart. */
+  const [holdFrom, setHoldFrom] = useState<Date | null>(null)
   const [lostReason, setLostReason] = useState('')
 
   /* A flexible-mode quick move used to be awaited RAW here: `void quickMove(stage)` with nothing around it, so a
@@ -151,7 +168,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   // Return Lead is offered to Qanvast leads only (REG-139) and not while a return is in processing or already approved; a rejected one may be returned again.
   const canReturn = canReturnLead({ source: lead.source, returnStatus: ret?.status })
   const copyLink = async () => {
-    try { await navigator.clipboard.writeText(window.location.href); snackbar({ message: 'Link copied' }) }
+    try { await copyText(window.location.href); snackbar({ message: 'Link copied' }) }
     catch { snackbar({ message: 'Couldn’t copy — please try again' }) }
   }
   const myWorkRef = useRef<HTMLDivElement>(null)
@@ -182,7 +199,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       or move to the next stage — the window, where the lock only said "Complete Quote Sent first". `stage` null = Assign. */
   const wayOn = (): { label: string; stage: Stage | null } | null => {
     if (lead.assignees.length === 0 && isActiveStage(lead.stage)) return { label: 'Assign', stage: null }
-    if (!isActiveStage(lead.stage)) { const at = resumeStageOf(lead); return { label: `Resume at ${at}`, stage: at } }
+    /* (Dane's UAT 7.13) The refusal already names the stage ("Resume at Quote Sent first") — the action says only the verb. */
+    if (!isActiveStage(lead.stage)) return { label: 'Resume', stage: resumeStageOf(lead) }
     const next = nextStageOf(lead)
     return next ? { label: `Move to ${next}`, stage: next } : null
   }
@@ -202,7 +220,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       case 'none': return
       /* (UX audit 2026-09-30, L10 — supersedes REG-607's pre-pick) Both dialogs open with no reason chosen: the required field asks for
          one, where a hurried Save used to file every lost lead under the list's first reason. */
-      case 'hold': setHoldReason(''); setHoldOpenedAt(Date.now()); setOnHold(true); return
+      case 'hold': setHoldReason(''); setHoldFrom(null); setHoldOpenedAt(Date.now()); setOnHold(true); return
       case 'lost': setLostReason(''); setLost(true); return
       case 'blocked': snackbar(refusal(intent.message)); return
       case 'confirm-resume': setConfirmMove({ stage: intent.stage, step: intent.step }); return
@@ -232,11 +250,19 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     else if (primaryKind === 'next' && nextStage) requestStageChange(nextStage)
     else if (wonBlock) refuse(wonBlock)
   }
+  /* (Dane's UAT 9.06, supersedes REG-168's "parked row → the resume stage") The parked row — On Hold or Lost — resumes the lead the way
+     the header's "Resume at X" does: the "Resume at X?" confirm, then a quick resume or that step (REG-738). It opened the Move stage
+     window at the stage the lead left, a second way in that skipped the confirm's words. */
   const openStageStep = (stage: string) => {
-    if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
+    if (stage === 'On Hold' || stage === 'Lost') { requestStageChange(resumeStageOf(lead)); return }
     const step = timeline.find((s) => s.stage === stage)
     if (step && step.state !== 'future') { setWizard(stage as Stage); return }
     requestStageChange(stage as Stage)
+  }
+  /** (REG-259) The card's head arrow: the Move stage window at the lead's position — for a parked lead, the stage it left. */
+  const openCurrentStep = () => {
+    if (!isActiveStage(lead.stage)) { setWizard(lead.resumeStage ?? 'New'); return }
+    openStageStep(lead.stage)
   }
 
   /* ── (UX audit 2026-09-30, Q1 · C1 · L2) The hand-off: `?move=<step>&quote=|contract=|log=` (lib/leads/move-link.ts) — a sent or
@@ -246,6 +272,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
      reveals (GHOST_MIN_MS), never under the ghost. ── */
   const openHandoff = async (h: NonNullable<ReturnType<typeof readMoveParams>>) => {
     const stage = STEP_STAGE[h.step]
+    /* (Dane's UAT 8.17 — REG-779 unchanged) A signed notice keeps its Won link after the lead is Won: there is no step left to take, so
+       the link lands on the lead's Contracts tab with that contract brought into view and pulsed once (`?open=`, read below). */
+    if (h.step === 'won' && lead.stage === 'Won' && h.contract) {
+      const resolved = await resolveMoveHandoff(lead.id, { quote: null, contract: h.contract, log: null }).catch(() => null)
+      router.replace(href('contracts', resolved?.contractId ? `open=${encodeURIComponent(resolved.contractId)}` : undefined))
+      return
+    }
     const [resolved] = await Promise.all([
       h.quote || h.contract || h.log ? resolveMoveHandoff(lead.id, { quote: h.quote, contract: h.contract, log: h.log }).catch(() => null) : Promise.resolve(null),
       new Promise((r) => setTimeout(r, GHOST_MIN_MS)),
@@ -276,6 +309,43 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     router.replace(rest ? `${pathname}?${rest}` : pathname, { scroll: false })
     if (h) void handoffRun.current?.(h)
   }, [handoffKey, pathname, router])
+  /* ── (Dane's UAT 5.19 · 8.17) Arrivals that point at one thing on the page: `?pulse=lead-stages` (the "Moved to X" snackbar's View, from
+     another tab) brings the LEAD STAGES card into view and pulses it once — the house attention pulse; `?open=<contractId>` on the Contracts
+     tab (a signed notice on a lead already Won) does the same for that contract's row. Read once as the page reveals (GHOST_MIN_MS), then
+     the parameter leaves the address. The timer is not cleared when the address changes — dropping the parameter is what changes it. ── */
+  const pulseParam = tab === '' ? 'pulse' : tab === 'contracts' ? 'open' : null
+  const pulseKey = pulseParam ? searchParams.get(pulseParam) : null
+  const [pulseCard, setPulseCard] = useState<string | null>(null)
+  const pulseDone = useRef('')
+  useEffect(() => {
+    if (!pulseKey || !pulseParam) { pulseDone.current = ''; return }
+    if (pulseDone.current === pulseKey) return
+    pulseDone.current = pulseKey
+    const here = new URLSearchParams(window.location.search)
+    here.delete(pulseParam)
+    const rest = here.toString()
+    router.replace(rest ? `${pathname}?${rest}` : pathname, { scroll: false })
+    const onCard = pulseParam === 'pulse'
+    setTimeout(() => {
+      const el = onCard
+        ? document.querySelector<HTMLElement>(`[data-card="${CSS.escape(pulseKey)}"]`)
+        : document.querySelector<HTMLElement>(`[data-kb-list="contract"] [data-kb-row][data-kb-id="${CSS.escape(pulseKey)}"]`)
+      if (!el) return
+      el.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+      if (!onCard) { pulseRow(el); return }
+      setPulseCard(pulseKey)
+      setTimeout(() => setPulseCard((c) => (c === pulseKey ? null : c)), 1600)
+    }, GHOST_MIN_MS + 250)
+  }, [pulseKey, pulseParam, pathname, router])
+  /* ── (Dane's UAT 5.05) A task pressed on the Overview — MY TASKS, the tasks popover, LEAD STAGES' next follow-up — opens in the Tasks
+     tab's own panel over the page (`OverviewTaskPanel`); closing it leaves the reader on the Overview, and its Open in Tasks goes to the
+     full tab. It used to leave for the Tasks tab, whose Back then left the lead (REG-465). ── */
+  const [panelTask, setPanelTask] = useState<string | null>(null)
+  if (panelTask && !taskData?.tasks.some((t) => t.id === panelTask)) setPanelTask(null)   // deleted under the open panel (render-phase adjust)
+  const openTaskPanel = (taskId: string) => {
+    if (tab === '' && taskData?.tasks.some((t) => t.id === taskId)) { setTasksFor(null); setPanelTask(taskId); return }
+    router.push(href('tasks', `open=${taskId}`))
+  }
   // Popovers follow their anchor while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(stageMenu || assign || tasksFor)
   useEffect(() => {
@@ -290,11 +360,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     return () => { document.removeEventListener('scroll', follow, true); window.removeEventListener('resize', follow) }
   }, [anyAnchored])
 
-  /** Tab / quick-link hrefs keep the origin (931:49680, REG-465): `?from=` rides along so the crumb and Back hold across the tabs. */
-  const href = (slug: DetailTabSlug, query?: string) => {
-    const parts = [query, origin ? `from=${encodeURIComponent(origin)}` : undefined].filter(Boolean)
-    return parts.length ? `${detailHref(lead.id, slug)}?${parts.join('&')}` : detailHref(lead.id, slug)
-  }
   /* (REG-673, Q-02) AI Visualizer: the lead's design — made on first open — and Back returns to the very page the link was pressed on:
      (F110) the URL as it stands, so a Files folder (`?folder=`) or any other state of the tab comes back with it. Read at the press. */
   /* (wave E, tablet-11) The action that makes / finds the design runs ~1 s before the editor's ghost can show: it runs in a transition that
@@ -311,12 +376,17 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   }
 
   const goTab = (slug: DetailTabSlug) => router.push(href(slug))
+  /** (Dane's UAT 5.19) The "Moved to X" snackbar's View on a tab other than the Overview: the Overview, LEAD STAGES pulsing once. */
+  const viewStages = tab === '' ? {} : { actionLabel: 'View', onAction: () => router.push(href('', 'pulse=lead-stages')) }
   /* The tab window events come from CREATE_EVENTS, the map the listening tabs already read (REG-286) — these three
      dispatchers used to hard-code the same strings, so a rename on one side broke the quick link in silence. */
   /** New quote (QUOTES card › From Scratch, Create quick links › Quote): the Quotes tab handles it in place, elsewhere it opens with `?new=1`. */
   /* (UX audit Q12, the Overview's QUOTES card) From Scratch makes the blank quote at once, as the Quotes tab's empty card does; From Template
      keeps the Create Quote modal. */
-  const onBlankQuote = () => { void run(async () => { const id = await createQuote(lead.id, null); router.push(withFrom(`/quotes/${id}`, `${window.location.pathname}${window.location.search}`)) }, 'Couldn’t create the quote — please try again') }
+  /* (Dane's UAT, b-doublequote) A double press made two quotes: the Quotes tab's own re-entrancy guard (`guard: 'create'`, RACE-05) — a
+     press while the first is in flight is dropped. The failure line is the same "Couldn’t create the quote — please try again". */
+  const createRun = useRun()
+  const onBlankQuote = () => { void createRun.run('create the quote', async () => { const id = await createQuote(lead.id, null); router.push(withFrom(`/quotes/${id}`, `${window.location.pathname}${window.location.search}`)) }, undefined, { guard: 'create' }) }
   const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
@@ -436,7 +506,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onAssigneeMenu={(anchor) => openAssign(anchor)}
             onCopy={async (what, value) => {
               // (REG-287) One copy format for the whole app — `phoneDisplay`, not a second "+65 ${value}" template here.
-              try { await navigator.clipboard.writeText(what === 'phone' ? phoneDisplay(value) : value); snackbar({ message: 'Copied to clipboard' }) }
+              try { await copyText(what === 'phone' ? phoneDisplay(value) : value); snackbar({ message: 'Copied to clipboard' }) }
               catch { snackbar({ message: 'Couldn’t copy — please try again' }) }
             }}
             // (REG-287) wa.me wants country code + local number, so the local half goes through `phoneDigits`.
@@ -457,7 +527,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         tasks={lead.tasks} now={now}
                         onCreate={(anchor) => openTasks(anchor)}
                         onComplete={async (task) => { try { await completeTask(task.id); refresh() } catch { snackbar({ message: 'Couldn’t complete the task — please try again' }) } }}
-                        onOpenTask={(task) => router.push(href('tasks', `open=${task.id}`))}
+                        onOpenTask={(task) => openTaskPanel(task.id)}   /* (Dane's UAT 5.05) the task's panel over the Overview */
                         onOpenTab={() => goTab('tasks')}
                       />
                     </div>
@@ -470,17 +540,17 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         <LeadReturnedCard ret={ret} returnedBy={returnedBy} onView={() => setReturnDetailsOpen(true)} onAppeal={comingSoon} onOpenTab={() => goTab('activity')} />
                       </div>
                     ) : null}
-                    <div data-card="lead-stages">
+                    <div data-card="lead-stages" className={styles.pulse} data-fresh={pulseCard === 'lead-stages' || undefined}>   {/* (Dane's UAT 5.19) View from another tab pulses it once */}
                     <LeadStagesCard
                       lastContact={lead.lastContact} onOpenContact={() => router.push(href('notes'))}
-                      nextFollowUp={nextFollowUp} onOpenFollowUp={() => { if (nextFollowUp) router.push(href('tasks', `open=${nextFollowUp.id}`)) }} onSetFollowUp={() => setFollowUpOpen(true)}
+                      nextFollowUp={nextFollowUp} onOpenFollowUp={() => { if (nextFollowUp) openTaskPanel(nextFollowUp.id) }} onSetFollowUp={() => setFollowUpOpen(true)}
                       responseTime={responseLine(responseTime)} onOpenInsights={canDelete ? () => router.push(withFrom('/leads/insights', `/leads/${lead.id}`)) : undefined}   /* (REG-611) */
                       timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
                       blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement)}
                       onOpenStage={openStageStep}
                       /* The head arrow opens the Move stage window at the current position, not the Activity tab
                          (user 2026-09-01, REG-259). */
-                      onOpen={() => openStageStep(lead.stage)}
+                      onOpen={openCurrentStep}
                     />
                     </div>
                     {/* A tile opens the record it draws — folder in the Files tab, file in its viewer (REG-181), the routes the card's own arrow and "+n" already use. */}
@@ -573,7 +643,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
               // (REG-340) The number is the signed system quote's own; an uploaded quote has none to print.
               if (toStage === 'Won') snackbar({ message: `Project created for ${lead.name}${quoteNumber ? ` · ${quoteNumber}` : ''}`, actionLabel: 'View', onAction: comingSoon })
               /* (UX audit 2026-09-30, Q1) The move marks its system quote sent to the client — the snackbar says which one. */
-              else snackbar({ message: stamped ? `Moved to ${toStage} · ${stamped} marked sent to the client` : `Moved to ${toStage}` })
+              /* (Dane's UAT 5.19) Moved from another tab, the reader stays where they are; View takes them to the Overview with the LEAD STAGES
+                 card pulsing once. A move with Undo keeps Undo — the snackbar carries one action. */
+              else snackbar({ message: stamped ? `Moved to ${toStage} · ${stamped} marked sent to the client` : `Moved to ${toStage}`, ...viewStages })
               refresh()
             }, 'Couldn’t move the lead — please try again')
           }}
@@ -584,6 +656,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onClose={() => setOnHold(false)}
         reason={holdReason} setReason={setHoldReason}
         openedAt={holdOpenedAt}
+        followUpOn={holdFrom}   /* (Dane's UAT 9.08) from the Lost dialog's "Put On Hold instead" */
         options={holdOptions}
         onSave={(otherReason, followUpAt, duration) => {
           setOnHold(false)
@@ -606,6 +679,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         reason={lostReason} setReason={setLostReason}
         options={lostOptions} reasons={leadReasons.lost} contactCount={lead.contactCount} today={new Date(now)}
         competitorHint={lead.lastComparison}   /* (REG-640) */
+        onHoldInstead={(restart) => { setLost(false); setHoldReason(''); setHoldFrom(restart); setHoldOpenedAt(Date.now()); setOnHold(true) }}   /* (Dane's UAT 9.08) */
         onSave={(d) => {
           setLost(false)
           const from = lead.stage
@@ -646,8 +720,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           try { await setTaskDue(task.id, due); refresh(); return true }
           catch { snackbar({ message: 'Couldn’t set the due date — please try again' }); return false }
         }}
-        onOpenTask={(task) => router.push(href('tasks', `open=${task.id}`))}
+        onOpenTask={(task) => openTaskPanel(task.id)}
       />
+      {taskData ? (
+        /* (Dane's UAT 5.05) the Tasks tab's panel and its actions, over the Overview */
+        <OverviewTaskPanel leadId={lead.id} data={taskData} openId={panelTask} onClose={() => setPanelTask(null)}
+                           onOpenInTasks={(id) => { setPanelTask(null); router.push(href('tasks', `open=${id}`)) }} />
+      ) : null}
       <LeadFormModal
         team={team}
         now={now}
@@ -684,7 +763,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           setFollowUpOpen(false)
           void run(async () => {
             await setFollowUp(lead.id, { title, dueAt: dueAt.toISOString() })
-            snackbar({ message: `Follow-up set for ${displayDateTimeDot(dueAt)}` })
+            snackbar({ message: `Follow-up set for ${displayDue(dueAt)}` })
             refresh()
           }, 'Couldn’t set the follow-up — please try again')
         }}

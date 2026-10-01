@@ -30,12 +30,15 @@ export function suggestedTemplate(items: ContractTemplateOption[]): { id: string
   const used = items.filter((t) => t.lastUsedAt).sort((a, b) => new Date(b.lastUsedAt!).getTime() - new Date(a.lastUsedAt!).getTime())[0]
   return used ? { id: used.id, why: 'last' } : null
 }
-export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }: {
+export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, busy = false }: {
   open: boolean; onClose: () => void
   /** Fetches the live templates — and (REG-664) the library's folders — when the dialog opens (a server action). */
   load: () => Promise<ContractPickerData>
   onUse: (templateId: string) => void | Promise<void>
   onStarter: () => void | Promise<void>
+  /** (Dane UAT 8.02, REG-659) The contract is being made: the button pressed reads "Creating…", both wait, and the host closes the picker
+      once the contract exists (the editor opens). A refusal leaves it open to try again. */
+  busy?: boolean
 }) {
   const [items, setItems] = useState<ContractTemplateOption[] | null>(null)
   const [folders, setFolders] = useState<ContractPickerData['folders']>([])
@@ -44,8 +47,11 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
   const browse = useFolderBrowse(folders, items ?? [], { query: '', pinned: (t) => t.id === suggested?.id })
   const pathname = usePathname()
   const [picked, setPicked] = useState<string | null>(null)
+  const [pressed, setPressed] = useState<'use' | 'starter'>('use')
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null); browse.go(null) } }   // render-phase reset: the list ghosts until the fetch lands
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null); setPressed('use'); browse.go(null) } }   // render-phase reset: the list ghosts until the fetch lands
+  const use = (id: string) => { if (busy) return; setPressed('use'); void onUse(id) }
+  const starter = () => { if (busy) return; setPressed('starter'); void onStarter() }
   useEffect(() => {
     if (!open) return
     let live = true
@@ -57,8 +63,8 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
     <Dialog open={open} onClose={onClose} title="Choose a contract template" size="modal" width={1200} portal
             subtitle={<span className={styles.sub}>Pick a template to start the contract from. <Link href={withFrom('/company/templates/contracts', pathname)} className={styles.manage}>Manage Templates</Link></span>}
             footer={<>
-              <Button variant="secondary" appearance="outlined" onPress={() => { void onStarter() }}>Start from the studio agreement</Button>
-              <Button isDisabled={!picked} onPress={() => { if (picked) void onUse(picked) }}>Use template</Button>
+              <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={starter}>{busy && pressed === 'starter' ? 'Creating…' : 'Start from the studio agreement'}</Button>
+              <Button isDisabled={!picked || busy} onPress={() => { if (picked) use(picked) }} data-testid="contract-template-use">{busy && pressed === 'use' ? 'Creating…' : 'Use template'}</Button>
             </>}>
       {items === null ? (
         <div className={styles.grid} aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className={styles.ghost} />)}</div>
@@ -75,7 +81,7 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
         {browse.hereEntries.length ? (
         <div className={styles.grid} data-rows={browse.hereFolders.length ? 'fit' : undefined} role="radiogroup" aria-label="Contract templates">
           {browse.hereEntries.map((t) => (
-            <button key={t.id} type="button" role="radio" aria-checked={picked === t.id} className={styles.card} data-picked={picked === t.id || undefined} onClick={() => setPicked(t.id)} onDoubleClick={() => { void onUse(t.id) }} data-testid="contract-template-option">
+            <button key={t.id} type="button" role="radio" aria-checked={picked === t.id} className={styles.card} data-picked={picked === t.id || undefined} onClick={() => { if (!busy) setPicked(t.id) }} onDoubleClick={() => { if (busy) return; setPicked(t.id); use(t.id) }} data-testid="contract-template-option">
               <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{excerptOf(t.body, 260)}</span></span>
               <span className={styles.name}>{t.title}</span>
               <span className={styles.meta}>{t.isDefault ? <MetaChip>Default</MetaChip> : t.id === suggested?.id && suggested.why === 'last' ? <MetaChip>Last used</MetaChip> : null}{browse.where(t) ? `${browse.where(t)} · ` : ''}Edited {displayDate(t.updatedAt)}</span>

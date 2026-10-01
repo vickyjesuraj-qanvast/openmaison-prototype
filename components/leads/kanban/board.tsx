@@ -11,7 +11,7 @@ import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
-import { displayDate, isOverdue, moneySGD, relativeTime } from '@/lib/format'
+import { displayDateLong, isOverdue, moneySGD, relativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -289,7 +289,7 @@ function KanbanCard({
         <span>{hitPhone(lead.phone)}</span><span>·</span>
         <span>{lead.budgetMinor > 0 ? hit(moneySGD(lead.budgetMinor)) : BLANK}</span><span>·</span>   {/* (UX audit L8) no budget known reads "--" */}
         <span>{hit(lead.source)}</span>
-        {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDate(new Date(lead.onHoldFollowUp)))}</span></> : null}
+        {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDateLong(new Date(lead.onHoldFollowUp)))}</span></> : null}
         {/* (UX audit L3) how long the lead has sat in this column */}
         <span>·</span><span data-testid="card-stage-age">{stageAge(lead, now)}</span>
       </div>

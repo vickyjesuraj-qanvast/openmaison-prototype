@@ -26,6 +26,10 @@ export const xrayColumnDefs = (otherStudio: string): readonly TableColumnDef[] =
 ]
 const COL_CLASS: Record<string, string | undefined> = { item: styles.colItem, trade: styles.colTrade, yours: styles.colYours, theirs: styles.colTheirs, diff: styles.colDiff, status: styles.colStatus }
 const STATUS_WORD: Record<XrayRow['status'], string> = { matched: 'Matched', 'yours-only': 'Only in yours', 'theirs-only': 'Only in theirs', unpriced: 'No price given' }
+/** (Dane UAT 7.04) The Status chip wears the legend's colour — only in yours green, only in theirs red — so a row says which side has it
+    without the 3px bar alone; Matched and No price given stay plain (a pairing you made is a match). Whole-row tints would fight the
+    row's hover and the frozen Item column. */
+const STATUS_COLOR: Record<XrayRow['status'], 'green' | 'red' | 'default'> = { matched: 'default', 'yours-only': 'green', 'theirs-only': 'red', unpriced: 'default' }
 /** (REG-640, parity Q-14) What a row offers: *Not the same item* on a pair, *Same item as…* on a lone line. */
 export type RowAction = { label: string; onSelect: () => void }
 
@@ -98,7 +102,7 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
             <span className={styles.figure}><span className={styles.num}>{money(r.theirsMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.theirs, r.qty.unit)}</span> : null}</span>
           )),
           diff: () => cell('diff', styles.colDiff, diff === null ? <span className={styles.muted}>--</span> : <span className={styles.num} data-sign={diff < 0 ? 'less' : diff > 0 ? 'more' : 'same'}>{diff === 0 ? 'same' : `${diff < 0 ? '−' : '+'}${money(Math.abs(diff))}`}</span>),
-          status: () => cell('status', styles.colStatus, <MetaChip>{r.by === 'you' ? 'Paired by you' : STATUS_WORD[r.status]}</MetaChip>),
+          status: () => cell('status', styles.colStatus, <MetaChip color={r.by === 'you' ? 'default' : STATUS_COLOR[r.status]}>{r.by === 'you' ? 'Paired by you' : STATUS_WORD[r.status]}</MetaChip>),
         }
         const acts = rowActions?.(r) ?? []
         return (

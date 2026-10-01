@@ -25,7 +25,7 @@
   "module": "Contracts",
   "try": "Use the studio’s service agreement template",
   "how": "1. Keep \"Interior Design Service Agreement\" (marked \"Default\") picked\n2. Click \"Use template\"",
-  "expect": "The contract opens as a Draft with a \"From template\" chip; the top row shows Sophia Wong · 9765 4321 and her quote’s number and total",
+  "expect": "\"Use template\" reads \"Creating…\" for a moment, then the contract opens as a Draft with a \"From template\" chip; the top row shows Sophia Wong · 9765 4321 and her quote’s number and total",
   "in10": "Different from 1.0: 1.0 kept no contract record",
   "as": "Dane",
   "covers": [
@@ -48,8 +48,8 @@
   "chapter": 8,
   "scene": "Raise Sophia’s contract",
   "module": "Contracts",
-  "try": "Add the quote’s validity date with Smart Text",
-  "how": "1. Click at the end of clause 2’s paragraph (\"2. Contract sum\")\n2. Click \"Smart Text\" › \"Studio\" and find \"GST reg. no.\", then click \"‹ Studio\" to go back\n3. Click \"Quote\" and then \"Quote valid until\"",
+  "try": "Add the quote’s validity date with Insert a field",
+  "how": "1. Click at the end of clause 2’s paragraph (\"2. Contract sum\")\n2. Click \"Insert a field\" › \"Studio\" and find \"GST reg. no.\", then click \"‹ Studio\" to go back\n3. Click \"Quote\" and then \"Quote valid until\"",
   "expect": "Each record shows what it prints for Sophia (or \"Empty\"); Studio lists \"GST reg. no.\"; a \"Quote valid until\" chip appears where you clicked",
   "in10": "Different from 1.0: more records, each showing its value",
   "as": "Dane",
@@ -86,7 +86,7 @@
   "scene": "Get it ready to send",
   "module": "Contracts",
   "try": "Make Sophia read to the end and tick before signing",
-  "how": "1. Click \"eSignatures\" in the toolbar\n2. Under \"Before the client signs\", switch on \"Read to the end\" and \"Tick to accept\"\n3. In \"The words they tick\", type: I have read and agree to the service agreement.\n4. Close the panel",
+  "how": "1. Click \"eSignatures\" in the toolbar\n2. Under \"Before the client signs\", switch on \"Read to the end\" and \"Tick to accept\"\n3. \"The words they tick\" already reads \"I have read and agree to this document.\" — replace it with: I have read and agree to the service agreement.\n4. Close the panel",
   "expect": "The panel lists four fillable fields (Studio / Client signature and initial); both switches stay on and your words are kept",
   "in10": "Different from 1.0: only library documents had these checks",
   "as": "Dane",
@@ -304,8 +304,8 @@
   "module": "Notifications",
   "try": "See the studio was told she signed",
   "how": "1. Click \"Notifications\" (the bell) in the side navigation",
-  "expect": "The newest notice reads \"Sophia Wong signed Interior Design Service Agreement\" and opens her Contracts tab",
-  "in10": "Same as 1.0",
+  "expect": "The newest notice reads \"Sophia Wong signed Interior Design Service Agreement\"; it opens her Overview with the Move stage window at Won and her contract picked — press Cancel (Won comes in chapter 9)",
+  "in10": "Different from 1.0: the signed notice takes you to the next step, Won",
   "as": "Dane",
   "covers": [
    "CTR:CN-07"
@@ -389,7 +389,7 @@
   "module": "Contracts",
   "try": "Try sending a variation order with nowhere to sign",
   "how": "1. Close with ✕, then \"New Contract\" › \"From Template\" › \"Variations\" › \"Variation Order\" › \"Use template\"\n2. Click \"Send\"\n3. Click \"Show me\" on the message (or \"eSignatures\"), then \"Insert\" beside \"Client signature\"\n4. Close the contract with ✕",
-  "expect": "Send refuses: \"Before you send: There’s no Client signature field — insert one from eSignatures\"; after Insert a Client signature box ends the document",
+  "expect": "Send refuses: \"Before you send: There’s no Client signature field — insert one from eSignatures\"; after Insert a Client signature box is added where the cursor was — here at the end of the document, since nothing in it was clicked",
   "in10": "Different from 1.0: 1.0 only checked for an empty page",
   "as": "Dane",
   "covers": [

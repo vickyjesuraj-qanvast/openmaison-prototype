@@ -13,6 +13,7 @@
 .list { composes: list from '../om/filters-modal.module.css'; margin-top: 0; }   /* this modal's lists sit the pane's full 16 under their title */
 .row { composes: row from '../om/filters-modal.module.css'; }
 .rowTwo { composes: rowTwo from '../om/filters-modal.module.css'; }
+.rowGrow { composes: rowGrow from '../om/filters-modal.module.css'; }   /* (Dane's UAT 12.07) Quick filters: the two-line row that grows */
 .rowText { composes: rowText from '../om/filters-modal.module.css'; }
 .rowName { composes: rowName from '../om/filters-modal.module.css'; }
 .rowRole { composes: rowRole from '../om/filters-modal.module.css'; }
@@ -21,9 +22,6 @@
 
 .groupRule { height: 1px; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
 .noMatch { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding: var(--om-spacing-3) 0; }
-/* (REG-608) Quick filters: the row's one-line meaning after its name — primary with the rest of the row on hover. */
-.rowHelp { color: var(--om-color-on-surface-secondary); }
-.row:hover .rowHelp { color: var(--om-color-primary-default); }
 
 @media (max-width: 767px) {
   .sortRow { width: 100%; }

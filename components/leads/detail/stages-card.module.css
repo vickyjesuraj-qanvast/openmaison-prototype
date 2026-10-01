@@ -92,3 +92,11 @@
 .overdue { color: var(--om-color-tertiary-red-default); }
 .row[data-static] { cursor: default; }
 .row[data-static]:hover { background: none; }
+
+/* (Dane UAT 5.05 · 5.13) The Next follow-up line carries a day and a time ("overdue · Tue, 29 Sep ’26 · 10:00 AM"). Where the row cannot hold
+   it beside the name and the task, the date takes a second line under them — it never crushes the task to a letter or runs over the
+   name — and on a card too narrow even for that, it wraps at its spaces. A row that fits stays the stage row's one line. */
+.row[data-wrap] { height: auto; }   /* its one line is the stage row's 36 (8 · 20 · 8); the touch rule's 44 floor still holds */
+.row[data-wrap] .label { flex-wrap: wrap; row-gap: 0; }
+.row[data-wrap] .nameGroup { flex: 1 1 160px; }
+.row[data-wrap] .meta { flex-shrink: 1; min-width: 0; flex-wrap: wrap; white-space: normal; }

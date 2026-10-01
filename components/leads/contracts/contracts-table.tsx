@@ -15,11 +15,16 @@ import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import type { Contract } from '@/lib/db/schema'
-import { displayDate } from '@/lib/format'
+import { displayDate, displayDateTime } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
 import { CLIENT_SIGNED_RULE, UNSIGN_ROLE_RULE } from '@/lib/contracts/policy'
 import { awaitingLine } from '@/lib/contracts/model'
 import styles from './contracts-table.module.css'
+
+/** (Dane UAT 8.23) A date cell: the mock's date, its time in the house tooltip on hover (a finger never leaves one behind). */
+function DateTip({ at }: { at: Date }) {
+  return <Tooltip label={displayDateTime(at)}><span data-testid="contract-date">{displayDate(at)}</span></Tooltip>
+}
 
 /** Row kebab — not mocked for Contracts; copied from the Quotes row kebab (910:36723, REG-177…179):
  *  Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. (UX audit C5 · C9) After Copy Link: Send a reminder (out for
@@ -206,21 +211,22 @@ function ContractRowView({
         </span>
       </div>
 
-      {/* Created · Signed Copy · Sent · Updated — "17 Jul ‘26" / file name 14/Regular ink, "-" when empty (931:38692). */}
-      <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(contract.createdAt)}</div>
+      {/* Created · Signed Copy · Sent · Updated — "17 Jul ‘26" / file name 14/Regular ink, "-" when empty (931:38692). (Dane UAT 8.23) The mock's
+          dates and widths stay; hovering one says its date and time in the house tooltip ("17 Jul ’26, 3:05 PM"). */}
+      <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}><DateTip at={contract.createdAt} /></div>
       <div className={`${styles.cell} ${styles.colSignedCopy} ${L.pinned('signedCopy') ? styles.pin : ''}`} role="cell" data-col="signedCopy" data-pin-edge={L.edge('signedCopy') || undefined} style={L.style('signedCopy')}>
         <span className={styles.oneLine}>{contract.signedCopy ?? '-'}</span>
       </div>
       <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>
         {contract.sentAt ? (
           <span className={styles.sentCell}>
-            <span>{displayDate(contract.sentAt)}</span>
+            <DateTip at={contract.sentAt} />
             {/* (REG-633, contracts parity Q-17) the client's first open of the link, while it is out for signature */}
             {contract.viewedAt && contract.status !== 'Draft' ? <span className={styles.viewed} data-testid="contract-viewed">Viewed {displayDate(contract.viewedAt)}</span> : null}
           </span>
         ) : '-'}
       </div>
-      <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(contract.updatedAt ?? contract.createdAt)}</div>
+      <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}><DateTip at={contract.updatedAt ?? contract.createdAt} /></div>
 
       {/* Row hover actions — not mocked for Contracts; the Quotes "Hover button" (910:36644 / 910:36709) copied:
           View + kebab, level-1 shadow, right 24, vertically centred in the 68 row. */}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useShortcutsHere } from '@/lib/keys/store'
+import { newId as newUuid } from '@/lib/uid'
 import { VISUALIZER_KEYS } from '@/lib/keys/registry'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -297,7 +298,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     const count = kind === 'edit' || kind === 'restyle' || kind === 'transfer' ? used.variants : 1
     /* (REG-704, AI credits A-05 · B-12) the charge is taken before the work, keyed by the job's own id (so a retry can't charge twice);
        a refusal opens its moment and nothing starts. The cheaper way (Q-33): one version, or Fast, when that one fits. */
-    const jobId = crypto.randomUUID(), ref = `render:${jobId}`, action = renderAction(kind, used.quality), need = costOf(action, count)
+    const jobId = newUuid(), ref = `render:${jobId}`, action = renderAction(kind, used.quality), need = costOf(action, count)
     const can = credits ? spendable(credits) : null
     const fits = (n: number) => can == null || n <= can
     const smaller = count > 1 && fits(costOf(action, 1))

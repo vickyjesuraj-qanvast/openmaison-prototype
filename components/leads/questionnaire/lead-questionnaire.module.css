@@ -20,6 +20,15 @@
 .layout { display: flex; align-items: flex-start; gap: var(--om-spacing-6); min-width: 0; }
 .questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 1 1 auto; min-width: 0; }
 .summary { flex: 0 0 480px; width: 480px; }
+/* (Dane's UAT 5.17) Each question card's frame: it travels to its new place once answered, then pulses once there — the house attention
+   pulse (the quote Items' `data-fresh`): a 14% primary wash over the card that holds, then fades. */
+.item { position: relative; border-radius: var(--om-radius-1); }
+.item[data-fresh]::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
+  background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent);
+  animation: fresh 1.4s ease-out forwards;
+}
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Responsive (REG-269): ≤1024 the questions + summary row stacks — the summary card goes LAST (it is
    already second in the DOM) and full-width; question cards stay fluid. Desktop ≥1025 keeps the mock's

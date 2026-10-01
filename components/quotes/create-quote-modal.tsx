@@ -17,6 +17,7 @@ import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
+import { newId } from '@/lib/uid'
 import type { QuoteTemplate } from '@/lib/db/schema'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
@@ -82,8 +83,13 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setMode(preselect ? { kind: 'all', selectedId: preselect } : { kind: 'rail' }) } }   // every opening starts afresh (render-phase adjust)
   const client = clients?.find((c) => c.id === clientId) ?? null
+  /* (Dane UAT 6.41) Studio-wide the Client decides everything after it: the field takes the focus as the modal opens (its active stroke
+     says "start here", and typing searches it), and a press that needs a client first brings the caret back to it with its error. */
+  const clientBox = useRef<HTMLDivElement>(null)
+  const focusClient = () => clientBox.current?.querySelector<HTMLElement>('button[role="combobox"]')?.focus({ preventScroll: true })
+  const needsClient = () => { if (!clients || clientId) return false; setClientError(true); focusClient(); return true }
   const start = (templateId: string | null) => {
-    if (clients && !clientId) { setClientError(true); return }
+    if (needsClient()) return
     onStart(templateId, clientId)
   }
   /* (REG-627, parity Q-16) Upload a quote: pick a file, read it here, show the lines, then the page creates the quote with them. */
@@ -91,9 +97,10 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   /* the press again once credits are in (the top-up's `then`) — through a ref, so the read never names itself */
   const again = useRef<(file: File) => void>(() => {})
   const pickFile = async (file: File) => {
+    if (needsClient()) return   // (Dane UAT 6.41) the client is checked before the file is read and its credits taken
     /* (REG-704, AI credits T-26 · Q-29) reading a quote is Digitize quote in 1.0 — 5 AI credits, taken at the read and keyed by the quote
        it becomes; a refusal opens its moment and nothing is read; a file that can't be read gives them back */
-    const quoteId = crypto.randomUUID(), ref = `quote:${quoteId}`
+    const quoteId = newId(), ref = `quote:${quoteId}`
     const charged = await chargeAI({ action: 'quote_digitize', ref, what: 'quote', needed: costOf('quote_digitize'), retry: () => again.current(file) })
     if (charged === false) return
     setMode({ kind: 'upload', name: file.name, read: null, quoteId, refunded: 0 })
@@ -110,15 +117,25 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
     setMode((m) => (m.kind === 'upload' && m.quoteId === quoteId ? { ...m, read, refunded } : m))
   }
   useEffect(() => { again.current = (file) => { void pickFile(file) } })
+  /* (Dane UAT 6.41) Upload a quote asks for the client BEFORE the file chooser — the read (and its 5 AI credits) never runs for a quote
+     that has nowhere to go. */
+  const chooseFile = () => { if (needsClient()) return; fileRef.current?.click() }
   const createFromUpload = () => {
     if (mode.kind !== 'upload' || !mode.read?.ok || !onUpload) return
-    if (clients && !clientId) { setClientError(true); return }
+    if (needsClient()) return
     onUpload(mode.read, clientId, mode.quoteId)
   }
   /* A template's kebab menu and the chooser dialogs render over this panel, and the surface policy skips descendants (REG-287),
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
   useEscapeLayer(open && menuFor === null, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
   useDialogFocus(open, panel)
+  /* (Dane UAT 6.41) …after the dialog has taken the focus: the Client field, while none is picked (Tools › Quotes) */
+  const hasClients = !!clients
+  useEffect(() => {
+    if (!open || !hasClients) return
+    const r = requestAnimationFrame(() => clientBox.current?.querySelector<HTMLElement>('button[role="combobox"]')?.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(r)
+  }, [open, hasClients])
   const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow follows the body's scroll (REG-322)
   /* (REG-489) Only published templates can start a quote; drafts and archived ones stay in Company › Templates. */
   const picker: PickerData | null = useMemo(() => (render ? { ...render.extras, templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
@@ -147,7 +164,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
               {clients ? (
                 /* (REG-422) Studio-wide: the Client field decides which lead the quote belongs to; a tile pressed before a pick shows the field's error. */
                 <section className={styles.block} aria-label="Client">
-                  <TextField label="Client" mode="select" required value={client?.name ?? ''} options={clients.map((c) => c.name)}
+                  <TextField label="Client" mode="select" searchable boxRef={clientBox} required value={client?.name ?? ''} options={clients.map((c) => c.name)}
                              error={clientError ? 'Choose a client first' : undefined}
                              onChange={(name) => { setClientId(clients.find((c) => c.name === name)?.id ?? null); setClientError(false) }} />
                 </section>
@@ -172,7 +189,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                     <>
                       <p className={styles.uploadNote} role="status" data-tone="error"><Icon name="error" size={20} weight={300} /><span>We couldn’t read {mode.name}.{mode.refunded > 0 ? ` Your ${mode.refunded} AI credits are back.` : ''}</span></p>
                       <p className={styles.uploadHelp}>{mode.read.reason === 'empty' ? 'The file has no lines we could use.' : 'Upload a spreadsheet (XLSX · CSV) of the quote’s lines, or start from a blank quote.'}</p>
-                      <span><Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={() => fileRef.current?.click()}>Choose another file</Button></span>
+                      <span><Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={chooseFile}>Choose another file</Button></span>
                     </>
                   )}
                 </section>
@@ -239,7 +256,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                   <section className={styles.block} aria-label="More ways to start">
                     <span className={styles.eyebrow}>More ways to start</span>
                     <div className={styles.list}>
-                      <button type="button" className={styles.row} data-testid="upload-quote-row" onClick={onUpload ? () => fileRef.current?.click() : comingSoon}>
+                      <button type="button" className={styles.row} data-testid="upload-quote-row" onClick={onUpload ? chooseFile : comingSoon}>
                         <span className={styles.glyph}><Icon name="upload_file" size={20} weight={300} /></span>
                         <span className={styles.rowText}>
                           <span className={styles.rowTitle}>Upload a quote <MetaChip>{`PDF · XLS · JPG · ${costOf('quote_digitize')} AI credits`}</MetaChip></span>

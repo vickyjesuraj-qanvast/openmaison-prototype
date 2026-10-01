@@ -100,6 +100,27 @@ export function inputDate(d: Date): string {
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`
 }
 
+/** (Dane UAT 5.05) Whether a due date carries a time: a date-only due is stamped at local midnight (`startOfDay` below), so midnight
+    means "no time" and prints none. */
+export const hasTime = (d: Date): boolean => d.getHours() !== 0 || d.getMinutes() !== 0
+
+/** (Dane UAT 5.13 · 5.05) A date people plan by — a task's due, a follow-up, a quote's Due or Valid until, On hold till — with its
+    day, "Sat, 3 Oct ’26" (`displayDateLong`, REG-167), and the time after a dot when it has one: "Sat, 3 Oct ’26 · 10:00 AM".
+    Created, updated, sent and history dates keep `displayDate`: they look back, not ahead. */
+export function displayDue(d: Date): string {
+  return hasTime(d) ? `${displayDateLong(d)} · ${displayTime(d)}` : displayDateLong(d)
+}
+
+/** (Dane UAT 4.22) How far off a due date is, in calendar days as `isOverdue` counts them: "today" · "tomorrow" · "in 3 days" ·
+    "1 day late" · "3 days late". */
+export function dueDistance(d: Date, now: number): string {
+  const days = Math.round((startOfDay(d) - startOfDay(new Date(now))) / 86_400_000)
+  if (days === 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days > 1) return `in ${days} days`
+  return `${-days} ${days === -1 ? 'day' : 'days'} late`
+}
+
 /** "1d ago"-style relative time, as on kanban cards. */
 export function relativeTime(d: Date, now = new Date()): string {
   const s = Math.max(0, (now.getTime() - d.getTime()) / 1000)
@@ -198,7 +219,7 @@ export function moneySGD(minor: number): string {
   return `S$${money(minor)}`
 }
 
-/** Local-midnight timestamp — task due dates are stamped at local midnight. */
+/** Local-midnight timestamp — a date-only task due is stamped at local midnight (one with a time keeps it, `hasTime`). */
 export const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 /** Overdue = due on a calendar day BEFORE today (same-day tasks are 'Due today'). */
 export const isOverdue = (due: Date | null | undefined, now: number) =>

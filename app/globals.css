@@ -5,6 +5,13 @@
  * the component, matching the design system's own convention.
  */
 
+/* (REG-896, Dane UAT 8.09 — "'view the quote' can be in primary colour") The cascade's first layer, named before anything else so it
+   sits BELOW every house layer (om-text-link, om-table-core, om-card-table …, REG-727 · REG-729). An unlayered rule beats any layered
+   one whatever its specificity, so the bare `a { color: inherit }` below used to take the house text link's primary away from every
+   <a> / <Link> that composes it (the signing page's quote link read body ink). The anchor reset lives in this layer now: a bare <a>
+   still inherits, a module's own (unlayered) class still wins, and a house layer's colour reaches its anchors. */
+@layer om-reset;
+
 @import '@openmaison/tokens/css/theme-light.css';
 @import '@openmaison/tokens/css/theme-dark.css';
 
@@ -116,9 +123,14 @@ ol {
   list-style: none;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* (REG-896) In the lowest layer (declared at the top of this file), so a house layer's link colour wins over it. The other element
+   resets stay unlayered on purpose: moving them would let house layers' own margins and box-sizing through (the tab toolbar's count
+   badge declares content-box but has always drawn border-box) — a visible change nobody asked for. */
+@layer om-reset {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 img,

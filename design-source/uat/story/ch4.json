@@ -36,8 +36,8 @@
   "scene": "A new enquiry by hand",
   "module": "Leads",
   "try": "Get warned about a lead you already have",
-  "how": "1. Click \"Add Lead\", then \"Create New Lead\"\n2. \"Lead name\": Test Duplicate · \"Lead phone number\": 9123 8803\n3. Press \"Create\"\n4. In the warning, press \"Open existing lead\"",
-  "expect": "\"A lead with this phone already exists\" names Kenji Sato · 9123 8803 · Lost; the button opens his lead and nothing new is created.",
+  "how": "1. Click \"Add Lead\", then \"Create New Lead\"\n2. \"Lead name\": Test Duplicate · \"Lead phone number\": 9123 8803\n3. Press \"Create\"\n4. In the warning, press \"Open existing lead\"\n5. Look at his lead in the new browser tab, close that tab, then press \"Cancel\" on your form",
+  "expect": "\"A lead with this phone already exists\" names Kenji Sato · 9123 8803 · Lost; the button opens his lead in a new browser tab while your form stays as you left it; nothing new is created.",
   "in10": "Different from 1.0: \"Create anyway\" creates it, not held for review",
   "as": "Dane",
   "covers": [
@@ -81,7 +81,7 @@
   "scene": "Sophia Wong gets in touch",
   "module": "Leads",
   "try": "Save Sophia's lead with her floor plan attached",
-  "how": "1. Change \"Estimated budget (S$)\" to 60,000\n2. \"Condition\" Resale · \"Key collection\" in 3 months (fill any custom field your studio still has)\n3. Under \"Attach files (optional)\" press \"Attach\" and pick sophia-floor-plan.pdf\n4. Press \"Create\"",
+  "how": "1. Change \"Estimated budget (S$)\" to 60,000\n2. \"Condition\" Resale · \"Key collection\" in 3 months (fill any custom field your studio still has)\n3. Open \"Additional info\" and scroll to its end; under \"Attach files (optional)\" press \"Attach\" and pick sophia-floor-plan.pdf\n4. Press \"Create\"",
   "expect": "\"Successfully Created\"; Sophia Wong tops the list in New, with a coloured band on the left and \"Assign\" under Members.",
   "in10": "Different from 1.0: one name field; only name and phone required",
   "as": "Dane",
@@ -393,7 +393,7 @@
   "module": "Leads",
   "try": "Add the District and follow-up columns",
   "how": "1. Click the \"Column settings\" icon (right of Filters)\n2. Switch on \"District\", \"Next follow-up\" and \"Last contact\"\n3. Press \"Done\"",
-  "expect": "Three columns appear; on Sophia's row DISTRICT reads East and LAST CONTACT reads \"No contact yet\".",
+  "expect": "Three columns appear; on Sophia's row DISTRICT reads East and LAST CONTACT reads \"No contact yet\"; NEXT FOLLOW-UP shows when (day, date and time over \"in n days\"), while TASKS names the task.",
   "in10": "New in 2.0",
   "as": "Dane",
   "covers": [

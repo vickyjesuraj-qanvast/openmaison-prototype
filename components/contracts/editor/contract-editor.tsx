@@ -14,6 +14,7 @@ import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { ContractSkeleton } from './contract-skeleton'
 import { MSG } from '@/lib/forms'
+import { copyText } from '@/lib/clipboard'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
@@ -45,6 +46,7 @@ import { DocEditor, IDLE_STATE, type DocEditorHandle, type DocState } from './do
 import { DocToolbar } from './doc-toolbar'
 import { OutlinePane } from './outline-pane'
 import { ESignPanel } from './esign-panel'
+import { TitleInput } from './title-input'
 import { AutomationDialog, AutomationPopover, MarkSignedDialog, RecipientDialog, SaveTemplateDialog, SendContractDialog } from './dialogs'
 import quoteStyles from '@/components/quotes/editor/quote-editor.module.css'
 import styles from './contract-editor.module.css'
@@ -54,7 +56,7 @@ const AUTOSAVE_MS = 600
 /**
  * The contract editor (REG-534, no mock; the reference screens on 2.0's pieces): the quote editor's header (crumb · [title ▾]
  * · chips · Saved · [status ▾] · Send · Preview · automation · copy link · kebab · ✕), a meta row (title · recipient · date),
- * the formatting bar with Smart Text ▾ and eSignatures, then the canvas — Outline · paper · eSignatures drawer. Every change
+ * the formatting bar with Insert a field ▾ and eSignatures, then the canvas — Outline · paper · eSignatures drawer. Every change
  * autosaves 600 ms after the last keystroke; close and Preview flush first. Send = 1.0's WhatsApp signing link.
  */
 export function ContractEditor({ data, from }: { data: ContractEditorData; from?: string }) {
@@ -209,7 +211,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     if (status === 'Draft' && blockIssue) { sayBlocked(); return }   // (REG-634, parity Q-22) sharing is sending
     if (status !== 'Draft') { void copy(); return }
     /* (UX audit C8, supersedes sweep S2 #2's order) the checks above first, then the copy, then the share — never Sent over a failed copy */
-    const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink({ id: contract.id, bundleId: contract.bundleId, status })) : Promise.reject(new Error('no clipboard'))
+    const write = copyText(contractLink({ id: contract.id, bundleId: contract.bundleId, status }))
     void write.then(() => { void shareDraft() }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
   }
   /* A refused save puts the switch back (sweep S2) — the panel said on while the record said off. */
@@ -287,8 +289,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                         onClose={close} />
 
         <div className={styles.meta} data-testid="contract-meta">
-          <input className={styles.titleInput} value={title} placeholder="Contract title" aria-label="Contract title" maxLength={120} readOnly={signedLock} aria-readonly={signedLock || undefined}
-                 onChange={(e) => { if (signedLock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
+          <TitleInput value={title} placeholder="Contract title" aria-label="Contract title" maxLength={120} readOnly={signedLock} aria-readonly={signedLock || undefined}
+                      onChange={(e) => { if (signedLock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
           <div className={styles.metaEnd}>
             <Tooltip label={signedLock ? 'Signed — the recipient stays as signed' : 'Edit recipient'}>
               <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setRecipientOpen(true) }} aria-disabled={signedLock || undefined} data-testid="contract-recipient">
@@ -394,7 +396,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
             ) : (
               <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
                 <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={setDocState} label="Contract document"
-                           placeholder="Start writing, or insert a record with Smart Text…" readOnly={status === 'Signed'} chipTip={chipTip} />
+                           placeholder="Start writing, or insert a field…" readOnly={status === 'Signed'} chipTip={chipTip} />
               </div>
             )}
           </div>

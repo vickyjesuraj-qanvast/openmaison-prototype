@@ -19,6 +19,11 @@
 
 .viewWrap { display: inline-flex; }
 
+/* (Dane's UAT 1.05) "View all" — the DS text button, 8 after the pill while it holds a scope. Folded (the pill's words leave it no room on
+   a phone row, REG-354) it leaves the flow but keeps its width, so the row can measure whether it fits again. */
+.viewAll { display: inline-flex; align-items: center; flex-shrink: 0; margin-left: var(--om-spacing-2); }
+.viewAll[data-folded] { position: absolute; visibility: hidden; pointer-events: none; }
+
 /* ── Mobile (1082:25269, REG-298/299) ─────────────────────────────────────────────────────────────────
    The mocked row is the pill on the left and the filter glyph on the right, both 36 — search moved to the top
    bar and the view toggle is gone (one view: cards). `.right` dissolves into the bar so the filter can sit at

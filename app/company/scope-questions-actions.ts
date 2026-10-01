@@ -60,3 +60,12 @@ export async function moveScopeQuestion(id: string, dir: 'up' | 'down'): Promise
   await db.transaction(async (tx) => { for (let k = 0; k < ids.length; k++) await tx.update(studioScopeQuestions).set({ sortOrder: k }).where(eq(studioScopeQuestions.id, ids[k]!)) })
   touch()
 }
+/** (Dane UAT 3.38) A dragged order, written whole: the bank's every question, in the order given — anything else is refused. */
+export async function reorderScopeQuestions(ids: string[]): Promise<void> {
+  await guard()
+  const list = await db.select({ id: studioScopeQuestions.id }).from(studioScopeQuestions)
+  const known = new Set(list.map((q) => q.id))
+  if (ids.length !== list.length || new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) throw new Error('the order names every question once')
+  await db.transaction(async (tx) => { for (let k = 0; k < ids.length; k++) await tx.update(studioScopeQuestions).set({ sortOrder: k }).where(eq(studioScopeQuestions.id, ids[k]!)) })
+  touch()
+}

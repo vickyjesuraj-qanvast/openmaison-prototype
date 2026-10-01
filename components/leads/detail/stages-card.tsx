@@ -4,7 +4,7 @@ import type { ParkedStep, StageStep } from '@/lib/leads/detail'
 import type { LastContact } from '@/lib/leads/queries'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
-import { displayDate } from '@/lib/format'
+import { displayDate, displayDateLong, displayDue } from '@/lib/format'
 import { Card, CardRule } from './card'
 import styles from './stages-card.module.css'
 
@@ -116,8 +116,9 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
                 <span className={styles.nameGroup}>
                   <span className={styles.name}>{parked.stage}</span>
                   {/* (REG-607) The reason the lead was parked, and its detail — 1.0's close wizard records both; the row reads them back. */}
+                  {/* (Dane UAT 5.13) On Hold's till is a date to plan by: it wears its day, as the listing's On hold till does. */}
                   {parked.stage === 'On Hold' && parked.till ? (
-                    <span className={styles.till}>till {displayDate(new Date(parked.till))}{parked.reason ? ` · ${parked.reason}` : ''}</span>
+                    <span className={styles.till}>till {displayDateLong(new Date(parked.till))}{parked.reason ? ` · ${parked.reason}` : ''}</span>
                   ) : parked.reason ? (
                     <span className={styles.till} title={`${parked.reason}${parked.detail ? ` · ${parked.detail}` : ''}`}>{parked.reason}{parked.detail ? ` · ${parked.detail}` : ''}</span>
                   ) : null}
@@ -144,7 +145,7 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
             </span>
             <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
           </button>
-          <button type="button" className={styles.row} data-testid="next-follow-up" data-empty={nextFollowUp ? undefined : ''} onClick={nextFollowUp ? onOpenFollowUp : onSetFollowUp}>
+          <button type="button" className={styles.row} data-testid="next-follow-up" data-empty={nextFollowUp ? undefined : ''} data-wrap="" onClick={nextFollowUp ? onOpenFollowUp : onSetFollowUp}>
             <Icon name="event" size={20} weight={300} className={styles.icon} />
             <span className={styles.label}>
               <span className={styles.nameGroup}>
@@ -153,7 +154,7 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
               </span>
               <span className={styles.meta}>
                 {nextFollowUp?.overdue ? <><span className={styles.overdue} data-overdue="">overdue</span><span className={styles.dot}>·</span></> : null}
-                <span>{nextFollowUp ? displayDate(nextFollowUp.dueAt) : '--'}</span>
+                <span>{nextFollowUp ? displayDue(nextFollowUp.dueAt) : '--'}</span>   {/* (Dane UAT 5.05 · 5.13) date · time, as REG-608 has it: "Sat, 3 Oct ’26 · 10:00 AM" */}
               </span>
             </span>
             <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />

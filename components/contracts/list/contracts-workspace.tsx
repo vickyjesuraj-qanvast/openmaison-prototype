@@ -1,6 +1,7 @@
 'use client'
 
 import { useRememberShape } from '@/lib/ghost-shape'
+import { copyText } from '@/lib/clipboard'
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
@@ -71,6 +72,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const [importOpen, setImportOpen] = useState(false)
   const [deletedOpen, setDeletedOpen] = useState(false)
   const [pending, setPending] = useState<Pending | null>(null)
+  const [creating, setCreating] = useState(false)   /* (Dane UAT 8.02) the lead question reads "Creating…" until the editor takes over */
   const [unsign, setUnsign] = useState<{ contract: Contract; to: 'Draft' | 'Sent to Client' } | null>(null)   /* (REG-631, parity Q-04) */
   const [marking, setMarking] = useState<Contract | null>(null)   /* (sweep S2 #3) Signed from a list asks for its date and copy */
   const [archivedOpen, setArchivedOpen] = useState(false)   /* (sweep S2 · U-07) */
@@ -103,13 +105,16 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const from = '/contracts'
   const openEditor = (id: string) => router.push(withFrom(`/contracts/${id}`, from))
 
-  /* New Contract: the kind first, then the lead, then the editor. */
+  /* New Contract: the kind first, then the lead, then the editor. (Dane UAT 8.02, REG-659) The lead question stays, reading "Creating…", until
+     the contract exists and its editor takes over the page; a refusal leaves it open to try again. One contract per press (RACE-05). */
   const createFor = async (leadId: string, p: Pending) => {
+    if (creating) return
+    setCreating(true)
     try {
       const id = await createContractDoc(p.kind === 'blank' ? { leadId } : p.kind === 'template' ? { leadId, templateId: p.templateId } : { leadId, upload: { fileName: p.fileName, signed: p.signed, title: p.title } })
       snackbar({ message: p.kind === 'import' ? (p.signed ? 'Signed contract imported' : 'Contract imported') : 'Contract created' })
       openEditor(id)
-    } catch { fail('create the contract') }
+    } catch { fail('create the contract'); setCreating(false) }
   }
   const onNew = (kind: 'blank' | 'template' | 'import' | 'ai') => {
     if (kind === 'blank') setPending({ kind: 'blank' })
@@ -137,7 +142,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         const why = sendBlock(c); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return }
         const q = quoteBlockOf(c); if (q) { sayQuoteBlock(c, q); return }
       }
-      const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink(c)) : Promise.reject(new Error('no clipboard'))
+      const write = copyText(contractLink(c))
       if (c.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(c.id), 'Signing link copied — the contract is Sent to Client now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
       else void write.then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
     }
@@ -201,7 +206,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates}
                                 onUse={(templateId) => { setPickerOpen(false); setPending({ kind: 'template', templateId }) }} onStarter={() => { setPickerOpen(false); setPending({ kind: 'template', templateId: null }) }} />
         <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={(o) => { setImportOpen(false); setPending({ kind: 'import', ...o }) }} />
-        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} onPick={(leadId) => { const p = pending; setPending(null); if (p && leadId) void createFor(leadId, p) }} />
+        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} busy={creating} onPick={(leadId) => { const p = pending; if (p && leadId) void createFor(leadId, p) }} />
         <DeletedContractsSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb="Tools / Contracts" showLead
                                onRestore={(ids) => run('restore', () => restoreContracts(ids), ids.length === 1 ? 'Contract restored' : `${ids.length} contracts restored`)}
                                onDeleteForever={(ids) => run('delete', () => deleteContractsForever(ids), 'Contract deleted forever')}

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Reorder, useDragControls } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -17,7 +18,7 @@ import { ReadOnlyNote } from './read-only-note'
 import { runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import type { StudioScopeQuestion } from '@/lib/db/schema'
 import { BANK_TYPES, BANK_TYPE_LABELS, isBankType, needsOptions, parseBankOptions, type BankType } from '@/lib/company/question-bank'
-import { createScopeQuestion, deleteScopeQuestion, moveScopeQuestion, setScopeQuestionFlags, updateScopeQuestion } from '@/app/company/scope-questions-actions'
+import { createScopeQuestion, deleteScopeQuestion, moveScopeQuestion, reorderScopeQuestions, setScopeQuestionFlags, updateScopeQuestion } from '@/app/company/scope-questions-actions'
 import { MSG } from '@/lib/forms'
 import styles from './questionnaire-view.module.css'
 
@@ -52,6 +53,16 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
     setRows((rs) => { const i = rs.findIndex((x) => x.id === q.id), j = dir === 'up' ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= rs.length) return rs; const n = [...rs]; [n[i], n[j]] = [n[j]!, n[i]!]; return n })
     void run('move the question', () => moveScopeQuestion(q.id, dir), 'Order saved', prev)
   }
+  /* (Dane UAT 3.38) Drag a question by its handle (the task template's steps, motion's Reorder): the list follows the pointer and the order
+     is written once, on the drop — "Order saved", or put back with the refusal. The arrows stay for the keyboard and a finger. */
+  const latest = useRef(rows); useEffect(() => { latest.current = rows })
+  const before = useRef<StudioScopeQuestion[] | null>(null)
+  const dropped = () => {
+    const prev = before.current; before.current = null
+    const now = latest.current
+    if (!prev || prev.map((q) => q.id).join() === now.map((q) => q.id).join()) return
+    void run('move the question', () => reorderScopeQuestions(now.map((q) => q.id)), 'Order saved', prev)
+  }
   return (
     <CompanyShell title="Questionnaire" from={from} skeleton={<QuestionnaireGhost />}>
       <div className={styles.layout} data-testid="questionnaire-bank">
@@ -67,7 +78,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
           {rows.length === 0 ? (
             <p className={styles.empty} data-testid="bank-empty">No questions yet — add the first one, and every new lead will start with it.</p>
           ) : (
-            <div className={styles.table} role="table" aria-label="Questions" data-card-table="">
+            <div className={styles.table} role="table" aria-label="Questions" data-card-table="" data-reorder={canEdit || undefined}>
               {/* (REG-614) The Notifications settings' event table: a bordered list under a caption head, every switch under its own
                   column name, the actions (order · edit · delete) at the row's end. The rows used to carry ad-hoc switch labels. */}
               <div className={styles.thead} role="row">
@@ -76,31 +87,13 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
                 <span role="columnheader" className={styles.col}>Active</span>   {/* (sweep S4 · U-10) one word with Settings' custom fields */}
                 <span role="columnheader" className={styles.actionsHead} aria-label="Actions" />
               </div>
-              {rows.map((q, i) => {
-                const t = isBankType(q.questionType) ? q.questionType : 'text'
-                const opts = parseBankOptions(q.options)
-                return (
-                  <div key={q.id} className={styles.trow} role="row" data-testid="bank-question" data-enabled={q.isEnabled || undefined}>
-                    <span className={styles.text} role="cell">
-                      <span className={styles.question}>{q.question}</span>
-                      <span className={styles.meta}><MetaChip>{BANK_TYPE_LABELS[t]}</MetaChip>{opts.length ? <span className={styles.options}>{opts.join(' · ')}</span> : null}</span>
-                    </span>
-                    <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isRequired} isDisabled={!canEdit} aria-label={`${q.question} required`} onChange={(on: boolean) => flag(q, { required: on })} /></label></span>
-                    <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isEnabled} isDisabled={!canEdit} aria-label={`${q.question} active`} onChange={(on: boolean) => flag(q, { enabled: on })} /></label></span>
-                    <span className={styles.actions} role="cell">
-                      {canEdit ? (
-                        <>
-                          {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
-                          <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move “${q.question}” up`} size={24} variant="bare" iconSize={18} disabled={i === 0} onClick={() => move(q, 'up')} /></Tooltip>
-                          <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move “${q.question}” down`} size={24} variant="bare" iconSize={18} disabled={i === rows.length - 1} onClick={() => move(q, 'down')} /></Tooltip>
-                          <Tooltip label="Edit"><IconButton icon="edit" label={`Edit “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={() => setEditing({ q })} /></Tooltip>
-                          <Tooltip label="Delete"><IconButton icon="delete" label={`Delete “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={() => setDeleting(q)} /></Tooltip>
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
-                )
-              })}
+              <Reorder.Group as="div" axis="y" values={rows} onReorder={(next: StudioScopeQuestion[]) => setRows(next)} className={styles.rowGroup} role="rowgroup">
+                {rows.map((q, i) => (
+                  <BankRow key={q.id} q={q} index={i} last={i === rows.length - 1} canEdit={canEdit}
+                           onFlag={(patch) => flag(q, patch)} onMove={(dir) => move(q, dir)} onEdit={() => setEditing({ q })} onDelete={() => setDeleting(q)}
+                           onLift={() => { before.current = latest.current }} onDrop={dropped} />
+                ))}
+              </Reorder.Group>
             </div>
           )}
         </section>
@@ -122,6 +115,44 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
       <ConfirmDialog open={!!deleting} title="Delete this question?" message={deleting ? `“${deleting.question}” leaves the bank. Leads that already carry it keep their copy.` : undefined} confirmLabel="Delete"
                      onCancel={() => setDeleting(null)} onConfirm={() => { const q = deleting; setDeleting(null); if (q) { const prev = rows; setRows((rs) => rs.filter((x) => x.id !== q.id)); void run('delete the question', () => deleteScopeQuestion(q.id), 'Question deleted', prev) } }} />
     </CompanyShell>
+  )
+}
+
+/** One question of the bank: (Dane UAT 3.38) the drag handle first for Owners and Admins, the question with its type and options, the two
+    switches, the actions. A row on motion's Reorder, dragged by its handle only. */
+function BankRow({ q, index, last, canEdit, onFlag, onMove, onEdit, onDelete, onLift, onDrop }: {
+  q: StudioScopeQuestion; index: number; last: boolean; canEdit: boolean
+  onFlag: (patch: { enabled?: boolean; required?: boolean }) => void; onMove: (dir: 'up' | 'down') => void; onEdit: () => void; onDelete: () => void
+  onLift: () => void; onDrop: () => void
+}) {
+  const controls = useDragControls()
+  const [dragging, setDragging] = useState(false)
+  const t = isBankType(q.questionType) ? q.questionType : 'text'
+  const opts = parseBankOptions(q.options)
+  return (
+    <Reorder.Item as="div" value={q} dragListener={false} dragControls={controls} className={styles.trow} role="row" data-testid="bank-question" data-enabled={q.isEnabled || undefined} data-dragging={dragging || undefined}
+                  onDragStart={() => { setDragging(true); onLift() }} onDragEnd={() => { setDragging(false); onDrop() }}>
+      <span className={styles.lead} role="cell">
+        {canEdit ? <button type="button" className={styles.handle} aria-label={`Drag “${q.question}” to reorder`} data-testid="bank-question-handle" onPointerDown={(e) => controls.start(e)}><Icon name="drag_indicator" size={20} weight={300} /></button> : null}
+        <span className={styles.text}>
+          <span className={styles.question}>{q.question}</span>
+          <span className={styles.meta}><MetaChip>{BANK_TYPE_LABELS[t]}</MetaChip>{opts.length ? <span className={styles.options}>{opts.join(' · ')}</span> : null}</span>
+        </span>
+      </span>
+      <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isRequired} isDisabled={!canEdit} aria-label={`${q.question} required`} onChange={(on: boolean) => onFlag({ required: on })} /></label></span>
+      <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isEnabled} isDisabled={!canEdit} aria-label={`${q.question} active`} onChange={(on: boolean) => onFlag({ enabled: on })} /></label></span>
+      <span className={styles.actions} role="cell">
+        {canEdit ? (
+          <>
+            {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
+            <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move “${q.question}” up`} size={24} variant="bare" iconSize={18} disabled={index === 0} onClick={() => onMove('up')} /></Tooltip>
+            <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move “${q.question}” down`} size={24} variant="bare" iconSize={18} disabled={last} onClick={() => onMove('down')} /></Tooltip>
+            <Tooltip label="Edit"><IconButton icon="edit" label={`Edit “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={onEdit} /></Tooltip>
+            <Tooltip label="Delete"><IconButton icon="delete" label={`Delete “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={onDelete} /></Tooltip>
+          </>
+        ) : null}
+      </span>
+    </Reorder.Item>
   )
 }
 

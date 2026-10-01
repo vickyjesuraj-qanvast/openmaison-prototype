@@ -49,7 +49,7 @@
 .row:hover .leadName, .leadLink:focus-visible .leadName { color: var(--om-color-primary-default); text-decoration: underline; }   /* the listing's name on hover (REG-450) */
 .leadStudio { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
-.colDue { flex: var(--cw-due, 0 0 137px); }
+.colDue { flex: var(--cw-due, 0 0 240px); }   /* (Dane UAT 5.13 · 5.05) the due's day and time, uncut — was the mock's 137 */
 .colStatus { flex: var(--cw-status, 0 0 118px); }
 .colTags { flex: var(--cw-tags, 0 0 191px); }   /* --cw-*: the user's dragged widths (REG-427) */
 
@@ -180,6 +180,11 @@
 }
 .tagsBtn:hover .link { color: var(--om-color-on-primary-variant); }   /* link hover = the token every other link uses (UI-18) */
 .link[data-inert] { pointer-events: none; }
+
+/* (Dane UAT 11.02) The task the add row just created pulses once — the quote editor's attention after an add (items-table.module.css
+   `.row[data-fresh]`, REG-573): a primary wash over the whole row, frozen cells included, that fades out. */
+.row[data-fresh]::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }   /* ::before — the row's ::after is the actions band (REG-733) */
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 
 /* ---- Inline add / rename (frame 194 "Type=RW-New, State=Input") ---- */
 /* The whole Title cell is the active field: 2px primary ring inside the cell, no status glyph. */

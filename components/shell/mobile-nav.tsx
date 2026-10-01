@@ -157,9 +157,10 @@ export function MobileChrome({ team = [], credits = null, badges }: { team?: Ses
           )
         })}
         <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
-        <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
-        <ViewAsPopover open={viewAsOpen} anchor={null} onClose={() => setViewAsOpen(false)} team={team} />
-        {credits ? <CreditsSheet initial={credits.summary} gstLine={credits.gstLine} open={creditsOpen} onClose={() => setCreditsOpen(false)} /> : null}
+        {/* (REG-899, Dane UAT 12.04) a sheet opened from More leads back to it */}
+        <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} onBack={() => { setCompanyOpen(false); setOpen(true) }} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
+        <ViewAsPopover open={viewAsOpen} anchor={null} onClose={() => setViewAsOpen(false)} onBack={() => { setViewAsOpen(false); setOpen(true) }} team={team} />
+        {credits ? <CreditsSheet initial={credits.summary} gstLine={credits.gstLine} open={creditsOpen} onClose={() => setCreditsOpen(false)} onBack={() => { setCreditsOpen(false); setOpen(true) }} /> : null}
         <button type="button" className={styles.dockItem} data-active={open || undefined}
                 aria-label={moreHas ? `More (${[counts.Tasks ? `Tasks ${countWords('Tasks', counts.Tasks)}` : null, counts.Company ? `Company ${countWords('Company', counts.Company)}` : null].filter(Boolean).join(', ')})` : 'More'} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} />{moreHas ? <span className={styles.moreDot} aria-hidden /> : null}</span>   {/* (UX audit V3) something inside counts */}

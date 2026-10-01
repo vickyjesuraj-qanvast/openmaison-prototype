@@ -7,6 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { MessageField, RecipientFields } from './editor/dialogs'
 import { useCopy } from '@/components/om/use-copy'
 import { digitsOnly, isSgPhone } from '@/lib/format'
+import { newId } from '@/lib/uid'
 import { bundleSigningLink } from '@/lib/contracts/model'
 import { SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
 import { MSG } from '@/lib/forms'
@@ -14,8 +15,8 @@ import type { Contract } from '@/lib/db/schema'
 import styles from './editor/contract-editor.module.css'
 import own from './send-bundle-dialog.module.css'
 
-/* (REG-633, E-118) The fallback is hex too — the server takes only hex and dashes, and a refused id left WhatsApp holding a dead link. */
-const makeId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''))
+/* (REG-633, E-118) The bundle's id is hex and dashes in every browser — the server takes only those, and a refused id left WhatsApp holding a
+   dead link. (REG-897) `newId` (lib/uid.ts) makes one where `crypto.randomUUID` is missing too. */
 
 /**
  * (REG-591) Send together: the lead's unsigned documents under one signing link — Mavid: "send all documents at once for
@@ -46,7 +47,7 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
   const [text, setText] = useState<string | null>(null)   // null = follows the draft
   const [touched, setTouched] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setBundleId(makeId()); setPicked(sendable.map((c) => c.id)); setName(defaults.name); setPhone(defaults.phone); setText(null); setTouched(false) } }
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setBundleId(newId()); setPicked(sendable.map((c) => c.id)); setName(defaults.name); setPhone(defaults.phone); setText(null); setTouched(false) } }
   const link = bundleId ? bundleSigningLink(bundleId) : ''
   const titles = picked.map((id) => contracts.find((c) => c.id === id)?.title).filter((t): t is string => !!t)
   const auto = draft(name, titles, link)

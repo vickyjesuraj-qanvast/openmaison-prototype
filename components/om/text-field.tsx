@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { SearchBar } from '@/components/ds'
 import { Icon } from './icon'
 import { PortalMenu } from './portal-menu'
 import { useReadOnly } from './read-only'
@@ -61,6 +62,10 @@ export type TextFieldProps = {
   size?: 'm' | 's'
   /** Extra attributes for the text input — a combobox's role / aria-* (REG-417). Explicit props win over these. */
   inputProps?: InputHTMLAttributes<HTMLInputElement>
+  /** (Dane UAT 6.41) A select whose list is long (the studio's clients): a search box heads the open list and narrows it to the options that
+   *  hold the typed words anywhere, any case — ↓ into the list, ↑ from its top back to the box, Enter takes the first match, Esc closes,
+   *  "No matches" when none do. A letter typed on the closed field opens the list with it in the box. */
+  searchable?: boolean
 }
 
 /**
@@ -71,7 +76,7 @@ export type TextFieldProps = {
 export function TextField({
   label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, below, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
-  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps,
+  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps, searchable = false,
 }: TextFieldProps) {
   const id = useId()
   const readOnlyScope = useReadOnly()
@@ -92,15 +97,31 @@ export function TextField({
 
   const setBox = (el: HTMLDivElement | null) => { ownBox.current = el; if (boxRef) boxRef.current = el }
 
-  // Open menu: focus lands on the current option so arrows / Enter work at once.
+  /* (Dane UAT 6.41) The searchable list's words: every opening starts with an empty box (or the letter that opened it). */
+  const [query, setQuery] = useState('')
+  const openMenu = (seed = '') => { setQuery(seed); setMenuOpen(true) }
+  const searchBox = () => listRef.current?.querySelector<HTMLInputElement>('input') ?? null
+  const focusSearch = () => { const i = searchBox(); if (i) { i.focus({ preventScroll: true }); const L = i.value.length; i.setSelectionRange(L, L) } }
+  const q = query.trim().toLowerCase()
+  const shownOptions = options ? (searchable && q ? options.filter((o) => o.toLowerCase().includes(q)) : options) : undefined
+  // Open menu: focus lands on the current option so arrows / Enter work at once — or, searchable, in the search box with the caret at its end.
   useEffect(() => {
     if (!menuOpen) return
     const list = listRef.current
+    if (searchable) { const i = list?.querySelector<HTMLInputElement>('input'); if (i) { i.focus({ preventScroll: true }); const L = i.value.length; i.setSelectionRange(L, L) } return }
     ;(list?.querySelector<HTMLElement>('[data-selected]') ?? list?.querySelector<HTMLElement>('[role="option"]'))?.focus()
-  }, [menuOpen])
+  }, [menuOpen, searchable])
   const closeMenu = () => {
     setMenuOpen(false)
     if (listRef.current?.contains(document.activeElement)) controlRef.current?.focus()   // never strand focus on a removed option
+  }
+  const pickOption = (o: string) => { onChange?.(o); setMenuOpen(false); controlRef.current?.focus() }
+  /* The search box's keys (React Aria hands them here and stops them at the box): ↓ steps into the list; Home / End stay the caret's —
+     the menu's own walk (useMenuKeyboard) would otherwise take them to the first and last option. Enter is the field's submit (below). */
+  const onSearchKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); listRef.current?.querySelector<HTMLElement>('[role="option"]')?.focus(); return }
+    if (e.key === 'ArrowUp') { e.preventDefault(); return }   // the box is the list's top: nothing above it to walk to
+    if (e.key === 'Home' || e.key === 'End') e.nativeEvent.stopImmediatePropagation()
   }
   /* (REG-639) Type to find: letters typed in quick succession move to the first option that starts with them, as a native
      list does — the lead lists run to dozens of names (X-Ray parity Q-11, 1.0's searchable picker). */
@@ -109,6 +130,12 @@ export function TextField({
     const items = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
     const i = items.indexOf(document.activeElement as HTMLElement)
     const go = (n: number) => { e.preventDefault(); items[(n + items.length) % items.length]?.focus() }
+    if (searchable && i >= 0) {
+      /* (Dane UAT 6.41) On an option: a letter or Backspace goes on in the search box; ↑ from the first option returns to it. */
+      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setQuery((v) => v + e.key); requestAnimationFrame(focusSearch); return }
+      if (e.key === 'Backspace') { e.preventDefault(); setQuery((v) => v.slice(0, -1)); requestAnimationFrame(focusSearch); return }
+      if (e.key === 'ArrowUp' && i === 0) { e.preventDefault(); focusSearch(); return }
+    }
     if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key !== ' ' || typed.current.text !== '')) {
       const now = e.timeStamp
       typed.current = { text: (now - typed.current.at < 700 ? typed.current.text : '') + e.key.toLowerCase(), at: now }
@@ -125,14 +152,18 @@ export function TextField({
 
   const activate = () => {
     if (disabled) return
-    if (isSelect) setMenuOpen((o) => !o)
+    if (isSelect) { if (menuOpen) setMenuOpen(false); else openMenu() }
     else if (mode === 'trigger') onOpen?.()
   }
   const onControlKey = (e: KeyboardEvent<HTMLElement>) => {
     if (!disabled && mode !== 'text' && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') && !(mode === 'trigger' && open && e.key === 'ArrowDown')) {
       e.preventDefault()
-      if (isSelect) setMenuOpen(true); else onOpen?.()
+      if (isSelect) openMenu(); else onOpen?.()
       return
+    }
+    /* (Dane UAT 6.41) A letter on the closed searchable field opens its list with that letter in the search box. */
+    if (!disabled && isSelect && searchable && !menuOpen && e.key.length === 1 && e.key !== ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault(); openMenu(e.key); return
     }
     onKeyDown?.(e)
   }
@@ -221,16 +252,24 @@ export function TextField({
         {below ? <div className={styles.below}>{below}</div> : null}
       </div>
       {message ? <span id={supportId} className={styles.support} role={hasError ? 'alert' : undefined}>{message}</span> : null}
-      {isSelect && options ? (
-        <PortalMenu open={menuOpen} anchor={anchor} onClose={closeMenu}>
+      {isSelect && shownOptions ? (
+        <PortalMenu open={menuOpen} anchor={anchor} onClose={closeMenu} autoFocus={!searchable}>
           <div ref={listRef} onKeyDown={onListKey}>
-            {options.map((o) => (
+            {searchable ? (
+              /* (Dane UAT 6.41) The DS search bar heads the list and stays put while the options scroll under it. */
+              <div className={styles.menuSearch}>
+                <SearchBar size="md" appearance="filled" placeholder="Search" aria-label={`Search ${label}`} value={query} onChange={setQuery}
+                           onKeyDown={onSearchKey} onSubmit={() => { const first = shownOptions[0]; if (q && first !== undefined) pickOption(first) }} />
+              </div>
+            ) : null}
+            {shownOptions.map((o) => (
               <button key={o} type="button" role="option" aria-selected={o === value} className={menuStyles.item}
                       data-selected={o === value || undefined}
-                      onClick={() => { onChange?.(o); setMenuOpen(false); controlRef.current?.focus() }}>
+                      onClick={() => pickOption(o)}>
                 {o}
               </button>
             ))}
+            {searchable && shownOptions.length === 0 ? <div className={`${menuStyles.item} ${styles.noMatches}`} role="status">No matches</div> : null}
           </div>
         </PortalMenu>
       ) : null}

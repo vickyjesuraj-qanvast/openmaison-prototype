@@ -7,6 +7,8 @@
 .headSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .headActions { display: flex; align-items: center; gap: 0; flex-shrink: 0; margin-right: calc(-1 * var(--om-spacing-2)); }
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* (Dane UAT, Figma b-fab) The Maison AI button sits over this pane's bottom-right corner (REG-507): the end of the list scrolls clear of it — More options, Reset this block. */
+.body { padding-bottom: var(--fab-clearance); }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
 .field { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
 .field[data-wide] { grid-column: 1 / -1; }
@@ -18,6 +20,8 @@
 .txt > :first-child { flex: 1; min-width: 0; }
 .txtGrow { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
 .helper { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-3); }
+/* (Dane UAT, Figma 1517:57) Reset under a box whose words differ from a new block's — the text button's own padding lines its glyph up with the box. */
+.reset { display: inline-flex; align-self: flex-start; margin-left: calc(-1 * var(--om-spacing-3)); }
 .area { width: 100%; min-height: 72px; }
 .fieldsAnchor { position: relative; display: inline-flex; flex-shrink: 0; margin-top: 10px; }
 .swatches { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }

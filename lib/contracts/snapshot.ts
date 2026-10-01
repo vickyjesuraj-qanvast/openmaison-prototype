@@ -12,6 +12,7 @@ import { longDate } from './model'
 import { resolveTokens, type TokenValues } from './tokens'
 import type { SignedLetterhead, SignedStudioSignature } from './policy'
 import { contractIssuer } from './issuer'
+import { memberSignatureOf } from '@/lib/quotes/signature'
 
 export type ContractLead = { id: string; name: string; phone: string; email: string | null; propertyType: string; propertyAddress: string | null; leadAddress: string | null }
 export type ContractQuote = { id: string; number: string; title: string; amountMinor: number; validUntil: Date | null; projectRef: string | null; status: string }
@@ -49,10 +50,11 @@ export const pickQuote = (c: Contract, qs: ContractQuote[]): ContractQuote | nul
 /** Which quote a new contract names when nobody picked one: the lead's Signed quote, else its latest live one (oldest first in `qs`). */
 export const defaultQuote = <Q extends { status: string }>(qs: Q[]): Q | null => qs.find((q) => q.status === 'Signed') ?? qs[qs.length - 1] ?? null
 
-/** (E-117) The studio signature a contract prints: its creator's, else the signed-in member's. */
+/** (E-117) The studio signature a contract prints: its creator's, else the signed-in member's — (Dane UAT 6.23) drawn, typed or uploaded,
+ *  read the one way every page reads it (lib/quotes/signature.ts), so the copy kept at signing holds the picture too. */
 export function studioSignatureFor(createdBy: string | null, team: SignatureOwner[], sessionId: string): SignedStudioSignature {
   const m = team.find((x) => x.id === (createdBy ?? sessionId)) ?? team.find((x) => x.id === sessionId) ?? null
-  return m && (m.signatureKind === 'draw' || m.signatureKind === 'type') ? { kind: m.signatureKind === 'draw' ? 'draw' : 'type', name: m.signatureName ?? m.name, data: m.signatureData } : null
+  return memberSignatureOf(m)
 }
 
 /** 1.0's per-document hash (B-26): SHA-256 over "html\n{title}\n{body}", the body resolved; an uploaded file is its name. */

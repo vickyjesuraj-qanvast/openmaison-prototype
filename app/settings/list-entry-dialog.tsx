@@ -8,6 +8,10 @@ import { MSG } from '@/lib/forms'
 import styles from './settings.module.css'
 
 export type EntryEdit = { name: string; position: number; gate?: number }
+/** (Dane UAT 2.21) A Lost reason's logged-contacts number: the Lost dialog's hint, not a block — one label and one help line, here and on
+    Settings' add row. */
+export const GATE_LABEL = 'Contacts expected first'
+export const GATE_HELP = 'Blank asks for none — the Lost dialog says how many are logged'
 
 /**
  * (REG-647, settings parity Q-09) One entry of a Settings list — a lead source, a Lost or On Hold reason: its name (a rename carries the
@@ -36,8 +40,8 @@ export function ListEntryDialog({ open, title, entry, total, withGate = false, n
           <TextField label="Name" required value={draft.name} autoFocus maxLength={40} onChange={(v) => setDraft({ ...draft, name: v })} error={tried && empty ? MSG.required : taken && draft.name.trim().toLowerCase() === taken.trim().toLowerCase() ? `${taken.trim()} is already in the list` : undefined}
                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
           <TextField label="Place in the list" mode="select" options={positions} value={String(draft.position)} onChange={(v) => setDraft({ ...draft, position: Number(v) })} />
-          {withGate ? <TextField label="Needs logged contacts" value={draft.gate ? String(draft.gate) : ''} numeric="digits" maxLength={2} trailingIcon={null}
-                                 onChange={(v) => setDraft({ ...draft, gate: v ? Math.min(20, Number(v)) : 0 })} helper="Blank asks for none — the Lost dialog says how many are logged" /> : null}
+          {withGate ? <TextField label={GATE_LABEL} value={draft.gate ? String(draft.gate) : ''} numeric="digits" maxLength={2} trailingIcon={null}
+                                 onChange={(v) => setDraft({ ...draft, gate: v ? Math.min(20, Number(v)) : 0 })} helper={GATE_HELP} /> : null}
           {note ? <p className={styles.settingHelp}>{note}</p> : null}
         </div>
       ) : null}

@@ -15,7 +15,7 @@ import { MembersGhost } from './company-ghosts'
 import { ROLES, isRole, type Role } from '@/lib/leads/enums'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { addBlock, deactivateBlock, reactivateBlock, roleChangeBlock } from '@/lib/company/member-rules'
-import { displayDate, isSgPhone, phoneDigits, phoneTyped } from '@/lib/format'
+import { displayDate, isSgPhone, phoneDigits, phoneTyped, titleCaseName } from '@/lib/format'
 import type { MembersData, MemberRow } from '@/lib/company/members'
 import { addMember, deactivateMember, reactivateMember, setMemberAccepting, setMemberManager, setMemberPreferences, setMemberRole, type Released } from '@/app/company/members-actions'
 import { ReadOnlyNote } from './read-only-note'
@@ -23,8 +23,9 @@ import { EMAIL_RE, MSG } from '@/lib/forms'
 import { Button, Switch } from '@/components/ds'
 import { PreferencesDialog } from './preferences-dialog'
 import { HelpLink } from './help-link'
-import { SignatureSettings } from '@/components/quotes/editor/signature/signature-section'
+import { SignatureSettings, type SignatureDraft } from '@/components/quotes/editor/signature/signature-section'
 import { saveMemberSignature } from '@/app/quotes/signature-actions'
+import { couldnt } from '@/components/leads/tasks/use-run'
 import { parsePreferences, summarisePreferences, type LeadPreferences } from '@/lib/company/preferences'
 import styles from './members-view.module.css'
 
@@ -70,7 +71,10 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
   const viewer = data.viewer
   /* (REG-646, settings parity Q-06) The Owner rules: an Admin never offers Owner; a row the viewer may not change says why. */
   const roleOptions = viewer.role === 'Owner' ? [...ROLES] : ROLES.filter((r) => r !== 'Owner')
-  const roleBlock = (m: MemberRow) => (canEdit ? roleChangeBlock(viewer, m, m.role as Role, activeOwners) ?? (m.role === 'Owner' && viewer.role !== 'Owner' ? 'Only an Owner makes or unmakes an Owner' : null) : 'Only Owners and Admins set roles')
+  /* (Dane UAT 2.11) An Owner's own row says how ownership passes — the rule is unchanged: another member is made an Owner first, then they
+     change this one's role. Every other refusal keeps the rule's own words. */
+  const OWN_OWNER = 'You’re the studio’s Owner — make another member an Owner, then they can change your role.'
+  const roleBlock = (m: MemberRow) => (canEdit ? (m.id === viewer.id && viewer.role === 'Owner' ? OWN_OWNER : null) ?? roleChangeBlock(viewer, m, m.role as Role, activeOwners) ?? (m.role === 'Owner' && viewer.role !== 'Owner' ? 'Only an Owner makes or unmakes an Owner' : null) : 'Only Owners and Admins set roles')
   const changeRole = async (m: MemberRow, role: string) => {
     if (!isRole(role) || role === m.role) return
     const prev = rows
@@ -119,7 +123,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
       const mgr = designer && adding.managerId ? managers.find((x) => x.id === adding.managerId) ?? null : null
       const r = await addMember({ name: adding.name, phone: adding.phone, email: adding.email, role: adding.role, managerId: mgr?.id ?? null })
       if ('error' in r) { snackbar({ message: r.error }); return }
-      const name = adding.name.trim(), id = r.id ?? null
+      const name = titleCaseName(adding.name), id = r.id ?? null   // (Dane UAT 2.07) as the server saved it
       setAdding(null); if (id) setFresh(id); router.refresh()
       const added = `${name} added as ${adding.role === 'Owner' || adding.role === 'Admin' ? 'an' : 'a'} ${adding.role}`
       /* (UX audit S6) the next step rides the snackbar: a Designer who reports to nobody yet is one press from their Reports to */
@@ -155,11 +159,15 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     return `${m.name} leaves every picker and stops getting new leads. ${work ? `Their ${work} ${one ? 'stays' : 'stay'} with them — reassign ${one ? 'it' : 'them'} from the listing.` : 'Nothing open is on their name.'}${lets ? ` ${lets.charAt(0).toUpperCase()}${lets.slice(1)}; Undo gives ${team.length + (data.backupApproverId === m.id ? 1 : 0) === 1 ? 'it' : 'them'} back.` : ''} Their notes, tasks and history stay as they are; Reactivate brings them back.`
   }
   /* (UX audit S11) Your own signature, set here as in a quote's Signature section — the same dialog and the same save. */
-  const [signing, setSigning] = useState<{ kind: 'draw' | 'type'; name: string; data: string } | null>(null)
+  const [signing, setSigning] = useState<SignatureDraft | null>(null)
   const saveSignature = async () => {
     const v = signing
-    if (!v || !v.name.trim() || (v.kind === 'draw' && !v.data)) return
-    try { await saveMemberSignature({ kind: v.kind, name: v.name.trim(), data: v.kind === 'draw' ? v.data : null }); setSigning(null); snackbar({ message: 'Signature saved — it prints on the quotes you prepare' }); router.refresh() }
+    if (!v || !v.name.trim() || (v.kind !== 'type' && !v.data)) return   // (Dane UAT 6.23) a drawing or an uploaded picture
+    try {
+      const r = await saveMemberSignature({ kind: v.kind, name: v.name.trim(), data: v.kind === 'type' ? null : v.data })
+      if ('error' in r) { snackbar({ message: couldnt('save the signature', r.error) }); return }   // the dialog stays with the picture
+      setSigning(null); snackbar({ message: 'Signature saved — it prints on the quotes you prepare' }); router.refresh()
+    }
     catch { snackbar({ message: 'Couldn’t save the signature — please try again' }) }   // the dialog stays with what was drawn or typed
   }
   const changeManager = async (m: MemberRow, name: string) => {
@@ -266,8 +274,9 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
           <div className={styles.addForm} data-testid="add-member">
             <TextField label="Name" required value={adding.name} maxLength={60} autoFocus onChange={(v) => setAdding({ ...adding, name: v })} error={adding.tried ? addErrors.name : undefined} />
             <TextField label="Role" mode="select" options={roleOptions} value={adding.role} onChange={(v) => { if (isRole(v) && !addBlock(viewer, v)) setAdding({ ...adding, role: v }) }} />
-            <TextField label="Phone" value={phoneTyped(adding.phone)} numeric="digits" maxLength={9} inputMode="tel" onChange={(v) => setAdding({ ...adding, phone: phoneDigits(v) })} error={adding.tried ? addErrors.phone : undefined} helper="Optional" />
-            <TextField label="Email" value={adding.email} maxLength={120} inputMode="email" onChange={(v) => setAdding({ ...adding, email: v })} error={adding.tried ? addErrors.email : undefined} helper="Optional — printed as their email on the quotes they prepare" />
+            {/* (Dane UAT 2.07) No "Optional" — the required field wears its star, as on the lead form (REG-451) */}
+            <TextField label="Phone" value={phoneTyped(adding.phone)} numeric="digits" maxLength={9} inputMode="tel" onChange={(v) => setAdding({ ...adding, phone: phoneDigits(v) })} error={adding.tried ? addErrors.phone : undefined} />
+            <TextField label="Email" value={adding.email} maxLength={120} inputMode="email" onChange={(v) => setAdding({ ...adding, email: v })} error={adding.tried ? addErrors.email : undefined} helper="Printed as their email on the quotes they prepare" />
             {/* (UX audit S6) A Designer's manager, picked as they are added — who they report to decides who assigns their leads */}
             {adding.role === 'Designer' && managers.length ? (
               <TextField label="Reports to" mode="select" options={[NOBODY, ...managers.map((x) => x.name)]} value={managers.find((x) => x.id === adding.managerId)?.name ?? NOBODY}

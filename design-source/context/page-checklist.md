@@ -31,6 +31,7 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] Maison AI comes with `AppShell` (REG-507) — never mount `MaisonFab` / `AiSheet` on a page in the shell; a page with scripted suggestions calls `useMaisonAi(suggestions, raised)` (raised when a bottom dock is shown); `--bottom-dock` respected by
       bulk bar / snackbar / AI sheet; page content ends with `padding-bottom: var(--fab-clearance)`.
 - [ ] Every inert affordance answers with the coming-soon snackbar (`useComingSoon`).
+- [ ] **A snackbar is never the only place a must-read lives** (REG-898): it confirms and offers one next step or Undo; a warning that should change a decision sits inline where it is made, in the warning tone, with its own action.
 - [ ] The page's search input registers with `useSearchTarget` (`components/shell/search-focus.ts`)
       so the rail search tile and the "/" key focus it.
 - [ ] A control whose current value narrows what the page shows says so when it is off its default: a scope

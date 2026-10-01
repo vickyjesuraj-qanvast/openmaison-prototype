@@ -32,6 +32,9 @@ export type TableExtras = { head: ReactNode; filler: ReactNode; pageTotal: (ctx:
 export type Built = { slices: Slice[]; tables: Record<string, TableExtras> }
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+const ROMAN: [number, string][] = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']]
+/** i · ii · iii · iv — a line's mark in the "1 · a · i" numbering (Dane UAT, Figma 1518:77). */
+const toRoman = (n: number) => { let out = ''; let left = n; for (const [v, r] of ROMAN) while (left >= v) { out += r; left -= v } return out }
 const html = (h: string, values: Record<string, string>) => ({ __html: resolveFields(h, values) })
 
 /** A stored HTML body as paragraphs (the rich editor writes <p>…</p>; a bare string is one paragraph). */
@@ -164,12 +167,13 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   const cellStyle = textCss(b.style, brand, 'table')
   const pad = ROW_PAD[b.density]
   const ink = resolveColor('ink', brand), light = resolveColor('light', brand)
+  const zebra = resolveColor('band', brand)   // (Dane UAT, b-zebra) "Shade every other row" tints with the kit's band colour
   const gridAttr = b.grid ? '' : undefined
   const ruledAttr = !b.grid && b.ruled ? '' : undefined
   const widths = cols.map((c) => (c.key === 'item' ? null : mm(c.width)))
   const colgroup = <colgroup>{cols.map((c, i) => <col key={c.key} style={widths[i] !== null ? { width: widths[i]! } : undefined} />)}</colgroup>
   const table = (rows: ReactNode, extra?: string) => (
-    <table className={`${styles.t}${extra ? ` ${extra}` : ''}`} data-grid={gridAttr} data-ruled={ruledAttr} style={{ ...cellStyle, ['--ink' as string]: ink, ['--light' as string]: light, ['--pad' as string]: pad }}>{colgroup}<tbody>{rows}</tbody></table>
+    <table className={`${styles.t}${extra ? ` ${extra}` : ''}`} data-grid={gridAttr} data-ruled={ruledAttr} style={{ ...cellStyle, ['--ink' as string]: ink, ['--light' as string]: light, ['--pad' as string]: pad, ['--zebra' as string]: zebra }}>{colgroup}<tbody>{rows}</tbody></table>
   )
   const money = (minor: number, noPrice: boolean, zeroText = true) => {
     if (noPrice) return <span className={styles.amt}><span /><span>—</span></span>
@@ -206,7 +210,9 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   const noteRow = (note: string, key: string, noteHtml?: string | null) => table(<tr key={key}><td colSpan={span} style={{ ...textCss(b.groupNoteStyle, brand, 'table'), paddingLeft: inset }}>{noteHtml ? <div className={styles.rich} dangerouslySetInnerHTML={html(noteHtml, values)} /> : resolveFields(note, values)}</td></tr>)
   /* A room label under a section — or (REG-558) a sub-section's own row: numbered in the nested mode, highlighted like its lines. */
   const areaRow = (label: string, key: string, no = '', hl?: string | null) => table(<tr key={key} data-area>{no && cols[0]?.key === 'no' ? <><td style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl), textAlign: cols[0].align }}>{no}</td><td colSpan={span - 1} style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl) }}>{label}</td></> : <td colSpan={span} style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl), paddingLeft: inset }}>{label}</td>}</tr>)
-  const lineRow = (l: Line, no: string, key: string, hideAmount: boolean) => {
+  /* `shade` (Dane UAT, b-zebra): every other line of a section wears the band colour while the block's "Shade every other row" is on —
+     section, room and note rows never count, and a highlight's fill still wins over it. */
+  const lineRow = (l: Line, no: string, key: string, hideAmount: boolean, shade = false) => {
     const plain = l.descriptionHtml ? htmlToPlain(l.descriptionHtml) : l.description
     const descLines = descriptions === 'none' || !plain ? [] : descriptions === 'first' ? [plain.split('\n')[0]!] : plain.split('\n').filter(Boolean)
     /* (REG-557) A formatted description prints its own shape (lists, bold, underline) unless the template asks for the first line only. */
@@ -222,7 +228,7 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
     const strike = (m: number) => <span className={styles.was}>{money(m, false, false)}</span>
     const amount = (minor: number, zeroText: boolean) => (word ? wordCell(l) : l.printAs === 'behalf' ? <>{money(minor, l.noPrice, zeroText)}<div style={{ ...textCss(b.descriptionStyle, brand, 'small'), textAlign: 'right' }}>on behalf</div></> : money(minor, l.noPrice, zeroText))
     return table(
-      <tr key={key} data-line data-removed={removed || undefined} data-added={added || undefined}>
+      <tr key={key} data-line data-shade={shade || undefined} data-removed={removed || undefined} data-added={added || undefined}>
         {cols.map((c) => {
           switch (c.key) {
             case 'no': return cell(c, l.noNumber ? '' : no, st)
@@ -279,9 +285,15 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   let counter = 0
   const nested = b.numbering === 'nested'   // (REG-558) 1 · 1.1 · a b c
   const lettered = b.numbering === 'lettered'   // (REG-617, parity Q-10) A1 · A2 · B1
+  /* (Dane UAT, Figma 1518:77) The room rows take numbers too: "rooms" = B · 1 Kitchen · 1.1 (with sections marked 1 · 2 · 3: 1 · 1.1 Kitchen
+     · 1.1.1), "roman" = 1 · a · i. Inside a section the rooms — and any lines of its own beside them — count 1, 2, 3 (or a, b, c), and a
+     room's lines count under it. */
+  const rooms = b.numbering === 'rooms', roman = b.numbering === 'roman'
+  const levelTwo = rooms || roman
+  const numbersMarked = b.sectionLabel === 'numbers'
   const subAt = b.subtotalAt ?? 'row'
   main.forEach((s, si) => {
-    const label = b.sectionLabel === 'letters' ? `${LETTERS[si % 26]}  ${s.label}` : b.sectionLabel === 'numbers' || nested ? `${si + 1}  ${s.label}` : s.label
+    const label = b.sectionLabel === 'letters' ? `${LETTERS[si % 26]}  ${s.label}` : b.sectionLabel === 'numbers' || nested || roman ? `${si + 1}  ${s.label}` : s.label
     const gk = s.id
     const subWord = s.subLabel ? ` (${s.subLabel})` : ''
     const onlyOptional = s.lines.length > 0 && s.lines.every((l) => l.optional)   // a section of optional lines only has nothing to sum
@@ -289,23 +301,27 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
     const bandAmount = inBand ? <>{money(s.totalMinor, false, false)}{subWord ? <div style={{ fontWeight: 400 }}>{subWord.trim()}</div> : null}</> : undefined
     if (s.label) push({ key: `${tid}:${s.id}:band`, node: bandRow(label, `${s.id}-band`, 'section', s.highlight, bandAmount), groupKey: gk, groupStart: true, keepWithNext: true, breakBefore: b.groupNewPage && si > 0 })
     if (s.note || s.noteHtml) push({ key: `${tid}:${s.id}:note`, node: noteRow(s.note ?? '', `${s.id}-note`, s.noteHtml), groupKey: gk, keepWithNext: true })
-    if (b.numbering === 'group' || lettered || nested) counter = 0
+    if (b.numbering === 'group' || lettered || nested || levelTwo) counter = 0
     const areas = s.areas.length ? s.areas : [{ label: '', lines: s.lines }]
     let subCounter = 0
+    let shaded = 0   // the section's lines so far, for the zebra
+    const levelTwoMark = (k: number) => (rooms ? (numbersMarked ? `${si + 1}.${k}` : String(k)) : LETTERS[(k - 1) % 26]!.toLowerCase())
     areas.forEach((a, ai) => {
       // A sub-section in the nested mode takes the section's next number ("1.3") and letters its lines (a, b, c).
-      const subNo = a.sub && nested ? `${si + 1}.${++counter}` : ''
+      const areaNo = levelTwo && a.label ? levelTwoMark(++counter) : ''
+      const subNo = a.sub && nested ? `${si + 1}.${++counter}` : areaNo
       if (a.label) push({ key: `${tid}:${s.id}:a${ai}`, node: areaRow(a.label, `${s.id}-a${ai}`, subNo, a.highlight), groupKey: gk, keepWithNext: true })
       if (a.sub && (a.note || a.noteHtml)) push({ key: `${tid}:${s.id}:a${ai}:note`, node: noteRow(a.note ?? '', `${s.id}-a${ai}-note`, a.noteHtml), groupKey: gk, keepWithNext: true })
       if (b.numbering === 'area') counter = 0
-      if (a.sub) subCounter = 0
+      if (a.sub || areaNo) subCounter = 0
       a.lines.forEach((l) => {
         let no = ''
         if (!l.noNumber) {   // (REG-558) a "no number" line is passed over
           if (nested) { if (a.sub) { subCounter += 1; no = LETTERS[(subCounter - 1) % 26]!.toLowerCase() } else { counter += 1; no = `${si + 1}.${counter}` } }
+          else if (levelTwo) { if (areaNo) { subCounter += 1; no = rooms ? `${areaNo}.${subCounter}` : toRoman(subCounter) } else no = levelTwoMark(++counter) }
           else { counter += 1; no = b.numbering === 'none' ? '' : lettered ? `${LETTERS[si % 26]}${counter}` : String(counter) }
         }
-        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, hideAmount), groupKey: gk, amountMinor: l.noPrice || printsWord(l) || l.change === 'removed' || l.optional ? 0 : lineTotalMinor(l) })
+        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, hideAmount, b.zebra && shaded++ % 2 === 1), groupKey: gk, amountMinor: l.noPrice || printsWord(l) || l.change === 'removed' || l.optional ? 0 : lineTotalMinor(l) })
       })
     })
     const subLabel = s.subLabel ? ` (${s.subLabel})` : ''   // (REG-555, T-3) "Sub-total for Masonry (Approximate)"
@@ -315,7 +331,7 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   })
   if (optional.length && b.optionalSection && view.optionalWorks) {
     push({ key: `${tid}:opt:band`, node: bandRow(b.optionalTitle, 'opt-band', 'optional'), groupKey: 'optional', groupStart: true, keepWithNext: true })
-    optional.forEach((l, i) => push({ key: `${tid}:opt:${l.id}`, node: lineRow(l, String(i + 1), `opt-${l.id}`, hideAmount), groupKey: 'optional' }))
+    optional.forEach((l, i) => push({ key: `${tid}:opt:${l.id}`, node: lineRow(l, String(i + 1), `opt-${l.id}`, hideAmount, b.zebra && i % 2 === 1), groupKey: 'optional' }))
   }
 }
 

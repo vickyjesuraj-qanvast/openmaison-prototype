@@ -1,6 +1,7 @@
 'use client'
 
 import { useRememberShape } from '@/lib/ghost-shape'
+import { copyText } from '@/lib/clipboard'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
@@ -113,7 +114,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
     if (action === 'contract') { contract.open(quote); return }   /* (UX audit C6) */
     if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`
-      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
+      void copyText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
     } else if (action === 'archive') {
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })
     } else if (action === 'delete') {

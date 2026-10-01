@@ -4,7 +4,9 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
+import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
+import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
 import { leadTasks, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
@@ -26,7 +28,9 @@ const cleanStep = (s: TaskStepInput, i: number, templateId: string) => ({
   dueDays: s.dueDays === null || s.dueDays === undefined || !Number.isFinite(s.dueDays) ? null : Math.max(0, Math.min(365, Math.round(s.dueDays))),
 })
 
-export type CreateTaskTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'lead'; leadId: string | null } }
+export type CreateTaskTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'lead'; leadId: string | null }
+  /** (Dane UAT 3.03) The folder open in the gallery — the new template is filed there (its maker may file it). */
+  folderId?: string | null }
 /** Blank (one empty step), a copy, or the open tasks of a lead (the tab's "Save all as Template" from Company's side). Returns the id. */
 export async function createTaskTemplate(input: CreateTaskTemplateInput): Promise<string> {
   const now = new Date()
@@ -45,8 +49,10 @@ export async function createTaskTemplate(input: CreateTaskTemplateInput): Promis
     if (!rows.length) throw new Error('no tasks')
     steps = rows.map((r) => ({ title: r.title, description: r.description, kind: r.kind, dueDays: r.dueAt ? Math.max(0, Math.round((r.dueAt.getTime() - now.getTime()) / 86_400_000)) : null }))
   }
+  const viewer = await fetchViewer()
+  const { folderId } = await landingFolder('tasks', input.folderId, templateChangeBlock(viewer, viewer.id))
   await db.transaction(async (tx) => {
-    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: sessionMemberSql, updatedAt: now })
+    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: sessionMemberSql, updatedAt: now, folderId })
     await tx.insert(templateTasks).values(steps.map((s, i) => cleanStep(s, i, id)))
   })
   touch(id)

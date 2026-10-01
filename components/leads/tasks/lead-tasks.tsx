@@ -27,7 +27,7 @@ import { useRun } from './use-run'
 import { CREATE_EVENTS, useCreateIntent } from './use-create-intent'
 import { EMPTY_TASK_FILTERS, TASK_SCOPE_LABEL, activeTaskFilterCount, applyTaskFilters, type TaskFilters, type TaskScope } from '@/lib/leads/task-filters'
 import { filterByQuery, matchesQuery } from '@/lib/search'
-import { displayDate, isDueToday, isOverdue } from '@/lib/format'
+import { displayDue, isDueToday, isOverdue } from '@/lib/format'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
 import type { LeadTasksData, TaskRow, TaskLead } from '@/lib/leads/tasks'
 import {
@@ -72,7 +72,7 @@ const REFRESH = { refresh: true } as const
 
 /**
  * Every piece of text the task ROW prints (REG-274): title · assignee names · creator (the REG-239 column) · the due
- * date exactly as the cell prints it (displayDate, never the raw timestamp) · the status label · tag names.
+ * date exactly as the cell prints it (displayDue — its day and its time, Dane UAT 5.13 — never the raw timestamp) · the status label · tag names.
  * It is also the yardstick for "matched on the description alone" (REG-275) — see `descriptionOnly` below.
  */
 const rowText = (t: TaskRow): (string | null | undefined)[] => [
@@ -80,7 +80,7 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
   t.lead?.name,
   ...t.assignees.map((m) => m.name),
   t.creator?.name,
-  t.dueAt ? displayDate(t.dueAt) : null,
+  t.dueAt ? displayDue(t.dueAt) : null,
   t.done ? 'Completed' : 'Open',
   ...t.tags.map((g) => g.name),
 ]
@@ -135,7 +135,18 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   /* (T5 · T4) the to-do chips count within the scope; a press narrows the list to its tasks, a second press lets go (REG-666) */
   const todoCounts = useMemo(() => Object.fromEntries((Object.keys(TODO_TEST) as Todo[]).map((k) => [k, inScope.filter((t) => TODO_TEST[k](t, now)).length])) as Record<Todo, number>, [inScope, now])
   if (todo && todoCounts[todo] === 0) setTodo(null)   // nothing left waiting — the chip goes, and its narrowing with it
-  const visible = useMemo(() => {
+  /* (Dane UAT 11.02) The tasks typed into the add row here, newest first. They stay the FIRST rows while this list is on screen — the
+     rule of 30 Aug ("the new added task should be the first row always", app/leads/tasks-actions.ts createTask) held even when the
+     system has written other unseen, dated tasks (a log's reminder, a contract's automation, a render's call back) or the new one has
+     no date — so it can be opened and changed at once, never hunted for. A change of view — the sort, a filter, the scope, a to-do
+     chip, the search — lets them go to their places; leaving the page forgets them. */
+  const view = JSON.stringify([filters, scope, todo, query])
+  const [fresh, setFresh] = useState<{ ids: string[]; view: string }>({ ids: [], view })
+  if (fresh.view !== view) setFresh({ ids: [], view })   // render-phase adjust
+  /* …and the one just added is brought into view and pulses once — the quote editor's attention after an add (REG-573) */
+  const [pulse, setPulse] = useState<{ id: string; n: number } | null>(null)
+  const addedHere = (id: string) => { setFresh((f) => ({ ids: [id, ...f.ids.filter((x) => x !== id)], view: f.view })); setPulse((p) => ({ id, n: (p?.n ?? 0) + 1 })) }
+  const matched = useMemo(() => {
     const sorted = applyTaskFilters(todo ? inScope.filter((t) => TODO_TEST[todo](t, now)) : inScope, filters, now)
     /* (REG-466) On the studio page the due-date sort keeps the open tasks ahead of the completed ones — a morning list, not an archive. */
     const base = studio && filters.sort === 'due' ? [...sorted.filter((t) => !t.done), ...sorted.filter((t) => t.done)] : sorted
@@ -145,12 +156,17 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
        there (the "In description" chip beside the title), which is what unlocked matching it. */
     return filterByQuery(base, query, (t) => ({ fields: [...rowText(t), t.description] }))
   }, [inScope, filters, query, now, studio, todo])
+  const visible = useMemo(() => {
+    if (!fresh.ids.length) return matched
+    const first = fresh.ids.map((id) => tasks.find((t) => t.id === id)).filter((t): t is TaskRow => !!t)
+    return [...first, ...matched.filter((t) => !fresh.ids.includes(t.id))]
+  }, [matched, fresh.ids, tasks])
   /* (REG-275) The tasks whose ONLY hit is the description — the chip's trigger. Quiet by construction: empty while
-     the box is empty, and empty for a task the reader can already see the query in. */
+     the box is empty, and empty for a task the reader can already see the query in (and for a task just added, which no search found). */
   const descriptionOnly = useMemo(() => {
     if (!query.trim()) return new Set<string>()
-    return new Set(visible.filter((t) => !matchesQuery(query, rowText(t))).map((t) => t.id))
-  }, [visible, query])
+    return new Set(matched.filter((t) => !matchesQuery(query, rowText(t))).map((t) => t.id))
+  }, [matched, query])
   // Search / filters that match nothing → the listing's "No results found" card (T6); the bare head never shows.
   const nothingMatches = tasks.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
   // Selection follows the visible set (render-phase adjust).
@@ -169,6 +185,10 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   const [tagsFor, setTagsFor] = useState<(Anchored & { taskId: string }) | null>(null)
   const [dueFor, setDueFor] = useState<{ taskId: string; el: HTMLElement } | null>(null)
   const dueAnchor = useRef<HTMLElement | null>(null)
+  /* (Dane UAT 5.05) The due picker carries the time row: each pick saves, and the picker reads the last pick until the saved task catches
+     up — an hour picked right after the day must land on the NEW day, not the one still on the row. */
+  const [duePick, setDuePick] = useState<{ taskId: string; date: Date } | null>(null)
+  const closeDue = () => { setDueFor(null); setDuePick(null) }
   const [manageTags, setManageTags] = useState(false)
   /* Every destructive action confirms (REG-264): comment and tag deletes were the two paths that ran straight through. */
   const [deletingComment, setDeletingComment] = useState<string | null>(null)
@@ -242,7 +262,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
     })()
   }
   const openTags = (task: TaskRow, anchor: HTMLElement) => setTagsFor((a) => (a?.el === anchor ? null : { taskId: task.id, ...tagsPos(anchor, tags.length) }))
-  const openDue = (task: TaskRow, anchor: HTMLElement) => { dueAnchor.current = anchor; setDueFor((d) => (d?.el === anchor ? null : { taskId: task.id, el: anchor })) }
+  const openDue = (task: TaskRow, anchor: HTMLElement) => { dueAnchor.current = anchor; setDuePick(null); setDueFor((d) => (d?.el === anchor ? null : { taskId: task.id, el: anchor })) }
   const rowMenu = (task: TaskRow, action: 'complete' | 'rename' | 'template' | 'duplicate' | 'delete') => {
     if (action === 'complete') void setDone([task.id], true)
     if (action === 'rename') setRenaming(task.id)
@@ -313,7 +333,8 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
           adding={adding}
           /* Saving keeps the row open, empty and focused for the next task — entry chains until Esc / Cancel
              (user 2026-09-01, REG-257: "user can just keep adding tasks one after the other"). */
-          onAddSubmit={(title) => { if (title.trim()) { const members = addMembers; void run('add the task', () => createTask(addLeadId, title.trim(), { assignees: members }), 'Task added'); setAddRun((n) => n + 1) } else stopAdd() }}
+          onAddSubmit={(title) => { if (title.trim()) { const members = addMembers; let id = ''; void run('add the task', async () => { id = await createTask(addLeadId, title.trim(), { assignees: members }) }, 'Task added').then((ok) => { if (ok && id) addedHere(id) }); setAddRun((n) => n + 1) } else stopAdd() }}
+          pulse={pulse}   /* (Dane UAT 11.02) the task just added: into view, one pulse */
           addKey={addRun}
           onAddCancel={stopAdd}
           onAddClick={startAdd}
@@ -344,7 +365,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
           onComments={() => setPanelView('comments')}
           onAttach={() => setAttachFor(openTask.id)}
           onMenu={(action) => (action === 'template' ? setSaveTemplateFor([openTask.id]) : setDeleting({ ids: [openTask.id], all: false }))}
-          onChange={(patch) => { void run('save the task', () => updateTask(openTask.id, patch), 'Task updated') }}   /* (REG-326) the blur-saved fields confirm, as Members do */
+          onChange={(patch) => run('save the task', () => updateTask(openTask.id, patch), { message: 'Task updated', key: `task-saved-${openTask.id}` })}   /* (REG-326) the blur-saved fields confirm, as Members do; (Dane UAT 5.05) one line for a run of picks — the day, the hour, the minute — not a stack */
           onAssign={(anchor) => openAssign(openTask, anchor)}
           onTags={(tagIds) => { void run('update the tags', () => setTaskTags(openTask.id, tagIds), 'Tags updated') }}
           onCreateTag={(name) => { void createAndTag(openTask, name) }}
@@ -399,15 +420,23 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
           position={tagsFor}
         />
       </div>
+      {/* (Dane UAT 5.05) With the time row (REG-119's picker, as Set a follow-up and the panel's field): a picked day keeps the task's time,
+          the row below changes it, Done closes. Each pick saves at once; a refused one puts the picker back on the saved due. */}
       <DatePicker
         open={!!dueFor}
         anchorRef={dueAnchor}
         anchorKey={dueFor?.taskId ?? ''}
-        value={dueTask?.dueAt ?? null}
+        value={(duePick && duePick.taskId === dueTask?.id ? duePick.date : dueTask?.dueAt) ?? null}
         today={new Date(now)}
         label="Due date"
-        onSelect={(date) => { const t = dueTask; setDueFor(null); if (t) void run('set the due date', () => updateTask(t.id, { dueAt: date }), 'Due date updated') }}
-        onClose={() => setDueFor(null)}
+        withTime
+        onSelect={(date) => {
+          const t = dueTask; if (!t) return
+          setDuePick({ taskId: t.id, date })
+          void run('set the due date', () => updateTask(t.id, { dueAt: date }), { message: 'Due date updated', key: `task-due-${t.id}` })
+            .then((ok) => { if (!ok) setDuePick((p) => (p && p.date === date ? null : p)) })
+        }}
+        onClose={closeDue}
       />
       <ManageTagsDialog
         open={manageTags} tags={tags}

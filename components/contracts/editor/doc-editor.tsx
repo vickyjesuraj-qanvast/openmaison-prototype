@@ -19,13 +19,15 @@ export type Align = 'left' | 'center' | 'right'
 export type DocState = { block: BlockKind; bold: boolean; italic: boolean; underline: boolean; strike: boolean; highlight: boolean; align: Align; ul: boolean; ol: boolean }
 export const IDLE_STATE: DocState = { block: 'p', bold: false, italic: false, underline: false, strike: false, highlight: false, align: 'left', ul: false, ol: false }
 export const HIGHLIGHT = '#EEE5FF'   /* primary-variant — the only highlight, the DS tint */
+const INERT = 'data-om-inert'   /* a chip on its way in: made contenteditable="false" once it is in place (emit) */
 
 export type DocEditorHandle = {
   exec: (cmd: string, value?: string) => void
   formatBlock: (kind: BlockKind) => void
   align: (a: Align) => void
   toggleHighlight: () => void
-  /** Inserts HTML at the caret (a chip, a field, an image), or at the end when the paper is not focused. */
+  /** Inserts HTML at the caret (a chip, a field, an image) — the paper's last caret when a menu, a dialog or the eSignatures drawer
+      holds focus — or at the end when the paper has never had one. */
   insertHtml: (html: string) => void
   /** A link on the selection, or the URL itself when nothing is selected. */
   link: (href: string) => void
@@ -66,13 +68,27 @@ export const DocEditor = forwardRef<DocEditorHandle, {
     if (chip && tip) showTooltipFor(chip, tip)
   }
   const onChipOut = (e: React.PointerEvent) => { const chip = chipOf(e.target); if (chip && !(e.relatedTarget instanceof Node && chip.contains(e.relatedTarget))) hideTooltipFor(chip) }
-  const emit = useCallback(() => { const el = body.current; if (!el) return; el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML)); onChangeRef.current(el.innerHTML) }, [])
+  const emit = useCallback(() => {
+    const el = body.current; if (!el) return
+    /* (Dane UAT 8.03) Chips and signature fields are always inert — a chip goes in editable (see `insertHtml`), and Redo brings back a
+       fresh copy of what was inserted; both are made `contenteditable="false"` here, before the paper is saved. */
+    el.querySelectorAll<HTMLElement>(`[${INERT}], .om-token:not([contenteditable="false"]), .om-sign:not([contenteditable="false"])`).forEach((n) => {
+      if (n.hasAttribute(INERT)) { n.removeAttribute(INERT); n.removeAttribute('style') }   // the computed style Chrome copies onto an inserted inline — the chip's class draws it
+      n.setAttribute('contenteditable', 'false')
+    })
+    el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML)); onChangeRef.current(el.innerHTML)
+  }, [])
 
+  /* (Dane UAT 8.03) The paper's last selection: a menu, a dialog or a drawer that takes focus (Insert a field ▾ moves it to its first
+     row, REG-286) left the paper unfocused and every insert went to the end of the document. Kept on every selection change inside the
+     paper and put back before a command runs — the quote editor's rich text keeps its range the same way (`savedRange`). */
+  const lastRange = useRef<Range | null>(null)
   const readState = useCallback(() => {
     const el = body.current
+    const sel = el ? window.getSelection() : null
+    if (el && sel && sel.rangeCount && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) lastRange.current = sel.getRangeAt(0).cloneRange()
     if (!el || !el.contains(document.activeElement)) { onStateRef.current(IDLE_STATE); return }
     const q = (c: string) => { try { return document.queryCommandState(c) } catch { return false } }
-    const sel = window.getSelection()
     const node = sel?.anchorNode
     const elem = node instanceof Element ? node : node?.parentElement
     const blockEl = elem?.closest('h1, h2, h3, p, div, li') ?? null
@@ -96,9 +112,18 @@ export const DocEditor = forwardRef<DocEditorHandle, {
     const sel = window.getSelection(); if (!sel) return
     sel.selectAllChildren(el); sel.collapseToEnd()
   }
+  /** Focus back in the paper at its last caret (still in the document), else at the end. */
+  const refocus = () => {
+    const el = body.current; if (!el || el.contains(document.activeElement)) return
+    const r = lastRange.current
+    if (!r || !el.contains(r.startContainer) || !el.contains(r.endContainer)) { focusEnd(); return }
+    el.focus({ preventScroll: true })
+    const sel = window.getSelection(); if (!sel) return
+    sel.removeAllRanges(); sel.addRange(r)
+  }
   const run = (cmd: string, value?: string) => {
     const el = body.current; if (!el || readOnly) return
-    if (!el.contains(document.activeElement)) focusEnd()
+    refocus()
     document.execCommand(cmd, false, value)
     emit(); readState(); setTick((t) => t + 1)
   }
@@ -112,10 +137,14 @@ export const DocEditor = forwardRef<DocEditorHandle, {
       try { const v = document.queryCommandValue('hiliteColor') || document.queryCommandValue('backColor'); on = /238,\s*229,\s*255|eee5ff/i.test(String(v)) } catch { on = false }
       run('hiliteColor', on ? 'transparent' : HIGHLIGHT)
     },
-    insertHtml: (html) => run('insertHTML', html),
+    /* (Dane UAT 8.03) Chrome lifts a non-editable inline inserted at a paragraph's end out of the paragraph, onto a line of its own after
+       it: a chip goes in editable — marked — and turns inert in place (`emit`), so it sits where the caret was, end of a clause included.
+       (Its trailing space also keeps Chrome from unwrapping a lone span as a style span.) A signature field keeps that line of its own
+       at a paragraph's end — a box under the words it follows — and sits in the text anywhere else. */
+    insertHtml: (html) => run('insertHTML', /class="om-token"/.test(html) ? html.replace(/ contenteditable="false"/g, ` ${INERT}=""`) : html),
     link: (href) => {
       const el = body.current; if (!el) return
-      if (!el.contains(document.activeElement)) focusEnd()
+      refocus()   // (Dane UAT 8.03) the selection the Link dialog was opened on
       const sel = window.getSelection()
       const full = /^https?:\/\//i.test(href) ? href : `https://${href}`
       if (!sel || sel.isCollapsed) run('insertHTML', `<a href="${full.replace(/"/g, '%22')}">${full}</a>`)
@@ -128,7 +157,7 @@ export const DocEditor = forwardRef<DocEditorHandle, {
       const h = el.querySelectorAll('h1, h2, h3')[index] as HTMLElement | undefined
       h?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     },
-  }), [emit, readState, readOnly])   // eslint-disable-line react-hooks/exhaustive-deps -- `run` and `focusEnd` close over refs only
+  }), [emit, readState, readOnly])   // eslint-disable-line react-hooks/exhaustive-deps -- `run`, `refocus` and `focusEnd` close over refs only
 
   return (
     <div ref={body} className={styles.doc} contentEditable={!readOnly} suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}

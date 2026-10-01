@@ -169,9 +169,10 @@ export function MoreCredits({ initial, onOpen, onUpgrade, rowClass, iconClass, l
   )
 }
 /** The credits card as the phone's sheet, opened from More's first row. */
-export function CreditsSheet({ initial, gstLine, open, onClose }: { initial: CreditSummary | null; gstLine: string; open: boolean; onClose: () => void }) {
+export function CreditsSheet({ initial, gstLine, open, onClose, onBack }: { initial: CreditSummary | null; gstLine: string; open: boolean; onClose: () => void
+  /** (REG-899) the sheet's back to More */ onBack?: () => void }) {
   const s = useCredits(initial)
   const none = useRef<HTMLElement | null>(null)
   if (!s) return null
-  return <CreditsCard open={open} anchor={none} placement="rail" onClose={onClose} summary={s} gstLine={gstLine} />
+  return <CreditsCard open={open} anchor={none} placement="rail" onClose={onClose} onBack={onBack} summary={s} gstLine={gstLine} />
 }

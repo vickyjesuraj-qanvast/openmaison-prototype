@@ -182,16 +182,18 @@ function AreaField({
   )
 }
 
+/** (REG-902, Dane UAT 4.03) "Open existing lead" opens it in a new browser tab — on the press itself, so no popup blocker eats it — and the
+    form stays open with what was typed, for the next lead in a run of manual adds. Supersedes REG-609's "closes the form and opens it". */
+const openInNewTab = (leadId: string) => { window.open(`/leads/${leadId}`, '_blank', 'noopener') }
+
 export function LeadFormModal({
-  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, onOpenExisting, customFields = [], customValues,
+  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, customFields = [], customValues,
 }: {
   /** (REG-612, parity Q-25) The studio's active custom fields, rendered in Additional info; `customValues` seeds an edit. */
   customFields?: CustomFieldDef[]
   customValues?: CustomValues
   /** (REG-609, parity C-07) A Designer creating a lead: pre-ticked and locked to them. */
   selfAssign?: { id: string } | null
-  /** (REG-609, parity Q-18) The duplicate dialog's "Open existing lead" — the host closes the form and navigates. */
-  onOpenExisting?: (leadId: string) => void
   /** (REG-601) The members this viewer may assign — the Assign member field offers these; null = everyone. */
   assignable?: string[] | null
   /** (REG-599) The studio's live lead sources (Settings › Leads), the lead's own retired one kept first; the enum when the caller has none. */
@@ -344,7 +346,7 @@ export function LeadFormModal({
                   onPick={() => fillFromDocument()} accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx" />
       </Dialog>
       <Dialog open={!!dup} onClose={() => setDup(null)} title={dup?.matchedOn === 'email' ? 'A lead with this email already exists' : 'A lead with this phone already exists'} width={400} size="form" alert nested portal
-              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { const id = dup?.id; setDup(null); if (id) onOpenExisting?.(id) }}>Open existing lead</Button>
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { const id = dup?.id; setDup(null); if (id) openInNewTab(id) }}>Open existing lead</Button>
                        <Button onPress={() => { setDup(null); void persist() }}>Create anyway</Button></>}>
         {dup ? <p className={styles.dupText} data-testid="duplicate-lead"><b>{dup.name}</b> · {phoneTyped(dup.phone)}{dup.email ? ` · ${dup.email}` : ''} · {dup.stage}</p> : null}
         <span className={styles.helper}>Open it to work the existing lead, or create this one anyway.</span>

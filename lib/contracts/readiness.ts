@@ -35,9 +35,9 @@ export function contractReadiness(o: { source: string; body: string | null; valu
   if (named) out.push(named)
   if ((fields.includes('studio-signature') || fields.includes('studio-initial')) && !o.hasStudioSignature) out.push({ label: 'Your signature isn’t set up, so the Studio signature box prints blank — set it up in any quote’s Signature section', blocking: false })
   const used = tokensIn(body)
-  if (!o.hasQuote && used.some((k) => QUOTE_KEYS.includes(k))) out.push({ label: 'It names no quote, so its quote records print empty', blocking: false, fix: 'quote' })
+  if (!o.hasQuote && used.some((k) => QUOTE_KEYS.includes(k))) out.push({ label: 'It names no quote, so its quote fields print empty', blocking: false, fix: 'quote' })
   const empty = used.filter((k) => !(o.hasQuote ? [] : QUOTE_KEYS).includes(k) && !o.values[k]?.trim())
-  if (empty.length) out.push({ label: `${empty.length === 1 ? 'A Smart Text record is' : `${empty.length} Smart Text records are`} empty and print in brackets: ${empty.map((k) => TOKEN_LABEL[k]).join(', ')}`, blocking: false })
+  if (empty.length) out.push({ label: `${empty.length === 1 ? 'An inserted field is' : `${empty.length} inserted fields are`} empty and print in brackets: ${empty.map((k) => TOKEN_LABEL[k]).join(', ')}`, blocking: false })
   return out
 }
 /** (sweep S2 #2 · #3) What a refused send says, wherever it is asked for — Send, Copy Link, a list's status menu. */

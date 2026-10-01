@@ -15,6 +15,7 @@ import { BOOK_RULE, SECTION_RULE, itemChangeBlock, newItemStatus, runsBook } fro
 import { diffItem, fetchItemHistory, logBookChange } from '@/lib/company/price-book-history'
 import type { ItemChange } from '@/lib/company/price-book-changes'
 import { refuse, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
 
 /* Company › Price book (REG-594): the studio's items and sections, edited outside any quote. Every write revalidates the page
    the quote editor reads from on its next load. Deletes are soft (REG-502's rule): a deleted entry leaves the Add Item popover
@@ -66,16 +67,19 @@ async function inUse(ids: string[]): Promise<Set<string>> {
   return new Set(rows.map((r) => r.id).filter((x): x is string => !!x))
 }
 
-export async function createPriceBookItem(input: PriceBookItemInput): Promise<PriceBookItem> {
+/** (Dane UAT 3.03) A new item lands in the folder that was open (`folderId`, inside the one object — the photo makes the input long), filed
+    by the book's rule for its maker (lib/company/folder-landing.ts); `refused` says why it went to the top instead, for the snackbar. */
+export async function createPriceBookItem(input: PriceBookItemInput & { folderId?: string | null }): Promise<PriceBookItem & { refused: string | null }> {
   const v = await who()
   const now = new Date(), id = randomUUID()
   const status = newItemStatus(v)
-  await db.insert(priceBookItems).values({ ...row(id, input, now), status, createdBy: v.id, updatedBy: v.id })
+  const landed = await landingFolder('book-items', input.folderId, itemChangeBlock(v, { status, createdBy: v.id }))
+  await db.insert(priceBookItems).values({ ...row(id, input, now), status, createdBy: v.id, updatedBy: v.id, folderId: landed.folderId })
   await logBookChange(id, 'created', v.id, null, null, now)
   if (status === 'proposed') await proposeNotice(id, v.id)
   touch()
   const [r] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, id))
-  return r!
+  return { ...r!, refused: landed.refused }
 }
 
 export async function updatePriceBookItem(id: string, patch: Partial<PriceBookItemInput>, note?: string | null): Promise<PriceBookItem | Refusal> {
@@ -102,6 +106,27 @@ async function writeItem(cur: PriceBookItem, patch: Partial<PriceBookItemInput>,
   return r!
 }
 
+/** (Dane UAT 3.10) History › Bring back: the values one History entry changed go back to what they were before it, through the item's own
+    write (the book's rule, a Designer's own proposal, a History row of its own noted "Brought back"). Answers the item and that new row,
+    whose own Bring back is the Undo. */
+export async function bringBackPriceBookItem(id: string, changeId: string, note: 'Brought back' | 'Undo' = 'Brought back'): Promise<{ item: PriceBookItem; changeId: string | null } | Refusal> {
+  const [cur] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, id))
+  if (!cur) return refuse(GONE)
+  const v = await who()
+  const block = itemChangeBlock(v, cur)
+  if (block) return refuse(block)
+  const [log] = await db.select().from(priceBookChanges).where(and(eq(priceBookChanges.id, changeId), eq(priceBookChanges.itemId, id)))
+  if (!log) return refuse('That change is gone from the item’s History')
+  let diff: Record<string, [unknown, unknown]> = {}
+  try { diff = log.changes ? JSON.parse(log.changes) as Record<string, [unknown, unknown]> : {} } catch { diff = {} }
+  const back: Record<string, unknown> = {}
+  for (const [field, [before]] of Object.entries(diff)) back[field] = before ?? null
+  if (!Object.keys(back).length) return refuse('That entry changed no values')
+  const logged: string[] = []
+  const item = await writeItem(cur, back as Partial<PriceBookItemInput>, note === 'Undo' ? 'Undo' : 'Brought back', v, logged)
+  return { item, changeId: logged[0] ?? null }
+}
+
 export async function renamePriceBookItem(id: string, name: string): Promise<void | Refusal> { const r = await updatePriceBookItem(id, { name }); if ('error' in r) return r }
 
 export async function duplicatePriceBookItem(id: string): Promise<string | Refusal> {
@@ -124,9 +149,12 @@ export async function importPriceBookItems(lines: PasteLine[], vendor?: string |
   const { v, block } = await runner(); if (block) return refuse(block)
   const now = new Date()
   const key = (name: string, ven: string | null | undefined) => `${name.trim().toLowerCase()}|${(ven ?? '').trim().toLowerCase()}`
-  const live = await db.select().from(priceBookItems).where(and(isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live')))
+  const inBook = await db.select().from(priceBookItems).where(isNull(priceBookItems.deletedAt))
   const shelf = new Map<string, PriceBookItem>()
-  for (const it of live) if (!shelf.has(key(it.name, it.vendor))) shelf.set(key(it.name, it.vendor), it)
+  for (const it of inBook) if (it.status === 'live' && !shelf.has(key(it.name, it.vendor))) shelf.set(key(it.name, it.vendor), it)
+  /* (Dane UAT 3.11 · 3.12) A row that matches an item waiting for approval is skipped — never imported, never live: an import would have
+     made a live copy of a proposal, round its approval (REG-652). */
+  const waiting = new Set(inBook.filter((it) => it.status === 'proposed').map((it) => key(it.name, it.vendor)))
   const seen = new Set<string>()
   let skipped = 0, updated = 0
   const fresh: ReturnType<typeof row>[] = []
@@ -141,6 +169,7 @@ export async function importPriceBookItems(lines: PasteLine[], vendor?: string |
     seen.add(k)
     const unit = l.unit ? (UNITS.find((u) => u.toLowerCase() === l.unit!.toLowerCase()) ?? l.unit) : undefined
     const hit = shelf.get(k)
+    if (!hit && waiting.has(k)) { skipped++; continue }
     if (hit && onMatch === 'skip') { skipped++; continue }
     if (hit && onMatch === 'update') {
       await writeItem(hit, { ...(l.costMinor !== undefined ? { costMinor: l.costMinor } : {}), ...(l.markupMinor !== undefined ? { markupMinor: l.markupMinor } : {}), ...(unit ? { unit } : {}), ...(l.description ? { description: l.description } : {}), ...(l.category ? { category: l.category } : {}), ...(l.kind ? { kind: l.kind } : {}), ...(l.link ? { link: l.link } : {}) }, 'Imported', v, changes)
@@ -355,11 +384,14 @@ export async function emptyPriceBookSectionTrash(): Promise<{ removed: number; k
 
 /** New section (REG-653, Q-10 · E-70): written on Save with what the editor holds — Cancel leaves nothing behind. The usual way in is a
     quote's "Save section to My Sections" (REG-566). */
-export async function createPriceBookSection(input: SectionInput): Promise<string | Refusal> {
+export async function createPriceBookSection(input: SectionInput & { /** (Dane UAT 3.03) the folder open in My Sections */ folderId?: string | null }): Promise<{ id: string; folderId: string | null; refused: string | null } | Refusal> {
   const { v, block } = await runner(SECTION_RULE); if (block) return refuse(block)
   const now = new Date(), id = randomUUID(), n = clean(input.name, 120) ?? 'New section'
   const blank: SavedSection = { name: n, description: null, descriptionHtml: null, lines: [], subs: [] }
-  await db.insert(priceBookSections).values({ id, name: n, description: null, linesJson: JSON.stringify(input.body ? { ...input.body, name: n } : blank), createdAt: now, updatedAt: now, createdBy: v.id, updatedBy: v.id })
-  await updatePriceBookSection(id, { ...input, name: n })
-  return id
+  /* (Dane UAT 3.03) made inside a folder of My Sections, it is filed there — whoever saves sections may file them */
+  const { folderId: asked, ...fields } = input
+  const landed = await landingFolder('book-sections', asked, null)
+  await db.insert(priceBookSections).values({ id, name: n, description: null, linesJson: JSON.stringify(input.body ? { ...input.body, name: n } : blank), createdAt: now, updatedAt: now, createdBy: v.id, updatedBy: v.id, folderId: landed.folderId })
+  await updatePriceBookSection(id, { ...fields, name: n })
+  return { id, folderId: landed.folderId, refused: landed.refused }
 }

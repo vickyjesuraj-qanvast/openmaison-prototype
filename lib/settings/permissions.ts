@@ -24,6 +24,26 @@ export type Reach = 'yes' | 'no' | 'own' | 'team' | 'backup' | 'submit'
 export const REACH_LABEL: Record<Reach, string> = { yes: 'Yes', no: 'No', own: 'Their own', team: 'Their team’s', backup: 'If the backup approver', submit: 'Submits for approval' }
 
 export type StudioRules = { visibility: LeadVisibility; quoteApproval: QuoteApproval; templateApproval: TemplateApproval; paymentLock: boolean }
+
+/**
+ * (Dane UAT 2.23 · 10.08) Where a row's rule is set — Who may do what links each row a studio can change to that place: a Settings card by
+ * its anchor, or the Company page that holds the records. A row whose rule is fixed by its role has none.
+ */
+export type RulePlace = { href: string; label: string }
+const LEADS_VIS: RulePlace = { href: '/settings?section=leads#lead-visibility', label: 'Lead management › Who sees leads' }
+const MEMBERS: RulePlace = { href: '/company/members', label: 'Company › Members' }
+const BOOK: RulePlace = { href: '/company/price-book', label: 'Company › Price book' }
+const PLAN: RulePlace = { href: '/company/plan', label: 'Company › Plan & AI credits' }
+export const RULE_PLACES: Partial<Record<string, RulePlace>> = {
+  members: MEMBERS, owner: MEMBERS,
+  see: LEADS_VIS, assign: LEADS_VIS,
+  approve: { href: '/settings?section=quotes#quote-approval', label: 'Quotes & pricing › Quote approval' },
+  publish: { href: '/settings?section=quotes#template-approval', label: 'Quotes & pricing › Template approval' },
+  payments: { href: '/settings?section=quotes#payment-lock', label: 'Quotes & pricing › Payment schedule' },
+  'price-book': BOOK, 'price-book-approve': BOOK,
+  'price-book-sections': { href: '/company/price-book/sections', label: 'Company › Price book › My Sections' },
+  'ai-use': PLAN, 'ai-buy': PLAN, 'ai-amounts': PLAN, 'ai-plan': PLAN, 'ai-usage': PLAN,
+}
 export type PermissionRow = { key: string; action: string; reach: Record<RoleColumn, Reach> }
 
 /* Stand-in ids: "me" is the role holder, "mine" a Designer reporting to them, "other" anyone else. */

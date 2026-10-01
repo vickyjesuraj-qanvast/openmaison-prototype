@@ -162,7 +162,7 @@ export type ItemsBlock = BlockBase & {
   groupBy: 'none' | 'category' | 'room' | 'section'
   subGroupBy: 'none' | 'room' | 'category'
   sectionLabel: 'letters' | 'numbers' | 'none'
-  numbering: 'group' | 'area' | 'continuous' | 'none' | 'nested' | 'lettered'   // (REG-558) nested = 1 · 1.1 · a b c: the section's number, its lines, a sub-section's lines lettered; (REG-617, parity Q-10) lettered = A1 · A2 · B1, the section's letter before each number, restarting per section
+  numbering: 'group' | 'area' | 'continuous' | 'none' | 'nested' | 'lettered' | 'rooms' | 'roman'   // (REG-558) nested = 1 · 1.1 · a b c: the section's number, its lines, a sub-section's lines lettered; (REG-617, parity Q-10) lettered = A1 · A2 · B1, the section's letter before each number, restarting per section; (Dane UAT, Figma 1518:77) rooms = B · 1 Kitchen · 1.1 — the room rows numbered inside their section, each line the room's number and its own (with sections marked 1 · 2 · 3: 1 · 1.1 Kitchen · 1.1.1); roman = 1 · a · i — the section's number, the room's letter, the line in roman numerals
   bandStyle: 'grey' | 'accent' | 'black' | 'underlined' | 'inline'
   groupNotes: boolean
   groupNoteStyle: TextStyle

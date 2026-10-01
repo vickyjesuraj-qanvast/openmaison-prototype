@@ -17,17 +17,19 @@ export function useContractFromQuote(from: string) {
   const router = useRouter()
   const { run } = useRun()
   const [quote, setQuote] = useState<{ id: string; leadId: string; number: string } | null>(null)
+  /* (Dane UAT 8.02, REG-659) The picker stays, reading "Creating…", until the contract exists and its editor takes over; a refusal leaves it open. */
+  const [busy, setBusy] = useState(false)
   const create = (templateId?: string) => {
     const q = quote
-    setQuote(null)
-    if (!q) return
+    if (!q || busy) return
+    setBusy(true)
     void run('create the contract', async () => {
       const id = await createContractDoc({ leadId: q.leadId, fromQuoteId: q.id, ...(templateId ? { templateId } : {}) })
       router.push(withFrom(`/contracts/${id}`, from))
-    }, `Contract created from ${q.number}`)
+    }, `Contract created from ${q.number}`).then((ok) => { if (!ok) setBusy(false) })
   }
   return {
-    open: (q: { id: string; leadId: string; number: string }) => setQuote(q),
-    dialog: <ContractTemplatePicker open={!!quote} onClose={() => setQuote(null)} load={fetchContractTemplateOptionsAction} onUse={(t) => create(t)} onStarter={() => create()} />,
+    open: (q: { id: string; leadId: string; number: string }) => { setBusy(false); setQuote(q) },
+    dialog: <ContractTemplatePicker open={!!quote} onClose={() => setQuote(null)} load={fetchContractTemplateOptionsAction} busy={busy} onUse={(t) => create(t)} onStarter={() => create()} />,
   }
 }

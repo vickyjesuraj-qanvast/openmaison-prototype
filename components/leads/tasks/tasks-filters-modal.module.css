@@ -8,6 +8,7 @@
 .tab { composes: tab from '../../om/filters-modal.module.css'; }
 .tabDot { composes: tabDot from '../../om/filters-modal.module.css'; }
 .content { composes: content from '../../om/filters-modal.module.css'; }
+.search { composes: search from '../../om/filters-modal.module.css'; }   /* (Dane UAT 11.03) the Lead pane's search — the listing's Sources pane's box */
 .sectionTitle { composes: sectionTitle from '../../om/filters-modal.module.css'; }
 .list { composes: list from '../../om/filters-modal.module.css'; }
 .sortRow { composes: sortRow from '../../om/filters-modal.module.css'; }
@@ -17,3 +18,4 @@
 .rowName { composes: rowName from '../../om/filters-modal.module.css'; }
 .rowRole { composes: rowRole from '../../om/filters-modal.module.css'; }
 .dateRow { composes: dateRow from '../../om/filters-modal.module.css'; }
+.noMatch { composes: noMatch from '../filters-modal.module.css'; }   /* (Dane UAT 11.03) “No leads match …” — the listing's line */

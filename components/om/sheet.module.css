@@ -31,6 +31,8 @@
    pads them as every phone sheet does — 12 above the title (the grabber takes the rest, REG-308), 16 at the sides (REG-372) — so a
    menu's sheet and a dialog's sheet stand the same 56. */
 .sheet .head { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-5); }
+/* (REG-899) The back arrow of a sheet opened from another sheet — the Drawer's (drawer.module.css .back): the ink of the title. */
+.back { color: var(--om-color-on-surface-default); }
 .sheet .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 /* A menu inside a sheet is the full-width list of the canvas (1f, 2f): rows run the sheet's width on the modal's

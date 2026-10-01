@@ -10,7 +10,8 @@ import { revalidateEveryLead } from '@/lib/leads/queries'
 import { STUDIO_KEY, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { changeBlock, defaultBlock } from '@/lib/company/template-guard'
-import { BRAND_RULE, TEMPLATE_AWAITING_DELETE_RULE, TEMPLATE_DEFAULT_DELETE_RULE, TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, TEMPLATE_IN_USE_RULE, TEMPLATE_PUBLISH_RULE, TEMPLATE_REVIEW_RULE, TEMPLATE_UNPUBLISHED_RULE, refuse, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
+import { BRAND_RULE, TEMPLATE_AWAITING_DELETE_RULE, TEMPLATE_DEFAULT_DELETE_RULE, TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, TEMPLATE_IN_USE_RULE, TEMPLATE_PUBLISH_RULE, TEMPLATE_REVIEW_RULE, TEMPLATE_UNPUBLISHED_RULE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { findSplit, presetOf } from '@/lib/quotes/payments'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { createPaymentTemplate } from '@/app/company/payment-templates-actions'
@@ -57,7 +58,10 @@ export type TemplateSource =
  * New template: a Draft from nothing, from a house style, from a quote ("Recreate from my current quote" — the curated match
  * plus the quote's own defaults) or as a copy of another template. Returns the new id; the editor opens on it.
  */
-export async function createTemplate(input: { name?: string; source: TemplateSource }): Promise<string> {
+export async function createTemplate(input: { name?: string; source: TemplateSource
+  /** (Dane UAT 3.03) The folder open in the gallery — the new template is filed there when its maker may file a quote template (an Owner or
+      an Admin: a quote template keeps no author); else it lands at the top of Quotes. */
+  folderId?: string | null }): Promise<string> {
   const now = new Date()
   let design: TemplateDesign
   let defaults: TemplateDefaults = { ...DEFAULT_DEFAULTS }
@@ -81,11 +85,16 @@ export async function createTemplate(input: { name?: string; source: TemplateSou
     defaults = parseDefaults(draft?.defaults ? JSON.stringify(draft.defaults) : row.defaultsJson)
     if (!input.name) name = `Copy of ${row.name}`
     sourceFile = row.sourceFile
-  } else { design = presetByKey('letter').design(); design.blocks = design.blocks.filter((b) => b.kind === 'items' || b.kind === 'totals'); design.brand = {}; design.page = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '', dateFormat: 'short' } }
+  } else {
+    /* (Figma 1546:28, Dane UAT g-blank) A blank template keeps the Letter design's header and footer too — the letterhead and the signatures a
+       quote always carries — with its Items table and Totals; the rest of the page is the studio's to add. */
+    design = presetByKey('letter').design(); design.blocks = design.blocks.filter((b) => b.kind === 'header' || b.kind === 'items' || b.kind === 'totals' || b.kind === 'footer'); design.brand = {}; design.page = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '', dateFormat: 'short' }
+  }
   const id = randomUUID()
+  const { folderId } = await landingFolder('quotes', input.folderId, templateChangeBlock(await fetchViewer(), undefined))
   await db.insert(quoteTemplates).values({
     id, name: await uniqueName(name), kind: 'design', isDefault: false, createdAt: now, status: 'draft', version: 0, paper: design.page.paper,
-    designJson: null, defaultsJson: null, draftJson: JSON.stringify({ design, defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME, sourceFile,
+    designJson: null, defaultsJson: null, draftJson: JSON.stringify({ design, defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME, sourceFile, folderId,
   })
   touch(id)
   return id

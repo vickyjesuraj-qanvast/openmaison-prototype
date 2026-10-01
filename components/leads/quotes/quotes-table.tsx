@@ -16,7 +16,7 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import type { Member, Quote } from '@/lib/db/schema'
 import { Avatar } from '@/components/om/avatar'
-import { displayDate, money } from '@/lib/format'
+import { displayDate, displayDateLong, money } from '@/lib/format'
 import { clientValidityPassed, isQuoteOverdue, quoteStatuses, sentToClientOf, type QuoteListRow, type QuoteSort, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { STATUS_BLOCK_META, statusBlock } from '@/lib/quotes/policy'
 import type { QuoteApproval } from '@/lib/settings/types'
@@ -63,10 +63,10 @@ export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
   { key: 'creator', label: 'Creator', track: '160px' },   /* (REG-471) who created the quote — avatar + name, as the Tasks table's Creator */
   { key: 'total', label: 'Total', track: '120px' },
-  { key: 'due', label: 'Due', track: '120px' },
+  { key: 'due', label: 'Due', track: '160px' },   /* (Dane UAT 5.13) the widest "Wed, 28 May ’26" uncut — was 120 */
   { key: 'created', label: 'Created', track: '120px' },
   { key: 'sent', label: 'Sent to client', track: '168px' },   /* (UX audit Q5) the day it went to the client (client_sent_at), not to the approvers */
-  { key: 'valid', label: 'Valid until', track: '144px' },   /* (UX audit Q5) the quote's Valid until — sortable, red once passed while the client holds it */
+  { key: 'valid', label: 'Valid until', track: '160px' },   /* (UX audit Q5) the quote's Valid until — sortable, red once passed while the client holds it; (Dane UAT 5.13) 160 holds its day */
   { key: 'updated', label: 'Updated', track: '120px' },
   { key: 'approval', label: 'Approval Date', track: '157px' },
 ]
@@ -279,13 +279,13 @@ function QuoteRowView({
       </div>
       <div className={`${styles.cell} ${styles.colTotal} ${L.pinned('total') ? styles.pin : ''}`} role="cell" data-col="total" data-pin-edge={L.edge('total') || undefined} style={L.style('total')}>{`S$${money(quote.amountMinor)}`}</div>
 
-      {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}
+      {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise — (Dane UAT 5.13) with its day. */}
       <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')}>
         {quote.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
-                  aria-label={`Due ${displayDate(quote.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
+                  aria-label={`Due ${displayDateLong(quote.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
                   onClick={(e) => onDue(quote, e.currentTarget)}>
-            {displayDate(quote.dueAt)}
+            {displayDateLong(quote.dueAt)}
           </button>
         ) : (
           <Tooltip label="Set due date">
@@ -300,7 +300,7 @@ function QuoteRowView({
       <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>{(() => { const d = sentToClientOf(quote); return d ? displayDate(d) : '-' })()}</div>
       {/* (UX audit Q5) Valid until: the date, red once it has passed while the client holds the quote (the row's "Expired" mark says the same). */}
       <div className={`${styles.cell} ${styles.colValid} ${L.pinned('valid') ? styles.pin : ''}`} role="cell" data-col="valid" data-pin-edge={L.edge('valid') || undefined} style={L.style('valid')}>
-        {quote.validUntil ? <span className={styles.validDate} data-passed={clientValidityPassed(quote, now) || undefined}>{displayDate(quote.validUntil)}</span> : '-'}
+        {quote.validUntil ? <span className={styles.validDate} data-passed={clientValidityPassed(quote, now) || undefined}>{displayDateLong(quote.validUntil)}</span> : '-'}
       </div>
       <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(quote.updatedAt ?? quote.createdAt)}</div>
       {showApproval ? <div className={`${styles.cell} ${styles.colApproval} ${L.pinned('approval') ? styles.pin : ''}`} role="cell" data-col="approval" data-pin-edge={L.edge('approval') || undefined} style={L.style('approval')}>{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div> : null}

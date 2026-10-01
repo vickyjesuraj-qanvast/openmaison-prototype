@@ -7,7 +7,7 @@ import {
 } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { itemVisible } from '@/lib/company/price-book-rules'
-import { displayDate, moneySGD, phoneTyped } from '@/lib/format'
+import { displayDate, displayDue, moneySGD, phoneTyped } from '@/lib/format'
 import { ALL_LIMIT, KIND_LABEL, KIND_ORDER, SCOPE_LIMIT, SCOPES, rankOf, termsOf, type SearchGroup, type SearchHit, type SearchKind, type SearchResult, type SearchScope } from './model'
 
 /**
@@ -86,7 +86,7 @@ export async function searchStudio(query: string, scope: SearchScope): Promise<S
     for (const r of rows) {
       const lead = r.leadId ? leadById.get(r.leadId) : null
       if (r.leadId && !lead) continue
-      push({ kind: 'task', id: r.id, title: r.title, sub: [lead?.name ?? 'Studio', r.dueAt ? `due ${displayDate(r.dueAt)}` : null].filter(Boolean).join(' · '), chip: r.done ? 'Done' : null,
+      push({ kind: 'task', id: r.id, title: r.title, sub: [lead?.name ?? 'Studio', r.dueAt ? `due ${displayDue(r.dueAt)}` : null].filter(Boolean).join(' · '), chip: r.done ? 'Done' : null,
         href: lead ? `/leads/${lead.id}/tasks?open=${r.id}` : `/tasks?open=${r.id}`, icon: 'task_alt' }, [r.description])
     }
   })())

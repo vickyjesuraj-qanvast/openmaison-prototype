@@ -1,5 +1,5 @@
 import type { Quote } from '@/lib/db/schema'
-import { displayDate, money, parseInputDate, startOfDay } from '@/lib/format'
+import { displayDate, displayDateLong, money, parseInputDate, startOfDay } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 import type { QuoteApproval } from '@/lib/settings/types'   // types only — safe to import from a client component
 
@@ -165,10 +165,10 @@ export function searchQuotes<T extends QuoteListRow>(quotes: T[], query: string)
       q.visibility,
       q.status,
       `S$${money(q.amountMinor)}`,
-      q.dueAt ? displayDate(q.dueAt) : null,
+      q.dueAt ? displayDateLong(q.dueAt) : null,   // (Dane UAT 5.13) Due and Valid until print their day
       displayDate(q.createdAt),
       (() => { const d = sentToClientOf(q); return d ? displayDate(d) : null })(),   // (UX audit Q5) the "Sent to client" column's date
-      q.validUntil ? displayDate(q.validUntil) : null,   // (Q5) the Valid until column
+      q.validUntil ? displayDateLong(q.validUntil) : null,   // (Q5) the Valid until column
       displayDate(q.updatedAt ?? q.createdAt),
       q.approvedAt ? displayDate(q.approvedAt) : null,
     ],

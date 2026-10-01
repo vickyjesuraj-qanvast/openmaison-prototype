@@ -6,6 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
+import { Tooltip } from '@/components/om/tooltip'
 import { BOOK_PASTE_FIELDS, PASTE_FIELDS, PASTE_FIELD_LABEL, QUOTE_PASTE_FIELDS, guessColumns, guessHeader, parseBlock, toLines, type PasteField, type PasteLine } from '@/lib/quotes/clipboard'
 import styles from './paste-items-dialog.module.css'
 
@@ -45,8 +46,9 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
   onAdd: (lines: PasteLine[], place: 'after' | 'end', match?: BookMatch) => void
   /** (REG-594) `book` = Company › Price book's Import from a spreadsheet: the same mapping, the lines become My Items. */
   target?: 'quote' | 'book'
-  /** (REG-653) The book's items (to match rows against), the studio's trades, and the vendor typed for rows without one. */
-  book?: { name: string; vendor: string | null }[]
+  /** (REG-653) The book's items (to match rows against), the studio's trades, and the vendor typed for rows without one.
+      (Dane UAT 3.12) `status` 'proposed' = an item waiting for approval: a row that matches it is skipped, never imported. */
+  book?: { name: string; vendor: string | null; status?: string }[]
   trades?: string[]
   vendor?: string | null
   /** (UX audit S7) The book's import asks, where the columns are mapped, what Kind a row without one takes — its select sits where a quote's
@@ -74,16 +76,20 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
   /* (REG-653, Q-13) The book's reading of the rows: capped, each a new item, a match, or a repeat of an earlier row. */
   const isBook = target === 'book'
   const lines = isBook ? all.slice(0, IMPORT_LIMIT) : all
-  const shelf = useMemo(() => new Set(book.map((b) => bookKey(b.name, b.vendor))), [book])
-  const rowState = (l: PasteLine, seenKeys: Set<string>): 'new' | 'match' | 'repeat' => { const k = bookKey(l.name, l.vendor || vendor); if (seenKeys.has(k)) return 'repeat'; seenKeys.add(k); return shelf.has(k) ? 'match' : 'new' }
-  const states = useMemo(() => { const s = new Set<string>(); return lines.map((l) => rowState(l, s)) }, [lines, shelf, vendor])   // eslint-disable-line react-hooks/exhaustive-deps
+  const shelf = useMemo(() => new Set(book.filter((b) => b.status !== 'proposed').map((b) => bookKey(b.name, b.vendor))), [book])
+  const waitingShelf = useMemo(() => new Set(book.filter((b) => b.status === 'proposed').map((b) => bookKey(b.name, b.vendor))), [book])
+  const rowState = (l: PasteLine, seenKeys: Set<string>): 'new' | 'match' | 'repeat' | 'waiting' => { const k = bookKey(l.name, l.vendor || vendor); if (seenKeys.has(k)) return 'repeat'; seenKeys.add(k); return shelf.has(k) ? 'match' : waitingShelf.has(k) ? 'waiting' : 'new' }
+  const states = useMemo(() => { const s = new Set<string>(); return lines.map((l) => rowState(l, s)) }, [lines, shelf, waitingShelf, vendor])   // eslint-disable-line react-hooks/exhaustive-deps
   const matches = states.filter((x) => x === 'match').length
   const repeats = states.filter((x) => x === 'repeat').length
+  const waiting = states.filter((x) => x === 'waiting').length
   const newTrades = useMemo(() => [...new Map(lines.map((l) => l.category?.trim()).filter((c): c is string => !!c && !trades.some((t) => t.toLowerCase() === c.toLowerCase())).map((c) => [c.toLowerCase(), c] as const)).values()], [lines, trades])
   const writes = states.filter((x) => x === 'new').length + (match === 'skip' ? 0 : matches)
+  /* (Dane UAT 3.12) Rows to read, and none would write: the import says so and its button closes it ("Import 0 rows" waited, disabled) */
+  const nothingNew = isBook && named && lines.length > 0 && writes === 0
   /* the preview's own reading: a row's state, as the lines are counted (a blank row is no line) */
-  const previewStates = useMemo(() => { const s = new Set<string>(); const out: ('new' | 'match' | 'repeat' | null)[] = []; for (const r of body.slice(0, PREVIEW_ROWS)) { const l = toLines([r], map, false)[0]; out.push(l ? rowState(l, s) : null) } return out }, [body, map, shelf, vendor])   // eslint-disable-line react-hooks/exhaustive-deps
-  const STATE_WORD = { new: 'New', match: match === 'update' ? 'Updates its price' : match === 'new' ? 'Added again' : 'Skipped', repeat: 'Repeats — skipped' } as const
+  const previewStates = useMemo(() => { const s = new Set<string>(); const out: ('new' | 'match' | 'repeat' | 'waiting' | null)[] = []; for (const r of body.slice(0, PREVIEW_ROWS)) { const l = toLines([r], map, false)[0]; out.push(l ? rowState(l, s) : null) } return out }, [body, map, shelf, waitingShelf, vendor])   // eslint-disable-line react-hooks/exhaustive-deps
+  const STATE_WORD = { new: 'New', match: match === 'update' ? 'Updates its price' : match === 'new' ? 'Added again' : 'Skipped', repeat: 'Repeats — skipped', waiting: 'Waiting for approval — skipped' } as const
 
   const add = () => { if (named && lines.length && (!isBook || writes > 0)) onAdd(lines, anchor && place === 'after' ? 'after' : 'end', isBook ? match : undefined) }
 
@@ -92,10 +98,12 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
             footer={<>
               {onBack ? <><Button variant="secondary" appearance="outlined" iconStart={<Icon name="arrow_back" size={20} />} onPress={onBack}>Back</Button><span style={{ flex: 1 }} /></> : null}
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-              <Button onPress={add} isDisabled={!named || lines.length === 0 || (isBook && writes === 0)}>{isBook ? (writes === 1 ? 'Import 1 row' : `Import ${writes} rows`) : all.length === 1 ? 'Add 1 item' : `Add ${all.length} items`}</Button>
+              {nothingNew ? <Button onPress={onClose} data-testid="import-done">Done</Button>
+                : <Button onPress={add} isDisabled={!named || lines.length === 0 || (isBook && writes === 0)}>{isBook ? (writes === 1 ? 'Import 1 row' : `Import ${writes} rows`) : all.length === 1 ? 'Add 1 item' : `Add ${all.length} items`}</Button>}
             </>}>
       <div className={styles.top}>
-        <p className={styles.caption}>{rows.length} {rows.length === 1 ? 'row' : 'rows'} · {width} {width === 1 ? 'column' : 'columns'} from {source ? `“${source}”` : 'the clipboard'}. Pick what each column becomes.</p>
+        {/* (Dane UAT 3.12) the book's import counts its items — the rows under the header, not the header line */}
+        <p className={styles.caption}>{isBook ? `${body.length} ${body.length === 1 ? 'item' : 'items'}` : `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}`} · {width} {width === 1 ? 'column' : 'columns'} from {source ? `“${source}”` : 'the clipboard'}. Pick what each column becomes.</p>
         <label className={styles.header}><Checkbox isSelected={header} onChange={(on: boolean) => setHeader(on)} aria-label="First row is a header" /><span>First row is a header</span></label>
       </div>
       <div className={styles.sheet} role="table" aria-label={isBook ? 'Rows to import' : 'Pasted rows'}>
@@ -111,7 +119,8 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
         </div>
         {preview.map((r, ri) => (
           <div key={ri} className={styles.row} role="row" data-testid="import-row">
-            {isBook ? <div className={`${styles.cell} ${styles.state}`} role="cell" data-state={previewStates[ri] ?? undefined}>{previewStates[ri] ? STATE_WORD[previewStates[ri]!] : '--'}</div> : null}
+            {/* (Dane UAT 3.12) a state cut by its column ("Waiting for approval — skipped") reads whole on hover — the house whenCut tooltip */}
+            {isBook ? <Tooltip label={previewStates[ri] ? STATE_WORD[previewStates[ri]!] : '--'} whenCut><div className={`${styles.cell} ${styles.state}`} role="cell" data-state={previewStates[ri] ?? undefined}>{previewStates[ri] ? STATE_WORD[previewStates[ri]!] : '--'}</div></Tooltip> : null}
             {r.map((v, c) => <div key={c} className={styles.cell} role="cell" data-skip={map[c] === 'skip' || undefined} title={v}>{v || '--'}</div>)}   {/* (sweep S5 #33) "--", REG-228 */}
           </div>
         ))}
@@ -134,6 +143,8 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
             </div>
           ) : null}
           {repeats ? <span className={styles.note}>{repeats === 1 ? '1 row repeats' : `${repeats} rows repeat`} an item earlier in the file — only the first is imported.</span> : null}
+          {waiting ? <span className={styles.note} data-testid="import-waiting">{waiting === 1 ? '1 row matches an item' : `${waiting} rows match items`} waiting for approval — skipped until an Owner or an Admin approves {waiting === 1 ? 'it' : 'them'}.</span> : null}
+          {nothingNew ? <span className={styles.note} role="status" data-testid="import-nothing-new">Nothing new to import — every row is already in My Items or waiting for approval</span> : null}
           {newTrades.length ? <span className={styles.note}>New {newTrades.length === 1 ? 'trade' : 'trades'} for Settings › Quotes & pricing: {newTrades.join(', ')}.</span> : null}
           {all.length > IMPORT_LIMIT ? <span className={styles.note} data-tone="warn">Only the first {IMPORT_LIMIT} rows are imported — the file has {all.length}.</span> : null}
         </div>

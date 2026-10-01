@@ -23,6 +23,7 @@ import { LibraryHeader } from '../library-header'
 import { isRefusal } from '@/lib/company/template-rules'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
+import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import styles from './library-editor.module.css'
 
 const AUTOSAVE_MS = 600
@@ -80,7 +81,7 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
                          <DropdownItem tone="danger" disabled={isDefault} help={isDefault ? 'The studio default cannot be deleted' : undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>   {/* (REG-728) the reason in the row */}
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
-          <input className={page.titleInput} value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
+          <TitleInput value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
           <div className={page.metaEnd}><span className={styles.note}>{rows.length} {rows.length === 1 ? 'milestone' : 'milestones'} · {splitWord(rows)}</span></div>
         </div>
         <div className={styles.body}>

@@ -52,6 +52,10 @@
 .rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .rowRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (Dane's UAT 12.07) The two-line row with no avatar that grows with its words — a name over a 12/Regular meaning line (the listing's
+   Quick filters): 64 at least, taller when the meaning wraps, at every width (the phone's one-line truncation below is undone for it). */
+.rowGrow { height: auto; min-height: 64px; }
+.rowGrow .rowName, .rowGrow .rowRole { white-space: normal; overflow: visible; }
 
 /* Date: the preset chips → the fields, g12; the fields show only for "Custom" */
 .dateGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }

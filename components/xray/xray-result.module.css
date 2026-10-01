@@ -2,6 +2,9 @@
 /* (REG-640) the header kebab's anchor, and the stale banner (the quote editor's banner) on the reading column's width */
 .anchor { position: relative; display: inline-flex; }
 .banner { box-sizing: border-box; width: min(calc(960px - 2 * var(--om-spacing-6)), calc(100% - 2 * var(--om-spacing-6))); margin: var(--om-spacing-6) auto 0; }
+/* (Dane UAT 8.11) The editors' banner went full width; this one stays the card in the column it was (doubled class: it outranks the shared rule wherever the sheets land). */
+.banner.banner { margin: var(--om-spacing-6) auto 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); }
+.banner.banner[data-tone='changes'] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
 .column { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); max-width: 960px; width: 100%; margin: 0 auto; box-sizing: border-box; }   /* (REG-639) clear of the FAB */
 .card { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); }
@@ -48,7 +51,7 @@
    copy's size) */
 .link { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 @media (max-width: 767px) {
-  .banner { width: auto; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
+  .banner.banner { width: auto; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
   .column { padding: var(--om-spacing-4) var(--om-spacing-4) var(--fab-clearance); gap: var(--om-spacing-4); }
   .card { padding: var(--om-spacing-4); }
   .tiles { grid-template-columns: 1fr; }

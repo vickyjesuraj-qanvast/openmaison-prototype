@@ -172,11 +172,9 @@
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
-  /* The mock's own tracks (REG-430: nothing squeezes — the frame scrolls) plus the band. */
-  .card { grid-template-columns: 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px) 157px 150px; }
-  .card[data-no-approval] { grid-template-columns: 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px) 150px; }
-  .card[data-client] { grid-template-columns: 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 157px 150px; }
-  .card[data-client][data-no-approval] { grid-template-columns: 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 150px; }
+  /* The user's tracks — order, visibility, dragged widths, Valid until and the actions trail (REG-454 · REG-733) — plus the band, as the
+     Contracts table has since sweep S2 #11; a fixed template here put the columns out of step with their heads on a touch tablet. */
+  .card, .card[data-no-approval], .card[data-client], .card[data-client][data-no-approval] { grid-template-columns: var(--tracks) 150px; }
 }
 
 /* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────

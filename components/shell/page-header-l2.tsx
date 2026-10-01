@@ -22,6 +22,7 @@ export function PageHeaderL2({
   chips,
   actions,
   titleActions,
+  backLabel,
 }: {
   /** (REG-331 · REG-369) This header owns its block's shadow. Off where a sticky tab strip follows it: the mock draws
    *  ONE level-1 under the header + tabs block (1186:2554), carried by whichever piece is at its bottom edge — the
@@ -39,15 +40,19 @@ export function PageHeaderL2({
   /** (REG-355) The header's own kebab. Last in the row on the desktop — where it has always sat, at the end of the
    *  action cluster — and ≤767 pinned to the title's line, so the lead's name keeps the width the canvas gives it (2a). */
   titleActions?: ReactNode
+  /** (Dane's UAT 11.09) What Back says when it returns somewhere the crumb does not name — Insights opened from a lead goes back to the
+   *  lead ("Back to Kevin Ng") while its crumb stays "Leads". Default: "Back to {crumb}". */
+  backLabel?: string
 }) {
   const scrolled = useWindowScrolled()
   const crumbText = crumb ?? (crumbs ?? []).map((c) => c.label).join(' / ')
+  const backText = backLabel ?? `Back to ${crumbText}`
   return (
     <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined}
             data-owns-shadow={scrollShadow || undefined}>
-      <Tooltip label={`Back to ${crumbText}`} shortcut="back">
+      <Tooltip label={backText} shortcut="back">
         {/* (REG-713) Esc goes back here once nothing is open — the key layer presses this link */}
-        <Link href={backHref} className={styles.back} aria-label={`Back to ${crumbText}`} data-kb="back">
+        <Link href={backHref} className={styles.back} aria-label={backText} data-kb="back">
           <Icon name="arrow_back" size={24} weight={300} />
         </Link>
       </Tooltip>

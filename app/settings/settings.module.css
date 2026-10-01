@@ -27,6 +27,9 @@
 /* (REG-561) Settings › Quotes: the number pattern's fields in a 3-up grid with the two switches under, the live example, and the trades list. */
 .numGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); align-items: start; }
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-height: 36px; cursor: pointer; }
+/* (Dane UAT 2.25) The number's switches: their own group under the fields — a caption, then one switch per line. */
+.switchGroup { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
+.switchGroup > .reasonLabel { margin-bottom: var(--om-spacing-1); }
 .example { display: flex; align-items: center; gap: var(--om-spacing-2); }
 .exampleNo { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .settingActions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }
@@ -112,6 +115,14 @@
   .fieldTable .eventRow { gap: var(--om-spacing-3); }   /* (REG-727) the head's 12, so each switch stands under its label (the stack's 8 put it off by 4) */
 }
 .fieldText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+/* (Dane UAT 3.38) Drag to reorder: motion's Reorder group draws no box (the rows stay the table's flex children); the handle leads the field
+   cell (the task template's handle, composed) and the head's label lines up with the field's; a dragged row rises on the card's surface. */
+.rowGroup { display: contents; }
+.fieldLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.dragHandle { composes: handle from '../../components/company/templates/editors/library-editor.module.css'; flex-shrink: 0; }
+.dragHandle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.fieldTable[data-reorder] .eventHead > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
+.fieldTable .eventRow[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
 .fieldLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .fieldMeta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .fieldError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }

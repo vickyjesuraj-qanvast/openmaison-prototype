@@ -19,6 +19,8 @@ import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { TagPicker } from '@/components/leads/tasks/tag-picker'
+import { ManageTagsDialog } from '@/components/leads/tasks/manage-tags-dialog'
+import { createTag, deleteTag, renameTag } from '@/app/leads/tasks-actions'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { savedLabel } from '@/lib/contracts/model'
@@ -27,13 +29,20 @@ import type { TaskTemplateEditorData, TaskTemplateStep } from '@/lib/company/tas
 import { addTaskTemplateToLead, deleteTaskTemplate, duplicateTaskTemplate, saveTaskTemplate } from '@/app/company/task-templates-actions'
 import { LibraryHeader } from '../library-header'
 import { isRefusal } from '@/lib/company/template-rules'
-import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
+import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
+import { TitleInput } from '@/components/contracts/editor/title-input'   // (Dane UAT 3.18) the editors' one title, with its pencil
 import styles from './library-editor.module.css'
 
 const AUTOSAVE_MS = 600
 type Step = TaskTemplateStep & { key: string }
 const newStep = (): Step => ({ id: '', key: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, title: '', description: null, kind: 'General', memberIds: [], tagIds: [], dueDays: null, sortOrder: 0 })
+/** (Dane UAT 3.20) The Tags picker opens fixed at its own 352 under its button, as the Tasks tab's tags cell places it (lead-tasks.tsx
+    `tagsPos`): the field, the list (8 rows before it scrolls) and Manage Tags, kept inside the window. */
+const tagsPlace = (el: HTMLElement, tagCount: number) => {
+  const r = el.getBoundingClientRect(), h = 48 + 16 + Math.min(tagCount * 36, 288) + 1 + 44
+  return { top: Math.max(8, Math.min(r.bottom + 4, window.innerHeight - h - 20)), left: Math.max(8, Math.min(r.left, window.innerWidth - 352 - 20)) }
+}
 
 /**
  * The task template editor (REG-538): the checklist's steps in order — title · description · due in n days · members · tags —
@@ -56,6 +65,11 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  /* (Dane UAT 3.20) The studio's tags, kept here as the Tasks tab keeps them: Enter on a new name in a step's picker makes the tag and ticks
+     it; Manage Tags opens the same Manage Tags dialog. The tag actions refresh the lead pages only, so this page refreshes itself (use-run). */
+  const { run } = useRun()
+  const [manageTags, setManageTags] = useState(false)
+  const [deletingTag, setDeletingTag] = useState<string | null>(null)
 
   const dirty = useRef(false)
   const latest = useRef({ name, keepMembers, keepDescription, steps }); useEffect(() => { latest.current = { name, keepMembers, keepDescription, steps } })
@@ -74,6 +88,10 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
   const patch = (key: string, p: Partial<Step>) => { setSteps((ss) => ss.map((s) => (s.key === key ? { ...s, ...p } : s))); queue() }
   const remove = (key: string) => { setSteps((ss) => ss.filter((s) => s.key !== key)); queue() }
   const add = () => { setSteps((ss) => [...ss, newStep()]); queue() }
+  const createAndTick = (key: string, name: string) =>
+    run('add the tag', async () => { const id = await createTag(name); setSteps((ss) => ss.map((s) => (s.key === key && !s.tagIds.includes(id) ? { ...s, tagIds: [...s.tagIds, id] } : s))); queue() }, undefined, { refresh: true })
+  /* A deleted tag leaves every step here at once — the template never keeps a tag the studio no longer has. */
+  const dropTag = (id: string) => run('delete the tag', async () => { await deleteTag(id); setSteps((ss) => ss.map((s) => (s.tagIds.includes(id) ? { ...s, tagIds: s.tagIds.filter((t) => t !== id) } : s))); queue() }, 'Tag deleted', { refresh: true })
   const backHref = from ?? '/company/templates/tasks'
   const close = () => { void flushRef.current(); router.push(backHref) }
   const usedBy = template.usedBy
@@ -92,7 +110,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
                          <DropdownItem tone="danger" onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
-          <input className={page.titleInput} value={name} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
+          <TitleInput value={name} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
           <div className={`${page.metaEnd} ${styles.switches}`}>
             <label className={styles.switchRow}>Keep team members <Switch size="sm" isSelected={keepMembers} onChange={(v: boolean) => { setKeepMembers(v); queue() }} aria-label="Keep team members" /></label>
             <label className={styles.switchRow}>Keep descriptions <Switch size="sm" isSelected={keepDescription} onChange={(v: boolean) => { setKeepDescription(v); queue() }} aria-label="Keep descriptions" /></label>
@@ -104,7 +122,8 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
             <div className={styles.cardBody}>
               {steps.length === 0 ? <div className={styles.stepsEmpty}>No steps yet. Add the first one.</div> : (
                 <Reorder.Group as="ol" axis="y" values={steps} onReorder={(next: Step[]) => { setSteps(next); queue() }} className={styles.steps}>
-                  {steps.map((s, i) => <StepRow key={s.key} step={s} index={i} team={team} tags={tags} keepMembers={keepMembers} keepDescription={keepDescription} onPatch={(p) => patch(s.key, p)} onRemove={() => remove(s.key)} onDrop={() => queue()} />)}
+                  {steps.map((s, i) => <StepRow key={s.key} step={s} index={i} team={team} tags={tags} keepMembers={keepMembers} keepDescription={keepDescription} onPatch={(p) => patch(s.key, p)} onRemove={() => remove(s.key)} onDrop={() => queue()}
+                                                onCreateTag={(name) => { void createAndTick(s.key, name) }} onManageTags={() => setManageTags(true)} />)}
                 </Reorder.Group>
               )}
               <Button variant="secondary" appearance="outlined" className={styles.addRow} iconStart={<Icon name="add" size={20} />} onPress={add}>Add a step</Button>
@@ -116,6 +135,14 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
                        message={usedBy ? `The tasks it already added to ${usedBy} ${usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.'}
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTaskTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/tasks') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
+        {/* (Dane UAT 3.20) The Tasks tab's Manage Tags and its delete confirm, as they are there (902:27709). */}
+        <ManageTagsDialog open={manageTags} tags={tags} onClose={() => setManageTags(false)}
+                          onRename={(id, name) => { void run('rename the tag', () => renameTag(id, name), undefined, { refresh: true }) }}
+                          onDelete={setDeletingTag}
+                          onCreate={(name) => { void run('add the tag', () => createTag(name), undefined, { refresh: true }) }} />
+        <ConfirmDialog open={!!deletingTag} title="Delete Tag" confirmLabel="Yes" cancelLabel="No" nested
+                       message="Are you sure you want to delete this tag? It will be removed from every task. This action cannot be undone."
+                       onCancel={() => setDeletingTag(null)} onConfirm={() => { const id = deletingTag; setDeletingTag(null); if (id) void dropTag(id) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>
@@ -124,13 +151,28 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
 }
 
 /** One step: the drag handle, its number, title over description, "Due in n days", the members and tags pickers, remove. */
-function StepRow({ step, index, team, tags, keepMembers, keepDescription, onPatch, onRemove, onDrop }: { step: Step; index: number; team: Member[]; tags: Tag[]; keepMembers: boolean; keepDescription: boolean; onPatch: (p: Partial<Step>) => void; onRemove: () => void; onDrop: () => void }) {
+function StepRow({ step, index, team, tags, keepMembers, keepDescription, onPatch, onRemove, onDrop, onCreateTag, onManageTags }: { step: Step; index: number; team: Member[]; tags: Tag[]; keepMembers: boolean; keepDescription: boolean; onPatch: (p: Partial<Step>) => void; onRemove: () => void; onDrop: () => void; onCreateTag: (name: string) => void; onManageTags: () => void }) {
   const controls = useDragControls()
   const [dragging, setDragging] = useState(false)
   const [assignOpen, setAssignOpen] = useState(false)
   const [assignPos, setAssignPos] = useState<{ top: number; left: number } | null>(null)
   const [tagOpen, setTagOpen] = useState(false)
   const [tagEl, setTagEl] = useState<HTMLElement | null>(null)
+  const [tagPos, setTagPos] = useState<{ top: number; left: number } | null>(null)
+  /* (Dane UAT 3.20) While open, the picker follows its button as the page scrolls, and closes once the button leaves the window (the
+     listing's anchored popovers, checklist › Fields). */
+  const tagCount = tags.length
+  useEffect(() => {
+    if (!tagOpen || !tagEl) return
+    const follow = () => {
+      const r = tagEl.getBoundingClientRect()
+      if (r.bottom < 0 || r.top > window.innerHeight) { setTagOpen(false); return }
+      setTagPos(tagsPlace(tagEl, tagCount))
+    }
+    document.addEventListener('scroll', follow, true)
+    window.addEventListener('resize', follow)
+    return () => { document.removeEventListener('scroll', follow, true); window.removeEventListener('resize', follow) }
+  }, [tagOpen, tagEl, tagCount])
   const [dueText, setDueText] = useState<string | null>(null)
   const members = step.memberIds.map((id) => team.find((m) => m.id === id)).filter((m): m is Member => !!m)
   const stepTags = step.tagIds.map((id) => tags.find((t) => t.id === id)).filter((t): t is Tag => !!t)
@@ -156,9 +198,10 @@ function StepRow({ step, index, team, tags, keepMembers, keepDescription, onPatc
       </span>
       <span className={styles.stepPick}>
         <Tooltip label="Tags">
-          <SelectTrigger ref={setTagEl} label="Tags" placeholder="Tags" open={tagOpen} value={stepTags.length ? stepTags.map((t) => t.name).join(', ') : ''} onClick={() => setTagOpen((o) => !o)} />
+          <SelectTrigger ref={setTagEl} label="Tags" placeholder="Tags" open={tagOpen} value={stepTags.length ? stepTags.map((t) => t.name).join(', ') : ''} onClick={(e) => { setTagPos(tagsPlace(e.currentTarget, tags.length)); setTagOpen((o) => !o) }} />
         </Tooltip>
-        <TagPicker open={tagOpen} tags={tags} value={step.tagIds} anchor={tagEl} onChange={(ids) => onPatch({ tagIds: ids })} onManage={() => setTagOpen(false)} onClose={() => setTagOpen(false)} />
+        <TagPicker open={tagOpen} tags={tags} value={step.tagIds} anchor={tagEl} position={tagPos} onChange={(ids) => onPatch({ tagIds: ids })} onCreate={onCreateTag}
+                   onManage={() => { setTagOpen(false); onManageTags() }} onClose={() => setTagOpen(false)} />
       </span>
       <Tooltip label="Remove step"><IconButton icon="delete" label={`Remove step ${index + 1}`} onClick={onRemove} /></Tooltip>
     </Reorder.Item>

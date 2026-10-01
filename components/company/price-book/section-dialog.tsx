@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
+import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -20,6 +21,11 @@ import { PROPERTY_TYPES } from '@/lib/leads/enums'
 import { cleanSectionTags } from '@/lib/quotes/items-model'
 import styles from './price-book.module.css'
 
+/* (Dane UAT 3.38) A line keeps a key while the dialog edits it, so a drag can follow it (`_k`; typing makes a new line object, the key rides
+   along; the server reads only a line's own fields). Lines that open with the dialog are keyed by their place, new ones by a count. */
+type KLine = SavedLine & { _k?: string }
+const keyed = (b: SavedSection): SavedSection => ({ ...b, lines: b.lines.map((l, i) => ({ ...l, _k: `t${i}` })), subs: b.subs.map((g, gi) => ({ ...g, lines: g.lines.map((l, i) => ({ ...l, _k: `s${gi}-${i}` })) })) })
+const unkey = (ls: SavedLine[]): SavedLine[] => ls.map((l) => { const { _k, ...rest } = l as KLine; void _k; return rest })
 const blankLine = (): SavedLine => ({ name: '', description: null, descriptionHtml: null, qty: 1, unit: 'Pieces', costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: 9, room: null, category: null, section: null, printAs: null, printAsText: null, highlight: null, icon: null })
 const moveIn = <T,>(arr: T[], i: number, dir: -1 | 1): T[] => { const j = i + dir; if (j < 0 || j >= arr.length) return arr; const next = [...arr]; const [x] = next.splice(i, 1); next.splice(j, 0, x as T); return next }
 const price = (l: SavedLine) => (l.costMinor + l.markupMinor) / 100
@@ -34,7 +40,9 @@ const lineTotal = (l: SavedLine) => Math.round(l.qty * (l.costMinor + l.markupMi
  */
 export function SectionDialog({ open, section, onClose, onSave, readOnly = null }: { open: boolean; section: PriceBookSectionRow | null; onClose: () => void; onSave: (input: { name: string; description: string | null; descriptionHtml: string | null; body: SavedSection; propertyType: string | null; tags: string[] }) => void | Promise<void>; /** (REG-652) why the viewer may only read it */ readOnly?: string | null }) {
   const empty: SavedSection = { name: '', description: null, descriptionHtml: null, lines: [], subs: [] }
-  const [body, setBody] = useState<SavedSection>(section?.body ?? empty)
+  const [body, setBody] = useState<SavedSection>(() => keyed(section?.body ?? empty))
+  const seq = useRef(0)
+  const newLine = (): KLine => { seq.current += 1; return { ...blankLine(), _k: `n${seq.current}` } }
   const [note, setNote] = useState(() => section?.body?.descriptionHtml || plainToHtml(section?.body?.description ?? ''))
   const [touched, setTouched] = useState(false)
   /* (REG-619, parity Q-27) What the section suits and how the studio finds it: a property type and a few tags. */
@@ -42,7 +50,7 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
   const [tagsText, setTagsText] = useState((section?.tagList ?? []).join(', '))
   const [wasOpen, setWasOpen] = useState(open)
   const [seen, setSeen] = useState(section?.id ?? null)
-  if (open !== wasOpen || (section?.id ?? null) !== seen) { setWasOpen(open); setSeen(section?.id ?? null); if (open) { setBody(section?.body ?? empty); setNote(section?.body?.descriptionHtml || plainToHtml(section?.body?.description ?? '')); setTouched(false); setPropertyType(section?.propertyType ?? null); setTagsText((section?.tagList ?? []).join(', ')) } }
+  if (open !== wasOpen || (section?.id ?? null) !== seen) { setWasOpen(open); setSeen(section?.id ?? null); if (open) { setBody(keyed(section?.body ?? empty)); setNote(section?.body?.descriptionHtml || plainToHtml(section?.body?.description ?? '')); setTouched(false); setPropertyType(section?.propertyType ?? null); setTagsText((section?.tagList ?? []).join(', ')) } }
   const nameOk = body.name.trim().length > 0
   const snackbar = useSnackbar()
   const [busy, setBusy] = useState(false)
@@ -64,10 +72,11 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
     const minor = Math.round((Number(v) || 0) * 100)
     setLines(subIndex, (ls) => ls.map((l, k) => { if (k !== i) return l; const share = l.costMinor + l.markupMinor > 0 ? l.markupMinor / (l.costMinor + l.markupMinor) : 0; const markup = Math.round(minor * share); return { ...l, costMinor: minor - markup, markupMinor: markup } }))
   }
+  /* (Dane UAT 3.38) A line moves by its handle (the task template editor's drag, REG-538) — or by its arrows, from the keyboard and on touch */
   const rows = (subIndex: number | null, lines: SavedLine[]) => (
-    <div className={styles.lines}>
+    <Reorder.Group as="div" axis="y" values={lines} onReorder={(next: SavedLine[]) => setLines(subIndex, () => next)} className={styles.lines}>
       {lines.map((l, i) => (
-        <div key={i} className={styles.lineRow} data-testid="section-line">
+        <LineRow key={(l as KLine)._k ?? `i${i}`} line={l} name={l.name || 'item'} movable={!readOnly}>
           <TextField label="Item" size="s" value={l.name} onChange={(v) => patchLine(subIndex, i, { name: v })} maxLength={200} error={touched && nameless(l) ? 'Name the item or remove it' : undefined} />
           <TextField label="Qty" size="s" numeric="decimal" value={shown(`${subIndex}:${i}:q`, String(l.qty))} onBlur={() => setTyping(null)}
                      onChange={(v) => { setTyping({ key: `${subIndex}:${i}:q`, text: v }); patchLine(subIndex, i, { qty: Number(v) || 0 }) }} />
@@ -79,10 +88,10 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
             <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move ${l.name || 'item'} down`} size={36} variant="bare" iconSize={18} disabled={i === lines.length - 1} onClick={() => setLines(subIndex, (ls) => moveIn(ls, i, 1))} /></Tooltip>
             <Tooltip label="Remove"><IconButton icon="close" label={`Remove ${l.name || 'item'}`} size={36} variant="bare" iconSize={18} onClick={() => removeLine(subIndex, i, l)} /></Tooltip>
           </span>}
-        </div>
+        </LineRow>
       ))}
-      {readOnly ? null : <Button appearance="text" className={styles.addLine} iconStart={<Icon name="add" size={18} />} onPress={() => setLines(subIndex, (ls) => [...ls, blankLine()])}>Add an item</Button>}
-    </div>
+      {readOnly ? null : <Button appearance="text" className={styles.addLine} iconStart={<Icon name="add" size={18} />} onPress={() => setLines(subIndex, (ls) => [...ls, newLine()])}>Add an item</Button>}
+    </Reorder.Group>
   )
   const named = (ls: SavedLine[]) => ls.filter((l) => l.name.trim()).length
   const count = named(body.lines) + body.subs.reduce((n, g) => n + named(g.lines), 0)   // (sweep S5 #14) what Save keeps
@@ -92,7 +101,7 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
     if ([...body.lines, ...body.subs.flatMap((g) => g.lines)].some(nameless)) return
     const kept = keptText(note, isBlankHtml(note))
     setBusy(true)
-    try { await onSave({ name: body.name.trim(), description: kept.text || null, descriptionHtml: kept.html, propertyType, tags: cleanSectionTags(tagsText.split(',')), body: { ...body, name: body.name.trim(), description: kept.text || null, descriptionHtml: kept.html, lines: body.lines.filter((l) => l.name.trim()), subs: body.subs.map((g) => ({ ...g, lines: g.lines.filter((l) => l.name.trim()) })) } }) } finally { setBusy(false) }
+    try { await onSave({ name: body.name.trim(), description: kept.text || null, descriptionHtml: kept.html, propertyType, tags: cleanSectionTags(tagsText.split(',')), body: { ...body, name: body.name.trim(), description: kept.text || null, descriptionHtml: kept.html, lines: unkey(body.lines.filter((l) => l.name.trim())), subs: body.subs.map((g) => ({ ...g, lines: unkey(g.lines.filter((l) => l.name.trim())) })) } }) } finally { setBusy(false) }
   }
   return (
     <Dialog open={open} onClose={onClose} title={readOnly ? 'Section details' : section ? 'Edit section' : 'New section'} size="modal" width={800}
@@ -122,9 +131,23 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
             <div className={styles.subLines}>{rows(gi, g.lines)}</div>
           </div>
         ))}
-        {readOnly ? null : <Button appearance="text" className={styles.addLine} iconStart={<Icon name="create_new_folder" size={18} />} onPress={() => setBody((b) => ({ ...b, subs: [...b.subs, { name: 'Sub-section', description: null, descriptionHtml: null, lines: [blankLine()] }] }))}>Add a sub-section</Button>}   {/* (REG-653, Q-10 · E-71) */}
+        {readOnly ? null : <Button appearance="text" className={styles.addLine} iconStart={<Icon name="create_new_folder" size={18} />} onPress={() => setBody((b) => ({ ...b, subs: [...b.subs, { name: 'Sub-section', description: null, descriptionHtml: null, lines: [newLine()] }] }))}>Add a sub-section</Button>}   {/* (REG-653, Q-10 · E-71) */}
         </ReadOnlyScope>
       </div>
     </Dialog>
+  )
+}
+
+/** (Dane UAT 3.38) One line of the section: the drag handle (the task template editor's, REG-538 — motion's Reorder with the handle as the
+    only grip, so the fields keep their own presses), then the line's boxes and tools. Read-only, no handle. */
+function LineRow({ line, name, movable, children }: { line: SavedLine; name: string; movable: boolean; children: ReactNode }) {
+  const controls = useDragControls()
+  const [dragging, setDragging] = useState(false)
+  return (
+    <Reorder.Item as="div" value={line} dragListener={false} dragControls={controls} className={styles.lineRow} data-handle={movable || undefined} data-dragging={dragging || undefined} data-testid="section-line"
+                  onDragStart={() => setDragging(true)} onDragEnd={() => setDragging(false)}>
+      {movable ? <button type="button" className={styles.handle} aria-label={`Reorder ${name}`} onPointerDown={(e) => controls.start(e)} data-testid="section-line-handle"><Icon name="drag_indicator" size={20} weight={300} /></button> : null}
+      {children}
+    </Reorder.Item>
   )
 }

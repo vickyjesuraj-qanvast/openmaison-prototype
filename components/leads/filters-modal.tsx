@@ -121,10 +121,15 @@ export function FiltersModal({
                   <>
                     <span className={styles.sectionTitle}>Quick filters</span>
                     <div className={styles.list}>
+                      {/* (Dane's UAT 12.07) Two lines — the name, then its meaning in 12 under it (the Members pane's row) — growing with the
+                          words: printed inline in a fixed 44 row, the first one ran to three lines over the next at 390. */}
                       {QUICK_FILTERS.map((f) => (
-                        <div key={f.key} className={styles.row} role="button" tabIndex={0} onClick={() => toggleQuick(f.key)}
+                        <div key={f.key} className={`${styles.rowTwo} ${styles.rowGrow}`} role="button" tabIndex={0} onClick={() => toggleQuick(f.key)}
                              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleQuick(f.key) } }} data-testid={`quick-${f.key}`}>
-                          <span>{f.label}<span className={styles.rowHelp}> · {f.help}</span></span>
+                          <span className={styles.rowText}>
+                            <span className={styles.rowName}>{f.label}</span>
+                            <span className={styles.rowRole}>{f.help}</span>
+                          </span>
                           <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                             <Checkbox isSelected={draft.quick.includes(f.key)} onChange={() => toggleQuick(f.key)} aria-label={f.label} />
                           </span>

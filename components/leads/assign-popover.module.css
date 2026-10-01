@@ -45,8 +45,13 @@
 .sheetBody { display: flex; flex-direction: column; padding: var(--om-spacing-2) 0; }
 .sheetBody .row { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 
-/* (REG-601) A row the viewer may not tick keeps its look but not its press. */
+/* (REG-601) A row the viewer may not tick keeps its place but not its press. (REG-900, Dane UAT 10.10 — supersedes "keeps its look") It
+   looks as disabled as its checkbox: the avatar at the DS disabled 50%, the name in the disabled ink, and no hover fill. The role line —
+   "· outside your team", the reason — stays readable in its secondary grey. */
 .row[data-locked] { cursor: default; }
+.row[data-locked]:hover { background: none; }
+.row[data-locked] > :first-child { opacity: 0.5; }   /* the Avatar */
+.row[data-locked] .rowName { color: var(--om-color-on-surface-disabled); }
 .row[data-locked] .rowRole { color: var(--om-color-on-surface-secondary); }
 
 /* (REG-612) The suggested member, above the rows while the lead has nobody. */

@@ -7,7 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
-import { displayDate, isDueToday, isOverdue, phoneLocal } from '@/lib/format'
+import { displayDue, displayTime, hasTime, isDueToday, isOverdue, phoneLocal } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import { FootStart, SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
@@ -72,12 +72,13 @@ function TaskRow({
           <span className={styles.rowMeta}>
             {task.kind}
             <span data-dot>·</span>
+            {/* (Dane UAT 5.13 · 5.05) the due's day, and its time when it has one — as the Tasks tab prints it */}
             {overdue ? (
-              <><span data-red>{displayDate(due)}</span><span data-red>(Overdue)</span></>
+              <><span data-red>{displayDue(due)}</span><span data-red>(Overdue)</span></>
             ) : dueToday ? (
-              <span data-amber>Due today</span>
+              <span data-amber>{hasTime(due) ? `Due today · ${displayTime(due)}` : 'Due today'}</span>
             ) : (
-              <span>{displayDate(due)}</span>
+              <span>{displayDue(due)}</span>
             )}
           </span>
         ) : (

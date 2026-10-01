@@ -127,3 +127,13 @@
    OUTPUT, not a constant — with the FAB band the card fell 64px short and the page grew a pointless scroll. The FAB then
    sits over the card's empty bottom-right corner, exactly as it does on Notes above. Populated tabs keep the full band. */
 .centre:has([data-testid$='-empty']) { --fab-clearance: var(--om-spacing-6); }
+
+/* (Dane's UAT 5.19) The house attention pulse (the quote Items' `data-fresh`, Company › Members' new row) on the LEAD STAGES card, once,
+   when the "Moved to X" snackbar's View brings the reader here from another tab: a 14% primary wash over the card that holds, then fades. */
+.pulse { position: relative; border-radius: var(--om-radius-2); }
+.pulse[data-fresh]::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
+  background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent);
+  animation: fresh 1.4s ease-out forwards;
+}
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }

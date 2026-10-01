@@ -275,7 +275,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                             <span className={styles.noQuoteActions}><Button appearance="outlined" variant="secondary" iconStart={<Icon name="upload_file" size={20} />} onPress={() => { setMode('upload'); setErrors({}) }}>Upload two quotes</Button></span>
                           </div>
                         ) : (
-                          <TextField label="Lead" required mode="select" value={lead ? labels.get(lead.id) ?? '' : ''} options={data.leads.map((l) => labels.get(l.id)!)}
+                          <TextField label="Lead" required mode="select" searchable value={lead ? labels.get(lead.id) ?? '' : ''} options={data.leads.map((l) => labels.get(l.id)!)}
                                      onChange={(v) => pickLead(data.leads.find((x) => labels.get(x.id) === v)?.id ?? null)} />
                         )}
                         {lead ? (

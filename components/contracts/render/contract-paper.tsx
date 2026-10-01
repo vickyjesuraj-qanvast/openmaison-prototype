@@ -3,9 +3,10 @@ import { resolveTokens, SIGN_LABEL, type SignKey, type TokenValues } from '@/lib
 import { displayDateLong } from '@/lib/format'
 import { sanitizeContractHtml } from '@/lib/contracts/sanitize'
 import type { SignedLetterhead } from '@/lib/contracts/policy'
+import { isSignatureImage } from '@/lib/quotes/signature'
 import styles from './contract-paper.module.css'
 
-export type StudioSignature = { kind: 'draw' | 'type'; name: string; data: string | null } | null
+export type StudioSignature = { kind: 'draw' | 'type' | 'image'; name: string; data: string | null } | null   // (Dane UAT 6.23) 'image' = an uploaded picture
 export type ClientSignature = { name: string; at: Date; /** (REG-563) the masked NRIC the client typed when signing */ nric?: string | null; /** (REG-633, parity Q-18) a drawn signature's path */ drawing?: string | null } | null
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -19,7 +20,10 @@ export function renderSignFields(html: string, o: { studio: StudioSignature; cli
     if (k.startsWith('studio')) {
       const sig = o.studio
       const mark = sig
-        ? sig.kind === 'draw' && sig.data ? `<svg viewBox="0 0 752 140" class="${styles.drawn}" aria-label="${esc(sig.name)}"><path d="${esc(sig.data)}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>` : `<span class="${styles.typed}">${esc(initial ? initials(sig.name) : sig.name)}</span>`
+        ? sig.kind === 'draw' && sig.data ? `<svg viewBox="0 0 752 140" class="${styles.drawn}" aria-label="${esc(sig.name)}"><path d="${esc(sig.data)}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        /* (Dane UAT 6.23) an uploaded signature: only a PNG / JPEG data URL of at most 1 MB is ever drawn — never a link or markup */
+        : sig.kind === 'image' && isSignatureImage(sig.data) ? `<img src="${esc(sig.data)}" class="${styles.drawn} ${styles.pictured}" alt="${esc(sig.name)}" />`
+        : `<span class="${styles.typed}">${esc(initial ? initials(sig.name) : sig.name)}</span>`
         : `<span class="${styles.blank}"></span>`
       return `<span class="${styles.box} ${initial ? styles.initial : ''}" data-sign="${key}"><span class="${styles.mark}">${mark}</span><span class="${styles.caption}">${esc(label)} · ${esc(o.studioName)}</span></span>`
     }

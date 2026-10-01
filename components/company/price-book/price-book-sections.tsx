@@ -17,7 +17,7 @@ import { LibraryGallery, settle, type LibraryItem } from '@/components/company/t
 import gallery from '@/components/company/templates/library-gallery.module.css'
 import { SectionDialog } from './section-dialog'
 import styles from './price-book.module.css'
-import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { LIBRARY_ROOT, folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { PriceBookGhost } from '@/components/company/company-ghosts'
 
 type Row = PriceBookSectionRow & LibraryItem
@@ -44,12 +44,31 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
   const { run } = useRun()
   /* (REG-709) `?open=<id>` — a section the global search found — opens its dialog on arrival */
   const opening = useSearchParams().get('open')
-  const [edit, setEdit] = useState<{ open: boolean; section: PriceBookSectionRow | null }>(() => { const it = opening ? sections.find((x) => x.id === opening) ?? null : null; return { open: !!it, section: it } })
+  /* (Dane UAT 3.03) `folderId` = the folder open when New section was pressed — the new section is filed there */
+  const [edit, setEdit] = useState<{ open: boolean; section: PriceBookSectionRow | null; folderId?: string | null }>(() => { const it = opening ? sections.find((x) => x.id === opening) ?? null : null; return { open: !!it, section: it } })
+  const save = async (input: Parameters<typeof updatePriceBookSection>[1] & { name: string }) => {
+    const cur = edit.section
+    const asked = cur ? null : edit.folderId ?? null
+    const landed: { folderId: string | null; refused: string | null } = { folderId: null, refused: null }
+    const ok = await run('save the section', async () => {
+      if (cur) await settle(updatePriceBookSection(cur.id, input))
+      else { const r = (await settle(createPriceBookSection({ ...input, folderId: asked }))) as { folderId: string | null; refused: string | null }; landed.folderId = r.folderId; landed.refused = r.refused }
+      router.refresh()
+    }, cur ? 'Section saved' : undefined)
+    if (!ok) return   /* (sweep S5 #3) closed once saved — a failure keeps what was typed */
+    if (!cur) {
+      /* (Dane UAT 3.03) the snackbar names where it went — and why, when it went to the top instead (the folder gone meanwhile) */
+      const place = (landed.folderId ? folders.find((f) => f.id === landed.folderId)?.name : null) ?? LIBRARY_ROOT['book-sections']
+      const why = landed.refused ?? 'That folder is gone'
+      snackbar({ message: `${input.name} added to ${place}${asked && !landed.folderId ? ` — ${why.charAt(0).toLowerCase()}${why.slice(1).replace(/\.$/, '')}` : ''}` })
+    }
+    setEdit({ open: false, section: null })
+  }
   return (
     <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.sections} shell={SHELL} noun={{ one: 'section', many: 'sections' }} nameLabel="Section" deletedLabel="Deleted Sections" openLabel={runsBook ? 'Edit' : 'Open'}
       byColumn mayChange={block} duplicateBlock={block} restoreBlock={block} purgeBlock={block()}
       from={from} folders={{ library: 'book-sections', list: folders, block: folderBlock(data.viewer) }} items={sections.map(toRow)} deleted={deletedSections.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Sections" tableKey="price-book-sections"
-      newMenu={(close) => (<DropdownItem onSelect={() => { close(); setEdit({ open: true, section: null }) }}>New section</DropdownItem>)} newBlock={runsBook ? null : block()}   /* (REG-653, Q-10 · E-70) written on Save — Cancel leaves nothing behind */
+      newMenu={(close, place) => (<DropdownItem onSelect={() => { close(); setEdit({ open: true, section: null, folderId: place.folderId }) }}>New section</DropdownItem>)} newBlock={runsBook ? null : block()}   /* (REG-653, Q-10 · E-70) written on Save — Cancel leaves nothing behind */
       searchText={(t) => [...names(t), ...t.tagList, t.propertyType ?? ''].join(' ')}   // (REG-619) a tag or the property type finds it
       thumb={(t) => (
         <span className={gallery.checklist}>
@@ -79,9 +98,9 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       deletedMeta={{ label: 'Items', value: (t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'}` }}
       empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',
         /* (REG-735) the first run carries New ▾'s row for whoever runs the book; anyone else reads who does */
-        start: () => (runsBook ? { primary: { label: 'New section', icon: 'add', onPress: () => setEdit({ open: true, section: null }) } } : {}) }}>   {/* (sweep S5 #22) */}
+        start: (place) => (runsBook ? { primary: { label: 'New section', icon: 'add', onPress: () => setEdit({ open: true, section: null, folderId: place.folderId }) } } : {}) }}>   {/* (sweep S5 #22) */}
       <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()}
-                     onSave={async (input) => { const cur = edit.section; const ok = await run('save the section', async () => { if (cur) await settle(updatePriceBookSection(cur.id, input)); else await settle(createPriceBookSection(input)); router.refresh() }, cur ? 'Section saved' : `${input.name} added to My Sections`); if (ok) setEdit({ open: false, section: null }) }} />   {/* (sweep S5 #3) closed once saved — a failure keeps what was typed */}
+                     onSave={save} />
     </LibraryGallery>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useSnackbar } from '@/components/om/snackbar'
 import { isSgPhone, phoneDigits } from '@/lib/format'
+import { copyText } from '@/lib/clipboard'
 
 /**
  * (UX audit 2026-09-30, T9) Sharing a lead's file with the client — the tile menu, the list row's menu and the viewer's kebab: Copy link, or
@@ -15,7 +16,7 @@ export function useFileShare({ lead, sender }: { lead: { name: string; phone: st
   const urlOf = (path: string) => `${window.location.origin}${path}`
   const copyLink = (f: { name: string; share: string | null }) => {
     if (!f.share) { snackbar({ message: 'Couldn’t make the link — this file can’t be shared' }); return }
-    const write = navigator.clipboard ? navigator.clipboard.writeText(urlOf(f.share)) : Promise.reject(new Error('no clipboard'))
+    const write = copyText(urlOf(f.share))
     write.then(() => snackbar({ message: `Link to “${f.name}” copied` }), () => snackbar({ message: 'Couldn’t copy the link — please try again' }))
   }
   const sendWhatsApp = (f: { name: string; share: string | null }) => {

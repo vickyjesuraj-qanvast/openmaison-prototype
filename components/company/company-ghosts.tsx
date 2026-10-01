@@ -95,7 +95,8 @@ export function QuestionnaireGhost() {
             <div className={bank.thead}><Bone w={64} h={10} /><span className={bank.col}><Bone w={56} h={10} /></span><span className={bank.col}><Bone w={40} h={10} /></span><span className={bank.actionsHead} /></div>
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div key={i} className={bank.trow}>
-                <span className={bank.text}><Line w={cycle([150, 176, 140, 132, 180, 150, 188, 170], i)} lh={20} h={12} /><Slot kind="chip" w={cycle([34, 52, 34, 48, 70], i)} /></span>
+                {/* (Dane UAT 3.38) the drag handle first, as the page draws it for Owners and Admins */}
+                <span className={bank.lead}><Bone w={20} h={20} r={4} /><span className={bank.text}><Line w={cycle([150, 176, 140, 132, 180, 150, 188, 170], i)} lh={20} h={12} /><Slot kind="chip" w={cycle([34, 52, 34, 48, 70], i)} /></span></span>
                 <span className={bank.col}><Slot kind="switch" /></span>
                 <span className={bank.col}><Slot kind="switch" /></span>
                 <span className={bank.actions}>{[0, 1, 2, 3].map((j) => <Bone key={j} w={16} h={16} />)}</span>
@@ -265,7 +266,10 @@ export function BrandKitGhost() {
         <aside className={profile.preview}>
           <Line w={220} lh={16} h={10} />
           <div className={profile.previewPage}><Bone w={276} h={390} r={2} /></div>
-          <Line w={130} lh={20} h={12} />
+          {/* (Dane UAT 2.01 · 3.34) Preview, the hint, and the note on what the default template sets itself */}
+          <span className={profile.previewOpen}><Line w={84} lh={36} h={12} /></span>
+          <span className={profile.previewHint}><Line w={300} lh={20} h={12} /></span>
+          <span className={profile.previewNote}><Line w={300} lh={20} h={12} /><Line w={180} lh={20} h={12} /></span>
         </aside>
       </div>
     </CompanyGhostFrame>

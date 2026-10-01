@@ -2,7 +2,7 @@
  * (REG-726) The anatomy check — the design's measures, checked in a real browser on every page, so a copy that drifts is caught by
  * CI instead of by the owner. It visits each page of the app, then:
  *  - every table head cell (role="columnheader") is measured against the leads listing's (components/leads/table.module.css):
- *    the 56 head, padding 16/24/16/16 (52 or 40 on a selectable first column), the label 12/500 uppercase, no letter-spacing, grey;
+ *    the 56 head, padding 16/24/16/16 (52 or 40 on a selectable first column; 12 on the column right after a selection box, REG-820), the label 12/500 uppercase, no letter-spacing, grey;
  *  - every modal it can open from the page's own controls — Create (C) and Filters (F), the keyboard's contract — and every
  *    modal already open must wear the house head and foot (REG-725): SurfaceHead 64 (p20/24) with the rule inside, the 20/24 bold
  *    title; SurfaceFoot p16/24 with its top rule.
@@ -44,7 +44,10 @@ async function checkTables(page, route) {
       const ls = getComputedStyle(label)
       const row = h.parentElement.getBoundingClientRect()
       const first = h === h.parentElement.firstElementChild
-      return { text: (label.textContent || '').trim().slice(0, 24), first, hasBox: !!h.querySelector('input[type="checkbox"], [role="checkbox"]'),
+      /* (REG-820) the column straight after a selection-box column starts at 12, so its words land at 52 as the listing's do */
+      const prev = h.previousElementSibling
+      const afterBox = !!prev && !!prev.querySelector('input[type="checkbox"], [role="checkbox"]') && !(prev.textContent || '').trim()
+      return { text: (label.textContent || '').trim().slice(0, 24), first, afterBox, hasBox: !!h.querySelector('input[type="checkbox"], [role="checkbox"]'),
                pl: cs.paddingLeft, color: cs.color, h: Math.round(row.height),
                size: ls.fontSize, weight: ls.fontWeight, tt: ls.textTransform, ls: ls.letterSpacing }
     })
@@ -52,7 +55,7 @@ async function checkTables(page, route) {
   for (const h of heads) {
     const where = `${route} · table head "${h.text || '(blank)'}"`
     if (!h.text) continue   // a selection or actions column
-    ok(h.pl === '16px' || (h.first && (h.pl === '52px' || h.pl === '40px')), `${where}: padding-left ${h.pl}, the listing's is 16px`)
+    ok(h.pl === '16px' || (h.first && (h.pl === '52px' || h.pl === '40px')) || (h.afterBox && h.pl === '12px'), `${where}: padding-left ${h.pl}, the listing's is 16px`)
     ok(h.color === 'rgb(102, 102, 102)', `${where}: colour ${h.color}, the listing's head grey is rgb(102, 102, 102)`)
     ok(h.size === '12px' && h.weight === '500' && h.tt === 'uppercase', `${where}: label ${h.size}/${h.weight} ${h.tt}, the listing's is 12px/500 uppercase`)
     ok(h.ls === 'normal', `${where}: letter-spacing ${h.ls}, the listing's head has none`)

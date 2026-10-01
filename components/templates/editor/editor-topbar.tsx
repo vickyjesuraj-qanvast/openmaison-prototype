@@ -72,7 +72,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
             <Dropdown open={menu === 'source'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="Preview with">
               {sources.map((s, i) => (
                 <div key={s.key}>
-                  {i === 2 ? <DropdownDivider /> : null}
+                  {i === 2 ? <><DropdownDivider /><div className={styles.sourceNote} role="presentation" data-testid="source-note">Previews only — a quote’s lines are edited in the quote.</div></> : null}   {/* (Dane UAT, Figma 1546:14/30) why a real quote opens here at all (REG-486 · REG-495) */}
                   <DropdownItem role="menuitemradio" checked={s.key === source} selected={s.key === source} onSelect={() => { setMenu(null); onSource(s.key) }} meta={s.sub}>{s.label}</DropdownItem>
                 </div>
               ))}

@@ -63,7 +63,7 @@ export function DefaultsPane({ defaults: d, textTemplates, paymentPresets, onCha
               <Chip key={key} variant="choice" isSelected={columns.includes(key)} onChange={() => toggleColumn(key)}>{COLUMN_LABEL[key]}</Chip>
             ))}
           </div>
-          <span className={styles.intro}>The studio’s working columns in the quote editor. What the client sees is the Items block on the Structure tab.</span>
+          <span className={styles.intro}>The studio’s working columns in the quote editor. What the client sees is the Items table on the Page tab.</span>   {/* (Dane UAT 3.30) the tab is Page since REG-569 */}
         </div>
       </div>
     </div>

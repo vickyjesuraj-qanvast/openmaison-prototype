@@ -82,13 +82,16 @@ export function AssignPopover({
       <Checkbox isSelected={picked.has(m.id)} isDisabled={!mayPick(m.id)} onChange={() => toggle(m.id)} aria-label={`Assign ${m.name}`} />
     </button>
   ))
-  /* (REG-612) The suggestion sits above the rows while the lead has nobody: 1.0's AI Recommendation card, scored without AI. */
-  const tip = suggestion && value.length === 0 && !locked ? (
+  /* (REG-612) The suggestion sits above the rows while the lead has nobody: 1.0's AI Recommendation card, scored without AI.
+     (REG-901, Dane UAT 5.04) "Assign to {name}" assigns at once — the same `onApply` (and so the same action and snackbar) as ticking
+     the member and pressing Assign. It is offered only for a member this viewer may assign (REG-601, the managers' reach); a lead with
+     nobody has nothing to keep, so the owner rule past New is met by the one member it assigns. */
+  const tip = suggestion && value.length === 0 && !locked && mayPick(suggestion.id) ? (
     <div className={styles.suggest} data-testid="assign-suggestion">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <span className={styles.suggestHead}><img src="/figma-assets/brief-sparkle.svg" alt="" width={17} height={17} />Suggested · {suggestion.name}</span>
       <span className={styles.suggestReason}>{suggestion.reason}</span>
-      <Button appearance="text" onPress={() => setPicked(new Set([suggestion.id]))}>Assign to {suggestion.name}</Button>
+      <Button appearance="text" onPress={() => onApply([suggestion.id])}>Assign to {suggestion.name}</Button>
     </div>
   ) : null
   /* (REG-725) The message rides on the foot's left (FootStart) — in the popover's house foot and in the phone sheet's. */

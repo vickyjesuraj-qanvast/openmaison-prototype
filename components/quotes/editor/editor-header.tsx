@@ -8,7 +8,8 @@ import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
-import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
+import { useSheetLayout } from '@/components/om/sheet'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteContract, QuoteSibling } from '@/lib/quotes/editor'
 import { SendButton, type SendKind, type SendMode } from '@/components/quotes/send/send-button'
@@ -59,6 +60,10 @@ export function EditorHeader({
 }) {
   const [menu, setMenu] = useState<'switch' | 'more' | null>(null)
   const folded = useMediaQuery(TABLET_DOWN)   // ≤1024 Preview and Comments live in the kebab (editor-header.module.css)
+  const sheet = useSheetLayout()   // ≤767 the switch list is a bottom sheet with its own heading
+  /* (Dane UAT 6.03, t-6.03) The ▾ lists the lead's OTHER quotes — beside the "Version 1" chip, a list with no heading read as versions (renaming
+     changes only the title). It says whose quotes they are on every width: the sheet's heading on a phone, the house group title elsewhere. */
+  const switchHeading = `${lead.name}’s quotes`
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
   return (
     <header className={styles.header}>
@@ -74,7 +79,8 @@ export function EditorHeader({
             </button>
             {/* The lead's quotes, newest last (the Quotes tab's order): one 36px row each — title · number — the open one
                 marked "current" like the tab's status menu (910:36673). (REG-728) The editor switchers' width: rows with a description. */}
-            <Dropdown open={menu === 'switch'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Quotes">
+            <Dropdown open={menu === 'switch'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle={switchHeading}>
+              {sheet ? null : <DropdownLabel>{switchHeading}</DropdownLabel>}
               {siblings.map((s) => (
                 <DropdownItem key={s.id} role="menuitemradio" checked={s.id === quoteId} onSelect={pick(() => { if (s.id !== quoteId) onSwitch(s.id) })}>
                   <span className={styles.menuTitle}>{s.title || s.number}</span>

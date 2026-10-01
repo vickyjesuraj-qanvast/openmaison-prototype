@@ -1,6 +1,7 @@
 'use client'
 
 import { useRememberShape } from '@/lib/ghost-shape'
+import { copyText } from '@/lib/clipboard'
 import { leadTabShape } from '@/components/leads/detail/tab-ghost-for'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -118,7 +119,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
       router.push(withFrom(`/quote-x-ray?lead=${quote.leadId}&quote=${quote.id}`, here))   /* (REG-639) Quote X-Ray on this quote, back to this tab */
     } else if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`   /* (REG-625, E-117) the quote's own address — "?open=" was read by nothing */
-      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
+      void copyText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
     } else if (action === 'archive') {
       // The Undo snackbar rides with the success (RACE-03): a failed archive shows only "Couldn’t archive the quote".
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })

@@ -36,10 +36,10 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
 
   return (
     <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'payments', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Payment templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="payment-templates"
-      newMenu={(close) => (<>
-        <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank split</DropdownItem>
+      newMenu={(close, place) => (<>   {/* (Dane UAT 3.03) a split made inside a folder is filed there */}
+        <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'blank' }, folderId: place.folderId }), 'create the template') }}>Blank split</DropdownItem>
         <DropdownDivider />
-        <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'copy', id: DEFAULT_SPLIT_ID } }), 'create the template') }}>Start from Default 10/30/30/30</DropdownItem>
+        <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'copy', id: DEFAULT_SPLIT_ID }, folderId: place.folderId }), 'create the template') }}>Start from Default 10/30/30/30</DropdownItem>
       </>)}
       filters={[{ key: 'preset', label: 'Studio presets', test: (t) => t.isPreset }, { key: 'own', label: 'Your own', test: (t) => !t.isPreset }]}
       searchText={(t) => t.rows.map((r) => r.name).join(' ')}

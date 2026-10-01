@@ -176,7 +176,7 @@
   "module": "Company",
   "try": "Try to change your own role",
   "how": "1. On your own row (Dane), point at the \"Role\" box",
-  "expect": "The box is greyed out and a tip says \"Nobody changes their own role\".",
+  "expect": "The box is greyed out and a tip says \"You’re the studio’s Owner — make another member an Owner, then they can change your role.\"",
   "in10": "Different from 1.0: the rule is enforced, not just hidden",
   "as": "Dane",
   "covers": [
@@ -225,7 +225,7 @@
   "module": "Settings",
   "try": "Open the studio's settings",
   "how": "1. Click \"Settings\" in the side navigation\n2. Read the tabs\n3. Click \"Projects\"",
-  "expect": "Settings opens on \"Studio\", beside \"Lead management\", \"Quotes & pricing\" and \"Notifications\"; \"Projects\" (still to come) answers \"Coming soon in OpenMaison 2.0\".",
+  "expect": "Settings opens on \"Studio\"; the tabs read Studio · Lead management · Projects · Quotes & pricing · Finance · Notifications; \"Projects\" (still to come) answers \"Coming soon in OpenMaison 2.0\".",
   "in10": "Different from 1.0: four tabs instead of one long Accounts page",
   "as": "Dane",
   "covers": [
@@ -345,7 +345,7 @@
   "scene": "How leads are handled",
   "module": "Settings",
   "try": "Add a Lost reason that expects two logged contacts",
-  "how": "1. Back in Settings, open \"Lead management\" and find \"Reasons\"\n2. In \"Add a Lost reason\" type Chose a contractor; in \"Needs logged contacts\" type 2\n3. Click \"Add\"",
+  "how": "1. Back in Settings, open \"Lead management\" and find \"Lost and On Hold reasons\"\n2. In \"Add a Lost reason\" type Chose a contractor; in \"Contacts expected first\" type 2 (the line under it says what the number does)\n3. Click \"Add\"",
   "expect": "\"Chose a contractor added to the Lost reasons\"; it shows as \"Chose a contractor · after 2 contacts\", just before \"Others\".",
   "in10": "Same as 1.0",
   "as": "Dane",
@@ -587,8 +587,8 @@
   "scene": "Leave the studio as you found it",
   "module": "Settings",
   "try": "Remove the test reason and the test field",
-  "how": "1. Under \"Reasons\" click ✕ on \"Chose a contractor\"\n2. Under \"Custom fields\" click the bin on \"Preferred contact time\"\n3. Click \"Delete\" in \"Delete this field?\"",
-  "expect": "\"Chose a contractor removed\", \"Preferred contact time deleted\"; Reasons says \"These are the defaults.\" and Custom fields \"No custom fields yet.\"",
+  "how": "1. Under \"Lost and On Hold reasons\" click ✕ on \"Chose a contractor\"\n2. Under \"Custom fields\" click the bin on \"Preferred contact time\"\n3. Click \"Delete\" in \"Delete this field?\"",
+  "expect": "\"Chose a contractor removed\", \"Preferred contact time deleted\"; Lost and On Hold reasons says \"These are the defaults.\" and Custom fields \"No custom fields yet.\"",
   "in10": "Same as 1.0",
   "as": "Dane",
   "covers": [

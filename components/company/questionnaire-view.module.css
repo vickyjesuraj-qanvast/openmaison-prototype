@@ -29,3 +29,12 @@
 /* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
 @media (max-width: 1024px) { .thead, .trow { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
 @media (max-width: 767px) { .thead, .trow { grid-template-columns: minmax(0, 1fr) 56px 56px; } }
+/* (Dane UAT 3.38) Drag to reorder: the rows sit in motion's Reorder group, which draws no box of its own (the table's rows stay its flex
+   children); the handle leads the question cell (the task template's handle, composed) and the head's label lines up with the question.
+   A row being dragged rises on the card's own surface. */
+.rowGroup { display: contents; }
+.lead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.handle { composes: handle from './templates/editors/library-editor.module.css'; flex-shrink: 0; }
+.handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.table[data-reorder] .thead > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
+.trow[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }

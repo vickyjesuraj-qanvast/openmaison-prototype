@@ -44,7 +44,7 @@ export function linkState(c: { status: string; archivedAt: Date | null; deletedA
 
 /** (Q-05) The copy kept at signing, as the renderer reads it. */
 export type SignedLetterhead = { name: string; line: string; /** (REG-632) an issuing entity's own logo; none = the brand kit's */ logo?: string | null }
-export type SignedStudioSignature = { kind: 'draw' | 'type'; name: string; data: string | null } | null
+export type SignedStudioSignature = { kind: 'draw' | 'type' | 'image'; name: string; data: string | null } | null   // (Dane UAT 6.23) 'image' = an uploaded picture
 export type SignedCopy = { body: string | null; letterhead: SignedLetterhead | null; studioSignature: SignedStudioSignature; hash: string | null }
 export function signedCopyOf(c: { signedBody: string | null; signedLetterhead: string | null; signedStudioSignature: string | null; documentHash: string | null; status: string }): SignedCopy | null {
   if (c.status !== 'Signed' || (!c.signedBody && !c.documentHash)) return null

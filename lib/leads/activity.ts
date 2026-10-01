@@ -8,8 +8,11 @@ import { SHARE_DAYS } from '@/lib/visualizer/policy'
 import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
-import { displayDate, displayDateTimeDot, parseInputDateTime } from '@/lib/format'
+import { displayDate, displayDateTimeDot, maskNric, parseInputDateTime } from '@/lib/format'
 import type { LeadEventDetail } from '@/lib/leads/events'
+
+/** (REG-903, PDPA) An edit line shows the NRIC / FIN masked (•••••567A) — older lines in the log kept the full number. */
+const shownField = (key: string, v: string) => (key === 'icNumber' && v !== '—' ? maskNric(v) : v)
 
 /** (UX audit 2026-09-30, T10) "Sarah assigned Kevin and Hui Min to the task “X”." — who joined, who left, in one sentence. */
 function assignedLine(actor: string, d: LeadEventDetail): string {
@@ -194,7 +197,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     const d = (e.detail && typeof e.detail === 'object' ? e.detail : {}) as LeadEventDetail
     const actor = who(e.actorId)
     const text = e.kind === 'member_removed' ? `${actor} removed ${d.memberId === ME ? 'yourself' : (d.name ?? 'a member')} from this lead.`
-      : e.kind === 'field_edited' ? `${actor} edited the lead — ${(d.fields ?? []).map((f) => `${f.label}: ${f.from} → ${f.to}`).join('; ')}.`
+      : e.kind === 'field_edited' ? `${actor} edited the lead — ${(d.fields ?? []).map((f) => `${f.label}: ${shownField(f.key, f.from)} → ${shownField(f.key, f.to)}`).join('; ')}.`
       : e.kind === 'task_deleted' ? `${actor} deleted the task ${q(d.title ?? '')}.`
       : e.kind === 'note_deleted' ? (d.kind === 'contact' ? `${actor} deleted the contact log${d.when ? ` of ${displayDateTimeDot(new Date(d.when))}` : ''}.` : `${actor} deleted the note${d.title ? ` ${q(d.title)}` : ''}.`)
       : e.kind === 'file_trashed' ? `${actor} moved ${q(d.name ?? '')} to the trash.`

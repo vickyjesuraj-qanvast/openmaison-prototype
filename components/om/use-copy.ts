@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSnackbar } from '@/components/om/snackbar'
+import { copyText } from '@/lib/clipboard'
 
 /** How long the button reads "Copied" before returning to its label. */
 const COPIED_MS = 2000
@@ -48,10 +49,10 @@ export function useCopy(
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   /* (sweep S3) `copy` answers whether it worked — a caller that keeps a record of the copy (X-Ray's send) keeps it only then — and a
-     browser with no clipboard gets the failure line, never silence. */
+     browser with no clipboard gets the failure line, never silence. (REG-897) A page without the Clipboard API (plain http on a LAN
+     address) copies the old way inside the same press (lib/clipboard.ts). */
   const copy = useCallback((): Promise<boolean> => {
-    const write = navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'))
-    return write.then(
+    return copyText(text).then(
       () => {
         snackbar({ message: done })
         setState((s) => {

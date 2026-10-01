@@ -11,6 +11,7 @@ import { Crumbs } from '@/components/om/crumbs'
 import { useCopy } from '@/components/om/use-copy'
 import { useSnackbar } from '@/components/om/snackbar'
 import { withFrom } from '@/lib/nav'
+import { copyText } from '@/lib/clipboard'
 import { displayDate } from '@/lib/format'
 import { contractLink, firstName, signingLink, signingMessage } from '@/lib/contracts/model'
 import type { ContractEditorData } from '@/lib/contracts/queries'
@@ -57,7 +58,7 @@ export function ContractPreview({ data, from, print }: { data: ContractEditorDat
     if (status === 'Draft' && !uploaded && isBlankDoc(contract.body)) { snackbar({ message: 'Add some content before sharing the link' }); return }
     if (status === 'Draft' && blockIssue) { snackbar({ message: `Before you send: ${blockIssue.label}` }); return }
     if (status !== 'Draft') { void copy(); return }
-    const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink({ id: contract.id, bundleId: contract.bundleId, status })) : Promise.reject(new Error('no clipboard'))
+    const write = copyText(contractLink({ id: contract.id, bundleId: contract.bundleId, status }))
     void write.then(() => { void shareDraft() }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
   }
   return (

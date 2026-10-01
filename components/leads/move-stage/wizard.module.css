@@ -170,6 +170,12 @@
 
 /* Suggested tasks rows (the dialog shell itself is components/om/dialog). */
 .helper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (Dane's UAT 9.08) The Lost dialog's On Hold nudge in the house warning tone (the yellow ink My Tasks' Due today and the review sheet's
+   matched label wear) with its glyph, and the move it suggests as the house text link under the sentence. */
+.nudge { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-tertiary-yellow-variant); }
+.nudge > :first-child { flex-shrink: 0; }
+.nudgeBody { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); min-width: 0; }
+.nudgeAction { composes: link from '../../om/text-link.module.css'; }
 .taskRow {
   display: flex; align-items: center; gap: var(--om-spacing-3);
   padding: var(--om-spacing-3);

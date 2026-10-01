@@ -149,8 +149,11 @@
 .chev { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }
 
-/* Same card frame as every other table (1px surface-variant, radius-2); the frame owns the outer edges. */
-.previewWrap { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+/* Same card frame as every other table (1px surface-variant, radius-2); the frame owns the outer edges.
+   (Dane's UAT 4.07, Figma 1659:30) The frame ends at its last row: it took the step's whole remaining height (`flex: 1`), so a short file sat
+   above a white block with the sideways scrollbar at the frame's foot, far below the rows. It is as tall as its rows now and scrolls only
+   once they outgrow the room — the scrollbar then sits right under them. */
+.previewWrap { flex: 0 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .preview { display: grid; width: max-content; min-width: 100%; grid-template-rows: 48px; grid-auto-rows: minmax(44px, auto); }   /* (UX audit L4) a marked cell's second line grows its row */
 .pRow { display: contents; }
 .pCell:last-child { border-right: 0; }

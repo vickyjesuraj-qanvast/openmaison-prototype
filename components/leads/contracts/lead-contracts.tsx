@@ -1,6 +1,7 @@
 'use client'
 
 import { useRememberShape } from '@/lib/ghost-shape'
+import { copyText } from '@/lib/clipboard'
 import { leadTabShape } from '@/components/leads/detail/tab-ghost-for'
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -96,12 +97,13 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const wonNext = (c: Contract) => (data.lead.stage && data.lead.stage !== 'Won' ? { actionLabel: 'Move to Won', onAction: () => router.push(moveStageHref(leadId, 'won', { contract: c.id })) } : {})
 
   const openEditor = (id: string) => router.push(withFrom(`/contracts/${id}`, from))
-  /* One contract per press (RACE-05), then straight into the editor. */
+  /* One contract per press (RACE-05), then straight into the editor. (Dane UAT 8.02, REG-659) `creating` holds until the editor takes over
+     the page — the template picker reads "Creating…" all that while — and drops only when the server refuses (the picker stays to retry). */
   const create = async (input: Omit<Parameters<typeof createContractDoc>[0], 'leadId'>, done: string) => {
     if (creating) return
     setCreating(true)
     try { const id = await createContractDoc({ leadId, ...input }); snackbar({ message: done }); openEditor(id) }
-    catch { fail('create the contract') } finally { setCreating(false) }
+    catch { fail('create the contract'); setCreating(false) }
   }
   const newBlank = () => { void create({}, 'Contract created') }
 
@@ -129,7 +131,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         const why = sendBlock(contract); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return }
         const q = quoteBlockOf(contract); if (q) { sayQuoteBlock(contract, q); return }
       }
-      const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink(contract)) : Promise.reject(new Error('no clipboard'))
+      const write = copyText(contractLink(contract))
       if (contract.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(contract.id), 'Signing link copied — the contract is Sent to Client now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
       else void write.then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
     }
@@ -193,9 +195,9 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         onNo={() => setDeleting(null)}
         onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; void run('delete', async () => { const r = await deleteContracts(ids); snackbar({ message: contractsDeletedLine(r) }) }) }}
       />
-      <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates}
-                              onUse={(templateId) => { setPickerOpen(false); void create({ templateId }, 'Contract created from the template') }}
-                              onStarter={() => { setPickerOpen(false); newBlank() }} />
+      <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates} busy={creating}
+                              onUse={(templateId) => { void create({ templateId }, 'Contract created from the template') }}
+                              onStarter={newBlank} />
       <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)}
                             onImport={(o) => { setImportOpen(false); void create({ upload: { fileName: o.fileName, signed: o.signed, title: o.title } }, o.signed ? 'Signed contract imported' : 'Contract imported') }} />
       {/* (REG-591) Send together: the WhatsApp window opens on the press (a popup blocker eats one opened after the round trip — REG-534), then the bundle is recorded. */}

@@ -32,13 +32,14 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
   const here = useHere('/company/templates/terms')   // (round 3) the open folder and search ride along
   const open = useCallback((id: string) => router.push(`/templates/terms/${id}?from=${encodeURIComponent(here)}`), [router, here])
   /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …" */
-  const create = async (k: TextKind) => { try { open(await newIdOf(createTextTemplate(k, { title: 'Untitled template', body: '' }))) } catch (e) { fail('create the template', reasonOf(e)) } }
+  /* (Dane UAT 3.03) a template made inside a folder is filed there */
+  const create = async (k: TextKind, folderId: string | null = null) => { try { open(await newIdOf(createTextTemplate(k, { title: 'Untitled template', body: '' }, folderId))) } catch (e) { fail('create the template', reasonOf(e)) } }
 
   return (
     <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'texts', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Terms and Notes templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="text-templates"
-      newMenu={(close) => (<>
-        <DropdownItem onSelect={() => { close(); void create('terms') }}>Terms and Conditions</DropdownItem>
-        <DropdownItem onSelect={() => { close(); void create('notes') }}>Additional Notes</DropdownItem>
+      newMenu={(close, place) => (<>
+        <DropdownItem onSelect={() => { close(); void create('terms', place.folderId) }}>Terms and Conditions</DropdownItem>
+        <DropdownItem onSelect={() => { close(); void create('notes', place.folderId) }}>Additional Notes</DropdownItem>
       </>)}
       filters={[{ key: 'terms', label: 'Terms', test: (t) => t.kind === 'terms' }, { key: 'notes', label: 'Notes', test: (t) => t.kind === 'notes' }]} filterLabel="Kind"
       searchText={(t) => textPreview(t.body, 600)}

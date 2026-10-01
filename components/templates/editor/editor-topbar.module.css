@@ -20,6 +20,8 @@
 .sourceValue { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
 .sourceCaption { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .sourceLabel { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (Dane UAT, Figma 1546:14/30) the quiet caption over the real quotes in Preview with ▾ — the menu's group-title padding, body-s grey */
+.sourceNote { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .zoom { display: inline-flex; align-items: center; }
 /* (REG-729) The zoom figure: the bare icon button's look at 36 with the DS text button's subheading-m — the Visualizer's zoom label. */
 .zoomLabel { min-width: 52px; height: 36px; padding: 0 var(--om-spacing-1); border: 0; background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }

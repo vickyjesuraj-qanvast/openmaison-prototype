@@ -30,6 +30,8 @@ export function SignatureMark({ image, ctx, height }: { image: SignatureColumn['
     const s = data.memberSignature
     if (!s) return <span style={{ height }} />
     if (s.kind === 'draw' && s.data) return <svg className={styles.sigImg} style={{ height }} viewBox="0 0 752 140" aria-hidden><path d={s.data} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    if (s.kind === 'image' && s.data) return <img className={styles.sigImg} style={{ height }} src={s.data} alt="" draggable={false} />   /* (Dane UAT 6.23) an uploaded signature prints where a drawn one does */
     return <span className={styles.sigTyped} style={{ height, fontSize: height * 0.55 }}>{s.name}</span>
   }
   const c = data.clientSignature

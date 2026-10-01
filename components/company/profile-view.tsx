@@ -19,6 +19,7 @@ import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './templates/refusal'
 import { couldnt } from '@/components/leads/tasks/use-run'
 import { EMPTY_ENTITY, SOCIAL_LABEL, type IssuingEntity, type SocialKey, type StudioDetails } from '@/lib/templates/model'
+import { newId } from '@/lib/uid'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import type { BrandSetting } from '@/lib/templates/brand'
 import { EMAIL_RE, MSG } from '@/lib/forms'
@@ -121,8 +122,9 @@ export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand:
                 </div>
               ))}
             </div>
-            {/* (REG-618, parity Q-20) Social links: {studio_social} prints them in a line; the templates' Social links element prints each with its mark. */}
-            <div className={styles.cardHead}><h3 className={styles.subTitle}>Social links</h3><p className={styles.cardHelp}>Handles or links, as you want them printed. {'{studio_social}'} prints the filled ones in a line; the Social links element on a template prints each with its mark.</p></div>
+            {/* (REG-618, parity Q-20) Social links: {studio_social} prints them in a line; the templates' Social links element prints each with its mark.
+                (Dane UAT 2.02) The help shows what "as you want them printed" means — a handle prints exactly as typed (REG-618). */}
+            <div className={styles.cardHead}><h3 className={styles.subTitle}>Social links</h3><p className={styles.cardHelp}>Handles or links, as you want them printed — e.g. @demostudio.sg. {'{studio_social}'} prints the filled ones in a line; the Social links element on a template prints each with its mark.</p></div>
             <div className={styles.details} data-testid="social-links">
               {SOCIAL_FIELDS.map((k) => (
                 <div key={k}><TextField label={SOCIAL_LABEL[k]} value={details.socials?.[k] ?? ''} onChange={(v) => setDetails((d) => ({ ...d, socials: { ...(d.socials ?? {}), [k]: v } }))} /></div>
@@ -173,7 +175,7 @@ export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand:
                 </> : null}
               </div>
             ))}
-            {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('', crypto.randomUUID())] }))}>Add an entity</Button></span> : null}
+            {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('', newId())] }))}>Add an entity</Button></span> : null}
           </section>
           {/* (REG-554) The kit lives with the templates now; this is the way there for whoever comes here for the logo. */}
           <Link href="/company/templates/brand" className={styles.kitLink} data-testid="brand-kit-link">

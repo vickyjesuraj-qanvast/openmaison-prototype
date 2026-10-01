@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -10,10 +10,12 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell, templateTabs } from '../company-shell'
 import { BrandKitGhost } from '@/components/company/company-ghosts'
 import { TemplateThumb } from '@/components/templates/render/document'
+import { TemplatePreviewPages } from '@/components/templates/template-preview-dialog'
+import { Dialog } from '@/components/om/dialog'
 import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './refusal'
 import { couldnt } from '@/components/leads/tasks/use-run'
-import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLES, FONT_ROLE_LABEL, type BrandKit, type ColorKey, type FontRole, type TemplateDesign } from '@/lib/templates/model'
+import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLES, FONT_ROLE_LABEL, type BrandKit, type BrandOverrides, type ColorKey, type FontRole, type TemplateDesign } from '@/lib/templates/model'
 import type { BrandSetting } from '@/lib/templates/brand'
 import { DEMO_BADGES, stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
@@ -25,6 +27,26 @@ import { ReadOnlyNote } from '@/components/company/read-only-note'
 import { LeaveGuard } from '@/components/company/leave-guard'
 
 const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular', value: 400 }, { label: 'Semibold', value: 600 }, { label: 'Bold', value: 700 }]
+
+const listOf = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`)
+/**
+ * (Dane UAT · Figma 1517:11, keeps REG-554) What the previewed template sets for itself, so the kit's edits to it don't show on that page —
+ * a template's brand is an override drawn over the kit (REG-487, `mergeBrand`). Names only what it overrides: its logo, which colours
+ * (all six = "its own colours"), which type roles (all four = "its own fonts"). Null when it follows the kit throughout.
+ */
+function ownBrandNote(name: string, o: BrandOverrides | undefined): string | null {
+  if (!o) return null
+  const colours = COLOR_KEYS.filter((k) => o.colors?.[k] !== undefined)
+  const fonts = FONT_ROLES.filter((r) => Object.keys(o.fonts?.[r] ?? {}).length > 0)
+  const parts = [
+    o.logo !== undefined ? 'its own logo' : '',
+    colours.length === COLOR_KEYS.length ? 'its own colours' : colours.length ? `its own ${listOf(colours.map((k) => COLOR_LABEL[k]))} ${colours.length === 1 ? 'colour' : 'colours'}` : '',
+    fonts.length === FONT_ROLES.length ? 'its own fonts' : fonts.length ? `its own ${listOf(fonts.map((r) => FONT_ROLE_LABEL[r]))} ${fonts.length === 1 ? 'font' : 'fonts'}` : '',
+  ].filter(Boolean)
+  if (!parts.length) return null
+  const one = parts.length === 1 && (o.logo !== undefined || colours.length === 1 || fonts.length === 1)
+  return `${name} sets ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}` : parts[0]}, so changing ${one ? 'that' : 'those'} here doesn’t show on it. Templates that use the brand kit follow it.`
+}
 
 /**
  * Company › Templates › Brand kit (REG-487 → REG-554, owner 2026-09-23: "inside the template is better"): the kit every
@@ -72,6 +94,11 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
     setColorShown((d) => { const n = { ...d }; delete n[key]; return n })
   }
   const [sizeDraft, setSizeDraft] = useState<Record<string, string>>({})
+  /* (Dane UAT 2.01 · 3.34) Preview: every page of the default template, large, drawn with the kit as it stands — saved or not. */
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [pageCount, setPageCount] = useState<number | null>(null)
+  const previewData = useMemo(() => ({ ...sample, studio: details }), [sample, details])
+  const ownNote = previewDesign && previewName ? ownBrandNote(previewName, previewDesign.brand) : null
 
   return (
     <CompanyShell title="Templates" tabs={templateTabs()} from={from} skeleton={<BrandKitGhost />} actions={!canRun ? null : <>
@@ -81,8 +108,9 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
       {canRun ? null : <ReadOnlyNote />}
       {/* (UX audit S2) Unsaved edits are not lost to a move inside the app — a tab, the rail, a card — nor to a tab or a reload. */}
       <LeaveGuard dirty={dirty && canRun} what="the brand kit" onSave={save} onDiscard={discard} />
-      <ReadOnlyScope readOnly={!canRun}>
       <div className={styles.layout} data-testid="brand-kit">
+        {/* (Dane UAT 2.01) The scope holds the kit's fields only: the preview and its Preview stay pressable for a member who may only read. */}
+        <ReadOnlyScope readOnly={!canRun}>
         <div className={styles.form}>
           <p className={styles.lead}>Every template starts from this kit — its logo, stamp, badges, colours and type. Change one thing here and every template that uses it follows. A template can still differ on its own Brand tab.</p>
           <section id="marks" className={styles.card} aria-labelledby="brand-marks">
@@ -180,17 +208,27 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
             </div>
           </section>
         </div>
-        <aside className={styles.preview} aria-label="Preview">
+        </ReadOnlyScope>
+        <aside className={styles.preview} aria-label="Preview" data-testid="brand-kit-preview">
           <span className={styles.previewLabel}>{previewName ? `Default template · ${previewName}` : 'Sample quote'}</span>
           <div className={styles.previewPage}>
-            {previewDesign ? <TemplateThumb design={previewDesign} brand={kit} data={{ ...sample, studio: details }} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
+            {previewDesign ? <TemplateThumb design={previewDesign} brand={kit} data={previewData} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
           </div>
+          {/* (Dane UAT 2.01 · 3.34) Every page, large — at every width; ≤1024 the first page steps out and this stays beside the label. */}
+          {previewDesign ? <span className={styles.previewOpen}><Button appearance="text" iconStart={<Icon name="visibility" size={20} weight={300} />} onPress={() => setPreviewOpen(true)} data-testid="brand-kit-preview-open">Preview</Button></span> : null}
           <Tooltip label="The first page of the studio's default template, drawn with the kit as you edit it">
-            <span className={styles.previewHint}><Icon name="info" size={16} weight={300} /> Redraws as you edit</span>
+            {/* (Dane UAT · Figma 1517:11) the stamp is a mark a template places — Letter places none, Form does */}
+            <span className={styles.previewHint}><Icon name="info" size={16} weight={300} /><span>Redraws as you edit. The stamp prints only where a template places it.</span></span>
           </Tooltip>
+          {ownNote ? <p className={styles.previewNote} data-testid="brand-kit-own-note">{ownNote}</p> : null}
         </aside>
       </div>
-      </ReadOnlyScope>
+      {previewDesign ? (
+        <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} size="modal" width={1200} height={960} title={previewName ?? 'Sample quote'}
+                subtitle={`${previewDesign.page.paper}${pageCount ? ` · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}` : ''} · drawn with this brand kit and a sample quote`}>
+          <TemplatePreviewPages paper={previewDesign.page.paper} design={previewDesign} brand={kit} sample={previewData} onPages={(n) => setPageCount((c) => (c === n ? c : n))} />
+        </Dialog>
+      ) : null}
     </CompanyShell>
   )
 }

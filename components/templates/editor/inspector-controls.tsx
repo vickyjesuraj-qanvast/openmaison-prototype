@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type ReactNode } from 'react'
-import { SegmentedButton, SegmentedButtonItem, Switch, TextArea } from '@/components/ds'
+import { Button, SegmentedButton, SegmentedButtonItem, Switch, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
@@ -36,11 +36,11 @@ export function Seg<T extends string>({ label, value, options, onChange, wide = 
 }
 
 /** (REG-542) A select spans the pane unless paired on purpose: a half column truncated "Restart per section" to "Restart per r…". */
-export function Sel<T extends string>({ label, value, options, onChange, wide = true }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; wide?: boolean }) {
+export function Sel<T extends string>({ label, value, options, onChange, wide = true, helper }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; wide?: boolean; /** (Dane UAT) a line under the box saying what a choice means */ helper?: string }) {
   const current = options.find((o) => o.value === value)?.label ?? ''
   return (
     <Field wide={wide}>
-      <TextField label={label} mode="select" value={current} options={options.map((o) => o.label)} onChange={(l) => { const o = options.find((x) => x.label === l); if (o) onChange(o.value) }} />
+      <TextField label={label} mode="select" value={current} options={options.map((o) => o.label)} onChange={(l) => { const o = options.find((x) => x.label === l); if (o) onChange(o.value) }} helper={helper} />
     </Field>
   )
 }
@@ -71,21 +71,26 @@ export function Sw({ label, value, onChange, hint }: { label: string; value: boo
  * Text with an "Insert field" menu that appends a {field}. Multiline for intros and paragraphs. (REG-569) The menu is a portal, so the
  * pane's edge never clips it; and when `values` are given, a field in the text shows what it prints as ("Prints as: Mr & Mrs Tan") —
  * the words in braces read as code to a studio owner, the line under them says what they mean.
+ * (Dane UAT, Figma 1517:57) `reset` = the words a new block starts with here: once the text differs from them, a Reset under the box puts
+ * them back — `onReset` makes that one undo step of its own (a cleared box had no way back but ⌘Z).
  */
-export function Txt({ label, value, onChange, multiline, fields = true, wide = true, values }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean; values?: Record<string, string> }) {
+export function Txt({ label, value, onChange, multiline, fields = true, wide = true, values, reset, onReset }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean; values?: Record<string, string>; reset?: string; onReset?: () => void }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const preview = values && /\{[a-z_]+\}/.test(value) ? resolveFields(value, values).replace(/\s+/g, ' ').trim() : null
   const helper = preview !== null ? (preview ? `Prints as: ${preview}` : 'Prints as: nothing on this quote') : undefined
+  const resetBtn = reset !== undefined && value !== reset ? (
+    <span className={styles.reset}><Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => (onReset ? onReset() : onChange(reset))} aria-label={`Reset ${label}`} data-testid="txt-reset">Reset</Button></span>
+  ) : null
   return (
     <Field wide={wide}>
       <div className={styles.txt}>
         {/* (REG-542) a paragraph field keeps its label — a placeholder vanished as soon as one typed. (REG-729) The DS TextArea's own label,
             inside the box while it is empty and on its top edge once it holds text, as every single-line field's. */}
         {multiline ? (
-          <span className={styles.txtGrow}><TextArea label={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />{helper ? <span className={styles.helper}>{helper}</span> : null}</span>
+          <span className={styles.txtGrow}><TextArea label={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />{helper ? <span className={styles.helper}>{helper}</span> : null}{resetBtn}</span>
         ) : (
-          <span className={styles.txtGrow}><TextField label={label} value={value} onChange={onChange} helper={helper} /></span>
+          <span className={styles.txtGrow}><TextField label={label} value={value} onChange={onChange} helper={helper} />{resetBtn}</span>
         )}
         {fields ? (
           <span ref={anchor} className={styles.fieldsAnchor}>

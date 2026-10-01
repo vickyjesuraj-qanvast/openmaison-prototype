@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MetaChip } from '@/components/om/meta-chip'
+import { useSnackbar } from '@/components/om/snackbar'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { TemplateThumb } from '@/components/templates/render/document'
@@ -48,18 +49,30 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
   const router = useRouter()
   const { run, fail } = useRun()
   const phone = useMediaQuery(MOBILE)
+  const snackbar = useSnackbar()
+  /* (Dane UAT 3.03) The two dialogs New ▾ opens remember the folder that was open — the template they make is filed there */
   const [houseOpen, setHouseOpen] = useState(false)
   const [recreateOpen, setRecreateOpen] = useState(false)
+  const [at, setAt] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const kind = templateKind('quotes')!
   const here = useHere('/company/templates/quotes')   // (round 3) the open folder and search ride along
 
   const open = (id: string) => router.push(withFrom(`/templates/${id}`, here))   /* (REG-465) Back returns here */
   /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
-  const create = async (fn: () => Promise<unknown>, what: string) => {
+  const create = async (fn: (folderId: string | null) => Promise<unknown>, what: string, folderId: string | null = null) => {
     if (busy) return
     setBusy(true)
-    try { const id = await newIdOf(fn()); router.push(`/templates/${id}`) }
+    try {
+      const id = await newIdOf(fn(folderId))
+      /* (Dane UAT 3.03) Made inside a folder, it is filed there (createTemplate checks the rule). A quote template keeps no author, so only an
+         Owner or an Admin files one: anyone else's lands at the top of Quotes — the page stays to say where, with the way into the editor. */
+      if (folderId && !canRun) {
+        snackbar({ message: `The new template is in Quotes, not ${folders.find((f) => f.id === folderId)?.name ?? 'that folder'} — only an Owner or an Admin files quote templates in folders`, actionLabel: 'Open', onAction: () => router.push(`/templates/${id}`) })
+        router.refresh(); return
+      }
+      router.push(`/templates/${id}`)
+    }
     catch (e) { fail(what, reasonOf(e)) }
     finally { setBusy(false) }
   }
@@ -99,12 +112,12 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
     <LibraryGallery<Row> kind={kind} from={from} items={templates.map(toRow)} deleted={deleted.map(toDeletedRow)} now={now} ariaLabel="Quote templates" tableKey="quote-templates"
       folders={{ library: 'quotes', list: folders, block: canRun ? null : FOLDER_RULE }}   /* canRun = an Owner or an Admin, the folder rule */
       filters={filters} filterLabel="Status"
-      newMenu={(close) => (
+      newMenu={(close, place) => (
         <>
-          <DropdownItem onSelect={() => { close(); void create(() => createTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
-          <DropdownItem onSelect={() => { close(); setHouseOpen(true) }}>Use a ready-made design</DropdownItem>
+          <DropdownItem onSelect={() => { close(); void create((folderId) => createTemplate({ source: { kind: 'blank' }, folderId }), 'create the template', place.folderId) }}>Blank template</DropdownItem>
+          <DropdownItem onSelect={() => { close(); setAt(place.folderId); setHouseOpen(true) }}>Use a ready-made design</DropdownItem>
           <DropdownDivider />
-          <DropdownItem onSelect={() => { close(); setRecreateOpen(true) }}>Upload my existing quote</DropdownItem>
+          <DropdownItem onSelect={() => { close(); setAt(place.folderId); setRecreateOpen(true) }}>Upload my existing quote</DropdownItem>
         </>
       )}
       thumb={(r) => (
@@ -143,7 +156,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
       empty={{ title: 'No templates yet', help: 'Use a ready-made design, or upload the quote you send today and we’ll rebuild it.',
         /* (REG-735) the first run carries New ▾'s rows: a studio arriving already sends a quote, so rebuilding it leads; blank second; the
            ready-made designs are the library's samples, drawn with the studio's brand — a press starts a template on one */
-        start: () => ({ primary: { label: 'Upload my existing quote', icon: 'upload_file', onPress: () => setRecreateOpen(true) },
+        start: () => ({ primary: { label: 'Upload my existing quote', icon: 'upload_file', onPress: () => { setAt(null); setRecreateOpen(true) } },
           secondary: { label: 'Blank template', onPress: () => { void create(() => createTemplate({ source: { kind: 'blank' } }), 'create the template') } } }),
         samples: { label: 'Or start from a ready-made design', node: (
           <div className={styles.ready} role="list" aria-label="Ready-made designs">
@@ -157,9 +170,9 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
           </div>
         ) } }}>
       <HouseStyleDialog open={houseOpen} brand={brand} sample={sample} onClose={() => setHouseOpen(false)}
-                        onCreate={(key, name) => { setHouseOpen(false); void create(() => createTemplate({ name, source: { kind: 'preset', key } }), 'create the template') }} />
+                        onCreate={(key, name) => { setHouseOpen(false); void create((folderId) => createTemplate({ name, source: { kind: 'preset', key }, folderId }), 'create the template', at) }} />
       <RecreateDialog open={recreateOpen} brand={brand} sample={sample} onClose={() => setRecreateOpen(false)}
-                      onCreate={(key, name, sourceFile) => { setRecreateOpen(false); void create(() => createTemplate({ name, source: { kind: 'preset', key, sourceFile } }), 'create the template') }} />
+                      onCreate={(key, name, sourceFile) => { setRecreateOpen(false); void create((folderId) => createTemplate({ name, source: { kind: 'preset', key, sourceFile }, folderId }), 'create the template', at) }} />
     </LibraryGallery>
   )
 }

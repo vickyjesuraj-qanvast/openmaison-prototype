@@ -60,6 +60,9 @@
 .t tr[data-sum] td { font-weight: 700; }
 .t tr[data-head] td { font-weight: 700; }
 .t tr[data-fill] td { height: 1px; }
+/* (Dane UAT, b-zebra) "Shade every other row": the kit's band colour on every other line of a section (set per table as --zebra) — on the
+   canvas, Preview, the print and the client's pages alike. A line's own highlight fill is inline and wins. */
+.t tr[data-shade] > td { background: var(--zebra); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .amt { display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
 .amt > span:first-child { flex: 0 0 auto; }
 .amt > span:last-child { flex: 1; text-align: right; }

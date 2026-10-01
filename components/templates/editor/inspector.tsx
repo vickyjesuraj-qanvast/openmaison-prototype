@@ -7,7 +7,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
-import { BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_LABEL, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, type Align, type Block, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
+import { BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, type Align, type Block, type BlockKind, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import { defaultElement, duplicateBlock, flowBlocks, moveBlock, patchBlock, patchElement, removeBlock } from './editor-state'
@@ -15,7 +15,11 @@ import { ColorPick, Field, Group, Num, Seg, Sel, StyleEditor, Sub, Sw, Txt } fro
 import styles from './inspector.module.css'
 
 export type DesignSetter = (fn: (d: TemplateDesign) => TemplateDesign, opts?: { coalesce?: string }) => void
-type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-618, parity Q-19) the host resets a block to a new block's settings, with an Undo snackbar */ onResetBlock?: (id: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string> }
+type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-618, parity Q-19) the host resets a block to a new block's settings, with an Undo snackbar */ onResetBlock?: (id: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string>; /** (Dane UAT, Figma 1517:21) the studio's trades, named under "Group the items by" */ trades?: string[] }
+
+/** (Dane UAT, Figma 1517:57) The words a new block of each kind starts with — what a box's Reset puts back. Built once, outside render. */
+const FRESH = Object.fromEntries(BLOCK_KINDS.map((k) => [k, defaultBlock(k)])) as Record<BlockKind, Block>
+const FRESH_PAGE_NO = (() => { const e = defaultElement('pageno'); return e.kind === 'pageno' ? e.format : '' })()
 
 const ALIGN_OPTS: { value: Align; label: string; icon: string }[] = [{ value: 'left', label: 'Left', icon: 'format_align_left' }, { value: 'center', label: 'Centre', icon: 'format_align_center' }, { value: 'right', label: 'Right', icon: 'format_align_right' }]
 const ELEMENT_KINDS: CanvasElement['kind'][] = ['text', 'image', 'kv', 'rule', 'box', 'signature', 'badges', 'pageno', 'social']
@@ -30,7 +34,7 @@ const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')
  */
 const TOTAL_LINE_LABEL: Record<string, string> = { pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }
 
-export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, onResetBlock, values }: Props) {
+export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, onResetBlock, values, trades = [] }: Props) {
   const block = design.blocks.find((b) => b.id === selection?.blockId) ?? null
   if (!block) {
     /* (REG-542) The resting state says what to do in three plain steps — "Inspector" meant nothing to a studio owner. */
@@ -51,11 +55,16 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
   }
   const element = isCanvas(block) && selection?.elementId ? block.elements.find((e) => e.id === selection.elementId) ?? null : null
   if (element && isCanvas(block)) return <ElementInspector block={block} element={element} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteElement} values={values} />
-  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} onReset={onResetBlock} values={values} />
+  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} onReset={onResetBlock} values={values} trades={trades} />
 }
 
-function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, onReset, values }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; onReset?: (id: string) => void; values?: Record<string, string> }) {
+/** (Dane UAT, Figma 1517:57) A box's Reset: the words a new block of this kind starts with, put back as one undo step (never folded into the typing before it). */
+type ResetFor = (field: string) => { reset?: string; onReset?: () => void }
+
+function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, onReset, values, trades }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; onReset?: (id: string) => void; values?: Record<string, string>; trades: string[] }) {
   const upd = (patch: Record<string, unknown>, coalesce?: string) => onDesign((d) => patchBlock(d, b.id, (x) => ({ ...x, ...patch }) as Block), coalesce ? { coalesce: `${b.id}:${coalesce}` } : undefined)
+  const fresh = FRESH[b.kind] as unknown as Record<string, unknown>
+  const rs: ResetFor = (field) => { const v = fresh[field]; return typeof v === 'string' && v ? { reset: v, onReset: () => upd({ [field]: v }) } : {} }   // a box that starts empty has nothing to put back
   const style = (key: string, label: string, more = false) => <StyleEditor label={label} value={(b as unknown as Record<string, TextStyle>)[key] ?? {}} onChange={(s) => upd({ [key]: s })} brand={brand} more={more} />
   const flow = flowBlocks(design)
   const at = flow.findIndex((x) => x.id === b.id)
@@ -87,12 +96,12 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'title' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} {...rs('title')} />
             <Txt label="Subject line" value={b.subject} onChange={(v) => upd({ subject: v }, 'subject')} values={values} />
-            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} />
+            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} {...rs('intro')} />
             <Group title="More options"><Sub>Text styles</Sub>{style('titleStyle', 'Title')}{style('subjectStyle', 'Subject')}{style('introStyle', 'Introduction')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
-          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} onReset={onReset} /> : null}
+          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} onReset={onReset} rs={rs} trades={trades} /> : null}
           {b.kind === 'totals' ? <>
             <div className={styles.list} role="group" aria-label="Lines">
               {b.lines.map((l, i) => (
@@ -109,7 +118,7 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('totalStyle', 'Grand total')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'payments' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} {...rs('title')} />
             <Seg label="Shown as" value={b.layout} options={[{ value: 'table', label: 'Table' }, { value: 'list', label: 'List' }, { value: 'cards', label: 'Cards' }]} onChange={(v) => upd({ layout: v })} />
             <Sw label="Show amounts" value={b.showAmounts} onChange={(v) => upd({ showAmounts: v })} />
             <Sw label="Show due dates" value={b.showDue} onChange={(v) => upd({ showDue: v })} />
@@ -120,7 +129,7 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Group title="More options"><Sw label="Title as a black band" value={b.band} onChange={(v) => upd({ band: v })} /><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'bank' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} {...rs('title')} />
             <Seg label="PayNow QR sits" value={b.layout} options={[{ value: 'row', label: 'Beside the details' }, { value: 'stacked', label: 'Below them' }]} onChange={(v) => upd({ layout: v })} />
             <Sw label="PayNow QR" value={b.qr} onChange={(v) => upd({ qr: v })} hint="Prints when the issuing entity has a QR uploaded in Company › Profile" />
             {b.qr ? <Num label="QR size" unit="mm" value={b.qrWidth} min={12} max={60} onChange={(v) => upd({ qrWidth: v })} /> : null}
@@ -129,11 +138,12 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Group title="More options">
               {/* (REG-618, parity Q-24) The studio's own words for each row. */}
               <Sub>Row labels</Sub>
-              {BANK_ROWS.map((k) => <Txt key={k} label={BANK_ROW_LABEL[k]} value={b.labels?.[k] ?? BANK_ROW_LABEL[k]} fields={false} onChange={(v) => upd({ labels: { ...(b.labels ?? {}), [k]: v } }, `label-${k}`)} />)}
+              {BANK_ROWS.map((k) => <Txt key={k} label={BANK_ROW_LABEL[k]} value={b.labels?.[k] ?? BANK_ROW_LABEL[k]} fields={false} onChange={(v) => upd({ labels: { ...(b.labels ?? {}), [k]: v } }, `label-${k}`)}
+                                         reset={BANK_ROW_LABEL[k]} onReset={() => upd({ labels: { ...(b.labels ?? {}), [k]: BANK_ROW_LABEL[k] } })} />)}
               <Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'terms' || b.kind === 'notes' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} {...rs('title')} />
             <Sw label="Number the paragraphs" value={b.numbered} onChange={(v) => upd({ numbered: v })} />
             <Sw label="Box each paragraph" value={b.grid} onChange={(v) => upd({ grid: v })} />
             <span className={styles.note}>{b.kind === 'terms' ? 'The text is each quote’s Terms and Conditions section; the Defaults tab picks the template a new quote starts with.' : 'The text is each quote’s Additional Notes section.'}</span>
@@ -293,7 +303,7 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
             <span className={styles.note}>The badges come from the brand kit — Templates › Brand kit.</span>
           </> : null}
           {e.kind === 'pageno' ? <>
-            <Txt label="Reads" value={e.format} onChange={(v) => upd({ format: v }, 'format')} values={values} />
+            <Txt label="Reads" value={e.format} onChange={(v) => upd({ format: v }, 'format')} values={values} reset={FRESH_PAGE_NO} onReset={() => upd({ format: FRESH_PAGE_NO })} />
             {style('style', 'Style')}
           </> : null}
           {e.kind === 'social' ? <>
@@ -386,16 +396,20 @@ function ImageSource({ value, onChange, dark }: { value: string; onChange: (src:
   )
 }
 
-function ItemsFields({ b, upd, style, onReset }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode; onReset?: (id: string) => void }) {
+function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode; onReset?: (id: string) => void; rs: ResetFor; trades: string[] }) {
   const col = (i: number, patch: Partial<ItemsBlock['columns'][number]>) => upd({ columns: b.columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) }, `col-${i}`)
   const nextAlign = (a: Align): Align => (a === 'left' ? 'center' : a === 'center' ? 'right' : 'left')
   const ALIGN_WORD: Record<Align, string> = { left: 'left', center: 'centre', right: 'right' }
+  /* (Dane UAT, Figma 1517:21) "Trade" keeps its name (REG-561 · REG-569); the line under the box says it in the studio's own words — its trades. */
+  const tradeHelp = trades.length ? `A trade is one of your works — ${trades.slice(0, 2).join(', ')}${trades.length > 2 ? ' and the rest' : ''} in Settings › Quotes & pricing.` : 'A trade is one of your works, as listed in Settings › Quotes & pricing.'
+  /* (Dane UAT, Figma 1518:77) Numbering the room rows needs room rows: picked while nothing splits the sections, the rooms split them. */
+  const pickNumbering = (v: ItemsBlock['numbering']) => upd((v === 'rooms' || v === 'roman') && b.subGroupBy === 'none' && b.groupBy !== 'room' ? { numbering: v, subGroupBy: 'room' } : { numbering: v })
   return (
     <>
-      <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section label' }]} onChange={(v) => upd({ groupBy: v })} />
+      <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section label' }]} onChange={(v) => upd({ groupBy: v })} helper={tradeHelp} />
       <Sel label="Then split each by" value={b.subGroupBy} options={[{ value: 'none', label: 'Nothing' }, { value: 'room', label: 'Room' }, { value: 'category', label: 'Trade' }]} onChange={(v) => upd({ subGroupBy: v })} />
       <Seg label="Sections are marked" value={b.sectionLabel} options={[{ value: 'letters', label: 'A · B · C' }, { value: 'numbers', label: '1 · 2 · 3' }, { value: 'none', label: 'Not at all' }]} onChange={(v) => upd({ sectionLabel: v })} />
-      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'lettered', label: 'A1 · A2 · B1' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ numbering: v })} />
+      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'lettered', label: 'A1 · A2 · B1' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'rooms', label: 'B · 1 Kitchen · 1.1' }, { value: 'roman', label: '1 · a · i' }, { value: 'none', label: 'None' }]} onChange={pickNumbering} />
       <Sel label="Section headings" value={b.bandStyle} options={[{ value: 'grey', label: 'Grey band' }, { value: 'accent', label: 'Accent band' }, { value: 'black', label: 'Black band' }, { value: 'underlined', label: 'Underlined words' }, { value: 'inline', label: 'In the description column' }]} onChange={(v) => upd({ bandStyle: v })} />
       <Field label="Columns" wide>
         <div className={styles.list}>
@@ -407,8 +421,9 @@ function ItemsFields({ b, upd, style, onReset }: { b: ItemsBlock; upd: (p: Recor
                 <span className={styles.cardName}>{ITEM_COLUMN_LABEL[c.key]}</span>
                 <span className={styles.cardActions}>
                   <Tooltip label={`Aligned ${ALIGN_WORD[c.align]} — press to change`}><IconButton icon={`format_align_${c.align}`} label={`Aligned ${ALIGN_WORD[c.align]} — press to change`} size={36} variant="bare" iconSize={20} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>
-                  <Tooltip label="Move left on the page"><IconButton icon="arrow_upward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} left`} size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => upd({ columns: swap(b.columns, i, i - 1) })} /></Tooltip>
-                  <Tooltip label="Move right on the page"><IconButton icon="arrow_downward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} right`} size={36} variant="bare" iconSize={20} disabled={i === b.columns.length - 1} onClick={() => upd({ columns: swap(b.columns, i, i + 1) })} /></Tooltip>
+                  {/* (Dane UAT, Figma 1517:27) left and right arrows: the move is across the page, as the tooltips always said */}
+                  <Tooltip label="Move left on the page"><IconButton icon="arrow_back" label={`Move ${ITEM_COLUMN_LABEL[c.key]} left`} size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => upd({ columns: swap(b.columns, i, i - 1) })} /></Tooltip>
+                  <Tooltip label="Move right on the page"><IconButton icon="arrow_forward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} right`} size={36} variant="bare" iconSize={20} disabled={i === b.columns.length - 1} onClick={() => upd({ columns: swap(b.columns, i, i + 1) })} /></Tooltip>
                 </span>
               </div>
               <div className={styles.cardLine}>
@@ -432,14 +447,14 @@ function ItemsFields({ b, upd, style, onReset }: { b: ItemsBlock; upd: (p: Recor
         <Sub>Amounts</Sub>
         <Sel label="Currency" value={b.currency} options={[{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ with a space' }, { value: 'none', label: 'Figures only' }]} onChange={(v) => upd({ currency: v })} />
         <Sel label="A line that costs nothing prints" value={b.zeroAmount} options={[{ value: 'FOC', label: 'FOC' }, { value: 'Inclusive', label: 'Inclusive' }, { value: '0.00', label: '0.00' }, { value: 'blank', label: 'Nothing' }]} onChange={(v) => upd({ zeroAmount: v })} />
-        <Sel label="Items hidden from the client" value={b.hiddenItems} options={[{ value: 'omit', label: 'Left out' }, { value: 'no-price', label: 'Shown without a price' }]} onChange={(v) => upd({ hiddenItems: v })} />
+        <Sel label="Items hidden from the client" value={b.hiddenItems} options={[{ value: 'omit', label: 'Left out' }, { value: 'no-price', label: 'Shown without a price' }]} onChange={(v) => upd({ hiddenItems: v })} helper="Lines you hid from the client in the quote editor." />
         <Sw label="Sub-total under each section" value={b.subtotals} onChange={(v) => upd({ subtotals: v })} />
         {/* (REG-617, parity Q-21) Where the sub-total sits: after the items, in the section's heading, or both. */}
         {b.subtotals ? <Seg label="Sub-total sits" value={b.subtotalAt ?? 'row'} options={[{ value: 'row', label: 'After the items' }, { value: 'band', label: 'In the heading' }, { value: 'both', label: 'Both' }]} onChange={(v) => upd({ subtotalAt: v })} /> : null}
-        {b.subtotals && (b.subtotalAt ?? 'row') !== 'band' ? <Txt label="Sub-total reads" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} /> : null}
+        {b.subtotals && (b.subtotalAt ?? 'row') !== 'band' ? <Txt label="Sub-total reads" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} {...rs('subtotalLabel')} /> : null}
         <Sw label="One lump sum per section" value={b.lumpSum} onChange={(v) => upd({ lumpSum: v })} hint="Prints one amount per section instead of a price on every line" />
         <Sw label="A total for each page" value={b.pageTotals} onChange={(v) => upd({ pageTotals: v })} />
-        {b.pageTotals ? <Txt label="Page total reads" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} /> : null}
+        {b.pageTotals ? <Txt label="Page total reads" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} {...rs('pageTotalLabel')} /> : null}
         <Sub>Sections and pages</Sub>
         <Sw label="Section notes" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="A section's own note prints under its heading; a section without one prints its trade's note from Settings › Quotes & pricing" />
         {/* (REG-617, parity Q-11) With the Optional price column on, optional lines stay in their sections — the Optional works section has nothing left to print. */}
@@ -447,7 +462,7 @@ function ItemsFields({ b, upd, style, onReset }: { b: ItemsBlock; upd: (p: Recor
           ? <span className={styles.note}>The Optional price column is on: lines marked optional print in their own sections, priced in that column and out of the totals.</span>
           : <>
             <Sw label="Optional works section" value={b.optionalSection} onChange={(v) => upd({ optionalSection: v })} hint="Lines marked optional print here, out of the totals" />
-            {b.optionalSection ? <Txt label="That section is called" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} /> : null}
+            {b.optionalSection ? <Txt label="That section is called" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} {...rs('optionalTitle')} /> : null}
           </>}
         <Sw label="Keep a section on one page" value={b.keepGroups} onChange={(v) => upd({ keepGroups: v })} />
         <Sw label="Each section on a new page" value={b.groupNewPage} onChange={(v) => upd({ groupNewPage: v })} />

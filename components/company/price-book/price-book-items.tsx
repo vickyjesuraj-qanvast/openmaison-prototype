@@ -13,7 +13,7 @@ import { BOOK_RULE, itemChangeBlock } from '@/lib/company/price-book-rules'
 import { ITEM_KINDS, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, type ItemKind } from '@/lib/quotes/items-model'
 import { PRICE_BOOK_KINDS, PRICE_BOOK_TABS } from '@/lib/company/sections'
 import type { PriceBookData, PriceBookItemRow } from '@/lib/company/price-book'
-import { approvePriceBookItem, bulkUpdatePriceBookItems, undoBulkPriceBook, createPriceBookItem, deletePriceBookItems, deletePriceBookItemsForever, duplicatePriceBookItem, emptyPriceBookItemTrash, importPriceBookItems, renamePriceBookItem, restorePriceBookItems, sendBackPriceBookItem, undoPriceBookImport, updatePriceBookItem, type ImportBatch, type PriceBookItemInput } from '@/app/company/price-book-actions'
+import { approvePriceBookItem, bringBackPriceBookItem, bulkUpdatePriceBookItems, undoBulkPriceBook, createPriceBookItem, deletePriceBookItems, deletePriceBookItemsForever, duplicatePriceBookItem, emptyPriceBookItemTrash, importPriceBookItems, renamePriceBookItem, restorePriceBookItems, sendBackPriceBookItem, undoPriceBookImport, updatePriceBookItem, type ImportBatch, type PriceBookItemInput } from '@/app/company/price-book-actions'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { BulkEditDialog, type BulkEdit } from './bulk-edit-dialog'
 import { LibraryGallery, settle, type LibraryItem } from '@/components/company/templates/library-gallery'
@@ -23,7 +23,9 @@ import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import styles from './price-book.module.css'
 import table from '@/components/company/templates/templates-table.module.css'
-import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { LIBRARY_ROOT, folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { changedFieldsWord, type ItemChange } from '@/lib/company/price-book-changes'
+import type { PriceBookItem } from '@/lib/db/schema'
 import { PriceBookItemsGhost } from './price-book-ghost'
 
 type Row = PriceBookItemRow & LibraryItem
@@ -32,6 +34,8 @@ const toRow = (i: PriceBookItemRow): Row => ({ ...i, title: i.name, updatedAt: i
 const toDeletedRow = (i: PriceBookItemRow): Row => ({ ...toRow(i), author: i.maker, authorColor: i.makerColor })
 /** (REG-653, price book parity Q-11) An item a live quote came from waits in the trash — the libraries' rule. */
 const inUseReason = (t: PriceBookItemRow) => (t.usedBy > 0 ? `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'} — restore it instead` : null)
+/** A rule after a dash: "that folder is gone" (its first letter lowered, its full stop dropped — the house `couldnt` reads them so). */
+const lowerRule = (why: string) => `${why.charAt(0).toLowerCase()}${why.slice(1).replace(/\.$/, '')}`
 const kindOf = (i: PriceBookItemRow): ItemKind => (isItemKind(i.kind) ? i.kind : 'purchase')
 const unitPrice = (i: PriceBookItemRow) => i.costMinor + i.markupMinor
 const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookItemsGhost /> }   /* (REG-708) the ghost its loading.tsx draws — (UX audit S8) the list, or the member's own grid */
@@ -53,7 +57,10 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   const { run } = useRun()
   /* (REG-709) `?open=<id>` — an item the global search found — opens its dialog on arrival */
   const opening = useSearchParams().get('open')
-  const [edit, setEdit] = useState<{ open: boolean; item: PriceBookItemRow | null }>(() => { const it = opening ? items.find((i) => i.id === opening) ?? null : null; return { open: !!it, item: it } })
+  /* (Dane UAT 3.03) `folderId` = the folder open when New item was pressed — the new item is filed there (audit F118: what's new lands there) */
+  const [edit, setEdit] = useState<{ open: boolean; item: PriceBookItemRow | null; folderId?: string | null }>(() => { const it = opening ? items.find((i) => i.id === opening) ?? null : null; return { open: !!it, item: it } })
+  /* (Dane UAT 3.10) the open item as the book holds it now — a Bring back (or its Undo) changes it under the open dialog */
+  const editItem = edit.item ? items.find((i) => i.id === edit.item!.id) ?? edit.item : null
   /* (UX audit V11) a bell notice pressed while this page is already open changes only `?open=` — the item it names opens then too */
   const [seenOpening, setSeenOpening] = useState(opening)
   if (opening !== seenOpening) { setSeenOpening(opening); const it = opening ? items.find((i) => i.id === opening) ?? null : null; if (it) setEdit({ open: true, item: it }) }
@@ -63,13 +70,17 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   const [focus, setFocus] = useState<{ key: string } | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [exportShown, setExportShown] = useState<PriceBookItemRow[] | null>(null)
+  /* (Dane UAT 3.11) A proposal waits for its approval — the export leaves it out unless the member ticks it in, and then says which is which
+     (a Status column, the list's words, REG-820). */
+  const [withProposed, setWithProposed] = useState(false)
+  const exportable = (list: PriceBookItemRow[]) => (withProposed ? list : list.filter((i) => i.status !== 'proposed'))
   /* (REG-627, parity Q-18) The export's sheet: the list's own columns plus the description, money with its two decimals.
      (REG-653, price book parity Q-14) Every item or what the list shows; Kind and Link come back on an import (the columns map by name). */
   const downloadItems = (format: ExportFormat, scope: 'all' | 'shown' = 'all') => {
-    const head = ['Item', 'Kind', 'Description', 'Unit', 'Cost', 'Markup', 'Unit price', 'Category', 'Vendor', 'Website link', 'Used by']   // (sweep S5 #29) the dialog's names; the import reads them back
+    const head = ['Item', 'Kind', 'Description', 'Unit', 'Cost', 'Markup', 'Unit price', 'Category', 'Vendor', 'Website link', 'Used by', ...(withProposed ? ['Status'] : [])]   // (sweep S5 #29) the dialog's names; the import reads them back (Status it leaves aside)
     const d2 = (m: number) => (m / 100).toFixed(2)
-    const list = scope === 'shown' && exportShown ? exportShown : items
-    const body = list.map((i) => [i.name, ITEM_KIND_LABEL[kindOf(i)], i.description ?? '', i.unit, d2(i.costMinor), d2(i.markupMinor), d2(unitPrice(i)), i.category ?? '', i.vendor ?? '', i.link ?? '', String(i.usedBy)])
+    const list = exportable(scope === 'shown' && exportShown ? exportShown : items)
+    const body = list.map((i) => [i.name, ITEM_KIND_LABEL[kindOf(i)], i.description ?? '', i.unit, d2(i.costMinor), d2(i.markupMinor), d2(unitPrice(i)), i.category ?? '', i.vendor ?? '', i.link ?? '', String(i.usedBy), ...(withProposed ? [i.status === 'proposed' ? 'Proposed' : 'Approved'] : [])])
     return downloadBlob(buildTable('OpenMaison — My Items', head, body, format), `my-items.${format.toLowerCase()}`)
   }
   /* (REG-653, price book parity Q-15) The list's bulk changes: Set category · Set vendor · Set markup · Delete — the Owners' and Admins'. */
@@ -83,11 +94,37 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
 
   /* (sweep S5 #3) The dialog stays until the server has the item — a failure keeps everything typed; (#1) an Owner's edits to a proposal
      are saved before it is approved (Approve threw them away). */
+  const folderName = (id: string | null | undefined) => (id ? folders.find((f) => f.id === id)?.name ?? null : null)
   const save = async (input: PriceBookItemInput) => {
     const cur = edit.item
-    const ok = await run(cur ? 'save the item' : runsBook ? 'add the item' : 'propose the item', async () => { if (cur) await settle(updatePriceBookItem(cur.id, input)); else await settle(createPriceBookItem(input)); router.refresh() },   /* (wave E, E7) a refusal is said, the dialog stays */
-      cur ? 'Item saved' : runsBook ? `${input.name} added to My Items` : `${input.name} proposed — it’s on your quotes now; an Owner or an Admin approves it for the studio`)
-    if (ok) setEdit({ open: false, item: null })
+    /* (Dane UAT 3.03) a new item is filed in the folder that was open; the snackbar names where it went — and, when it went to the top
+       instead (the folder gone meanwhile), why */
+    const asked = cur ? null : edit.folderId ?? null
+    const landed: { folderId: string | null; refused: string | null } = { folderId: null, refused: null }
+    const ok = await run(cur ? 'save the item' : runsBook ? 'add the item' : 'propose the item', async () => {   /* (wave E, E7) a refusal is said, the dialog stays */
+      if (cur) await settle(updatePriceBookItem(cur.id, input))
+      else { const r = (await settle(createPriceBookItem({ ...input, folderId: asked }))) as PriceBookItem & { refused: string | null }; landed.folderId = r.folderId ?? null; landed.refused = r.refused ?? null }
+      router.refresh()
+    }, cur ? 'Item saved' : undefined)
+    if (!ok) return
+    if (!cur) {
+      const place = folderName(landed.folderId) ?? LIBRARY_ROOT['book-items']
+      const missed = asked && !landed.folderId ? ` — ${lowerRule(landed.refused ?? 'That folder is gone')}` : ''
+      snackbar({ message: runsBook ? `${input.name} added to ${place}${missed}`
+        : missed ? `${input.name} proposed in ${place}${missed}`
+        : landed.folderId ? `${input.name} proposed in ${place} — it’s on your quotes now; an Owner or an Admin approves it for the studio` : `${input.name} proposed — it’s on your quotes now; an Owner or an Admin approves it for the studio` })
+    }
+    setEdit({ open: false, item: null })
+  }
+  /* (Dane UAT 3.10) History › Bring back: that entry's earlier values, through the item's own write (the book's rule, History); the
+     snackbar's Undo brings back what the Bring back changed. */
+  const bringBack = async (t: PriceBookItemRow, h: ItemChange) => {
+    const answer: { changeId: string | null } = { changeId: null }
+    const ok = await run('bring the values back', async () => { const r = (await settle(bringBackPriceBookItem(t.id, h.id))) as { changeId: string | null }; answer.changeId = r.changeId; router.refresh() })
+    if (!ok) return
+    const undoId = answer.changeId
+    snackbar({ key: 'price-book-bring-back', message: `${changedFieldsWord(Object.keys(h.changes))} brought back`,
+      ...(undoId ? { actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await settle(bringBackPriceBookItem(t.id, undoId, 'Undo')); router.refresh() }, { key: 'price-book-bring-back', message: 'Change undone' }) } } : {}) })
   }
   const approve = async (t: PriceBookItemRow, edited: PriceBookItemInput | null = null) => {
     const ok = await run('approve the item', async () => { if (edited) await settle(updatePriceBookItem(t.id, edited)); await settle(approvePriceBookItem(t.id)); router.refresh() }, `${edited?.name ?? t.name} ${edited ? 'saved and approved' : 'approved'} — it’s in My Items for the studio`)
@@ -97,12 +134,12 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   return (
     <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.items} shell={SHELL} noun={{ one: 'item', many: 'items' }} nameLabel="Item" deletedLabel="Deleted Items"
       from={from} folders={{ library: 'book-items', list: folders, block: folderBlock(data.viewer) }} items={items.map(toRow)} deleted={deletedItems.map(toDeletedRow)} keepReason={inUseReason} now={now} ariaLabel="My Items" tableKey="price-book-items"
-      newMenu={(close) => (<>
-        <DropdownItem onSelect={() => { close(); setEdit({ open: true, item: null }) }}>{runsBook ? 'New item' : 'Propose an item'}</DropdownItem>
+      newMenu={(close, place) => (<>
+        <DropdownItem onSelect={() => { close(); setEdit({ open: true, item: null, folderId: place.folderId }) }}>{runsBook ? 'New item' : 'Propose an item'}</DropdownItem>
         <DropdownDivider />
         <DropdownItem onSelect={() => { close(); setImportOpen(true) }} disabled={!runsBook} help={runsBook ? undefined : BOOK_RULE}>Import from a spreadsheet…</DropdownItem>   {/* (REG-728) the reason in the row, not a native title */}
       </>)}
-      pageMenu={(shown) => [{ label: 'Export My Items…', onSelect: () => setExportShown(shown) }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
+      pageMenu={(shown) => [{ label: 'Export My Items…', onSelect: () => { setWithProposed(false); setExportShown(shown) } }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
       facets={[
         { key: 'category', label: 'Category', options: categories.filter((c) => items.some((i) => (i.category ?? '').toLowerCase() === c.toLowerCase())), test: (t, v) => (t.category ?? '').toLowerCase() === v.toLowerCase() },
         { key: 'vendor', label: 'Vendor', options: data.vendors, test: (t, v) => t.vendor === v },
@@ -132,7 +169,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       )}
       // eslint-disable-next-line @next/next/no-img-element
       glyph={(t) => <span className={styles.glyph}>{t.thumb ? <img src={t.thumb} alt="" /> : <Icon name={ITEM_KIND_ICON[kindOf(t)]} size={20} weight={300} />}</span>}
-      meta={(t) => [t.vendor ? `by ${t.vendor}` : ITEM_KIND_LABEL[kindOf(t)], `${money2(unitPrice(t))} / ${t.unit}`, t.category].filter(Boolean).join(' · ')}   /* the vendor leads: the same tile from two suppliers must read apart at a glance */
+      meta={(t) => [t.vendor ? `by ${t.vendor}` : null, t.category].filter(Boolean).join(' · ')}   /* the vendor leads: the same tile from two suppliers must read apart at a glance — (Dane UAT 3.04) the price and the unit are the picture's, said once */
       usage={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'}`)}
       usageWord={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)}   /* (REG-653, Q-18) zero use, said one way */
       columns={[
@@ -152,25 +189,28 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       onDuplicate={async (t) => { await settle(duplicatePriceBookItem(t.id)); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}   /* (wave E, E7) a refusal throws its rule for the gallery to say */
       onRename={(t, name) => renamePriceBookItem(t.id, name)}
       onDelete={(t) => deletePriceBookItems([t.id])}
-      deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the line. You can restore the item from Deleted Items.` : 'You can restore it from Deleted Items.')}
+      deleteMessage={(t) => (t.usedBy > 1 ? `It’s on ${t.usedBy} quotes — they keep their lines. New quotes can’t pick it until you restore it from Deleted Items.`   /* (Dane UAT 3.14) what stays, and what a delete stops */
+        : t.usedBy === 1 ? 'It’s on 1 quote — it keeps its line. New quotes can’t pick it until you restore it from Deleted Items.' : 'You can restore it from Deleted Items.')}
       onRestore={(ids) => restorePriceBookItems(ids)} onDeleteForever={(ids) => deletePriceBookItemsForever(ids)} onEmptyTrash={() => emptyPriceBookItemTrash()}
       deletedMeta={{ label: 'Unit price', value: (t) => `${money2(unitPrice(t))} / ${t.unit}` }}
       empty={{ title: 'Nothing in My Items yet', help: runsBook ? 'Add an item, import your list from a spreadsheet, or save a line from a quote’s Items table (⋯ › Save to My Items).' : 'Propose an item — an Owner or an Admin approves it for the studio.',
         /* (REG-735) the first run carries New ▾'s rows: a studio moving in has its list already, so Import leads; a Designer proposes */
-        start: () => (runsBook
-          ? { primary: { label: 'Import from a spreadsheet', icon: 'upload_file', onPress: () => setImportOpen(true) }, secondary: { label: 'New item', icon: 'add', onPress: () => setEdit({ open: true, item: null }) } }
-          : { primary: { label: 'Propose an item', icon: 'add', onPress: () => setEdit({ open: true, item: null }) } }) }}>   {/* (sweep S5 #22) the help offers what this member can do */}
-      <ItemDialog open={edit.open} item={edit.item} onClose={() => setEdit({ open: false, item: null })} onSave={save} trades={data.trades} now={now}
-                  proposing={!runsBook} readOnly={edit.item ? block(edit.item) : null}
-                  proposal={edit.item && edit.item.status === 'proposed' ? { by: edit.item.proposer, at: edit.item.createdAt.getTime(), canReview: runsBook, onApprove: (edited) => { if (edit.item) return approve(edit.item, edited) }, onSendBack: () => { if (edit.item) askSendBack(edit.item) } } : null} />
+        start: (place) => (runsBook
+          ? { primary: { label: 'Import from a spreadsheet', icon: 'upload_file', onPress: () => setImportOpen(true) }, secondary: { label: 'New item', icon: 'add', onPress: () => setEdit({ open: true, item: null, folderId: place.folderId }) } }
+          : { primary: { label: 'Propose an item', icon: 'add', onPress: () => setEdit({ open: true, item: null, folderId: place.folderId }) } }) }}>   {/* (sweep S5 #22) the help offers what this member can do */}
+      <ItemDialog open={edit.open} item={editItem} onClose={() => setEdit({ open: false, item: null })} onSave={save} trades={data.trades} now={now}
+                  proposing={!runsBook} readOnly={editItem ? block(editItem) : null}
+                  onBringBack={editItem && !block(editItem) ? (h) => bringBack(editItem, h) : undefined}
+                  proposal={editItem && editItem.status === 'proposed' ? { by: editItem.proposer, at: editItem.createdAt.getTime(), canReview: runsBook, onApprove: (edited) => { if (editItem) return approve(editItem, edited) }, onSendBack: () => { if (editItem) askSendBack(editItem) } } : null} />
       {/* (REG-652, price book parity Q-04) Sending a proposal back needs its reason — it reaches the proposer in the bell and stays in the item's History. */}
       <NoteDialog open={!!sendBack} title="Send back" label="What should change?" action="Send back" busy={false} required maxLength={300}
                   help={`Goes to ${sendBack?.proposer ?? 'whoever proposed it'} in the bell. The item leaves My Items; lines already on their quotes keep their figures.`}
                   onClose={() => setSendBack(null)} onSubmit={(note) => { const t = sendBack; setSendBack(null); if (t) void run('send the item back', async () => { await settle(sendBackPriceBookItem(t.id, note)); router.refresh() }, `${t.name} sent back to ${t.proposer ?? 'its proposer'}`) }} />
       {/* (REG-627, parity Q-18) Export My Items — 1.0's CSV export, on the house Export dialog: every live item with the columns the list shows. */}
-      <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: items.length, shown: exportShown.length, noun: 'items' } : undefined}
+      <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: exportable(items).length, shown: exportable(exportShown).length, noun: 'items' } : undefined}
+                    option={proposedCount ? { label: 'Include proposed items', checked: withProposed, onChange: setWithProposed } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
-      <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items.filter((i) => i.status === 'live')} trades={data.trades}
+      <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items} trades={data.trades}
                          onImport={(lines, vendor, match, kind) => { setImportOpen(false); void run('import the items', async () => {
                            const r = (await settle(importPriceBookItems(lines, vendor, match, kind))) as { added: number; updated: number; skipped: number; batch: ImportBatch; touched: string[] }; router.refresh()
                            const said = [r.added ? `${r.added} ${r.added === 1 ? 'item' : 'items'} added` : null, r.updated ? `${r.updated} updated` : null, r.skipped ? `${r.skipped} skipped` : null].filter(Boolean).join(' · ') || 'Nothing imported'
@@ -192,7 +232,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
                           snackbar({ message: `${n} ${n === 1 ? 'item' : 'items'} changed`, actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await settle(undoBulkPriceBook(prev)); router.refresh() }, 'Change undone') } }) })
                       }} />
       <ConfirmDialog open={!!bulkDelete} title={`Delete ${bulkDelete?.ids.length ?? 0} ${bulkDelete?.ids.length === 1 ? 'item' : 'items'}?`} confirmLabel="Delete"
-                     message="Quotes already carrying them keep their lines. You can restore them from Deleted Items."
+                     message="Quotes already carrying them keep their lines. New quotes can’t pick them until you restore them from Deleted Items."
                      onCancel={() => setBulkDelete(null)} onConfirm={() => { const b = bulkDelete; setBulkDelete(null); if (b) void run('delete the items', async () => { await settle(deletePriceBookItems(b.ids)); b.clear(); router.refresh() }, { message: `${b.ids.length} ${b.ids.length === 1 ? 'item' : 'items'} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the items', async () => { await settle(restorePriceBookItems(b.ids)); router.refresh() }, 'Items restored') } }) }} />
     </LibraryGallery>
   )

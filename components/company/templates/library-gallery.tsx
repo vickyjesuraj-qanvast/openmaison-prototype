@@ -335,8 +335,11 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   }, [faceted, activeFilter, query, p, sort])   // eslint-disable-line react-hooks/exhaustive-deps
   const onSort = (key: string) => setSort((s) => (!s || s.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null))
   /* (REG-664) Browse or find: with no search, segment or filter the page is the open folder — its folders, then what it holds; any of
-     them finds across every folder, each result saying where it lives. The segments count the whole library either way. */
-  const finding = query.trim() !== '' || activeFilter !== 'all' || activeFacets.length > 0
+     them finds across every folder, each result saying where it lives. The segments count the whole library either way.
+     (Dane UAT 3.07) A sort finds too: the list sorts everything here — the open folder and all inside it, at the top the whole library — as
+     one list, each row with its place; the folders step aside (they stayed on top, and the sort left out whatever sat inside them). */
+  const sorting = view === 'list' && sort !== null
+  const finding = query.trim() !== '' || activeFilter !== 'all' || activeFacets.length > 0 || sorting
   const browsing = !!F && !finding
   const listed = useMemo(() => (browsing ? shown.filter((t) => placeIdOf(t) === openId) : shown), [browsing, shown, openId, flist])   // eslint-disable-line react-hooks/exhaustive-deps
   const shownFolders = useMemo(() => (browsing ? foldersIn(flist, openId) : []), [browsing, flist, openId])

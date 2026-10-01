@@ -38,7 +38,7 @@ export const memberLine = (m: SessionMember): string => (m.reportsTo ? `${m.role
  * studio's active members with their roles; picking one makes the whole prototype that member (app/view-as-actions.ts). The
  * snackbar offers the way back. ≤767 it is a bottom sheet, opened from More.
  */
-export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; team: SessionMember[] }) {
+export function ViewAsPopover({ open, anchor, onClose, onBack, team }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-899) the phone sheet's back to More */ onBack?: () => void; team: SessionMember[] }) {
   const router = useRouter()
   const snackbar = useSnackbar()
   const sheet = useSheetLayout()
@@ -108,7 +108,7 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
   if (typeof document === 'undefined') return null
   if (sheet) {
     return (
-      <Sheet open={open} onClose={onClose} title="View as" label="View as" role="menu">
+      <Sheet open={open} onClose={onClose} onBack={onBack} title="View as" label="View as" role="menu">
         <div className={panel.sheetBody}>{head}{list}{plans}</div>
       </Sheet>
     )

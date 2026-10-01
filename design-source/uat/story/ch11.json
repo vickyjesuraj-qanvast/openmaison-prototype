@@ -21,7 +21,7 @@
   "module": "Tasks",
   "try": "Add a studio chore that belongs to no lead",
   "how": "1. Click \"Add Task\" › \"Create New Task\"\n2. Type Order new sample boards for the showroom, leave the Lead cell on \"Studio\", press Enter, then Esc\n3. Click the \"All Tasks\" chip › \"Studio Tasks\"",
-  "expect": "\"Task added\"; Studio Tasks lists it with the studio's other chores (e.g. \"Update the showroom price list for Q4\"), each reading \"Studio\" as its Lead.",
+  "expect": "\"Task added\" and the new task stays at the top of the list, glowing once; Studio Tasks lists it with the studio's other chores (e.g. \"Update the showroom price list for Q4\"), each reading \"Studio\" as its Lead.",
   "in10": "Same as 1.0",
   "as": "Dane",
   "covers": [
@@ -51,7 +51,7 @@
   "module": "Notifications",
   "try": "Catch up on the week in the bell",
   "how": "1. Click \"Notifications\" (the bell) in the side navigation\n2. Read the list",
-  "expect": "Newest first: the week's notices, e.g. Sarah's proposed item and her quote for approval; follow-ups such as \"… has had no contact yet\" read \"Due\".",
+  "expect": "Two groups: \"Due\" comes first while a follow-up is late (e.g. \"… has had no contact yet\"), then \"Updates\", newest first — e.g. Sarah's proposed item and her quote for approval.",
   "in10": "Different from 1.0: follow-ups due are listed, not scheduled",
   "as": "Dane",
   "covers": [

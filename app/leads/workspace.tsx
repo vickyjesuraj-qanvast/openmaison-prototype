@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AutoHideChrome } from '@/components/shell/auto-hide-chrome'
 import { rememberView, useStoredView, type ListingView } from '@/lib/leads/view-pref'
+import { copyText } from '@/lib/clipboard'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
 import { PageReveal } from '@/components/shell/page-reveal'
@@ -49,7 +50,7 @@ import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
 import { fetchLeadFilesForReturn, returnLead, undoReturn, type ReturnInput } from './return-actions'
-import { displayDate, isSgPhone, money, phoneDisplay, phoneLocal } from '@/lib/format'
+import { displayDate, displayDateLong, isSgPhone, money, phoneDisplay, phoneLocal } from '@/lib/format'
 import { filterByQuery, phoneNeedles } from '@/lib/search'
 import { type Stage } from '@/lib/leads/enums'
 import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
@@ -136,6 +137,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [confirmMove, setConfirmMove] = useState<{ leadId: string; stage: Stage; step?: boolean } | null>(null)   // linear: moving back needs no details, just a nod
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
+  /* (Dane's UAT 9.08) The Lost dialog's "Put On Hold instead": On Hold opens on its Custom date, set to the expected restart. */
+  const [holdFrom, setHoldFrom] = useState<Date | null>(null)
   const [lostReason, setLostReason] = useState('')
   const [deleting, setDeleting] = useState<string[] | null>(null)
   /* (REG-607, parity Q-04) Delete opens with the count of contracts whose signing link is still live with the client. */
@@ -186,7 +189,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     switch (intent.kind) {
       case 'none': setPendingDrop(null); return
       /* (UX audit 2026-09-30, L10) no reason pre-chosen — the required field asks for one (the Overview's rule too) */
-      case 'hold': setHoldReason(''); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
+      case 'hold': setHoldReason(''); setHoldFrom(null); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
       case 'lost': setLostReason(''); setLost(lead.id); return
       case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
       case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage, step: intent.step }); return
@@ -237,7 +240,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       fields: [
         r.name, r.stage, r.source, r.propertyType, r.email, r.propertyAddress,
         r.budgetMinor > 0 ? money(r.budgetMinor) : null, displayDate(r.createdAt),   /* (UX audit L8) an unknown budget shows "--", so "0" finds nothing */
-        r.onHoldFollowUp ? displayDate(new Date(r.onHoldFollowUp)) : null,
+        r.onHoldFollowUp ? displayDateLong(new Date(r.onHoldFollowUp)) : null,   /* (Dane UAT 5.13) as the row prints it, with its day */
         ...r.tasks.map((t) => t.title),
         ...r.assignees.map((m) => m.name),
       ],
@@ -431,6 +434,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               onChipClick={() => { setNowTick(Date.now()); setStageMenuOpen((o) => !o) }}   /* the counts' clock: Overdue is "before today" */
               chipOpen={stageMenuOpen}
               chipScoped={stageScope !== null || attention !== null}   // (REG-295) a stage scope is a filter — say so; (UX audit L3) so is an attention scope
+              onViewAll={() => { setStageScope(null); setAttention(null) }}   /* (Dane's UAT 1.05) back to All Leads in one press — search and Filters stay */
               chipMenu={
                 <StageFilterDropdown open={stageMenuOpen} onClose={() => setStageMenuOpen(false)}
                                      counts={stageCounts} value={stageScope}
@@ -514,7 +518,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   // (REG-287) `phoneDisplay` is the app's one copy/export format — the literal "+65 ${row.phone}"
                   // template this replaced was a second rule that only agreed with it by luck.
                   try {
-                    await navigator.clipboard.writeText(phoneDisplay(row.phone))
+                    await copyText(phoneDisplay(row.phone))
                     snackbar({ message: 'Copied to clipboard' })
                   } catch {
                     snackbar({ message: phoneDisplay(row.phone) })
@@ -636,6 +640,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onClose={() => { setOnHold(null); setPendingDrop(null) }}
         reason={holdReason} setReason={setHoldReason}
         openedAt={holdOpenedAt}
+        followUpOn={holdFrom}   /* (Dane's UAT 9.08) from the Lost dialog's "Put On Hold instead" */
         options={holdOptions}
         onSave={(otherReason, followUpAt, duration) => {
           const lead = rows.find((r) => r.id === onHold)
@@ -659,6 +664,12 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         reason={lostReason} setReason={setLostReason}
         options={lostOptions} reasons={leadReasons.lost} contactCount={rows.find((r) => r.id === lost)?.contactCount ?? 0} today={new Date(initialNow)}
         competitorHint={rows.find((r) => r.id === lost)?.lastComparison ?? null}   /* (REG-640) */
+        /* (Dane's UAT 9.08) On Hold instead — a kanban card held over Lost moves to the On Hold column while that dialog decides */
+        onHoldInstead={(restart) => {
+          const id = lost
+          setLost(null); setHoldReason(''); setHoldFrom(restart); setHoldOpenedAt(Date.now()); setOnHold(id)
+          if (id && pendingDrop?.leadId === id) setPendingDrop({ leadId: id, stage: 'On Hold' })
+        }}
         onSave={(d) => {
           const lead = rows.find((r) => r.id === lost)
           setLost(null)
@@ -710,7 +721,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         sources={liveSources}
         assignable={assignHintText ? [viewer.id] : assignable}
         selfAssign={assignHintText ? { id: viewer.id } : null}   /* (REG-609, parity C-07) a Designer's new lead is theirs */
-        onOpenExisting={(id) => { setLeadForm(null); router.push(`/leads/${id}`) }}   /* (REG-609, parity Q-18) */
         customFields={customFields}   /* (REG-612, parity Q-25) */
         team={team}
         now={nowTick}

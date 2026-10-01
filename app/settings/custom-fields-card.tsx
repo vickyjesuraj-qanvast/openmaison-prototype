@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Reorder, useDragControls } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -27,13 +28,22 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
   const [fields, setFields] = useState<CustomFieldDef[]>(initial)
   const [editing, setEditing] = useState<{ f: CustomFieldDef | null } | null>(null)
   const [deleting, setDeleting] = useState<CustomFieldDef | null>(null)
-  const write = async (next: CustomFieldDef[], done: string) => {
-    const prev = fields
+  const write = async (next: CustomFieldDef[], done: string, prev = fields) => {
     setFields(next)
     try { const saved = await saveCustomFields(next); setFields(next.map((f, i) => ({ ...f, id: saved[i]?.id ?? f.id, orderIndex: i }))); snackbar({ message: done }); router.refresh() }
     catch { setFields(prev); snackbar({ message: 'Couldn’t save the fields — please try again' }) }
   }
   const move = (f: CustomFieldDef, dir: 'up' | 'down') => { const i = fields.findIndex((x) => x.id === f.id), j = dir === 'up' ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= fields.length) return; const n = [...fields]; [n[i], n[j]] = [n[j]!, n[i]!]; void write(n, 'Order saved') }
+  /* (Dane UAT 3.38) Drag a field by its handle (the task template's steps, motion's Reorder): the order is saved once, on the drop — "Order
+     saved", or put back as it was when the save is refused. The arrows stay for the keyboard and a finger. */
+  const latest = useRef(fields); useEffect(() => { latest.current = fields })
+  const before = useRef<CustomFieldDef[] | null>(null)
+  const dropped = () => {
+    const prev = before.current; before.current = null
+    const now = latest.current
+    if (!prev || prev.map((f) => f.id).join() === now.map((f) => f.id).join()) return
+    void write(now, 'Order saved', prev)
+  }
   return (
     <div className={styles.setting} data-testid="custom-fields">
       <div className={styles.settingHead}>
@@ -43,7 +53,7 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
       {fields.length === 0 ? (
         <span className={styles.settingHelp} data-testid="custom-fields-empty">No custom fields yet.</span>
       ) : (
-        <div className={`${styles.eventTable} ${styles.fieldTable}`} role="table" aria-label="Custom fields" data-card-table="">
+        <div className={`${styles.eventTable} ${styles.fieldTable}`} role="table" aria-label="Custom fields" data-card-table="" data-reorder={canManage || undefined}>
           {/* (REG-614) The Notifications module's event table, so every settings list of switches reads the same. */}
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Field</span>
@@ -51,27 +61,25 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
             <span role="columnheader" className={styles.eventCol}>Active</span>
             <span role="columnheader" className={styles.fieldActionsHead} aria-label="Actions" />
           </div>
-          {fields.map((f, i) => (
-            <div key={f.id} className={styles.eventRow} role="row" data-testid="custom-field" data-active={f.isActive || undefined}>
-              <span className={styles.fieldText} role="cell">
-                <span className={styles.fieldLabel}>{f.label}</span>
-                <span className={styles.fieldMeta}><MetaChip>{CUSTOM_FIELD_TYPE_LABELS[f.fieldType]}</MetaChip>{f.options.length ? <span>{f.options.join(' · ')}</span> : null}</span>
-              </span>
-              <span className={styles.eventCol} role="cell" data-label="Required"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isRequired} isDisabled={!canManage} aria-label={`${f.label} required`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isRequired: on } : x)), on ? `${f.label} is required` : `${f.label} is optional`) }} /></label></span>
-              <span className={styles.eventCol} role="cell" data-label="Active"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isActive} isDisabled={!canManage} aria-label={`${f.label} active`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isActive: on } : x)), on ? `${f.label} is back on every lead` : `${f.label} hidden — its values are kept`) }} /></label></span>
-              <span className={styles.fieldActions} role="cell">
-                {canManage ? (
-                  <>
-                    {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
-                    <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move ${f.label} up`} size={24} variant="bare" iconSize={18} disabled={i === 0} onClick={() => move(f, 'up')} /></Tooltip>
-                    <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move ${f.label} down`} size={24} variant="bare" iconSize={18} disabled={i === fields.length - 1} onClick={() => move(f, 'down')} /></Tooltip>
-                    <Tooltip label="Edit"><IconButton icon="edit" label={`Edit ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setEditing({ f })} /></Tooltip>
-                    <Tooltip label="Delete"><IconButton icon="delete" label={`Delete ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setDeleting(f)} /></Tooltip>
-                  </>
-                ) : null}
-              </span>
-            </div>
-          ))}
+          <Reorder.Group as="div" axis="y" values={fields} onReorder={(next: CustomFieldDef[]) => setFields(next)} className={styles.rowGroup} role="rowgroup">
+            {fields.map((f, i) => (
+              <FieldRow key={f.id || `new-${i}`} f={f} canManage={canManage} onLift={() => { before.current = latest.current }} onDrop={dropped}>
+                <span className={styles.eventCol} role="cell" data-label="Required"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isRequired} isDisabled={!canManage} aria-label={`${f.label} required`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isRequired: on } : x)), on ? `${f.label} is required` : `${f.label} is optional`) }} /></label></span>
+                <span className={styles.eventCol} role="cell" data-label="Active"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isActive} isDisabled={!canManage} aria-label={`${f.label} active`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isActive: on } : x)), on ? `${f.label} is back on every lead` : `${f.label} hidden — its values are kept`) }} /></label></span>
+                <span className={styles.fieldActions} role="cell">
+                  {canManage ? (
+                    <>
+                      {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
+                      <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move ${f.label} up`} size={24} variant="bare" iconSize={18} disabled={i === 0} onClick={() => move(f, 'up')} /></Tooltip>
+                      <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move ${f.label} down`} size={24} variant="bare" iconSize={18} disabled={i === fields.length - 1} onClick={() => move(f, 'down')} /></Tooltip>
+                      <Tooltip label="Edit"><IconButton icon="edit" label={`Edit ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setEditing({ f })} /></Tooltip>
+                      <Tooltip label="Delete"><IconButton icon="delete" label={`Delete ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setDeleting(f)} /></Tooltip>
+                    </>
+                  ) : null}
+                </span>
+              </FieldRow>
+            ))}
+          </Reorder.Group>
         </div>
       )}
       {canManage ? <div><Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => setEditing({ f: null })}>Add field</Button></div> : null}
@@ -80,6 +88,26 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
       <ConfirmDialog open={!!deleting} title="Delete this field?" message={deleting ? `“${deleting.label}” and the values leads carry for it are removed.` : undefined} confirmLabel="Delete"
                      onCancel={() => setDeleting(null)} onConfirm={() => { const f = deleting; setDeleting(null); if (f) void write(fields.filter((x) => x.id !== f.id), `${f.label} deleted`) }} />
     </div>
+  )
+}
+
+/** (Dane UAT 3.38) One custom field's row on motion's Reorder: the drag handle (Owners and Admins) before the label and its type, then the
+    row's own cells. Dragged by its handle only. */
+function FieldRow({ f, canManage, onLift, onDrop, children }: { f: CustomFieldDef; canManage: boolean; onLift: () => void; onDrop: () => void; children: React.ReactNode }) {
+  const controls = useDragControls()
+  const [dragging, setDragging] = useState(false)
+  return (
+    <Reorder.Item as="div" value={f} dragListener={false} dragControls={controls} className={styles.eventRow} role="row" data-testid="custom-field" data-active={f.isActive || undefined} data-dragging={dragging || undefined}
+                  onDragStart={() => { setDragging(true); onLift() }} onDragEnd={() => { setDragging(false); onDrop() }}>
+      <span className={styles.fieldLead} role="cell">
+        {canManage ? <button type="button" className={styles.dragHandle} aria-label={`Drag ${f.label} to reorder`} data-testid="custom-field-handle" onPointerDown={(e) => controls.start(e)}><Icon name="drag_indicator" size={20} weight={300} /></button> : null}
+        <span className={styles.fieldText}>
+          <span className={styles.fieldLabel}>{f.label}</span>
+          <span className={styles.fieldMeta}><MetaChip>{CUSTOM_FIELD_TYPE_LABELS[f.fieldType]}</MetaChip>{f.options.length ? <span>{f.options.join(' · ')}</span> : null}</span>
+        </span>
+      </span>
+      {children}
+    </Reorder.Item>
   )
 }
 

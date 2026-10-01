@@ -32,6 +32,7 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
   const { templates, deleted, leads, now } = data
   const router = useRouter()
   const { run, fail } = useRun()
+  const [creating, setCreating] = useState(false)
   const snackbar = useSnackbar()
   /* (REG-634, contracts parity E-132) Deleted from its editor: said here, with the gallery's Undo, once. */
   const params = useSearchParams(), pathname = usePathname()
@@ -44,7 +45,8 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
     if (t) snackbar({ message: `${t.title} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the template', () => restoreContractTemplates([t.id]), `${t.title} restored`).then(() => router.refresh()) } })
   }, [deletedId])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   const [pickFor, setPickFor] = useState<string | null>(null)
-  const [fromContract, setFromContract] = useState(false)
+  /* the folder open when "From a contract…" was pressed (undefined = closed) — the template made from it is filed there */
+  const [fromContract, setFromContract] = useState<string | null | undefined>(undefined)
   const kind = templateKind('contracts')!
   const here = useHere('/company/templates/contracts')   // (round 3) the open folder and search ride along
   const open = useCallback((id: string) => router.push(`/templates/contracts/${id}?from=${encodeURIComponent(here)}`), [router, here])
@@ -54,11 +56,11 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
 
   return (
     <LibraryGallery<ContractTemplateRow> kind={kind} from={from} folders={{ library: 'contracts', list: folders, block: folderBlock(data.viewer) }} items={templates} deleted={deleted} now={now} ariaLabel="Contract templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="contract-templates"
-      newMenu={(close) => (<>
-        <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
-        <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'starter' } }), 'create the template') }}>From the studio agreement</DropdownItem>
+      newMenu={(close, place) => (<>   {/* (Dane UAT 3.03) a template made inside a folder is filed there */}
+        <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'blank' }, folderId: place.folderId }), 'create the template') }}>Blank template</DropdownItem>
+        <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'starter' }, folderId: place.folderId }), 'create the template') }}>From the studio agreement</DropdownItem>
         <DropdownDivider />
-        <DropdownItem onSelect={() => { close(); setFromContract(true) }}>From a contract…</DropdownItem>
+        <DropdownItem onSelect={() => { close(); setFromContract(place.folderId) }}>From a contract…</DropdownItem>
       </>)}
       filters={[{ key: 'used', label: 'In use', test: (t) => t.usedBy > 0 }, { key: 'unused', label: 'Not used yet', test: (t) => t.usedBy === 0 }]}
       searchText={(t) => excerptOf(t.body, 400)}
@@ -89,10 +91,13 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
         /* (REG-735) the first run carries New ▾'s rows: the studio agreement first, a blank one, one of the studio's contracts */
         start: () => ({ primary: { label: 'From the studio agreement', onPress: () => { void create(() => createContractTemplate({ source: { kind: 'starter' } }), 'create the template') } },
           secondary: { label: 'Blank template', onPress: () => { void create(() => createContractTemplate({ source: { kind: 'blank' } }), 'create the template') } },
-          link: { label: 'From a contract…', onPress: () => setFromContract(true) } }) }}>
-      <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} onPick={(leadId) => { const id = pickFor; setPickFor(null); if (id && leadId) void run('create the contract', async () => { const cid = await newIdOf(contractFromTemplate(id, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) }) }} />
-      <PickOneDialog open={fromContract} onClose={() => setFromContract(false)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"
-                     onPick={(id) => { setFromContract(false); void run('create the template', async () => open(await newIdOf(createContractTemplate({ source: { kind: 'contract', contractId: id } })))) }} />
+          link: { label: 'From a contract…', onPress: () => setFromContract(null) } }) }}>
+      {/* (Dane UAT 8.02, REG-659) the lead question reads "Creating…" and stays until the editor takes over, as every contract picker does */}
+      <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} busy={creating}
+        onPick={async (leadId) => { const id = pickFor; if (!id || !leadId || creating) return; setCreating(true)
+          try { const cid = await newIdOf(contractFromTemplate(id, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) } catch (e) { fail('create the contract', reasonOf(e)); setCreating(false) } }} />
+      <PickOneDialog open={fromContract !== undefined} onClose={() => setFromContract(undefined)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"
+                     onPick={(id) => { const folderId = fromContract ?? null; setFromContract(undefined); void run('create the template', async () => open(await newIdOf(createContractTemplate({ source: { kind: 'contract', contractId: id }, folderId })))) }} />
     </LibraryGallery>
   )
 }

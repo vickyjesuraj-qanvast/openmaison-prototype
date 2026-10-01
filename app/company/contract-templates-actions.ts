@@ -12,7 +12,8 @@ import { CONTRACT_HTML_MAX, sanitizeContractHtml } from '@/lib/contracts/sanitiz
 import { canDeleteTemplateForever } from '@/lib/contracts/policy'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { changeBlock, changeableIds, defaultBlock, nothingChangeable } from '@/lib/company/template-guard'
-import { TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
+import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { landingFolder } from '@/lib/company/folder-landing'
 /** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the template gone from under a stale page — else null. */
 const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: contractTemplates.createdBy }).from(contractTemplates).where(eq(contractTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
 
@@ -35,7 +36,9 @@ export async function setDefaultContractTemplate(id: string): Promise<void | Ref
   touch(id)
 }
 
-export type CreateContractTemplateInput = { title?: string; source: { kind: 'blank' } | { kind: 'starter' } | { kind: 'contract'; contractId: string } }
+export type CreateContractTemplateInput = { title?: string; source: { kind: 'blank' } | { kind: 'starter' } | { kind: 'contract'; contractId: string }
+  /** (Dane UAT 3.03) The folder open in the gallery — the new template is filed there (its maker may file it). */
+  folderId?: string | null }
 /** Blank (an empty page), the starter agreement, or a copy of a contract's document. Returns the id. */
 export async function createContractTemplate(input: CreateContractTemplateInput): Promise<string> {
   const now = new Date()
@@ -48,7 +51,9 @@ export async function createContractTemplate(input: CreateContractTemplateInput)
     title = clean(input.title) || c.title; body = c.body
   }
   /* (REG-633, contracts parity Q-15) a new template asks the client to read to the end and tick to accept — 1.0's library default */
-  await db.insert(contractTemplates).values({ id, title, body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true })
+  const viewer = await fetchViewer()
+  const { folderId } = await landingFolder('contracts', input.folderId, templateChangeBlock(viewer, viewer.id))
+  await db.insert(contractTemplates).values({ id, title, body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true, folderId })
   touch(id)
   return id
 }

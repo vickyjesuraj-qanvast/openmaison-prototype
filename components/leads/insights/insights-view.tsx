@@ -41,7 +41,9 @@ const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'awaiting', label: 'Awaiting outreach', track: 'minmax(180px, 180fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
 ]
 
-export function InsightsView({ data, from }: { data: InsightsData | null; from?: string }) {
+/** `backLabel` (Dane's UAT 11.09): Back's words for the `from` it returns to — "Back to {lead}" when Insights was opened from a lead. Insights
+    stays studio-wide (REG-611), so the crumb keeps "Leads". */
+export function InsightsView({ data, from, backLabel }: { data: InsightsData | null; from?: string; backLabel?: string }) {
   const [range, setRange] = useState<Range>(30)
   const report = useMemo(() => (data ? insightsReport(data.facts, data.team, data.now, range) : null), [data, range])
   const mobile = useMediaQuery(MOBILE)
@@ -52,7 +54,7 @@ export function InsightsView({ data, from }: { data: InsightsData | null; from?:
   return (
     <PageReveal skeleton={<InsightsGhost />}>
       <div className={pageStyles.body}>
-        <PageHeaderL2 backHref={from ?? '/leads'} crumb="Leads" title="Insights" />
+        <PageHeaderL2 backHref={from ?? '/leads'} backLabel={backLabel} crumb="Leads" title="Insights" />
         <div className={pageStyles.content}>
           {!data || !report ? (
             /* The gate (Q-41: Insights are Owners' and Admins'). Invented copy. */

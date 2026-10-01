@@ -63,7 +63,9 @@ export const sheetRise = {
  *  presentation for every menu, popover, picker and form modal at ≤767 (screens 1d…3k). */
 export const bottomSheet = {
   initial: { y: '100%' },
-  animate: { y: 0, transition: { duration: duration.sheet, ease: ease.decelerate } },
+  /* opacity and scale too: a Dialog open on its first paint (a `?open=` deep link) hydrates on `modalPanel` (the phone query reads false
+     on the server) and switches to these variants mid-animation — without them its panel stayed at modalPanel's opacity 0 · scale 0.96 */
+  animate: { y: 0, opacity: 1, scale: 1, transition: { duration: duration.sheet, ease: ease.decelerate } },
   exit: { y: '100%', transition: { duration: duration.sheetExit, ease: ease.standard } },
 }
 

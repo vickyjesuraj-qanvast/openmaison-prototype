@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Tag as TagChip, TextArea } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
-import { DateField } from '@/components/om/date-field'
+import { DateTimeField } from '@/components/om/date-field'
 import { Drawer, DrawerAction, DrawerRule } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
 import NextLink from 'next/link'
@@ -13,7 +13,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { FileTile } from '@/components/leads/move-stage/fields'
-import { displayDate, inputDate, parseInputDate } from '@/lib/format'
+import { displayDate, displayDue, formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import type { Member, Tag } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
 import { TagPicker } from './tag-picker'
@@ -31,6 +31,7 @@ export type TaskPanelMenuAction = 'template' | 'delete'
 export function TaskPanel({
   task, tags, onClose, onComments, onAttach, onMenu, onChange, onAssign, onTags, onManageTags, onToggleDone, onDetach,
   open = true, now, onCreateTag, lead, focusName = 0,
+  onOpenInTasks,
 }: {
   task: TaskRow
   /** The studio's members (the assign popover is the host's; the panel shows task.assignees). */
@@ -42,7 +43,8 @@ export function TaskPanel({
   onComments: () => void
   onAttach: () => void
   onMenu: (action: TaskPanelMenuAction) => void
-  onChange: (patch: TaskPatch) => void
+  /** A save; it may answer whether it landed (`run`'s boolean) — a refused due date then goes back to the saved one. */
+  onChange: (patch: TaskPatch) => void | Promise<boolean>
   onAssign: (anchor: HTMLElement) => void
   onTags: (tagIds: string[]) => void
   onManageTags: () => void
@@ -55,6 +57,8 @@ export function TaskPanel({
   onCreateTag?: (name: string) => void
   /** (UX audit 2026-09-30, T6) Bumped by a double-click on the row's title: the Task name takes the caret with its text selected — rename here. */
   focusName?: number
+  /** (Dane's UAT 5.05) Opened over the lead's Overview: the head's arrow goes to the full Tasks tab with this task open. */
+  onOpenInTasks?: () => void
 }) {
   // Day-granular "today" for the Material picker: the host's `now`, else one lazy read at mount (no Date.now() in render).
   const [mountedAt] = useState(() => new Date())
@@ -79,6 +83,23 @@ export function TaskPanel({
     if (description !== desc) onChange({ description })
   }
 
+  /* (Dane UAT 5.05) Due is a date AND a time — the field "Set a follow-up" writes (REG-608), so a follow-up at 10:00 AM can be moved
+     here without losing its hour: the picker keeps the time when only the day changes, and the time row changes it. Each pick saves at
+     once, as the date did; the field shows the pick until the saved task catches up (a quick hour-then-minute must not read a stale
+     day), and a refused save puts the saved value back. The weekday form under it is how every list prints the due (UAT 5.13). */
+  const savedDue = task.dueAt ? formatInputDateTime(task.dueAt) : ''
+  const [dueDraft, setDueDraft] = useState<{ id: string; value: string } | null>(null)
+  if (dueDraft && (dueDraft.id !== task.id || dueDraft.value === savedDue)) setDueDraft(null)   // another task, or the save landed
+  const dueValue = dueDraft && dueDraft.id === task.id ? dueDraft.value : savedDue
+  const dueShown = parseInputDateTime(dueValue)
+  const changeDue = (v: string) => {
+    const d = parseInputDateTime(v)
+    if (!d || v === dueValue) return
+    setDueDraft({ id: task.id, value: v })
+    const saved = onChange({ dueAt: d })
+    if (saved) void saved.then((ok) => { if (!ok) setDueDraft((cur) => (cur && cur.value === v ? null : cur)) })
+  }
+
   const nameBox = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!focusName) return
@@ -92,6 +113,7 @@ export function TaskPanel({
 
   const actions: ReactNode = (
     <>
+      {onOpenInTasks ? <DrawerAction icon="arrow_outward" label="Open in Tasks" onClick={onOpenInTasks} /> : null}
       {/* (UX audit 2026-09-30, T8) the comment icon carries its count, as the row's comment chip does */}
       <span className={styles.countHost}>
         <DrawerAction icon="comment" label={task.comments.length ? `Comments (${task.comments.length})` : 'Comments'} onClick={onComments} />
@@ -143,13 +165,12 @@ export function TaskPanel({
         <dd className={styles.value}>{displayDate(task.createdAt)}</dd>
       </dl>
 
-      {/* Fields: Task name (Text Area 64) · Due date (DateField, picker only — REG-119) · Description (Text Area 112).
+      {/* Fields: Task name (Text Area 64) · Due date (DateTimeField, picker only — REG-119; a time since Dane UAT 5.05) · Description (Text Area 112).
           (REG-729) The DS TextArea with its own label — rests inside while empty, floats to the top border on focus or a value — where a
           local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
       <div className={styles.fields}>
         <div ref={nameBox}><TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} /></div>
-        <DateField label="Due date" today={today} value={task.dueAt ? inputDate(task.dueAt) : ''}
-                   onChange={(v) => { const d = parseInputDate(v); if (d) onChange({ dueAt: d }) }} />
+        <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} helper={dueShown ? displayDue(dueShown) : undefined} />
         <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />
       </div>
 

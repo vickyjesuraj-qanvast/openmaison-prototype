@@ -7,7 +7,7 @@ import { sentToClientDates } from '@/lib/quotes/sent-to-client'
 import type { Member } from '@/lib/db/schema'
 import { fetchBrand, pickerExtras } from '@/lib/templates/queries'
 import type { PickerExtras } from '@/lib/templates/picker'
-import { SAMPLE_DATA, type DocData } from '@/lib/templates/data'
+import { sampleFor, type DocData } from '@/lib/templates/data'
 import type { BrandKit } from '@/lib/templates/model'
 
 /* Lead Details › Quotes (910-36240) — one loader for the tab. Archived / deleted quotes leave the list. The studio's
@@ -44,5 +44,5 @@ export async function fetchLeadQuotes(leadId: string): Promise<LeadQuotesData> {
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const sent = await sentToClientDates(rows)
-  return { leadStage: leadRow[0]?.stage ?? 'New', quotes: rows.map((q) => ({ ...q, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { leadStage: leadRow[0]?.stage ?? 'New', quotes: rows.map((q) => ({ ...q, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
 }

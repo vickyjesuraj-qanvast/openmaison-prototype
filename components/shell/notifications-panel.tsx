@@ -16,7 +16,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ago } from '@/lib/templates/ago'
-import { displayDayShortMonth } from '@/lib/format'
+import { displayDateLong } from '@/lib/format'
 import { eventDef, type FeedRow } from '@/lib/notifications/model'
 import { fetchFeedAction, markAllNotificationsRead, markNotificationRead } from '@/app/notifications/actions'
 import styles from './notifications-panel.module.css'
@@ -28,12 +28,13 @@ export const openNotifications = () => window.dispatchEvent(new CustomEvent(OPEN
 
 const CHANNEL_WORD: Record<string, string> = { email: 'email', whatsapp: 'WhatsApp' }
 
-/** (UX audit V8) A follow-up's due line — "Due 28 Sep · 2 days late", "Due today · 3 h late", "Due in 12 min" — so an overdue row says how late
-    it is, never a bare "Due". `at` is when it came due (a due-soon row: 30 minutes before it does). */
+/** (UX audit V8) A follow-up's due line — "Due Mon, 28 Sep ’26 · 2 days late", "Due today · 3 h late", "Due in 12 min" — so an overdue row says
+    how late it is, never a bare "Due". `at` is when it came due (a due-soon row: 30 minutes before it does). (Dane UAT 5.13) The day wears its
+    weekday, as every date people plan by does. */
 export function dueLine(r: Pick<FeedRow, 'kind' | 'at'>, now: number): string {
   if (r.kind === 'task_due_soon') { const m = Math.max(1, Math.round((r.at + 30 * 60_000 - now) / 60_000)); return `Due in ${m} min` }
   const due = new Date(r.at), today = new Date(now)
-  const day = due.toDateString() === today.toDateString() ? 'today' : displayDayShortMonth(due)
+  const day = due.toDateString() === today.toDateString() ? 'today' : displayDateLong(due)
   const late = now - r.at
   if (late < 60_000) return `Due ${day}`
   const days = Math.floor(late / 86_400_000), hours = Math.floor(late / 3_600_000), mins = Math.floor(late / 60_000)
@@ -99,6 +100,11 @@ export function NotificationsPanel() {
   const unread = rows?.filter((r) => r.readAt === null && !r.derived).length ?? 0
   const due = rows?.filter((r) => r.derived) ?? []
   const notices = rows?.filter((r) => !r.derived) ?? []
+  /* (Dane UAT 11.06) Work that is late leads: while any Due row is overdue — its red "late" part showing (`late` below) — Due comes first; otherwise
+     the Updates the badge counts. The two groups and the badge stay REG-810's. */
+  const late = (r: FeedRow) => r.kind !== 'task_due_soon' && (now || r.at) - r.at >= 60_000
+  const groups = [{ key: 'notices', label: 'Updates', list: notices }, { key: 'due', label: 'Due', list: due }]
+  if (due.some(late)) groups.reverse()
   const openRow = (r: FeedRow) => {
     setOpen(false)
     if (!r.derived && r.readAt === null) {
@@ -136,7 +142,7 @@ export function NotificationsPanel() {
         ) : (
           /* (UX audit V8) two groups: the notices (what the badge counts) and what is due (work that stays until it's done, out of the count), each newest first */
           <>
-            {[{ key: 'notices', label: 'Updates', list: notices }, { key: 'due', label: 'Due', list: due }].filter((g) => g.list.length).map((g) => (
+            {groups.filter((g) => g.list.length).map((g) => (
               <section key={g.key} className={styles.group} aria-label={g.label} data-testid={`notifications-${g.key}`}>
                 {due.length && notices.length ? <h3 className={styles.groupHead} data-menu-label="">{g.label}<span className={styles.groupCount}>{g.list.length}</span></h3> : null}
                 <ul className={styles.list}>
@@ -150,7 +156,7 @@ export function NotificationsPanel() {
                           <span className={styles.text}>
                             <span className={styles.title}>{r.title}</span>
                             {r.body ? <span className={styles.sub}>{r.body}</span> : null}
-                            <span className={styles.meta}>{r.derived ? <span className={styles.due} data-late={(r.kind !== 'task_due_soon' && (now || r.at) - r.at >= 60_000) || undefined}>{dueLine(r, now || r.at)}</span> : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
+                            <span className={styles.meta}>{r.derived ? <span className={styles.due} data-late={late(r) || undefined}>{dueLine(r, now || r.at)}</span> : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
                           </span>
                           {r.readAt === null && !r.derived ? <span className={styles.dot} aria-label="Unread" /> : null}
                         </button>

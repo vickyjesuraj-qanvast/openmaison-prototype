@@ -103,8 +103,9 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
                       right={
                         <span className={styles.tokenAnchor}>
                           {/* (REG-729) The house compact select (m); (REG-728) the insert-field list's 240. */}
-                          <SelectTrigger ref={tokenRef} label="Insert Token" value={<span>Insert Token</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />   {/* the words in ink (1238:33173), named once for a screen reader */}
-                          <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert Token">
+                          {/* (Dane UAT 3.19, g-merge-fields) one name for every merge-field menu: "Insert a field" (was "Insert Token") — the tokens and what they resolve to are unchanged */}
+                          <SelectTrigger ref={tokenRef} label="Insert a field" value={<span>Insert a field</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />   {/* the words in ink (1238:33173), named once for a screen reader */}
+                          <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert a field">
                             {TOKENS.map((t) => <DropdownItem key={t.key} onSelect={() => { setTokenOpen(false); editor.current?.insertText(tokenText(t.key)) }}>{t.label}</DropdownItem>)}
                           </PortalMenu>
                         </span>

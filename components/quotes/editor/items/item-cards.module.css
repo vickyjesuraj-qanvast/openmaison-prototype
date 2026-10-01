@@ -39,3 +39,5 @@
 .descText[data-empty] { color: var(--om-color-on-surface-secondary); }
 /* (UX audit Q10) A line new or changed since the kept version: the table's yellow tint, on the card. */
 .card[data-change]:not([data-selected]) { background: var(--om-color-tertiary-yellow-variant2); }
+/* (Dane UAT 6.15) A line under its cost (the Cost column on): its price and total in the error red, beside the "Below cost" tag. */
+.figures[data-below] .sub, .figures[data-below] .total { color: var(--om-color-tertiary-red-default); }

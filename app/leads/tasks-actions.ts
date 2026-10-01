@@ -1,16 +1,17 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { dropLeadEvents, firstWords, logLeadEvent, logTaskEvent, printField } from '@/lib/leads/events'
+import { dropLeadEvents, firstWords, logLeadEvent, logTaskEvent, printField, type LeadEventDetail } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadTasks, leads, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
+import { leadEvents, leadTasks, leads, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds } from '@/lib/notifications/queries'
 import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { TASK_KINDS } from '@/lib/leads/enums'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
+import { displayTime, hasTime } from '@/lib/format'
 
 /* Lead Details › Tasks (902-36216). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
@@ -65,15 +66,34 @@ export async function updateTask(taskId: string, patch: { title?: string; descri
   /* (UX audit 2026-09-30, T10) who did it, on the lead's record: a completion, a reopening, or the fields an edit changed */
   if (set.done !== undefined && set.done !== t.done) await logTaskEvent(taskId, set.done ? 'task_completed' : 'task_reopened')
   const fields = taskChanges(t, set)
-  if (fields.length) await logTaskEvent(taskId, 'task_edited', { fields })
+  if (fields.length && !(fields.length === 1 && t.leadId && await foldDueLine(t.leadId, taskId, fields[0]!))) await logTaskEvent(taskId, 'task_edited', { fields })
   touch(t.leadId)
 }
 
+/**
+ * (Dane UAT 5.05) The due's picker saves each pick at once — the day, the hour, the minute, AM or PM — so moving a follow-up from 10:00 AM to
+ * Monday 2:30 PM is one change to the person making it, not four. The Due date line this member wrote for this task in the last two
+ * minutes takes the new value instead of a second line ("10:00 AM → 2:30 PM"), and leaves Activity when the due is back where it began.
+ */
+async function foldDueLine(leadId: string, taskId: string, change: { key: string; from: string; to: string; label: string }): Promise<boolean> {
+  if (change.key !== 'dueAt') return false
+  const [last] = await db.select().from(leadEvents).where(and(eq(leadEvents.leadId, leadId), eq(leadEvents.kind, 'task_edited'))).orderBy(desc(leadEvents.at)).limit(1)
+  const d = last?.detail as LeadEventDetail | null | undefined
+  const prev = d?.fields?.length === 1 ? d.fields[0] : undefined
+  if (!last || d?.id !== taskId || prev?.key !== 'dueAt' || prev.to !== change.from || last.actorId !== await sessionMemberId() || Date.now() - last.at.getTime() > 2 * 60_000) return false
+  if (prev.from === change.to) await db.delete(leadEvents).where(eq(leadEvents.id, last.id))
+  else await db.update(leadEvents).set({ at: new Date(), detail: { ...d, fields: [{ ...prev, to: change.to }] } }).where(eq(leadEvents.id, last.id))
+  return true
+}
+
 /** (T10) What an edit changed, in the panel's words — the name, the due date, the type, and that the description changed (never its text). */
+/* (Dane UAT 5.05) A due's time can change on its own now, so the line prints it when the task has one — "3 Oct ’26 · 10:00 AM → 3 Oct ’26 · 2:30 PM",
+   never "3 Oct ’26 → 3 Oct ’26". */
+const printDue = (d: Date | null | undefined) => (d && hasTime(d) ? `${printField('dueAt', d)} · ${displayTime(d)}` : printField('dueAt', d))
 function taskChanges(before: typeof leadTasks.$inferSelect, set: Partial<typeof leadTasks.$inferInsert>) {
   const out: { key: string; label: string; from: string; to: string }[] = []
   if (set.title !== undefined && set.title !== before.title) out.push({ key: 'title', label: 'Task name', from: before.title, to: set.title })
-  if (set.dueAt !== undefined && (set.dueAt?.getTime() ?? null) !== (before.dueAt?.getTime() ?? null)) out.push({ key: 'dueAt', label: 'Due date', from: printField('dueAt', before.dueAt), to: printField('dueAt', set.dueAt) })
+  if (set.dueAt !== undefined && (set.dueAt?.getTime() ?? null) !== (before.dueAt?.getTime() ?? null)) out.push({ key: 'dueAt', label: 'Due date', from: printDue(before.dueAt), to: printDue(set.dueAt) })
   if (set.kind !== undefined && set.kind !== before.kind) out.push({ key: 'kind', label: 'Type', from: before.kind, to: set.kind })
   if (set.description !== undefined && (set.description ?? '') !== (before.description ?? '')) out.push({ key: 'description', label: 'Description', from: '', to: '' })
   return out

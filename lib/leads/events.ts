@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { eq, inArray } from 'drizzle-orm'
 import { leadEvents, leadTasks } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
+import { maskNric } from '@/lib/format'
 
 /*
  * (REG-613, parity Q-20) The lead event log — written by the actions whose work leaves no row behind (a removal, an edit, a
@@ -59,9 +60,11 @@ export const FIELD_LABELS: Record<string, string> = {
   email: 'Lead email', leadAddress: 'Lead address', budgetMinor: 'Budget (S$)', estimatedStartDate: 'Estimated start date', style: 'Style',
   keyCollection: 'Key collection', condition: 'Condition', areaSqft: 'Area size (sq ft)', notes: 'Remarks', area: 'District', icNumber: 'NRIC / FIN', customerId: 'Customer ID',
 }
-/** A column value as the sentence prints it: money for the budget, a date for a date, "—" for nothing. */
+/** A column value as the sentence prints it: money for the budget, a date for a date, "—" for nothing — and (REG-903, PDPA) the NRIC /
+    FIN masked as a signed document shows it (•••••567A), so the log never keeps the full number. */
 export function printField(key: string, v: unknown): string {
   if (v === null || v === undefined || v === '') return '—'
+  if (key === 'icNumber') return maskNric(String(v))
   if (key === 'budgetMinor') { const n = Number(v); return n ? (n / 100).toLocaleString('en-SG') : '—' }
   if (v instanceof Date) return v.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: '2-digit' }).replace(/(\d{2})$/, '’$1')
   return String(v)

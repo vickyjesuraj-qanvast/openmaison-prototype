@@ -9,6 +9,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { displayDate, isSgPhone, phoneDigits } from '@/lib/format'
+import { copyText } from '@/lib/clipboard'
 import { SHARE_MAX_VERSIONS } from '@/lib/visualizer/policy'
 import type { VersionView } from '@/lib/visualizer/model'
 import { clientRoomNames, joinWords } from '@/lib/visualizer/outputs'
@@ -38,7 +39,7 @@ function useCopiedMark(open: boolean) {
   const runs = useRef(0)
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
   const copy = (what: string, text: string, failed: string): Promise<boolean> => {
-    const write = navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'))
+    const write = copyText(text)
     return write.then(() => {
       const run = ++runs.current
       setDone({ what, run })

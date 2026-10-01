@@ -9,7 +9,7 @@ import { markQuoteStatus, sendQuote, sendQuoteForConfirmation, undoQuoteStatus }
 import { setQuoteDue } from '@/app/leads/quotes-actions'
 import { confirmLink, confirmMessage } from '@/lib/quotes/confirm'
 import { firstName } from '@/lib/contracts/model'
-import { displayDate } from '@/lib/format'
+import { displayDateLong } from '@/lib/format'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
 import type { Readiness, ReadinessIssue } from '@/lib/templates/readiness'
@@ -105,7 +105,7 @@ export function useQuoteSend(o: {
       const r = await sendQuoteForConfirmation(quote.id)
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, clientSentAt: r.updatedAt })
       const due = await setFollowUpDue()
-      snackbar({ message: `Quote sent to ${name} for confirmation${due ? ` — follow-up on ${displayDate(due)}` : ''}`, ...moveAction(r.moveTo) })
+      snackbar({ message: `Quote sent to ${name} for confirmation${due ? ` — follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })   // (Dane UAT 5.13) the follow-up's day
     }, undefined, { guard: 'send' })
   }
   /* (sweep S1 · U-06) Copying the link sends it, the contract's rule (REG-631): a link handed out opens — with the follow-up asked for. */
@@ -115,7 +115,7 @@ export function useQuoteSend(o: {
       const r = await sendQuoteForConfirmation(quote.id)
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, clientSentAt: r.updatedAt })
       const due = await setFollowUpDue()
-      snackbar({ message: `The quote is Sent to Client — the link opens for your client now${due ? ` · follow-up on ${displayDate(due)}` : ''}`, ...moveAction(r.moveTo) })
+      snackbar({ message: `The quote is Sent to Client — the link opens for your client now${due ? ` · follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })
     }, undefined, { guard: 'send' })
   }
 

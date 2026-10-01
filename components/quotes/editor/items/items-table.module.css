@@ -96,7 +96,7 @@
 .wrap[data-more] .colTotal { box-shadow: var(--om-shadow-frozen-column-mirrored); }   /* (sweep S1 #32) the listing's frozen-column shadow (REG-286) */
 
 /* Selection cell: drag_indicator · add · checkbox, 20px glyphs 4 apart (1260:31254). */
-.handle, .plus, .foldAll {
+.handle, .plus, .foldAll, .bucketAdd {
   width: 20px; height: 20px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: none; padding: 0; color: var(--om-color-on-surface-secondary);
@@ -104,12 +104,12 @@
 }
 .handle { cursor: grab; touch-action: none; }
 .handle:active { cursor: grabbing; }
-.plus:hover, .handle:hover, .foldAll:hover { background: var(--om-color-hover-08p); }
+.plus:hover, .handle:hover, .foldAll:hover, .bucketAdd:hover { background: var(--om-color-hover-08p); }
 /* (REG-576) Bigger targets under a mouse too: the 20px marks keep their drawing and take an invisible box — handle and + 28×44 (they
    sit 4 apart, so the boxes meet with 4 to spare, the REG-365 rule), the eye and the fold 28×32 (they must not reach the name box
    beside them), the edge + 30 — the touch rules further down grow them more. */
-.handle, .plus, .eye, .fold { position: relative; }
-.handle::after, .plus::after { content: ''; position: absolute; inset: -12px -4px; }
+.handle, .plus, .eye, .fold, .bucketAdd { position: relative; }
+.handle::after, .plus::after, .bucketAdd::after { content: ''; position: absolute; inset: -12px -4px; }
 .eye::after, .fold::after { content: ''; position: absolute; inset: -6px -4px; }
 .edgeAdd::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; }
 .check { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; }
@@ -454,3 +454,18 @@
    under its tag ("New since v1" · "Changed since v1"); a selection's tint wins, as it wins over a child's. */
 .row[data-change]:not([data-selected]) { background: var(--om-color-tertiary-yellow-variant2); }
 .row[data-change]:not([data-selected]) .colSel, .row[data-change]:not([data-selected]) .colNum, .row[data-change]:not([data-selected]) .colItem, .row[data-change]:not([data-selected]) .colTotal { background: var(--om-color-tertiary-yellow-variant2); }
+/* (Dane UAT 6.15) A line under its cost (the Cost column on): the Unit Price and the Total read in the error red beside the "Below cost" tag. */
+.cell[data-below] .input, .cell[data-below] .total { color: var(--om-color-tertiary-red-default); }
+
+/* (Dane UAT, Figma 1549:34 pts 1 · 4) View by › Category: a bucket's row holds the handle that moves it with its lines and the "+" that adds a
+   line in it (the handle's place stays empty on Uncategorized, which keeps last); the + keeps its finger box on touch, as nothing sits
+   beside it (the row's "+" gives way to the checkbox there). A moving bucket lifts like a row; one jumped to pulses like a row. */
+.handleGap { width: 20px; height: 20px; flex-shrink: 0; }
+.bucket { position: relative; }
+.bucket[data-dragging] { transform: translateY(var(--row-dy, 0px)); z-index: 9; box-shadow: var(--om-elevation-level-3); transition: none; }
+.wrap[data-row-drag] .bucket:not([data-dragging]) { transition: transform 160ms ease; }
+.wrap[data-row-settle] .bucket[data-dragging] { transition: transform 160ms ease; }
+.bucket[data-fresh]::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .bucketAdd::after { inset: -12px -6px; }
+}
