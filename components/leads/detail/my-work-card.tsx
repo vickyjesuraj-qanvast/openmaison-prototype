@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { useFlagPref } from '@/lib/prefs'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -22,9 +22,14 @@ const DAY_MS = 86_400_000
 type GroupKey = 'overdue' | 'today' | 'upcoming'
 type Group = { key: GroupKey; label: string; tasks: LeadTask[] }
 
-export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpenTab }: {
+export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpenTab, whereOf, quietEmpty }: {
   tasks: LeadTask[]
   now: number
+  /** (S42 audit A-06) The Dashboard's empty: one quiet row in place of the mock's first-run state (858:24171), which belongs to a lead or a
+      project with no task yet — on the front door its filled button would outrank the page's next step, and "first" is not true there. */
+  quietEmpty?: ReactNode
+  /** (pending modules S22) The Dashboard's tasks come from every lead and project: each row names where it is, after its kind. */
+  whereOf?: (task: LeadTask) => string | null
   /** "Create New Task" (empty state) — receives the button so the tasks add flow can anchor to it. */
   onCreate: (anchor: HTMLElement) => void
   onComplete: (task: LeadTask) => void
@@ -66,7 +71,7 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
       openLabel="Open my tasks"
       testId="my-work"
     >
-      {open.length === 0 ? (
+      {open.length === 0 && quietEmpty ? quietEmpty : open.length === 0 ? (
         <CardEmpty
           illustration="/figma-assets/empty-tasks.svg"
           width={140}
@@ -119,7 +124,7 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
               )}
               <div className={styles.list} data-ruled={!last || undefined}>
                 {g.tasks.map((t) => (
-                  <TaskRow key={t.id} task={t} group={g.key} now={now} onComplete={onComplete} onOpenTask={onOpenTask} />
+                  <TaskRow key={t.id} task={t} group={g.key} now={now} onComplete={onComplete} onOpenTask={onOpenTask} where={whereOf?.(t) ?? null} />
                 ))}
               </div>
               {!last ? <CardRule /> : null}
@@ -132,12 +137,14 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
 }
 
 /** Task row (858:24989): 56 tall, 8 padding, 8 gap, r4 — radio · title / meta · chevron. */
-function TaskRow({ task, group, now, onComplete, onOpenTask }: {
+function TaskRow({ task, group, now, onComplete, onOpenTask, where }: {
   task: LeadTask
   group: GroupKey
   now: number
   onComplete: (task: LeadTask) => void
   onOpenTask: (task: LeadTask) => void
+  /** (pending modules S22) where the task is, on a card that lists more than one record's */
+  where?: string | null
 }) {
   const due = task.dueAt
   const overdueDays = due && group === 'overdue'
@@ -155,6 +162,7 @@ function TaskRow({ task, group, now, onComplete, onOpenTask }: {
         <span className={styles.title}>{task.title}</span>
         <span className={styles.meta}>
           <span>{task.kind}</span>
+          {where ? <><span className={styles.dot}>·</span><span className={styles.where}>{where}</span></> : null}
           {/* (Dane UAT 5.13 · 5.05) a due wears its day, and its time when it has one: "Sat, 3 Oct ’26 · 10:00 AM" · "Due today · 10:00 AM" */}
           {group === 'overdue' && due ? (
             <>

@@ -40,6 +40,8 @@
 .tradeName:hover > span { text-decoration: underline; }
 .tradeName:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
 .trade[data-noted] { border-color: var(--om-color-primary-default); }
+/* (S44P, row 264) the entry a typed name matches lights up while the field says "Already in the list as …" — the menus' selected fill */
+.trade[data-match] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); transition: background var(--motion-toggle), border-color var(--motion-toggle); }
 .addTrade { display: flex; gap: var(--om-spacing-2); align-items: flex-start; max-width: 480px; }
 .addTrade > :first-child { flex: 1; min-width: 0; }
 @media (max-width: 767px) {
@@ -50,11 +52,6 @@
 .sourceCount { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
 .trade[data-retired] { color: var(--om-color-on-surface-secondary); border-style: dashed; }
 .trade[data-retired] > span:first-child, .trade[data-retired] > .chipName { text-decoration: line-through; }
-
-/* (REG-602) Lead capture: the address as a code chip beside Copy, the arrivals line under it. */
-.captureRow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
-.captureAddress { display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* (sweep S4 #24) the house type */
-.captureMeta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* (REG-604) Settings › Notifications: the events × channels table, the follow-up rule, the messages. */
 /* (REG-727) The event table is the card table (components/om/card-table.module.css), composed once here for every Settings list
@@ -100,35 +97,8 @@
   .gateField { flex: 1 1 0; min-width: 0; }
 }
 
-/* (REG-612) Settings › Leads › Custom fields rows and the field dialog's option list. */
-/* (REG-614) The list is the Notifications module's event table above, with its own tracks: field · Required · Active · actions. */
-.fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(200px, 1fr) 96px 96px 120px; }
-.fieldTable .eventRow:not([data-active]) .fieldLabel { color: var(--om-color-on-surface-secondary); }
-.fieldActionsHead { composes: actionsHead from '../../components/om/card-table.module.css'; }   /* (REG-727) the actions' blank head, gone on a phone */
-.fieldActions { composes: actions from '../../components/om/card-table.module.css'; }   /* (REG-727) order · edit · delete at the row's end, a line of their own on a phone */
-@media (max-width: 767px) {
-  .fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(0, 1fr) 56px 56px; }
-  /* (sweep S4 #5) the bank's way: the head stays and names the two switch columns — a ::before label in a 56px track put a switch under the other label */
-  .fieldTable .eventHead { display: grid; }
-  .fieldTable .eventCol { justify-content: center; }
-  .fieldTable .eventCol::before { content: none; }
-  .fieldTable .eventRow { gap: var(--om-spacing-3); }   /* (REG-727) the head's 12, so each switch stands under its label (the stack's 8 put it off by 4) */
-}
-.fieldText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
-/* (Dane UAT 3.38) Drag to reorder: motion's Reorder group draws no box (the rows stay the table's flex children); the handle leads the field
-   cell (the task template's handle, composed) and the head's label lines up with the field's; a dragged row rises on the card's surface. */
-.rowGroup { display: contents; }
-.fieldLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
-.dragHandle { composes: handle from '../../components/company/templates/editors/library-editor.module.css'; flex-shrink: 0; }
-.dragHandle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
-.fieldTable[data-reorder] .eventHead > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
-.fieldTable .eventRow[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
-.fieldLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.fieldMeta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.fieldError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
-.optionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.optionRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
-.optionRow > :first-child { flex: 1; min-width: 0; }
+/* (REG-612 · pending modules S17) Settings › Leads › Custom fields: the studio's definitions list (components/om/definition-list.module.css),
+   one with Company › Questionnaire's bank — its tracks, rows and form live there now. */
 
 /* (REG-645, settings parity Q-01 · Q-03 · Q-04 · Q-08) A module's head: the read-only line, the Company pages that hold its records; the
    Studio module's cards — the team by role, the issuing entities and Who may do what on the event table. */
@@ -136,12 +106,7 @@
 .moduleLinks > span:first-child { margin-right: var(--om-spacing-1); }
 .settingHeadRow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); }
 .settingHeadRow > .settingHead { flex: 1 1 320px; min-width: 0; }
-.roleList { display: flex; flex-direction: column; }
-.roleRow { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--om-spacing-3); align-items: center; min-height: 48px; padding: var(--om-spacing-2) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.roleRow:first-child { border-top: 0; }
-.people { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2) var(--om-spacing-5); }
-.person { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
-.entityTable .eventHead, .entityTable .eventRow { grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 1.4fr); }
+/* (one-home N-06) Settings › Studio's Team list and Issuing entities table left with their cards — Company › Members and Profile hold them. */
 .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(240px, 1.6fr) repeat(4, minmax(96px, 1fr)); }
 .reachYes { color: var(--om-color-primary-default); }
 .reachNo { color: var(--om-color-on-surface-secondary); }
@@ -152,14 +117,12 @@
   /* (sweep S4 #2) Notifications' own tracks fit 768–1024 — WhatsApp was clipped by the table's overflow at 768–880 */
   .eventHead, .eventRow { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) repeat(3, 72px); }
   /* Tablet: the five tracks fit the card at 768 (≈ 594 of table) — the action column and the role columns give way first. */
-  .entityTable .eventHead, .entityTable .eventRow { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) minmax(96px, 1fr) minmax(120px, 1.2fr); }
   .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(150px, 1.4fr) repeat(4, minmax(72px, 1fr)); }
 }
 @media (max-width: 767px) {
-  .roleRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-2); }
   /* Phone: the event table's stack (head hidden, one column, each cell labelled) — its one column restated at these tables'
      specificity; the labels are the stack's own (.eventWho[data-label]::before, .eventCol::before). */
-  .entityTable .eventHead, .entityTable .eventRow, .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(0, 1fr); }
+  .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(0, 1fr); }
   .roleTable .eventCol { justify-content: space-between; }
   .roleTable .reachText { text-align: right; }
 }
@@ -171,10 +134,47 @@
 .chipName { display: inline-flex; align-items: center; gap: var(--om-spacing-1); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: var(--om-radius-1); }
 .chipName:hover { text-decoration: underline; }
 .chipName:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
-/* (REG-647, settings parity Q-12) Lead capture's ways in, on the event table. */
-.captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(200px, 1.2fr) minmax(160px, 1fr) minmax(160px, 1fr); }
-@media (max-width: 767px) {
-  .captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(0, 1fr); }   /* the stack's one column, as the entities' */
-}
+/* (one-home N-03) Lead capture's ways-in table left with its card — Company › Integrations shows every way in. */
 /* (UX audit S4) New quotes start with: Plan & billing's facts list (the label, then what a new quote takes), composed — one copy. */
 .defaults { composes: facts from '../../components/company/plan/plan.module.css'; }
+
+/* (gaps build E, item 5) Notifications › Sent messages — the outbox as a card table (REG-727): the message (its event over its first line,
+   which opens it), who it went to, the channel, when, how it went. A card per row on a phone, each line naming itself. */
+.sentTools { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.sentCount { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.sentTable { composes: table from '../../components/om/card-table.module.css'; }
+.sentHead { composes: head from '../../components/om/card-table.module.css'; }
+.sentRow { composes: row from '../../components/om/card-table.module.css'; }
+.sentHead, .sentRow { grid-template-columns: minmax(220px, 2fr) minmax(150px, 1fr) 112px 112px 136px; }
+.sentMessage { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sentEvent { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.sentLink { composes: link from '../../components/om/text-link.module.css'; text-align: left; overflow-wrap: anywhere; }
+.sentMessage > .sentLink { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }   /* two lines at most — the dialog holds the rest */
+.sentTo, .sentAt { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow-wrap: anywhere; }
+.sentAddress { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.sentChannel { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.sentStatus { font: var(--om-type-body-s); }
+.sentStatus[data-status='no_address'], .sentStatus[data-status='failed'] { color: var(--om-color-tertiary-red-default); }
+.sentEmpty { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.sentMore { display: flex; justify-content: center; }
+.sentDetail { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.sentDetail > p { overflow-wrap: anywhere; }   /* a WhatsApp's link never pushes the dialog wide */
+.sentFacts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-m); }
+.sentFacts dt { color: var(--om-color-on-surface-secondary); }
+.sentFacts dd { margin: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .sentHead { display: none; }
+  .sentRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
+  .sentTo, .sentAt { flex-direction: row; flex-wrap: wrap; gap: var(--om-spacing-1); }
+  .sentTo[data-label]::before, .sentAt[data-label]::before, .sentChannel[data-label]::before, .sentStatus[data-label]::before { content: attr(data-label) ' · '; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+  .sentCount { margin-left: 0; flex-basis: 100%; }
+}
+
+/* (gaps build H) the message dialog's foot: Reset on the left, Cancel · Save on the right */
+.footSpacer { flex: 1; }
+
+/* (simplify S-15) A module's cards in named groups — Settings › Finance's Money in · Money out · Commission: the group's caption (the house
+   caption, as a card's own sub-captions read — .reasonLabel), then its cards at the panel's own 24 apart. */
+.cardGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.cardStack { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.groupLabel { composes: reasonLabel; margin: 0; }

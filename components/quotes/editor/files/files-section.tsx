@@ -6,7 +6,6 @@ import { Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { useComingSoon } from '@/components/om/snackbar'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { Dropzone } from '@/components/leads/move-stage/fields'
@@ -14,8 +13,11 @@ import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { renameFile } from '@/app/leads/files-actions'
-import { attachQuoteFiles, detachQuoteFile, setQuoteFilesVisible, uploadQuoteFile } from '@/app/quotes/files-actions'
+import { attachQuoteFiles, detachQuoteFile, setQuoteFilesVisible } from '@/app/quotes/files-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into run()'s own failure line
+import { uploadPicked } from '@/components/leads/files/upload-picture'   // (gaps build E, item 1)
 import { downloadBlob } from '@/lib/leads/export'
+import { downloadName } from '@/lib/leads/file-model'
 import type { LeadFile } from '@/lib/db/schema'
 import { SectionCard } from '../section-card'
 import { withFrom } from '@/lib/nav'
@@ -50,7 +52,6 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   onCount: (n: number) => void
 }) {
   const router = useRouter()
-  const comingSoon = useComingSoon()
   const { run, fail } = useRun()
   const { quoteId, leadId } = seed
   const [files, setFiles] = useState<LeadFile[]>(seed.files)
@@ -66,28 +67,32 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   /* (sweep S1 #10) An optimistic write that the server refuses is put back — never a value on screen that was not kept. */
   const toggleVisible = (next: boolean) => {
     setVisible(next)
-    void run('save the setting', async () => { const r = await setQuoteFilesVisible(quoteId, next); onSaved(r.updatedAt) })
+    void run('save the setting', async () => { const r = await orThrow(setQuoteFilesVisible(quoteId, next)); onSaved(r.updatedAt) })
       .then((ok) => { if (!ok) setVisible(!next) })
   }
   /* The modal answers with the files newly ticked (its "Attach n Files" counts those) — they join the ones the quote already carries. */
   const attachSet = (ids: string[]) => {
     setModal(false)
     if (!ids.length) return
-    void run('attach the files', async () => { const r = await attachQuoteFiles(quoteId, ids); setFiles(r.files); onSaved(r.updatedAt) }, ids.length === 1 ? '1 file attached' : `${ids.length} files attached`)
+    void run('attach the files', async () => { const r = await orThrow(attachQuoteFiles(quoteId, ids)); setFiles(r.files); onSaved(r.updatedAt) }, ids.length === 1 ? '1 file attached' : `${ids.length} files attached`)
   }
+  /* (gaps build E, item 1) the picked file goes up with its bytes — the lead's Files' own upload (upload-picture.ts) — and joins the quote */
   const upload = (file?: File) => {
     setUploading(true)
     void run('upload the file', async () => {
-      const r = await uploadQuoteFile(quoteId, file?.name)
-      setFiles(r.files); setLeadFiles((l) => [...l, r.file]); onSaved(r.updatedAt)
-    }, `${file?.name?.trim() || 'Living Room'} added to the quote`).finally(() => setUploading(false))
+      if (!file) return { error: 'This file didn’t read — pick it again' }
+      const up = await uploadPicked(leadId, file)
+      if (!up || 'error' in up) return up ?? { error: 'The upload didn’t land' }
+      const r = await orThrow(attachQuoteFiles(quoteId, [up.id]))
+      setFiles(r.files); setLeadFiles((l) => [...l, up]); onSaved(r.updatedAt)
+    }, `${file?.name?.trim() || 'The file'} added to the quote`).finally(() => setUploading(false))
   }
   const remove = (file: LeadFile) => {
     setMenuFor(null)
     const at = filesRef.current.findIndex((f) => f.id === file.id)
     setFiles((fs) => fs.filter((f) => f.id !== file.id))
-    void run('remove the file', async () => { const r = await detachQuoteFile(quoteId, file.id); onSaved(r.updatedAt) },
-      { message: `${file.name} removed from the quote`, actionLabel: 'Undo', onAction: () => { void run('restore the file', async () => { const r = await attachQuoteFiles(quoteId, [file.id]); setFiles(r.files); onSaved(r.updatedAt) }) } })
+    void run('remove the file', async () => { const r = await orThrow(detachQuoteFile(quoteId, file.id)); onSaved(r.updatedAt) },
+      { message: `${file.name} removed from the quote`, actionLabel: 'Undo', onAction: () => { void run('restore the file', async () => { const r = await orThrow(attachQuoteFiles(quoteId, [file.id])); setFiles(r.files); onSaved(r.updatedAt) }) } })
       .then((ok) => { if (!ok) setFiles((fs) => (fs.some((f) => f.id === file.id) ? fs : [...fs.slice(0, Math.max(0, at)), file, ...fs.slice(Math.max(0, at))])) })
   }
   const rename = (file: LeadFile, name: string) => {
@@ -99,14 +104,16 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
     void run('rename the file', () => renameFile(file.id, v), 'File renamed')
       .then((ok) => { if (!ok) { setFiles(named(file.name)); setLeadFiles(named(file.name)) } })
   }
-  /* Download: an image downloads its thumbnail as a real file (the demo has no originals); anything else is coming soon — the viewer's rule. */
+  /* Download (pending modules S04 — card held:quotes, "Quote Files › Download of a non-image — Coming soon · revisit: a lead's Files now download
+     any kind"): the file as it was uploaded, under its own name — the lead's Files' own way (/files/raw/<id>?download=1, any kind; a demo stand-in
+     picture gives the picture it shows). A file of which only the name was kept says so. */
   const download = async (file: LeadFile) => {
     setMenuFor(null)
-    if (file.kind !== 'image' || !file.thumb) { comingSoon(); return }
     try {
-      const blob = await (await fetch(file.thumb)).blob()
-      const ext = file.mime === 'image/png' ? 'png' : 'jpg'
-      downloadBlob(blob, /\.[a-z0-9]+$/i.test(file.name) ? file.name : `${file.name}.${ext}`)
+      const res = await fetch(`/files/raw/${file.id}?download=1`)
+      if (!res.ok) { fail('download the file', `only the name of ${file.name} was kept`); return }
+      const blob = await res.blob()
+      downloadBlob(blob, downloadName(file.name, blob.type || file.mime))
     } catch { fail('download the file') }
   }
   const openFile = (file: LeadFile) => router.push(withFrom(`/leads/${leadId}/files/${file.id}`, `/quotes/${quoteId}`))   /* (REG-465) Back returns to the quote */

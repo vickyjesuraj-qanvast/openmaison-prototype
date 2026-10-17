@@ -1,11 +1,21 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
+import { planAllowsNow } from '@/lib/credits/plan-gate'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { DEFAULT_LEAD_SOURCES, parseLeadSources, type LeadSourceEntry, DEFAULT_LEAD_VISIBILITY, parseLeadVisibility, type LeadVisibility, DEFAULT_LEAD_CAPTURE, parseLeadCapture, type LeadCapture, DEFAULT_LEAD_REASONS, parseLeadReasons, type LeadReasons } from '@/lib/settings/types'
 import { priceBookItems, quoteItems, settings } from '@/lib/db/schema'
+import { DEFAULT_LEAD_STAGE_RULES, parseLeadStageRules, type LeadStageRules } from './types'
+import { COST_VISIBILITY_KEY, DEFAULT_COST_VISIBILITY, parseCostVisibility, type CostVisibility } from './cost-visibility'   // (pending modules S41b-1)
 import { approves, DEFAULT_NUMBERING, DEFAULT_QUOTE_APPROVAL, DEFAULT_QUOTE_RULES, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, DEFAULT_TEMPLATE_APPROVAL, parseNumbering, parseQuoteApproval, parseQuoteRules, parseStageMovement, parseStudio, parseTemplateApproval, parseTrades, parseTradeNotes, tradeKey, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type Studio, type TemplateApproval } from './types'
 
 export const STAGE_MOVEMENT_KEY = 'stage_movement'
+/** (pending modules S05) What a stage asks for (Settings › Lead management › Lead stages). */
+export const LEAD_STAGE_RULES_KEY = 'lead_stage_rules'
+export async function fetchLeadStageRules(): Promise<LeadStageRules> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, LEAD_STAGE_RULES_KEY)).limit(1)
+  if (!row) return DEFAULT_LEAD_STAGE_RULES
+  try { return parseLeadStageRules(JSON.parse(row.value)) } catch { return DEFAULT_LEAD_STAGE_RULES }
+}
 
 /** Studio setting; unset → linear (the default for new studios, user 2026-08-29). */
 export async function fetchStageMovement(): Promise<StageMovement> {
@@ -16,8 +26,13 @@ export async function fetchStageMovement(): Promise<StageMovement> {
 
 export const QUOTE_APPROVAL_KEY = 'quote_approval'
 
+/* (pending modules S19 — 1.0's plan gating: "approvals are forced off at READ time, never written") on Free nothing waits for an approval —
+   the studio's own rule is kept as stored and comes back with Pro; the setters read the stored rule (`…Stored`) */
 /** Studio setting; unset → approval required (the studio the mocks were drawn for, user 2026-08-30). */
 export async function fetchQuoteApproval(): Promise<QuoteApproval> {
+  return (await planAllowsNow('internal_approvals')) ? fetchQuoteApprovalStored() : 'not-required'
+}
+export async function fetchQuoteApprovalStored(): Promise<QuoteApproval> {
   const [row] = await db.select().from(settings).where(eq(settings.key, QUOTE_APPROVAL_KEY)).limit(1)
   if (!row) return DEFAULT_QUOTE_APPROVAL
   try { return parseQuoteApproval(JSON.parse(row.value)) } catch { return DEFAULT_QUOTE_APPROVAL }
@@ -34,8 +49,11 @@ export async function fetchStudio(): Promise<Studio> {
 
 export const TEMPLATE_APPROVAL_KEY = 'template_approval'
 
-/** Studio setting (REG-501); unset → approval required. */
+/** Studio setting (REG-501); unset → approval required. (pending modules S19) Off on Free, as every approval. */
 export async function fetchTemplateApproval(): Promise<TemplateApproval> {
+  return (await planAllowsNow('internal_approvals')) ? fetchTemplateApprovalStored() : 'not-required'
+}
+export async function fetchTemplateApprovalStored(): Promise<TemplateApproval> {
   const [row] = await db.select().from(settings).where(eq(settings.key, TEMPLATE_APPROVAL_KEY)).limit(1)
   if (!row) return DEFAULT_TEMPLATE_APPROVAL
   try { return parseTemplateApproval(JSON.parse(row.value)) } catch { return DEFAULT_TEMPLATE_APPROVAL }
@@ -110,6 +128,14 @@ export async function fetchLeadVisibility(): Promise<LeadVisibility> {
   try { return parseLeadVisibility(JSON.parse(row.value)) } catch { return DEFAULT_LEAD_VISIBILITY }
 }
 
+/** (pending modules S41b-1 — 1.0's Cost & Margin Visibility) Who sees costs and margins, per role; a missing row reads as every role on. A failed
+    read reads as on too (1.0: "a failed settings read falls back to everyone sees cost") — the role still decides whose screens carry costs. */
+export async function fetchCostVisibility(): Promise<CostVisibility> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, COST_VISIBILITY_KEY)).limit(1)
+  if (!row) return DEFAULT_COST_VISIBILITY
+  try { return parseCostVisibility(JSON.parse(row.value)) } catch { return DEFAULT_COST_VISIBILITY }
+}
+
 export const LEAD_CAPTURE_KEY = 'lead_capture'
 /** (REG-602) The website's intake address and the Meta connection. */
 export async function fetchLeadCapture(): Promise<LeadCapture> {
@@ -163,4 +189,12 @@ export async function fetchNewQuoteDefaults(): Promise<NewQuoteDefaults> {
     terms: title(d.termsTemplateId), notes: title(d.notesTemplateId),
     starterGroups: d.starterGroups.map((g) => g.trim()).filter(Boolean),
   }
+}
+
+/** (S44I — M9) The studio's units (Settings › Quotes & pricing › Units); unset → the seven a quote always offered. */
+export async function fetchUnits(): Promise<{ units: string[]; managed: boolean }> {
+  const { UNITS_KEY, DEFAULT_UNITS, parseUnits } = await import('./units')
+  const [row] = await db.select().from(settings).where(eq(settings.key, UNITS_KEY)).limit(1)
+  if (row) { try { return { units: parseUnits(JSON.parse(row.value)), managed: true } } catch { /* the seven below */ } }
+  return { units: [...DEFAULT_UNITS], managed: false }
 }

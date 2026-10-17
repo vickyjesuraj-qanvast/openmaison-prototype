@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type FocusEvent, type KeyboardEvent } from 'react'
+import { ProTag } from '@/components/credits/pro-tag'
+import { usePlanLock } from '@/components/credits/credits-client'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useStuck } from '@/components/om/use-stuck'
@@ -13,15 +15,16 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { isBlock, sumLines } from '@/lib/quotes/clipboard'
 import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, shortLink, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
-import { countedLines, descendantIds, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, numberItems, pct, unitPriceMinor } from '@/lib/quotes/math'
+import { afterContractIds, ancestorIds, countedLines, depthOf, descendantIds, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, numberItems, pct, unitPriceMinor } from '@/lib/quotes/math'
 import type { PriceBookSection } from '@/lib/db/schema'
 import { parseSavedSection, parseSectionTags, savedSectionCount } from '@/lib/quotes/items-model'
-import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
+import { ItemRow, COL_CLASS, Guides, type ColWidths, type RowHandlers, type RowLabels } from './item-row'
 import type { LineChanges } from './line-change'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
 import { useRowDrag, type DragRow, type DropSlot } from './row-drag'
 import { ItemCards } from './item-cards'
 import { useSheetLayout } from '@/components/om/sheet'
+import { SideScrollbar } from '@/components/om/side-scrollbar'   // (REG-570) moved to the house pieces — the Schedule's timeline scrolls on it too (fix-B, B-31)
 import styles from './items-table.module.css'
 
 /** The table's key in the user's stored column widths (lib/table-widths.ts). */
@@ -51,6 +54,7 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
   const out: [string, number][] = []
   const counted = new Set(countedLines(items).map((l) => l.id))
   for (const d of display) {
+    if (d.kind === 'foot' || d.kind === 'divider') continue   // (S44I) a foot and the divider hold no figures
     if (d.kind === 'bucket') {
       const lines = d.lines.filter((l) => counted.has(l.id))
       const cost = lines.reduce((s, l) => s + lineCostMinor(l), 0), markup = lines.reduce((s, l) => s + Math.round(l.qty * l.markupMinor), 0), price = lines.reduce((s, l) => s + Math.round(l.qty * unitPriceMinor(l)), 0)
@@ -87,10 +91,49 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
 }
 import sec from './items-section.module.css'
 
-/** One display row: a line, or a view bucket's header (Category / Room / Section). */
-type Display =
-  | { kind: 'row'; item: QuoteItem; number: string; bucket: string | null }
+/** (S44I, B11 — the team's sections prototype, Branches) The tree a child row draws in its ITEM cell: per level above its own, whether that
+    ancestor's branch runs on below the row; its own branch (a tee, or the last child's elbow); a section's stem under its open row. */
+export type Tree = { guides: boolean[]; branch: 'tee' | 'elbow' | null; stem: boolean }
+/** One display row: a line, or a view bucket's header (Category / Room / Section). (S44I, B3) An open section's foot after its last row —
+    its adds — and (S44T — call C1, S44I) the divider above the sections priced after the contract. */
+export type Display =
+  | { kind: 'row'; item: QuoteItem; number: string; bucket: string | null; tree?: Tree }
   | { kind: 'bucket'; key: string; name: string; number: string; ids: string[]; lines: QuoteItem[] }
+  | { kind: 'foot'; section: QuoteItem; depth: number; empty: boolean; top: boolean; bucket: string | null; tree?: Tree }
+  | { kind: 'divider'; count: number }
+
+/** (S44I, B3) Each open section (a sub-section too) ends with its foot row: right after the last row shown under it, before whatever follows. */
+function withFeet(display: Display[], items: QuoteItem[]): Display[] {
+  const byId = new Map(items.map((i) => [i.id, i]))
+  const under = (sectionId: string, row: QuoteItem) => { let p = row.parentId; const seen = new Set<string>(); while (p && !seen.has(p)) { if (p === sectionId) return true; seen.add(p); p = byId.get(p)?.parentId ?? null } return false }
+  const out: Display[] = []
+  const open: { g: QuoteItem; bucket: string | null }[] = []
+  const close = () => { const s = open.pop()!; out.push({ kind: 'foot', section: s.g, depth: depthOf(items, s.g.id) + 1, empty: !items.some((c) => c.parentId === s.g.id), top: !s.g.parentId, bucket: s.bucket }) }
+  for (const d of display) {
+    if (d.kind === 'row') { while (open.length && !under(open[open.length - 1]!.g.id, d.item)) close() } else while (open.length) close()
+    out.push(d)
+    if (d.kind === 'row' && d.item.kind === 'group' && !d.item.collapsed) open.push({ g: d.item, bucket: d.bucket })
+  }
+  while (open.length) close()
+  return out
+}
+/** (S44I, B11) The guides each child row and foot draws, from the rows as shown (Find's filter included): a foot is its section's last child. */
+export function withTree(display: Display[], items: QuoteItem[]): Display[] {
+  const parentKey = (d: Display) => (d.kind === 'row' ? d.item.parentId ?? null : d.kind === 'foot' ? d.section.id : null)
+  const last = new Map<string, number>()
+  display.forEach((d, i) => { const p = parentKey(d); if (p) last.set(p, i) })
+  return display.map((d, i) => {
+    if (d.kind !== 'row' && d.kind !== 'foot') return d
+    const stem = d.kind === 'row' && d.item.kind === 'group' && !d.item.collapsed && last.has(d.item.id)
+    const p = parentKey(d)
+    if (!p) return stem ? { ...d, tree: { guides: [], branch: null, stem } } : d
+    const chain = d.kind === 'row' ? ancestorIds(items, d.item.id) : [d.section.id, ...ancestorIds(items, d.section.id)]   // nearest first
+    const depth = chain.length
+    const guides: boolean[] = []
+    for (let k = 1; k < depth; k++) guides.push((last.get(chain[depth - k]!) ?? -1) > i)
+    return { ...d, tree: { guides, branch: last.get(p) === i ? 'elbow' : 'tee', stem } }
+  })
+}
 
 /** Group the quote's lines the way "View by" asks: every top-level line (and a group's children with it) under its label. */
 export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string[], collapsedBuckets: Set<string>): Display[] {
@@ -102,7 +145,11 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
   for (const id of folded) hidden.delete(id)
   if (view === 'none') {
     const num = numberItems(items)
-    return flat.filter((i) => !hidden.has(i.id)).map((i) => ({ kind: 'row', item: i, number: num.get(i.id) ?? '', bucket: null }))
+    const rows = withFeet(flat.filter((i) => !hidden.has(i.id)).map((i): Display => ({ kind: 'row', item: i, number: num.get(i.id) ?? '', bucket: null })), items)
+    /* (S44T — call C1, S44I) the sections priced after the contract stand last (flattenItems' order) under their divider */
+    const at = rows.findIndex((d) => d.kind === 'row' && !d.item.parentId && !!d.item.pricedAfter)
+    if (at >= 0) rows.splice(at, 0, { kind: 'divider', count: items.filter((i) => !i.parentId && i.pricedAfter).length })
+    return rows
   }
   const field = view
   const labelOf = (i: QuoteItem): string => {
@@ -134,13 +181,13 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
       for (const c of flat.filter((x) => x.id !== r.id && descendantIds(items, [r.id]).has(x.id))) if (!hidden.has(c.id)) out.push({ kind: 'row', item: c, number: inner.get(c.id) ?? '', bucket: label })
     })
   })
-  return out
+  return withFeet(out, items)
 }
 
 export function ItemsTable({
   items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
-  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, bookPlace = null, bookPlaceSection = null, onClearBookPlace,
-  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes, onAddToBucket, onMoveBucket,
+  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, matchCount = 0, onMatch,
+  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes, onAddToBucket, onMoveBucket, onDropMany, sectionsFold = null, chainId = null,
 }: {
   /** (Dane UAT, Figma 1549:34 pt 1) View by › Category: the "+" on a bucket's row adds a line in that category. */
   onAddToBucket?: (key: string) => void
@@ -169,7 +216,7 @@ export function ItemsTable({
   /** A head dragged to a new place (REG-462): the visible keys in their new order. */
   onReorder: (keys: ColumnKey[]) => void
   details: ColumnSettings['details']
-  labels: { rooms: string[]; categories: string[]; sections: string[]; vendors: string[]; tradeNotes?: Record<string, string> }
+  labels: RowLabels
   selected: Set<string>
   collapsedBuckets: Set<string>
   showFull: Set<string>
@@ -185,10 +232,9 @@ export function ItemsTable({
   onCreate: (name: string) => void
   onPickPriceBook: (id: string) => void
   onViewPriceBook: () => void
-  /** (REG-653, price book parity Q-12) Where the Add Item popover's pick lands when a row asked for it, and the way back to the end. */
-  bookPlace?: string | null
-  bookPlaceSection?: string | null
-  onClearBookPlace?: () => void
+  /** (pending modules S12) how many lines match an item in My Items, and the review that matches them — the link shows only with a count */
+  matchCount?: number
+  onMatch?: () => void
   /** Export As → the house Export dialog (REG-478). */
   onExport: () => void
   addInputRef: React.RefObject<HTMLInputElement | null>
@@ -198,6 +244,12 @@ export function ItemsTable({
   query: string
   /** A block copied from a spreadsheet was pasted (REG-476): the text and the row it landed on. */
   onPasteBlock: (text: string, anchorId: string | null) => void
+  /** (S44I, B4) Several ticked rows dropped together: every id (the pressed row first), and where. */
+  onDropMany?: (ids: string[], slot: DropSlot) => void
+  /** (S44I, B2) View by: None with sections — the head's one toggle folds every top section, or opens every section. */
+  sectionsFold?: { anyOpen: boolean; onToggle: () => void } | null
+  /** (S44I, B10) The line an add press just made, its name holding the caret (Enter adds another there). */
+  chainId?: string | null
 }) {
   const comingSoon = useComingSoon()
   const phone = useSheetLayout()   /* (REG-597) ≤767 the lines are cards with a sheet each; the grid stays for every wider screen */
@@ -260,10 +312,11 @@ export function ItemsTable({
     return keep
   }, [items, q])
   const shown = useMemo(() => {
-    if (!found) return display
+    if (!found) return withTree(display, items)
+    /* while Find is on there are no feet and no divider — only what matches, under its section and its bucket */
     const buckets = new Set(display.flatMap((d) => (d.kind === 'row' && found.has(d.item.id) ? [d.bucket] : [])))
-    return display.filter((d) => (d.kind === 'row' ? found.has(d.item.id) : buckets.has(d.key)))
-  }, [display, found])
+    return withTree(display.filter((d) => (d.kind === 'row' ? found.has(d.item.id) : d.kind === 'bucket' ? buckets.has(d.key) : false)), items)
+  }, [display, found, items])
   /* (sweep S1) while Find is on, the Sum row adds up what it shows — never every line beside two rows */
   const sums = useMemo(() => sumLines(found ? items.filter((i) => found.has(i.id)) : items), [items, found])
   /* (wave E, desktop-6) "priced" means a line with a price: a counted line still at S$0 (a finish the Price book couldn't price, a floor
@@ -303,12 +356,16 @@ export function ItemsTable({
   /* (Dane UAT, Figma 1549:34 pts 3 · 4) View by › Category takes its bucket rows into the drag: a line may land in another category, and a
      bucket moves with its lines. Room and Section label keep a line in its own bucket, as before. */
   const byCategory = view === 'category'
+  /* (S44T — call C1, S44I) the rows that belong to a section priced after the contract */
+  const afterIds = useMemo(() => afterContractIds(items), [items])
   useEffect(() => {
-    dragRows.current = shown.flatMap((d): DragRow[] => (d.kind === 'row' ? [{ id: d.item.id, parentId: d.item.parentId ?? null, kind: d.item.kind === 'group' ? 'group' as const : 'item' as const, bucket: d.bucket, open: d.item.kind === 'group' && !d.item.collapsed, hasSubs: d.item.kind === 'group' && items.some((x) => x.parentId === d.item.id && x.kind === 'group') }]
-      : byCategory ? [{ id: `bucket:${d.key}`, parentId: null, kind: 'bucket' as const, bucket: d.key, open: !collapsedBuckets.has(d.key), hasSubs: false, fixed: d.key === UNLABELLED.category }] : []))
+    dragRows.current = shown.flatMap((d): DragRow[] => (d.kind === 'row' ? [{ id: d.item.id, parentId: d.item.parentId ?? null, kind: d.item.kind === 'group' ? 'group' as const : 'item' as const, bucket: d.bucket, open: d.item.kind === 'group' && !d.item.collapsed, hasSubs: d.item.kind === 'group' && items.some((x) => x.parentId === d.item.id && x.kind === 'group'), after: afterIds.has(d.item.id) }]
+      : d.kind === 'foot' ? [{ id: `foot:${d.section.id}`, parentId: d.section.id, kind: 'foot' as const, bucket: d.bucket, open: false, hasSubs: false, after: afterIds.has(d.section.id) }]   // (S44I, B4) a drop on a foot = the end of its section
+      : d.kind === 'bucket' && byCategory ? [{ id: `bucket:${d.key}`, parentId: null, kind: 'bucket' as const, bucket: d.key, open: !collapsedBuckets.has(d.key), hasSubs: false, fixed: d.key === UNLABELLED.category }] : []))
   })
-  const R = useRowDrag({ root: wrap, rowsRef: dragRows, crossBucket: byCategory, onDrop: (id, slot) => {
+  const R = useRowDrag({ root: wrap, rowsRef: dragRows, crossBucket: byCategory, onDrop: (id, slot, carriedIds) => {
     if (id.startsWith('bucket:')) { if (slot.anchorId?.startsWith('bucket:')) onMoveBucket?.(id.slice(7), slot.anchorId.slice(7), slot.where === 'after' ? 'after' : 'before'); return }
+    if (carriedIds.length && onDropMany) { onDropMany([id, ...carriedIds], slot); return }
     onDropRow(id, slot)
   } })
   const lastTouched = useRef<string | null>(null)
@@ -322,23 +379,51 @@ export function ItemsTable({
       if (range && a >= 0 && b >= 0) h.onSelectRun(ids.slice(Math.min(a, b), Math.max(a, b) + 1)); else h.onSelect(id, on)
       lastTouched.current = id
     },
-    onDragPointerDown: (id, e) => R.start(id, e),
+    /* (S44I, B4 — the team's sections prototype) a ticked row drags every ticked row with it (View by: None; one write, one ⌘Z) */
+    onDragPointerDown: (id, e) => R.start(id, e, view === 'none' && !found && selected.has(id) && selected.size > 1 ? [...selected].filter((x) => x !== id) : []),
   }
-  const anyFolded = collapsedBuckets.size > 0
+  const bucketNames = display.flatMap((d) => (d.kind === 'bucket' ? [d.key] : []))
+  const foldedAll = view !== 'none' ? bucketNames.length > 0 && bucketNames.every((k) => collapsedBuckets.has(k)) : !!sectionsFold && !sectionsFold.anyOpen
 
   /* Drag-fill (REG-477): from the handle's press to the pointer's release the rows under the pointer join the range; on release the
      source cell's value goes into every row in it (the section applies it under one snapshot). A group joins only for a label column. */
-  const [fill, setFill] = useState<{ col: ColumnKey; from: string; to: string | null } | null>(null)
+  const fillRows = useMemo(() => {
+    const lines = shown.flatMap((d) => (d.kind === 'row' && d.item.kind === 'item' ? [d.item.id] : []))
+    const all = shown.flatMap((d) => (d.kind === 'row' ? [d.item.id] : []))
+    return (col: string) => (col === 'room' || col === 'category' || col === 'section' ? all : lines)
+  }, [shown])
+  /* (S45C — S43D's NB-07 (c); as recommended — her ask 2026-10-17) A RUN: cells selected down one column — Shift+click a cell of the column
+     the focus is in, or Shift+↓ / Shift+↑ from it (Excel's own two ways). The run wears the selected tint; its corner square sits on its last
+     cell, and dragging it continues the run's series (numbers by their step, anything else in turn — lib/quotes/fill-series.ts); one cell
+     still copies. ⌘D fills the run's first cell into the rest, as Excel's Ctrl+D does. Any other press, key or a move out of the table lets
+     the run go. The phone's cards keep their own way (no run there). */
+  const [run, setRun] = useState<{ col: ColumnKey; anchor: string; end: string } | null>(null)
+  const runIds = useMemo(() => {
+    if (!run) return [] as string[]
+    const ids = fillRows(run.col)
+    const a = ids.indexOf(run.anchor), b = ids.indexOf(run.end)
+    if (a < 0 || b < 0 || a === b) return [] as string[]
+    return ids.slice(Math.min(a, b), Math.max(a, b) + 1)
+  }, [run, fillRows])
+  const runSet = useMemo(() => new Set(runIds), [runIds])
+  const runLast = runIds[runIds.length - 1] ?? null
+  const [fill, setFill] = useState<{ col: ColumnKey; from: string; to: string | null; run?: string[] } | null>(null)
   const fillIds = useMemo(() => {
     if (!fill || !fill.to || fill.to === fill.from) return new Set<string>()
-    const labelCol = fill.col === 'room' || fill.col === 'category' || fill.col === 'section'
-    const ids = shown.flatMap((d) => (d.kind === 'row' && (d.item.kind === 'item' || labelCol) ? [d.item.id] : []))
-    const a = ids.indexOf(fill.from), b = ids.indexOf(fill.to)
-    if (a < 0 || b < 0) return new Set<string>()
+    const ids = fillRows(fill.col)
+    const b = ids.indexOf(fill.to)
+    if (b < 0) return new Set<string>()
+    if (fill.run && fill.run.length >= 2) {   // (S45C) from a run: the rows past it, below or above — never the run itself
+      const top = ids.indexOf(fill.run[0]!), bottom = ids.indexOf(fill.run[fill.run.length - 1]!)
+      if (top < 0 || bottom < 0) return new Set<string>()
+      return new Set(b > bottom ? ids.slice(bottom + 1, b + 1) : b < top ? ids.slice(b, top) : [])
+    }
+    const a = ids.indexOf(fill.from)
+    if (a < 0) return new Set<string>()
     return new Set(ids.slice(Math.min(a, b), Math.max(a, b) + 1).filter((id) => id !== fill.from))
-  }, [fill, shown])
-  const fillRef = useRef({ fill, fillIds, h })
-  useEffect(() => { fillRef.current = { fill, fillIds, h } })
+  }, [fill, fillRows])
+  const fillRef = useRef({ fill, fillIds, h, fillRows })
+  useEffect(() => { fillRef.current = { fill, fillIds, h, fillRows } })
   const filling = fill !== null
   useEffect(() => {
     if (!filling) return
@@ -350,13 +435,65 @@ export function ItemsTable({
       if (id) setFill((f) => (f && f.to !== id ? { ...f, to: id } : f))
     }
     const up = () => {
-      const { fill: f, fillIds: ids, h: handlers } = fillRef.current
-      if (f && ids.size) handlers.onFill(f.col, f.from, [...ids])
+      const { fill: f, fillIds: ids, h: handlers, fillRows: rowsOf } = fillRef.current
+      if (f && ids.size && f.run && f.run.length >= 2) {
+        /* (S45C) a run's series: the rows reached below it top-down, above it nearest first — in the order the table shows them */
+        const order = rowsOf(f.col), top = order.indexOf(f.run[0]!)
+        const reached = order.filter((id) => ids.has(id))
+        handlers.onFill(f.col, f.from, reached, { run: f.run, below: reached.filter((id) => order.indexOf(id) > top), above: reached.filter((id) => order.indexOf(id) < top).reverse() })
+        setRun(null)
+      } else if (f && ids.size) handlers.onFill(f.col, f.from, [...ids])
       setFill(null)
     }
     document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up)
     return () => { document.body.style.userSelect = prev; document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up) }
   }, [filling])
+  /* (S45C) the corner square of a run's last cell drags the run's series; any other square copies its own cell, as before */
+  const startFill = (col: ColumnKey, id: string) => setFill({ col, from: id, to: null, ...(run && run.col === col && runLast === id && runIds.length >= 2 ? { run: runIds } : {}) })
+  /* (S45C) Shift+click: a cell of the column the focus is in (or the run is in) becomes the run's other end; the focus stays where it was */
+  const swallowClick = useRef(false)
+  const onRunPress = (e: MouseEvent<HTMLDivElement>) => {
+    const t = e.target instanceof Element ? e.target : null
+    if (e.button !== 0 || !e.shiftKey || !t || t.closest('[data-fill-handle]')) return
+    const cell = t.closest<HTMLElement>('[role="row"][data-item-id] [data-col]')
+    const col = cell?.dataset.col as ColumnKey | undefined
+    const id = cell ? rowOf(cell)?.dataset.itemId : undefined
+    if (!cell || !col || !id || !cell.querySelector('[data-fill-handle]')) return
+    const focus = document.activeElement
+    const fromFocus = focus instanceof HTMLElement && focus.hasAttribute('data-edit') && wrap.current?.contains(focus) && focus.closest<HTMLElement>('[data-col]')?.dataset.col === col ? rowOf(focus)?.dataset.itemId ?? null : null
+    const anchor = run && run.col === col ? run.anchor : fromFocus
+    if (!anchor) return
+    e.preventDefault()
+    swallowClick.current = true
+    setRun(anchor === id ? null : { col, anchor, end: id })
+  }
+  const onRunClick = (e: MouseEvent<HTMLDivElement>) => { if (!swallowClick.current) return; swallowClick.current = false; e.preventDefault(); e.stopPropagation() }
+  /* (S45C) the run lets go on a press anywhere else (Shift held keeps it; its corner square uses it) and when the focus leaves the table */
+  const hasRun = runIds.length > 0
+  useEffect(() => {
+    if (!hasRun) return
+    const w = wrap.current
+    const down = (e: PointerEvent) => { const t = e.target instanceof Element ? e.target : null; if (e.shiftKey || t?.closest('[data-fill-handle]')) return; setRun(null) }
+    const out = (e: globalThis.FocusEvent) => { const to = e.relatedTarget; if (!(to instanceof Node) || !w?.contains(to)) setRun(null) }
+    document.addEventListener('pointerdown', down, true)
+    w?.addEventListener('focusout', out)
+    return () => { document.removeEventListener('pointerdown', down, true); w?.removeEventListener('focusout', out) }
+  }, [hasRun])
+  /** (S45C) Shift+↓ / Shift+↑ from a box: the run grows (or shrinks) by one cell that way, and the cell it reaches scrolls into view. */
+  const stepRun = (t: HTMLElement, dir: 1 | -1): boolean => {
+    const cell = t.closest<HTMLElement>('[data-col]')
+    const col = cell?.dataset.col as ColumnKey | undefined
+    const id = rowOf(t)?.dataset.itemId
+    if (!cell || !col || !id || !cell.querySelector('[data-fill-handle]')) return false
+    const ids = fillRows(col)
+    const same = run && run.col === col && runIds.length > 0
+    const anchor = same ? run.anchor : id, end = same ? run.end : id
+    const next = ids[ids.indexOf(end) + dir]
+    if (!next) return true
+    setRun(next === anchor ? null : { col, anchor, end: next })
+    requestAnimationFrame(() => wrap.current?.querySelector<HTMLElement>(`[role="row"][data-item-id="${next}"] [data-col="${col}"]`)?.scrollIntoView({ block: 'nearest' }))
+    return true
+  }
 
   /* Paste (REG-476): a block from a spreadsheet — tabs between cells, a line per row — goes to the mapping dialog instead of one box;
      the Add Item field also takes a plain list of names. A single value pastes into its box as ever. */
@@ -373,10 +510,25 @@ export function ItemsTable({
      An open select menu keeps its own keys, and so does anything that is not a cell control. */
   const onGridKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const t = e.target
+    /* (S45C) a run's keys: ⌘D fills its first cell into the rest (Excel's Ctrl+D over a selection), Shift+↓ / Shift+↑ grow it; any other
+       key lets it go (typing edits the box the focus is in, as before) */
+    if (hasRun && run && t instanceof HTMLElement && t.hasAttribute('data-edit')) {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'd') { e.preventDefault(); h.onFill(run.col, runIds[0]!, runIds.slice(1)); setRun(null); return }
+      if (!(e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) && !['Shift', 'Meta', 'Control', 'Alt', 'CapsLock'].includes(e.key)) setRun(null)
+    }
+    if (t instanceof HTMLElement && t.hasAttribute('data-edit') && t.getAttribute('aria-expanded') !== 'true' && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      if (stepRun(t, e.key === 'ArrowDown' ? 1 : -1)) { e.preventDefault(); return }
+    }
     if (!(t instanceof HTMLElement) || !t.hasAttribute('data-edit') || t.getAttribute('aria-expanded') === 'true' || e.metaKey || e.ctrlKey || e.altKey) return
     const table = e.currentTarget
     const input = t instanceof HTMLInputElement ? t : null
     const go = (n: Target) => { if (n === 'add') addInputRef.current?.focus(); else if (n) focusCell(n, scroller.current); else t.blur() }
+    /* (S44I, B10 — call C4) Enter in the name of the line an add press just made adds another (items-section.tsx); everywhere else it walks */
+    if (e.key === 'Enter' && !e.shiftKey && chainId && input?.hasAttribute('data-name')) {
+      const row = rowOf(t)
+      const it = row?.dataset.itemId === chainId ? items.find((i) => i.id === chainId) : undefined
+      if (it) { e.preventDefault(); h.onChainKey(it, 'enter', input.value); return }
+    }
     switch (e.key) {
       case 'Tab': { const n = nextAcross(table, t, e.shiftKey ? -1 : 1); if (!n) return; e.preventDefault(); go(n); return }
       case 'Enter': e.preventDefault(); go(nextDown(table, t, e.shiftKey ? -1 : 1)); return
@@ -389,25 +541,28 @@ export function ItemsTable({
   if (phone) {
     return (
       <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
-        <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
+        <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : d.kind === 'bucket' ? { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }
+          : d.kind === 'foot' ? { kind: 'foot' as const, section: d.section, empty: d.empty, top: d.top } : { kind: 'divider' as const, count: d.count }))}
                    items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} showMarkup={columns.includes('markup')} commentCounts={commentCounts} changes={changes} />
         {/* (wave E, phone-4) no "#n" before the field on a phone — the cards carry their own numbers, and a lone "2" floated at the edge */}
-        <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
+        <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} matchCount={matchCount} onMatch={onMatch} />
       </div>
     )
   }
   return (
     <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-kb-own data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root=""
-         data-more={more || undefined} data-scrolled={scrolled || undefined} onKeyDown={onGridKey} onPaste={onPaste}>
+         data-more={more || undefined} data-scrolled={scrolled || undefined} onKeyDown={onGridKey} onPaste={onPaste} onMouseDownCapture={onRunPress} onClickCapture={onRunClick}>
       <div ref={sentinel} className={styles.sentinel} aria-hidden />
       {/* (REG-570) The column heads: a sticky bar above the body's scroller, scrolled sideways in step with it. */}
       <div ref={headBar} className={styles.headBar} role="rowgroup" data-head-bar="" data-stuck={headStuck || undefined}>
           <div ref={headRef} className={styles.head} role="row">
             <div role="columnheader" className={`${styles.cell} ${styles.colSel}`}>
-              {view !== 'none' ? (
-                <Tooltip label={anyFolded ? 'Expand all' : 'Collapse all'}>
-                  <button type="button" className={styles.foldAll} aria-label={anyFolded ? 'Expand all' : 'Collapse all'} onClick={onToggleAllBuckets}>
-                    <Icon name={anyFolded ? 'expand_all' : 'collapse_all'} size={20} weight={300} />
+              {/* (S44I, B2 — the team's sections prototype) one toggle whose words and glyph follow the state: Collapse all while anything is
+                  open, Expand all once everything is folded — the View-by buckets, or (View by: None) the quote's sections */}
+              {view !== 'none' || sectionsFold ? (
+                <Tooltip label={foldedAll ? 'Expand all' : 'Collapse all'}>
+                  <button type="button" className={styles.foldAll} aria-label={foldedAll ? 'Expand all' : 'Collapse all'} data-testid="fold-all" onClick={view !== 'none' ? onToggleAllBuckets : sectionsFold?.onToggle}>
+                    <Icon name={foldedAll ? 'expand_all' : 'collapse_all'} size={20} weight={300} />
                   </button>
                 </Tooltip>
               ) : null}
@@ -435,72 +590,23 @@ export function ItemsTable({
                        fresh={fresh.has(`bucket:${d.key}`)} drag={byCategory ? R.rowProps(`bucket:${d.key}`) : undefined}
                        onAdd={byCategory && onAddToBucket ? () => onAddToBucket(d.key) : undefined}
                        onDragPointerDown={byCategory && onMoveBucket && d.key !== UNLABELLED.category && !found ? (e) => R.start(`bucket:${d.key}`, e) : undefined} />
+          ) : d.kind === 'foot' ? (
+            <SectionFoot key={`f-${d.section.id}`} d={d} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} onFoot={h.onFoot} drag={R.rowProps(`foot:${d.section.id}`)} />
+          ) : d.kind === 'divider' ? (
+            <DividerRow key="priced-after" count={d.count} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
           ) : (
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
-                     selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
+                     selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels} tree={d.tree} chained={chainId === d.item.id}
                      {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)}
-                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
+                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={startFill} h={rowH}
+                     runCol={run && runSet.has(d.item.id) ? run.col : null} runEnd={runLast === d.item.id} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
           ))}
           {found && !shown.some((d) => d.kind === 'row') ? <div className={styles.findEmpty} role="row" data-testid="find-empty"><span role="cell">No items match “{query.trim()}”</span></div> : null}   {/* (sweep S1) */}
           <SumRow sums={sums} priced={priced} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
-          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
+          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} matchCount={matchCount} onMatch={onMatch} />
         </div>
       </div>
       <SideScrollbar scroller={scroller} />
-    </div>
-  )
-}
-
-/**
- * (REG-570) The sideways scrollbar that stays in reach: a bar stuck to the bottom of the viewport (or the Expand's scroller) while
- * the table runs on below it — a pager at each end, a track whose thumb is the visible share. Drag the thumb, press the track
- * (pages toward the press), or press a pager; the body's own scroll moves the thumb. Not drawn while the table fits.
- */
-function SideScrollbar({ scroller }: { scroller: React.RefObject<HTMLDivElement | null> }) {
-  const [st, setSt] = useState({ on: false, left: 0, width: 0, pct: 0 })
-  const track = useRef<HTMLDivElement>(null)
-  const [held, setHeld] = useState(false)
-  useEffect(() => {
-    const el = scroller.current, tr = track.current
-    if (!el || !tr) return
-    const measure = () => {
-      const on = el.scrollWidth > el.clientWidth + 1
-      const tw = tr.clientWidth || 1
-      const width = on ? Math.max(32, (el.clientWidth / el.scrollWidth) * tw) : 0
-      const room = Math.max(1, el.scrollWidth - el.clientWidth)
-      const left = on ? (el.scrollLeft / room) * (tw - width) : 0
-      const pct = on ? Math.round((el.scrollLeft / room) * 100) : 0
-      setSt((s) => (s.on === on && Math.abs(s.left - left) < 0.5 && Math.abs(s.width - width) < 0.5 && s.pct === pct ? s : { on, left, width, pct }))
-    }
-    measure()
-    el.addEventListener('scroll', measure, { passive: true })
-    const ro = new ResizeObserver(measure)
-    ro.observe(el); ro.observe(tr)
-    for (const c of Array.from(el.children)) ro.observe(c)
-    return () => { el.removeEventListener('scroll', measure); ro.disconnect() }
-  }, [scroller])
-  const page = (dir: -1 | 1) => { const el = scroller.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: 'smooth' }) }
-  const onTrack = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = scroller.current, tr = track.current
-    if (!el || !tr || e.button !== 0) return
-    const x = e.clientX - tr.getBoundingClientRect().left
-    if (x >= st.left && x <= st.left + st.width) {
-      // the thumb: drag it
-      e.preventDefault()
-      const x0 = e.clientX, s0 = el.scrollLeft, ratio = (el.scrollWidth - el.clientWidth) / Math.max(1, tr.clientWidth - st.width)
-      setHeld(true)
-      const move = (ev: PointerEvent) => { el.scrollLeft = s0 + (ev.clientX - x0) * ratio }
-      const up = () => { setHeld(false); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up) }
-      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up)
-    } else page(x < st.left ? -1 : 1)
-  }
-  return (
-    <div className={styles.hbar} data-on={st.on || undefined} data-side-scroll="" aria-hidden={st.on ? undefined : true}>
-      <Tooltip label="Scroll left"><button type="button" className={styles.pager} aria-label="Scroll the columns left" onClick={() => page(-1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_left" size={20} /></button></Tooltip>
-      <div ref={track} className={styles.track} role="scrollbar" aria-orientation="horizontal" aria-valuenow={st.pct} aria-label="Scroll the columns" onPointerDown={onTrack}>
-        <span className={styles.barThumb} data-dragging={held || undefined} style={{ left: st.left, width: st.width }} />
-      </div>
-      <Tooltip label="Scroll right"><button type="button" className={styles.pager} aria-label="Scroll the columns right" onClick={() => page(1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_right" size={20} /></button></Tooltip>
     </div>
   )
 }
@@ -515,6 +621,51 @@ function SumRow({ sums, priced, columns, colW, colStyle, autonumber, itemStyle }
       {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(sums.totalMinor)}</span></div>
+    </div>
+  )
+}
+
+/** (S44I, B3 — the team's sections prototype) An open section's foot: the adds at its end — a line, a sub-section (a top section only), the
+    Price book and pasted lines, each landing LAST in the section — and, while the section is empty, the words that say so. On the sum row's
+    cell skeleton, so the frozen block and the columns stay where they are; the keyboard grid passes over it (no `data-item-id`). Each button's
+    spoken name starts with its words and names its section (several feet stand in one table). */
+function SectionFoot({ d, columns, colW, colStyle, autonumber, itemStyle, onFoot, drag }: { d: Extract<Display, { kind: 'foot' }>; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties
+  onFoot: RowHandlers['onFoot']; drag?: { dragStyle?: CSSProperties } }) {
+  const name = d.section.name.trim() || (d.top ? 'New section' : 'New sub-section')
+  return (
+    <div className={styles.footRow} role="row" aria-label={`The end of ${name}`} data-section-foot={d.section.id} data-drag-id={`foot:${d.section.id}`} data-depth={d.depth} style={drag?.dragStyle}>
+      <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
+      {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>
+        {d.tree ? <Guides tree={d.tree} /> : null}
+        <span className={styles.footBody}>
+          {d.empty ? <span className={styles.footEmpty} data-testid="foot-empty">Nothing in {name} yet —</span> : null}
+          <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'item')} aria-label={`Add item to the end of ${name}`} data-testid="foot-add-item"><Icon name="add" size={16} />Add item</button>
+          {d.top ? <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'sub')} aria-label={`Add sub-section to ${name}`} data-testid="foot-add-sub"><Icon name="add" size={16} />Add sub-section</button> : null}
+          <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'book')} aria-label={`Price book — add to the end of ${name}`} data-testid="foot-book">Price book</button>
+          <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'paste')} aria-label={`Paste lines at the end of ${name}`} data-testid="foot-paste">Paste lines</button>
+        </span>
+      </div>
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }} />)}
+      <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
+      <div role="cell" className={`${styles.cell} ${styles.colTotal}`} />
+    </div>
+  )
+}
+
+/** (S44T — call C1, S44I) The divider over the sections priced after the contract, gathered at the table's end: their work is estimated now,
+    out of the quote's total and its payment split. */
+function DividerRow({ count, columns, colW, colStyle, autonumber, itemStyle }: { count: number; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
+  return (
+    <div className={styles.dividerRow} role="row" data-testid="priced-after-divider">
+      <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
+      {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>
+        <span className={styles.dividerText}><span className={styles.dividerName}>Priced after the contract</span><span className={styles.dividerHelp}>{count === 1 ? 'An estimate' : `${count} estimates`} — out of the total and the payment split</span></span>
+      </div>
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }} />)}
+      <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
+      <div role="cell" className={`${styles.cell} ${styles.colTotal}`} />
     </div>
   )
 }
@@ -566,17 +717,16 @@ function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onTogg
  * matches, Enter adds the active one — or, with nothing active, a blank line named as typed ("Item" when nothing is typed,
  * like Create ▾ › New Item). "Create New Item" is always live (spec 04 draws it enabled). The field keeps focus for the next line.
  */
-function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick, place = null, placeSection = null, onClearPlace }: {
+function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick, matchCount = 0, onMatch }: {
   number: number; autonumber: boolean; priceBook: PriceBookItem[]; sections: PriceBookSection[]; propertyType: string | null; onCreate: (name: string) => void; onPick: (id: string) => void; onPickSection: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
+  matchCount?: number; onMatch?: () => void
   inputRef: React.RefObject<HTMLInputElement | null>
   openTick: number
-  /** (REG-653, price book parity Q-12) Where a pick lands when a row asked for it (the row menu's Add Item › From My Items…): "below “Painting”". */
-  place?: string | null
-  /** (sweep S5 #13) Where a section pick lands with that place — after the row's top-level section: "after “Bathrooms”". */
-  placeSection?: string | null
-  onClearPlace?: () => void
 }) {
+  /* (S44I, B6) A row's ⋮ › Add Item › From Price book… opens the Price book modal with its place now (REG-662's surface, REG-653's rule): this
+     box's type-ahead adds at the end, as it always did, and no longer carries a place line. */
   const listId = useId()
+  const sectionsLocked = usePlanLock('package_creation').locked   // (pending modules S19) My Sections are Pro — a pick opens the lock
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
@@ -606,17 +756,15 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
       sectionMatches: shown.map(({ x, tags }) => { const body = parseSavedSection(x.linesJson); return { id: x.id, name: x.name, count: body ? savedSectionCount(body) : 0, propertyType: x.propertyType, tags } }),
     }
   }, [q, sections, propertyType, allTypes])
-  /* (REG-653, Q-12) One keyboard walk over the items and then the sections. (sweep S5 #12) "At the end instead" and "Show all" are in the walk
-     too — they were pointer-only; leaving the field closes the box and keeps the place (Escape or At the end instead let it go). */
+  /* (REG-653, Q-12) One keyboard walk over the items and then the sections. (sweep S5 #12) "Show all" is in the walk too. */
   const typeToggle = !!(otherTypes && propertyType)
   const options = useMemo(() => [
-    ...(place ? [{ kind: 'end' as const, id: 'end' }] : []),
     ...matches.map((m) => ({ kind: 'item' as const, id: m.id })),
     ...(typeToggle ? [{ kind: 'allTypes' as const, id: 'all-types' }] : []),
     ...sectionMatches.map((x) => ({ kind: 'section' as const, id: x.id })),
-  ], [place, matches, typeToggle, sectionMatches])
+  ], [matches, typeToggle, sectionMatches])
   const idx = (kind: string, id: string) => options.findIndex((o) => o.kind === kind && o.id === id)
-  const close = () => { setOpen(false); setActive(-1); onClearPlace?.() }
+  const close = () => { setOpen(false); setActive(-1) }
   const shut = () => { setOpen(false); setActive(-1) }
   const create = () => { onCreate(q.trim()); setQ(''); setActive(-1); setOpen(false) }
   const pick = (id: string) => { onPick(id); setQ(''); setActive(-1); setOpen(false) }
@@ -630,7 +778,7 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); walk(1) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (!open) setOpen(true); walk(-1) }
-    else if (e.key === 'Enter') { e.preventDefault(); const o = active >= 0 ? options[active] : undefined; if (o?.kind === 'item') pick(o.id); else if (o?.kind === 'section') pickSection(o.id); else if (o?.kind === 'end') { onClearPlace?.(); setActive(-1) } else if (o?.kind === 'allTypes') { setAllTypes((v) => !v); setActive(-1) } else create() }
+    else if (e.key === 'Enter') { e.preventDefault(); const o = active >= 0 ? options[active] : undefined; if (o?.kind === 'item') pick(o.id); else if (o?.kind === 'section') pickSection(o.id); else if (o?.kind === 'allTypes') { setAllTypes((v) => !v); setActive(-1) } else create() }
     else if (e.key === 'Escape') { close(); (e.target as HTMLInputElement).blur() }
   }
   // Focus leaving the field closes the popover — unless it went INTO the popover (a row or Create New Item press).
@@ -644,12 +792,6 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
                      inputProps={{ role: 'combobox', 'aria-expanded': open, 'aria-controls': open ? listId : undefined, 'aria-autocomplete': 'list', 'aria-activedescendant': open && active >= 0 ? optId(active) : undefined, autoComplete: 'off', onBlur }} />
           <PortalMenu open={open} anchor={anchor} onClose={close} role="listbox" width={360} id={listId} className={sec.popoverMenu} autoFocus={false}>
             <div className={sec.popover}>
-              {place ? (
-                <div className={sec.popPlace} data-testid="add-item-place">
-                  <span>An item lands {place}</span>
-                  <button type="button" id={optId(idx('end', 'end'))} role="option" aria-selected={active === idx('end', 'end')} data-active={active === idx('end', 'end') || undefined} className={sec.popToggle} onMouseDown={(e) => e.preventDefault()} onClick={() => onClearPlace?.()}>At the end instead</button>
-                </div>
-              ) : null}
               <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>Create New Item</Button></div>
               <div className={sec.popList} data-testid="add-item-list">
                 <div className={sec.popHead}>My Items ({matches.length})</div>
@@ -670,10 +812,9 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
                 {sectionMatches.length || otherTypes ? (
                   <>
                     <div className={sec.popHead}>
-                      <span>My Sections ({sectionMatches.length})</span>
+                      <span>My Sections ({sectionMatches.length}){sectionsLocked ? <> <ProTag /></> : null}</span>
                       {typeToggle ? <button type="button" id={optId(idx('allTypes', 'all-types'))} role="option" aria-selected={active === idx('allTypes', 'all-types')} data-active={active === idx('allTypes', 'all-types') || undefined} className={sec.popToggle} data-testid="sections-all-types" onMouseDown={(e) => e.preventDefault()} onClick={() => setAllTypes((v) => !v)}>{allTypes ? `For ${propertyType} only` : `Show all · ${otherTypes} more`}</button> : null}
                     </div>
-                    {placeSection ? <div className={sec.popPlace} data-testid="add-section-place"><span>A section lands {placeSection}</span></div> : null}
                     {sectionMatches.map((x) => {
                       const i = idx('section', x.id)
                       return (
@@ -693,6 +834,8 @@ function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onC
           </PortalMenu>
         </div>
         <button type="button" className={styles.link} onClick={onViewPriceBook}>Price book</button>   {/* (REG-662, owner 2026-09-25) one name — the modal, Company's page and this link */}
+        {/* (pending modules S12) shown only while a line not taken from My Items reads like an item in it — the review fills their costs */}
+        {matchCount > 0 && onMatch ? <button type="button" className={styles.link} onClick={onMatch} data-testid="match-link" aria-label={`Match ${matchCount} ${matchCount === 1 ? 'line' : 'lines'} to the Price book`}>{`Match ${matchCount} ${matchCount === 1 ? 'line' : 'lines'}`}</button> : null}
         <button type="button" className={styles.link} onClick={onExport}>Export As</button>
       </div>
     </div>

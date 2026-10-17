@@ -1,0 +1,900 @@
+<title>Projects &amp; Finance, Simplified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a design review read top to bottom — the load measured, why, the idea, each area as Today ↔ Proposed, the evidence, what's kept, your calls. Concept screens are drawn in the product's own look (Inter, the studio violet) so they read as OpenMaison, not as the report. */
+:root {
+  --bg: #f6f5f9; --paper: #ffffff; --sunk: #efedf4; --line: #e2dfe9; --ink: #1c1925; --muted: #605b6e; --faint: #8b8699;
+  --accent: #5a1ee0; --accent-soft: #ede6fe; --today: #a3510e; --today-soft: #fbecdd; --after: #17784a; --after-soft: #dcf2e5;
+  --red: #c4291c; --red-soft: #fde4e1; --amber: #a86400; --amber-soft: #fdf0d8;
+  --display: "Fraunces", Georgia, "Times New Roman", serif; --ui: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* the product's own look, for the concept screens (fixed, as the app is light) */
+  --om-bg: #f4f4f6; --om-card: #ffffff; --om-line: #e4e4e9; --om-ink: #1b1b1f; --om-sub: #6b6b75; --om-primary: #5b14f5; --om-primary-soft: #efe8ff;
+  --om-red: #d92d20; --om-red-soft: #fef0ef; --om-green: #1f8a4c; --om-green-soft: #e3f5ea; --om-amber: #b25c00; --om-amber-soft: #fff1df; --om-chip: #f1f1f4;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141219; --paper: #1d1a24; --sunk: #18161e; --line: #322e3d; --ink: #ece9f3; --muted: #a59fb5; --faint: #7d778c;
+  --accent: #ab8cff; --accent-soft: #2b2342; --today: #f0a868; --today-soft: #3a2616; --after: #6fd39b; --after-soft: #173326;
+  --red: #ff8a7d; --red-soft: #3d1c19; --amber: #f2b45a; --amber-soft: #3a2a12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141219; --paper: #1d1a24; --sunk: #18161e; --line: #322e3d; --ink: #ece9f3; --muted: #a59fb5; --faint: #7d778c;
+  --accent: #ab8cff; --accent-soft: #2b2342; --today: #f0a868; --today-soft: #3a2616; --after: #6fd39b; --after-soft: #173326;
+  --red: #ff8a7d; --red-soft: #3d1c19; --amber: #f2b45a; --amber-soft: #3a2a12; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--ui); }
+.page { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 96px; display: flex; flex-direction: column; gap: 72px; }
+@media (max-width: 700px) { .page { padding-inline: 16px; gap: 56px; } }
+h1 { font-family: var(--display); font-weight: 650; font-size: clamp(36px, 6vw, 60px); line-height: 1.02; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 650; font-size: clamp(26px, 3.6vw, 36px); line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h3 { font-size: 19px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.eyebrow { font: 600 12px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 19px; color: var(--muted); max-width: 66ch; }
+.prose { max-width: 70ch; color: var(--muted); }
+.prose b, .lede b { color: var(--ink); }
+section { display: flex; flex-direction: column; gap: 24px; scroll-margin-top: 24px; }
+.sec-head { display: flex; flex-direction: column; gap: 10px; }
+.hero { display: flex; flex-direction: column; gap: 20px; padding-top: 12px; }
+.hero .meta { font-size: 14px; color: var(--faint); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { font: 500 14px var(--ui); color: var(--ink); text-decoration: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); }
+.toc a:hover { border-color: var(--accent); color: var(--accent); }
+/* before → after numbers */
+.deltas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 960px) { .deltas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .deltas { grid-template-columns: minmax(0, 1fr); } }
+.delta { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.delta .what { font-size: 13px; color: var(--muted); min-height: 2.6em; }
+.delta .nums { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.delta .was { font: 600 22px var(--ui); color: var(--today); text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: color-mix(in srgb, var(--today) 55%, transparent); }
+.delta .now { font: 700 30px var(--display); color: var(--after); }
+.delta .note { font-size: 12px; color: var(--faint); }
+/* causes */
+.causes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 820px) { .causes { grid-template-columns: minmax(0, 1fr); } }
+.cause { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
+.cause .n { font: 650 24px var(--display); color: var(--today); line-height: 1; }
+.cause h3 { margin-bottom: 6px; }
+.cause p { font-size: 15px; color: var(--muted); }
+.cause .ev { margin-top: 8px; font-size: 13px; color: var(--faint); }
+.cause.wide { grid-column: 1 / -1; }
+/* the moments */
+.path { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.hop { background: var(--today-soft); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 150px; }
+.hop b { font-size: 14px; }
+.hop span { font-size: 13px; color: var(--muted); }
+.hop .wa { font: 600 11px var(--ui); color: var(--today); text-transform: uppercase; letter-spacing: .06em; }
+.moments { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .moments { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .moments { grid-template-columns: minmax(0, 1fr); } }
+.moment { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.moment .nums { display: flex; gap: 10px; align-items: baseline; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.moment .nums .was { color: var(--today); font-weight: 600; text-decoration: line-through; }
+.moment .nums .now { color: var(--after); font: 700 20px var(--display); }
+.moment p { font-size: 14px; color: var(--muted); }
+.moment ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+/* the concept sheet (product look) */
+.dlg { width: 600px; background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(20, 10, 40, .22); overflow: hidden; }
+.dlg .dh { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 24px 0 24px; border-bottom: 1px solid var(--om-line); }
+.dlg .dh .tt { flex: 1; display: flex; flex-direction: column; }
+.dlg .dh b { font: 700 20px/1.2 "Inter"; }
+.dlg .dh small { font-size: 13px; color: var(--om-sub); }
+.dlg .db { padding: 18px 24px; display: flex; flex-direction: column; gap: 16px; }
+.dlg .rg { display: flex; flex-direction: column; gap: 10px; }
+.dlg .rg + .rg { border-top: 1px solid var(--om-line); padding-top: 14px; }
+.dlg .rl { font: 600 12px "Inter"; letter-spacing: .05em; text-transform: uppercase; color: var(--om-sub); }
+.dlg .fld { display: flex; align-items: center; gap: 12px; }
+.dlg .box { border: 1px solid #c9c7d1; border-radius: 4px; padding: 9px 12px; min-width: 170px; font-size: 15px; display: flex; justify-content: space-between; }
+.dlg .tick { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; font-size: 15px; }
+.dlg .tick i { width: 18px; height: 18px; border-radius: 3px; border: 2px solid #8a8696; margin-top: 2px; display: grid; place-items: center; color: #fff; font: 700 12px/1 "Inter"; font-style: normal; }
+.dlg .tick i.on { background: var(--om-primary); border-color: var(--om-primary); }
+.dlg .tick small { display: block; font-size: 13px; color: var(--om-sub); margin-top: 2px; }
+.dlg .tick small a { color: var(--om-primary); font-weight: 600; text-decoration: none; }
+.dlg .well { border: 1px dashed #bdb9c8; border-radius: 6px; padding: 10px; font-size: 13px; color: var(--om-sub); text-align: center; }
+.dlg .cond { border: 1px dashed #c6b3fa; border-radius: 8px; padding: 12px; background: #fbf9ff; }
+.dlg .df { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--om-line); }
+.snack { width: 600px; background: #2b2930; color: #f4eff4; border-radius: 4px; padding: 12px 16px; font: 14px/1.4 "Inter"; display: flex; gap: 14px; align-items: center; }
+.snack span { flex: 1; }
+.snack b { color: #ccb2ff; font-weight: 600; }
+/* the idea */
+.idea { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .idea { grid-template-columns: minmax(0, 1fr); } }
+.q { border-radius: 12px; padding: 20px; background: var(--accent-soft); display: flex; flex-direction: column; gap: 8px; }
+.q .step { font: 600 12px var(--mono); color: var(--accent); }
+.q h3 { font-family: var(--display); font-weight: 650; font-size: 24px; }
+.q p { font-size: 15px; color: var(--muted); }
+.rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 28px; padding: 0; margin: 0; list-style: none; }
+@media (max-width: 760px) { .rules { grid-template-columns: minmax(0, 1fr); } }
+.rules li { padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; color: var(--muted); }
+.rules li b { color: var(--ink); display: block; font-size: 16px; }
+/* before / after frames */
+.compare { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.label { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--ui); letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; width: fit-content; }
+.label.today { background: var(--today-soft); color: var(--today); }
+.label.after { background: var(--after-soft); color: var(--after); }
+.shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--sunk); cursor: zoom-in; max-height: 420px; }
+.shot img { width: 100%; height: auto; display: block; }
+.shot.tall { max-height: 640px; }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cap { font-size: 13px; color: var(--muted); }
+.cap b { color: var(--ink); }
+/* IA trees */
+.ia { display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1.3fr); gap: 12px; align-items: start; }
+@media (max-width: 760px) { .ia { grid-template-columns: minmax(0, 1fr); } .ia .arrow { transform: rotate(90deg); justify-self: center; } }
+.ia .arrow { font: 600 26px var(--ui); color: var(--faint); align-self: center; text-align: center; }
+.tree { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.tree .t { display: flex; gap: 8px; align-items: baseline; font-size: 15px; padding: 6px 8px; border-radius: 6px; }
+.tree .t .k { font: 500 12px var(--mono); color: var(--faint); min-width: 18px; }
+.tree.old .t { background: var(--today-soft); color: var(--ink); }
+.tree.new .t { background: var(--after-soft); flex-wrap: wrap; }
+.tree.new .t b { font-weight: 700; }
+.tree.new .t .views { font-size: 13px; color: var(--muted); }
+.tree .foot { font-size: 13px; color: var(--muted); padding-top: 4px; }
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+th { text-align: left; font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--sunk); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .was { color: var(--today); }
+td .now { color: var(--after); font-weight: 700; }
+/* evidence */
+.patterns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .patterns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .patterns { grid-template-columns: minmax(0, 1fr); } }
+.pat { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.pat h3 { font-size: 16px; }
+.pat p { font-size: 14px; color: var(--muted); }
+.pat .who { font-size: 12px; color: var(--accent); font-weight: 600; }
+/* decisions */
+.decide { display: flex; flex-direction: column; gap: 10px; }
+.dcard { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.dcard[data-pick="build"] { border-color: color-mix(in srgb, var(--after) 50%, var(--line)); }
+.dcard[data-pick="skip"] { opacity: .7; }
+.dcard[data-pick="discuss"] { border-color: color-mix(in srgb, var(--today) 50%, var(--line)); }
+.dhead { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.dhead .id { font: 500 12px var(--mono); color: var(--accent); }
+.dhead h3 { font-size: 16px; flex: 1 1 320px; min-width: 0; }
+.dcard p { font-size: 14px; color: var(--muted); }
+.pickrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: 600 13px var(--ui); padding: 7px 12px; background: var(--paper); color: var(--ink); border: 0; border-right: 1px solid var(--line); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"][data-v="build"] { background: var(--after-soft); color: var(--after); }
+.seg button[aria-pressed="true"][data-v="discuss"] { background: var(--today-soft); color: var(--today); }
+.seg button[aria-pressed="true"][data-v="skip"] { background: var(--sunk); color: var(--muted); }
+.opts { display: flex; flex-direction: column; gap: 6px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { margin-top: 3px; accent-color: var(--accent); }
+.rec { font: 600 11px var(--ui); color: var(--after); background: var(--after-soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+textarea { font: 14px/1.4 var(--ui); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; flex: 1 1 240px; min-width: 0; min-height: 36px; resize: vertical; }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; border-bottom: 1px solid var(--line); }
+.bar .tally { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn { font: 600 14px var(--ui); border-radius: 6px; padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:focus-visible, .seg button:focus-visible, .shot:focus-visible, .opt:focus-within, textarea:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1000px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .phases { grid-template-columns: minmax(0, 1fr); } }
+.phase { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.phase .w { font: 600 12px var(--mono); color: var(--accent); }
+.phase ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.lightbox { position: fixed; inset: 0; background: rgba(12, 10, 18, .84); z-index: 20; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 24px 16px; }
+.lightbox img { max-width: min(1400px, 100%); height: auto; border-radius: 6px; background: #fff; }
+.lightbox .btn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 16px; }
+
+/* ── The concept screens (the product's look) ─────────────────────────────────────────────── */
+.mock-wrap { width: 100%; position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: var(--om-bg); }
+.mock { box-sizing: border-box; position: absolute; top: 0; left: 0; transform-origin: top left; font: 14px/1.4 "Inter", ui-sans-serif, system-ui, sans-serif; color: var(--om-ink); background: var(--om-bg); }
+.mock * { box-sizing: border-box; }
+.app { display: grid; grid-template-columns: 64px minmax(0, 1fr); padding: 8px; gap: 8px; }
+.rail { background: #fff; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px 0; }
+.rail i { width: 24px; height: 24px; border-radius: 6px; background: #e9e7ef; display: block; }
+.rail i.on { background: var(--om-primary-soft); outline: 2px solid var(--om-primary); outline-offset: 2px; }
+.rail .logo { width: 30px; height: 30px; border-radius: 50%; background: var(--om-primary); }
+.sheet { background: #fff; border-radius: 12px; overflow: hidden; }
+.hdr { display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid var(--om-line); }
+.hdr .back { width: 24px; height: 24px; border-radius: 4px; background: #e9e7ef; }
+.hdr .tt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.hdr .crumb { font-size: 12px; color: var(--om-sub); }
+.hdr .title { font: 700 20px/1.2 "Inter"; display: flex; gap: 10px; align-items: center; }
+.chipx { font: 600 11px "Inter"; color: var(--om-sub); border: 1px solid var(--om-line); border-radius: 4px; padding: 2px 6px; text-transform: uppercase; }
+.obtn { font: 600 14px "Inter"; border: 1px solid var(--om-line); background: #fff; border-radius: 4px; padding: 8px 14px; color: var(--om-ink); white-space: nowrap; }
+.fbtn { font: 600 14px "Inter"; background: var(--om-primary); color: #fff; border-radius: 4px; padding: 9px 16px; border: 0; white-space: nowrap; }
+.kebab { width: 36px; height: 36px; border: 1px solid var(--om-line); border-radius: 4px; display: grid; place-items: center; color: var(--om-sub); }
+.tabsx { display: flex; gap: 26px; padding: 0 24px; border-bottom: 1px solid var(--om-line); }
+.tabsx span { padding: 14px 0 12px; font: 500 15px "Inter"; color: var(--om-sub); display: flex; gap: 6px; align-items: center; }
+.tabsx span.on { color: var(--om-primary); border-bottom: 3px solid var(--om-primary); font-weight: 600; }
+.mock .tabsx span.cnt, .mock .ptabs span.cnt { padding: 1px 6px; border-bottom: 0; display: inline-block; line-height: 1.3; color: #fff; font: 600 11px/1.3 "Inter"; }
+.cnt { background: var(--om-red); color: #fff; font: 600 11px "Inter"; border-radius: 999px; padding: 1px 6px; }
+.body3 { display: grid; grid-template-columns: 330px minmax(0, 1fr) 64px; }
+.info { border-right: 1px solid var(--om-line); padding: 22px 22px; display: flex; flex-direction: column; gap: 16px; }
+.info .nm { font: 700 22px "Inter"; }
+.info .sub { font-size: 14px; color: var(--om-sub); }
+.info .grp { border-top: 1px solid var(--om-line); padding-top: 14px; display: flex; flex-direction: column; gap: 9px; }
+.info .gh { font: 600 14px "Inter"; display: flex; justify-content: space-between; }
+.kv { display: grid; grid-template-columns: 112px 1fr; gap: 8px; font-size: 14px; }
+.kv span:first-child { color: var(--om-sub); }
+.strip { border-left: 1px solid var(--om-line); display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 22px; }
+.strip i { width: 22px; height: 22px; border-radius: 5px; background: #e9e7ef; display: block; }
+.centre { padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.brief { border-radius: 8px; padding: 16px 18px; background: linear-gradient(110deg, #f6efff 0%, #fdf2f6 70%, #fff4ec 100%); border: 1px solid #ece4fb; display: flex; flex-direction: column; gap: 10px; }
+.brief .bh { display: flex; justify-content: space-between; font: 600 12px "Inter"; color: var(--om-sub); letter-spacing: .04em; }
+.brief .tag { background: #f3a43a; color: #fff; border-radius: 3px; padding: 2px 6px; font-size: 11px; }
+.brief p { font-size: 15px; }
+.brief .acts { display: flex; gap: 10px; }
+.obtnp { font: 600 14px "Inter"; border: 1px solid var(--om-primary); color: var(--om-primary); background: #fff; border-radius: 4px; padding: 7px 12px; }
+.cols2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.card { border: 1px solid var(--om-line); border-radius: 8px; background: #fff; }
+.card .ch { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px 8px; font: 600 12px "Inter"; letter-spacing: .05em; color: var(--om-sub); text-transform: uppercase; }
+.card .ch .r { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--om-sub); display: flex; gap: 10px; align-items: center; }
+.card .ch .go { color: var(--om-primary); font-weight: 600; }
+.rows { padding: 2px 8px 10px; display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 6px; font-size: 14px; }
+.row + .row { border-top: 1px solid #f1f1f4; }
+.row .ic { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #c9c7d1; }
+.row .ic.red { border-color: var(--om-red); background: var(--om-red-soft); }
+.row .ic.wait { border-color: #9a96a8; border-style: dashed; }
+.row .ic.ok { border-color: var(--om-green); background: var(--om-green); }
+.row .ic.pu { border-color: var(--om-primary); background: var(--om-primary-soft); }
+.row .tx { min-width: 0; }
+.row .tx b { font-weight: 600; }
+.row .tx .m { color: var(--om-sub); font-size: 13px; }
+.row .tx .m.red { color: var(--om-red); }
+.row .act { color: var(--om-primary); font: 600 14px "Inter"; white-space: nowrap; }
+.row .act.f { background: var(--om-primary); color: #fff; padding: 6px 12px; border-radius: 4px; }
+.row.hl { background: #f7f3ff; }
+.more { padding: 4px 18px 12px; color: var(--om-primary); font: 600 13px "Inter"; }
+.glance { padding: 4px 18px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.glance .line { display: flex; justify-content: space-between; gap: 10px; }
+.glance .line span:first-child { color: var(--om-sub); }
+.glance .big { font: 700 22px "Inter"; }
+.pbar { height: 6px; border-radius: 3px; background: #ecebf1; overflow: hidden; }
+.pbar i { display: block; height: 100%; background: var(--om-primary); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tile { background: var(--om-chip); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.tile .tl { font: 600 12px "Inter"; letter-spacing: .05em; color: var(--om-sub); text-transform: uppercase; display: flex; justify-content: space-between; }
+.tile .tv { font: 700 24px "Inter"; }
+.tile .tv.red { color: var(--om-red); }
+.tile .th { font-size: 13px; color: var(--om-sub); }
+.mchip { font: 600 11px "Inter"; border-radius: 4px; padding: 2px 6px; text-transform: uppercase; white-space: nowrap; }
+.mchip.g { background: var(--om-green-soft); color: var(--om-green); }
+.mchip.r { background: var(--om-red-soft); color: var(--om-red); }
+.mchip.a { background: var(--om-amber-soft); color: var(--om-amber); }
+.mchip.n { background: var(--om-chip); color: var(--om-sub); }
+.mtable { border: 1px solid var(--om-line); border-radius: 8px; overflow: hidden; background: #fff; }
+.mtable .mh, .mtable .mr { display: grid; gap: 12px; padding: 12px 16px; align-items: center; font-size: 14px; }
+.mtable .mh { background: #fff; font: 600 12px "Inter"; letter-spacing: .05em; color: var(--om-sub); text-transform: uppercase; border-bottom: 1px solid var(--om-line); }
+.mtable .mr + .mr { border-top: 1px solid #f1f1f4; }
+.mtable .s { color: var(--om-sub); font-size: 13px; }
+.mtable .act { color: var(--om-primary); font-weight: 600; text-align: right; }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pill { font: 600 13px "Inter"; border: 1px solid var(--om-line); border-radius: 4px; padding: 6px 12px; background: #fff; color: var(--om-ink); white-space: nowrap; }
+.pill.on { border-color: var(--om-primary); background: var(--om-primary-soft); color: var(--om-primary); }
+.search { flex: 0 0 260px; border: 1px solid var(--om-line); border-radius: 4px; padding: 7px 12px; color: var(--om-sub); font-size: 14px; background: #fff; }
+.secttl { display: flex; justify-content: space-between; align-items: baseline; }
+.secttl b { font: 700 16px "Inter"; }
+.secttl span { font-size: 13px; color: var(--om-sub); }
+/* phone */
+.phone { width: 390px; background: #fff; display: flex; flex-direction: column; font: 15px/1.4 "Inter"; color: var(--om-ink); }
+.phone .ptop { display: flex; align-items: center; gap: 12px; padding: 14px 16px 8px; }
+.phone .ptop .tt { font: 700 20px "Inter"; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phone .pact { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 16px 12px; border-bottom: 1px solid var(--om-line); }
+.phone .ptabs { display: flex; gap: 20px; padding: 0 16px; border-bottom: 1px solid var(--om-line); overflow: hidden; white-space: nowrap; }
+.phone .ptabs span { padding: 12px 0 10px; color: var(--om-sub); font-weight: 500; display: flex; gap: 6px; align-items: center; }
+.phone .ptabs span.on { color: var(--om-primary); border-bottom: 3px solid var(--om-primary); font-weight: 600; }
+.phone .pid { padding: 16px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--om-line); }
+.phone .pid .nm { font: 700 22px "Inter"; }
+.phone .pid .ph { color: var(--om-primary); }
+.phone .pbody { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; background: var(--om-bg); }
+.phone .card .row { grid-template-columns: 20px minmax(0, 1fr); }
+.phone .card .row .act { grid-column: 2; justify-self: start; margin-top: 4px; }
+.phone .dock { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--om-line); padding: 10px 0 16px; text-align: center; font-size: 12px; color: var(--om-sub); }
+.phone .dock i { width: 22px; height: 22px; border-radius: 5px; background: #e9e7ef; display: block; margin: 0 auto 4px; }
+.phone .dock .on { color: var(--om-primary); }
+.phone .dock .on i { background: var(--om-primary-soft); }
+.fab { position: absolute; right: 16px; bottom: 86px; width: 52px; height: 52px; border-radius: 50%; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.14); display: grid; place-items: center; color: #e2602a; font-size: 22px; }
+.annot { position: absolute; background: #fff7d6; color: #5a4300; border: 1px solid #f0d27a; border-radius: 6px; padding: 6px 9px; font: 600 13px/1.3 "Inter"; box-shadow: 0 2px 8px rgba(0,0,0,.08); max-width: 240px; }
+.annot::before { content: attr(data-n); display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #5a4300; color: #fff7d6; font-size: 11px; margin-right: 6px; }
+@media (prefers-reduced-motion: no-preference) { .dcard, .opt { transition: border-color .15s, opacity .15s, background .15s; } }
+</style>
+
+<div class="page">
+  <header class="hero">
+    <span class="eyebrow">Proposal · 9 October 2026 · for Vicky</span>
+    <h1>Projects &amp; Finance, made simple</h1>
+    <p class="lede">You said Projects and Finance feel super complex, unintuitive and heavy. Five studies measured why. Each one walked the real app as a designer on site, an owner on Monday and an admin paying vendors, and the fifth compared how Houzz Pro, Buildertrend, Procore, Studio Designer, Monograph, Xero and eight others organise the same jobs. <b>Nothing is wrong with the features. The heaviness comes from how they're organised.</b> Below are the seven root causes, one idea that fixes them, concept screens drawn with the demo studio's real records, and the decisions only you can make. Every feature stays.</p>
+    <p class="meta">Concepts are drawn in the product's own look with Benjamin Han's project (P-2026-002) and Demo Studio's finance records. Full findings are in <code>design-source/context/simplify-projects-finance/</code>.</p>
+    <nav class="toc" aria-label="Sections">
+      <a href="#load">The load</a><a href="#why">Why it's heavy</a><a href="#idea">The idea</a><a href="#project">The project page</a><a href="#moments">Moments</a><a href="#money">Money on a project</a><a href="#finance">Finance</a><a href="#flows">Flows</a><a href="#evidence">Evidence</a><a href="#kept">Nothing lost</a><a href="#decide">Your calls</a><a href="#plan">The build</a>
+    </nav>
+  </header>
+
+  <section id="load">
+    <div class="sec-head">
+      <span class="eyebrow">01 · The load, measured</span>
+      <h2>What a studio person carries today, and after</h2>
+      <p class="prose">Counted on the demo studio's busiest records at 1440 and on a phone. The "after" figures come from the proposal's layouts; build-time measurements will confirm them.</p>
+    </div>
+    <div class="deltas">
+      <div class="delta"><span class="what">Tabs on a project</span><span class="nums"><span class="was">14</span><span class="now">7</span></span><span class="note">Leads has 8. At 390, 10 of the 14 are off-screen today.</span></div>
+      <div class="delta"><span class="what">Places a project says "what needs you"</span><span class="nums"><span class="was">7</span><span class="now">1</span></span><span class="note">Today they disagree: Benjamin's header says Share changes while the brief leads with Payment overdue.</span></div>
+      <div class="delta"><span class="what">Numbers on Benjamin's Overview</span><span class="nums"><span class="was">72</span><span class="now">~25</span></span><span class="note">"Payment overdue" is shown 5 times today, the stage 3 times.</span></div>
+      <div class="delta"><span class="what">Closing one stage (done, client confirms, bill, tell)</span><span class="nums"><span class="was">~16 presses</span><span class="now">3</span></span><span class="note">Today: 5 screens and 3 WhatsApp drafts to the same client.</span></div>
+      <div class="delta"><span class="what">Benjamin's Money tab on a phone</span><span class="nums"><span class="was">8.6 screens</span><span class="now">~2</span></span><span class="note">57 money figures, 17 of them different; S$20,784.94 printed 11 times.</span></div>
+      <div class="delta"><span class="what">Owner clearing Benjamin's approvals</span><span class="nums"><span class="was">2 tabs · 3 screens</span><span class="now">1 list</span></span><span class="note">PO, expense and bill approvals sit ~2,400px down the Money tab today, unmentioned on the Overview.</span></div>
+      <div class="delta"><span class="what">Finance tabs</span><span class="nums"><span class="was">8</span><span class="now">5</span></span><span class="note">Paying one carpenter visits POs, Bills, Vendors and Payments out today.</span></div>
+      <div class="delta"><span class="what">Presses, the five most-used project flows</span><span class="nums"><span class="was">~63</span><span class="now">~30</span></span><span class="note">Start the job, post site photos, close a stage, share new dates, a choice with a price.</span></div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="sec-head">
+      <span class="eyebrow">02 · Why it feels heavy</span>
+      <h2>Seven root causes, all fixable without removing anything</h2>
+    </div>
+    <div class="causes">
+      <article class="cause"><span class="n">1</span><div><h3>"What needs you" lives in seven places, and they disagree</h3><p>The header's button, the AI brief, Project stages, MY TASKS, six tab counts, Latest updates and the Money card each hold a piece. Some things that need someone appear in none of them: a PO to approve, a bill to pay, a client's payment to confirm, an unread client message.</p><p class="ev">Ryan's header says <i>Post an update</i> while 2 milestones are overdue and a payment waits to be confirmed.</p></div></article>
+      <article class="cause"><span class="n">2</span><div><h3>Tabs follow record types, not jobs</h3><p>Talking with the client spans Updates, Messages, Tickets, Questionnaire, Choices and Floor plan comments, so a site photo has 5 possible homes. Finance splits one vendor's money across Purchase orders, Bills, Payments out and Vendors.</p><p class="ev">Benchmark: Buildertrend groups ~20 job tools under 5 menus; Xero sorts bills by status, not by document type.</p></div></article>
+      <article class="cause"><span class="n">3</span><div><h3>The same fact, again and again</h3><p>Benjamin's overdue Mid-Project invoice appears 5 times on the Overview and 11 times on the Money tab. One invoice is spread over five tables: Payment schedule, Invoices sent, Other invoices, Payments and Credit notes.</p><p class="ev">Benjamin's Money tab prints 57 money figures; only 17 are different.</p></div></article>
+      <article class="cause"><span class="n">4</span><div><h3>Red means five different things</h3><p>The studio's own late work, the client's lateness, a vendor's reply, a client's "no" and a stall all use one red warning row. Ryan shows 8 red rows; the owner can't tell whose move it is.</p><p class="ev">Procore's project home is built on "ball in court": every open item says whose move it is.</p></div></article>
+      <article class="cause"><span class="n">5</span><div><h3>Money is two silos stacked on one long page</h3><p>Money in runs first; costs start 1,900px down (5.3 phone screens). Profit, which combines both, is buried inside Costs and shows the whole contract before any costs exist (Marcus: "Profit S$48,600"). Finance and Reports disagree on overdue (S$1,400 vs S$15,477) and margin (63.2% vs 87.7%).</p><p class="ev">Praised tools hang money on one spine: Monograph's phase timeline, JobTread's job budget.</p></div></article>
+      <article class="cause"><span class="n">6</span><div><h3>The phone is a shrunk desktop</h3><p>On site there's no Create strip, so logging a call takes 6–7 presses. The first actionable row sits below the fold, and the Money tab is 7,222px long. Logging a claim asks for the receipt last.</p><p class="ev">Buildertrend's mobile opens on a job summary with one capture button; a receipt goes into a Cost Inbox to file later.</p></div></article>
+      <article class="cause wide"><span class="n">7</span><div><h3>The steps between features are left to memory</h3><p>Each feature works well on its own, but the moves between them are separate flows. Getting a won job ready asks for the start date in 3 places. Seven steps that always follow are prompted by nothing: send the deposit; turn on "ask the client to confirm" <i>before</i> sharing; start the milestone's wait when a choice is shared; draft the VO after a priced pick; tell the client about a hold or a handover; the start and done prompts, which vanish on reload; Remind, which lives only in the Invite to Portal drawer.</p><p class="ev">Benjamin's header says <i>Share changes</i> while his payment is 7 days overdue: the button's order ignores urgency, and a ready invoice hides Share.</p></div></article>
+    </div>
+  </section>
+
+  <section id="idea">
+    <div class="sec-head">
+      <span class="eyebrow">03 · The idea</span>
+      <h2>Every page answers three questions, in this order</h2>
+      <p class="prose">This is what the Leads module already does well and what the best tools converged on. The client's portal already opens on "What needs you". The studio's side gets the same twin.</p>
+    </div>
+    <div class="idea">
+      <div class="q"><span class="step">1 · Act</span><h3>What needs me?</h3><p>One ranked list, each row with its one button. The header's filled button is simply the top row, so the two can never disagree.</p></div>
+      <div class="q"><span class="step">2 · Plan</span><h3>What's next?</h3><p>What's coming this week and next, and what we're waiting on the client for, with Remind on the row.</p></div>
+      <div class="q"><span class="step">3 · Glance</span><h3>Where does it stand?</h3><p>A few honest numbers, each shown once, each opening its list. Profit appears only when it means something.</p></div>
+    </div>
+    <ul class="rules">
+      <li><b>One home per job.</b> Tools that are one job seen from two sides are grouped. Every current address keeps working.</li>
+      <li><b>Each fact once.</b> Other places link to it rather than repeating it.</li>
+      <li><b>One list, several views.</b> One Money out list with a kind switch, not four tabs; one Billing list with the payment stages as its spine.</li>
+      <li><b>Red means it's late and it's ours.</b> The client's lateness is neutral, with Remind. A vendor's reply is neutral, with Open.</li>
+      <li><b>The role shapes the page by its data.</b> A designer sees what the server already hands them; no toggles.</li>
+      <li><b>The phone gets its own job.</b> Today on site: what needs me, Create in reach, the receipt first.</li>
+      <li><b>Nothing removed.</b> Every capability keeps a home (section 10), every rule and approval stays, and Undo stays on every step.</li>
+      <li><b>One sheet per moment.</b> Steps that always happen together become default-on ticks in one sheet, each keeping its own approval rule, and the sheet ends with one WhatsApp draft.</li>
+      <li><b>Automatic only where nothing reaches the client without a press.</b> Drafts, waits, rows and prompts happen by themselves. Sends never do.</li>
+      <li><b>House pieces only.</b> The lead's frame, MY TASKS, the LEAD STAGES row, the listing's table, Chips, the cost panel, the house Dialog. No new UI kit.</li>
+    </ul>
+  </section>
+
+  <section id="project">
+    <div class="sec-head">
+      <span class="eyebrow">04 · The project page</span>
+      <h2>Fourteen tabs become seven, and the Overview becomes a to-do</h2>
+    </div>
+    <div class="ia">
+      <div class="tree old"><span class="label today">Today · 14 tabs</span>
+        <span class="t"><span class="k">1</span>Overview</span><span class="t"><span class="k">2</span>Tasks</span><span class="t"><span class="k">3</span>Schedule</span><span class="t"><span class="k">4</span>Updates</span><span class="t"><span class="k">5</span>Money</span><span class="t"><span class="k">6</span>Choices</span><span class="t"><span class="k">7</span>Floor plan</span><span class="t"><span class="k">8</span>Messages</span><span class="t"><span class="k">9</span>Tickets</span><span class="t"><span class="k">–</span>Compliance</span><span class="t"><span class="k">–</span>Files</span><span class="t"><span class="k">–</span>Notes &amp; Logs</span><span class="t"><span class="k">–</span>Questionnaire</span><span class="t"><span class="k">–</span>Activity</span>
+        <span class="foot">"–" = no number key. Six tabs carry red counts, each counting something different.</span>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="tree new"><span class="label after">Proposed · 7 tabs, views inside</span>
+        <span class="t"><span class="k">1</span><b>Overview</b><span class="views">Needs you · What's next · Where it stands</span></span>
+        <span class="t"><span class="k">2</span><b>Tasks</b><span class="views">All tasks · Compliance (one list, one tick)</span></span>
+        <span class="t"><span class="k">3</span><b>Schedule</b><span class="views">as today; already the best screen on the page</span></span>
+        <span class="t"><span class="k">4</span><b>Client</b><span class="views">Updates · Messages · Tickets · Questionnaire</span></span>
+        <span class="t"><span class="k">5</span><b>Design</b><span class="views">Choices · Floor plan · Designs (renders + 3-D the client sees)</span></span>
+        <span class="t"><span class="k">6</span><b>Money</b><span class="views">Needs you · Collect · Pay · Profit · Billing · Costs</span></span>
+        <span class="t"><span class="k">7</span><b>Files &amp; notes</b><span class="views">Files · Notes &amp; Logs · Activity</span></span>
+        <span class="foot">One count rule: a tab counts only what waits on <i>you</i> there. Benjamin goes from 6 counts totalling 28 to 4 totalling 7.</span>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="col">
+        <span class="label today">Today · Benjamin's Overview</span>
+        <button class="shot tall" type="button" data-img="d1440-overview-benjamin-full" aria-label="Open today's Overview full size"><img src="img/d1440-overview-benjamin-full.jpg" alt="Today's project Overview: nine equal cards" loading="lazy"></button>
+        <p class="cap"><b>9 cards + a brief, 77 controls, 72 numbers.</b> No reading order: status, schedule, money and documents on the left; tasks, updates, files, questionnaire and activity on the right.</p>
+      </div>
+      <div class="col">
+        <span class="label after">Proposed · the same project</span>
+        <div class="mock-wrap" data-w="1440" data-h="1180">
+          <div class="mock" style="width:1440px;height:1180px">
+            <div class="app" style="height:100%">
+              <div class="rail"><span class="logo"></span><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+              <div class="sheet">
+                <div class="hdr"><span class="back"></span><div class="tt"><span class="crumb">Projects /</span><span class="title">HDB 5-Room — Benjamin Han <span class="chipx">P-2026-002</span><span class="chipx">Whole-home renovation</span></span></div><span class="obtn">Stage: In progress ▾</span><button class="fbtn" type="button" tabindex="-1">Review the update</button><span class="kebab">⋮</span></div>
+                <div class="tabsx"><span class="on">Overview</span><span>Tasks <span class="cnt">1</span></span><span>Schedule <span class="cnt">1</span></span><span>Client <span class="cnt">2</span></span><span>Design <span class="cnt">1</span></span><span>Money <span class="cnt">3</span></span><span>Files &amp; notes</span></div>
+                <div class="body3">
+                  <div class="info">
+                    <div><div class="nm">Benjamin Han</div><div class="sub">9773 1968 · copy · WhatsApp</div></div>
+                    <div class="grp"><div class="gh">Collaborators <span style="color:var(--om-primary)">Add</span></div><div class="kv"><span>Owner</span><span>Dane</span></div><div class="kv"><span>Members</span><span>Germaine</span></div></div>
+                    <div class="grp"><div class="gh">Project info</div><div class="kv"><span>Number</span><span>P-2026-002</span></div><div class="kv"><span>Type</span><span>Whole-home renovation</span></div><div class="kv"><span>Start · Handover</span><span>21 Aug · 20 Nov</span></div><div class="kv"><span>Signed quote</span><span style="color:var(--om-primary)">OM-10005 ↗</span></div><div class="kv"><span>Contract</span><span style="color:var(--om-primary)">Signed 21 Aug ↗</span></div></div>
+                    <div class="grp"><div class="gh">Property info</div><div class="kv"><span>Type</span><span>HDB 5-Room</span></div><div class="kv"><span>Address</span><span>SkyOasis @ Dawson, Queenstown</span></div><div class="kv"><span>Style</span><span>Contemporary</span></div></div>
+                  </div>
+                  <div class="centre">
+                    <div class="brief"><div class="bh"><span>✦ MAISON AI BRIEF</span><span class="tag">THIS WEEK</span></div><p>Carpentry fabrication runs to 30 Oct. <b>Painting starts 2 Nov once Benjamin picks the paint colour</b> — he's 7 days past the date we asked.</p><div class="acts"><span class="obtnp">Remind Benjamin about the paint</span><span class="obtnp">Summarise the week</span></div></div>
+                    <div class="cols2">
+                      <div style="display:flex;flex-direction:column;gap:18px">
+                        <div class="card"><div class="ch">Needs you · 6<span class="r">most urgent first</span></div><div class="rows">
+                          <div class="row hl"><span class="ic pu"></span><span class="tx"><b>Feature wall panels</b> — Germaine sent it for review<div class="m">4 days ago · the client sees it once you approve</div></span><span class="act f">Review</span></div>
+                          <div class="row"><span class="ic pu"></span><span class="tx"><b>PO-2026-008</b> to Stone &amp; Tile Masonry · S$ 5,530<div class="m">Over S$5,000 · leaves 23.8% against the quote</div></span><span class="act">Review</span></div>
+                          <div class="row"><span class="ic red"></span><span class="tx"><b>Mid-Project invoice</b> · S$ 20,785<div class="m red">7 days overdue · reminded twice</div></span><span class="act">Remind</span></div>
+                          <div class="row"><span class="ic red"></span><span class="tx"><b>AquaFlow Plumbing's bill</b> · S$ 1,400<div class="m red">Due 30 Sep</div></span><span class="act">Pay</span></div>
+                          <div class="row"><span class="ic"></span><span class="tx"><b>Benjamin asked:</b> "can we add a socket inside the tall cabinet?"<div class="m">Message · yesterday</div></span><span class="act">Reply</span></div>
+                          <div class="row"><span class="ic"></span><span class="tx"><b>4 schedule changes</b> Benjamin hasn't seen<div class="m">Handover moved to Fri 20 Nov</div></span><span class="act">Share</span></div>
+                        </div></div>
+                        <div class="card"><div class="ch">My tasks · Fri, 9 Oct<span class="r"><span class="go">↗</span></span></div><div class="rows"><div class="row"><span class="ic red"></span><span class="tx"><b>Order the kitchen cabinets</b><div class="m red">Sun, 4 Oct · 5 days overdue</div></span><span class="act">›</span></div><div class="row"><span class="ic"></span><span class="tx">Upcoming · 11</span><span class="act">▾</span></div></div></div>
+                        <div class="card"><div class="ch">With Benjamin<span class="r">Portal opened yesterday</span></div><div class="rows">
+                          <div class="row"><span class="ic wait"></span><span class="tx"><b>Paint colours</b> — waiting on Benjamin<div class="m">Asked 2 Oct · needed by 19 Oct</div></span><span class="act">Remind</span></div>
+                          <div class="row"><span class="ic wait"></span><span class="tx"><b>Electrical &amp; plumbing</b> to confirm<div class="m">Shared as done 2 Oct</div></span><span class="act">Remind</span></div>
+                          <div class="row"><span class="ic"></span><span class="tx">Last told Benjamin <b>4 days ago</b> — "Kitchen cabinets are in"</span><span class="act">Post an update</span></div>
+                        </div></div>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:18px">
+                        <div class="card"><div class="ch">Progress<span class="r">62 days since Won <span class="go">↗</span></span></div><div class="glance"><div class="line"><span>In progress</span><span>48 days</span></div><div class="pbar"><i style="width:43%"></i></div><div class="line"><span>3 of 7 milestones</span><span>Handover 20 Nov · 42 days left</span></div></div></div>
+                        <div class="card"><div class="ch">Coming up<span class="r"><span class="go">↗</span></span></div><div class="rows"><div class="row"><span class="ic"></span><span class="tx"><b>Thu 15 Oct</b> · Ah Seng installs the countertop</span><span></span></div><div class="row"><span class="ic"></span><span class="tx"><b>Fri 30 Oct</b> · Carpentry fabrication ends</span><span></span></div><div class="row"><span class="ic"></span><span class="tx"><b>Mon 2 Nov</b> · Painting starts</span><span></span></div></div></div>
+                        <div class="card"><div class="ch">Money<span class="r"><span class="go">↗</span></span></div><div class="glance"><div class="line"><span>Contract</span><span>S$ 69,283</span></div><div class="line"><span>Collected</span><span>S$ 27,713 · 40%</span></div><div class="pbar"><i style="width:40%"></i></div><div class="line"><span>Outstanding</span><span style="color:var(--om-red);font-weight:600">S$ 20,785 overdue</span></div><div class="line"><span>Profit</span><span>-- · early estimate</span></div></div></div>
+                        <div class="card"><div class="ch">Recent activity<span class="r"><span class="go">↗</span></span></div><div class="rows"><div class="row"><span class="ic ok"></span><span class="tx">Benjamin sent a message<div class="m">Yesterday</div></span><span></span></div><div class="row"><span class="ic ok"></span><span class="tx">Germaine posted "Feature wall panels"<div class="m">5 Oct</div></span><span></span></div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                </div>
+              </div>
+            </div>
+            <span class="annot" data-n="1" style="left:612px;top:68px">The filled button is the top row of Needs you</span>
+            <span class="annot" data-n="2" style="left:1030px;top:118px">Counts = only what waits on you</span>
+            <span class="annot" data-n="3" style="left:28px;top:660px;max-width:280px">Needs you: one ranked list (approvals, money, the client, late work, sharing), each row with its one button</span>
+            <span class="annot" data-n="4" style="left:1010px;top:1100px">Numbers once; profit only when graded</span>
+            <span class="annot" data-n="5" style="left:28px;top:900px;max-width:280px">With Benjamin: the client's lateness is neutral, with Remind</span>
+          </div>
+        </div>
+        <p class="cap"><b>7 cards instead of 10.</b> Act on the left (Needs you, My tasks, With Benjamin); glance on the right (Progress, Coming up, Money, Recent activity). Key documents move into Project info, Files to Files &amp; notes, and Questionnaire to Client. Every row opens where its fact is fixed.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="col">
+        <span class="label today">Today · on a phone at 9am</span>
+        <button class="shot tall" type="button" data-img="p390-overview-benjamin-full" aria-label="Open today's phone Overview full size"><img src="img/p390-overview-benjamin-full.jpg" alt="Today's project Overview on a phone, 3,900px long" loading="lazy"></button>
+        <p class="cap"><b>3,900px long; the first actionable row at y 912</b>, below the fold. No Create strip, so a contact log is 6–7 presses.</p>
+      </div>
+      <div class="col">
+        <span class="label after">Proposed · a designer on site</span>
+        <div class="mock-wrap" data-w="390" data-h="900" style="max-width:390px">
+          <div class="mock" style="width:390px;height:900px">
+            <div class="phone" style="height:900px;position:relative">
+              <div class="ptop"><span class="back" style="width:22px;height:22px;border-radius:4px;background:#e9e7ef"></span><span class="tt">HDB 5-Room — Benjamin Han</span><span class="kebab">⋮</span></div>
+              <div class="pact"><span class="obtn" style="text-align:center">Stage: In progress ▾</span><button class="fbtn" type="button" tabindex="-1">Review the update</button></div>
+              <div class="ptabs"><span class="on">Overview</span><span>Tasks <span class="cnt">1</span></span><span>Schedule</span><span>Client <span class="cnt">2</span></span><span>Desi…</span></div>
+              <div class="pid"><span class="nm">Benjamin Han</span><span class="ph">9773 1968 · copy · WhatsApp</span><span class="obtn" style="text-align:center">View Client Info</span></div>
+              <div class="pbody">
+                <div class="card"><div class="ch">Needs you · 6</div><div class="rows">
+                  <div class="row"><span class="ic pu"></span><span class="tx"><b>Feature wall panels</b> — for your review<div class="m">Germaine · 4 days ago</div></span><span class="act">Review</span></div>
+                  <div class="row"><span class="ic red"></span><span class="tx"><b>Mid-Project invoice</b> · S$ 20,785<div class="m red">7 days overdue</div></span><span class="act">Remind</span></div>
+                  <div class="row"><span class="ic"></span><span class="tx"><b>Benjamin asked</b> about a socket in the tall cabinet</span><span class="act">Reply</span></div>
+                </div><div class="more">Show 3 more</div></div>
+                <div class="card"><div class="ch">My tasks</div><div class="rows"><div class="row"><span class="ic red"></span><span class="tx"><b>Order the kitchen cabinets</b><div class="m red">5 days overdue</div></span></div></div></div>
+              </div>
+              <div class="dock" style="grid-template-columns:repeat(4,1fr);margin-top:auto;font-size:13px;font-weight:600;color:var(--om-ink)"><span><i style="background:var(--om-primary-soft)"></i>Photos</span><span><i></i>Done</span><span><i></i>Note</span><span><i></i>Message</span></div>
+              <span class="fab">✦</span>
+              <span class="annot" data-n="1" style="left:186px;top:312px">First action in the first screen</span>
+              <span class="annot" data-n="2" style="left:150px;top:236px;max-width:220px">⋮ opens Create: Photo update · Task · Note · Contact log · Expense receipt · Variation order</span>
+              <span class="annot" data-n="3" style="left:40px;top:770px">The site bar, while In progress: Photos opens the camera</span>
+            </div>
+          </div>
+        </div>
+        <p class="cap"><b>The first action is in the first screen</b>, and the page is ~2,900px long instead of 3,900. On a phone, ⋮ carries the Create list the desktop shows as a strip, so a contact log is 3 presses. While the job is In progress, a site bar keeps the four on-site jobs one tap away: <b>Photos</b> (the camera first, then the post with its title filled), <b>Done</b> (the running stage's Mark done sheet), <b>Note</b> and <b>Message</b>. Site photos: 8 presses → 5.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="moments">
+    <div class="sec-head">
+      <span class="eyebrow">05 · The project's life, as moments</span>
+      <h2>Steps that always go together become one sheet</h2>
+      <p class="prose">A real-world moment such as "carpentry's done" is four flows in the app today, on five screens, with three WhatsApp drafts to the same client and two traps along the way. The proposal turns each moment into one sheet of default-on ticks. Every tick runs today's own action under today's rule: a Designer under invoice approval sees <i>Submit the invoice for approval</i>. Untick a step to skip it, and each step stays reachable on its own tab. The sheet ends with one sentence, one Undo and one WhatsApp draft.</p>
+    </div>
+    <div class="col">
+      <span class="label today">Today · closing Carpentry fabrication on Benjamin's job · ~16 presses</span>
+      <div class="path">
+        <div class="hop"><b>Schedule › the milestone</b><span>Open it, switch on <i>Ask Benjamin to confirm it</i>, Save · 4</span><span class="wa">Trap: must come before the share</span></div>
+        <div class="hop"><b>Mark done</b><span><i>Mark done</i>, then <i>Mark done</i> in the early dialog · 2</span><span class="wa">The prompt is lost on reload</span></div>
+        <div class="hop"><b>Money</b><span>The stage's invoice › Send via WhatsApp › send · 3</span><span class="wa">WhatsApp 1</span></div>
+        <div class="hop"><b>Share changes</b><span>Header › Share 4 changes › Tell Benjamin on WhatsApp › send · 4</span><span class="wa">WhatsApp 2 · trap: a ready invoice hides this button</span></div>
+        <div class="hop"><b>Updates</b><span>+ › title and photos › Post · 3</span><span class="wa">WhatsApp 3, if they tell him again</span></div>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="col">
+        <span class="label today">Today · the Done dialog</span>
+        <button class="shot" type="button" data-img="1440-ben-done-early-dialog" aria-label="Open today's Done dialog full size"><img src="img/1440-ben-done-early-dialog.jpg" alt="Today's Mark Carpentry done today dialog" loading="lazy"></button>
+        <p class="cap">It asks one question. Telling Benjamin, asking him to confirm, the photos and the invoice are each a separate trip.</p>
+      </div>
+      <div class="col">
+        <span class="label after">Proposed · the Mark done sheet</span>
+        <div class="mock-wrap" data-w="760" data-h="830">
+          <div class="mock" style="width:760px;height:830px;background:#58546a;display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:30px">
+            <div class="dlg">
+              <div class="dh"><div class="tt"><b>Mark Carpentry fabrication done</b><small>HDB 5-Room — Benjamin Han</small></div><span style="font-size:22px;color:var(--om-sub)">✕</span></div>
+              <div class="db">
+                <div class="rg"><span class="rl">When</span>
+                  <div class="fld"><span class="box">Fri, 9 Oct 2026 <span style="color:var(--om-sub)">▾</span></span><span style="font-size:14px;color:var(--om-sub)">3 weeks early — it was due to end Fri 30 Oct</span></div>
+                  <div class="tick"><i></i><span>Bring Painting and 2 more forward to start sooner</span></div>
+                  <span style="font-size:13px;color:var(--om-sub)">8 of 14 tasks inside are still open. They stay open.</span>
+                </div>
+                <div class="rg"><span class="rl">Tell Benjamin</span>
+                  <div class="tick"><i class="on">✓</i><span>Show it on his schedule as done<small>With the 4 other changes he hasn't seen · <a>Choose what to share</a></small></span></div>
+                  <div class="tick"><i class="on">✓</i><span>Ask Benjamin to confirm it<small>He answers "Looks good" or "Something is not right" on his page</small></span></div>
+                  <div class="tick"><i></i><span>Add photos<small>They post as "Carpentry fabrication is done", sent for review</small></span></div>
+                  <div class="well">Drop photos here or <span style="color:var(--om-primary);font-weight:600">choose them</span></div>
+                </div>
+                <div class="rg"><span class="rl">Money</span>
+                  <div class="cond"><div class="tick"><i class="on">✓</i><span>Send the Completion invoice · S$20,784.94<small>30% · shown only for a stage that carries a payment, here Handover &amp; defect check</small></span></div></div>
+                </div>
+              </div>
+              <div class="df"><span class="obtn">Cancel</span><button class="fbtn" type="button" tabindex="-1">Mark done</button></div>
+            </div>
+            <div class="snack"><span>Carpentry fabrication marked done — shown to Benjamin, who's asked to confirm it.</span><b>Tell him on WhatsApp</b><b>Undo</b></div>
+          </div>
+        </div>
+        <p class="cap"><b>3 presses (2 on a phone) and one optional WhatsApp</b>: the share and the invoice email already go out automatically today. The sheet opens from every Done: the row, its ⋮, the side panel, the phone row's new Done and the site bar. When a Designer's Done waits for the Owner's approval, the ticks travel with the ask and run when the Owner approves (today, approving runs none of them).</p>
+      </div>
+    </div>
+    <div class="moments">
+      <div class="moment"><h3>Start the project</h3><div class="nums"><span class="was">~15 presses · 8 screens</span><span class="now">5</span></div><p>One sheet: the start date (asked once instead of 3 times), the schedule with today's picker and preview, ☑ Invite Marcus to his page, ☑ Send the Deposit invoice. Then one WhatsApp with the invite and the deposit link. Won and New project open the project instead of leaving you on the lead.</p></div>
+      <div class="moment"><h3>Post from the site</h3><div class="nums"><span class="was">8 presses</span><span class="now">5</span></div><p>Photos first: the camera opens, the title fills itself ("Carpentry fabrication — Fri 9 Oct", editable), and the running milestone is picked. The review rule is unchanged. Today photos come last and the title must be typed.</p></div>
+      <div class="moment"><h3>A choice turns into money</h3><div class="nums"><span class="was">~5 + remembering</span><span class="now">2</span></div><p>Sharing a choice starts its milestone's wait (the pick already ends it) and tells the client. A priced pick drafts its VO by itself; Needs you shows <i>Benjamin chose Calacatta quartz · +S$1,308 · Send VO-3</i>. A draft never reaches the client.</p></div>
+      <div class="moment"><h3>The client asks</h3><div class="nums"><span class="was">~6 + lines, retyped</span><span class="now">3 + lines</span></div><p>Every message, ticket and floor-plan mark carries Reply · <b>Make a task</b> · <b>Raise a variation order</b> (marks already have the last two). The client's words carry over, with a link back to where they came from.</p></div>
+      <div class="moment"><h3>The Owner's OK</h3><div class="nums"><span class="was">9 kinds in 5 places</span><span class="now">1 group</span></div><p><b>Needs your OK</b> leads Needs you, with Approve in each row. The listing's <i>Needs my review</i> also counts schedule asks, POs and expenses. One Settings card lists all six "waits for an Owner or an Admin" switches.</p></div>
+      <div class="moment"><h3>Pause and hand over</h3><div class="nums"><span class="was">8–12 presses, tab trips</span><span class="now">4–6</span></div><p>The handover checklist fixes things in place: Mark done, Remind, Send the Completion invoice, Approve. It adds compliance's Handover items and open tickets, plus a <i>Tell Benjamin</i> tick and Undo. Hold and Resume get a <i>Tell Aisha</i> tick, and escalated tickets stay in view during a hold.</p></div>
+    </div>
+  </section>
+
+  <section id="money">
+    <div class="sec-head">
+      <span class="eyebrow">06 · Money on a project</span>
+      <h2>From eleven stacked sections to four regions</h2>
+      <p class="prose">A designer needs one figure (what the client owes now), the next invoice and what's waiting on them. An owner needs three figures (to collect, to pay, profit) and their approvals. The server already hands each role different data; today both get the same 3,273px page.</p>
+    </div>
+    <div class="compare">
+      <div class="col">
+        <span class="label today">Today · Benjamin's Money tab</span>
+        <button class="shot tall" type="button" data-img="money-benjamin-1440-full" aria-label="Open today's Money tab full size"><img src="img/money-benjamin-1440-full.jpg" alt="Today's Money tab: 10 tiles, 8 tables, 7 alert bands" loading="lazy"></button>
+        <p class="cap"><b>10 tiles, 8 tables, 7 alert bands, 5 filled buttons.</b> One invoice spans five tables. Costs start 1,900px down; profit is inside them.</p>
+      </div>
+      <div class="col">
+        <span class="label after">Proposed</span>
+        <div class="mock-wrap" data-w="1200" data-h="1010">
+          <div class="mock" style="width:1200px;height:1010px;padding:22px 26px;display:flex;flex-direction:column;gap:18px;background:#fff">
+            <div class="secttl"><b style="font-size:20px">Money</b><span><button class="fbtn" type="button" tabindex="-1">+ New ▾</button></span></div>
+            <div class="card"><div class="ch">Needs you · 5<span class="r">worst first</span></div><div class="rows">
+              <div class="row"><span class="ic red"></span><span class="tx"><b>INV-2026-006 · Mid-Project</b> · S$20,784.94<div class="m red">7 days overdue · reminded twice, last 6 Oct</div></span><span class="act">Remind on WhatsApp &nbsp; <span class="act f">Record a payment</span></span></div>
+              <div class="row"><span class="ic pu"></span><span class="tx"><b>PO-2026-008</b> to Stone &amp; Tile Masonry · S$5,529.57<div class="m">Germaine submitted it 5 Oct · leaves 23.8% against the quote</div></span><span class="act">Approve and send</span></div>
+              <div class="row"><span class="ic red"></span><span class="tx"><b>AquaFlow Plumbing's bill AF-7781</b> · S$1,400.00<div class="m red">Due 30 Sep</div></span><span class="act">Pay</span></div>
+            </div><div class="more">Show 2 more — Germaine's S$38.50 claim · S$1,090 to refund on CN-2026-002</div></div>
+            <div class="tiles">
+              <div class="tile"><span class="tl">To collect</span><span class="tv red">S$20,784.94</span><div class="pbar"><i style="width:40%"></i></div><span class="th">S$27,713 collected of S$69,283 · Next: Completion S$20,784.94 when Handover &amp; defect check is done</span></div>
+              <div class="tile"><span class="tl">To pay</span><span class="tv red">S$1,400.00</span><span class="th">Overdue · S$5,529.57 waiting for your approval</span></div>
+              <div class="tile"><span class="tl">Profit <span class="mchip n">Early estimate</span></span><span class="tv">--</span><span class="th">Shown once costs pass a tenth of the contract · cash in hand S$27,713</span></div>
+            </div>
+            <div class="secttl"><b>Billing</b><span>From OM-10005's payment schedule · Change the split</span></div>
+            <div class="mtable">
+              <div class="mh" style="grid-template-columns:1.4fr 1fr 1.6fr 1.2fr 150px"><span>Stage</span><span>Amount</span><span>Invoice</span><span>Paid</span><span></span></div>
+              <div class="mr" style="grid-template-columns:1.4fr 1fr 1.6fr 1.2fr 150px"><span>Deposit<div class="s">On signing</div></span><span>S$6,928.31<div class="s">10%</div></span><span><span class="mchip g">Paid</span><div class="s">INV-2026-003 · paid 8 Aug</div></span><span>S$6,928.31<div class="s">RCT-2026-002</div></span><span class="act">Open</span></div>
+              <div class="mr" style="grid-template-columns:1.4fr 1fr 1.6fr 1.2fr 150px"><span>Commencement<div class="s">Hacking &amp; demolition · done</div></span><span>S$20,784.94<div class="s">30%</div></span><span><span class="mchip g">Paid</span><div class="s">INV-2026-004 · S$1,090 credited</div></span><span>S$20,784.94<div class="s">RCT-2026-004</div></span><span class="act">Open</span></div>
+              <div class="mr" style="grid-template-columns:1.4fr 1fr 1.6fr 1.2fr 150px"><span>Mid-Project<div class="s">Electrical &amp; plumbing · done</div></span><span>S$20,784.94<div class="s">30%</div></span><span><span class="mchip r">Overdue</span><div class="s">INV-2026-006 · due 2 Oct</div></span><span>--</span><span class="act">Record a payment</span></div>
+              <div class="mr" style="grid-template-columns:1.4fr 1fr 1.6fr 1.2fr 150px"><span>Completion<div class="s">Handover &amp; defect check</div></span><span>S$20,784.94<div class="s">30%</div></span><span><span class="mchip n">Draft</span><div class="s">Sent when the handover is done</div></span><span>--</span><span class="act"></span></div>
+            </div>
+            <div class="secttl"><b>Costs</b><span><span class="pill on">All</span> <span class="pill">Purchase orders</span> <span class="pill">Bills</span> <span class="pill">Expenses</span></span></div>
+            <div class="mtable">
+              <div class="mh" style="grid-template-columns:1.6fr 0.8fr 1fr 1fr 1.3fr 150px"><span>What</span><span>Kind</span><span>Amount</span><span>Paid</span><span>Status</span><span></span></div>
+              <div class="mr" style="grid-template-columns:1.6fr 0.8fr 1fr 1fr 1.3fr 150px"><span>PO-2026-005 · AquaFlow Plumbing<div class="s">Bill AF-7781 · S$1,400</div></span><span>PO</span><span>S$1,400.00</span><span>--</span><span><span class="mchip r">Bill overdue</span></span><span class="act">Pay</span></div>
+              <div class="mr" style="grid-template-columns:1.6fr 0.8fr 1fr 1fr 1.3fr 150px"><span>PO-2026-008 · Stone &amp; Tile Masonry<div class="s">Tiling, screeding and waterproofing</div></span><span>PO</span><span>S$5,529.57</span><span>--</span><span><span class="mchip a">Waiting for approval</span></span><span class="act">Approve and send</span></div>
+            </div>
+            <span class="annot" data-n="1" style="left:760px;top:70px">Every money step that waits on you, each fact once, with its button</span>
+            <span class="annot" data-n="2" style="left:820px;top:330px">"--" until profit means something</span>
+            <span class="annot" data-n="3" style="left:880px;top:470px">One invoice = one row; payments and credits fold into it</span>
+            <span class="annot" data-n="4" style="left:880px;top:820px">POs, bills and expenses in one list; every record opens one side panel</span>
+          </div>
+        </div>
+        <p class="cap"><b>Needs you · Collect · Pay · Profit · Billing · Costs.</b> One New ▾ for both halves. Every record opens the same side panel, the one POs and bills already use, so an invoice's payments, receipts, credit notes and history sit in one place. On a phone, Billing and Costs switch with two chips; the tab is ~2 screens instead of 8.6.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="finance">
+    <div class="sec-head">
+      <span class="eyebrow">07 · Finance</span>
+      <h2>Open on what the money needs from you</h2>
+      <p class="prose">Studio owners don't think in "purchase orders, bills, expenses, payments out". They think <b>what do I approve, what do I pay, who owes us, what's stuck</b>. Finance › Overview shows 6 rows today while 15 items wait on Dane, and "who owes us" isn't in Finance at all.</p>
+    </div>
+    <div class="ia">
+      <div class="tree old"><span class="label today">Today · 8 tabs by record type</span>
+        <span class="t">Overview (Money to verify · Stuck)</span><span class="t">Purchase orders</span><span class="t">Bills</span><span class="t">Expenses</span><span class="t">Payments out</span><span class="t">Vendors</span><span class="t">Commissions</span><span class="t">Accounting</span>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="tree new"><span class="label after">Proposed · 5 tabs by job</span>
+        <span class="t"><b>To do</b><span class="views">To approve · To pay · To collect · Stuck, each action on its row; where Finance lands</span></span>
+        <span class="t"><b>Money out</b><span class="views">one list with a kind switch: Purchase orders · Bills · Expenses · Paid (today's tables, unchanged)</span></span>
+        <span class="t"><b>Vendors</b><span class="views">as today, with Merge</span></span>
+        <span class="t"><b>Commission</b><span class="views">one table grouped by member, with "Pay Michelle"</span></span>
+        <span class="t"><b>Xero</b><span class="views">mapping and sync log; Connect works in place</span></span>
+        <span class="foot">Members see 4 tabs, with their own drafts, claims and commission. The numbers stay in Company › Reports, with one set of numbers (your call S-13).</span>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="col">
+        <span class="label today">Today · Finance › Overview</span>
+        <button class="shot" type="button" data-img="fin-overview-1440" aria-label="Open today's Finance Overview full size"><img src="img/fin-overview-1440.jpg" alt="Today's Finance Overview: Money to verify and Stuck" loading="lazy"></button>
+        <p class="cap"><b>6 rows shown while 15 wait on Dane.</b> Missing: bills due but not yet overdue, PO balances, claims to pay back, S$1,258 of commission owed, overdue client invoices, vendors asking for changes.</p>
+        <button class="shot" type="button" data-img="fin-pos-1440" aria-label="Open today's Purchase orders full size"><img src="img/fin-pos-1440.jpg" alt="Today's Purchase orders tab" loading="lazy"></button>
+        <p class="cap">Paying one carpenter visits Purchase orders, Bills, Vendors (for his bank details) and Payments out.</p>
+      </div>
+      <div class="col">
+        <span class="label after">Proposed · Finance › To do</span>
+        <div class="mock-wrap" data-w="1440" data-h="1020">
+          <div class="mock" style="width:1440px;height:1020px">
+            <div class="app" style="height:100%">
+              <div class="rail"><span class="logo"></span><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i></div>
+              <div class="sheet">
+                <div class="hdr"><div class="tt"><span class="title">Finance</span></div><span style="color:var(--om-primary);font-weight:600">Reports ›</span><button class="fbtn" type="button" tabindex="-1">+ New ▾</button></div>
+                <div class="tabsx"><span class="on">To do <span class="cnt">15</span></span><span>Money out</span><span>Vendors</span><span>Commission</span><span>Xero</span></div>
+                <div class="centre" style="gap:16px">
+                  <div class="toolbar"><span class="pill on">All · 15</span><span class="pill">To approve · 3</span><span class="pill">To pay · 8</span><span class="pill">To collect · 3</span><span class="pill">Stuck · 1</span><span class="search">Search what, who, project…</span></div>
+                  <div class="secttl"><b>To approve</b><span>3 waiting for you · S$5,568.07</span></div>
+                  <div class="mtable">
+                    <div class="mh" style="grid-template-columns:1.7fr 1.3fr 1fr 0.9fr 1.6fr 160px"><span>What</span><span>Project</span><span>Asked by</span><span>Amount</span><span>What to know</span><span></span></div>
+                    <div class="mr" style="grid-template-columns:1.7fr 1.3fr 1fr 0.9fr 1.6fr 160px"><span>PO-2026-008 to Stone &amp; Tile<div class="s">Tiling, screeding and waterproofing</div></span><span>Benjamin Han</span><span>Germaine · 5 Oct</span><span>S$5,529.57</span><span class="s">Over S$5,000 · leaves 23.8% against the quote</span><span class="act">Approve and send</span></div>
+                    <div class="mr" style="grid-template-columns:1.7fr 1.3fr 1fr 0.9fr 1.6fr 160px"><span>"Grab to site — tile selection"<div class="s">Claim · transport</div></span><span>Benjamin Han</span><span>Germaine · 4 Oct</span><span>S$38.50</span><span class="s">Receipt attached</span><span class="act">Approve</span></div>
+                    <div class="mr" style="grid-template-columns:1.7fr 1.3fr 1fr 0.9fr 1.6fr 160px"><span>Michelle asks for 5% commission<div class="s">"Two variation orders and extra site visits"</div></span><span>Ryan D'Souza</span><span>Michelle · 5 Oct</span><span>--</span><span class="s">Studio rule is 3%</span><span class="act">Answer</span></div>
+                  </div>
+                  <div class="secttl"><b>To pay</b><span>S$19,002.20 · S$1,400.00 overdue</span></div>
+                  <div class="mtable">
+                    <div class="mh" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>To</span><span>For</span><span>Project</span><span>Due</span><span>Amount</span><span></span></div>
+                    <div class="mr" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>AquaFlow Plumbing Works</span><span>Bill AF-7781 · PO-2026-005</span><span>Benjamin Han</span><span style="color:var(--om-red)">30 Sep · 9 days late</span><span>S$1,400.00</span><span class="act">Pay</span></div>
+                    <div class="mr" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>Woodcraft Carpentry</span><span>PO-2026-003 balance</span><span>Ryan D'Souza</span><span>on delivery</span><span>S$14,077.35</span><span class="act">Pay</span></div>
+                    <div class="mr" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>Germaine · Michelle</span><span>Commission owed</span><span>3 projects</span><span>--</span><span>S$1,258.45</span><span class="act">Pay</span></div>
+                  </div>
+                  <div class="secttl"><b>To collect</b><span>S$34,802.98 owed on 3 invoices</span></div>
+                  <div class="mtable">
+                    <div class="mh" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>Client</span><span>Invoice</span><span>Project</span><span>Due</span><span>Amount</span><span></span></div>
+                    <div class="mr" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>Ryan D'Souza</span><span>INV-2026-002 · says he paid</span><span>Executive Condo</span><span>8 Aug</span><span>S$13,370.04</span><span class="act">Confirm</span></div>
+                    <div class="mr" style="grid-template-columns:1.5fr 1.4fr 1.3fr 1fr 1fr 160px"><span>Benjamin Han</span><span>INV-2026-006 · Mid-Project</span><span>HDB 5-Room</span><span style="color:var(--om-red)">2 Oct · 7 days late</span><span>S$20,784.94</span><span class="act">Remind</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class="annot" data-n="1" style="left:560px;top:84px">Grouped by what you do, not by record type</span>
+            <span class="annot" data-n="2" style="left:1100px;top:150px">The approver sees the margin before approving</span>
+            <span class="annot" data-n="3" style="left:700px;top:930px">Pay shows the vendor's bank and PayNow in the dialog</span>
+            <span class="annot" data-n="4" style="left:1000px;top:930px">"Who owes us" lives here now; Remind drafts the WhatsApp</span>
+          </div>
+        </div>
+        <p class="cap"><b>Every action opens the same dialog or panel the record lists use, in place, with Undo.</b> Approve and send a PO: 6 → 5 presses with the margin in view. Pay a bill: 5–10 → 4. Chase a client: 7 → 4. Run commission for three people: 11 presses and 4 dialogs → 9 and 3. Log a claim on site: ~12 → ~9, receipt first.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="flows">
+    <div class="sec-head">
+      <span class="eyebrow">08 · Flows</span>
+      <h2>The jobs, before and after</h2>
+      <p class="prose" id="flows-intro">Presses counted from where the person starts their day (a project's Overview, or Company › Finance).</p>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>The job, in the studio's words</th><th>Who</th><th>Today</th><th>Proposed</th><th>What changes</th></tr></thead>
+      <tbody id="flow-rows">
+        <tr><td>"What do I have to do on this project today?"</td><td>Designer</td><td class="n"><span class="was">7 places to read</span></td><td class="n"><span class="now">1 list</span></td><td>Needs you, then My tasks; the first row in the first phone screen</td></tr>
+        <tr><td>"We won it — get the job ready to start"</td><td>Designer</td><td class="n"><span class="was">~15 · 8 screens · date asked 3×</span></td><td class="n"><span class="now">5</span></td><td>The Start sheet: date, schedule, invite, deposit; one WhatsApp</td></tr>
+        <tr><td>"Post today's site photos"</td><td>Designer · phone</td><td class="n"><span class="was">8 · photos last · title typed</span></td><td class="n"><span class="now">5</span></td><td>The site bar's Photos; title filled from the running stage</td></tr>
+        <tr><td>"Carpentry's done — tell him, bill him"</td><td>Designer</td><td class="n"><span class="was">~16 · 5 screens · 3 WhatsApps</span></td><td class="n"><span class="now">3 (phone 2)</span></td><td>The Mark done sheet</td></tr>
+        <tr><td>"Tell Benjamin the new dates"</td><td>Designer</td><td class="n"><span class="was">2, only if the header shows it</span></td><td class="n"><span class="now">2, always</span></td><td>Share N changes is a button on the Schedule toolbar</td></tr>
+        <tr><td>"He picked the quartz — bill the difference"</td><td>Designer</td><td class="n"><span class="was">~5 + remembering</span></td><td class="n"><span class="now">2</span></td><td>The pick drafts the VO; a Needs you row sends it</td></tr>
+        <tr><td>"He asked for a socket — price it"</td><td>Designer</td><td class="n"><span class="was">~6 + lines, words retyped</span></td><td class="n"><span class="now">3 + lines</span></td><td>⋮ on the message › Raise a variation order</td></tr>
+        <tr><td>"Hand it over"</td><td>Designer · Owner</td><td class="n"><span class="was">8–12, with tab trips</span></td><td class="n"><span class="now">4–6</span></td><td>Fixes in place on the checklist; Tell and Undo</td></tr>
+        <tr><td>"Approve what's waiting for me"</td><td>Owner</td><td class="n"><span class="was">7–9 presses · 2 tabs · 3 screens</span></td><td class="n"><span class="now">4 rows, 0 scrolling</span></td><td>Updates, POs, expenses and bills are rows on the Overview, each with Review</td></tr>
+        <tr><td>"Answer what Benjamin asked"</td><td>Designer · phone</td><td class="n"><span class="was">4–5</span></td><td class="n"><span class="now">2</span></td><td>Needs you › Reply lands at the composer</td></tr>
+        <tr><td>"Log the call I just had"</td><td>Designer · phone</td><td class="n"><span class="was">6–7</span></td><td class="n"><span class="now">3</span></td><td>⋮ › Contact log › Save</td></tr>
+        <tr><td>"Ryan says he paid — confirm it"</td><td>Designer</td><td class="n"><span class="was">3, unsignposted</span></td><td class="n"><span class="now">2, visible</span></td><td>A Needs you row; the proof opens in the record panel</td></tr>
+        <tr><td>"Issue a credit note and record the refund"</td><td>Owner / Admin</td><td class="n"><span class="was">5 + 2, ~1,000px apart</span></td><td class="n"><span class="now">4 + 2</span></td><td>The refund row gets its own button</td></tr>
+        <tr><td>"Raise a PO from the quote"</td><td>Designer</td><td class="n"><span class="was">9 + lines, after 1,900px of scroll</span></td><td class="n"><span class="now">8 + lines, no scroll</span></td><td>New ▾ at the top of Money</td></tr>
+        <tr><td>"Is this job making money?"</td><td>Owner</td><td class="n"><span class="was">misleading figure</span></td><td class="n"><span class="now">honest, first screen</span></td><td>Profit "--" until graded; one named margin</td></tr>
+        <tr><td>"Pay the carpenter"</td><td>Owner / Admin</td><td class="n"><span class="was">5 (10 with bank lookup)</span></td><td class="n"><span class="now">4</span></td><td>To do › Pay, with bank and PayNow shown</td></tr>
+        <tr><td>"Who owes us? Chase them"</td><td>Owner</td><td class="n"><span class="was">7 per client</span></td><td class="n"><span class="now">4</span></td><td>To do › To collect › Remind</td></tr>
+        <tr><td>"Tick off the HDB rules"</td><td>Designer</td><td class="n"><span class="was">10th tab · logged twice</span></td><td class="n"><span class="now">Tasks › Compliance · once</span></td><td>Compliance items are tasks; one tick, one Activity line</td></tr>
+      </tbody>
+    </table></div>
+    <div id="flows-more"></div>
+  </section>
+
+  <section id="evidence">
+    <div class="sec-head">
+      <span class="eyebrow">09 · Evidence</span>
+      <h2>What the best tools do, and what it means for us</h2>
+      <p class="prose">From their help docs, product tours and reviews. The leaders don't have fewer modules than OpenMaison. They <b>group</b> them, <b>hide</b> what a job doesn't use, <b>open on what needs you</b> and <b>push</b> digests. Full sources are in <code>R-benchmark.md</code>.</p>
+    </div>
+    <div class="patterns">
+      <div class="pat"><span class="who">Buildertrend · Procore</span><h3>Land on what needs me</h3><p>Buildertrend rebuilt its landing page because people "would begin there but quickly navigate to another page". Procore's project home lists open items by whose move it is.</p></div>
+      <div class="pat"><span class="who">Buildertrend · Houzz Pro</span><h3>Many tools, few headings</h3><p>About 20 job tools under 5 menus. Houzz Pro lets a studio switch off tiles it doesn't use. Our 14 → 7.</p></div>
+      <div class="pat"><span class="who">Monograph · JobTread · CoConstruct</span><h3>Money on one spine</h3><p>The phase timeline, the job budget or the single estimate. Other documents are converted from it, not retyped. Our payment stages become Billing's spine.</p></div>
+      <div class="pat"><span class="who">Xero · QuickBooks</span><h3>Browse by status, not by document type</h3><p>Xero's bills: Draft · Awaiting approval · Awaiting payment · Paid, with dashboard links landing on Awaiting payment. Our To do and Money out.</p></div>
+      <div class="pat"><span class="who">Buildertrend · QuickBooks</span><h3>Costs come in through an inbox</h3><p>Capture a receipt first, file it later: Buildertrend's Cost Inbox, QuickBooks' "For review". Our receipt-first claim on a phone.</p></div>
+      <div class="pat"><span class="who">CoConstruct · Houzz Pro</span><h3>The client sees the studio's view, filtered</h3><p>"Set up very similar to the builder's side". Houzz Pro drafts the weekly client update from the week's activity, and the pro edits and publishes it. Our Client tab mirrors the portal.</p></div>
+    </div>
+  </section>
+
+  <section id="kept">
+    <div class="sec-head">
+      <span class="eyebrow">10 · Nothing lost</span>
+      <h2>Every capability keeps a home</h2>
+      <p class="prose">The full maps are in the four study files (about 120 rows). Here are the ones that move; everything not listed stays exactly where it is, including every deep link, bell link and old address.</p>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Capability</th><th>Today</th><th>Proposed</th></tr></thead>
+      <tbody>
+        <tr><td>Updates · Messages · Tickets · Questionnaire</td><td>4 tabs</td><td>Client tab, 4 views (same components, same addresses)</td></tr>
+        <tr><td>Choices · Floor plan · renders and 3-D layouts the client sees</td><td>2 tabs + scattered doors</td><td>Design tab, 3 views (Designs is a new view of existing records)</td></tr>
+        <tr><td>Compliance checklist</td><td>Its own tab; also synced tasks</td><td>Tasks › Compliance view; one record, one tick</td></tr>
+        <tr><td>Files · Notes &amp; Logs · Activity</td><td>3 tabs</td><td>Files &amp; notes tab, 3 views</td></tr>
+        <tr><td>Key documents (signed quote, contract)</td><td>An Overview card + ⋮</td><td>Info column › Project info rows (+ ⋮)</td></tr>
+        <tr><td>Getting started</td><td>A card on every stage</td><td>"Before work starts" rows while setting up; the Start sheet does the date, schedule, invite and deposit; an unticked step comes back as a row</td></tr>
+        <tr><td>Start and done prompts</td><td>Page memory (lost on reload)</td><td>Needs you rows read from records; the sheets' ticks</td></tr>
+        <tr><td>Remind (any waiting item)</td><td>The Invite to Portal drawer</td><td>That drawer, plus every Needs you and With {client} row</td></tr>
+        <tr><td>Attention reasons · waiting on the client</td><td>Red rows in Project stages</td><td>Needs you (ours) · With {client} (theirs, with Remind)</td></tr>
+        <tr><td>Invoices sent · Other invoices · Payments · Credit notes</td><td>5 tables</td><td>Billing rows + the record panel (optional view chips for admins)</td></tr>
+        <tr><td>POs · Bills · Expenses (on a project)</td><td>3 tables, 1,900px down</td><td>Costs, one list with a kind filter</td></tr>
+        <tr><td>"What the numbers say" on Money</td><td>A block of insights</td><td>Non-duplicates become Needs you rows; the full list stays in Reports</td></tr>
+        <tr><td>Finance's Purchase orders · Bills · Expenses · Payments out</td><td>4 tabs</td><td>Money out, kind switch (today's tables unchanged)</td></tr>
+        <tr><td>Finance Overview's Money to verify · Stuck</td><td>Overview</td><td>To do, widened to everything that waits</td></tr>
+        <tr><td>Commission lines per project</td><td>Pay per line</td><td>Grouped by member; Pay {member} pays their lines oldest first</td></tr>
+        <tr><td>Money rules (invoices, payments, credit notes, paper)</td><td>Settings › Projects + Settings › Finance</td><td>One Settings module for money, one Document numbers card</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="decide">
+    <div class="sec-head">
+      <span class="eyebrow">11 · Your calls</span>
+      <h2>Pick what to build</h2>
+      <p class="prose">Each proposal has a Build / Discuss / Skip pick and an optional note; each question has my recommendation marked. Your picks save as you make them, and I'll read them before building. Several of these revise your picks from 8 October, and those say so.</p>
+    </div>
+    <div class="bar"><span class="tally" id="tally">Loading your picks…</span><button class="btn ghost" type="button" id="all-rec">Mark the rest as recommended</button><span class="tally" id="save"></span></div>
+    <div class="decide" id="decide-list"></div>
+  </section>
+
+  <section id="plan">
+    <div class="sec-head">
+      <span class="eyebrow">12 · The build</span>
+      <h2>Four rounds, each one usable on its own</h2>
+      <p class="prose">After your picks, built as packages in parallel like the parity rounds. Each round ends with its probes green, the anatomy and lint checks, ghosts that match, register rows and updated UAT steps.</p>
+    </div>
+    <div class="phases">
+      <div class="phase"><span class="w">Round 1 · the biggest relief</span><h3>One list of what needs you</h3><ul><li>The project Overview's Needs you (Needs your OK first) · With {client} · Coming up</li><li>The header's button reads the list</li><li>One tab-count rule; red only for ours-and-late</li><li>Finance › To do</li><li>Honest profit</li><li>The four bug fixes</li></ul></div>
+      <div class="phase"><span class="w">Round 2 · fewer places</span><h3>Fewer tabs, one money story</h3><ul><li>Project tabs 14 → 7 with views; old addresses kept</li><li>The Money tab's regions and one record panel</li><li>Finance › Money out and Commission</li><li>One Settings home for money and approvals</li></ul></div>
+      <div class="phase"><span class="w">Round 3 · the moments</span><h3>One sheet per moment</h3><ul><li>Start · Mark done · Hand over sheets</li><li>Choices that run up to the send</li><li>Task and VO from messages and tickets</li><li>New client messages; Share N changes</li></ul></div>
+      <div class="phase"><span class="w">Round 4 · the phone and the numbers</span><h3>On site, and one set of numbers</h3><ul><li>The site bar, photos first, the receipt-first claim, Create in ⋮</li><li>Reports' number fixes</li><li>The options you pick (weekly update draft, order from the quote…)</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const PROPOSALS = [
+  { id: 'S-01', t: 'The project Overview opens on one ranked "Needs you" list', d: 'Approvals, client money, the client waiting on us, late work and sharing, each row with its one button. With {client} and Coming up follow; Progress, Money and Recent activity are glances. Key documents, Files and Questionnaire leave the Overview.', note: 'Revises P-04 (8 Oct: the lead\'s Files and Questionnaire cards on the project Overview).' },
+  { id: 'S-02', t: 'The header\'s filled button is always the top Needs you row', d: 'So the button and the list can never disagree. Stage moves (Start, Complete handover, Resume) are rows when they\'re due.', note: 'Changes REG-917\'s registry order.' },
+  { id: 'S-03', t: 'Project tabs 14 → 7: Overview · Tasks · Schedule · Client · Design · Money · Files & notes', d: 'Views inside each group (house Chips). Every slug keeps its address and lights its group\'s tab. Keys 1–7 reach every tab.' },
+  { id: 'S-04', t: 'One tab-count rule: count only what waits on you', d: 'Tasks = overdue + due today; Client = unread + tickets waiting + updates to review; Money = invoices to send or overdue + your approvals and payments. Compliance stops counting on the strip.', note: 'Revises REG-1182 / REG-1400 ("open tasks").' },
+  { id: 'S-05', t: 'Red only for "late, and ours to fix"', d: 'The client\'s lateness, a vendor\'s reply and a client\'s "no" become neutral rows with Remind or Open.', note: 'Changes REG-914\'s red rows.' },
+  { id: 'S-06', t: 'Compliance becomes a view of Tasks', d: 'Compliance items already sync with tasks. One list, one tick, one Activity line.' },
+  { id: 'S-07', t: 'Money tab: Needs you · Collect · Pay · Profit · Billing · Costs', d: 'One New ▾ for both halves. Billing uses the payment stages as its spine, with payments and credit notes folded into each invoice. Costs is one list with a kind filter. On a phone, two chips switch the lists.' },
+  { id: 'S-08', t: 'One record panel for every money record', d: 'Invoices get the side panel POs and bills already have: facts, payments, credit notes, history and the next step. The printable pages stay for print and the client.' },
+  { id: 'S-09', t: 'Profit shows "--" until it means something', d: 'On the Overview, the Money tab and Reports, until costs pass the early-estimate line. Today it shows the whole contract.' },
+  { id: 'S-10', t: 'Finance opens on To do: To approve · To pay · To collect · Stuck', d: 'Every action on its row, opening the existing dialogs in place. "Who owes us" lives here. The approver sees the margin; Pay shows the bank and PayNow.' },
+  { id: 'S-11', t: 'Finance tabs 8 → 5: To do · Money out · Vendors · Commission · Xero', d: 'Purchase orders, Bills, Expenses and Payments out become one Money out list with a kind switch. Today\'s tables are unchanged.' },
+  { id: 'S-12', t: 'Commission grouped by member, with "Pay Michelle"', d: 'Pays the member\'s owed lines oldest first, one payout per project. This is a new behaviour; today pay is per project line.' },
+  { id: 'S-13', t: 'One set of numbers in Reports', d: 'Fixes three disagreements: overdue to vendors (S$1,400 vs S$15,477), margin (63.2% vs 87.7%, two margins named apart) and commission (period stated). Figures studios have seen in demos will change.' },
+  { id: 'S-14', t: 'Create on a phone, and a receipt-first claim', d: 'The ⋮ sheet carries the Create list (Photo update · Task · Note · Contact log · Expense · Variation order). The expense dialog opens with "Take a photo of the receipt".' },
+  { id: 'S-15', t: 'One Settings home for money rules, and one Document numbers card', d: 'The Invoices, Client payments, Credit notes and Invoice paper cards join Costs and Commission. One card numbers INV, RCT, CN and PO.' },
+  { id: 'S-16', t: 'The Company badge counts money approvals', d: '"2 to approve" on the Company panel\'s Finance row, as Templates shows "1 awaiting".' },
+  { id: 'S-17', t: 'The Start sheet', d: 'One sheet asks for the start date once, picks the schedule (today\'s picker and preview), ☑ invites the client and ☑ sends the Deposit invoice (or submits it for approval). Then one WhatsApp carries the invite and the deposit link, with one Undo. Getting started becomes "Before work starts" rows.', note: 'Grows REG-917\'s Start dialog; the combined WhatsApp text is invented copy.' },
+  { id: 'S-18', t: 'The Mark done sheet, and a Done on each phone schedule row', d: 'Ticks: bring later stages forward · show it as done · ask the client to confirm · photos become an update · send the stage\'s invoice. Under Done approval the ticks travel with the ask and run on the Owner\'s approval.' },
+  { id: 'S-19', t: 'The Hand over sheet fixes things in place', d: 'Mark done, Remind, Send the Completion invoice and Approve all work inside the checklist. Compliance\'s Handover items and open tickets join the checklist (deferrable), and a Tell {client} tick is added.', note: 'Extends Q-24\'s checklist.' },
+  { id: 'S-20', t: 'The Owner\'s OK in one place', d: 'Needs you starts with a "Needs your OK" group, approve in the row. The listing\'s Needs my review counts every kind, including schedule asks, POs and expenses. One Settings card lists all six "waits for an Owner or an Admin" switches.' },
+  { id: 'S-21', t: 'Choices run themselves up to the send', d: 'Sharing a choice starts its milestone\'s wait (the pick already ends it). A priced pick drafts its VO, and a Needs you row offers "Send VO-n". Nothing reaches the client without a press.' },
+  { id: 'S-22', t: 'Messages and tickets get Make a task · Raise a variation order', d: 'As floor-plan marks already have. The client\'s words carry over, with a link back to where they came from.' },
+  { id: 'S-23', t: 'The phone\'s post: photos first, title filled', d: 'The camera opens first. The title fills from the running stage and the day (editable, still required), and the milestone is preselected. Desktop keeps today\'s order.' },
+  { id: 'S-24', t: '"Share N changes" is a button on the Schedule toolbar', d: 'So sharing no longer depends on the header slot. The line beside it keeps opening the client\'s view.' },
+  { id: 'S-25', t: 'Fix four things that look like bugs', d: '1) The studio\'s "See it as Benjamin" says "Under way" for a blocked stage while his page says "Paused". 2) The Contract dialog says "Files › Contract", but the folder is "Contract & VOs". 3) Delete forever skips projects with money recorded without saying so. 4) Phone schedule rows have no Mark done, and the panel\'s Done never offers to bring later stages forward.' },
+]
+const QUESTIONS = [
+  { id: 'Q-01', t: 'Tab names for the groups', o: [['client', '"Client", "Design", "Files & notes"', true], ['plan', '"Client", "Plan" (Schedule + Choices + Floor plan), "Files"'], ['other', 'Something else (say in the note)']] },
+  { id: 'Q-02', t: 'Where Notes & Logs lives', o: [['files', 'Files & notes (the record)', true], ['client', 'Client (contact logs are conversations with the client)']] },
+  { id: 'Q-03', t: 'Order of the Needs you rows', o: [['rec', 'Approvals → client money → the client waiting on us → late work → telling the client → set-up leftovers', true], ['money', 'Money first, then approvals, then the rest']] },
+  { id: 'Q-04', t: 'Create on a phone', o: [['kebab-bar', 'A Create group in the ⋮ sheet, plus a site bar (Photos · Done · Note · Message) while the job is In progress, on the house dock frame', true], ['kebab', 'Only the Create group in the ⋮ sheet (no new chrome)'], ['capture', 'One "Capture" button that opens Create']] },
+  { id: 'Q-05', t: 'Billing\'s payments and credit notes', o: [['fold', 'Fold into each invoice\'s row and its panel, with optional All · Invoices · Payments · Credit notes chips for admins', true], ['keep', 'Keep Payments and Credit notes as their own lists']] },
+  { id: 'Q-06', t: 'Billing · Costs on a project', o: [['both', 'Both lists at 1440; a two-chip switch on phones only', true], ['switch', 'The switch at every width']] },
+  { id: 'Q-07', t: '"Who owes us" rows inside Finance › To do', o: [['yes', 'Yes: listed in Finance, owned by the project\'s Money (rows open there)', true], ['no', 'No: keep money in on the project only']] },
+  { id: 'Q-08', t: 'Profit before costs exist', o: [['dash', '"--" with "Early estimate" until costs pass a tenth of the contract', true], ['planned', 'A planned margin from the quote\'s own line costs until real costs arrive']] },
+  { id: 'Q-09', t: 'The weekly client update', o: [['draft', 'Draft it from the week\'s records (no credits); the designer edits and publishes', true], ['ai', 'A metered Maison AI press'], ['none', 'Not now']] },
+  { id: 'Q-10', t: 'Order from the quote', o: [['yes', 'New ▾ › "Order from the quote" makes one Draft PO per vendor from the signed quote\'s lines', true], ['no', 'Keep only "Add from the quote" inside the PO dialog']] },
+  { id: 'Q-11', t: 'Hide modules a studio doesn\'t use', o: [['later', 'Later: a "modules this studio uses" list in Settings › Projects', true], ['now', 'Now, with this round'], ['never', 'No']] },
+  { id: 'Q-12', t: 'The new words', o: [['ok', 'Needs you · Needs your OK · With {client} · Coming up · Progress · Before work starts · Mark {stage} done · Tell {client} · To do · To approve · To pay · To collect · Stuck · Money out · Billing · Costs', true], ['edit', 'Change some (say which in the note)']] },
+  { id: 'Q-13', t: 'New messages to the client', o: [['all', 'Add "A choice to make", "Paused / running again" and "Handed over", and email studio replies in Messages by default; each stays switchable in Settings › Notifications', true], ['events', 'The three new events only; replies stay off (as H-Q18 decided)'], ['none', 'None']] },
+  { id: 'Q-14', t: 'Escalated and waiting tickets during a hold', o: [['keep', 'They stay in Needs attention: a defect isn\'t paused', true], ['hide', 'Hidden while on hold, as today']] },
+  { id: 'Q-15', t: 'Undo after Complete handover', o: [['undo', 'Yes, for the snackbar\'s life; after that, Reopen (Owner / Admin) as today', true], ['no', 'No: Reopen stays the only way back']] },
+  { id: 'Q-16', t: 'After Won and New project', o: [['open', 'Open the new project', true], ['stay', 'Stay where you are, with View (today)']] },
+  { id: 'Q-17', t: 'The Won step\'s payment split for a system quote', o: [['line', 'Show "Payments follow OM-10005\'s payment schedule" (the split stays for an uploaded quote). Today it\'s editable but ignored, and shows budget amounts before a quote is picked. Revises mock 780:92744 / REG-149', true], ['use', 'Keep it editable and make the project use it']] },
+  { id: 'Q-18', t: '"Ask for more time" while a Designer can drag the dates anyway', o: [['ask', 'With the rule on, a Designer\'s drag past the end becomes the ask', true], ['leave', 'Leave it as it is']] },
+]
+const ALL = [...PROPOSALS.map((p) => p.id), ...QUESTIONS.map((q) => q.id)]
+const picks = {}
+let db = null
+const el = (tag, a = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(a)) { if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v) } for (const c of kids.flat()) if (c != null) n.append(c.nodeType ? c : document.createTextNode(c)); return n }
+function note(id) { const t = el('textarea', { id: `note-${id}`, rows: '1', placeholder: 'A note (optional)', 'aria-label': `Note on ${id}` }); let tm; t.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => save(id, { note: t.value }), 600) }); return t }
+function render() {
+  const root = document.getElementById('decide-list'); root.replaceChildren()
+  root.append(el('h3', {}, 'Proposals'))
+  for (const p of PROPOSALS) {
+    const c = el('article', { class: 'dcard', id: p.id })
+    c.append(el('div', { class: 'dhead' }, el('span', { class: 'id' }, p.id), el('h3', {}, p.t)), el('p', {}, p.d))
+    if (p.note) c.append(el('p', { style: 'color:var(--today);font-size:13px' }, p.note))
+    c.append(el('div', { class: 'pickrow' }, el('div', { class: 'seg', role: 'group', 'aria-label': `Pick for ${p.id}` }, ...[['build', 'Build'], ['discuss', 'Discuss'], ['skip', 'Skip']].map(([v, l]) => el('button', { type: 'button', 'data-v': v, 'aria-pressed': 'false', onclick: () => save(p.id, { pick: picks[p.id]?.pick === v ? null : v }) }, l))), note(p.id)))
+    root.append(c)
+  }
+  root.append(el('h3', { style: 'margin-top:18px' }, 'Questions'))
+  for (const q of QUESTIONS) {
+    const c = el('article', { class: 'dcard', id: q.id })
+    c.append(el('div', { class: 'dhead' }, el('span', { class: 'id' }, q.id), el('h3', {}, q.t)))
+    c.append(el('div', { class: 'opts', role: 'radiogroup', 'aria-label': q.t }, ...q.o.map(([v, l, r]) => el('label', { class: 'opt' }, el('input', { type: 'radio', name: q.id, value: v, id: `${q.id}-${v}`, onchange: () => save(q.id, { answer: v, pick: 'build' }) }), el('span', {}, l, r ? el('span', { class: 'rec' }, 'Recommended') : null)))))
+    c.append(el('div', { class: 'pickrow' }, note(q.id)))
+    root.append(c)
+  }
+}
+function paint() {
+  let done = 0
+  for (const id of ALL) {
+    const p = picks[id] || {}, c = document.getElementById(id); if (!c) continue
+    c.dataset.pick = p.pick || ''
+    c.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === p.pick)))
+    c.querySelectorAll('input[type=radio]').forEach((r) => { r.checked = r.value === p.answer })
+    const t = c.querySelector('textarea'); if (t && document.activeElement !== t) t.value = p.note || ''
+    if (p.pick || p.answer) done++
+  }
+  document.getElementById('tally').textContent = `${done} of ${ALL.length} decided`
+}
+async function save(id, patch) {
+  picks[id] = { ...(picks[id] || {}), ...patch, at: Date.now() }
+  if (picks[id].pick == null) delete picks[id].pick
+  paint()
+  const s = document.getElementById('save')
+  if (!db) { s.textContent = 'This view can\'t save picks.'; return }
+  try { await db.doc(`picks/${id}`).set(picks[id]); s.textContent = 'Saved' } catch { s.textContent = `Couldn't save ${id}. Try again.` }
+}
+document.getElementById('all-rec').addEventListener('click', async () => {
+  for (const p of PROPOSALS) if (!picks[p.id]?.pick) await save(p.id, { pick: 'build' })
+  for (const q of QUESTIONS) if (!picks[q.id]?.answer) { const r = q.o.find((o) => o[2]); if (r) await save(q.id, { answer: r[0], pick: 'build' }) }
+})
+/* concept screens: scale the fixed-width drawing to its column */
+function fit() { document.querySelectorAll('.mock-wrap').forEach((w) => { const m = w.querySelector('.mock'); const W = +w.dataset.w, H = +w.dataset.h; const s = Math.min(1, w.clientWidth / W); m.style.transform = `scale(${s})`; w.style.height = `${Math.ceil(H * s)}px` }) }
+addEventListener('resize', fit); fit()
+/* screenshots open full size */
+document.querySelectorAll('.shot').forEach((b) => b.addEventListener('click', () => {
+  const prev = document.activeElement
+  const box = el('div', { class: 'lightbox', role: 'dialog', 'aria-label': 'Screenshot', onclick: (e) => { if (e.target === box) close() } }, el('img', { src: `img/${b.dataset.img}.jpg`, alt: '' }), el('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Close'))
+  const close = () => { box.remove(); removeEventListener('keydown', key); prev?.focus?.() }
+  const key = (e) => { if (e.key === 'Escape') close() }
+  addEventListener('keydown', key); document.body.append(box); box.querySelector('button').focus()
+}))
+render(); paint()
+;(async () => {
+  try { db = await window.claude?.use?.('db') } catch { db = null }
+  if (!db) { document.getElementById('tally').textContent = `0 of ${ALL.length} decided · picks can't be saved in this view`; return }
+  db.collection('picks').onSnapshot((snap) => { for (const d of snap.docs) { const v = d.data(); if (v) picks[d.id] = { ...v } } paint() }, () => { document.getElementById('save').textContent = 'Lost the connection. Reload to keep saving.' })
+})()
+</script>

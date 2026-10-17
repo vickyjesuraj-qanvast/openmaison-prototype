@@ -28,7 +28,7 @@ import { sgd, TOPUP_CREDITS, TOPUP_PRICE } from '@/lib/credits/plans'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import { displayDateTimeDot } from '@/lib/format'
 import { ago } from '@/lib/templates/ago'
-import { useMaisonAi } from '@/lib/maison-ai'
+import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { withFrom } from '@/lib/nav'
 import { PLAN_TABS } from '@/lib/company/sections'
 import type { Usage, UsageLead, UsageMember, UsageRange, UsageRow, UsageTool } from '@/lib/credits/queries'
@@ -40,11 +40,14 @@ export type Ask = { id: string; memberId: string; name: string; kind: 'pool' | '
 const RANGES: { key: UsageRange; label: string }[] = [{ key: 'this', label: 'This month' }, { key: 'last', label: 'Last month' }, { key: '3m', label: 'Last 3 months' }, { key: '6m', label: 'Last 6 months' }]
 /** (Q-25) The monthly amount's quick picks — 1.0's permanent cap under its 2.0 name. */
 const PICKS = [300, 600, 1000]
-const AI_SUGGESTIONS = ['Who used the most this month?', 'How long will our credits last?', 'Which leads had renders?']
+/* (pending modules S10 — card held:maison-ai, "Plan & AI credits' words-only suggestions") each is asked and answered from the credits record —
+   who used the most, when they run out at this month's pace, the leads with renders (lib/maison-ai/answers/money.ts · work.ts) */
+const AI_SUGGESTIONS: MaisonSuggestion[] = [{ label: 'Who used the most this month?', ask: 'Who used the most AI credits this month?' }, 'How long will our AI credits last?', 'Which leads had renders?']
 const PAGE = 20
 const plural = (n: number, one: string, many = `${one}s`) => `${fmtCredits(n)} ${n === 1 ? one : many}`
 const amountWords = (n: number | null) => (n == null ? 'No limit' : `${fmtCredits(n)} a month`)
-const workLine = (r: { renders: number; quotes: number }) => [r.renders ? plural(r.renders, 'render') : null, r.quotes ? plural(r.quotes, 'quote read', 'quotes read') : null].filter(Boolean).join(' · ') || 'Nothing yet'
+/* (pending modules S23 · S19, joined at the lanes' merge) a meeting's co-pilot time counts in the words as it does in the number — 10 minutes a block */
+const workLine = (r: { renders: number; quotes: number; copilot: number }) => [r.renders ? plural(r.renders, 'render') : null, r.quotes ? plural(r.quotes, 'quote read', 'quotes read') : null, r.copilot ? `${fmtCredits(r.copilot * 10)} min of Co-Pilot` : null].filter(Boolean).join(' · ') || 'Nothing yet'
 
 const MEMBER_DEFS = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
@@ -145,7 +148,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
 
   /* the tiles */
   const used = usage.tools.reduce((n, t) => n + t.credits, 0)
-  const works = usage.members.reduce((a, m) => ({ renders: a.renders + m.renders, quotes: a.quotes + m.quotes }), { renders: 0, quotes: 0 })
+  const works = usage.members.reduce((a, m) => ({ renders: a.renders + m.renders, quotes: a.quotes + m.quotes, copilot: a.copilot + m.copilot }), { renders: 0, quotes: 0, copilot: 0 })
   const runOut = trusted && s.counting ? runOutAt({ used: s.usedThisPeriod ?? 0, balance: s.balance ?? 0, periodStart: s.periodStart, periodEnd: s.periodEnd, now: s.now }) : null
   const delta = usage.previous != null && usage.previous > 0 ? Math.round(((used - usage.previous) / usage.previous) * 100) : null
   const plan = s.planCredits ?? 0, top = s.topupCredits ?? 0, whole = Math.max(1, (s.allowance ?? 0) + top)
@@ -253,7 +256,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
                       help={!s.counting ? 'AI tools don’t use AI credits yet' : runOut ? `Before the refresh on ${dayMonth(s.periodEnd)} — top up or pick Fast` : `This month’s credits refresh on ${dayMonth(s.periodEnd)}`} testId="tile-pace">
               {buyHere ? (
                 <span className={styles.tileActions} data-testid="pace-buy">
-                  <Button onPress={openTopUp}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button>
+                  <Button onPress={() => openTopUp()}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button>
                   <Button variant="secondary" appearance="outlined" onPress={openPlans}>See plans</Button>
                 </span>
               ) : null}
@@ -285,7 +288,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
                   <span className={styles.askActions}>
                     {a.kind === 'monthly' && raise != null ? <Button onPress={() => { void setAmount(a.memberId, raise) }}>{`Raise to ${fmtCredits(raise)}`}</Button> : null}
                     {a.kind === 'monthly' ? <Button variant="secondary" appearance="outlined" onPress={() => setCustom({ memberId: a.memberId, value: cap != null ? String(cap) : '', tried: false })}>Another amount</Button> : null}
-                    {a.kind === 'pool' ? <Button onPress={openTopUp}>{`Buy ${fmtCredits(TOPUP_CREDITS)} · ${sgd(TOPUP_PRICE)}`}</Button> : null}
+                    {a.kind === 'pool' ? <Button onPress={() => openTopUp()}>{`Buy ${fmtCredits(TOPUP_CREDITS)} · ${sgd(TOPUP_PRICE)}`}</Button> : null}
                   </span>
                 </div>
               )
@@ -306,7 +309,11 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
         ) : null}
 
         <CreditsTable table="credits-tools" title="By tool" testId="usage-tools" defs={TOOL_DEFS} rows={usage.tools} rowKey={(t) => t.key} cell={toolCell}
-                      help="Leads, quotes, contracts and projects never use AI credits." empty={`Nothing used ${rangeLabel.toLowerCase() === 'this month' ? 'this month' : `in ${rangeLabel.toLowerCase()}`}.`} />
+                      help="Leads, quotes, contracts and projects never use AI credits."
+                      /* (pending modules S19 — 1.0's 2026-10-01 empty month) a quiet month that follows a busy one says so, one press from it */
+                      empty={usage.range === 'this' && (usage.previous ?? 0) > 0
+                        ? <span data-testid="usage-empty-last">Nothing used this month yet — last month used {fmtCredits(usage.previous ?? 0)}. <Button appearance="text" onPress={() => go(() => router.replace(here('last'), { scroll: false }))}>See last month</Button></span>
+                        : `Nothing used ${rangeLabel.toLowerCase() === 'this month' ? 'this month' : `in ${rangeLabel.toLowerCase()}`}.`} />
 
         {trusted ? (
           <CreditsTable table="credits-leads" title="By lead" testId="usage-leads" defs={LEAD_DEFS} rows={usage.leads} rowKey={(l) => l.id} cell={leadCell}

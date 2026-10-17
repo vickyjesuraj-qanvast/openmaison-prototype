@@ -1,0 +1,17 @@
+/*
+ * (simplify S-08, P3 §6.4) What the record panel adds for an invoice — composed on the panel's own rules (finance.module.css), tokens only: the
+ * paper's links as one row of text buttons, and a list's lines (a payment, a credit note) as the panel's line grid with a status line and the
+ * line's own ⋮. A line a `?open=` named is lit once, the tables' way (plan.module.css `.row[data-focus]`).
+ */
+.links { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-2); margin-left: calc(-1 * var(--om-spacing-3)); }
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-1); margin: 0; padding: 0; list-style: none; }
+.row {
+  display: grid; grid-template-columns: minmax(0, 1fr) max-content 40px; align-items: start; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-2); margin: 0 calc(-1 * var(--om-spacing-2)); border-radius: var(--om-radius-2); font: var(--om-type-body-m);
+}
+.row[data-focus] { animation: lit 1600ms ease-out 1; }
+@keyframes lit { from { background: var(--om-color-primary-variant); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .row[data-focus] { animation: none; background: var(--om-color-primary-variant); } }
+.rowText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rowStatus { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; margin-top: 2px; }
+.rowMenu { display: flex; justify-content: flex-end; margin-top: -8px; }

@@ -1,0 +1,21 @@
+/* (pending modules S12) Match lines — the Order from the quote / Omit lists' pieces (omit-dialog.module.css → the Price book modal's list),
+   composed: the body, the bordered list, the caption group heads that hold while it scrolls, the tick rows. A match row has two grey lines
+   (the item it reads like · its cost and any price gap). */
+.body { composes: body from './omit-dialog.module.css'; }
+.list { composes: list from './omit-dialog.module.css'; }
+.groupHead { composes: groupHead from './omit-dialog.module.css'; gap: var(--om-spacing-3); }
+.row { composes: row from './omit-dialog.module.css'; min-height: 64px; }
+.text { composes: text from './omit-dialog.module.css'; }
+.name { composes: name from './omit-dialog.module.css'; }
+.meta { composes: meta from './omit-dialog.module.css'; }
+.price { composes: price from './omit-dialog.module.css'; }
+.empty { composes: empty from './omit-dialog.module.css'; }
+.emptyGlyph { composes: emptyGlyph from './omit-dialog.module.css'; }
+.emptyTitle { composes: emptyTitle from './omit-dialog.module.css'; }
+.emptyHelp { composes: emptyHelp from './omit-dialog.module.css'; }
+.price[data-tone="below"] { color: var(--om-color-tertiary-red-default); }   /* the Items grid's below-cost red (REG-623) */
+/* A phone: no thumbnail column here — the tick, then the words; the margin under them (the house list's phone shape without its photo). */
+@media (max-width: 767px) {
+  .row { grid-template-columns: auto minmax(0, 1fr); }
+  .price { grid-column: 2; text-align: left; }
+}

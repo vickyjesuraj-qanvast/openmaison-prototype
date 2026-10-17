@@ -72,7 +72,7 @@ export function ContractPaper({ html, values, brand, studio, studioSignature, cl
         </span>
       </header>
       <div className={styles.body} dangerouslySetInnerHTML={{ __html: resolved }} />
-      <footer className={styles.foot}>Prepared with OpenMaison</footer>
+      {/* (pending modules S03 — REG-963 · REG-1120 · REG-1682) no OpenMaison mark on the client's paper: the studio's letterhead alone */}
     </article>
   )
 }

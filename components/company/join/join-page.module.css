@@ -1,0 +1,10 @@
+/* (pending modules S09) The invitation's page — the signing page's bar and notice card (signing-page.module.css), inside a body with the house
+   side gutter; the caption under the button says what Join does until sign-in arrives. */
+.body { flex: 1; display: flex; flex-direction: column; padding: 0 var(--om-spacing-4) var(--om-spacing-8); }
+.fine { margin: 0; max-width: 440px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.ghostFine { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); width: 100%; max-width: 440px; }
+/* (pending modules S30) Join's code step inside the card — a left-set column (the boxes, Keep me signed in, the button, the resend line, the
+   stand-in's words) at the sign-in column's measure */
+.codeForm { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); text-align: left; }
+.codeForm .fine { max-width: none; }
+.check { display: flex; align-items: center; min-height: 40px; }

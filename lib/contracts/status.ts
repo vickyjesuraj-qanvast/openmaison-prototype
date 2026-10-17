@@ -4,11 +4,13 @@ import { db } from '@/lib/db'
 import { contractBundles, contracts, type Contract } from '@/lib/db/schema'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { signQuoteThrough } from '@/lib/quotes/sign'
-import { unsignBlock } from './policy'
+import { quoteHoldsSigningRule, unsignBlock } from './policy'
 import { sendBlock } from './readiness'
-import { namedQuoteBlock, signedSnapshot, UNSIGNED } from './queries'
+import { namedQuoteBlock, namedQuoteHold, signedSnapshot, UNSIGNED } from './queries'
 import { logLeadEvent } from '@/lib/leads/events'
 import { actingMember, afterSent, afterSigned, freshContract } from './automation'
+import { newSignToken, windowFrom } from './link-server'
+import { approveNamedQuote, contractSender } from './approve-named'
 
 /**
  * (REG-631, contracts parity Q-04 · Q-05) The one way a contract changes status by hand — the editor's pill and every list's status cell.
@@ -20,6 +22,7 @@ export async function applyContractStatus(c: Contract, status: 'Draft' | 'Sent t
   if (status === c.status) return
   const now = new Date()
   if (status === 'Signed') {
+    { const held = await namedQuoteHold(c); if (held) throw new Error(quoteHoldsSigningRule(held)) }   // (S42 B-01) a list's Signed waits for the revised quote
     const signedAt = c.signedAt ?? now
     await db.update(contracts).set({ status, sentAt: c.sentAt ?? now, signedAt, signedCopy: c.signedCopy ?? `${c.title}.pdf`, markedBy: await actingMember(), ...await signedSnapshot(c, signedAt), updatedAt: now }).where(eq(contracts.id, c.id))
     await signQuoteThrough(c, signedAt)   // (REG-626, parity Q-31)
@@ -27,12 +30,18 @@ export async function applyContractStatus(c: Contract, status: 'Draft' | 'Sent t
     return
   }
   if (c.status === 'Signed') { const why = unsignBlock(c, await fetchViewer()); if (why) throw new Error(why) }
-  if (status === 'Sent to Client' && c.status === 'Draft') { const why = sendBlock(c) ?? await namedQuoteBlock(c); if (why) throw new Error(why) }   // (sweep S2 #3) a list's status menu keeps Send's checks — (UX audit C2) the named quote's too
+  const who = status === 'Sent to Client' && c.status === 'Draft' ? await contractSender() : null   // (S44Q — row 334) an approver's move approves the named quote
+  if (status === 'Sent to Client' && c.status === 'Draft') { const why = sendBlock(c) ?? await namedQuoteBlock(c, who?.approver); if (why) throw new Error(why) }   // (sweep S2 #3) a list's status menu keeps Send's checks — (UX audit C2) the named quote's too
   const set: Partial<typeof contracts.$inferInsert> = { status, updatedAt: now, ...(c.status === 'Signed' ? UNSIGNED : {}) }
   if (status === 'Sent to Client' && !c.sentAt) { set.sentAt = now; set.sentBy = await actingMember() }
+  /* (pending modules S03) out for signature opens the link's window; back to Draft ends the link — a new token, so the address the client
+     has stays dead (the screens offer this as Stop the link, with Undo — stopSigningLink) */
+  if (status === 'Sent to Client') { set.signExpiresAt = await windowFrom(now); set.signToken = c.signToken ?? newSignToken() }
+  if (status === 'Draft' && c.status === 'Sent to Client') { set.signToken = newSignToken(); set.signExpiresAt = null }
   await db.update(contracts).set(set).where(eq(contracts.id, c.id))
   if (c.status === 'Signed') await logLeadEvent(db, c.leadId, 'contract_unsigned', { title: c.title, kind: status })   // (REG-634, E-128) the move back leaves a line
   if (status === 'Sent to Client' && !c.sentAt) { const fresh = await freshContract(c.id); if (fresh) await afterSent(fresh, now) }
+  if (who) await approveNamedQuote(c, who)
 }
 
 /**

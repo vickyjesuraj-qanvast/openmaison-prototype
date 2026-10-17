@@ -17,8 +17,9 @@ export type ContractsToolbarProps = {
   bare?: boolean
   query: string
   onQuery: (q: string) => void
-  /** New Contract menu — not mocked; the Quotes New Quote menu (910:36664) copied: From Blank · From Template · Import from File · Create with AI. */
-  onNew: (kind: 'blank' | 'template' | 'import' | 'ai') => void
+  /** New Contract menu — not mocked; the Quotes New Quote menu (910:36664) copied: From Blank · From Template · Import from File. (pending modules
+   *  S03, as the card recommends) Create with AI is gone — 1.0 had none, and nothing behind it would write a contract. */
+  onNew: (kind: 'blank' | 'template' | 'import') => void
   onFilter: () => void
   /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
   onColumns?: () => void
@@ -81,7 +82,6 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
             <DropdownItem onSelect={pick(() => onNew('blank'))}>From the studio agreement</DropdownItem>   {/* (sweep S2 #20) what it makes — the full agreement, as the picker says; "From Blank" made no blank */}
             <DropdownItem onSelect={pick(() => onNew('template'))}>From Template</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('import'))}>Import from File</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('ai'))}>Create with AI</DropdownItem>
           </Dropdown>
         </span>
         <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, status, date…" label="Search contracts" />
@@ -114,6 +114,7 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
             {/* (UX audit C4) the reason names the document that holds it back */}
             <DropdownItem disabled={!!noBundle} title={noBundle ?? undefined} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
+            {/* (pending modules S03, as the card recommends) Settings › Quotes & pricing › Contracts — the signing links' window */}
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Contracts</DropdownItem>   {/* (sweep S2 · U-07) */}
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Contracts</DropdownItem>

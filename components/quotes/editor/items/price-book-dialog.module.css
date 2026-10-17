@@ -29,7 +29,8 @@
 @media (hover: none) { .row:hover { background: none; } .row[data-selected] { background: var(--om-color-primary-variant); } }
 @media (max-width: 767px) {
   .row { grid-template-columns: auto 40px minmax(0, 1fr); row-gap: 2px; }
-  .name { white-space: normal; }   /* a phone shows the whole name, on two lines if it needs them */
+  .name { white-space: normal; flex-wrap: wrap; row-gap: 2px; }   /* a phone shows the whole name, on two lines if it needs them — (pending modules S12) a chip beside it ("On PO-…") wraps under it instead of squeezing the name into a narrow column */
+  .meta { white-space: normal; }   /* (pending modules S12) the grey line whole too ("1,037 sqft · 987 on the quote +5% waste"), never cut */
   .price { grid-column: 3; text-align: left; }
 }
 /* (REG-664) A folder in the list: the shared folder row, ruled like the item rows. */

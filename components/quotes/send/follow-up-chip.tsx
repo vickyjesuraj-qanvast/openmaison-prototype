@@ -20,14 +20,14 @@ export const followUpDate = (days: number, now: number) => new Date(startOfDay(n
  * (UX audit Q11) "Follow up in [3 days ▾]" in a send dialog: the house scope pill with the choices in a portal menu. The send sets the
  * quote's Due to that day, which raises (or moves) its follow-up task (REG-470) — "No follow-up" leaves Due as it is.
  */
-export function FollowUpChip({ days, onChange }: { days: number; onChange: (days: number) => void }) {
+export function FollowUpChip({ days, onChange, noun = 'quote' }: { days: number; onChange: (days: number) => void; /** (fix-D, D-24) a variation order is named as one */ noun?: string }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   const pick = FOLLOW_UPS.find((f) => f.days === days) ?? FOLLOW_UPS[1]!
   return (
     <div className={styles.followUp} data-testid="follow-up-chip">
       <ScopePill ref={anchor} icon="event" label={pick.days ? `Follow up in ${pick.label}` : 'No follow-up'} open={open} onClick={() => setOpen((o) => !o)} />
-      <span className={styles.followHelp}>{pick.days ? 'Sets the quote’s Due date and adds a follow-up task for you' : 'The quote’s Due date stays as it is'}</span>
+      <span className={styles.followHelp}>{pick.days ? `Sets the ${noun}’s Due date and adds a follow-up task for you` : `The ${noun}’s Due date stays as it is`}</span>
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Follow up in">
         {FOLLOW_UPS.map((f) => (
           <DropdownItem key={f.days} role="menuitemradio" checked={f.days === pick.days} onSelect={() => { setOpen(false); onChange(f.days) }}>{f.label}</DropdownItem>

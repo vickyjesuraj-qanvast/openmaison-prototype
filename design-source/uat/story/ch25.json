@@ -1,0 +1,93 @@
+[
+ {
+  "step": "25.01",
+  "chapter": 25,
+  "scene": "What the industry is reading",
+  "module": "Market Insights",
+  "try": "Open Market Insights and find the reports",
+  "how": "1. \"Tools\" in the side navigation › \"Market Insights\"\n2. Read the chips, the line above the list and the wide card\n3. Press \"Reports · 2\", then \"All · 6\"\n4. Type resale in \"Search articles\"",
+  "expect": "Chips All · 6, Trends · 2, Reports · 2, Case Studies · 1, Industry News · 1. The line says \"Sample articles written for the demo — their figures are illustrative, not market data.\" The wide card is \"Resale flats are reshaping the renovation brief\", flagged Featured; the rest follow newest first. Reports keeps two articles; the search keeps the ones that mention resale.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.02",
+  "chapter": 25,
+  "scene": "What the industry is reading",
+  "module": "Market Insights",
+  "try": "Read the featured article and see the numbers behind its chart",
+  "how": "1. Clear the search and open \"Resale flats are reshaping the renovation brief\"\n2. Point at the chart’s line\n3. Press \"Show the numbers\", then \"Hide the numbers\"\n4. Press Back (top left)",
+  "expect": "The article wears the chip Featured and the note \"A sample article written for the demo. Its figures are illustrative — not market data.\" Pointing at the chart reads out each point; its source says the figures are illustrative. \"Show the numbers\" puts a table of the chart’s figures under it. \"More from Market Insights\" ends the page. Back returns to the list as you left it.",
+  "in10": "Different from 1.0: every chart can show its numbers",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.03",
+  "chapter": 25,
+  "scene": "Your account with Qanvast",
+  "module": "Qanvast Ops",
+  "try": "Check the studio’s Qanvast lead credits",
+  "how": "1. Click \"Qanvast Ops\" in the side navigation, then the tab \"Lead credits\"\n2. Read the tiles and the charts\n3. Press \"Transactions\", then \"Contracts\"",
+  "expect": "Tabs Leads · Studios · Lead credits · Reviews · Hangouts. Overview: \"Credits left\" (\"Need more? Ask your Qanvast account manager to top up.\"), \"Used in …\" this month and — while a returned lead’s credits are coming back — \"On the way back\"; \"Leads received and credits used\", \"Month by month\" and \"Closures in the last six months\". Transactions is \"Statement for …\" (Date · Description · Taken · Added · Balance — or a line offering an earlier month); Contracts is \"Your contracts with Qanvast\" with contract #20714 and what it includes.",
+  "in10": "Different from 1.0: named Lead credits, apart from AI credits",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.04",
+  "chapter": 25,
+  "scene": "Your account with Qanvast",
+  "module": "Qanvast Ops",
+  "try": "Reply to a homeowner’s review",
+  "how": "1. Click the tab \"Reviews\"; read the overview on the left\n2. Press \"Waiting for a reply · 2\"\n3. On the first review press \"Reply\", type Thank you — it was a joy to work on your home., press \"Post reply\"",
+  "expect": "The overview shows how many reviews, the average with its star and the spread by stars; \"Request reviews\" sits in the header. Waiting for a reply keeps the two reviews with no answer. Your reply box says everyone who reads the review on Qanvast sees it. Then \"Reply kept here — on this prototype it isn’t posted to Qanvast\"; the card shows \"Your reply · …\" with \"Edit\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.05",
+  "chapter": 25,
+  "scene": "Your account with Qanvast",
+  "module": "Qanvast Ops",
+  "try": "See what Hui Min, the Admin, may open in Qanvast Ops",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Hui Min\"\n2. \"Qanvast Ops\" › \"Reviews\", then \"Lead credits\"\n3. \"Demo Studio\" block › \"View as\" › \"Dane\"",
+  "expect": "Hui Min reads Reviews and can Reply. Lead credits shows a lock: \"Lead credits are for the studio’s Owner\" — \"What Qanvast charges for each lead, the studio’s contracts with Qanvast and its statement are the Owner’s to see.\" The block reads Dane again.",
+  "in10": "Different from 1.0: Admins read and answer reviews too",
+  "as": "Hui Min",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.06",
+  "chapter": 25,
+  "scene": "The fine print on the portal",
+  "module": "Client portal",
+  "try": "Link your privacy notice at the foot of the client portal",
+  "how": "1. \"Company\" › \"Client portal\"; in \"Getting it live\" read \"Privacy notice\", press \"Add the link\"\n2. In \"Privacy notice link\" type not a link, press \"Save\"\n3. Replace it with demostudio.sg/privacy, press \"Save\"\n4. Read the \"Privacy notice\" row again",
+  "expect": "The row says clients sign in with their mobile number, so Singapore’s PDPA asks you to say how you use it. \"Add the link\" lands on the card \"Privacy and terms\" (\"0 of 3 linked\") with the first box ready. \"not a link\" is refused: \"Enter a web address, e.g. yourstudio.sg/privacy\". Then \"Links saved — clients see them at the foot of every page\" with Undo; the row reads \"Linked at the foot of every page — demostudio.sg/privacy.\"",
+  "in10": "Different from 1.0: set on Company › Client portal",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "25.07",
+  "chapter": 25,
+  "scene": "The fine print on the portal",
+  "module": "Client portal",
+  "try": "See the privacy link as Benjamin, on his portal",
+  "how": "1. In a private window open localhost:3000/my/demo-studio and look at the foot of the sign-in page\n2. Sign in with 9773 1968 and any six digits (\"Send me a code\", then \"Open my project\") — skip if already signed in as Benjamin\n3. Scroll to the foot of his home page and press \"Privacy\"",
+  "expect": "\"Privacy\" sits at the foot of the sign-in page and of every portal page — never Terms or Contact, which are not linked. It opens demostudio.sg/privacy in a new tab (not a real page in the demo — close it).",
+  "in10": "Same as 1.0",
+  "as": "Benjamin Han (client)",
+  "covers": [],
+  "files": []
+ }
+]

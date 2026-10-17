@@ -1,0 +1,16 @@
+/* (pending modules S23) The meetings list's toolbar — the house tab toolbar (REG-729); what stays here is the to-do chips' box and touch. */
+.bar { composes: bar from '../om/tab-toolbar.module.css'; }
+.title { composes: title from '../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../om/tab-toolbar.module.css'; }
+.menuWrap { composes: menuWrap from '../om/tab-toolbar.module.css'; }
+.chev { composes: chev from '../om/tab-toolbar.module.css'; }
+.todo { display: inline-flex; }
+@media (hover: none) {
+  .menuWrap > button, .menuWrap > span > button { position: relative; }
+  .menuWrap > button::after, .menuWrap > span > button::after { content: ''; position: absolute; inset: -4px; }
+}
+/* (REG-354) one row on a phone: the title and the glyphs */
+@media (max-width: 767px) {
+  .bar { flex-wrap: nowrap; height: 36px; }
+  .actions { flex-wrap: nowrap; }
+}

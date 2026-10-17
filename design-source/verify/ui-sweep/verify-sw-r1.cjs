@@ -56,7 +56,9 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     const sigBtn = page.locator('#section-signature').getByRole('button', { name: /^(Type|Edit)$/ }).first()
     await sigBtn.click(); await page.waitForTimeout(500)
     const rg = page.getByRole('radiogroup', { name: 'Show signature as' })
-    ok('Show signature as is the DS radio group', await rg.getByRole('radio').count() === 2)
+    // REG-857 (Dane UAT 6.23) added Upload beside Draw and Type
+    const radios = await rg.getByRole('radio').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') || e.closest('label')?.textContent?.trim() || ''))
+    ok('Show signature as is the DS radio group — Draw · Type · Upload', radios.length === 3, radios.join(' · '))
     await shot(page, '03-signature-radios')
     await page.getByRole('dialog', { name: 'Signature Settings' }).getByRole('button', { name: 'Cancel' }).click().catch(() => page.keyboard.press('Escape'))
     await page.waitForTimeout(300)
@@ -99,7 +101,11 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     ok('Preview shows its own ghost, not the editor’s', ghost && await page.locator('[aria-label="Loading quote"]').count() === 0)
     await ready(page)
     // #8 the press says what it does
-    ok('the preview’s press reads Mark as sent', await page.getByRole('button', { name: 'Mark as sent' }).count() === 1)
+    // REG-768 (UX audit Q2) superseded Mark as sent: Preview's main button is the quote's Send ▾, ending with "Sent it another way"
+    ok('the preview’s press is the quote’s Send ▾', await page.getByTestId('quote-send').count() === 1 && await page.getByRole('button', { name: 'Mark as sent' }).count() === 0)
+    await page.getByTestId('quote-send').click(); await page.waitForTimeout(400)
+    ok('…its menu ends with Sent it another way', await page.getByRole('menuitem', { name: /Sent it another way/ }).count() === 1)
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await shot(page, '04-preview')
     await ctx.close()
   })

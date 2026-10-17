@@ -10,10 +10,10 @@ import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { useSnackbar } from '@/components/om/snackbar'
+import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { useFlagPref } from '@/lib/prefs'
-import { useMaisonAi } from '@/lib/maison-ai'
+import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { withFrom } from '@/lib/nav'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
 import type { DesignCard, VisualizerHome as HomeData } from '@/lib/visualizer/queries'
@@ -25,6 +25,7 @@ import { DesignCover } from './design-cover'
 import { VisualizerWelcome } from './welcome'
 import { photoProblem } from '@/components/visualizer/editor/dialogs/add-room'
 import { stashPhotos } from '@/lib/visualizer/pending-photos'
+import { takeTrialRoom, type CarriedRoom } from '@/lib/visualizer/trial/carry'
 import styles from './visualizer-home.module.css'
 
 type Item = LibraryItem & { d: DesignCard }
@@ -52,7 +53,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   const [busy, setBusy] = useState(false)
   /* (F118) this page as it stands (its folder, its search) — where the editor's Back returns */
   const params = useSearchParams()
-  const hereParams = new URLSearchParams(params.toString()); hereParams.delete('deleted'); hereParams.delete('new')   // (F084) the folder and search ride along; the one-off marks do not
+  const hereParams = new URLSearchParams(params.toString()); hereParams.delete('deleted'); hereParams.delete('new'); hereParams.delete('trial')   // (F084) the folder and search ride along; the one-off marks do not
   const here = hereParams.toString() ? `/visualizer?${hereParams}` : '/visualizer'
   /* (F085) deleted from its editor: said here once, with the gallery's Undo, and the URL loses the mark (contract templates' pattern) */
   const pathname = usePathname()
@@ -65,7 +66,21 @@ export function VisualizerHome({ data }: { data: HomeData }) {
     /* (verify round 1, F129 · F204) the Undo's refusal says the rule (run reads the `{ error }` answer), never "please try again" */
     if (d) snackbar({ message: `${d.name} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the design', () => restoreDesigns([d.id])).then((ok) => { if (ok) router.refresh() }) } })
   }, [deletedId])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
-  useMaisonAi(['Which renders did clients pick this week?', 'Start a design for my newest lead', 'Show designs waiting on the client'])
+  /* (pending modules S10 — card held:maison-ai, "the Visualizer … homes' words-only suggestions · make each act") The two questions are asked
+     and answered from the records (lib/maison-ai/answers/work.ts — the clients' favourites, the links with no answer yet); the newest lead's
+     design is shown first with one button — New ▾ › For a lead's own step (`forLead`), nothing generated until Generate. *(invented copy)* */
+  const newestLead = [...data.leads].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))[0] ?? null
+  const maison: MaisonSuggestion[] = [
+    'Which renders did clients pick this week?',
+    newestLead
+      ? { label: 'Start a design for my newest lead', propose: newestLead.hasDesign
+          ? { title: `${newestLead.name} has a design`, text: `${newestLead.name}’s design opens in the AI Visualizer — every lead has one.`, confirm: 'Open it', run: async () => { void forLead(newestLead.id, { folderId: null, here }); return true } }
+          : { title: `Start a design for ${newestLead.name}`, text: `A design for ${newestLead.name}’s ${newestLead.propertyType ?? 'home'} opens in the AI Visualizer${newestLead.style ? `, on their ${newestLead.style} style` : ''} — add a room’s photo, then Generate. Nothing is charged until you Generate.`,
+              lines: [[newestLead.stage, newestLead.propertyType].filter(Boolean).join(' · ')], confirm: 'Start the design', run: async () => { void forLead(newestLead.id, { folderId: null, here }); return true } } }
+      : { label: 'Start a design for my newest lead', answer: { title: 'No lead to design for yet', text: 'Once a lead comes in, its design starts here — or start a blank one from New ▾.' } },
+    'Show designs waiting on the client',
+  ]
+  useMaisonAi(maison)
   /* (UX audit V2) a personal design joins a lead from its card, as from Design options in the editor */
   const [linkFor, setLinkFor] = useState<Item | null>(null)
   const loadLinkable = useCallback(async (): Promise<PickOption[]> => (await leadsToLink()).map((l) => ({ id: l.id, label: l.name, sub: [l.stage, l.propertyType, l.blocked].filter(Boolean).join(' · '), blocked: l.blocked ?? undefined })), [])
@@ -98,18 +113,33 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   }, [startNew])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   /* (REG-735) The welcome's "Upload a room photo": the picked photos start a design and ride to its editor, which adds each as a room —
      its own upload path. A pick with no photo it can read says why here, and no empty design is left behind. */
-  const upload = async (files: File[]) => {
+  const upload = async (files: File[], name?: string, landed?: CarriedRoom['landed']) => {
     if (busy) return
     const good = files.filter((f) => !photoProblem(f))
     if (!good.length) { snackbar({ message: photoProblem(files[0]!) ?? 'That file isn’t a photo — use a JPG, PNG, WebP or HEIC.' }); return }
     setBusy(true)
     try {
-      const r = await createDesign({})
+      const r = await createDesign(name ? { name } : {})
       if ('error' in r) { snackbar({ message: r.error }); return }
       stashPhotos(r.id, good)
+      if (landed) carrySnackbar(`/visualizer/${r.id}`, landed.message, landed.action)   // (S42E, E-14) said where the photo opens
       router.push(withFrom(`/visualizer/${r.id}`, here))
     } catch { snackbar({ message: 'Couldn’t start a design — please try again' }) } finally { setBusy(false) }
   }
+  /* (pending modules S36) A new studio's first stop after signing up from the website's AI Visualizer trial (`?trial=1`, lib/visualizer/trial/
+     carry.ts): the room photo the visitor brought becomes a design of theirs, named after the room, through the welcome's own upload — once,
+     the mark goes; without a photo waiting (a reload, another tab) the gallery is as it is. */
+  const fromTrial = params.get('trial') === '1'
+  useEffect(() => {
+    if (!fromTrial) return
+    router.replace(here, { scroll: false })
+    const room = takeTrialRoom()
+    if (!room) return
+    queueMicrotask(() => {
+      void fetch(room.dataUrl).then((res) => res.blob()).then((b) => upload([new File([b], `${room.name}.jpg`, { type: b.type || 'image/jpeg' })], room.name, room.landed))
+        .catch(() => snackbar({ message: 'Couldn’t bring your trial photo across — add it again with Upload a room photo' }))
+    })
+  }, [fromTrial])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   /* (F214) a lead's pick waits like Blank does and says so when it can't open; the lead's design stays unfiled (it may already exist) */
   const forLead = async (leadId: string, place: LibraryPlace) => {
     setLeadPick(null)

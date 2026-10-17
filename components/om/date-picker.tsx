@@ -53,8 +53,12 @@ export function focusDatePicker() {
   return !!target
 }
 
+/** (fix-D, D-32) A day before `min` or after `max` (day-granular). */
+const dayOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+const outside = (d: Date, min: Date | null, max: Date | null) => (!!min && dayOf(d) < dayOf(min)) || (!!max && dayOf(d) > dayOf(max))
+
 export function DatePicker({
-  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date', withTime = false, defaultHour = 10, defaultNow = false,
+  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date', withTime = false, defaultHour = 10, defaultNow = false, min = null, max = null,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
@@ -73,6 +77,9 @@ export function DatePicker({
   /** (UX audit 2026-09-30, L9) Opt-in: a freshly picked day takes the time it is NOW instead of `defaultHour` — a contact or meeting
       log records when it happened, and a silent 10:00 AM put a 12:21 PM call before the lead existed. Read at the press, never in render. */
   defaultNow?: boolean
+  /** (fix-D, D-32) Days that can't be picked are greyed and refuse the press — e.g. a payment's day is never in the future. Day-granular. */
+  min?: Date | null
+  max?: Date | null
 }) {
   const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false)
   const [seed, setSeed] = useState({ open, anchorKey })
@@ -225,7 +232,7 @@ export function DatePicker({
         </div>
         <div className={styles.grid} data-days onKeyDown={onDaysKey}>
           {gridFor(view.y, view.m).map(({ date, inMonth }) => (
-            <button key={date.getTime()} type="button" className={styles.day}
+            <button key={date.getTime()} type="button" className={styles.day} disabled={outside(date, min, max) || undefined}
                     data-muted={!inMonth || undefined} data-today={sameDay(today, date) || undefined} data-selected={sameDay(value, date) || undefined}
                     aria-pressed={sameDay(value, date) || undefined} aria-current={sameDay(today, date) ? 'date' : undefined}
                     aria-label={`${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`}

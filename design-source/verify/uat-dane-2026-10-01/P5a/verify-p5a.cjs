@@ -49,20 +49,21 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
     ok('g-resumerow Cancel leaves the lead On Hold', sql(`select stage from leads where id = '${MEI}'`) === 'On Hold')
   })
 
-  /* ── b-insights (UAT 11.09): Insights from a lead — the crumb stays "Leads", Back names the lead ── */
+  /* ── b-insights (UAT 11.09): Insights from a lead — Back names the lead. (REG-1361) It opens Company › Reports › Leads now, on Company's frame:
+     the crumb is where it came from (the lead, a link) / Company — no longer "Leads" ── */
   await step('b-insights', async () => {
     await page.locator('[data-testid="response-time"]').click()
-    await page.waitForURL(/\/leads\/insights\?from=/); await ready(page)
+    await page.waitForURL(/\/company\/reports\/leads\?from=/); await ready(page)
     const back = page.locator('a[data-kb="back"]')
     ok('b-insights Back says where it goes — the lead', (await back.getAttribute('aria-label')) === 'Back to Mei Ling Tan', await back.getAttribute('aria-label'))
     const crumb = await back.evaluate((a) => a.closest('header')?.querySelector('[class*="crumb"]')?.textContent?.trim() ?? '')
-    ok('b-insights the crumb stays "Leads" (Insights is studio-wide)', /^Leads\s*\/$/.test(crumb), crumb)
+    ok('b-insights the crumb names the lead it came from, then Company (REG-1361)', /^Mei Ling Tan\s*\/\s*Company\s*\/?$/.test(crumb), crumb)
     await back.hover(); await page.waitForTimeout(700)
     ok('b-insights the tooltip says the same', (await page.locator('[role="tooltip"]').innerText().catch(() => '')).startsWith('Back to Mei Ling Tan'))
     await shot(page, 'b-insights-back', { x: 0, y: 0, width: 720, height: 160 })
     await back.click(); await page.waitForURL(new RegExp(`/leads/${MEI}$`))
     ok('b-insights Back lands on the lead', page.url().endsWith(`/leads/${MEI}`))
-    await page.goto(`${BASE}/leads/insights?from=${encodeURIComponent('/leads')}`); await ready(page)
+    await page.goto(`${BASE}/company/reports/leads?from=${encodeURIComponent('/leads')}`); await ready(page)
     ok('b-insights from the listing Back still reads "Back to Leads"', (await page.locator('a[data-kb="back"]').getAttribute('aria-label')) === 'Back to Leads')
   })
 

@@ -15,7 +15,12 @@ export const DUE_KINDS = ['approval', 'estimate', 'fixed'] as const
 export type DueKind = (typeof DUE_KINDS)[number]
 export const isDueKind = (s: string): s is DueKind => (DUE_KINDS as readonly string[]).includes(s)
 
-export type PaymentRow = { name: string; description: string | null; pct: number; dueKind: DueKind; dueAt: Date | null }
+export type PaymentRow = { name: string; description: string | null; pct: number; dueKind: DueKind; dueAt: Date | null
+  /** (parity map, MI-021 — 1.0's fee first) the FIRST row as a fixed fee ("Design fees S$3,000") instead of a share: the others share what it
+      leaves. Only while Settings › Finance › Invoices › *May open with a fixed fee* is on; null = the % row it always was. */
+  fixedMinor?: number | null
+  /** (S44O — UAT row 297) the fixed fee's own word (S44T's `fixed_label`), carried wherever its amount goes */
+  fixedLabel?: string | null }
 /** One milestone of a split as a template stores it. */
 export type SplitRow = { name: string; description: string | null; pct: number }
 /** A payment template as every surface reads it (the DB row parsed, or a seeded preset). */
@@ -43,11 +48,50 @@ export function parseSplitRows(json: string | null | undefined): SplitRow[] {
     return raw.map((r) => { const x = (r ?? {}) as Partial<SplitRow>; return { name: typeof x.name === 'string' ? x.name : 'Payment', description: typeof x.description === 'string' ? x.description : null, pct: typeof x.pct === 'number' && Number.isFinite(x.pct) ? x.pct : 0 } })
   } catch { return [] }
 }
-/** "10/30/30/30" — the split as a label. */
-export const splitWord = (rows: Pick<SplitRow, 'pct'>[]) => rows.map((r) => (Number.isInteger(r.pct) ? String(r.pct) : r.pct.toFixed(1))).join('/')
+/* ── (parity map, MI-021) A fixed fee first ───────────────────────────────────────────────────────────────────────────────────── */
+
+type Shareable = Pick<PaymentRow, 'pct'> & { fixedMinor?: number | null }
+/** Whether this row is the schedule's fixed fee — only the first row ever is. */
+export const isFixedRow = (r: { fixedMinor?: number | null }, i: number) => i === 0 && typeof r.fixedMinor === 'number' && r.fixedMinor > 0
+/** The fixed fee the schedule opens with (0 = none). */
+export const fixedFeeOf = (rows: readonly { fixedMinor?: number | null }[]) => (rows[0] && isFixedRow(rows[0], 0) ? rows[0].fixedMinor! : 0)
+/** (invented copy) The rule's words, as the server refuses it. */
+export const FEE_FIRST_RULE = 'A fixed first payment is off — an Owner or an Admin switches it on in Settings › Finance › Invoices'
+export const FEE_FIRST_ONLY = 'Only the first payment may be a fixed fee'
+export const FEE_FIRST_ALONE = 'Add another payment first — the fixed fee leaves the rest to share'
+export const FEE_FIRST_STAYS = 'The fixed fee stays the first payment — make it a share to move it'
+const round2 = (n: number) => Math.round(n * 100) / 100
+/** Shares scaled to add up to `to`, in proportion, to the cent of a percent — the last absorbing the rounding (all equal when none had a share). */
+function rescale(pcts: number[], to: number): number[] {
+  if (!pcts.length) return []
+  const sum = pcts.reduce((s, p) => s + clampPct(p), 0)
+  const out = pcts.map((p) => round2(sum > 0 ? (clampPct(p) / sum) * to : to / pcts.length))
+  out[out.length - 1] = round2(to - out.slice(0, -1).reduce((s, p) => s + p, 0))
+  return out
+}
+/** The first payment made a fixed fee of what it bills now; the others' shares made 100% of what it leaves, in proportion — nothing moves. */
+export function asFixedFirst<T extends PaymentRow>(rows: T[], totalMinor: number): T[] {
+  if (rows.length < 2 || totalMinor <= 0) return rows
+  const fee = Math.max(100, paymentAmounts(rows, totalMinor)[0] ?? 0)
+  const shares = rescale(rows.slice(1).map((r) => r.pct), 100)
+  return [{ ...rows[0]!, pct: 0, fixedMinor: fee }, ...rows.slice(1).map((r, i) => ({ ...r, pct: shares[i]!, fixedMinor: null }))]
+}
+/** Back to shares: the first payment's share is what its fee is of the total; the others share what is left, in proportion. */
+export function asSharesFirst<T extends PaymentRow>(rows: T[], totalMinor: number): T[] {
+  if (!rows.length) return rows
+  const fee = fixedFeeOf(rows)
+  const first = totalMinor > 0 ? Math.min(100, round2((fee / totalMinor) * 100)) : 0
+  const shares = rescale(rows.slice(1).map((r) => r.pct), round2(100 - first))
+  return [{ ...rows[0]!, pct: first, fixedMinor: null }, ...rows.slice(1).map((r, i) => ({ ...r, pct: shares[i]!, fixedMinor: null }))]
+}
+const feeWord = (minor: number) => `S$${Math.round(minor / 100).toLocaleString('en-SG')}`
+
+/** "10/30/30/30" — the split as a label; (MI-021) a fixed fee first reads "S$3,000/30/30/40". */
+export const splitWord = (rows: (Pick<SplitRow, 'pct'> & { fixedMinor?: number | null })[]) => rows.map((r, i) => (isFixedRow(r, i) ? feeWord(r.fixedMinor!) : Number.isInteger(r.pct) ? String(r.pct) : r.pct.toFixed(1))).join('/')
 
 /** Which template the rows ARE (names and shares in order), or 'custom' once the studio has changed anything that matters. */
-export function presetOf(rows: Pick<PaymentRow, 'name' | 'pct'>[], splits: PaymentSplit[] = PRESET_SPLITS): string {
+export function presetOf(rows: (Pick<PaymentRow, 'name' | 'pct'> & { fixedMinor?: number | null })[], splits: PaymentSplit[] = PRESET_SPLITS): string {
+  if (fixedFeeOf(rows)) return 'custom'   // (parity map, MI-021) a template holds shares only
   for (const p of splits) {
     if (p.rows.length !== rows.length) continue
     if (p.rows.every((r, i) => r.name === rows[i]!.name && Math.abs(r.pct - rows[i]!.pct) < 0.005)) return p.id
@@ -57,21 +101,28 @@ export function presetOf(rows: Pick<PaymentRow, 'name' | 'pct'>[], splits: Payme
 export const presetLabel = (key: string | null | undefined, splits: PaymentSplit[] = PRESET_SPLITS) => splits.find((p) => p.id === key)?.name ?? CUSTOM_LABEL
 export const findSplit = (key: string | null | undefined, splits: PaymentSplit[] = PRESET_SPLITS): PaymentSplit | null => splits.find((p) => p.id === key) ?? null
 
-/** Amounts in cents: total × pct each; when the shares add up to exactly 100 % the last row absorbs the rounding, so the amounts sum to the total. */
-export function paymentAmounts(rows: Pick<PaymentRow, 'pct'>[], totalMinor: number): number[] {
-  const out = rows.map((r) => Math.round(totalMinor * clampPct(r.pct) / 100))
+/** Amounts in cents: total × pct each; when the shares add up to exactly 100 % the last row absorbs the rounding, so the amounts sum to the total.
+    (parity map, MI-021) A fixed fee first bills its amount and the shares split what it leaves — the project's stages read the same rule
+    (lib/projects/money.ts `moneyOf`), so the quote, its print and the invoices agree. */
+export function paymentAmounts(rows: Shareable[], totalMinor: number): number[] {
+  const fee = fixedFeeOf(rows)
+  const rest = Math.max(0, totalMinor - fee)
+  const out = rows.map((r, i) => (isFixedRow(r, i) ? fee : Math.round(rest * clampPct(r.pct) / 100)))
   const pctTotal = sumPct(rows)
-  if (rows.length && Math.abs(pctTotal - 100) < 0.005) { const sum = out.reduce((s, a) => s + a, 0); out[out.length - 1]! += totalMinor - sum }
+  const last = rows.length - 1
+  if (rows.length && !isFixedRow(rows[last]!, last) && Math.abs(pctTotal - 100) < 0.005) { const sum = out.reduce((s, a) => s + a, 0); out[last]! += Math.max(totalMinor, fee) - sum }
   return out
 }
 const clampPct = (p: number) => (Number.isFinite(p) ? Math.max(0, p) : 0)
-export const sumPct = (rows: Pick<PaymentRow, 'pct'>[]) => Number(rows.reduce((s, r) => s + clampPct(r.pct), 0).toFixed(2))
+/** The shares' sum — a fixed fee first is not a share. */
+export const sumPct = (rows: Shareable[]) => Number(rows.reduce((s, r, i) => s + (isFixedRow(r, i) ? 0 : clampPct(r.pct)), 0).toFixed(2))
 
-/** The Total row and the over-balance state (1271:38624): shares past 100 % schedule more than the proposal is worth. */
-export function scheduleBalance(rows: Pick<PaymentRow, 'pct'>[], totalMinor: number): { pctTotal: number; amountTotal: number; over: boolean; overMinor: number } {
+/** The Total row and the over-balance state (1271:38624): shares past 100 % schedule more than the proposal is worth — (MI-021) as does a
+    fixed fee above the quote's total. */
+export function scheduleBalance(rows: Shareable[], totalMinor: number): { pctTotal: number; amountTotal: number; over: boolean; overMinor: number } {
   const pctTotal = sumPct(rows)
   const amountTotal = paymentAmounts(rows, totalMinor).reduce((s, a) => s + a, 0)
-  const over = pctTotal > 100.005
+  const over = pctTotal > 100.005 || (totalMinor > 0 && fixedFeeOf(rows) > totalMinor)
   return { pctTotal, amountTotal, over, overMinor: over ? Math.max(0, amountTotal - totalMinor) : 0 }
 }
 
@@ -156,4 +207,4 @@ export function dueLabel(row: { dueKind: string; dueAt: Date | null }): string {
 }
 
 /** Rows as stored → rows as the section edits them (dates rehydrated for the client). */
-export const toRows = (list: QuotePayment[]): PaymentRow[] => list.map((p) => ({ name: p.name, description: p.description, pct: p.pct, dueKind: isDueKind(p.dueKind) ? p.dueKind : 'estimate', dueAt: p.dueAt ? new Date(p.dueAt) : null }))
+export const toRows = (list: QuotePayment[]): PaymentRow[] => list.map((p) => ({ name: p.name, description: p.description, pct: p.pct, dueKind: isDueKind(p.dueKind) ? p.dueKind : 'estimate', dueAt: p.dueAt ? new Date(p.dueAt) : null, fixedMinor: p.fixedMinor ?? null, fixedLabel: p.fixedLabel ?? null }))   // (MI-021) the fixed fee rides an Undo — (S44O) with its word

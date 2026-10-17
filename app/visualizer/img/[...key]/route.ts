@@ -4,6 +4,7 @@ import { projectRooms, renderJobs, studioMaterials, visualizerDesigns } from '@/
 import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
 import { gateLead, parseOwnStored, readShareLink } from '@/lib/visualizer/queries'
 import { addressPath, LINK_CACHE, parseAssets, renderPicture, sendPicture, STUDIO_CACHE } from '@/lib/visualizer/images'
+import { signedOutResponse } from '@/lib/auth/session'   // (pending modules S30) an address without `?t=` is the studio's — behind sign-in
 
 /* AI Visualizer (REG-673, audit §4.2) — the pictures a studio uploaded or the engine made, stored as data URLs, served as images so a
    page's payload carries addresses: /visualizer/img/room/{roomId} · v/{jobId}/{variantId} · m/{materialId} · d/{designId}/{swatchId} ·
@@ -12,8 +13,8 @@ import { addressPath, LINK_CACHE, parseAssets, renderPicture, sendPicture, STUDI
    of one); a client's address carries its link's token (`?t=`) and is served only while that link opens, and only for a picture on it —
    not after a Stop, the design's delete, the lead's return or delete, or the version's delete. Private caching only.
    (wave E, files-3 · critic-1) PRODUCTION: every address without `?t=` is the studio's and needs an authenticated session — a request with
-   no session gets a 401 before these checks run. The prototype has no login (a cookie-less request reads as the signed-in member,
-   `sessionMemberId()`); parity map 17 says the same under "The studio's picture routes need a signed-in session". */
+   no session gets a 401 before these checks run. (pending modules S30) It does now: a signed-out browser's request without `?t=` gets its
+   401 first (`signedOutResponse`); a browser that never signed in or out is the demo's own session (`DEMO_STANDING_SESSION`). */
 
 export const dynamic = 'force-dynamic'
 const notFound = () => new Response('Not found', { status: 404 })
@@ -51,6 +52,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ key: str
   if (!kind || !a) return notFound()
   const url = new URL(req.url)
   const token = url.searchParams.get('t')
+  if (!token) { const out = await signedOutResponse(); if (out) return out }
   const ok = token ? await linkMayRead(token, url.pathname) : await studioMayRead(kind, a)
   if (!ok) return notFound()
   const cache = token ? LINK_CACHE : STUDIO_CACHE

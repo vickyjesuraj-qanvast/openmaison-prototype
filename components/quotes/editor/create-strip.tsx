@@ -7,9 +7,11 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import styles from './create-strip.module.css'
 
 /**
- * The editor's Create strip (collapsed 1260:31160 · expanded 1271:40377): Maison AI · My Items · Templates · Brand Catalog
- * (Recent Quotes removed, owner 2026-09-18; Templates opens the template picker, REG-496) — the Lead Overview's quick-links strip (components/leads/detail/quick-links.tsx) with this
- * page's four shortcuts. Remembered per browser in localStorage `om.quote.createStrip` (default collapsed), read through
+ * The editor's Create strip (collapsed 1260:31160 · expanded 1271:40377): Maison AI · Price book · Templates
+ * (Recent Quotes removed, owner 2026-09-18; Templates opens the template picker, REG-496; (pending modules S04 — card held:quotes, "the Create
+ * strip's Brand Catalog tile — Coming soon · 1.0 had neither · revisit: drop or define") the mock's Brand Catalog tile is dropped: nothing in 1.0
+ * or 2.0 holds a brands' catalogue to open — a supplier's products are My Items) — the Lead Overview's quick-links strip
+ * (components/leads/detail/quick-links.tsx) with this page's three shortcuts. Remembered per browser in localStorage `om.quote.createStrip` (default collapsed), read through
  * useSyncExternalStore so a remembered "expanded" strip never hydrates against collapsed server markup.
  */
 type StripState = 'expanded' | 'collapsed'
@@ -32,12 +34,11 @@ const write = (s: StripState) => {
 }
 const serverSnapshot = (): StripState => 'collapsed'
 
-export type StripLink = 'ai' | 'items' | 'templates' | 'catalog'
+export type StripLink = 'ai' | 'items' | 'templates'
 const LINKS: { key: StripLink; icon: string | null; label: string }[] = [
   { key: 'ai', icon: null, label: 'Maison AI' },
   { key: 'items', icon: 'list_alt', label: 'Price book' },   /* (UX audit Q7) one name for the book on every way in (REG-662's pick) */
   { key: 'templates', icon: 'description', label: 'Templates' },
-  { key: 'catalog', icon: 'menu_book', label: 'Brand Catalog' },
 ]
 
 function Glyph({ icon }: { icon: string | null }) {

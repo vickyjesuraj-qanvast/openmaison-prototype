@@ -12,10 +12,12 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
  * (REG-725) Now the house confirm (ConfirmDialog): the one head and foot every dialog wears, the 14/20 message, and the answer
  * is the verb — "Cancel" · "Move to Trash" for the mock's "No" · "Yes" (REG-720's rule).
  */
-export function TrashDialog({ open, names, onNo, onYes }: { open: boolean; names: string[]; onNo: () => void; onYes: () => void }) {
+export function TrashDialog({ open, names, onNo, onYes, seen = null }: { open: boolean; names: string[]; onNo: () => void; onYes: () => void
+  /** (fix-C, C-25) What the client sees among them — a file on a published update leaves that update too, so the question says so first. */
+  seen?: string | null }) {
   const subject = names.length === 1 ? `"${names[0]}"` : `these ${names.length} items`
   return (
     <ConfirmDialog open={open} onCancel={onNo} onConfirm={onYes} title="Move to Trash Folder?" confirmLabel="Move to Trash"
-                   message={`You sure you want to move ${subject} to the Trash Folder and remove all project attachments (chat messages, invoices, etc.)?`} />
+                   message={`You sure you want to move ${subject} to the Trash Folder and remove all project attachments (chat messages, invoices, etc.)?${seen ? ` ${seen}` : ''}`} />
   )
 }

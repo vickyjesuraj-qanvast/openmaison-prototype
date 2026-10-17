@@ -313,8 +313,8 @@ async function viewBy(page, label) {
     ok('g-signature a contract’s paper draws it in the studio box', onPaper > 0, `${onPaper}`)
     if (onPaper) { const p = page.locator('[data-testid="contract-paper"] img[src^="data:image/png"]').first(); await p.scrollIntoViewIfNeeded(); const pb = await p.boundingBox(); await shot(page, 'g-signature-contract-paper', { x: Math.max(0, pb.x - 200), y: Math.max(0, pb.y - 160), width: 760, height: 300 }) }
     /* the copy kept at signing reads it the same way */
-    const snap = execSync(`npx tsx -e "import { studioSignatureFor } from './lib/contracts/snapshot'; const s = studioSignatureFor('dane', [{ id: 'dane', name: 'Dane', signatureKind: 'image', signatureName: 'Dane', signatureData: 'data:image/png;base64,iVBORw0KGgo=' }], 'dane'); console.log(s ? s.kind : 'none')"`, { cwd: path.resolve(__dirname, '../../../..') }).toString().trim()
-    ok('g-signature the signed copy keeps an uploaded signature (snapshot)', snap === 'image', snap)
+    const snap = execSync(`npx tsx -e "import { studioSignatureFor } from './lib/contracts/snapshot'; const s = studioSignatureFor('dane', [{ id: 'dane', name: 'Dane', signatureKind: 'image', signatureName: 'Dane', signatureData: 'data:image/png;base64,iVBORw0KGgo=', signatureConsent: 'yes' }], 'dane'); console.log(s ? s.kind : 'none')"`, { cwd: path.resolve(__dirname, '../../../..') }).toString().trim()
+    ok('g-signature the signed copy keeps an uploaded signature (snapshot)', snap === 'image', snap)   // (pending modules S03, a deliberate change of this rule) the member said yes to it on their documents
     await page.goto(`${BASE}/company/members`); await ready(page)
     ok('g-signature Members no longer says “not set” for you', !(await page.locator('[data-testid="member-signature"]').filter({ hasText: 'Set it up' }).count()))
   })
@@ -342,7 +342,8 @@ async function viewBy(page, label) {
     ok('g-createclient the list narrows to names holding “tan” anywhere — Gerald Tan among them', opts.includes('Gerald Tan') && opts.every((o) => /tan/i.test(o)) && opts.length < all, opts.join(' · '))
     await shot(page, 'g-createclient-search-tan')
     await page.keyboard.press('ArrowDown'); await page.waitForTimeout(150)
-    ok('g-createclient ↓ steps from the search box into the matches', (await page.evaluate(() => document.activeElement?.textContent)) === 'Gerald Tan')
+    /* (pending modules, a deliberate change — S27's demo Hangout added Chloe Tan, so the first match is no longer Gerald Tan: ↓ lands on the first one listed) */
+    ok('g-createclient ↓ steps from the search box into the matches', (await page.evaluate(() => document.activeElement?.textContent)) === opts[0], opts[0])
     await page.keyboard.press('ArrowUp'); await page.waitForTimeout(150)
     ok('g-createclient ↑ from the first match returns to the box', await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === 'Search Client'))
     await search.fill('zzqx'); await page.waitForTimeout(200)

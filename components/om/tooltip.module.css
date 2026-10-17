@@ -1,5 +1,8 @@
 /* Tooltip — 789:83369. Inverse surface bubble, body-s label, 24×4 marker. */
 .anchor { display: contents; }
+/* (S43E, F3-01 W1-01) On a finger a refused control (natively disabled, inside the wrapper the caller gives it) lets the press reach that wrapper,
+   so the tap can say the tooltip's reason — a disabled control swallows its own touches. A mouse keeps the control's own cursor. */
+@media (hover: none) { .anchor > * :disabled { pointer-events: none; } }
 .tip {
   position: fixed; z-index: 140;
   display: flex; align-items: center;

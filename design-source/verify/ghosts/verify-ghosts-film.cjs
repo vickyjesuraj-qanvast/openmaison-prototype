@@ -18,7 +18,7 @@ const FILMS = {
   'tpl-quotes': { path: '/company/templates/quotes' }, 'tpl-brand': { path: '/company/templates/brand' }, 'pb-items': { path: '/company/price-book' }, 'pb-sections': { path: '/company/price-book/sections' },
   'leads': { path: '/leads' }, 'lead': { path: `/leads/${LEAD}` }, 'lead-files': { path: `/leads/${LEAD}/files` }, 'lead-notes': { path: `/leads/${LEAD}/notes` },
   'lead-activity': { path: `/leads/${LEAD}/activity` }, 'lead-questionnaire': { path: `/leads/${LEAD}/questionnaire` }, 'lead-tasks': { path: `/leads/${LEAD}/tasks` },
-  'viewer': { path: `/leads/${FLEAD}/files/${FILE}` }, 'insights': { path: '/leads/insights' }, 'imports': { path: '/leads/imports' },
+  'viewer': { path: `/leads/${FLEAD}/files/${FILE}` }, 'insights': { path: '/company/reports/leads' }, 'imports': { path: '/leads/imports' },
   'tasks': { path: '/tasks' }, 'quotes': { path: '/quotes' }, 'contracts': { path: '/contracts' }, 'xray': { path: '/quote-x-ray' }, 'xray-record': { path: `/quote-x-ray/${XRAY}` },
   'visualizer': { path: '/visualizer' }, 'settings': { path: '/settings' }, 'settings-notifications': { path: '/settings?section=notifications' },
   'quote-preview': { path: `/quotes/${QUOTE}/preview` }, 'contract-preview': { path: `/contracts/${CONTRACT}/preview` }, 'contract': { path: `/contracts/${CONTRACT}` },

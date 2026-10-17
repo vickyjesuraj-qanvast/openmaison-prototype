@@ -1,0 +1,37 @@
+/*
+ * (gaps build I, I-Q12) Tools › Compliance Navigator — on the house pieces, composed: Company's frame (the L1 header and its tab strip,
+ * components/company/company-shell.tsx), the detail card's white box (components/leads/detail/card.module.css) for each of the studio's own
+ * steps, the tab toolbar (components/om/tab-toolbar.module.css) over the rules, and the project's Compliance tab rows (its stylesheet,
+ * components/projects/compliance/compliance.module.css) for every rule.
+ */
+.page { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
+.intro { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 90ch; }
+.link { composes: link from '../om/text-link.module.css'; }
+
+.actions { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.card { composes: card from '../leads/detail/card.module.css'; padding: var(--om-spacing-5); gap: var(--om-spacing-3); scroll-margin-block: 120px; }
+.cardHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+.cardText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.cardTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.cardSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.about { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); max-width: 90ch; }
+.state { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.toggle { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--om-spacing-5); }
+.stepsCol { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.stepsLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.list { margin: 0; padding-left: var(--om-spacing-5); list-style: disc; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.buttons { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+
+.bar { composes: bar from '../om/tab-toolbar.module.css'; }
+.title { composes: title from '../om/tab-toolbar.module.css'; }
+.barActions { composes: actions from '../om/tab-toolbar.module.css'; }
+.filters { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.count { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .bar { flex-wrap: nowrap; } .card { padding: var(--om-spacing-4); } }
+.list[data-ordered] { list-style: decimal; }
+/* (parity map, TD-110) a registration's note — the steps' caption over the studio's words, who and when with Edit; the editor is the house field */
+.note { display: flex; flex-direction: column; gap: var(--om-spacing-1); max-width: 90ch; }
+.noteText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+.noteMeta { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.noteButtons { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }

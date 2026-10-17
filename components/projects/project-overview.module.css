@@ -1,0 +1,108 @@
+/*
+ * (REG-930) A project's Overview — the lead Overview's grid (app/leads/[id]/overview.module.css: two stacks of cards, 24 apart; one column
+ * below 1025, the stacks dissolving on a phone so each card takes its own place) and the LEAD STAGES row inside the cards
+ * (components/leads/detail/stages-card.module.css, REG-614: an extra line on a card takes the card's own row). Composed, never copied.
+ *
+ * (simplify S-01, the owner's "build everything" 2026-10-09) Two columns that are no longer equal: ACT (~530 at 1440: Needs you · My tasks ·
+ * With {client} · Coming up) and GLANCE (~330: Progress · Money · Recent activity) — the lead's grid, its columns weighted 53 : 33.
+ */
+.grid { composes: grid from '../../app/leads/[id]/overview.module.css'; }
+.column { composes: column from '../../app/leads/[id]/overview.module.css'; }
+@media (min-width: 1025px) {
+  .grid > .act { flex: 53 1 0; }
+  .grid > .glance { flex: 33 1 0; }
+}
+.body { composes: body from '../leads/detail/stages-card.module.css'; }
+.group { composes: group from '../leads/detail/stages-card.module.css'; }
+.row { composes: row from '../leads/detail/stages-card.module.css'; text-decoration: none; }
+.icon { composes: icon from '../leads/detail/stages-card.module.css'; }
+.label { composes: label from '../leads/detail/stages-card.module.css'; }
+.nameGroup { composes: nameGroup from '../leads/detail/stages-card.module.css'; }
+.name { composes: name from '../leads/detail/stages-card.module.css'; }
+.till { composes: till from '../leads/detail/stages-card.module.css'; }
+.meta { composes: meta from '../leads/detail/stages-card.module.css'; }
+.current { composes: current from '../leads/detail/stages-card.module.css'; }
+.chevron { composes: chevron from '../leads/detail/stages-card.module.css'; }
+/* A row that needs attention: the red of an overdue follow-up (stages-card .overdue), on its icon and its words. (simplify S-05) Only for what is
+   past its day and ours to fix. */
+.row[data-alert] .icon, .row[data-alert] .name { color: var(--om-color-tertiary-red-default); }
+/* (simplify S-20) An approval waiting on you: the primary of LEAD STAGES' current row, on the icon only — the words stay the row's own. */
+.row[data-approve] .icon { color: var(--om-color-primary-default); }
+/* An open row's own button, at the row's end — the DS text button, held to the row's 36. */
+.rowAction { display: inline-flex; flex-shrink: 0; margin: calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-1)) calc(-1 * var(--om-spacing-2)) 0; }
+.rowActions { display: inline-flex; align-items: center; flex-shrink: 0; gap: var(--om-spacing-1); }
+
+/* (simplify S-01) A Needs you row: its title and, under it, its caption — the row grows from LEAD STAGES' 36 to hold both (the MY TASKS row's
+   two lines, 858:24989), and a long title wraps rather than running under the button. */
+.row[data-two] { height: auto; min-height: 36px; }
+.two { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.two .name { white-space: normal; overflow-wrap: anywhere; }
+.two .till { white-space: normal; overflow-wrap: anywhere; }
+/* A row whose words open the record and whose buttons act: the words are the link, the buttons sit beside them (never one inside the other). */
+.rowMain {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2);
+  border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; text-decoration: none; cursor: pointer;
+  border-radius: var(--om-radius-1);
+}
+.rowMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.row[data-split] { cursor: default; }
+/* When the words and the buttons no longer fit one line (a phone, a long caption), the buttons take the next line, at the row's end. */
+.row[data-two] { flex-wrap: wrap; row-gap: 0; }
+.row[data-two] > .label, .row[data-two] > .rowMain { flex: 1 1 200px; }
+.row[data-two] > .rowActions { margin-left: auto; }
+/* (pending modules S22) A two-line row that only opens (no buttons, its chevron at the end — the Dashboard's Workload, Site updates, Coming up):
+   the words give way and the meta and the chevron keep the row's line — only buttons ever take a line of their own. */
+.row[data-two]:not([data-split]) { flex-wrap: nowrap; }
+
+/* A card's group label inside its body ("Needs your OK · 2") — MY TASKS' group label (my-work-card .groupLabel), set on the body's own inset. */
+.groupLabel { composes: groupLabel from '../leads/detail/my-work-card.module.css'; }
+.groupText { composes: groupText from '../leads/detail/my-work-card.module.css'; }
+.body .groupLabel { padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); }
+.body .groupLabel[data-tone='approve'] { color: var(--om-color-primary-default); }
+.line { margin: 0; padding: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* Money: the contract value as the card's figure — the StatTile's number type (REG-614), under its caption. */
+.value { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-2) var(--om-spacing-2); }
+.valueLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.valueFigure { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.note { margin: 0; padding: var(--om-spacing-1) var(--om-spacing-2) 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* (simplify S-01) Progress: the schedule's bar folded into the stages card — the Schedule card's own bar (schedule.module.css), under its line. */
+.bar { composes: progress from './schedule/schedule.module.css'; }
+.barFill { composes: progressFill from './schedule/schedule.module.css'; }
+
+/* (REG-377 → simplify S-01, P1 §6.4) A phone's card order: the brief, then what needs you first, your tasks, the client, what is coming, and the
+   glances last. The columns dissolve (the lead's rule) so each card takes its own place; `.column >` outranks the lead's own orders. */
+@media (max-width: 767px) {
+  .grid .column > [data-card='needs'] { order: 0; }
+  .grid .column > [data-card='my-work'] { order: 1; }
+  .grid .column > [data-card='with-client'] { order: 2; }
+  .grid .column > [data-card='coming-up'] { order: 3; }
+  .grid .column > [data-card='progress'] { order: 4; }
+  .grid .column > [data-card='money'] { order: 5; }
+  .grid .column > [data-card='closing-summary'] { order: 5; }
+  .grid .column > [data-card='recent-activity'] { order: 6; }
+}
+/* (simplify round 2, P1 §6.4 — the owner's "fix all the pending things" 2026-10-09) The phone page, tighter with nothing dropped: a two-line
+   row keeps the 44 touch floor (REG-273) on its own two lines rather than on 12px of padding, and With {client}'s rows stay two lines — the
+   words and their caption one line each, the button beside them instead of on a third line (each row opens, or reminds with, the whole
+   thing). Needs you shows four rows and Coming up three before their "Show n more" (needs-card.tsx · coming-up-card.tsx). */
+@media (max-width: 767px) {
+  .row[data-two] { padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-2); }
+  [data-card='with-client'] .row[data-two] { flex-wrap: nowrap; }
+  [data-card='with-client'] .row[data-two] > .label, [data-card='with-client'] .row[data-two] > .rowMain { flex: 1 1 0; }
+  [data-card='with-client'] .two .name, [data-card='with-client'] .two .till { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+}
+
+/* (simplify round 3, the owner's "you decide" 2026-10-10) The phone folds what is said elsewhere, nothing lost: Progress's stage rows (the header's
+   Stage ▾ names the stage and runs their steps) with the rule under them — `.fold` is a box only for this, `display: contents` on the desk —, and
+   Recent activity to its head with Show / Hide (the head link's look, a 44 target inside the 48 head); ↗ still opens the Activity tab. */
+.fold { display: contents; }
+.activityFold { min-width: 0; }
+.foldToggle { composes: link from '../leads/detail/card.module.css'; display: none; }
+@media (max-width: 767px) {
+  .fold[data-phone-fold], .fold[data-phone-fold] + * { display: none; }
+  .foldToggle { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -12px 0; }
+  .activityFold[data-folded] > section > :not(:first-child) { display: none; }
+  .activityFold[data-folded] > section > :first-child { padding-bottom: var(--om-spacing-5); }
+}

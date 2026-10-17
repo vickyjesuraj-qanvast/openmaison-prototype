@@ -4,12 +4,13 @@ import type { ParkedStep, StageStep } from '@/lib/leads/detail'
 import type { LastContact } from '@/lib/leads/queries'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
-import { displayDate, displayDateLong, displayDue } from '@/lib/format'
+import { dayWords, displayDate, displayDateLong, displayDue } from '@/lib/format'
 import { Card, CardRule } from './card'
 import styles from './stages-card.module.css'
 
-/** "2 days" / "1 day" — the mock only shows plurals; the singular is a grammar fix, not new copy. */
-const daysLabel = (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`
+/** "2 days" / "1 day" — the mock only shows plurals; the singular is a grammar fix, not new copy. (parity P-28 · Q-13) The house duration
+    words, `dayWords` (lib/format.ts) — one formatter for every record, listing and report. */
+const daysLabel = dayWords
 
 /**
  * LEAD STAGES card (858:24890 New-current · 858:24646 Lost · 858:24709 On Hold).
@@ -23,7 +24,7 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
   nextFollowUp?: { id: string; title: string; dueAt: Date; overdue: boolean } | null
   onOpenFollowUp?: () => void
   onSetFollowUp?: () => void
-  /** (REG-611, parity R-03) 1.0's Response time card as one line — "Assigned in 30m · First contact in 1.2h · Won in 12d"; a press opens Insights (Owners and Admins). */
+  /** (REG-611, parity R-03) 1.0's Response time card as one line — "Assigned in 30m · First contact in 1.2h · Won in 12 days"; a press opens Insights (Owners and Admins). */
   responseTime?: string | null
   onOpenInsights?: () => void
   timeline: StageStep[]

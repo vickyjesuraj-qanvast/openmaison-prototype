@@ -1,0 +1,383 @@
+[
+ {
+  "step": "20.01",
+  "chapter": 20,
+  "scene": "Where the money stands",
+  "module": "Money",
+  "try": "See where Benjamin’s money stands",
+  "how": "1. Open Benjamin Han’s project › \"Money\"\n2. Read \"Needs you\", then press \"Show 2 more\"\n3. Read the three tiles, then the \"Billing\" table: the line under its title and the Mid-Project and Commencement rows",
+  "expect": "Needs you (5): PO-2026-008 to Stone & Tile Masonry Pte Ltd · Germaine’s claim · AquaFlow Plumbing Works’s bill AF-7781 (red) · INV-2026-006 · Mid-Project · S$1,090.00 to refund on CN-2026-002. Tiles TO COLLECT S$20,784.94 in red (\"S$20,784.94 overdue\", \"S$27,713.25 collected of S$69,283.13\", \"Next: Completion S$20,784.94 — when Handover & defect check is done\") · TO PAY S$1,400.00 · PROFIT \"--\" with \"Early estimate\". Billing: \"From OM-10005’s payment schedule — each stage bills its share of the contract value, GST included.\"; columns Stage · Amount · Invoice · Paid · Next step; Mid-Project: Electrical & plumbing · done, 30% · GST inside, OVERDUE \"INV-2026-006 · sent … · due … · n days overdue …\", \"Record a payment\"; Commencement’s Paid reads \"RCT-2026-004 · S$1,090.00 credited\".",
+  "in10": "Different from 1.0: one set of numbers, from the signed quote",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-01",
+   "PRJ:F-02",
+   "PRJ:F-03",
+   "PRJ:F-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.02",
+  "chapter": 20,
+  "scene": "Where the money stands",
+  "module": "Money",
+  "try": "Check money stays with the project’s team",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Alex\"\n2. Open Benjamin Han’s project\n3. Add /money to the end of the address and press Enter\n4. \"View as\" › \"Dane\"",
+  "expect": "Alex (not on the team) sees the project, but its tabs read Overview · Tasks · Schedule · Client · Design · Files & notes — no Money — and its Overview has no Money card. The Money address says \"Money is the project’s team’s\" — \"The contract value, the invoices and what the client has paid are for the project’s team, Owners and Admins…\".",
+  "in10": "Different from 1.0: 1.0 showed money to everyone",
+  "as": "Alex",
+  "covers": [
+   "PRJ:F-17",
+   "PRJ:Q-20"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.03",
+  "chapter": 20,
+  "scene": "A change to the works",
+  "module": "Money",
+  "try": "Start a variation order on Sophia’s project",
+  "how": "1. Open Sophia’s project › \"Money\"\n2. Press \"New\" (or C) and pick \"Variation order\"\n3. Read the header, the bar under it and the section tabs",
+  "expect": "\"New\" lists two groups, \"Bill Sophia\" and \"Costs\". The quote editor opens on VO-1: crumb \"Projects / … / Money\", chips \"Variation order\" (yellow) · \"VO-1\" · \"Draft\". The bar: \"A change to the contract of … (P-2026-…): S$… today, S$… once the client approves it. An omission is a line with a minus quantity.\" There is no Payment Schedule.",
+  "in10": "Different from 1.0: a VO is a quote in its own mode",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.04",
+  "chapter": 20,
+  "scene": "A change to the works",
+  "module": "Money",
+  "try": "Add one line and take one out",
+  "how": "1. Under Items add Extra power point · Qty 2 · \"Unit Price\" 85\n2. Add Ceiling fan point · Qty -1 · \"Unit Price\" 120\n3. Read the total and the bar",
+  "expect": "The minus quantity stays; the total row reads \"Change to the contract\" and the bar’s second figure moves by the change.",
+  "in10": "Different from 1.0: an omission is a minus line",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.05",
+  "chapter": 20,
+  "scene": "A change to the works",
+  "module": "Money",
+  "try": "Record an approval Sophia gave in person",
+  "how": "1. Go back to \"Money\" (the crumb)\n2. Under \"Changes to the contract\", on VO-1’s row open ⋮ › \"Mark as approved by the client\"\n3. \"Approved on\" today · \"How they approved it\" In person\n4. Press \"Mark as approved\"",
+  "expect": "The window says \"Sophia approved VO-1 in person or elsewhere? Record when and how — the contract becomes S$… and the unsent invoices are re-sized.\" Then \"VO-1 approved — the contract is now S$… — … were re-sized. Sent invoices and the agreed shares stay as they are.\" with Undo; VO-1 reads \"Approved by the client\" (Sophia Wong · … · in person), and pointing at the TO COLLECT figure shows \"Contract S$… (signed quote S$… + variation orders S$…)\".",
+  "in10": "Different from 1.0: approval moves the contract and re-sizes drafts",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-07",
+   "PRJ:F-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.06",
+  "chapter": 20,
+  "scene": "A change to the works",
+  "module": "Money",
+  "try": "Let Aisha approve her variation order on its link",
+  "how": "1. Open Aisha Rahman’s project › \"Money\"; under \"Changes to the contract\", on VO-1 press \"Open\"\n2. ⋮ › \"Copy confirmation link\"; paste it into the private window\n3. Type Aisha Rahman in \"Your full name\", press \"Approve the changes\"",
+  "expect": "\"Approve this variation order\": \"Hi Aisha, please read the changes…\" — her contract goes from S$62,702.25 to S$62,157.25; \"Change to the contract −S$545.00\"; \"Approving … is not a signature.\" Then \"Approved\" — \"Approved by Aisha Rahman on … Your contract … is now S$62,157.25.\"",
+  "in10": "Different from 1.0: the client approves the change herself",
+  "as": "Aisha Rahman (client)",
+  "covers": [
+   "PRJ:F-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.07",
+  "chapter": 20,
+  "scene": "A change to the works",
+  "module": "Money",
+  "try": "See the contract move and the drafts re-size",
+  "how": "1. Back in your window, reload Aisha’s \"Money\"\n2. Point at the TO COLLECT figure and read the line under it\n3. Read \"Changes to the contract\", then the \"Billing\" rows down to \"Outside the stages\"",
+  "expect": "The figure’s hover reads \"Contract S$62,157.25 (signed quote S$62,702.25 − variation orders S$545.00) · …\"; the line \"S$6,270.23 collected of S$62,157.25\". VO-1 reads \"Approved by the client\" (Aisha Rahman · … · on the confirmation link). Commencement, Mid-Project and Completion are now S$18,629.01 · S$18,629.01 · S$18,629.00; the Deposit already sent stays as it was; INV-2026-009 (Permit and lift padding fees) sits under \"Outside the stages\".",
+  "in10": "Different from 1.0: sent invoices never change",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-07",
+   "PRJ:F-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.08",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Send Aisha’s Commencement invoice",
+  "how": "1. In \"Billing\", on the Commencement row (READY TO SEND) press \"Send\"\n2. Read the window, then press \"Send via WhatsApp\" — close the WhatsApp tab, do not send",
+  "expect": "\"Send the Commencement invoice\": \"S$18,629.01, due … It’s numbered INV-2026-010 and recorded as sent, and WhatsApp opens with the message.\" Then \"INV-2026-010 sent to Aisha — due …\" (7 days from today); the row now reads SENT \"INV-2026-010 · sent … · due …\" and offers \"Record a payment\".",
+  "in10": "Different from 1.0: one press records it and opens WhatsApp",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-04",
+   "PRJ:F-13",
+   "PRJ:F-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.09",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Open the invoice as the client gets it",
+  "how": "1. Press \"Commencement\" in \"Billing\" — its panel opens; read it, then press \"Open the invoice\"\n2. Read the paper to \"How to pay\"\n3. Point at the download icon, then press \"Back to Money\"",
+  "expect": "The panel: \"INV-2026-010 · Commencement\", Sent, its facts and \"Payments\" — \"Nothing paid yet — record a payment when it comes in.\". The page: crumb \"Projects / … / Money\", the number with \"Sent\" and \"Commencement · S$18,629.01\". The paper: the studio’s letterhead, \"Tax invoice\", Invoice no. · Issued · Due, Bill to Aisha Rahman, \"Commencement — the 30% stage, its share of what the contract leaves\" with how the contract is made up and \"Original … → adjusted S$18,629.01 after VO-1\", Subtotal · GST (9%) · Total due, How to pay (bank, PayNow, Reference INV-2026-010). The icon reads \"Download PDF\"; Back to Money reopens the panel.",
+  "in10": "Different from 1.0: on the issuing entity’s letterhead",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-12",
+   "PRJ:F-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.10",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Submit an invoice as the designer",
+  "how": "1. \"View as\" › \"Germaine\"\n2. Open Marcus Teo’s project › \"Money\"; read \"Needs you\" and the tiles\n3. On the Deposit row press \"Submit for approval\"",
+  "expect": "Needs you: \"The Deposit invoice is ready to submit\" with \"Submit for approval\" — no Send anywhere. Tiles: TO COLLECT and CONTRACT VALUE S$48,600.00 only. \"Deposit invoice submitted — an Owner or an Admin approves it\" with Undo; the row leaves Needs you and the Deposit row reads WAITING FOR APPROVAL, \"You · just now\".",
+  "in10": "Different from 1.0: no way round the approval",
+  "as": "Germaine",
+  "covers": [
+   "PRJ:F-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.11",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Send an invoice back with a note",
+  "how": "1. \"View as\" › \"Dane\"; open the bell and press \"Germaine submitted an invoice for your approval\"\n2. Close the Deposit invoice’s panel that opens; on Needs you’s \"The Deposit invoice\" row press \"Send back\"\n3. \"What should change?\" Send it after Friday’s site visit · press \"Send back\"",
+  "expect": "The panel offers \"Approve and send\"; the Needs you row reads \"Germaine submitted it … — waiting for your approval\" with \"Send back\" and \"Approve and send\". \"Sent back to Germaine\"; the row becomes \"The Deposit invoice was sent back\" — \"by You … — “Send it after Friday’s site visit”\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.12",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Preview the draft, then send it yourself",
+  "how": "1. On the Deposit row ⋮ › \"Preview the invoice\"; read the stamp, press \"Back to Money\"\n2. In the Deposit invoice’s panel that opens press \"Send\", then \"Send via WhatsApp\" — close WhatsApp",
+  "expect": "The draft reads \"Draft — numbered when it is sent\", its number blank. \"Send the Deposit invoice\": \"S$4,860.00, due … It’s numbered INV-2026-011 …\". Then \"INV-2026-011 sent to Marcus — due …\"; the sent-back row leaves Needs you.",
+  "in10": "Different from 1.0: numbers are given when an invoice is sent",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-05",
+   "PRJ:F-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.13",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Bill a different amount, and put the others back in step",
+  "how": "1. On the Completion row ⋮ › \"Change the amount\": 15000 · \"Why it differs\" Extra hacking agreed on site · \"Save\"\n2. Read the Completion row (point at \"Differs\") and the Commencement and Mid-Project amounts\n3. Completion ⋮ › \"Change the amount\" › \"Use the schedule’s amount\" › \"Save\"",
+  "expect": "\"Change the Completion invoice\" says \"By the schedule it bills S$14,580.00.\" and, at 15000, \"Differs from the schedule by S$420.00 more. Saving re-sizes Commencement and Mid-Project to take the difference.\" Then \"Completion invoice is S$15,000.00 — Commencement and Mid-Project were re-sized to take the difference\" with Undo; Completion wears \"Differs\" (its reason on hover), the other two read S$14,370.00. Last: \"Completion invoice follows the schedule — Commencement and Mid-Project were re-sized to match\".",
+  "in10": "Different from 1.0: no reconcile task; a reason, the rest re-sized",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-08",
+   "PRJ:F-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.14",
+  "chapter": 20,
+  "scene": "Asking for money",
+  "module": "Money",
+  "try": "Void a sent invoice, then undo it",
+  "how": "1. Open Aisha’s \"Money\"; on the Commencement row (INV-2026-010) ⋮ › \"Void\"\n2. \"Why is it void?\" Sent before the site inspection · press \"Void\"\n3. Read the Commencement row and the faint row under it, then press \"Undo\"",
+  "expect": "\"Void INV-2026-010\": \"It stays on the record with this reason; a fresh Commencement Draft takes its share.\" Then \"INV-2026-010 is void — a fresh Commencement Draft takes its share\": a faint \"INV-2026-010 · Void\" row with its reason sits under Commencement, now a Draft reading \"Replaces INV-2026-010\". Undo: \"INV-2026-010 is no longer void\".",
+  "in10": "Different from 1.0: sent invoices void with a reason and Undo",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-18"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.15",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Remind Benjamin about an overdue payment",
+  "how": "1. Open Benjamin’s \"Money\"; under \"Needs you\" press \"Show 2 more\" and read the INV-2026-006 row\n2. Press its \"Remind on WhatsApp\" — close the WhatsApp tab, do not send\n3. Open \"Files & notes\" › \"Activity\"",
+  "expect": "The row: \"INV-2026-006 · Mid-Project · S$20,784.94\" — \"n days overdue · due … · reminded 2× …\", with \"Remind on WhatsApp\" and \"Record a payment\". \"Reminder drafted on WhatsApp for Benjamin — it’s on the project’s Activity\"; the row now says reminded 3×; Activity has Dane’s reminder line.",
+  "in10": "Different from 1.0: the reminder is one press and recorded",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.16",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Client portal",
+  "try": "See what Benjamin owes, on his portal",
+  "how": "1. In the private window press \"Sign out\", then sign in with 9773 1968 and any six digits\n2. Open \"Money\"",
+  "expect": "Deposit · 10% \"Paid … · Receipt\"; Commencement \"Paid … · Receipt · Credit note CN-2026-002 (S$1,090.00 to come back to you)\"; Mid-Project · 30% S$20,784.94 due, with Pay to Demo Studio Pte Ltd, \"Reference INV-2026-006\", the bank, PayNow and its QR, \"I have paid\" and \"See invoice INV-2026-006\"; Completion \"Planned for …\". Beside it \"Paid so far\" S$27,713.25 of S$69,283.13.",
+  "in10": "Different from 1.0: one Money page with receipts",
+  "as": "Benjamin Han (client)",
+  "covers": [
+   "PRJ:F-15",
+   "PRJ:F-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.17",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Client portal",
+  "try": "Tell the studio he has paid",
+  "how": "1. Press \"I have paid\"\n2. \"Amount paid (S$)\" 20784.94 · \"Paid on\" today · \"How you paid\" PayNow · add any picture as the bank’s confirmation\n3. Press \"Send\"",
+  "expect": "The window tells him the studio confirms it once it is in their bank. \"Received — Demo Studio will confirm it and send your receipt\"; the stage reads \"Received, waiting for Demo Studio to confirm\".",
+  "in10": "Different from 1.0: proof never marks an invoice paid by itself",
+  "as": "Benjamin Han (client)",
+  "covers": [
+   "PRJ:F-10",
+   "PRJ:F-11",
+   "PRJ:Q-48"
+  ],
+  "files": [
+   "uat-files/paynow-qr.png"
+  ]
+ },
+ {
+  "step": "20.18",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Check the payment, then confirm it",
+  "how": "1. In your window reload Benjamin’s \"Money\"; under \"Needs you\" press \"Show 2 more\" and read the payment row\n2. Press \"Not received\", write Not in the bank yet, press \"Mark not received\", then \"Undo\"\n3. On the payment row press \"Confirm\"",
+  "expect": "The row: \"Benjamin says they paid for INV-2026-006 · S$20,784.94\" — \"Mid-Project · paid …\", with \"See the bank’s confirmation\", \"Not received\" and \"Confirm\"; the overdue row is gone and Billing’s Mid-Project reads PAYMENT TO CONFIRM. \"Marked not received — Benjamin reads why on their page\", Undo puts it back to To confirm; then \"Confirmed — S$20,784.94 from Benjamin, receipt RCT-2026-…\".",
+  "in10": "Different from 1.0: the client’s proof waits for the studio",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-11",
+   "PRJ:Q-48"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.19",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Open the receipt",
+  "how": "1. Press \"Mid-Project\" in \"Billing\" — its panel opens; under \"Payments\", on the new receipt’s line ⋮ › \"Open the receipt\"\n2. Read it, then \"Back to Money\"\n3. In the private window reload \"Money\"",
+  "expect": "The receipt: \"Receipt no.\", Issued, \"Invoice no.\" INV-2026-006, \"Received from\" Benjamin Han, Invoice total · Paid to date · Still owed, \"Thank you — Demo Studio Pte Ltd received this payment.\" Back to Money reopens the panel on that payment. Benjamin’s Mid-Project now reads \"Paid … · Receipt\" and Paid so far has grown.",
+  "in10": "Different from 1.0: every confirmed payment gets a receipt",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-12",
+   "PRJ:F-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.20",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Record a payment the studio received",
+  "how": "1. Open Aisha’s \"Money\"; on the Commencement row (INV-2026-010) press \"Record a payment\"\n2. \"Amount paid (S$)\" 10000 · \"Paid on\" today · \"How it was paid\" Cheque · \"Reference\" UOB cheque 223344\n3. Press \"Record payment\"",
+  "expect": "\"Record a payment\": \"INV-2026-010 · Commencement — S$18,629.01 still owed. A payment you record is confirmed and gets its receipt.\" Then \"Payment recorded — receipt RCT-2026-…; S$8,629.01 still owed on INV-2026-010\"; the row reads PART PAID with S$10,000.00 paid.",
+  "in10": "Different from 1.0: confirmed on entry, receipt included",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-10",
+   "PRJ:F-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.21",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Reverse a bounced payment",
+  "how": "1. Press \"Commencement\" in \"Billing\" — its panel opens; under \"Payments\", on the RCT-… line ⋮ › \"Reverse\"\n2. \"Why is it reversed?\" The cheque bounced · press \"Reverse\"\n3. Same line ⋮ › \"Open the receipt\", then \"Back to Money\"",
+  "expect": "\"Reverse RCT-…\": \"It stays on the record with this reason; its receipt reads Reversed and the invoice is owed again.\" Then \"RCT-… reversed — it no longer counts toward INV-2026-010\" with Undo; the receipt reads \"Reversed\" and \"This payment was reversed on … and no longer counts toward the invoice.\"",
+  "in10": "Different from 1.0: reversals keep the record, with a reason",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-18"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.22",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Settings",
+  "try": "Choose who confirms a client’s payment",
+  "how": "1. \"Settings\" › \"Finance\"; read \"Document numbers\", then \"Invoices\" and \"Client payments\" under \"Money in\"\n2. Set \"Who confirms a client’s payment\" to Studio owner, then back to Assigned designer\n3. Under \"Invoices\" press \"Projects › What waits for an Owner or an Admin\" and read its invoice row",
+  "expect": "Document numbers: Invoices \"Next: INV-2026-012\", Receipts \"Next: RCT-2026-…\". Invoices: \"Payment terms (days)\" 7. Client payments: who confirms (Assigned designer · Studio owner · A member) and \"Trust the client’s proof\" (off). The picks answer \"The Owner confirms every client’s payment\", then \"Each project’s designer confirms its client’s payments\". The link opens Settings › Projects on \"Invoices need approval before they’re sent\" (on).",
+  "in10": "Different from 1.0: one place for the money rules",
+  "as": "Dane",
+  "covers": [
+   "PRJ:F-05",
+   "PRJ:F-13",
+   "PRJ:F-14",
+   "PRJ:Q-48"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.23",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Money",
+  "try": "Turn a chosen upgrade into a variation order",
+  "how": "1. Open Benjamin’s project › \"Design\" (it opens on \"Choices\"); on \"Kitchen countertop\" read the line under the options\n2. Press \"Draft a variation order\"\n3. Read the editor, then go back",
+  "expect": "The line reads \"+S$1,308.00 on the contract (S$1,200.00 + GST)\". The editor opens on VO-1 with \"VO-1 drafted from the pick — check its line, then send it for approval\", titled \"Kitchen countertop — Calacatta quartz\", the pick its one line under \"Client’s choices\". Back on Choices the card offers \"Open VO-1\".",
+  "in10": "Different from 1.0: the pick drafts the VO; 1.0 did it by hand",
+  "as": "Dane",
+  "covers": [
+   "PRJ:Q-18",
+   "PRJ:F-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "20.24",
+  "chapter": 20,
+  "scene": "Getting paid",
+  "module": "Settings",
+  "try": "Choose how approved variation orders are billed",
+  "how": "1. \"Settings\" › \"Finance\"; under \"Money in\" › \"Invoices\" find \"Variation orders are billed\"\n2. Pick \"On their own, up front\" and read the line under the chips\n3. Pick \"Spread over the stages\" again",
+  "expect": "\"Spread over the stages\" is picked: \"An approved order’s money joins the stage invoices not sent yet — each takes its share.\" The other pick reads \"An approved order gets its own invoice at once — a Draft for its whole amount; the stages keep their shares.\" and answers \"Approved variation orders now get their own invoice, up front\"; going back answers \"Approved variation orders are now spread over the stages\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ }
+]

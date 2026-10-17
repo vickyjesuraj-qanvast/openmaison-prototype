@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
-import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { SelectTrigger } from '@/components/om/select-trigger'
 import { Avatar } from '@/components/om/avatar'
@@ -16,15 +16,17 @@ import NextLink from 'next/link'
 import { withFrom } from '@/lib/nav'
 import type { TaskLead } from '@/lib/leads/tasks'
 import { IconButton } from '@/components/om/icon-button'
-import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDue, isOverdue } from '@/lib/format'
 import type { TaskRow } from '@/lib/leads/tasks'
+import { isTaskSortKey, taskHeadWords, type TaskHeadSort, type TaskSortKey } from '@/lib/leads/task-filters'
 import type { Member } from '@/lib/db/schema'
+import { OutsideBadge } from './outside-person'   // (gaps build, package C — M-03)
+import { outsideOf } from '@/lib/leads/outside'
 import styles from './tasks-table.module.css'
 
 const NO_HOVER = '(hover: none)'
-export type TaskRowAction = 'complete' | 'rename' | 'template' | 'duplicate' | 'delete'
+export type TaskRowAction = 'complete' | 'rename' | 'template' | 'duplicate' | 'delete' | 'send-outside'   // (gaps build, package C — M-03)
 
 export type TasksTableProps = {
   /** The visible columns in the user's order (useTableColumns, REG-454). */
@@ -73,7 +75,16 @@ export type TasksTableProps = {
   onAddClick?: () => void
   /** (Dane UAT 11.02) The task the add row just created — brought into view and pulsed once; `n` changes per add. */
   pulse?: { id: string; n: number } | null
+  /** (Projects round 2) A project's milestones: the Milestone cell names the one a task sits in and picks another. */
+  milestonePicker?: MilestonePicker
+  /** (gaps build, package C — 16) The rail's Tasks page grouped by project: each task's group; a header row opens each run of them. */
+  groupOf?: (t: TaskRow) => TaskGroup
+  /** (pending modules S05) The head's own order (Due date · Status), held by the orchestrator — one sort with Filters'. */
+  sort?: TaskHeadSort
+  onSort?: (key: TaskSortKey) => void
 }
+export type TaskGroup = { key: string; label: string; href?: string | null }
+export type MilestonePicker = { options: { id: string; title: string }[]; onPick: (task: TaskRow, milestoneId: string | null) => void }
 
 /* Column order + head copy — sentence case, exactly as the mock types it (spec 01). Tags has no sort icon. */
 /** The table's columns (902:26387): Title locked first; the user's order, visibility and pins come from Column settings (REG-454).
@@ -86,26 +97,28 @@ export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'status', label: 'Status', track: '118' },
   { key: 'tags', label: 'Tags', track: '191' },
 ]
-/** The rail's Tasks page (REG-466): the same columns with the task's Lead after Title — free, not pinned (owner's call). */
-export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'Lead', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
-const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
+/** The rail's Tasks page (REG-466): the same columns with the task's Lead after Title — free, not pinned (owner's call).
+    (parity P-27, Q-10) The head reads "For": the column holds leads, projects and the studio's own (the key stays `lead`, saved settings). */
+export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'For', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
+/** (Projects round 2) A project's tasks (a lead that has one): the milestone each sits in, after Title. */
+export const PROJECT_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'milestone', label: 'Milestone', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, milestone: styles.colMilestone, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
 /* (REG-468) Only Due date and Status order a task list; Title, Lead, Members and Creator lost their glyph. */
-const SORTABLE: Record<string, boolean> = { title: false, lead: false, assignees: false, creator: false, due: true, status: true, tags: false }
+const SORTABLE: Record<string, boolean> = { title: false, lead: false, milestone: false, assignees: false, creator: false, due: true, status: true, tags: false }
 
 /**
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt + 02-rows-menus-bulk.txt.
  * Head 56 · rows 48 · bottom bar 53; columns 56 · 582 · 160 · 160 · 137 · 118 · 191 (Title fills).
  * The Creator column is not in the mock (REG-239, user 2026-09-01): the panel's Creator row as a column,
  * so who asked for a task is visible without opening it; Members keeps the avatars + person_add only.
- * Every icon-only control carries a Tooltip; sorting is inert (coming soon); menus toggle on their own trigger.
+ * Every icon-only control carries a Tooltip; Due date and Status sort (pending modules S05); menus toggle on their own trigger.
  */
 export function TasksTable({
   tasks, now, selected, onSelect, unseen, descriptionMatches,
   adding, onAddSubmit, addKey, onAddCancel, addMembers, onAddAssign,
   renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker, pulse = null,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker, pulse = null, milestonePicker, groupOf, sort = null, onSort,
 }: TasksTableProps) {
-  const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
 
   /* (Dane UAT 11.02) The quote editor's attention after an add (REG-573, items-section.tsx `attention`): once the new row exists — a frame or
@@ -179,27 +192,33 @@ export function TasksTable({
         <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && tasks.some((t) => selected.has(t.id))} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
         </div>
-        {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
-            {SORTABLE[c.key] ? (
-              /* Sort is inert in this prototype — the head answers coming soon. */
-              <button type="button" className={styles.hSort} onClick={comingSoon}>
+        {columns.map((c) => {
+          const sorted = sort?.key === c.key ? sort : null
+          return (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}
+               aria-sort={sorted ? (sorted.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+            {SORTABLE[c.key] && isTaskSortKey(c.key) && onSort ? (
+              /* (pending modules S05) the head sorts its column — A→Z, Z→A, off (the Contracts / Quotes heads' model) */
+              <button type="button" className={styles.hSort} data-sorted={sorted ? 'true' : undefined} onClick={() => onSort(c.key as TaskSortKey)}
+                      aria-label={sorted ? `${c.label} — sorted ${taskHeadWords(sorted.key, sorted.dir)}; press to ${sorted.dir === 'asc' ? 'reverse' : 'stop sorting'}` : `Sort by ${c.label}`}>
                 <span className={styles.hLabel}>{c.label}</span>
-                <Icon name="unfold_more" size={16} />
+                <Icon name={sorted ? (sorted.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'} size={16} />
               </button>
             ) : (
               <span className={styles.hLabel}>{c.label}</span>
             )}
             <ColumnResizer table="lead-tasks" column={c.key} label={c.label} min={c.key === 'title' ? 200 : 72} />
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {adding ? (
-        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} members={addMembers} onAssign={onAddAssign} />
+        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} members={addMembers} onAssign={onAddAssign} milestones={!!milestonePicker} />
       ) : null}
 
       {tasks.map((task, idx) => (
+        <TaskRowFrag key={task.id} head={groupOf && (idx === 0 || groupOf(tasks[idx - 1]!).key !== groupOf(task).key) ? { ...groupOf(task), n: tasks.filter((t) => groupOf(t).key === groupOf(task).key).length } : null}>
         <TaskRowView L={L}
           onRenameInPanel={onRenameInPanel}
           key={task.id}
@@ -217,8 +236,9 @@ export function TasksTable({
           onMenuToggle={() => setMenuRow((m) => (m === task.id ? null : task.id))}
           onMenuClose={() => setMenuRow(null)}
           onOpen={onOpen} onOpenComments={onOpenComments} onToggleDone={onToggleDone} onAssign={onAssign} onDue={onDue} onAddTags={onAddTags}
-          onRowMenu={onRowMenu} onEdit={onEdit}
+          onRowMenu={onRowMenu} onEdit={onEdit} milestonePicker={milestonePicker}
         />
+        </TaskRowFrag>
       ))}
     </div>
     </div>
@@ -236,6 +256,25 @@ export function TasksTable({
 }
 
 /* ---------------------------------------------------------------------------------------------- */
+
+/** (gaps build, package C — 16) A group's header before its first task: the project (its number and name) and how many tasks are listed, with
+    Go to project — or Leads · Studio for the tasks with no project. Its words stay at the card's left edge while the table scrolls sideways. */
+function TaskRowFrag({ head, children }: { head: (TaskGroup & { n: number }) | null; children: React.ReactNode }) {
+  return (
+    <>
+      {head ? (
+        <div className={styles.groupRow} role="row" data-testid="task-group">
+          <span className={styles.groupInner} role="cell">
+            <span className={styles.groupLabel}>{head.label}</span>
+            <span className={styles.groupCount}>{`${head.n} ${head.n === 1 ? 'task' : 'tasks'}`}</span>
+            {head.href ? <NextLink href={head.href} className={styles.groupLink} data-testid="task-group-link">Go to project</NextLink> : null}
+          </span>
+        </div>
+      ) : null}
+      {children}
+    </>
+  )
+}
 
 /** The title cell as the active field (frame 194): bare input + ✕ (secondary outlined 24) + ✓ (primary filled 24) — (REG-729) the house IconButton. */
 function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { initial: string; onSubmit: (title: string) => void; onCancel: () => void; closeOnBlur?: boolean }) {
@@ -326,20 +365,30 @@ function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const current = picker.value ? picker.leads.find((l) => l.id === picker.value) : null
+  /* (parity map, TD-027 — 1.0's "Link to Project") the projects made with New project ride the list marked 'Project': a Projects group, with
+     its number, after the leads — the groups' titles only when there are projects to tell apart */
+  const leadsOnly = picker.leads.filter((l) => l.stage !== 'Project')
+  const projectsOnly = picker.leads.filter((l) => l.stage === 'Project')
+  const row = (l: TaskLead) => (
+    <DropdownItem key={l.id} role="menuitemradio" checked={picker.value === l.id} meta={l.stage === 'Project' ? l.project?.number : undefined} onSelect={() => { setOpen(false); picker.onChange(l.id) }}>{l.name}</DropdownItem>
+  )
   return (
-    <span className={styles.menuWrap} ref={anchor}>
+    <span className={styles.menuWrap} ref={anchor} data-testid="task-add-lead">
       <SelectTrigger size="s" label="Lead for the new task" value={current?.name ?? 'Studio'} open={open} onClick={() => setOpen((o) => !o)} />
-      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Lead">
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={projectsOnly.length ? MENU_WIDTH.wide : MENU_WIDTH.standard} role="menu" sheetTitle={projectsOnly.length ? 'Lead or project' : 'Lead'}>
         <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>Studio (no lead)</DropdownItem>
-        {picker.leads.map((l) => (
-          <DropdownItem key={l.id} role="menuitemradio" checked={picker.value === l.id} onSelect={() => { setOpen(false); picker.onChange(l.id) }}>{l.name}</DropdownItem>
-        ))}
+        {projectsOnly.length && leadsOnly.length ? <DropdownLabel>Leads</DropdownLabel> : null}
+        {leadsOnly.map(row)}
+        {projectsOnly.length ? <DropdownLabel>Projects</DropdownLabel> : null}
+        {projectsOnly.map(row)}
       </PortalMenu>
     </span>
   )
 }
 
-function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout>; leadPicker?: LeadPicker
+function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign, milestones = false }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout>; leadPicker?: LeadPicker
+  /** (Projects round 2) a project's table: the Milestone cell, unset until the task exists */
+  milestones?: boolean
   /** (UX audit 2026-09-30, T4) the new task's members (the lead's, removable) and their person_add */
   members?: Member[]; onAssign?: (anchor: HTMLElement) => void }) {
   return (
@@ -355,6 +404,11 @@ function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign }: { onSu
       {leadPicker ? (
         <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
           <LeadPickerCell picker={leadPicker} />
+        </div>
+      ) : null}
+      {milestones && !L.hidden('milestone') ? (
+        <div className={`${styles.cell} ${styles.colMilestone} ${L.pinned('milestone') ? styles.pin : ''}`} role="cell" data-col="milestone" data-pin-edge={L.edge('milestone') || undefined} style={L.style('milestone')}>
+          <span className={styles.creatorName}>—</span>
         </div>
       ) : null}
       {/* (UX audit 2026-09-30, T4) A new task starts with its lead's members — the log reminder's rule (REG-608) — shown as the row will show
@@ -403,8 +457,9 @@ function TaskRowView({
   task, now, unseen, fresh = false, descriptionMatch, selected, onToggleSelect,
   renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L, milestonePicker,
 }: {
+  milestonePicker?: MilestonePicker
   task: TaskRow
   onRenameInPanel?: (task: TaskRow) => void
   L: ReturnType<typeof useColumnLayout>
@@ -432,6 +487,7 @@ function TaskRowView({
   onEdit: (task: TaskRow) => void
 }) {
   const overdue = !task.done && isOverdue(task.dueAt, now)
+  const outside = outsideOf(task)   // (gaps build, package C — M-03)
   const shiftHeld = useRef(false)
   const touch = useMediaQuery(NO_HOVER)   /* a double-click is a mouse's gesture: on touch the tap alone opens the panel */
   const inert = renaming ? '' : undefined
@@ -524,26 +580,41 @@ function TaskRowView({
       {L.hidden('lead') ? null : (
       <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
         {/* (REG-466) The rail's Tasks page: the lead as the listing names it — bold, primary on hover, no stage (owner 2026-09-16) — opening its Tasks tab and coming back here. */}
+        {/* (fix-A, A-20) a task of a project opens the project's Tasks, the project's number beside the client */}
         {task.lead ? (
-          <NextLink href={withFrom(`/leads/${task.lead.id}/tasks`, '/tasks')} className={styles.leadLink}>
-            <span className={styles.leadName}>{task.lead.name}</span>
+          <NextLink href={withFrom(task.lead.project ? `/projects/${task.lead.project.id}/tasks` : `/leads/${task.lead.id}/tasks`, '/tasks')} className={styles.leadLink}>
+            {/* (parity P-27, B-18) a project's task names the project as the Projects listing and the group header do — its name, the
+                number under it — where it read "{client} · P-20…", cut on the number */}
+            {task.lead.project ? (
+              <span className={styles.leadTwo} data-testid="task-for-project">
+                <span className={styles.leadName}>{task.lead.project.name}</span>
+                <span className={styles.leadSub}>{task.lead.project.number}</span>
+              </span>
+            ) : <span className={styles.leadName}>{task.lead.name}</span>}
           </NextLink>
         ) : (
           <span className={styles.leadStudio}><Icon name="domain" size={16} weight={300} />Studio</span>
         )}
       </div>
       )}
+      {milestonePicker && !L.hidden('milestone') ? (
+        <div className={`${styles.cell} ${styles.colMilestone} ${L.pinned('milestone') ? styles.pin : ''}`} role="cell" data-col="milestone" data-pin-edge={L.edge('milestone') || undefined} style={L.style('milestone')} data-inert={inert}>
+          <MilestoneCell task={task} picker={milestonePicker} />
+        </div>
+      ) : null}
       <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-inert={inert}>
-        {task.assignees.length === 0 ? (
+        {task.assignees.length === 0 && !outside ? (
           <button type="button" className={styles.assignLink} onClick={(e) => onAssign(task, e.currentTarget)}>
             <Icon name="person_add" size={20} />
             Assign
           </button>
         ) : (
           <>
+            {/* (gaps build, package C — M-03) the outside person stands in the stack with the members: two at most, then +n */}
             <span className={styles.memberStack}>
-              {task.assignees.slice(0, 2).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} />)}
-              {task.assignees.length > 2 ? <span className={styles.plusBox}>+{task.assignees.length - 2}</span> : null}
+              {task.assignees.slice(0, outside ? 1 : 2).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} />)}
+              {outside ? <OutsideBadge o={outside} /> : null}
+              {task.assignees.length > (outside ? 1 : 2) ? <span className={styles.plusBox}>+{task.assignees.length - (outside ? 1 : 2)}</span> : null}
             </span>
             <Tooltip label="Assign members">
               <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24} variant="primary"
@@ -627,6 +698,8 @@ function TaskRowView({
               {/* "Mark as Completed" only — the mock has no reopen item, so it is hidden for completed tasks. */}
               {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as Completed</DropdownItem>}
               <DropdownItem onSelect={pick('rename')}>Rename</DropdownItem>
+              {/* (gaps build, package C — M-03) the task to its outside person, drafted on WhatsApp */}
+              {outside?.phone ? <DropdownItem onSelect={pick('send-outside')} help={`Opens WhatsApp with the task for ${outside.name}`}>Send on WhatsApp</DropdownItem> : null}
               <DropdownItem onSelect={pick('template')}>Save as Template</DropdownItem>
               <DropdownItem onSelect={pick('duplicate')}>Duplicate</DropdownItem>
               <DropdownItem tone="danger" onSelect={pick('delete')}>Delete</DropdownItem>
@@ -636,5 +709,25 @@ function TaskRowView({
         </span>
       )}
     </div>
+  )
+}
+
+/** (Projects round 2) The Milestone cell of a project's task: the milestone it sits in, pressed to put it in another or take it out — the house
+    menu through the portal (REG-728), its rows radio rows. */
+function MilestoneCell({ task, picker }: { task: TaskRow; picker: MilestonePicker }) {
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const current = picker.options.find((m) => m.id === task.milestoneId) ?? null
+  return (
+    <span className={styles.menuWrap} ref={anchor}>
+      <button type="button" className={styles.milestoneBtn} data-none={current ? undefined : ''} aria-haspopup="menu" aria-expanded={open}
+              aria-label={current ? `Milestone: ${current.title} — change` : `Put ${task.title} in a milestone`} onClick={() => setOpen((o) => !o)} data-testid="task-milestone">
+        <span>{current?.title ?? '--'}</span>
+      </button>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Milestone">
+        {picker.options.map((m) => <DropdownItem key={m.id} role="menuitemradio" checked={task.milestoneId === m.id} onSelect={() => { setOpen(false); picker.onPick(task, m.id) }}>{m.title}</DropdownItem>)}
+        <DropdownItem role="menuitemradio" checked={!current} onSelect={() => { setOpen(false); picker.onPick(task, null) }}>In no milestone</DropdownItem>
+      </PortalMenu>
+    </span>
   )
 }

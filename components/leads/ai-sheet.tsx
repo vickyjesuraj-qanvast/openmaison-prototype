@@ -1,18 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { duration, spring } from '@/lib/motion'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { resetPrototype } from '@/app/leads/actions'
+import { prototypeStudioCount, resetPrototype } from '@/app/leads/actions'
 import styles from './ai-sheet.module.css'
 
 /**
- * A4 (approved decision): scripted, display-only Maison AI suggestion sheet.
+ * A4 (approved decision): the Maison AI suggestion sheet.
  * Styling follows the "Maison AI Brief" pattern from the Lead Details mocks
  * (outlined purple suggestion buttons under a ✨ header). Springs from the
- * FAB's corner. REG: content is canned; clicking a suggestion → coming-soon.
+ * FAB's corner. (pending modules S10) Every page's and every editor's sheet is the shell's `MaisonAiSheet`
+ * (components/shell/maison-ai.tsx) — the Ask box, the page's suggestions that act, Recent; nothing answers Coming soon.
  */
 export function AiSheet({
   open,
@@ -20,6 +21,9 @@ export function AiSheet({
   onSelect,
   onClose,
   anchorRef,
+  panel,
+  ask,
+  recent,
 }: {
   open: boolean
   suggestions: string[]
@@ -27,19 +31,53 @@ export function AiSheet({
   onClose: () => void
   /** The FAB that opens it — a press there toggles instead of close-then-reopen (REG-153). */
   anchorRef?: RefObject<HTMLElement | null>
+  /** (gaps build I, I-Q18) A pressed suggestion's answer or proposal, in the body's place — the head and the foot stay. */
+  panel?: ReactNode
+  /** (parity map, TD-107) The shell's Ask box, under the head — above the suggestions and above an answer. A sheet without it is as it was. */
+  ask?: ReactNode
+  /** (pending modules S10) The member's recent questions, under the suggestions — only while no answer is open. */
+  recent?: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
   // Prototype-only: put everything back to the base state (user 2026-08-29) — leads, imports, tasks, settings and browser prefs.
   const [confirmReset, setConfirmReset] = useState(false)
   const [resetting, setResetting] = useState(false)
+  /* (S42 audit A-17) the studios started here go with a reset — the confirmation names them when there are any */
+  const [studios, setStudios] = useState(0)
+  const askReset = () => { setConfirmReset(true); void prototypeStudioCount().then(setStudios, () => setStudios(0)) }
   const doReset = async () => {
     setResetting(true)
     try {
       await resetPrototype()
       try { Object.keys(localStorage).filter((k) => k.startsWith('om.')).forEach((k) => localStorage.removeItem(k)) } catch {}
-      window.location.replace('/leads')
+      /* (simplify S-13) Reports' remembered tab and Finance report live in two cookies — the base state forgets them too */
+      try { for (const c of ['om_reports_tab', 'om_reports_finance']) document.cookie = `${c}=; path=/company/reports; max-age=0` } catch {}
+      window.location.replace('/')   // (S42 audit A-04) the front door (the Dashboard; Finance for Accounting), as every other way in
     } catch { setResetting(false); setConfirmReset(false) }
   }
+  /* (S42 D-06 — reach for everyone) opened from the keyboard, the sheet takes focus to its first control (the Ask box, else the first
+     suggestion) so Tab walks the sheet; when it closes with focus inside it, focus goes back to what opened it (the FAB, a menu's ⋮). A
+     press with a mouse or a finger leaves focus where it was — a phone's keyboard never pops up unasked. */
+  const opener = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!open) return
+    const was = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
+    opener.current = was
+    let byKeys = false
+    try { byKeys = !!was && was.matches(':focus-visible') } catch { byKeys = false }
+    const raf = byKeys ? requestAnimationFrame(() => { ref.current?.querySelector<HTMLElement>('[data-testid="maison-ask"] input, button')?.focus() }) : 0
+    const sheet = ref.current
+    const anchor = anchorRef?.current ?? null
+    return () => {
+      cancelAnimationFrame(raf)
+      requestAnimationFrame(() => {
+        const now = document.activeElement
+        if (now && now !== document.body && !(sheet?.contains(now) ?? false)) return   // something else took focus (a dialog the press opened)
+        const back = opener.current?.isConnected ? opener.current : anchor?.querySelector<HTMLElement>('button') ?? anchor
+        back?.focus({ preventScroll: true })
+      })
+    }
+  }, [open, anchorRef])
   useEffect(() => {
     if (!open || confirmReset) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -72,8 +110,11 @@ export function AiSheet({
             <span className={styles.spark}><img src="/figma-assets/brief-sparkle.svg" width={16} height={16} alt="" /></span>
             Maison AI
           </div>
+          {/* (pending modules S10) the middle scrolls inside the sheet when the Ask box, the suggestions and Recent outgrow a short window */}
+          <div className={styles.scroll}>
+          {ask}
           {/* (REG-507) A page with nothing scripted opens straight onto the foot — no empty body. */}
-          {suggestions.length > 0 ? <div className={styles.body}>
+          {panel ? panel : suggestions.length > 0 ? <div className={styles.body}>
             {suggestions.map((s, i) => (
               <motion.button
                 key={s}
@@ -87,8 +128,10 @@ export function AiSheet({
               </motion.button>
             ))}
           </div> : null}
+          {panel ? null : recent}
+          </div>
           <div className={styles.foot}>
-            <button type="button" className={styles.reset} onClick={() => setConfirmReset(true)}>
+            <button type="button" className={styles.reset} onClick={askReset}>
               <Icon name="restart_alt" size={18} />
               Reset prototype to base
             </button>
@@ -96,7 +139,7 @@ export function AiSheet({
         </motion.div>
       ) : null}
       <ConfirmDialog open={confirmReset} title="Reset the prototype?" tone="danger"
-                     message="Leads, imports, tasks and settings go back to the base state. Anything you tried in this session is lost."
+                     message={`Leads, imports, tasks and settings go back to the base state${studios ? ` — and the ${studios === 1 ? 'studio' : `${studios} studios`} started here ${studios === 1 ? 'is' : 'are'} removed` : ''}. Anything you tried in this session is lost.`}
                      confirmLabel={resetting ? 'Resetting…' : 'Reset'} onCancel={() => { if (!resetting) setConfirmReset(false) }} onConfirm={() => { if (!resetting) void doReset() }} />
     </AnimatePresence>
   )

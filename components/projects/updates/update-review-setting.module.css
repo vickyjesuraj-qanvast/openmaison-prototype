@@ -1,0 +1,18 @@
+/* (REG-949) Settings › Projects › Updates — the event table's own tracks for one rule: the rule · who reviews · its switch. The table, head,
+   rows and cells are Settings' event table (app/settings/settings.module.css, the card table); only the tracks are this card's, at the
+   modifier's specificity as Settings' own tables state theirs (.entityTable .eventRow …). A phone keeps the table's stack. */
+.table > [role='row'] { grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) 88px; }
+@media (min-width: 768px) and (max-width: 1024px) {
+  .table > [role='row'] { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) 72px; }
+}
+@media (max-width: 767px) {
+  .table > [role='row'] { grid-template-columns: minmax(0, 1fr); }
+}
+/* (gaps build D, item 10) Who reviews: the names, then the press that changes them; the dialog's list of the studio's Designers and Managers —
+   a box, the name, the role (the Assign popover's row, as a form list) */
+.who { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
+.pick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pickRow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--om-spacing-3); min-height: 48px; cursor: pointer; font: var(--om-type-body-m); }
+.pickName { min-width: 0; overflow-wrap: anywhere; color: var(--om-color-on-surface-default); }
+.pickRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (hover: none) { .pickRow { min-height: 52px; } }

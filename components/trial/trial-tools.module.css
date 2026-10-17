@@ -1,0 +1,80 @@
+/* (pending modules S41b-3) The website's no-account tools — Leads, Upload a quote, Quote X-Ray — on the website's token sheet
+   (app/site/site-tokens.css) and its own classes (components/site/site.module.css · pages.module.css), S36's trial frame
+   (components/visualizer/trial/trial.module.css): the hero says what the tool is and what is left; under it the tool itself sits in the
+   STUDIO's own look (the house --om-* surface, its tables, fields and buttons) — a window onto the app — then what keeps it, then the
+   other tools. Only the arrangement is here; every control inside is a house piece with its own stylesheet. */
+
+/* ── the hero: S36's tool page's one column ── */
+.hero { max-width: 760px; }
+.allowance { color: var(--site-accent); }
+
+/* ── the tool, in the studio's own look ── */
+.appBand.appBand { padding-top: 0; }   /* right under the hero's words */
+.app {
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+  border: var(--om-border-1) solid var(--site-hairline);
+  border-radius: var(--om-radius-4);
+  background: var(--om-color-surface-bg);
+  box-shadow: var(--site-shadow-sm);
+}
+/* a phone has no room for a window inside a window: the tool's own cards sit on the page, the frame steps back */
+@media (max-width: 767px) { .app { padding: 0; gap: var(--om-spacing-4); border: none; background: none; box-shadow: none; } }
+.block { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; padding: var(--om-spacing-6); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+@media (max-width: 767px) { .block { padding: var(--om-spacing-4); } }
+.blockHead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+/* a phone: the title and its line take the width, the press goes under them at full width */
+@media (max-width: 767px) { .blockHead { flex-direction: column; align-items: stretch; } .blockHead > button { width: 100%; justify-content: center; } }
+/* what a press opens or a reading answers is scrolled to under the site's sticky bar (the site's own 112, pages.module.css) */
+.landing { scroll-margin-top: 112px; }
+.landing:focus { outline: none; }
+.landing:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; border-radius: var(--om-radius-1); }   /* (S42E, E-21) the ring hugs the title, so the line under it stays readable */
+.addBelow { display: none; }
+@media (max-width: 767px) { .addBelow { display: flex; } .addBelow > * { width: 100%; justify-content: center; } }
+.blockTitles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 0; }
+.blockTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.blockHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+@media (max-width: 767px) { .actions { flex-direction: column; align-items: stretch; } .actions > * { width: 100%; } }
+.note { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.note > :first-child { flex-shrink: 0; margin-top: 2px; color: var(--om-color-primary-default); }
+.note[data-tone='error'] > :first-child { color: var(--om-color-tertiary-red-default); }
+.note[data-tone='done'] > :first-child { color: var(--om-color-tertiary-green-default); }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.kept { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.kept > :first-child { color: var(--om-color-tertiary-green-default); }
+.samples { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); }
+.samplesHead { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.fieldLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+@media (max-width: 767px) { .sides { grid-template-columns: minmax(0, 1fr); } }
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.reading { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strong { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.muted { color: var(--om-color-on-surface-secondary); }
+
+/* ── what keeps it: the website's card, its one filled button ── */
+.keep { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-6); flex-wrap: wrap; }
+.keepText { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; flex: 1 1 360px; }
+.keepTitle { margin: 0; font: var(--site-type-strong); color: var(--site-ink); }
+.keepBody { margin: 0; font: var(--site-type-body); color: var(--site-ink-soft); }
+.keepButtons { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+@media (max-width: 767px) { .keepButtons { flex-direction: column; width: 100%; } .keepButtons > * { width: 100%; justify-content: center; } }
+
+/* ── the other tools ── */
+.othersHead { margin-bottom: var(--om-spacing-6); }
+.other { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.otherTitle { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--site-type-strong); color: var(--site-ink); }
+.otherTitle > :first-child { color: var(--site-accent); }
+.otherTitle > :last-child { margin-left: auto; color: var(--site-muted); }
+
+/* ── the ghosts: the page's own boxes as bars ── */
+.ghostBlock { display: block; }
+
+/* ── a lead's row: its name and phone, Remove at the end ── */
+.leadCell { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-width: 0; width: 100%; }
+.leadText { display: flex; flex-direction: column; min-width: 0; }
+.leadText > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.textLink { composes: link from '../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); }

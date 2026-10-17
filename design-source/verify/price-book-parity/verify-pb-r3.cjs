@@ -36,6 +36,9 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
 ;(async () => {
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } })
+  // REG-797 (UX audit S8): My Items opens as the list for a member who never picked a view; this round was written on the grid, so the
+  // member's first pick is the grid (their own toggles still stick)
+  await ctx.addInitScript(() => { try { if (localStorage.getItem('om.price-book-items.list') === null) localStorage.setItem('om.price-book-items.list', '0') } catch {} })
   const page = await ctx.newPage()
   page.setDefaultTimeout(12000)
   const shot = (n, p = page) => p.screenshot({ path: `${S}/shots-pb3/${n}.png` })
@@ -194,10 +197,11 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     await a.press('Escape'); await page.waitForTimeout(300)
     const menu = await rowMenu(page, HAUL, 'Haulage and debris disposal')
     await menu.getByRole('menuitem', { name: /^Add Item/ }).click(); await page.waitForTimeout(200)
-    await page.getByRole('menu').last().getByRole('menuitem', { name: 'From My Items, below…' }).click(); await page.waitForTimeout(600)
-    ok('the popover says where the pick lands', /An item lands below “Haulage and debris disposal”/.test(await page.getByTestId('add-item-place').innerText()))   // (sweep S5 #13)
+    // REG-773 (UX audit Q7) · (S44I, B6 — a deliberate change of this rule) the row menu's "From Price book…" opens the Price book modal with the row's place
+    await page.getByRole('menu').last().getByRole('menuitem', { name: /^From Price book/ }).click(); await page.waitForTimeout(800)
+    ok('the popover says where the pick lands', /goes in below “Haulage and debris disposal”/.test(await page.getByRole('dialog', { name: 'Price book' }).innerText()))   // (sweep S5 #13)
     await shot('08-lands-below')
-    await page.getByRole('option', { name: /Electrical point, new/ }).first().click(); await page.waitForTimeout(1500)
+    await page.locator('[data-testid="book-item"]:has-text("Electrical point, new")').first().click(); await page.getByRole('button', { name: 'Add 1 item' }).click(); await page.waitForTimeout(1800)
     const haul = sql(`select ifnull(parent_id,'top') || '|' || position from quote_items where id='${HAUL}'`).split('|')
     const got = sql(`select ifnull(parent_id,'top') || '|' || position from quote_items where quote_id='${Q}' and price_book_item_id='${ELEC}' order by created_at desc limit 1`).split('|')
     ok('the pick landed right below Haulage', got[0] === haul[0] && Number(got[1]) === Number(haul[1]) + 1, `${got.join('/')} vs ${haul.join('/')}`)

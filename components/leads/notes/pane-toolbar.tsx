@@ -30,7 +30,7 @@ export type PaneToolbarProps = {
   title?: string
   /** attach_file_add → the files library (the Tasks Attach files modal). */
   onAttach: () => void
-  /** AI chip menu › "Refine" — answers coming soon in the parent. */
+  /** AI chip menu › "Refine" — (pending modules S05) the parent refines the note by rule. */
   onRefine: () => void
   /** Bold / italic / underline / lists (REG-252) — the parent runs the command on the focused editor. */
   onFormat: (cmd: FormatCommand) => void
@@ -56,7 +56,7 @@ const FORMAT_B: ToolIcon[] = [
  * format_list_bulleted · format_list_numbered · rule · attach_file_add · rule · AI chip 47×28 (p4 g2: 17×17 gradient
  * rounded square + keyboard_arrow_down 20 #666666; menu 931:45010 140×46 "Refine").
  * Every icon is a bare 24px icon button (components/om/drawer.tsx DrawerAction / .iconBtn) under a Tooltip (REG-75);
- * the text-format buttons and Refine answer "Coming soon in OpenMaison 2.0"; the chip menu toggles on its own trigger
+ * the text-format buttons act on the body (REG-252) and Refine tidies the note by rule (pending modules S05); the chip menu toggles on its own trigger
  * (REG-153) and its chevron points up while open (contracts-toolbar.module.css .chev). Tooltip labels are the icons'
  * Material names in plain words (no tooltip copy is mocked).
  */

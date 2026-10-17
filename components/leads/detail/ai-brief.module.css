@@ -49,6 +49,12 @@
 /* Two Buttons Primary/36/Outlined, 12 apart (DS Button variant primary · appearance outlined · size md = 36 / p8 16 / 1px primary / r4). */
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
 
+/* (parity P-33) A pressed button's answer or proposal in the body's place: the FAB sheet's own panel (components/shell/maison-answer.module.css,
+   16 sides) given 4 more so it sits on the card's 20, the head kept above it. */
+.answer { padding: 0 var(--om-spacing-1) var(--om-spacing-1); min-width: 0; }
+/* (parity P-07) The ghost's two brief lines on the text's own 40 floor. */
+.ghostText { min-height: 40px; display: flex; flex-direction: column; }
+
 /* Expanded tail: the height-animated wrapper (motion) and the stacked cards inside it. */
 .rest { width: 100%; min-width: 0; }
 .restInner { display: flex; flex-direction: column; gap: var(--om-spacing-2); width: 100%; }
@@ -92,3 +98,7 @@
   .toggleRow { height: 44px; }
   .toggle { align-self: stretch; }
 }
+
+/* (pending modules S22 — 1.0's chat-first home) The Dashboard's Ask box on the brief: the house TextField, between the brief and its two
+   buttons, as wide as a question reads (the FAB sheet's box is 320; a page has the room for 640). */
+.ask { width: 100%; max-width: 640px; min-width: 0; }

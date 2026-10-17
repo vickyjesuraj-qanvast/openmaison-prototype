@@ -18,6 +18,9 @@ const HEAD_ALIASES: Record<string, string> = {
 }
 const norm = (s: string) => s.trim().toLowerCase().replace(/[:*]+$/, '').replace(/\s+/g, ' ')
 const known = (s: string) => HEAD_ALIASES[norm(s)]
+/** (S42F) A label as a lead sheet names it ("Contact no", "Mobile", "Remarks") → the import's field — Fill from a document reads a single
+    enquiry's labelled lines with the same words. Undefined when it names nothing. */
+export const leadSheetField = (label: string): string | undefined => known(label)
 
 export type SheetGrid = { headers: string[]; rows: string[][] }
 

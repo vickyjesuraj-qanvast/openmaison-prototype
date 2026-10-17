@@ -1,0 +1,116 @@
+/*
+ * (pending modules S35 — her "build all of them" 2026-10-11; card public:marketing-website) The website's token sheet — 1.0's ".marketing" layer
+ * ("The Quiet Operating System", docs/marketing/openmaison-marketing-redesign.md §1, src/app/globals.css), named once. The site is OpenMaison's
+ * own, with its own art direction: warm paper, one accent, Playfair Display headlines over Inter. Everything the design system already holds is
+ * the design system's token (the accent IS --om-color-primary-default, its tint and hover the DS's own; the functional green / red / amber are
+ * the DS tertiaries); only what the DS has no word for is named here — the paper family, the signature gradient, the display type and the
+ * module tiles' hues. Scoped to `.om-site`, so nothing reaches the studio app. Every site stylesheet (components/site/**.module.css) reads
+ * these and the --om-* tokens, never a literal.
+ *
+ * Not carried from 1.0: the mono face of its eyebrows (no mono in 2.0's fonts — the eyebrows are Inter caps) and its letter-spacing (2.0's
+ * type rule: no tracking of a stylesheet's own, REG-726).
+ */
+.om-site {
+  /* ── paper (1.0's --mk-*) ── */
+  --site-paper: #f4f2ed;
+  --site-sunk: #efede6;
+  --site-surface: var(--om-color-surface-default);
+  --site-ink: var(--om-color-on-surface-default);
+  --site-ink-soft: #52524c;
+  --site-muted: #6b685f;
+  --site-hairline: #e3e0d9;
+  --site-hairline-strong: #cfccc2;
+  --site-accent: var(--om-color-primary-default);
+  --site-accent-hover: var(--om-color-primary-hover);
+  --site-accent-tint: var(--om-color-primary-variant);
+  --site-accent-line: color-mix(in srgb, var(--om-color-primary-default) 30%, transparent);
+  --site-accent-glow: color-mix(in srgb, var(--om-color-primary-default) 18%, transparent);
+  --site-paper-glass: color-mix(in srgb, #f4f2ed 85%, transparent);
+  --site-scrim: color-mix(in srgb, var(--om-color-on-surface-default) 30%, transparent);
+  /* the signature gradient — AI moments only (§1.2) */
+  --site-gradient: linear-gradient(90deg, #ab2576 0%, #df4d2a 45%, #ee8e2b 100%);
+  --site-sticky-note: #fdf3d8;
+  --site-dot: rgba(26, 26, 26, 0.06);
+
+  /* ── shadows (1.0's mk-shadow · mk-shadow-sm · the floating card and chip) ── */
+  --site-shadow: 0 24px 60px -24px rgba(26, 26, 26, 0.16);
+  --site-shadow-sm: 0 10px 30px -16px rgba(26, 26, 26, 0.14);
+  --site-shadow-float: 0 22px 55px -18px rgba(26, 26, 26, 0.5);
+  --site-shadow-chip: 0 12px 30px -12px rgba(26, 26, 26, 0.55);
+  --site-shadow-bar: 0 -8px 28px -8px rgba(26, 26, 26, 0.16), 0 12px 44px -8px rgba(26, 26, 26, 0.28);
+  --site-shadow-accent: 0 10px 24px -10px rgba(85, 0, 255, 0.2);
+  --site-shadow-photo: 0 24px 50px -30px rgba(26, 26, 26, 0.22);
+
+  /* ── the type scale (§1.3) ── */
+  --site-display: 'Playfair Display', Georgia, serif;
+  --site-type-statement: 600 clamp(2.5rem, 6.4vw, 5rem) / 1.06 var(--site-display);
+  --site-type-display-xl: 600 clamp(2.5rem, 6vw, 4.75rem) / 1.04 var(--site-display);
+  --site-type-display-l: 600 clamp(2.125rem, 4.5vw, 3.5rem) / 1.08 var(--site-display);
+  --site-type-oversized: 700 clamp(2.3rem, 5.8vw, 4.5rem) / 1.18 var(--site-display);
+  --site-type-setup: 500 clamp(1.15rem, 2.2vw, 1.8rem) / 1.35 var(--site-display);
+  --site-type-aside: 400 clamp(1.35rem, 2.6vw, 1.9rem) / 1.35 var(--site-display);
+  --site-type-figure: 700 clamp(1.9rem, 3.4vw, 2.7rem) / 1 var(--site-display);
+  --site-type-stat: 700 clamp(1.35rem, 2.5vw, 2.1rem) / 1.08 var(--site-display);
+  --site-type-serif-s: 400 1.1875rem / 1.35 var(--site-display);
+  --site-type-serif-xs: 600 0.8125rem / 1.35 var(--site-display);
+  --site-type-note: italic 600 0.8125rem / 1.35 var(--site-display);
+  --site-type-quote: italic 500 1.35rem / 1.5 var(--site-display);
+  --site-type-display-m: 600 clamp(1.625rem, 3vw, 2.25rem) / 1.15 var(--om-font-family-inter);
+  --site-type-display-s: 600 clamp(1.25rem, 2vw, 1.5rem) / 1.25 var(--om-font-family-inter);
+  --site-type-big: 600 2.125rem / 1 var(--om-font-family-inter);
+  --site-type-index: 600 2.5rem / 1 var(--om-font-family-inter);
+  --site-type-number: 600 2rem / 1 var(--om-font-family-inter);
+  --site-type-body-l: 400 clamp(1.0625rem, 1.4vw, 1.25rem) / 1.6 var(--om-font-family-inter);
+  --site-type-body-m: 400 1.0625rem / 1.6 var(--om-font-family-inter);
+  --site-type-body: 400 0.9375rem / 1.6 var(--om-font-family-inter);
+  --site-type-body-s: 400 0.875rem / 1.5 var(--om-font-family-inter);
+  --site-type-strong: 600 1.0625rem / 1.4 var(--om-font-family-inter);
+  --site-type-strong-s: 600 0.9375rem / 1.4 var(--om-font-family-inter);
+  --site-type-button: 500 0.9375rem / 1.25 var(--om-font-family-inter);
+  --site-type-eyebrow: 600 0.75rem / 1.4 var(--om-font-family-inter);
+  --site-type-label: 600 0.6875rem / 1.4 var(--om-font-family-inter);
+  --site-type-tab: 500 0.625rem / 1.2 var(--om-font-family-inter);
+
+  /* ── the module tiles' hues (1.0's module-icon.tsx ICON_THEME — "the one place the site uses colour beyond the accent, so modules read
+     distinct"): the glass wash, its ink, its glow ── */
+  --site-tile-visualizer: linear-gradient(150deg, #8b6cff57, #5b21b642); --site-tile-visualizer-ink: #5b21b6;
+  --site-tile-space-planner: linear-gradient(150deg, #2dd4bf57, #0e749042); --site-tile-space-planner-ink: #0e7490;
+  --site-tile-upload-a-quote: linear-gradient(150deg, #60a5fa57, #2540d642); --site-tile-upload-a-quote-ink: #2540d6;
+  --site-tile-finance: linear-gradient(150deg, #34d39957, #05966942); --site-tile-finance-ink: #047857;
+  --site-tile-leads: linear-gradient(150deg, #fbbf2457, #f9731642); --site-tile-leads-ink: #ea580c;
+  --site-tile-projects: linear-gradient(150deg, #fb718557, #e11d4842); --site-tile-projects-ink: #be123c;
+  --site-tile-meeting-copilot: linear-gradient(150deg, #e879f957, #a21caf42); --site-tile-meeting-copilot-ink: #86198f;
+  --site-tile-maison-ai: linear-gradient(150deg, #ab257657, #ee8e2b42); --site-tile-maison-ai-ink: #c2410c;
+  --site-tile-security-1: linear-gradient(150deg, #8b6cff57, #5500ff42); --site-tile-security-1-ink: #4400cc;
+  --site-tile-security-2: linear-gradient(150deg, #60a5fa57, #2540d642); --site-tile-security-2-ink: #2540d6;
+  --site-tile-security-3: linear-gradient(150deg, #fbbf2457, #f59e0b42); --site-tile-security-3-ink: #b45309;
+  --site-tile-security-4: linear-gradient(150deg, #34d39957, #05966942); --site-tile-security-4-ink: #047857;
+  --site-tile-edge: rgba(255, 255, 255, 0.6);
+  --site-tile-sheen: radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.45), transparent 60%);
+  --site-tile-glow: 0 8px 18px -8px rgba(26, 26, 26, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+
+  /* ── the home page's art (the hero's conic halo, the drifting blobs, the source pills) ── */
+  --site-halo: conic-gradient(from 0deg, rgba(85, 0, 255, 0.22), rgba(171, 37, 118, 0.2), rgba(238, 142, 43, 0.2), rgba(45, 212, 191, 0.16), rgba(85, 0, 255, 0.22));
+  --site-blob-violet: radial-gradient(circle, rgba(124, 92, 255, 0.2), transparent 70%);
+  --site-blob-green: radial-gradient(circle, rgba(52, 211, 153, 0.16), transparent 70%);
+  --site-glow-accent: radial-gradient(circle, var(--om-color-primary-variant), transparent 70%);
+  --site-glow-card: radial-gradient(circle at 50% 40%, rgba(85, 0, 255, 0.18), transparent 70%);
+  --site-source-qanvast: #5fa89d;
+  --site-avatar: linear-gradient(135deg, #eee5ff, #ddccff);
+  --site-photo-scrim: linear-gradient(to bottom, rgba(0, 0, 0, 0.06), transparent 50%, rgba(0, 0, 0, 0.14));
+  --site-render: linear-gradient(135deg, #e9e3d8 0%, #d9cfbf 45%, #c9bba5 100%);
+  --site-on-ink-soft: rgba(255, 255, 255, 0.7);
+  --site-on-ink-track: rgba(255, 255, 255, 0.18);
+
+  /* ── motion (§1.7; lib/site/motion.ts is the same in JS) ── */
+  --site-motion-reveal: 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  --site-motion-ease: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --site-motion-slow: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--site-paper);
+  color: var(--site-ink);
+}
+.om-site ::selection { background: var(--site-accent-tint); color: var(--site-accent-hover); }
+
+/* (1.0's intro) the page holds still while the first visit's welcome plays (components/site/site-shell.tsx IntroOverlay) */
+html[data-intro='play'] body { overflow: hidden; }

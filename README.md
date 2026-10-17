@@ -159,9 +159,12 @@ The module-by-module map — every screen, action, table and rule — is in [CLA
 
 ### Sign-in
 
-The prototype has **no sign-in**: the signed-in member is the `members` row marked `is_you` (Dane, the studio's owner, in
-the demo), and *Demo Studio › View as* moves it. `lib/db/session.ts` is the one place real authentication plugs in. The
-`users` / `organizations` / `memberships` tables are the original scaffold's; the app itself runs one studio.
+Sign-in is a stand-in (any six digits pass — `/sign-in`, `lib/auth/*`), but its sessions are real: a browser that signed in
+by a code is the member its own session names (`studio_sessions`), on every read and every write stamp, and only that browser.
+A browser that never signed in or out is the demo's standing session — the `members` row marked `is_you` (Dane, the studio's
+owner, in the demo) — and *Demo Studio › View as* moves it. `lib/db/session.ts` (`sessionMemberId`) is the one place that
+says who a request is; real authentication plugs in there and in `lib/auth/`. The `users` / `organizations` / `memberships`
+tables are the original scaffold's; the app itself runs one studio.
 
 ### Money
 

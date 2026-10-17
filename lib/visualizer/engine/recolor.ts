@@ -164,8 +164,15 @@ function boxBlur(f: Float32Array, w: number, h: number, r: number): Float32Array
     the seam is feathered. The plate's floor then meets the photo's floor with no slab and no edge.
     (F028 · F181) `keep` — the pieces that stay: the ring never reads them (a jute rug beside the sofa is not the plate's floor), and where
     the ring reads almost nothing it falls back on the ring's median light instead of the plate as it is (no flat grey box for the TV). */
-export function paste(dst: Img, src: Img, mask: Float32Array, keep?: Float32Array, o: { feathered?: boolean; zones?: Float32Array[] } = {}): void {
+export function paste(dst: Img, src: Img, mask: Float32Array, keep?: Float32Array, o: { feathered?: boolean; zones?: Float32Array[]; asIs?: boolean } = {}): void {
   const W = dst.width, H = dst.height, n = W * H
+  /* (pending modules S43C) a plate cut from the photo itself (`asIs`) has the photo's own light: laid as it is — a ring read beside a piece
+     is its shade, never a light to match */
+  if (o.asIs) {
+    const soft = o.feathered ? mask : featherMask(featherMask(mask, W, H, 4), W, H, 4), D = dst.data, S = src.data
+    for (let i = 0; i < n; i++) { const m = soft[i]!; if (m <= 0.002) continue; const p = i * 4; for (let c = 0; c < 3; c++) D[p + c] = D[p + c]! + (S[p + c]! - D[p + c]!) * m }
+    return
+  }
   const ring = spreadMask(mask, W, H, 18)
   const CW = 96, CH = Math.max(1, Math.round((CW * H) / W)), sx = W / CW, sy = H / CH
   const sum = [new Float32Array(CW * CH), new Float32Array(CW * CH), new Float32Array(CW * CH)], cnt = new Float32Array(CW * CH)

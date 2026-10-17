@@ -10,10 +10,9 @@ import { useOverflowX } from '@/components/om/use-overflow-x'
 import { useRef } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDate, fileSize } from '@/lib/format'
-import { fileTypeLabel, isFolder, type FileRow } from '@/lib/leads/file-model'
+import { fileGlyph, fileHeadWords, fileTypeLabel, isFileSortKey, isFolder, type FileHeadSort, type FileRow, type FileSortKey } from '@/lib/leads/file-model'
 import { FileMenu, FolderMenu, type FileAction, type FolderAction } from './files-grid'
 import styles from './files-table.module.css'
 
@@ -35,6 +34,13 @@ export type FilesTableProps = {
   placeOf?: (f: FileRow) => string
   /** (F095) The file menu's AI Visualizer item for a picture (files-grid `visualizeLabel`). */
   visualizeLabel?: (f: FileRow) => string | null
+  /** (pending modules S28) whether a file reads as a floor plan — its menu offers Make a 3D picture */
+  floorPlan?: (f: FileRow) => boolean
+  /** (pending modules S05) The head's own order (Title · Updated · File size), held by the tab. */
+  sort?: FileHeadSort
+  onSort?: (key: FileSortKey) => void
+  /** (pending modules S06) the viewer reads only (Accounting): no selection column, the menus keep Open and Download */
+  readOnly?: boolean
 }
 
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
@@ -47,9 +53,10 @@ export const FILE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'type', label: 'File type', track: '119px' },
   { key: 'size', label: 'File size', track: '114px' },
   { key: 'attached', label: 'Attached to', track: '195px' },
+  { key: 'client', label: 'Client', track: '120px' },   // (Projects r4a) Shown to client — the portal's Files lists only these
 ]
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
-const SORTABLE: Record<string, boolean> = { owner: false, type: false, attached: false }
+const SORTABLE: Record<string, boolean> = { owner: false, type: false, attached: false, client: false }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, owner: styles.colOwner, updated: styles.colUpdated, type: styles.colType, size: styles.colSize, attached: styles.colAttached }
 
 /**
@@ -59,10 +66,9 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * REG-180 — components/leads/contracts/contracts-table.module.css). Title cell: 48×36 thumb box + name 14/Medium +
  * comment chip 34×24; Owner: Avatar 24 + name; Updated; File type; File size ("--" for folders); Attached to: Tag "Task" / "--".
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
- * hover pattern (.actions/.float) with the kebab only (build plan, logged). Sorting is inert (coming soon).
+ * hover pattern (.actions/.float) with the kebab only (build plan, logged). Title, Updated and File size sort (pending modules S05).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel }: FilesTableProps) {
-  const comingSoon = useComingSoon()
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel, floorPlan, sort = null, onSort, readOnly = false }: FilesTableProps) {
   const [menuRow, setMenuRow] = useState<string | null>(null)
 
   const ids = rows.map((r) => r.id)
@@ -86,9 +92,10 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
   const colWidths = useColumnWidths('lead-files')
-  const tracks = gridTemplateFor(columns, colWidths, '40px', ACTIONS_TRAIL.kebab)
+  /* (pending modules S06) a viewer who reads only has nothing to do in bulk — no selection column (the folder pieces' rule) */
+  const tracks = gridTemplateFor(columns, colWidths, readOnly ? undefined : '40px', ACTIONS_TRAIL.kebab)
   const headRow = useRef<HTMLDivElement>(null)
-  const L0 = useColumnLayout(columns, headRow, { leading: 40 })
+  const L0 = useColumnLayout(columns, headRow, { leading: readOnly ? 0 : 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
@@ -98,23 +105,28 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
       <div ref={headRow} className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+        {readOnly ? null : <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={someSelected} isDisabled={rows.length === 0} onChange={toggleAll} aria-label="Select all files" />
-        </div>
-        {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
-            {SORTABLE[c.key] === false ? (
+        </div>}
+        {columns.map((c) => {
+          const sorted = sort?.key === c.key ? sort : null
+          return (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}
+               aria-sort={sorted ? (sorted.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+            {SORTABLE[c.key] === false || !isFileSortKey(c.key) || !onSort ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (
-              /* Sort is inert in this prototype — the head answers coming soon. */
-              <button type="button" className={styles.hSort} onClick={comingSoon}>
+              /* (pending modules S05) the head sorts its column — A→Z, Z→A, off (the Contracts / Quotes heads' model); folders stay first */
+              <button type="button" className={styles.hSort} data-sorted={sorted ? 'true' : undefined} onClick={() => onSort(c.key as FileSortKey)}
+                      aria-label={sorted ? `${c.label} — sorted ${fileHeadWords(sorted.key, sorted.dir)}; press to ${sorted.dir === 'asc' ? 'reverse' : 'stop sorting'}` : `Sort by ${c.label}`}>
                 <span className={styles.hLabel}>{c.label}</span>
-                <Icon name="unfold_more" size={16} />
+                <Icon name={sorted ? (sorted.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'} size={16} />
               </button>
             )}
             <ColumnResizer table="lead-files" column={c.key} label={c.label} min={c.key === 'title' ? 160 : 72} />
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {rows.map((row) => (
@@ -127,7 +139,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           onMenuToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))}
           onMenuClose={() => setMenuRow(null)}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
-          place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null}
+          place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null} readOnly={readOnly} picture3d={!!floorPlan?.(row)}
         />
       ))}
     </div>
@@ -139,7 +151,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose,
-  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize, readOnly, picture3d,
 }: {
   row: FileRow
   isSelected: boolean
@@ -154,6 +166,8 @@ function FileRowView({
   L: ReturnType<typeof useColumnLayout>
   place?: string
   visualize: string | null
+  readOnly: boolean
+  picture3d: boolean
 }) {
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
@@ -165,9 +179,9 @@ function FileRowView({
   return (
     <div className={styles.row} role="row" data-kb-row data-kb-id={row.id} data-selected={isSelected || undefined} data-kind={folder ? 'folder' : 'file'}>
       {/* Selection cell 40×60 (931:40181 "Cell / Selection" H g12 p12/0/12/16, top rule). */}
-      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-kb-select data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+      {readOnly ? null : <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-kb-select data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={isSelected} onChange={onToggle} aria-label={`Select ${row.name}`} />
-      </div>
+      </div>}
 
       {/* Title cell "Cell / Two line" 420×60 H g12 p12/24/12/16: thumb 48×36 (fill #f2f2f2 r2 — image cover, or folder 24
           centred) + name 14/Medium + comment chip 34×24 (only with comments). The name opens the row. */}
@@ -177,10 +191,10 @@ function FileRowView({
             <Icon name="folder" size={20} weight={300} className={styles.thumbIcon} />
           ) : row.thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={row.thumb} alt="" className={styles.thumbImg} width={36} height={36} />
+            <img src={row.thumb} alt="" className={styles.thumbImg} width={36} height={36} data-page={row.kind === 'image' ? undefined : ''} />
           ) : (
             /* No thumbnail (a PDF): the kind's glyph in the same box (spec silent — the grid tile's fallback). */
-            <Icon name="picture_as_pdf" size={20} weight={300} className={styles.thumbIcon} />
+            <Icon name={fileGlyph(row)} size={20} weight={300} className={styles.thumbIcon} />   /* (REG-950) an update's document or video · (gaps build E) every kind its own glyph */
           )}
         </span>
         {place !== undefined ? (
@@ -224,6 +238,11 @@ function FileRowView({
         {row.attachedTo ? <Tag appearance="outlined">{row.attachedTo}</Tag> : '--'}
       </div>
 
+      {/* (Projects r4a) Client: "Shown" when the client's portal lists the file; a folder is never shown on its own. */}
+      <div className={`${styles.cell} ${L.pinned('client') ? styles.pin : ''}`} role="cell" data-col="client" data-pin-edge={L.edge('client') || undefined} style={L.style('client')}>
+        {row.shownToClientAt ? <span className={styles.shown} data-testid="file-shown-cell"><Icon name="visibility" size={16} weight={300} />Shown</span> : '--'}
+      </div>
+
       {/* Row kebab — not mocked for the list; the tile's kebab at the row's right edge on hover (Quotes .actions/.float,
           kebab only, no View): right 24, top (60 − 36) / 2 = 12. */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
@@ -237,8 +256,8 @@ function FileRowView({
             </Tooltip>
           </span>
           {folder
-            ? <FolderMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} />
-            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} share={!!row.share} />}
+            ? <FolderMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} locked={row.system ?? null} readOnly={readOnly} />
+            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} share={!!row.share} shown={!!row.shownToClientAt} readOnly={readOnly} picture3d={picture3d} paper={!!row.paper} />}
         </span>
         </span>
       </span>

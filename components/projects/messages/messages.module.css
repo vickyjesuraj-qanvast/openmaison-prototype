@@ -1,0 +1,116 @@
+/*
+ * (gaps build H — H-Q11 · H-Q12) A project's Messages tab and the /chat inbox — composed from the house pieces: the tab toolbar
+ * (components/om/tab-toolbar.module.css), the detail card's white box (components/leads/detail/card.module.css), the conversation's lines
+ * (../threads/thread.module.css), the listing's row hover for the inbox's list.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; flex: 1; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+.who { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* The conversation: the detail card's box — the lines scroll, the composer stays at the foot */
+.card { composes: card from '../../leads/detail/card.module.css'; display: flex; flex-direction: column; min-height: 0; }
+.scroll { padding: var(--om-spacing-5); overflow-y: auto; max-height: min(640px, calc(100dvh - 360px)); min-height: 240px; display: flex; flex-direction: column; }
+.foot { border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding: var(--om-spacing-4) var(--om-spacing-5); }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.emptyWrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+
+/* The /chat inbox: the list beside the open conversation (≥1025); a phone opens one at a time */
+.inbox { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: var(--om-spacing-5); align-items: start; min-width: 0; }
+.list { composes: card from '../../leads/detail/card.module.css'; display: flex; flex-direction: column; overflow: hidden; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: var(--om-spacing-1) var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border: 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: none; text-align: left; cursor: pointer; color: inherit; font: inherit; min-height: 64px; transition: background-color var(--motion-hover); }
+.row:last-child { border-bottom: 0; }
+.row:hover { background: var(--om-color-hover-04p); }
+.row[aria-current='true'] { background: var(--om-color-primary-variant); }
+.rowName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowTime { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.rowLine { grid-column: 1; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row[data-unread] .rowLine { color: var(--om-color-on-surface-default); font: var(--om-type-subtitle-s); }
+/* (pending modules S26) a read row's line keeps the unread one's 20px box (its 16px words centred in it), so a row no longer shrinks as it is
+   read, and the loader's rows — which can't know which are unread — land where the list's do */
+.rowLine { padding-block: 2px; }
+.row[data-unread] .rowLine { padding-block: 0; }
+.count { grid-column: 2; justify-self: end; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default);
+  color: var(--om-color-on-primary-default); font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center; }
+.pane { min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.paneHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; }
+.listNote { margin: 0; padding: var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.backOnNarrow { display: none; }
+.paneTitle { margin: 0; flex: 1; min-width: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 1024px) {
+  .inbox { grid-template-columns: 1fr; }
+  .inbox:not([data-open]) .pane[data-slot='open'] { display: none; }
+  .inbox[data-open] .pane[data-slot='list'] { display: none; }
+  .backOnNarrow { display: inline-flex; }
+}
+@media (max-width: 767px) {
+  .scroll { max-height: none; padding: var(--om-spacing-4); }
+  .foot { padding: var(--om-spacing-3) var(--om-spacing-4); }
+}
+
+/* (parity map 2026-10-10 — UC-064 · UC-069 · UC-070) the conversation's head: the caller's start (the tab's Client · Team, /chat's line),
+   then its search (the DS SearchBar, the match count, ↑ ↓) and its ⋮ — one row above the lines, the card's own rule under it */
+.convHead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 52px; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-5);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.convStart { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
+.convMenu { display: inline-flex; }
+.find { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex: 0 1 auto; min-width: 0; }
+.findField { width: 240px; max-width: 100%; }
+.findCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; min-width: 56px; text-align: right; }
+.convMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* /chat's rows: a Team or a Lead chip, a pin, a mute */
+.rowName { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.rowTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rowMarks { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex: none; color: var(--om-color-on-surface-secondary); }
+.row[data-muted] .count { background: var(--om-color-on-surface-disabled); }
+
+@media (max-width: 767px) {
+  .convHead { padding-left: var(--om-spacing-4); flex-wrap: wrap; }
+  .find { flex: 1 1 100%; order: 3; }
+  .findField { width: auto; flex: 1; }
+}
+
+/* (parity map, TD-122) Send to Messages from the AI Visualizer — the dialog's body: the chips, the render (the house thumb at 16:10), the line */
+.sendRender { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.sendRenderPic { width: 100%; max-height: 280px; object-fit: contain; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+
+/* (pending modules S26) a conversation's Details on the house Drawer — the Client access panel's section · box · row grammar
+   (components/portal/client-access-panel.module.css), composed, never copied: who is in it, then what it has shared (Docs · Media · Links) */
+.dSection { composes: section from '../../portal/client-access-panel.module.css'; }
+.dHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.dTitle { composes: title from '../../portal/client-access-panel.module.css'; min-width: 0; overflow-wrap: anywhere; }
+.dBox { composes: box from '../../portal/client-access-panel.module.css'; }
+.dRow { composes: row from '../../portal/client-access-panel.module.css'; }
+.dRowLink { composes: row from '../../portal/client-access-panel.module.css'; color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+.dRowLink:hover { background: var(--om-color-primary-variant); }
+.dRowLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.dRow + .dRow, .dRowLink + .dRowLink { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.dText { composes: text from '../../portal/client-access-panel.module.css'; }
+.dName { composes: name from '../../portal/client-access-panel.module.css'; }
+.dMeta { composes: meta from '../../portal/client-access-panel.module.css'; }
+.dLink { composes: link from '../../om/text-link.module.css'; flex: none; }
+.dFoot { composes: foot from '../../portal/client-access-panel.module.css'; }
+.dEmpty { composes: empty from '../../portal/client-access-panel.module.css'; }
+.dActions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.dLoading { composes: loading from '../../portal/client-access-panel.module.css'; }
+.dThumb { composes: thumb from '../../om/thumb.module.css'; }
+.dGo { flex: none; color: var(--om-color-on-surface-secondary); }
+
+/* (S26) under one's own newest line: who has read it — honest, from each reader's read mark */
+.seen { display: block; margin-top: var(--om-spacing-1); font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+/* (S26) the conversation head's start for a members' one: who is in it — it opens Details */
+.peopleBtn { composes: link from '../../om/text-link.module.css'; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.peopleBtn:hover { color: var(--om-color-on-surface-default); }
+/* (S26) the list's filters (All · Unread · Clients · Team) under its search */
+.filters { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+/* (S26) New message ▾'s drill-down: the back row's arrow, the row's trailing chevron */
+.menuLead { display: inline-flex; margin-right: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); }
+.menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.newGroup { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* (S26) a client not yet on their page: the composer's line carries the way to invite them (the house text link, at the line's size) */
+.inviteLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subtitle-s); }

@@ -61,7 +61,7 @@
     "area": "Definitions",
     "feature": "Many members per lead; removing the last downgrades it",
     "now": "Not built — by design",
-    "why": "Past New the last member stays (Q-09); commission split waits for Finance"
+    "why": "Past New the last member stays (Q-09); commission shares are set per project (F2)"
   },
   {
     "key": "LEADS",
@@ -173,7 +173,7 @@
     "area": "Definitions",
     "feature": "A studio question bank the client answers",
     "now": "Built in parity round 6",
-    "why": "Per-question answer history not built, by design"
+    "why": "Each question's Answer history added later (Projects gaps D)"
   },
   {
     "key": "LEADS",
@@ -197,7 +197,7 @@
     "area": "Definitions",
     "feature": "Performance report and per-lead response time",
     "now": "Built in parity round 5",
-    "why": "Dashboard widgets still wait for the Dashboard mocks"
+    "why": "The Dashboard's Leads tile and lead rows in Needs you (S22)"
   },
   {
     "key": "LEADS",
@@ -212,8 +212,8 @@
     "id": "DEF-27",
     "area": "Definitions",
     "feature": "Workflow switches for stage requirements",
-    "now": "Not built — by design",
-    "why": "The Won step enforces the rules; no switches (Q-26)"
+    "now": "Built",
+    "why": "Settings › Lead stages: contract and next-call asks as switches; the rest fixed (S05)"
   },
   {
     "key": "LEADS",
@@ -229,7 +229,7 @@
     "area": "Definitions",
     "feature": "Fill a new lead from a document by AI",
     "now": "Built in parity round 3",
-    "why": "A scripted stand-in fills fixed values; no real AI (Q-28)"
+    "why": "Reads the picked file’s own words by rule — PDF, sheet or text; no AI (S42)"
   },
   {
     "key": "LEADS",
@@ -244,24 +244,24 @@
     "id": "DEF-31",
     "area": "Definitions",
     "feature": "Signing creates a draft project",
-    "now": "Later",
-    "why": "Won says Project created; projects come with the Projects module"
+    "now": "Built",
+    "why": "Won creates the project; signing alone doesn't (Q-37; Projects build)"
   },
   {
     "key": "LEADS",
     "id": "DEF-32",
     "area": "Definitions",
     "feature": "Issuing entity stored on the lead",
-    "now": "Later",
-    "why": "Entities live on quotes and contracts, not on the lead"
+    "now": "Not built — by design",
+    "why": "Entities live on each quote and contract — Issued by (quote editor D-101); the port copies the lead’s entity onto its quotes"
   },
   {
     "key": "LEADS",
     "id": "DEF-33",
     "area": "Definitions",
     "feature": "Meetings, copilot, visualiser and hangouts",
-    "now": "Later",
-    "why": "They wait for their own modules and mocks"
+    "now": "Built",
+    "why": "Meetings and the Co-Pilot (S23), AI Visualizer, Hangouts (S27) are all built"
   },
   {
     "key": "LEADS",
@@ -332,8 +332,8 @@
     "id": "MM-09",
     "area": "Mismatches",
     "feature": "Webhook duplicates dropped",
-    "now": "Platform",
-    "why": "Stand-in sends a known phone to Review imported leads"
+    "now": "Not built — by design",
+    "why": "Real receiver (S34) sends a known phone to Review imported leads, never drops it"
   },
   {
     "key": "LEADS",
@@ -461,7 +461,7 @@
     "area": "Mismatches",
     "feature": "Studio question bank, client answers, history",
     "now": "Built in parity round 6",
-    "why": "Answer history not built, by design"
+    "why": "Answer history added later, per question (Projects gaps D)"
   },
   {
     "key": "LEADS",
@@ -476,8 +476,8 @@
     "id": "MM-27",
     "area": "Mismatches",
     "feature": "Signed creates a draft project",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Built",
+    "why": "Won creates the project, not signing (Q-37; Projects build)"
   },
   {
     "key": "LEADS",
@@ -581,7 +581,7 @@
     "area": "Listing",
     "feature": "Kanban, list and Performance views",
     "now": "Built in parity round 5",
-    "why": "Performance became Leads › Insights"
+    "why": "Performance became Company › Reports › Leads"
   },
   {
     "key": "LEADS",
@@ -660,8 +660,8 @@
     "id": "L-12",
     "area": "Listing",
     "feature": "Commission pending badge",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Not built — by design",
+    "why": "Projects have no Draft gate; commission lives in Company › Finance › Commission"
   },
   {
     "key": "LEADS",
@@ -997,15 +997,15 @@
     "area": "Lead creation",
     "feature": "Fill from a document",
     "now": "Built in parity round 3",
-    "why": "Scripted stand-in with fixed values; no real AI"
+    "why": "Reads the picked file’s own words by rule — PDF, sheet or text (S42)"
   },
   {
     "key": "LEADS",
     "id": "C-16",
     "area": "Lead creation",
     "feature": "Hangout, AI agent and project intake",
-    "now": "Later",
-    "why": "Hangouts, AI tools and Projects come later"
+    "now": "Built",
+    "why": "Hangout bookings (S27), Maison AI's Add a lead (S05), New project (Projects build)"
   },
   {
     "key": "LEADS",
@@ -1061,15 +1061,15 @@
     "area": "Intake",
     "feature": "Webhook endpoints per source",
     "now": "Built in parity round 6",
-    "why": "A stand-in: generated URLs and demo POSTs"
+    "why": "Generated URLs receive real POSTs at /api/webhooks/leads (S34)"
   },
   {
     "key": "LEADS",
     "id": "I-08",
     "area": "Intake",
     "feature": "Webhook receiving rules",
-    "now": "Platform",
-    "why": "Real receiving is the platform's; the stand-in keeps the review landing"
+    "now": "Built",
+    "why": "/api/webhooks/leads/<token> keeps 1.0's limits, keys and test leads (S34)"
   },
   {
     "key": "LEADS",
@@ -1188,8 +1188,8 @@
     "id": "R-05",
     "area": "Reports",
     "feature": "Dashboard lead widgets",
-    "now": "Later",
-    "why": "Waits for the Dashboard mocks (owner's hold)"
+    "now": "Built",
+    "why": "/dashboard: a Leads tile and lead rows in Needs you (S22)"
   },
   {
     "key": "LEADS",
@@ -1213,7 +1213,7 @@
     "area": "Lead detail",
     "feature": "Tool turned off for the studio",
     "now": "Platform",
-    "why": "Platform admin switch; 2.0 shows coming soon"
+    "why": "Platform switch not built; OpenMaison can close only the client portal (P-F)"
   },
   {
     "key": "LEADS",
@@ -1252,8 +1252,8 @@
     "id": "D-08",
     "area": "Lead detail",
     "feature": "Commission pending callout",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Not built — by design",
+    "why": "Projects have no Draft gate; commission lives in Company › Finance › Commission"
   },
   {
     "key": "LEADS",
@@ -1276,8 +1276,8 @@
     "id": "D-11",
     "area": "Lead detail",
     "feature": "Meeting intelligence and briefs",
-    "now": "Later",
-    "why": "Tools module"
+    "now": "Built",
+    "why": "The lead's Meetings tab: the co-pilot and its brief, by rule (S23)"
   },
   {
     "key": "LEADS",
@@ -1316,8 +1316,8 @@
     "id": "D-16",
     "area": "Lead detail",
     "feature": "Create Project opens on Signed",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Built",
+    "why": "Convert to Project opens the Won step, which creates the project (Projects build)"
   },
   {
     "key": "LEADS",
@@ -1381,7 +1381,7 @@
     "area": "Lead detail",
     "feature": "Assigned designers with split and removal",
     "now": "Built in parity round 7",
-    "why": "Removals now in Activity; commission split waits for Finance"
+    "why": "Removals now in Activity; commission shares set per project (F2)"
   },
   {
     "key": "LEADS",
@@ -1501,7 +1501,7 @@
     "area": "Lead detail",
     "feature": "Return wizard with seven reasons",
     "now": "Built in parity round 3",
-    "why": "Return policy PDF and 1.0's eight tips not ported"
+    "why": "Return policy dialog, 1.0's tips (View all) and Appeal added (S05)"
   },
   {
     "key": "LEADS",
@@ -1516,16 +1516,16 @@
     "id": "D-41",
     "area": "Lead detail",
     "feature": "Quote summary, approvals and comments on the lead",
-    "now": "Later",
-    "why": "Quotes module; see the quote audits"
+    "now": "Built",
+    "why": "QUOTES card, Quotes tab's approval, line comments in the editor (quote rounds)"
   },
   {
     "key": "LEADS",
     "id": "D-42",
     "area": "Lead detail",
     "feature": "Move a lead's quotes to another entity",
-    "now": "Later",
-    "why": "Quotes module"
+    "now": "Not built — by design",
+    "why": "Each quote is issued from its own entity — Issued by (quote editor D-101); the port copies the lead’s entity onto its quotes"
   },
   {
     "key": "LEADS",
@@ -1548,8 +1548,8 @@
     "id": "D-45",
     "area": "Lead detail",
     "feature": "Promote a lead link to a project",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Built",
+    "why": "One record: the project reads its lead's portal link, nothing to promote"
   },
   {
     "key": "LEADS",
@@ -1564,16 +1564,16 @@
     "id": "D-47",
     "area": "Lead detail",
     "feature": "Contract flow and signing picker",
-    "now": "Later",
-    "why": "Contracts module; see the Contracts audit"
+    "now": "Built",
+    "why": "The lead's Contracts tab and Send for digital signature (Contracts parity)"
   },
   {
     "key": "LEADS",
     "id": "D-48",
     "area": "Lead detail",
     "feature": "Quote approval as a task",
-    "now": "Later",
-    "why": "Quotes module"
+    "now": "Built",
+    "why": "Approvers hear in the bell instead of a task (see QED QA-09)"
   },
   {
     "key": "LEADS",
@@ -1588,16 +1588,16 @@
     "id": "D-50",
     "area": "Lead detail",
     "feature": "Copilot brief saved to the lead",
-    "now": "Later",
-    "why": "Tools module"
+    "now": "Built",
+    "why": "A meeting's brief: Save to the lead, with a follow-up task (S23)"
   },
   {
     "key": "LEADS",
     "id": "D-51",
     "area": "Lead detail",
     "feature": "Hangout lead",
-    "now": "Later",
-    "why": "Hangouts module"
+    "now": "Built",
+    "why": "Hangout bookings arrive as leads, source Hangout (S27)"
   },
   {
     "key": "LEADS",
@@ -1613,7 +1613,7 @@
     "area": "Lead detail",
     "feature": "Flags, workflow switches, region, manager setting",
     "now": "Not built — by design",
-    "why": "Switches declined (Q-26); region is platform; managers are built"
+    "why": "Lead stages' two switches built (S05); flags and region are the platform's"
   },
   {
     "key": "LEADS",
@@ -1701,7 +1701,7 @@
     "area": "Stage engine",
     "feature": "AI reads a chat screenshot",
     "now": "Platform",
-    "why": "Auto Fill is a scripted stand-in"
+    "why": "Auto Fill reads a chat export, an email or call notes by rule; a screenshot is attached, not read (no model)"
   },
   {
     "key": "LEADS",
@@ -1772,16 +1772,16 @@
     "id": "S-19",
     "area": "Stage engine",
     "feature": "Project created moves the lead",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Built",
+    "why": "Won and the project are one move; New project makes a direct lead"
   },
   {
     "key": "LEADS",
     "id": "S-20",
     "area": "Stage engine",
     "feature": "AI agent moves stages",
-    "now": "Later",
-    "why": "AI tools"
+    "now": "Built",
+    "why": "Maison AI's \"Move … to …\" opens the Move stage window, never moves alone (S05)"
   },
   {
     "key": "LEADS",
@@ -1861,7 +1861,7 @@
     "area": "Settings",
     "feature": "Lead funnel editor",
     "now": "Not built — by design",
-    "why": "Held; 'Manage Stages' answers coming soon (Q-02)"
+    "why": "Held (Q-02); Manage Stages opens Settings › Lead stages, not an editor (S05)"
   },
   {
     "key": "LEADS",
@@ -1900,8 +1900,8 @@
     "id": "G-13",
     "area": "Settings",
     "feature": "Workflow rules and approvers",
-    "now": "Not built — by design",
-    "why": "Quote approval and backup approver only; no lead switches (Q-26)"
+    "now": "Built",
+    "why": "Quote approval, backup approver, and Lead stages' two switches (S05)"
   },
   {
     "key": "LEADS",
@@ -1909,15 +1909,15 @@
     "area": "Settings",
     "feature": "Lead webhooks page",
     "now": "Built in parity round 6",
-    "why": "A stand-in on Company › Integrations"
+    "why": "On Company › Integrations; its URLs receive real POSTs (S34)"
   },
   {
     "key": "LEADS",
     "id": "G-15",
     "area": "Settings",
     "feature": "Legal entities on leads",
-    "now": "Later",
-    "why": "Entities live on quotes and contracts"
+    "now": "Not built — by design",
+    "why": "Entities live on each quote and contract — Issued by (quote editor D-101)"
   },
   {
     "key": "LEADS",
@@ -1933,7 +1933,7 @@
     "area": "Settings",
     "feature": "Region config, lead country, CaseTrust",
     "now": "Platform",
-    "why": "Singapore only; CaseTrust belongs to Contracts"
+    "why": "Singapore only (S33 held); CaseTrust is on Company › Profile › Registrations"
   },
   {
     "key": "LEADS",
@@ -1948,8 +1948,8 @@
     "id": "P-01",
     "area": "Roles",
     "feature": "Role tags including Accounting",
-    "now": "Later",
-    "why": "An Accounting role comes with Finance (Q-39)"
+    "now": "Built",
+    "why": "The Accounting role: the books and money, on no lead (Projects & Finance parity)"
   },
   {
     "key": "LEADS",
@@ -1957,7 +1957,7 @@
     "area": "Roles",
     "feature": "Custom roles and per-member permissions",
     "now": "Not built — by design",
-    "why": "Four fixed roles; custom roles held (Q-40)"
+    "why": "Five fixed roles, Accounting added; custom roles held (Q-40)"
   },
   {
     "key": "LEADS",
@@ -1981,7 +1981,7 @@
     "area": "Roles",
     "feature": "Who may do what with leads",
     "now": "Built in parity round 1",
-    "why": "Delete, Settings and Insights for Owners and Admins (Q-41)"
+    "why": "Delete, Settings and Reports › Leads for Owners and Admins (Q-41)"
   },
   {
     "key": "LEADS",
@@ -2029,7 +2029,7 @@
     "area": "Notifications",
     "feature": "Questionnaire requested and answered",
     "now": "Built in parity round 3",
-    "why": "Ask recorded; 'client answered' waits for the portal"
+    "why": "The client answers on their portal; the bell tells the members"
   },
   {
     "key": "LEADS",
@@ -2060,8 +2060,8 @@
     "id": "N-10",
     "area": "Notifications",
     "feature": "Scheduled sends and daily digest",
-    "now": "Platform",
-    "why": "Real sending is the platform's; digest held (Q-42)"
+    "now": "Built",
+    "why": "Daily summary on Your profile (S18); timed sends through /api/cron (S34)"
   },
   {
     "key": "LEADS",
@@ -2076,8 +2076,8 @@
     "id": "T-01",
     "area": "Touchpoints",
     "feature": "Dashboard lead widgets",
-    "now": "Later",
-    "why": "Waits for the Dashboard mocks"
+    "now": "Built",
+    "why": "/dashboard: a Leads tile and lead rows in Needs you (S22)"
   },
   {
     "key": "LEADS",
@@ -2100,8 +2100,8 @@
     "id": "T-04",
     "area": "Touchpoints",
     "feature": "Convert to a project",
-    "now": "Later",
-    "why": "Projects module"
+    "now": "Built",
+    "why": "Convert to Project opens Won, which creates the project (Projects build)"
   },
   {
     "key": "LEADS",
@@ -2124,8 +2124,8 @@
     "id": "T-07",
     "area": "Touchpoints",
     "feature": "Homeowner page and automatic link",
-    "now": "Later",
-    "why": "Portal pages come later; invites are recorded (Q-22)"
+    "now": "Built",
+    "why": "The client portal /my/<address>; access by Invite to Portal, not automatic (Q-22)"
   },
   {
     "key": "LEADS",
@@ -2141,7 +2141,7 @@
     "area": "Touchpoints",
     "feature": "Admin studio detail",
     "now": "Platform",
-    "why": "Qanvast admin tooling, not ported"
+    "why": "Platform admin; Qanvast Ops › Studios has only the portal switch and usage"
   },
   {
     "key": "LEADS",
@@ -2156,7 +2156,7 @@
     "id": "T-11",
     "area": "Touchpoints",
     "feature": "Hangouts, copilot and entity",
-    "now": "Later",
-    "why": "Their own modules come later"
+    "now": "Built",
+    "why": "Hangouts (S27), the co-pilot (S23); the entity stays on quotes and contracts"
   }
 ]

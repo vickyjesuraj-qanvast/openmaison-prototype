@@ -1,9 +1,12 @@
 /**
  * Quote X-Ray (REG-529) — the other studio's quote, read from the file. The prototype reads the three reference quotes the
- * owner shared (design-source/reference/quotes/README.md — Dyel · Flo Design · Cove Interior) as line items; any other file
- * is "one we couldn't read". Amounts are S$ minor units; 0 = the line prints FOC / Inclusive / no price given.
+ * owner shared (design-source/reference/quotes/README.md — Dyel · Flo Design · Cove Interior) as line items, by their names; since
+ * pending modules S21 any other PDF is read from its own words (lib/quotes/pdf-quote.ts) and a spreadsheet for real (lib/xray/reading.ts). Amounts are S$ minor units; 0 = the line prints FOC / Inclusive / no price given.
  */
-export type RefLine = { trade: string; room: string | null; name: string; qty: number; unit: string | null; amountMinor: number; brand?: string }
+export type RefLine = { trade: string; room: string | null; name: string; qty: number; unit: string | null; amountMinor: number; brand?: string
+  /** (pending modules S21) The rate the other quote states beside its quantity, when it states one (a spreadsheet's Rate column, a PDF's
+      rate cell) — 1.0's arithmetic check reads it against the stated amount. The reference quotes print amounts only. */
+  rateMinor?: number | null }
 export type RefQuote = { key: 'dyel' | 'flo' | 'cove' | 'sheet'; studio: string; lines: RefLine[] }
 
 const L = (trade: string, room: string | null, name: string, qty: number, unit: string | null, amount: number, brand?: string): RefLine => ({ trade, room, name, qty, unit, amountMinor: Math.round(amount * 100), brand })
@@ -91,7 +94,32 @@ const COVE: RefQuote = { key: 'cove', studio: 'Cove Interior', lines: [
 
 export const REFERENCE_QUOTES: RefQuote[] = [FLO, DYEL, COVE]
 
+/** (S42 E-05) The reference quotes by their key — what a browser that recognised one by the file's own words sends (never a file name). */
+export const referenceQuote = (key: unknown): RefQuote | null => REFERENCE_QUOTES.find((q) => q.key === key) ?? null
+
+/* (S42 E-05 · B·4 — the audit's Blocker: any file NAMED like a reference quote, an empty one too, was shown as the demo's quote and could be
+   kept as the visitor's own) A reference quote is recognised by what the file SAYS, never by its name: its own words must name the studio
+   and hold most of the reference's lines (each line's first words, in order). The bundled sample (public/uat-files/cove-interior-quotation.pdf)
+   and the owner's own copies read as their curated lines; an empty file, a photo, or another quote from the same studio does not. */
+const STUDIO_WORDS: Record<'dyel' | 'flo' | 'cove', RegExp> = { dyel: /\bdyel\b/, flo: /\bflo design\b/, cove: /\bcove interior\b/ }
+const plainWords = (s: string) => s.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim()
+/** A line's first significant words — what a quote printing the line (even cut short with "…") still carries. */
+const lineSign = (name: string) => plainWords(name).split(' ').filter((w) => w.length > 1).slice(0, 4).join(' ')
+/** The reference quote a PDF's own text is, else null: the studio named, and at least 60 % of the reference's lines (never fewer than 5). */
+export function referenceInText(lines: readonly string[]): RefQuote | null {
+  const text = ` ${plainWords(lines.join(' '))} `
+  for (const q of REFERENCE_QUOTES) {
+    if (q.key === 'sheet' || !STUDIO_WORDS[q.key].test(text)) continue
+    const signs = q.lines.map((l) => lineSign(l.name)).filter((s) => s.split(' ').length >= 2)
+    const hits = signs.filter((s) => text.includes(` ${s} `)).length
+    if (hits >= Math.max(5, Math.ceil(signs.length * 0.6))) return q
+  }
+  return null
+}
+
 /**
+ * (S42 E-05) STORED READINGS ONLY — a comparison saved before the readings kept their lines names its other file; the demo's repair and Run
+ * again read those by the stored name. An upload is never read by its name (`referenceInText`).
  * Which reference the uploaded file is — by name. Null = unreadable. (REG-639, X-Ray parity §8.2) Whole words only: "floor
  * plan.pdf", "workflow.xlsx", "information.pdf" and "scope of works.pdf" are not the reference quotes (they were, by substring —
  * E-95); "Cove floor quote.pdf" is Cove's. An underscore or a dash counts as a break ("flo_design", "cove-interior").

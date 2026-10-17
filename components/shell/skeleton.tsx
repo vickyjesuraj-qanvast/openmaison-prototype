@@ -138,17 +138,22 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
         </div>
       </div>
       <div className={`${pageStyles.content} ${styles.cardsCanvas}`}>
+        {/* (parity P-26, B-17) the page's row: the pill · the 280 search · Filters · Column settings (`tune`, it was missing — the search bone
+            sat 48 right of the field) · the view toggle */}
         <div className={`${styles.toolbar} ${styles.notMobile}`}>
           <Bone w={132} h={36} r="var(--om-radius-1)" />
           <div className={styles.toolbarRight}>
             <Bone w={280} h={36} r="var(--om-radius-1)" />
             <Bone w={36} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />
             <Bone w={72} h={36} r="var(--om-radius-1)" />
           </div>
         </div>
-        {/* ≤767 the toolbar is the pill and the filter glyph only (1082:25269, toolbar.module.css). */}
+        {/* ≤767 the toolbar is the pill, the search glyph and the filter glyph (1082:25269, toolbar.module.css — (parity P-19) the house
+            ToolbarSearch's glyph before Filters). */}
         <div className={`${styles.toolbar} ${styles.mobileOnly}`}>
           <Bone w={132} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
           <Bone w={36} h={36} r="var(--om-radius-1)" />
         </div>
         <div className={`${styles.tableWrap} ${styles.notMobile}`}>
@@ -156,8 +161,9 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
               tracks hold and the wrap scrolls, exactly as the real table does (REG-269). */}
           <div className={styles.tableInner} data-min="1410">
           <div className={styles.headRow}>
-            {/* Lead Name is the listing's frozen column (table.module.css .pin) — the ghost freezes it too ≤1024. */}
-            <span className={`${styles.col} ${styles.pinCol}`} style={{ flex: '240 0 240px' }}><Bone w={72} h={12} /></span>
+            {/* Lead Name is the listing's frozen column (table.module.css .pin) — the ghost freezes it too ≤1024. (parity P-26, B-17) It holds
+                the select-all box 16 in and the label at 52, as the page's head does (REG-610 · REG-614). */}
+            <span className={`${styles.col} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '240 0 240px' }}><Bone w={18} h={18} className={styles.selSlot} /><Bone w={72} h={12} /></span>
             <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '160 0 160px' }}><Bone w={64} h={12} /></span>
@@ -170,7 +176,8 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
             const j = i % NAME_W.length   /* the mock's eight bone widths, cycled, so a taller sheet still reads as data */
             return (
             <div key={i} className={styles.row}>
-              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol}`} style={{ flex: '240 0 240px' }}>
+              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '240 0 240px' }}>
+                <Bone w={18} h={18} className={styles.selSlot} />   {/* (parity P-26) each row's box; the name lands at 52 */}
                 <Bone w={NAME_W[j] ?? 128} h={14} /><Bone w={72} h={10} />
               </span>
               <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
@@ -233,7 +240,7 @@ export function QanvastSkeleton() {
         </div>
       </div>
       <div className={styles.tabs}>
-        {[41, 49, 54, 65].map((w, i) => <Bone key={i} w={w} h={20} />)}
+        {[41, 56, 82, 54, 65].map((w, i) => <Bone key={i} w={w} h={20} />)}   {/* (one-home N-05) "Lead credits" · (parity map, CP-148) Studios after Leads */}
       </div>
       <div className={pageStyles.content}>
         <div className={styles.toolbar}>
@@ -290,7 +297,7 @@ export function ImportsSkeleton() {
           <Bone w={164} h={20} />
           <div className={styles.toolbarRight}>
             <Bone w={280} h={36} r="var(--om-radius-1)" className={styles.searchGrow} />
-            <Bone w={36} h={36} r="var(--om-radius-1)" />
+            {/* (pending modules S05) no Filters button — the page has none */}
           </div>
         </div>
         <div className={styles.tableWrap}>

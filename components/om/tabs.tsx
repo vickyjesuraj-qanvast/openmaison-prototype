@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import Link from 'next/link'
+import { Badge } from '@/components/ds'
 import { Tooltip } from './tooltip'
 import styles from './tabs.module.css'
 
@@ -18,8 +19,10 @@ export function Tabs({
   className,
   onSoon,
 }: {
-  /** (REG-645) A tab marked `soon` is a module still to come: it stays in the row and answers with `onSoon` (the house "Coming soon"). */
-  items: { label: string; href: string; soon?: boolean }[]
+  /** (REG-645) A tab marked `soon` is a module still to come: it stays in the row and answers with `onSoon` (the house "Coming soon").
+      (gaps build, package A — 12) `count`: what is still to do there, as the DS Badge's count after the label (the rail's and the Tools tiles'
+      count look); none, or 0, draws the tab exactly as before. */
+  items: { label: string; href: string; soon?: boolean; count?: number }[]
   activeHref: string
   'aria-label'?: string
   className?: string
@@ -62,7 +65,9 @@ export function Tabs({
         const selected = t.href === activeHref
         if (t.soon) return <button key={t.href} type="button" role="tab" aria-selected={false} tabIndex={-1} className={styles.tab} onClick={onSoon}>{t.label}</button>
         return (
-          <Tooltip key={t.href} label={t.label} keys={i < 9 ? `#${i + 1}` : undefined} disabled={i >= 9}>
+          /* (parity P-06) every tab names itself on hover — a tab past the ninth used to have no tooltip at all; its number shows where the key
+             layer answers one (1–9, components/shell/shortcuts/shortcuts-layer.tsx) */
+          <Tooltip key={t.href} label={t.label} keys={i < 9 ? `#${i + 1}` : undefined}>
           <Link
             key={t.href}
             href={t.href}
@@ -76,7 +81,7 @@ export function Tabs({
                prefetch only fetches the loading boundary — which is precisely the flash we are trying to remove. */
             prefetch
           >
-            {t.label}
+            {t.count ? <span className={styles.withCount}>{t.label}<Badge variant="count" count={t.count} aria-label={`${t.count} to do`} /></span> : t.label}
             {selected ? <span className={styles.ink} aria-hidden /> : null}
           </Link>
           </Tooltip>

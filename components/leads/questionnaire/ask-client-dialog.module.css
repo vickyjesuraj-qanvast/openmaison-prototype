@@ -49,3 +49,6 @@
 .questionsHead { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary); }
 .questionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); max-height: 240px; overflow-y: auto; }
 .question { align-items: flex-start; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+/* (parity map, CP-110) what the send will also do (invite the client), or why it can't go — one plain line under the portal box */
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

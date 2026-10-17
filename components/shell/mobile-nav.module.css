@@ -1,5 +1,6 @@
 /* Mobile chrome (1082:23305, REG-298): the ≤767 top bar, the bottom dock and the More drawer. Nothing renders ≥768. */
 .bar, .dock { display: none; }
+.dock { composes: dockFrame; }
 @media (max-width: 767px) {
   /* Top bar (1082:23389): 60 tall, px16 py12, the lockup left and the four marks right. The mocked shadow sits
      under the page header below it (page-header*.module.css), so the bar itself draws no edge.
@@ -18,9 +19,11 @@
   /* Bottom dock (1082:24937): fixed, pt8 pb12 px8, five 64×50 columns spread across, level-5 lift.
      (REG-308) The height token carries env(safe-area-inset-bottom); padding-bottom spends it, so the 50px columns
      stay 8/12 inside the drawn 70 and the home indicator gets its own band beneath them. */
-  .dock {
+  /* (REG-1050) The dock's frame is its own class so the client portal's phone bar wears it too (portal.module.css composes it and decides
+     when it shows); `.dock` composes it and keeps the studio's rule for when it shows. */
+  .dockFrame {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 85;
-    display: flex; justify-content: space-between; align-items: flex-start; gap: var(--om-spacing-1);
+    justify-content: space-between; align-items: flex-start; gap: var(--om-spacing-1);
     height: var(--app-mobile-dock-height);
     padding-top: var(--om-spacing-2);
     padding-right: calc(var(--om-spacing-2) + env(safe-area-inset-right, 0px));
@@ -80,6 +83,8 @@
 .barIcon { position: relative; }
 .barBadge { composes: badge from './app-rail.module.css'; top: 4px; right: 4px; }
 .dockIcon { position: relative; }
+/* (REG-919) a dock item's own count — the Projects item's projects that need attention — the rail's badge, composed */
+.dockBadge { composes: badge from './app-rail.module.css'; top: -2px; right: -2px; }
 .moreDot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-tertiary-red-default); box-shadow: 0 0 0 2px var(--om-color-surface-default); pointer-events: none; }
 .rowCount { composes: badge from './app-rail.module.css'; position: static; flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
 /* (UX audit V6) a row that isn't built yet: the Company panel's "Soon" tag */
@@ -91,6 +96,8 @@
   border-radius: var(--om-radius-2); overflow: hidden;
 }
 .avatarBtn img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* (pending modules S01) the member's own avatar (components/om/avatar) fills the framed 36 — their photo, or their tinted initial */
+.avatarBtn > span { width: 100%; height: 100%; border-radius: 0; }
 .avatarBtn::after { content: ''; position: absolute; inset: -4px; }
 
 /* Dock items: a 36px icon box (r8) over a subtitle/xs label, 2 apart; the active route tints the box primary/variant

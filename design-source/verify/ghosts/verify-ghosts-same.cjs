@@ -9,10 +9,10 @@ const QUOTE = '1f598389-4008-4079-a956-5dff071fb708', CONTRACT = '81463786-769d-
 const QTPL = '7ab7bfe7-3d8b-4e3c-a6ec-0285274c1de6', CTPL = '9d229e29-f161-4066-adae-57c6b90c25f5', TTPL = '53a859ef-9545-4228-8cc3-11f2183ddff9', TXTPL = '02a297a5-b5e6-4935-a665-d54e86f672fa'
 const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'
 const ROUTES = [
-  ['leads', '/leads'], ['leads-kanban', '/leads?view=kanban'], ['insights', '/leads/insights'], ['imports', '/leads/imports'],
+  ['leads', '/leads'], ['leads-kanban', '/leads?view=kanban'], ['insights', '/company/reports/leads'], ['reports-health', '/company/reports/health'],   /* (pending modules S39) */ ['reports-sales', '/company/reports/leads?report=sales'],   /* (pending modules S45A, a deliberate change of this rule: the Sales report on the list) */ ['imports', '/leads/imports'],
   ['lead-overview', `/leads/${LEAD}`], ...['tasks', 'quotes', 'contracts', 'files', 'notes', 'questionnaire', 'activity'].map((t) => [`lead-${t}`, `/leads/${FLEAD}/${t}`]),
   ['file-viewer', `/leads/${FLEAD}/files/${FILE}`],
-  ['tasks', '/tasks'], ['quotes', '/quotes'], ['contracts', '/contracts'], ['xray', '/quote-x-ray'], ['xray-record', `/quote-x-ray/${XRAY}`], ['visualizer', '/visualizer'], ['qanvast', '/qanvast-ops'],
+  ['tasks', '/tasks'], ['quotes', '/quotes'], ['contracts', '/contracts'], ['xray', '/quote-x-ray'], ['xray-record', `/quote-x-ray/${XRAY}`], ['visualizer', '/visualizer'], ['qanvast', '/qanvast-ops'], ['qanvast-studios', '/qanvast-ops/studios'],   /* (parity map, CP-148 · CP-149) Qanvast Ops › Studios */
   ...['studio', 'leads', 'quotes', 'notifications'].map((m) => [`settings-${m}`, `/settings?section=${m}`]),
   ['co-profile', '/company/profile'], ['co-profile-from', '/company/profile?from=%2Fcompany%2Fplan%2Fbilling'], ['co-members', '/company/members'], ['co-questionnaire', '/company/questionnaire'],
   ['co-integrations', '/company/integrations'], ['co-materials', '/company/materials'], ['co-plan', '/company/plan'], ['co-plan-billing', '/company/plan/billing'],
@@ -21,6 +21,16 @@ const ROUTES = [
   ['ed-quote', `/quotes/${QUOTE}`], ['ed-quote-preview', `/quotes/${QUOTE}/preview`], ['ed-contract', `/contracts/${CONTRACT}`], ['ed-contract-preview', `/contracts/${CONTRACT}/preview`],
   /* the quote template editor draws its loader and then the page — it has no PageReveal, so there is no reveal to compare */ ['ed-tpl-contract', `/templates/contracts/${CTPL}`], ['ed-tpl-tasks', `/templates/tasks/${TTPL}`], ['ed-tpl-terms', `/templates/terms/${TXTPL}`],
   ['ed-tpl-payments', '/templates/payments/20-40-40'], ['ed-visualizer', `/visualizer/${DESIGN}`], ['renders', '/renders/17fe84ab2eca47'],
+  ['marketplace', '/marketplace'], ['marketplace-deals', '/marketplace?view=deals'], ['marketplace-brand', '/marketplace/mkb-4101'],   /* (pending modules S24) */
+  ['market-insights', '/market-insights'], ['market-insights-reports', '/market-insights?category=reports'], ['market-insights-article', '/market-insights/mi-demo-budget-benchmark'],   /* (pending modules S25) */
+  /* (pending modules S27) Qanvast Ops › Hangouts, a Hangout's Plan · Chats · How it went and one the studio doesn't take part in, the studio's booking
+     page and a homeowner's own page (R144's fixed tokens), a member's Public profile */
+  ['hangouts', '/qanvast-ops/hangouts'], ...['plan', 'meetings'].map((v) => [`hangout-${v}`, `/qanvast-ops/hangouts/hge-qh-2026-marina?view=${v}`]), ['hangout-results', '/qanvast-ops/hangouts/hge-qh-2026-suntec?view=results'],
+  ['hangout-open', '/qanvast-ops/hangouts/hge-qh-2026-onenorth'], ['hangout-page', '/hangout/ETk9nlpkLinRS1JDm-_J9SK8'], ['hangout-own', '/hangout/ETk9nlpkLinRS1JDm-_J9SK8/CmIkVpC6P0ozfYuMPPm-hga4'], ['public-profile', '/company/members/germaine/profile'],
+  ['dashboard', '/dashboard'],   /* (pending modules S22) the Dashboard — its loader and its reveal draw the viewer's one ghost */
+  /* (pending modules S41b-5) Qanvast Ops › Lead credits (Overview · Transactions · Contracts) and Reviews (Reviews · Ranking · Feedback) */
+  ['qo-credits', '/qanvast-ops/credits'], ['qo-credits-tx', '/qanvast-ops/credits/transactions'], ['qo-credits-contracts', '/qanvast-ops/credits/contracts'],
+  ['qo-reviews', '/qanvast-ops/reviews'], ['qo-reviews-ranking', '/qanvast-ops/reviews/ranking'], ['qo-reviews-feedback', '/qanvast-ops/reviews/feedback'],
 ]
 ;(async () => {
   const [W = '1440', H = '1024', touch = '', filter = ''] = process.argv.slice(2)

@@ -24,3 +24,8 @@
 .notes { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .note { display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
 .note[data-tone='warn'] { color: var(--om-color-tertiary-red-default); }
+/* (S44I, B7) Paste lines from a row or a foot: the box to type into heads the dialog; the mapping and the preview follow it as it is typed. */
+.typed { display: flex; flex-direction: column; margin-bottom: var(--om-spacing-4); }
+.typed textarea { min-height: 144px; }
+/* (S44I, B6 · B7) A foot's one place, said at the footer's start where the chips would be. */
+.placeFixed { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

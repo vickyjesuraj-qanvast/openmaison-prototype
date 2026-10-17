@@ -1,0 +1,21 @@
+/* (gaps build J) New layout — the flats as cards with their own drawing. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.h { margin: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.card { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; text-align: left; }
+@media (hover: hover) { .card:hover:not(:disabled) { border-color: var(--om-color-primary-default); } }
+.card[data-on] { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.card:disabled { cursor: default; opacity: 0.7; }
+.card:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.art { display: flex; align-items: center; justify-content: center; height: 120px; margin-bottom: var(--om-spacing-1); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow: hidden; }
+.art svg { width: 100%; height: 100%; padding: var(--om-spacing-2); }
+.glyph { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.name { padding: 0 var(--om-spacing-1); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.line { padding: 0 var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.switch { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; }
+.switch[data-off] { color: var(--om-color-on-surface-disabled); cursor: default; }
+.grow { flex: 1; }
+.error { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-red-variant1); color: var(--om-color-on-tertiary-red-variant); font: var(--om-type-body-s); }
+@media (max-width: 767px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .art { height: 96px; } }

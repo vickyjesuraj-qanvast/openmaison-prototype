@@ -10,6 +10,7 @@ import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
 import { readFileAsDataUrl } from '@/lib/templates/files'
+import { HEIC_NO, looksHeic, normalizePicture } from '@/lib/heic'
 import { hexOf, hexTyped } from '@/lib/format'
 import { GENERIC_CATEGORIES } from '@/lib/visualizer/catalogue'
 import { PHOTO_ACCEPT } from '@/lib/visualizer/policy'
@@ -69,9 +70,13 @@ export function MaterialDialog({ open, material, onClose, onSave, bookItems, rea
     }
   }
   const shown = photo === undefined ? material?.imageUrl ?? null : photo
+  /* (pending modules S20 — 1.0's normalize-image.ts, the material swatch's own path there) a HEIC swatch from a phone is turned into a JPEG
+     where the browser can't draw it, as the AI Visualizer's are */
   const pick = async (f: File) => {
-    if (!PHOTO_ACCEPT.split(',').includes(f.type)) { snack({ message: 'We can read JPG, PNG and WebP photos' }); return }
-    try { const url = await readFileAsDataUrl(f, 512); setPhoto(url); setHex(dominantColour(await loadImg(url))); setHexDraft(null); if (!name.trim()) setName(f.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').slice(0, 40)) }
+    if (!looksHeic(f) && !PHOTO_ACCEPT.split(',').includes(f.type)) { snack({ message: 'We can read JPG, PNG, WebP and HEIC photos' }); return }
+    const n = await normalizePicture(f)
+    if ('error' in n) { snack({ message: n.error }); return }
+    try { const url = await readFileAsDataUrl(n.file, 512, { web: true }); if (!/^data:image\/(?:jpeg|png|webp)/.test(url)) { snack({ message: looksHeic(f) ? HEIC_NO : 'Couldn’t read that photo — please try another' }); return } setPhoto(url); setHex(dominantColour(await loadImg(url))); setHexDraft(null); if (!name.trim()) setName(f.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').slice(0, 40)) }
     catch { snack({ message: 'Couldn’t read that photo — please try another' }) }
   }
   /* (F121) the colour as typed: six digits commit at once; three (#9DB) wait for the blur so the swatch doesn't jump mid-word; an
@@ -108,7 +113,7 @@ export function MaterialDialog({ open, material, onClose, onSave, bookItems, rea
                 </span>
               )}
             </div>
-            <input ref={file} type="file" accept={PHOTO_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f) }} />
+            <input ref={file} type="file" accept={`${PHOTO_ACCEPT},image/heic,image/heif,.heic,.heif`} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f) }} />
           </div>
           <TextField label="Name" required value={name} maxLength={NAME_MAX} onChange={setName} error={tried && !name.trim() ? 'Give the material a name' : undefined} placeholder="e.g. Nippon Sage Whisper" />
           <div className={styles.pair}>

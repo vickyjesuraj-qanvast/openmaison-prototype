@@ -1,5 +1,6 @@
 'use client'
 
+import { usePlanLock } from '@/components/credits/credits-client'
 import { useRememberShape } from '@/lib/ghost-shape'
 import { copyText } from '@/lib/clipboard'
 import { leadTabShape } from '@/components/leads/detail/tab-ghost-for'
@@ -7,17 +8,19 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { DatePicker } from '@/components/om/date-picker'
-import { useSnackbar } from '@/components/om/snackbar'
+import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
+import { uploadedLine } from '@/lib/quotes/upload'   // (pending modules S12)
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { Quote } from '@/lib/db/schema'
-import { EMPTY_QUOTE_FILTERS, QUOTE_TODOS, activeQuoteFilterCount, applyQuoteFilters, quickMatch, quoteTodoCounts, searchQuotes, type QuoteFilters, type QuoteQuick, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { EMPTY_QUOTE_FILTERS, QUOTE_TODOS, activeQuoteFilterCount, applyQuoteFilters, nextQuoteHeadSort, quickMatch, quoteTodoCounts, searchQuotes, sortQuotesByHead, type QuoteFilters, type QuoteHeadSort, type QuoteQuick, type QuoteSortKey, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { useQuoteStatus } from './use-quote-status'
 import { useContractFromQuote } from '@/components/quotes/send/contract-from-quote'
 import type { QuoteApproval } from '@/lib/settings/types'
 import type { LeadQuotesData } from '@/lib/leads/quotes'
+import { createQuoteFromDraft } from '@/app/quotes/draft-actions'
 import { archiveQuote, listArchivedQuotes, unarchiveQuotes, createQuote, createQuoteFromUpload, deleteQuotes, deleteQuotesForever, emptyQuoteTrash, listDeletedQuotes, restoreQuotes, setDefaultTemplate, setQuoteDue } from '@/app/leads/quotes-actions'
 import { canDeleteQuote, deletedLine } from '@/lib/quotes/policy'
 import { templateDefaultBlock } from '@/lib/company/template-rules'
@@ -34,6 +37,7 @@ import { useTableColumns } from '@/components/om/table-columns'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { quoteColumnDefs, quoteShowApproval } from './quotes-table'
 import styles from './lead-quotes.module.css'
+import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
 
 /**
  * Lead Details › Quotes (910-36240): the tab's state — toolbar, table or empty state, selection + bulk bar, status
@@ -48,6 +52,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   const { quotes, templates, priceBookCount, now } = data
   useRememberShape(leadTabShape(leadId, 'quotes'), quotes.length === 0)   // (UX audit build) the shape this list opened on — its loading ghost draws the same one next time
   const router = useRouter()
+  const xrayLock = usePlanLock('quote_xray')   // (pending modules S19 — 1.0's plan gating) Quote X-Ray is Pro
   const snackbar = useSnackbar()
   const { run, fail, refresh } = useRun()
 
@@ -68,7 +73,10 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   const [quick, setQuick] = useState<QuoteQuick>('')
   const todoCounts = useMemo(() => quoteTodoCounts(quotes, now, canApprove && approval === 'required'), [quotes, now, canApprove, approval])
   if (quick && todoCounts[quick] === 0) setQuick('')
-  const visible = useMemo(() => searchQuotes(applyQuoteFilters(quotes.filter((q) => quickMatch(q, quick, now)), filters, now), query), [quotes, filters, query, now, quick])
+  /* (pending modules S04) the heads' own order — one sort with Filters' (a head's sort sets Filters' back to Newest first; Filters' takes the head's off) */
+  const [headSort, setHeadSort] = useState<QuoteHeadSort>(null)
+  const onSort = (key: QuoteSortKey) => { setHeadSort((h) => nextQuoteHeadSort(h, key)); setFilters((f) => (f.sort === 'newest' ? f : { ...f, sort: 'newest' })) }
+  const visible = useMemo(() => sortQuotesByHead(searchQuotes(applyQuoteFilters(quotes.filter((q) => quickMatch(q, quick, now)), filters, now), query), headSort), [quotes, filters, query, now, quick, headSort])
   // Search / filters that match nothing → the listing's "No results found" card (T6); the bare head never shows.
   const nothingMatches = quotes.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0 || quick !== '')
   // Selection follows the visible set (render-phase adjust).
@@ -108,7 +116,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   const loadArchived = useCallback(() => listArchivedQuotes(leadId), [leadId])
   const mayDelete = (q: Quote) => !viewer || canDeleteQuote(viewer, q)
   /* (sweep S1) a soft delete answers with Undo (REG-502), and a failure names what failed */
-  const removeQuotes = (ids: string[]) => { void run(ids.length > 1 ? 'delete the quotes' : 'delete the quote', async () => { const r = await deleteQuotes(ids); snackbar(r.deleted ? { message: deletedLine(r), actionLabel: 'Undo', onAction: () => { void restoreQuotes(ids).then(() => refresh(), () => snackbar({ message: 'Couldn’t restore — please try again' })) } } : { message: deletedLine(r) }) }) }
+  const removeQuotes = (ids: string[]) => { void run(ids.length > 1 ? 'delete the quotes' : 'delete the quote', async () => { const r = await deleteQuotes(ids); if (!('deleted' in r)) throw new Error(r.error); snackbar(r.deleted ? { message: deletedLine(r), actionLabel: 'Undo', onAction: () => { void restoreQuotes(ids).then(() => refresh(), () => snackbar({ message: 'Couldn’t restore — please try again' })) } } : { message: deletedLine(r) }) }) }
   const rowMenu = (quote: Quote, action: QuoteRowAction) => {
     if (action === 'share' || action === 'pdf' || action === 'print') {
       /* (REG-625, parity §8.2 · E-117) the row's Preview and Share · Download as PDF · Print open what the editor's own kebab opens */
@@ -116,6 +124,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
     } else if (action === 'contract') {
       contract.open(quote)
     } else if (action === 'xray') {
+      if (xrayLock.locked) { xrayLock.open(); return }   // (pending modules S19) Quote X-Ray is Pro
       router.push(withFrom(`/quote-x-ray?lead=${quote.leadId}&quote=${quote.id}`, here))   /* (REG-639) Quote X-Ray on this quote, back to this tab */
     } else if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`   /* (REG-625, E-117) the quote's own address — "?open=" was read by nothing */
@@ -146,7 +155,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
       ) : (
         <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           quotes={visible} now={now} approval={approval} canApprove={canApprove} canDelete={mayDelete}
-          sort={filters.sort} onSortValid={() => setFilters((f) => ({ ...f, sort: f.sort === 'valid' ? 'newest' : 'valid' }))}
+          sort={headSort} onSort={onSort}
           selected={selected} onSelect={setSelected}
           onStatus={onStatus}
           onDue={openDue}
@@ -173,16 +182,18 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
       <QuotesFiltersModal
         open={filtersOpen} value={filters} now={now} approval={approval}
         onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
+        headSort={headSort ? ({ status: 'Status', total: 'Total', due: 'Due', created: 'Created', sent: 'Sent to client', valid: 'Valid until', updated: 'Updated', approval: 'Approval Date' } as const)[headSort.key] : null} onClearHead={() => setHeadSort(null)}
         onClose={() => setFiltersOpen(false)}
       />
       <CreateQuoteModal
-        open={createOpen} leadName={leadName} templates={templates} priceBookCount={priceBookCount} now={now}
+        open={createOpen} leadName={leadName} leadId={leadId} templates={templates} priceBookCount={priceBookCount} now={now}
         render={{ brand: data.brand, sample: data.sample, extras: data.extras }}
         onClose={() => setCreateOpen(false)}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
         defaultBlock={viewer ? templateDefaultBlock(viewer) : null}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */
-        onUpload={(read, _client, quoteId) => { void run('create the quote', async () => { const id = await createQuoteFromUpload(leadId, null, read.groups, quoteId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }}   /* (REG-627, parity Q-16) */
+        onUpload={(read, _client, quoteId) => { void run('create the quote', async () => { const r = await orThrow(createQuoteFromUpload(leadId, null, read.groups, quoteId)); setCreateOpen(false); carrySnackbar(`/quotes/${r.id}`, uploadedLine(read, r.matched)); router.push(withFrom(`/quotes/${r.id}`, here)) }, undefined, { guard: 'create' })   /* (pending modules S12) said in the editor's own host — the shell's goes with the shell (carrySnackbar, Dane UAT 3.23) */ }}   /* (REG-627, parity Q-16) */
+        onDraft={(brief) => { void run('draft the quote', async () => { const r = await createQuoteFromDraft({ leadId, brief }); if ('error' in r) return r; setCreateOpen(false); carrySnackbar(`/quotes/${r.id}`, 'Quote drafted by Maison AI'); router.push(withFrom(`/quotes/${r.id}`, here)); return r }, undefined, { guard: 'create' }) }}   /* (pending modules S04) */
       />
       {statusChange.dialog}
       {contract.dialog}
@@ -192,11 +203,11 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
         onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); removeQuotes(ids) }}
       />
       <ArchivedQuotesSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb={`${leadName} / Quotes`}
-                           onUnarchive={async (ids) => { const r = await unarchiveQuotes(ids); snackbar({ message: r.restored > 1 ? `${r.restored} quotes unarchived` : 'Quote unarchived' }); refresh() }} />
+                           onUnarchive={async (ids) => { const r = await orThrow(unarchiveQuotes(ids)); snackbar({ message: r.restored > 1 ? `${r.restored} quotes unarchived` : 'Quote unarchived' }); refresh() }} />
       <DeletedQuotesSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb={`${leadName} / Quotes`}
-                          onRestore={async (ids) => { const r = await restoreQuotes(ids); snackbar({ message: r.restored ? 'Quote restored' : 'Only its creator, an Owner or an Admin restores it' }); refresh() }}
-                          onDeleteForever={async (ids) => { const r = await deleteQuotesForever(ids); snackbar({ message: r.deleted ? 'Quote deleted forever' : 'The quote stays — a contract reads it, or someone else created it' }) }}
-                          onEmptyTrash={async () => { const r = await emptyQuoteTrash(leadId); snackbar({ message: `${r.deleted} ${r.deleted === 1 ? 'quote' : 'quotes'} deleted forever${r.refused ? ` — ${r.refused} kept` : ''}` }) }} />
+                          onRestore={async (ids) => { const r = await orThrow(restoreQuotes(ids)); snackbar({ message: r.restored ? 'Quote restored' : 'Only its creator, an Owner or an Admin restores it' }); refresh() }}
+                          onDeleteForever={async (ids) => { const r = await orThrow(deleteQuotesForever(ids)); snackbar({ message: r.deleted ? 'Quote deleted forever' : 'The quote stays — a contract reads it, or someone else created it' }) }}
+                          onEmptyTrash={async () => { const r = await orThrow(emptyQuoteTrash(leadId)); snackbar({ message: `${r.deleted} ${r.deleted === 1 ? 'quote' : 'quotes'} deleted forever${r.refused ? ` — ${r.refused} kept` : ''}` }) }} />
     </div>
   )
 }

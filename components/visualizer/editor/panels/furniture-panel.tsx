@@ -38,7 +38,7 @@ function customizeWords(colour: string | null, finish: string | null): string {
  * (F038 · F012) A row on a version says what that version already did to the piece ("Now: Emerald velvet · Keep"); (F032) a Replace or a
  * Customize that can't render yet says what it still needs.
  */
-export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style, canRemove, tools = null, customized = {}, onAdd, onAddLike, onForget, onRefPhoto, reshaped }: {
+export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style, canRemove, tools = null, customized = {}, onAdd, onAddLike, onForget, onRefPhoto, onRecolour, reshaped }: {
   furniture: FurnitureDef[]
   picks: Record<string, FurniturePick>
   sel: string | null
@@ -55,6 +55,8 @@ export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style,
   onAddLike: (label: string, category: string) => void
   onForget: (ids: string[]) => void
   onRefPhoto: (ids: string[]) => void
+  /** (pending modules S20 — Q-21 as she answered) Replace's pick as a Customize — the piece keeps its shape and takes the pick's colour. */
+  onRecolour?: (ids: string[]) => void
   reshaped: boolean
 }) {
   const removeWhy = tools ? tools.removeWhy : canRemove === false ? 'Taking a piece out isn’t available on this photo yet' : null
@@ -126,7 +128,7 @@ export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style,
                     {now ? <span className={styles.hint}>Now: {now}</span> : null}
                     <Chips label={`What happens to the ${titleCaseLabel(key).toLowerCase()}`} options={ACTIONS.map((a) => ({ value: a.value, label: a.label, disabled: a.value === 'remove' && offRemove }))} value={p.action === 'keep' ? null : p.action}
                            onChange={(v) => { if (v === 'remove' && offRemove) return; setAll(nextPick(p, v as FurnitureAction)) }} testId="viz-furniture-actions" />
-                    {removeWhy ? <span className={styles.hint} data-testid="viz-remove-why">Remove is off: {removeWhy.charAt(0).toLowerCase() + removeWhy.slice(1)}. Replace or Customize it instead.</span> : null}
+                    {removeWhy ? <span className={styles.hint} data-testid="viz-remove-why">Remove is off: {removeWhy.charAt(0).toLowerCase() + removeWhy.slice(1)}. Customize it instead.</span> : null}
                     {pieceWhy ? <span className={styles.hint} data-testid="viz-remove-why">{pieceWhy}</span> : null}
                     {needs ? <span className={styles.hint}>{needs}</span> : null}
                     {p.action === 'replace' ? (
@@ -144,7 +146,10 @@ export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style,
                           ) : null}
                           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add_photo_alternate" size={20} weight={300} />} onPress={() => onRefPhoto(ids)}>{p.refImage ? 'Change the photo' : 'Add a photo of it'}</Button>
                         </span>
-                        <span className={styles.hint}>The piece keeps its shape on the photo — the pick brings its colour and finish. The colour comes from your words when they name one, otherwise from the photo.</span>
+                        {/* (pending modules S20 — Q-21 as she answered: the engine answers Replace honestly) the pick is kept — the live app's image
+                            model draws it in; here the one way on is a recolour, named for what it is */}
+                        <span className={styles.hint} data-testid="viz-replace-held">This is the prototype, so a new piece can’t be drawn into the photo — in the live app, the image model puts your pick in its place. For now, the {titleCaseLabel(key).toLowerCase()} can take its colour and finish.</span>
+                        {onRecolour ? <span className={styles.actions}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="palette" size={20} weight={300} />} isDisabled={!!unready} onPress={() => onRecolour(ids)} data-testid="viz-recolour">Recolour it to match</Button></span> : null}
                       </>
                     ) : null}
                     {p.action === 'customize' ? (

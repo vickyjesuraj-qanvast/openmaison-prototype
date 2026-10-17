@@ -25,6 +25,9 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
 ;(async () => {
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } })
+  // REG-797 (UX audit S8): My Items opens as the list for a member who never picked a view; this round was written on the grid, so the
+  // member's first pick is the grid (their own toggles still stick)
+  await ctx.addInitScript(() => { try { if (localStorage.getItem('om.price-book-items.list') === null) localStorage.setItem('om.price-book-items.list', '0') } catch {} })
   const page = await ctx.newPage()
   page.setDefaultTimeout(12000)
   const shot = (n, p = page) => p.screenshot({ path: `${S}/shots-pb2/${n}.png` })
@@ -176,9 +179,9 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
   await step('Who may do what lists the book', async () => {
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
     const reach = async (k) => JSON.stringify(await page.getByTestId(`may-${k}`).locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach'))))
-    ok('change the book: Owners and Admins; Managers and Designers submit', await reach('price-book') === '["yes","yes","submit","submit"]')
-    ok('approve a proposal: Owners and Admins', await reach('price-book-approve') === '["yes","yes","no","no"]')
-    ok('My Sections: Owners and Admins', await reach('price-book-sections') === '["yes","yes","no","no"]')
+    ok('change the book: Owners and Admins; Managers and Designers submit', await reach('price-book') === '["yes","yes","submit","submit","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('approve a proposal: Owners and Admins', await reach('price-book-approve') === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('My Sections: Owners and Admins', await reach('price-book-sections') === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     await page.getByTestId('may-price-book').scrollIntoViewIfNeeded(); await shot('09-who-may')
   })
 

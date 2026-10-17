@@ -53,6 +53,8 @@ export const COLUMN_LABEL: Record<ColumnKey, string> = {
   rebate: 'Rebate',   // (REG-596) Owners only — a vendor rebate on the line, counted in the owner's margin, never printed
 }
 /** Columns the table can actually render today (the rest are in the catalogue, off, and answer coming soon when switched on). */
+/** (pending modules S41b-1) The columns drawn from a line's cost — left out for a member who doesn't see costs (Settings › Roles & access). */
+export const COST_COLUMNS: ColumnKey[] = ['cost', 'markup', 'margin']
 export const RENDERABLE_COLUMNS: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'type', 'margin', 'rebate', 'vendor', 'website']   // (REG-623, parity Q-08 · Q-09) Vendor/Sub and Website Link are drawn
 export type ColumnSettings = { details: { description: boolean; images: boolean; autonumber: boolean }; columns: { key: ColumnKey; on: boolean }[] }
 /** The table as mocked (1260:31209, updated 2026-09-15 — the STATUS column left the default set, REG-426, then the catalogue
@@ -123,7 +125,8 @@ export function shortLink(v: string | null | undefined): string {
 
 /** Reference row menu (owner 2026-09-11; "Create Document(s)" dropped — REG-410). Round 1 of the testers' asks added
     Skip the number (REG-558), Ungroup (REG-558), Save section to My Items (REG-566) and Label the sub-total (REG-555). */
-export type RowMenuAction = 'library' | /** (REG-653) */ 'libraryUpdate' | 'addFromBook' | /** (sweep S1) */ 'subtotalClear' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove' | 'noNumber' | 'ungroup' | 'saveSection' | 'subtotalLabel' | 'description' | 'oneLine' | 'comment'
+export type RowMenuAction = 'library' | /** (REG-653) */ 'libraryUpdate' | 'addFromBook' | /** (sweep S1) */ 'subtotalClear' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove' | 'noNumber' | 'ungroup' | 'saveSection' | 'subtotalLabel' | 'description' | 'oneLine' | 'comment' | /** (S44T — call C1) */ 'pricedAfter'
+  | /** (S44I, B3 · B5) */ 'addSub' | 'addFromBookHere' | 'pasteHere'
 
 /**
  * (REG-555) Print as — what a line prints in place of its amount, and whether it counts (1.0's FOC / Inclusive / KIV words,
@@ -175,7 +178,9 @@ export const HIGHLIGHT_KIND: Record<Highlight, 'text' | 'fill'> = { accent: 'tex
 export type SavedLine = { name: string; description: string | null; descriptionHtml: string | null; qty: number; unit: string | null; costMinor: number; markupMinor: number; discountPct: number; gstPct: number; room: string | null; category: string | null; section: string | null; printAs: string | null; printAsText: string | null; highlight: string | null; icon: string | null; /** (REG-623) */ vendor?: string | null; link?: string | null
   /** (REG-653, price book parity Q-10) What keeps a line safe on its way back into a quote: hidden or priced-off for the client, optional
    *  (out of every sum), no number, the owner's rebate, its photo, and the My Items entry it came from. */
-  visibility?: Visibility; optional?: boolean; noNumber?: boolean; rebateMinor?: number; thumb?: string | null; thumbCount?: number; priceBookItemId?: string | null }
+  visibility?: Visibility; optional?: boolean; noNumber?: boolean; rebateMinor?: number; thumb?: string | null; thumbCount?: number; priceBookItemId?: string | null
+  /** (S44I — call C2) the name's emphasis, breaks and kit colours travel with it */
+  nameHtml?: string | null }
 /** (REG-653, Q-10) A saved section's own marks, and each sub-section's: printed as one line, the word beside its sub-total, its highlight, its visibility. */
 export type SavedGroupMarks = { printOneLine?: boolean; printAsText?: string | null; highlight?: string | null; visibility?: Visibility }
 export type SavedSection = SavedGroupMarks & { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[]; subs: (SavedGroupMarks & { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[] })[] }
@@ -204,6 +209,7 @@ export function parseSavedSection(json: string): SavedSection | null {
       rebateMinor: typeof l.rebateMinor === 'number' && l.rebateMinor > 0 ? Math.round(l.rebateMinor) : 0,
       thumb: typeof l.thumb === 'string' ? l.thumb : null, thumbCount: typeof l.thumbCount === 'number' ? l.thumbCount : typeof l.thumb === 'string' ? 1 : 0,
       priceBookItemId: typeof l.priceBookItemId === 'string' ? l.priceBookItemId : null,
+      nameHtml: typeof l.nameHtml === 'string' ? l.nameHtml : null,   // (S44I — C2) cleaned again where it lands
     })
     return {
       name: typeof r.name === 'string' ? r.name : 'Section', description: typeof r.description === 'string' ? r.description : null, descriptionHtml: typeof r.descriptionHtml === 'string' ? r.descriptionHtml : null,
@@ -218,20 +224,53 @@ export const savedSectionCount = (s: SavedSection) => s.lines.length + s.subs.re
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 /** A plain description as the rich editor's paragraphs; a line that starts with "• " becomes a list item so old bullets keep their shape
-    (REG-557; shared by the Items grid's Description dialog and, REG-653, the price book's item and section editors). */
+    (REG-557; shared by the Items grid's Description dialog and, REG-653, the price book's item and section editors). (S44I — M3) A blank
+    line between two lines stays a blank line, so opening and saving never closes it up. */
 export function plainToHtml(text: string): string {
   const out: string[] = []
   let list: string[] = []
   const flush = () => { if (list.length) { out.push(`<ul>${list.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`); list = [] } }
-  for (const l of text.split('\n')) { const m = /^[•\-–*]\s+(.*)$/.exec(l); if (m) list.push(m[1]!); else { flush(); if (l.trim()) out.push(`<p>${escapeHtml(l)}</p>`) } }
+  const rows = text.replace(/\s+$/, '').split('\n')
+  rows.forEach((l, k) => { const m = /^[•\-–*]\s+(.*)$/.exec(l); if (m) list.push(m[1]!); else { flush(); if (l.trim()) out.push(`<p>${escapeHtml(l)}</p>`); else if (k > 0 && rows[k - 1]!.trim()) out.push('<p><br></p>') } })
   flush()
   return out.join('')
 }
-/** The rich editor's text as it is kept: its plain words, and the HTML only when it carries lists or emphasis (REG-557's rule). */
+/** The rich editor's text as it is kept: its plain words, and the HTML only when it carries lists or emphasis (REG-557's rule) — (S44I — M3,
+    UAT rows 268 · 275, the triage's §12.3) or a shape plain words can't hold: more than one paragraph, a blank line, a break inside a line, an
+    alignment, a kit colour (call C2). An edit that only aligned a line or split it into paragraphs was lost on save. */
 export function keptText(html: string, blank: boolean): { text: string; html: string | null } {
   if (blank) return { text: '', html: null }
-  return { text: htmlToPlain(html), html: /<(ul|ol|li|b|strong|i|em|u|s|strike|a)\b/i.test(html) ? html : null }
+  const marks = /<(ul|ol|li|b|strong|i|em|u|s|strike|a)\b/i.test(html)
+  const shaped = (html.match(/<(p|div|h[1-4]|blockquote)\b/gi) ?? []).length > 1 || /<br\b/i.test(html) || /text-align:\s*(center|right|justify)/i.test(html) || /\bdata-kit=/i.test(html) || /<img\b/i.test(html)   // (NB-07 (a)) a note's picture
+  return { text: htmlToPlain(html), html: marks || shaped ? html : null }
 }
+
+/* ── (S44I — call C2 as recommended, her ask 2026-10-15; UAT rows 327 · 326 · 298 · 307; REVERSES REG-557's "no colour inside text") ──
+   A line's name may carry bold, italic, underline, strike and line breaks, and a run in a brand-kit colour (`<span data-kit="KEY">`, a kit
+   key — never a free hex; REG-556's kit-only rule kept). It passes the house allowlist (lib/rich-html.ts, S44Q) and is then narrowed to
+   those marks; the plain name stays the line's `name` for search, the X-Ray and exports. */
+export const NAME_TEXT_COLORS = ['ink', 'accent', 'red', 'grey'] as const
+const NAME_TAGS = /^(b|strong|i|em|u|s|strike|br|span)$/i
+/** A sanitised name body narrowed to the marks a name keeps: blocks become line breaks, lists / links / pictures their words, a span keeps its
+    kit key only. Null when it says no more than its plain words. */
+export function narrowNameHtml(clean: string | null | undefined): string | null {
+  if (!clean) return null
+  let out = clean
+    .replace(/\r?\n/g, '<br>')   // the editor keeps a typed break as a newline (its body is pre-wrap); on paper it is a <br>
+    .replace(/<\/(p|div|h[1-4]|li|blockquote)>\s*(?=<(p|div|h[1-4]|li|blockquote|ul|ol)\b)/gi, '<br>')
+    .replace(/<\/(p|div|h[1-4]|li|blockquote)>/gi, '').replace(/<img\b[^>]*>/gi, '')
+    .replace(/<(\/?)([a-z][a-z0-9]*)\b([^>]*)>/gi, (m, close: string, tag: string, attrs: string) => {
+      if (!NAME_TAGS.test(tag)) return ''
+      if (tag.toLowerCase() !== 'span' || close) return `<${close}${tag.toLowerCase()}>`
+      const kit = /\bdata-kit="([a-z]+)"/i.exec(attrs)?.[1]
+      return kit ? `<span data-kit="${kit}">` : '<span>'
+    })
+    .replace(/(<br>\s*)+$/i, '').replace(/^(\s*<br>)+/i, '')
+  out = out.replace(/<span>([\s\S]*?)<\/span>/gi, '$1').trim()
+  return /<(b|strong|i|em|u|s|strike|br)\b|data-kit=/i.test(out) ? out.slice(0, 4000) : null
+}
+/** A formatted name's plain words: its breaks read as spaces (a name is one line wherever it is plain). */
+export const nameFromHtml = (html: string) => htmlToPlain(html.replace(/<br\s*\/?>/gi, ' ')).replace(/\s+/g, ' ').trim()
 
 /** (REG-557) A formatted description's plain text: paragraphs and list items on their own lines, a bullet before each item. */
 export function htmlToPlain(html: string): string {

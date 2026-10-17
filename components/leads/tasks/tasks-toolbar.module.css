@@ -48,3 +48,6 @@
 @media (max-width: 767px) { .todos { overflow-x: auto; scrollbar-width: none; } .todos::-webkit-scrollbar { display: none; } }
 /* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk, its count-only width below 1025. */
 @media (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */
+
+/* (gaps build, package C — 16) the Leads · Projects switch beside the scope pill */
+.source { display: inline-flex; flex: none; }

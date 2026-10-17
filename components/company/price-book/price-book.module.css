@@ -2,6 +2,9 @@
 .fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-4); }
 @media (max-width: 767px) { .pair { grid-template-columns: 1fr; } }
+/* (S44P, M8 — rows 346 · 347) Cost · Markup · Unit price side by side, in the quote grid's order; a phone stacks them as it stacks a pair. */
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+@media (max-width: 767px) { .trio { grid-template-columns: 1fr; } }
 .pasteBox textarea { min-height: 168px; font: var(--om-type-body-s); white-space: pre; }   /* (sweep S5 #35) the house type */
 .pasteBox { display: block; }
 

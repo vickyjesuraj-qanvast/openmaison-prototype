@@ -18,6 +18,17 @@ export function styleBoard(style: string): MaterialRef[] {
   const out = ['floor', 'walls', 'countertop'].map((l) => suggestMaterials(l, style, 1)[0]).filter((c): c is CatalogueItem => !!c).map(fromCatalogue)
   boards.set(style, out); return out
 }
+/** (pending modules S43C) What a whole-room restyle lays on each surface of a reading — the style's nth pick for the surface (variant `v`,
+    the first when it has fewer), the engine's restyle and Render from sketch read it, and so does the demo's record of a sample room's look
+    (repair R162): a version lists exactly what its picture shows. */
+export function restylePicks<T extends { label: string }>(surfaces: T[], style: string, v = 1): { def: T; m: MaterialRef }[] {
+  const out: { def: T; m: MaterialRef }[] = []
+  for (const s of surfaces) {
+    const pick = suggestMaterials(s.label, style, 3)[v - 1] ?? suggestMaterials(s.label, style, 1)[0]
+    if (pick) out.push({ def: s, m: fromCatalogue(pick) })
+  }
+  return out
+}
 /** A chip's background: the swatch photo, the wallpaper's motif, or the colour. */
 export const chipCss = (m: Pick<MaterialRef, 'imageUrl' | 'pattern' | 'hex'>) => (m.imageUrl ? `center / cover no-repeat url("${m.imageUrl}")` : m.pattern ? patternCss(m.pattern, m.hex) : m.hex)
 

@@ -1,0 +1,7 @@
+/* (REG-928) The project's small forms: a help line over the fields, 24 apart — the lead form's rhythm. */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.row { composes: fieldRow from '../leads/lead-form.module.css'; }
+.help { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .row { flex-direction: column; }
+}

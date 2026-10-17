@@ -1,0 +1,57 @@
+/* (pending modules S23 — Meetings and the Meeting Co-Pilot) Settings › Meetings — five cards on the house Settings card and the card table
+   (components/om/card-table.module.css via settings.module.css .eventTable · .eventHead · .eventRow, REG-727). This file keeps only each
+   table's tracks (`.<table> .row`, above the event table's own tracks at every width), the deal score's fields and total, and an answer's
+   cell; the answers' band per kind is Who may do what's own group band (studio-settings.module.css `.group`, used as it is). */
+
+/* the tracks: a part · its switch — a checklist item · how important · its tools — an answer · On · ⋮ — a competitor · its tools */
+.features .row { grid-template-columns: minmax(0, 1fr) 72px; }
+.items .row { grid-template-columns: minmax(0, 1fr) 136px 132px; }
+.answers .row { grid-template-columns: minmax(0, 1fr) 72px 36px; }
+.rivals .row { grid-template-columns: minmax(0, 1fr) 72px; }
+
+.switchCell { min-width: 0; }
+.flag { display: inline-flex; align-items: center; cursor: pointer; }
+/* order · edit · remove at the row's end, a line of their own on a phone (the card table's own rule) */
+.actions { composes: actions from '../../components/om/card-table.module.css'; }
+.kebab { display: flex; justify-content: flex-end; }
+
+/* Deal score: the six weights, three to a row; the total, and the card's buttons at its end */
+.weights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); align-items: start; }
+.scoreFoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-3) var(--om-spacing-4); }
+.total { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.total[data-off] { color: var(--om-color-tertiary-red-default); }   /* the reason Save waits — said where Save is */
+.scoreActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--om-spacing-2); margin-left: auto; }
+
+/* Meeting checklists: each list under its caption, its Add under it */
+.listBlock { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+
+/* Objection answers: one band per kind (Who may do what's group band — the page uses that class itself), then the answers — what the client says with its marker, the answer
+   in two lines (the dialog holds the rest; read in full by whoever may only read), greyed while it is off */
+.answer { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; padding-block: var(--om-spacing-2); }
+.answerHead { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-2); }
+.answerTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.answerContext { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.answerText {
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+.answerText[data-full] { display: block; -webkit-line-clamp: none; line-clamp: none; overflow: visible; }
+.row[data-off] .answerTitle { color: var(--om-color-on-surface-secondary); }
+
+/* Competitors: the team's notes under the name, their line breaks kept */
+.notes { overflow-wrap: anywhere; white-space: pre-line; }
+
+@media (max-width: 767px) {
+  .weights { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+  /* a part keeps its switch beside it (no head on a phone — the switch names its part) */
+  .features .switchCell { justify-content: flex-end; }
+  /* an item stacks: its name, how important (labelled), its tools; an empty tools cell (the platform's, a reader's) takes no line */
+  .items .row { grid-template-columns: minmax(0, 1fr); }
+  .items .actions:empty { display: none; }
+  /* an answer takes the line; its switch (labelled On) and ⋮ share the next */
+  .answers .row { grid-template-columns: minmax(0, 1fr) auto; }
+  .answers .answer { grid-column: 1 / -1; padding-block: 0; }
+  /* a competitor keeps its two tools on its own line */
+  .rivals .row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rivals .actions { grid-column: auto; justify-content: flex-end; }
+}

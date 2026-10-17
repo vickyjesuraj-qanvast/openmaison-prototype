@@ -1,0 +1,153 @@
+{
+  "group": "Public pages — marketing site, try-it pages, events and public links",
+  "modules": [
+    {
+      "key": "marketing-website",
+      "name": "The marketing website (openmaison.ai)",
+      "what": "OpenMaison's public website, redesigned in June 2026 ('The Quiet Operating System'). It has a home page, a Platform hub with 8 module pages (AI Visualiser, Space Planner, Quote Digitizer, Finance & Margins, Leads, Projects, Meeting Co-pilot, mAIson bot), Story, Trust & Security, a Blog (21 articles kept in code), What's New (about 30 changelog entries), Jobs (4 roles, apply by email), Contact, Privacy, Terms and Cookies. 'Book a demo' asks for name, studio, email and phone, saves them, then opens Calendly. The footer's newsletter box saves emails. The contact form saves the message and emails hello@openmaison.ai. Every page carries SEO metadata, structured data, a sitemap, robots rules and a branded link-preview picture (/api/og). Pricing is hidden before launch (it redirects home). /about, /products and /ai-agents redirect to the newer pages. A separate UAE campaign page (/uae-get-started) has its own free-trial form.",
+      "who": "public",
+      "where_in_1": "/ · /platform · /platform/[module] · /story · /trust · /blog · /blog/[slug] · /changelog · /careers · /contact · /privacy · /terms · /cookies (redirects: /about /products /ai-agents /pricing) · /uae-get-started; top nav with mega-menu, phone bottom tabs, footer",
+      "v1_code": "src/app/(marketing)/**, src/components/landing/** (v2/*), src/app/api/{contact,newsletter,beta-signup,og}, src/lib/seo.ts, src/app/{sitemap,robots,manifest}.ts, src/app/uae-get-started/**, messages/{en,ar}.json, docs/marketing/openmaison-marketing-redesign.md",
+      "size": { "pages": 19, "components": 25, "api_routes": 4, "tables": 3, "loc": 12500 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Nothing. 2.0's front door goes straight to Leads. The pricing page's content became Plans inside the app (Company › Plan & AI credits).",
+      "pending": [
+        "Home, Platform hub and the 8 module pages, Story, Trust & Security",
+        "Blog index + 21 articles, What's New changelog, Jobs page",
+        "Contact form (saved, and emailed to the team), the footer's newsletter sign-up, 'Book a demo' form → Calendly",
+        "Privacy, Terms, Cookies pages",
+        "SEO layer: metadata, structured data, sitemap, robots (blocks AI training crawlers), the branded link-preview picture",
+        "UAE free-trial landing page /uae-get-started (regions beyond Singapore are held, DEF-30)",
+        "The site's words describe 1.0's modules and names (Quote Digitizer, Meeting Co-pilot, mAIson bot) — they will need updating to 2.0's (Quote X-Ray / Upload a quote, Maison AI) when 2.0 ships"
+      ],
+      "depends_on": "where the public website lives (its own site vs this repo); Calendly; an email sender (Resend); somewhere for OpenMaison's team to read the sign-ups (1.0's Admin › Beta signups)",
+      "held_by": "AI credits audit §0.2 left out the marketing site's chrome; DEF-30 holds the UAE page",
+      "recommendation": "skip",
+      "why": "It is the company's website, not the studio product: a separate site with its own art direction and audience, already live and recently redesigned. Rebuilding it in a pixel-faithful studio prototype adds nothing to a studio demo. What matters is updating its words and links when 2.0 ships.",
+      "effort": "L",
+      "questions": [
+        "Does the website stay a separate site (1.0's live one today), with only its words and its Sign in / Book a demo links updated when 2.0 ships?",
+        "Where should 'Book a demo', contact and newsletter sign-ups land for OpenMaison's team: 1.0's Admin › Beta signups, or a platform side in 2.0?"
+      ]
+    },
+    {
+      "key": "try-it-visualizer",
+      "name": "Try-it pages (AI Visualizer trial)",
+      "what": "An AI Visualizer trial for visitors who are not signed in. A visitor uploads a room photo (or picks a sample) and uses the real editor's tools: style, materials (tap a surface to swap its finish), lighting, furniture, defurnish (empty the room) and sketch-to-render. Each browser gets 3 free renders (counted in a signed cookie). Renders use the Fast model only and carry a watermark. After that comes 'Sign up free' → onboarding. Six per-tool pages carry their own search-engine copy. The older /try page offers pre-rendered sample rooms and styles plus one live restyle of your own photo.",
+      "who": "public",
+      "where_in_1": "/try-visualizer and /try-visualizer/{style, materials, lighting, furniture, defurnish, sketch} — reached from the website's Platform › AI Visualiser 'Try Now'; /try (older demo, linked from nowhere)",
+      "v1_code": "src/app/try-visualizer/**, src/components/trial-visualizer/** (9 files), src/app/api/demo/visualizer/{detect,segment,render,photorealistic,declutter,quota}, src/app/api/demo/restyle, src/lib/render/trial-gate.ts, src/lib/render/trial-quota.ts, src/app/(marketing)/try/*, src/components/landing/visualizer-demo.tsx",
+      "size": { "pages": 8, "components": 10, "api_routes": 7, "tables": 0, "loc": 2950 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "The anonymous trial editor: upload or sample → style / materials / lighting / furniture / defurnish / sketch, with before/after and download",
+        "3 free renders per browser, a watermark on every result, a sign-up gate at the end",
+        "Six per-tool landing pages with their own search-engine copy",
+        "In production it shows 'not found' unless a flag is set. 1.0 is still waiting for bot protection (Turnstile) and a lasting rate-limit store."
+      ],
+      "depends_on": "an image model (or 2.0's curated engine with its sample rooms); bot protection and rate limits; a sign-up flow to land in",
+      "held_by": "AI Visualizer audit Q-27 (marketing trial excluded); AI credits audit §0.2 (anonymous visitor tools excluded)",
+      "recommendation": "skip",
+      "why": "It belongs to the website's sign-up funnel. 2.0 has no sign-up to send visitors to, and she has already left it out (Q-27). If it returns, 2.0's Visualizer, its sample rooms and its welcome screen are the natural base.",
+      "effort": "M",
+      "questions": [
+        "Once 2.0 has sign-up, should the website's trial return, built on 2.0's Visualizer and its sample rooms?"
+      ]
+    },
+    {
+      "key": "hangouts",
+      "name": "Hangouts (meet-the-designer events)",
+      "what": "Qanvast Hangouts are in-person events where homeowners meet several interior designers at tables in one venue. On their phone at /hangouts/[eventId], a homeowner signs in with an SMS code, gives their preferences (property type and status, budget, key collection, region, style) and waits while staff match them. They then see the day's meetings, each with the designer's profile and portfolio, start each meeting, and read AI insights after it. Voucher rewards at 4, 5 and 6 meetings are shown locked (payouts paused). Staff run the event from Admin › Hangouts. They create events with shifts and a venue, approve studios and their designers, and register homeowners. Matching uses a 0–100 preference score. They also have a live table board (refreshed every 5 s), outcomes per meeting (converted · follow-up · dropped), analytics, and recording / transcript downloads with retry.",
+      "who": "platform (OpenMaison staff)",
+      "where_in_1": "/hangouts/[eventId] (homeowner, public) · Admin › Hangouts /admin/hangouts and /admin/hangouts/[eventId] (Configuration · Registration · Live Meetings · Matching · Live Matrix · Analytics) · the studio's sidebar still links Qanvast Ops › Hangouts, but that page was removed",
+      "v1_code": "src/app/hangouts/[eventId]/page.tsx, src/app/admin/hangouts/**, src/app/api/hangouts/** (23 routes incl. login · verify · preferences · meetings · start/end · transcribe · admin/*), src/app/api/admin/hangouts/{otp,register-id,assign-meetings}, src/app/api/invitations/hangout, src/lib/queries/hangouts.ts, src/lib/hangouts/match-score.ts, src/lib/notifications/templates/base/hangouts.ts, supabase/migrations/20240301000001_hangout_tables.sql",
+      "size": { "pages": 3, "components": 0, "api_routes": 27, "tables": 8, "loc": 11300 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "Only around the edges: the 'Hangout' lead source (Settings › Lead sources), a demo Hangout lead (repair R45), and the Qanvast Ops › Hangouts tab, which answers Coming soon.",
+      "pending": [
+        "The homeowner's event page: SMS sign-in, preferences, 'we're matching' wait, the day's meetings with designer profiles and portfolios, AI insights after each meeting, voucher progress",
+        "Staff console: events, shifts, studios and designers taking part, homeowner registration, preference matching (0–100 score), the live table board, outcomes, analytics, recordings and transcripts",
+        "The studio's side (apply to an event, plan which designers attend, a designer's own meetings, upload a recording, turn a meeting into a lead): its hooks and routes exist in 1.0, but no screen uses them today",
+        "AI meeting transcripts and the homeowner's insights (Gemini, from audio). Nothing in current 1.0 records the audio.",
+        "Two bell events: a homeowner registered, a meeting assigned"
+      ],
+      "depends_on": "SMS codes; a team running live events; Qanvast's homeowner traffic; an LLM for meeting audio; her mocks (only the tab's name is mocked)",
+      "held_by": "Leads audit DEF-33 · D-51 (Hangouts: Later); Qanvast Ops › Hangouts tab Coming soon (REG-193, REG-1372); meeting recordings and AI notes sit with Meetings (REG-552)",
+      "recommendation": "needs her mocks / decision",
+      "why": "This is Qanvast's marketplace event product, not a studio workflow. Only the studio's part (sign up for an event, see your designers' meetings, receive the leads) belongs in the studio app, and that is exactly the part 1.0 no longer shows. The homeowner page and the staff console belong with Qanvast's platform admin.",
+      "effort": "L",
+      "questions": [
+        "Are Hangouts still run, and are they an OpenMaison feature or Qanvast's own tool (like Qanvast Ops)?",
+        "If kept: build only the studio's part in Qanvast Ops › Hangouts (events, my designers, my meetings, the leads they made), and leave the homeowner page and staff console to the platform?"
+      ]
+    },
+    {
+      "key": "client-links-no-login",
+      "name": "Client links that open without signing in",
+      "what": "The links a studio sends a client or vendor, which open without an account. They cover signing (/sign/[token]), the quote (/quote/[token] behind an SMS code, and /quote-preview/[token], a live read-only view), payments (/pay/[token], the old project portal; /pay/inv/[token] an invoice; /pay/receipt/[token] a receipt), purchase orders (/po/[token]), designs (/renders/[token]), the 3-D floor plan (/floor-plan/view/[token]), the client portal (/my/...), the meeting brief (/copilot/share/[shareId]) and the X-Ray (/sign/quote-xray/[token]).",
+      "who": "client",
+      "where_in_1": "/sign/[token] · /sign/quote-xray/[token] · /quote/[token] · /quote-preview/[token] · /pay/[token] · /pay/inv/[token] · /pay/receipt/[token] · /po/[token] · /renders/[token] · /floor-plan/view/[token] · /copilot/share/[shareId] · /my, /my/login, /my/[studioSlug]/**, /my/projects/[id], /my/engagement/[linkId]",
+      "v1_code": "src/app/{sign,quote,quote-preview,pay,po,renders,my}/**, src/app/floor-plan/view/[token], src/app/copilot/share/[shareId], src/app/api/{sign,quote,quote-preview,pay,po,renders,homeowner}/**, src/components/homeowner/**",
+      "size": { "pages": 22, "components": 47, "api_routes": 81, "tables": 0, "loc": 10700 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Almost all of it. Signing: /sign/[id], /sign/bundle/[id], /sign/[id]/quote. The quote's confirmation: /confirm/[quoteId]. Money: /invoice/[token], /receipt/[token]. Purchase orders: /po/[token]. Designs: /renders/[token]. 3-D layouts: /space/[token]. Shared files: /f/[token]. The client portal /my/[slug] covers Home, Schedule, Updates, Money (invoice and receipt), Choices, Designs, Floor plan, Issues, Messages and About.",
+      "pending": [
+        "Links from 1.0 already in clients' WhatsApp threads have nowhere to land in 2.0. The projects migration map's D-11 (send /pay/…, /pay/inv/…, /pay/receipt/… and /my/{slug}/p/… to the portal's sign-in) is waiting on her.",
+        "A read-only 'have a look' quote link: 1.0's /quote-preview/[token] (from the Quote Digitizer's Share) updates live as the studio edits. In 2.0 the client gets the quote only through Send for confirmation (/confirm) or the signing link.",
+        "A real SMS code before a client link opens. 1.0's old payment portal never actually sends its code, and the quote link's code screen has no generator mounted. 2.0's portal accepts any six digits (a stand-in). This is developers' work.",
+        "A picture card when the link is pasted into WhatsApp. 2.0's design link has one. Its signing, confirm, invoice, receipt and PO links show their title only, where 1.0 showed the website's card. Small.",
+        "The meeting brief link /copilot/share/[shareId] is held with Meetings (REG-552). The X-Ray's public link was decided no (X-Ray audit Q-24)."
+      ],
+      "depends_on": "an SMS provider for real codes; her D-11 call on old links",
+      "held_by": "projects map D-11 (her call); REG-552 for the meeting brief link; X-Ray Q-24 (no public link)",
+      "recommendation": "developers' lane",
+      "why": "Everything a client sees is already built in 2.0, often more fully than in 1.0. What is left is porting work: old links landing somewhere sensible (her D-11 call first) and real SMS codes.",
+      "effort": "S",
+      "questions": [
+        "D-11: should 1.0's old client links (/pay/…, /my/{slug}/p/…) send people to the studio's portal sign-in?",
+        "Is a read-only 'just look' quote link wanted, or is Send for confirmation the only way a client sees a quote?",
+        "Should signing, confirm, invoice and receipt links show the studio's picture card on WhatsApp, as the design link does?"
+      ]
+    },
+    {
+      "key": "industry-news-feed",
+      "name": "Industry news feed",
+      "what": "/api/news pulls property and design news from regional RSS feeds (Singapore: PropertyGuru and others). It sorts the stories into property, design, regulation or market, scores how relevant each is, and caches them for an hour. Despite sitting among the public APIs, it feeds only the Dashboard home's news card, not the website.",
+      "who": "studio",
+      "where_in_1": "Dashboard › home widgets (news card); the chat-first home",
+      "v1_code": "src/app/api/news/route.ts, src/components/dashboard/home-widgets.tsx, src/components/dashboard/chat-first-home.tsx, newsSources in src/lib/region-config.ts",
+      "size": { "pages": 0, "components": 2, "api_routes": 1, "tables": 0, "loc": 290 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "The news card with stories by category and their links out"
+      ],
+      "depends_on": "RSS feeds per region; the Dashboard",
+      "held_by": "Dashboard (held — 'we will build it later')",
+      "recommendation": "needs her mocks / decision",
+      "why": "It only makes sense as a card on the Dashboard, which she has held. Decide it with the Dashboard.",
+      "effort": "S",
+      "questions": []
+    }
+  ],
+  "already_in_2": [
+    "/sign/[token] (sign a quote or contract) → /sign/[id], /sign/bundle/[id] and /sign/[id]/quote (Contracts parity, REG-629…635)",
+    "/po/[token] (vendor's purchase order) → /po/[token] (Projects gaps build, money out)",
+    "/pay/inv/[token] (an invoice) → /invoice/[token], and Money › invoice in the client portal",
+    "/pay/receipt/[token] (a receipt) → /receipt/[token], and Money › receipt in the client portal",
+    "/renders/[token] (designs shared with the client) → /renders/[token] (AI Visualizer, REG-671…698)",
+    "/floor-plan/view/[token] (3-D dollhouse and walkthrough) → /space/[token] (3-D Space Planner), plus the portal's Floor plan and Designs",
+    "/my/** (portal home, sign-in, About, Team, project pages, the lead-stage page, the one-link-for-the-whole-job token, the studio's preview) → the client portal /my/[slug] with Before work starts, and Company › Client portal › Open as a test client (Projects build, REG-911…)",
+    "/pay/[token] (old project portal: overview, invoices, milestones, updates, raise an issue) → the client portal's Home · Schedule · Updates · Money · Issues",
+    "/quote/[token] (quote PDF behind an SMS code) → 1.0 has no screen that makes this link; 2.0's client gets the quote at /confirm/[quoteId] or through the signing link",
+    "Pricing page (hidden in 1.0) → Plans inside the app and Company › Plan & AI credits (REG-699…705)",
+    "'Hangout' lead source and a Hangout demo lead → Settings › Lead sources and repair R45 (REG-613)"
+  ],
+  "notes": "The tables beta_signups, newsletter_subscribers and contact_messages are written by 1.0's routes but are not created in its supabase/migrations, so their columns come from the insert code only. I put the whole Hangouts system, including Admin › Hangouts, on one card so that one decision covers it; if the Platform admin group also lists Admin › Hangouts, merge the two cards. In current 1.0 the studio's Hangouts side and the Quote Digitizer's 'Share live link' popover are hooks and routes with no screen using them (dead code); the voucher payout is paused in the code. I read the code only and did not run 1.0, so I could not check whether the live site's flags (TRIAL_VISUALIZER_ENABLED, DEMO_VISUALIZER_ENABLED) are on. /api/news serves the Dashboard, not the public pages, so it sits under the Dashboard's hold."
+}

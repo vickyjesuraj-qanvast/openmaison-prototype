@@ -1,0 +1,36 @@
+/*
+ * (gaps build I, I-Q6) Projects › Insights — Leads › Insights' page (REG-611), composed, never copied: its range bar, tiles, section and the
+ * By team member table on the table core (components/leads/insights/insights-view.module.css → components/om/table-core.module.css).
+ * (parity P-30) The tile row is the house StatTiles (components/om/stat-tile) on both pages — five tiles (four without money) read one row
+ * from 1025 up and 3 + 2 on a tablet, where they were five at 119px; (P-32) the waiting chips are the lead's row.
+ */
+.bar { composes: bar from '../../leads/insights/insights-view.module.css'; }
+.barEnd { composes: barEnd from '../../leads/insights/insights-view.module.css'; }
+.caption { composes: caption from '../../leads/insights/insights-view.module.css'; }
+.tiles { composes: tiles from '../../leads/insights/insights-view.module.css'; }
+.awaiting { composes: awaiting from '../../leads/insights/insights-view.module.css'; }
+.tileDelta { composes: tileDelta from '../../leads/insights/insights-view.module.css'; }
+.section { composes: section from '../../leads/insights/insights-view.module.css'; }
+.sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; }
+.sectionTitle { composes: sectionTitle from '../../leads/insights/insights-view.module.css'; }
+.sectionHelp { composes: sectionHelp from '../../leads/insights/insights-view.module.css'; }
+.empty { composes: empty from '../../leads/insights/insights-view.module.css'; }
+.foot { composes: foot from '../../leads/insights/insights-view.module.css'; }
+.gate { composes: gate from '../../leads/insights/insights-view.module.css'; }
+.gateTitle { composes: gateTitle from '../../leads/insights/insights-view.module.css'; }
+.gateBody { composes: gateBody from '../../leads/insights/insights-view.module.css'; }
+.memberCell { composes: memberCell from '../../leads/insights/insights-view.module.css'; }
+.memberText { composes: memberText from '../../leads/insights/insights-view.module.css'; }
+.memberName { composes: memberName from '../../leads/insights/insights-view.module.css'; }
+.memberRole { composes: memberRole from '../../leads/insights/insights-view.module.css'; }
+.stat { composes: stat from '../../leads/insights/insights-view.module.css'; }
+.statValue { composes: statValue from '../../leads/insights/insights-view.module.css'; }
+.statHelp { composes: statHelp from '../../leads/insights/insights-view.module.css'; }
+.num { composes: num from '../../leads/insights/insights-view.module.css'; }
+.card { composes: card from '../../leads/insights/insights-view.module.css'; }
+.head { composes: head from '../../leads/insights/insights-view.module.css'; }
+.hCell { composes: hCell from '../../leads/insights/insights-view.module.css'; }
+.hLabel { composes: hLabel from '../../leads/insights/insights-view.module.css'; }
+.row { composes: row from '../../leads/insights/insights-view.module.css'; }
+.cell { composes: cell from '../../leads/insights/insights-view.module.css'; }
+.pin { composes: pin from '../../leads/insights/insights-view.module.css'; }

@@ -1,0 +1,29 @@
+/* (gaps build J) The planner's ghosts — the page's own frames, with bones where its words and controls land. */
+.gHead { display: flex; align-items: center; min-height: 68px; padding: 0 var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+@media (max-width: 767px) { .gHead { min-height: 60px; padding: 0 var(--om-spacing-4); } }
+.frame { position: fixed; inset: 0; display: flex; }
+.frame > * { flex: 1; min-width: 0; border-radius: 0; background: var(--om-color-surface-bg); }
+.middle { flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-2); }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-1); height: 60px; }
+.railBody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
+.head { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.row2 { display: flex; gap: var(--om-spacing-2); }
+.plan { position: absolute; left: 12%; right: 12%; top: 14%; bottom: 14%; border: 6px solid var(--om-color-surface-variant); }
+.dock { display: none; }
+.viewer { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-height: 100dvh; padding: var(--om-spacing-4) var(--om-spacing-6); background: var(--om-color-surface-bg); }
+.vTop { display: flex; justify-content: space-between; align-items: center; }
+.vHead { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.vStage { flex: 1; min-height: 420px; border-radius: var(--om-radius-2); background: var(--om-color-surface-variant); }
+.paperWrap { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); padding: 0 0 var(--om-spacing-6); background: var(--om-color-surface-bg); min-height: 100dvh; }
+.paperBar { align-self: stretch; display: flex; align-items: center; gap: var(--om-spacing-3); height: 56px; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-default); }
+.grow { flex: 1; }
+.paper { width: min(1123px, calc(100% - 32px)); display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-8); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+@media (max-width: 1024px) {
+  .gRail { display: none; }
+  .wide { display: none; }
+  .dock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+}
+@media (max-width: 767px) { .viewer { padding: var(--om-spacing-3) var(--om-spacing-4); } .vStage { min-height: 320px; } }
+/* (pending modules S28) a link of the isometric line, as its button boxes it (36 tall) */
+.isoLinkBox { display: inline-flex; align-items: center; }
+.isoGhost.isoGhost { background: var(--om-color-surface-variant); }   /* one grey block of the line's own size, its bars inside it */

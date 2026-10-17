@@ -93,7 +93,7 @@
   "area": "Definitions",
   "feature": "Signing a quote",
   "now": "Built in parity round 4",
-  "why": "A signed contract signs its quote; no token, expiry or code (Q-33)"
+  "why": "A signed contract signs its quote; links carry a token, signing a window (S03, S04)"
  },
  {
   "key": "QED",
@@ -109,15 +109,15 @@
   "area": "Definitions",
   "feature": "Getting a quote in: upload a file or AI draft",
   "now": "Built in parity round 5",
-  "why": "Upload a quote built; Draft with Maison AI still coming soon (Q-17)"
+  "why": "Upload a quote and Draft with Maison AI (a first cut by rule) built (S04)"
  },
  {
   "key": "QED",
   "id": "DEF-15",
   "area": "Definitions",
   "feature": "Variation orders",
-  "now": "Later",
-  "why": "Waits for Projects and Finance (Q-05)"
+  "now": "Built",
+  "why": "A project’s Money › New › “Variation order”, approved on its link (Projects build)"
  },
  {
   "key": "QED",
@@ -244,8 +244,8 @@
   "id": "MM-15",
   "area": "Mismatches",
   "feature": "The client’s link: token, expiry, one-time code",
-  "now": "Not built — by design",
-  "why": "The platform’s; the link keeps the quote id (Q-33)"
+  "now": "Built",
+  "why": "Token link built (S04); Valid until is its window; the SMS code stays a stand-in"
  },
  {
   "key": "QED",
@@ -324,8 +324,8 @@
   "id": "QF-10",
   "area": "The frame",
   "feature": "Variation order mode",
-  "now": "Later",
-  "why": "Projects and Finance (Q-05)"
+  "now": "Built",
+  "why": "The quote editor in variation mode, raised from a project’s Money tab (Projects build)"
  },
  {
   "key": "QED",
@@ -460,8 +460,8 @@
   "id": "QL-17",
   "area": "The grid and its lines",
   "feature": "Omission lines in a variation order",
-  "now": "Later",
-  "why": "Projects and Finance (Q-05)"
+  "now": "Built",
+  "why": "“Omit from the contract” turns signed lines into credits on the order (Projects gaps B)"
  },
  {
   "key": "QED",
@@ -541,7 +541,7 @@
   "area": "The grid and its lines",
   "feature": "Waste % per line",
   "now": "Not built — by design",
-  "why": "Put the waste in the quantity (Q-10)"
+  "why": "No waste on a line; a Price book item’s “Waste (%)” adds to orders (S12)"
  },
  {
   "key": "QED",
@@ -732,8 +732,8 @@
   "id": "QM-17",
   "area": "Money",
   "feature": "AI money helpers",
-  "now": "Platform",
-  "why": ""
+  "now": "Built",
+  "why": "Maison AI flags below-cost and thin-margin lines, sets one markup, by rule (S04)"
  },
  {
   "key": "QED",
@@ -812,8 +812,8 @@
   "id": "QP-08",
   "area": "The price book",
   "feature": "Vendor directory with default markups",
-  "now": "Later",
-  "why": "Finance"
+  "now": "Built",
+  "why": "Company › Finance › Vendors, picked in the Price book (S12); no default markups"
  },
  {
   "key": "QED",
@@ -860,8 +860,8 @@
   "id": "QP-14",
   "area": "The price book",
   "feature": "Auto-match and AI search",
-  "now": "Platform",
-  "why": ""
+  "now": "Built",
+  "why": "“Match N lines” to My Items by rule, also after an upload (S12)"
  },
  {
   "key": "QED",
@@ -917,23 +917,23 @@
   "area": "Getting lines in",
   "feature": "Quote Digitizer: upload an existing quote",
   "now": "Built in parity round 5",
-  "why": "Spreadsheets read; PDFs only the known samples"
+  "why": "Sheets and text PDFs read by their own words; a photo refused, credits back (S42)"
  },
  {
   "key": "QED",
   "id": "QG-06",
   "area": "Getting lines in",
   "feature": "AI hints per line",
-  "now": "Platform",
-  "why": ""
+  "now": "Built",
+  "why": "Maison AI’s line hints by rule; market and upsell hints not built (S04)"
  },
  {
   "key": "QED",
   "id": "QG-07",
   "area": "Getting lines in",
   "feature": "Chat with AI to draft a quote",
-  "now": "Later",
-  "why": "Held — Draft with Maison AI stays coming soon (Q-17)"
+  "now": "Built",
+  "why": "Draft with Maison AI: a brief becomes a first cut, by rule (S04)"
  },
  {
   "key": "QED",
@@ -948,8 +948,8 @@
   "id": "QG-09",
   "area": "Getting lines in",
   "feature": "Lines from a meeting brief",
-  "now": "Later",
-  "why": "Tools"
+  "now": "Built",
+  "why": "A meeting’s brief › “Make a draft quote” (S23)"
  },
  {
   "key": "QED",
@@ -1029,7 +1029,7 @@
   "area": "Many quotes per lead",
   "feature": "Readiness before sending",
   "now": "Built",
-  "why": "AI insights are the platform’s"
+  "why": "Margin hints by rule in Maison AI (S04); market insights stay the platform’s"
  },
  {
   "key": "QED",
@@ -1116,8 +1116,8 @@
   "id": "QA-11",
   "area": "Statuses and approval",
   "feature": "Approve quotes from Finance",
-  "now": "Later",
-  "why": "Finance"
+  "now": "Not built — by design",
+  "why": "Quotes are approved in the quote; Accounting never approves them (S04)"
  },
  {
   "key": "QED",
@@ -1172,8 +1172,8 @@
   "id": "QD-02",
   "area": "Sending",
   "feature": "Share to the homeowner portal",
-  "now": "Later",
-  "why": "The portal"
+  "now": "Built",
+  "why": "The client portal lists the client’s quotes with their links (Projects build)"
  },
  {
   "key": "QED",
@@ -1181,7 +1181,7 @@
   "area": "Sending",
   "feature": "Client link with a one-time code",
   "now": "Built in parity round 4",
-  "why": "Opens only once sent; no token or code (Q-33)"
+  "why": "A token link (/confirm/…) that opens once sent; the SMS code stays a stand-in (S04)"
  },
  {
   "key": "QED",
@@ -1228,8 +1228,8 @@
   "id": "QC-03",
   "area": "Signing and the client",
   "feature": "Signing link expires after 7 days",
-  "now": "Not built — by design",
-  "why": "No expiry (Q-33)"
+  "now": "Built",
+  "why": "The contract’s signing link closes after the studio’s window, 7 days by default (S03)"
  },
  {
   "key": "QED",
@@ -1252,8 +1252,8 @@
   "id": "QC-06",
   "area": "Signing and the client",
   "feature": "CaseTrust step",
-  "now": "Dead",
-  "why": ""
+  "now": "Built",
+  "why": "An accredited studio’s signing page asks for the CaseTrust tick (Projects gaps D)"
  },
  {
   "key": "QED",
@@ -1293,7 +1293,7 @@
   "area": "Signing and the client",
   "feature": "Paper signing and portal signing",
   "now": "Built",
-  "why": "Mark as signed; the portal later"
+  "why": "Mark as signed; the client portal opens the signing links (Projects build)"
  },
  {
   "key": "QED",
@@ -1348,16 +1348,16 @@
   "id": "QY-07",
   "area": "The payment schedule",
   "feature": "Fixed-amount rows",
-  "now": "Later",
-  "why": "Finance (quote templates Q-16)"
+  "now": "Built",
+  "why": "A fixed fee may open the split, a Settings › Finance switch (parity map P-A)"
  },
  {
   "key": "QED",
   "id": "QY-08",
   "area": "The payment schedule",
   "feature": "The project-side schedule (Gantt)",
-  "now": "Later",
-  "why": "Projects"
+  "now": "Built",
+  "why": "The project’s Schedule tab; Money bills the signed quote’s split (Projects build)"
  },
  {
   "key": "QED",
@@ -1388,8 +1388,8 @@
   "id": "QT-04",
   "area": "Follow-ups and notifications",
   "feature": "Portal bells and usage events",
-  "now": "Later",
-  "why": "Portal later; usage events are the platform’s"
+  "now": "Built",
+  "why": "The client’s portal bell lists quotes sent; usage events stay the platform’s (Projects build)"
  },
  {
   "key": "QED",
@@ -1412,8 +1412,8 @@
   "id": "QR-03",
   "area": "Roles",
   "feature": "Accounting approves from Finance",
-  "now": "Later",
-  "why": "Finance"
+  "now": "Not built — by design",
+  "why": "Accounting keeps the books and never approves quotes (S04)"
  },
  {
   "key": "QED",
@@ -1436,23 +1436,23 @@
   "id": "QX-03",
   "area": "Touchpoints",
   "feature": "What a signed quote creates (project, Gantt)",
-  "now": "Later",
-  "why": "Projects"
+  "now": "Built",
+  "why": "Won creates the project, its Schedule plans the works (Projects build)"
  },
  {
   "key": "QED",
   "id": "QX-04",
   "area": "Touchpoints",
   "feature": "Invoices, POs, variation orders, commissions",
-  "now": "Later",
-  "why": "Finance"
+  "now": "Built",
+  "why": "Project Money and Company › Finance: invoices, POs, VOs, commission (Projects, Finance builds)"
  },
  {
   "key": "QED",
   "id": "QX-05",
   "area": "Touchpoints",
   "feature": "The co-pilot’s meeting brief",
-  "now": "Later",
-  "why": "Tools"
+  "now": "Built",
+  "why": "Tools › Meeting Copilot writes the brief; it can draft the quote (S23)"
  }
 ]

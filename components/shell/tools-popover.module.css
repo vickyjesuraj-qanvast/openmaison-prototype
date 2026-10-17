@@ -35,3 +35,6 @@
 .sheetBody { padding: var(--om-spacing-4); }
 .sheetBody .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .sheetBody .tile { width: auto; }
+
+/* (pending modules S19) a Pro tool on a Free studio: the Pro tag in the Soon tag's corner */
+.pro { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); padding: 0 var(--om-spacing-1); font: var(--om-type-caption-xs); background: var(--om-color-surface-default); }

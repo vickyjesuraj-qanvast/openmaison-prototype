@@ -1,5 +1,7 @@
 'use client'
 
+import { usePlanLock } from '@/components/credits/credits-client'
+import { ProLocked } from '@/components/credits/pro-tag'
 import { useMemo, useState, type MouseEvent } from 'react'
 import { Button, Checkbox, SearchBar, SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
@@ -15,6 +17,7 @@ import { FolderPickRow } from '@/components/om/folders/folder-pick-row'
 import { useFolderBrowse } from '@/components/om/folders/use-folder-browse'
 import type { FolderNode } from '@/lib/folders'
 import styles from './price-book-dialog.module.css'
+import { PlaceFoot, type PlaceControl } from './paste-items-dialog'
 
 export type PriceBookTab = 'items' | 'sections'
 /** Everything ticked, in the order it was ticked — across both tabs, so the quote gets it in that order. */
@@ -33,8 +36,12 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  * table's *Price book* open it; typing in Add Item keeps its dropdown. Editing the book is Company's: the
  * toolbar's *Manage Price book* opens it (the Templates modal's *Manage Templates*), with the way back.
  */
-export function PriceBookDialog({ open, tab, onTab, items, sections, propertyType, onClose, onAdd, onManage, itemFolders = [], sectionFolders = [] }: {
+export function PriceBookDialog({ open, tab, onTab, items, sections, propertyType, onClose, onAdd, onManage, itemFolders = [], sectionFolders = [], place, placeText }: {
   open: boolean
+  /** (S44I, B6 — the team's sections prototype) opened from a row or a foot: where the ticks go (the footer's start), and those words for the
+      subtitle ("below “Tiling”"); absent, an item goes to its trade's section as before (UX audit Q7) */
+  place?: PlaceControl
+  placeText?: string
   tab: PriceBookTab
   onTab: (tab: PriceBookTab) => void
   /** What this member may put on a quote (live items, and their own proposals). */
@@ -50,6 +57,7 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
   itemFolders?: FolderNode[]
   sectionFolders?: FolderNode[]
 }) {
+  const sectionsLocked = usePlanLock('package_creation').locked   // (pending modules S19)
   const [picked, setPicked] = useState<PriceBookPick>([])
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<string>('all')
@@ -85,8 +93,9 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
 
   return (
     <Dialog open={open} onClose={onClose} title="Price book" size="modal" width={1200} height={680} portal
-            subtitle="Tick what this quote needs — it goes in at the end, in the order you tick it."
+            subtitle={placeText ? `Tick what this quote needs — it goes in ${placeText}, in the order you tick it.` : 'Tick what this quote needs — it goes in at the end, in the order you tick it.'}
             footer={<>
+              {place ? <PlaceFoot place={place} /> : null}
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <Button onPress={() => { void add() }} isDisabled={busy || (!n && !m)}>{busy ? 'Adding…' : addLabel}</Button>
             </>}>
@@ -94,7 +103,7 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
         <div className={styles.toolbar}>
           <SegmentedButton aria-label="Price book" selectedKeys={[tab]} onSelectionChange={(keys) => { const k = [...keys][0]; if (k === 'items' || k === 'sections') onTab(k) }}>
             <SegmentedButtonItem id="items">My Items · {items.length}{n ? ` (${n} ticked)` : ''}</SegmentedButtonItem>
-            <SegmentedButtonItem id="sections">My Sections · {sections.length}{m ? ` (${m} ticked)` : ''}</SegmentedButtonItem>
+            <SegmentedButtonItem id="sections">My Sections · {sections.length}{m ? ` (${m} ticked)` : ''}{sectionsLocked ? ' · Pro' : ''}</SegmentedButtonItem>
           </SegmentedButton>
           {/* The Templates modal's way (REG-528): Manage … opens the Company page, with this quote as the way back (REG-465). */}
           <Button appearance="text" iconStart={<Icon name="list_alt" size={20} weight={300} />} onPress={onManage}>Manage Price book</Button>
@@ -135,6 +144,9 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
             </div>
             </>
           )
+        ) : sectionsLocked ? (
+          /* (pending modules S19) My Sections are Pro: on Free the tab is the lock — the studio's sections are kept */
+          <ProLocked feature="package_creation" kept={sections.length ? `Your ${sections.length} ${sections.length === 1 ? 'section is' : 'sections are'} kept` : null} testId="book-sections-locked" />
         ) : sections.length === 0 ? (
           <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="format_list_bulleted" size={40} weight={300} /></span><span className={styles.emptyTitle}>No saved sections yet</span><span className={styles.emptyHelp}>In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote.</span></div>
         ) : shownSections.length === 0 && sectionBrowse.hereFolders.length === 0 && (q !== '' || !allTypes) ? <TabSearchEmpty noun="sections" searching={q !== ''} onClearAll={() => { setQuery(''); setAllTypes(true) }} /> : (

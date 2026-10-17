@@ -8,8 +8,9 @@
  * out, never a number). Only the Owner buys, sets monthly amounts and changes the plan (1.0: `settings.editStudio`).
  */
 import { displayDayShortMonth } from '@/lib/format'
-import { actionLabel, aboutRenders, CREDIT_SCHEDULE, isActionKey } from './schedule'
+import { actionLabel, aboutRenders, CREDIT_SCHEDULE, isActionKey, makesRenders } from './schedule'
 import type { BillingCycle, PlanId } from './plans'
+import { PRO_FEATURES, type ProFeature } from './features'
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'cancelled'
 export type PoolState = 'ok' | 'low' | 'out'
@@ -34,6 +35,18 @@ export type CreditSummary = {
   periodEnd: number
   trialEndsAt: number | null
   cancelAtPeriodEnd: boolean
+  /** (pending modules S19) fewer seats waiting for the billing date (1.0's scheduled seat change), or null. */
+  scheduledSeats: number | null
+  /** (pending modules S19) The plan's billing period — a seat change is billed against it (the credits month is `periodStart`…`periodEnd`;
+      the two are one date on a monthly plan, B-09, and part ways on an annual one). */
+  billingFrom: number
+  billingTo: number
+  /** (pending modules S19) The studio's auto top-up, for the Owner and Admins (null for everyone else, and when it is off). */
+  autoTopUp: { below: number; credits: number } | null
+  /** (pending modules S19 — 1.0's plan gating) The Pro features the studio's plan doesn't have (lib/credits/features.ts); [] on Pro. */
+  locked: ProFeature[]
+  /** Whether the studio can still take its one 14-day Pro trial (the lock card says it). */
+  trialOpen: boolean
   viewer: CreditViewer
   /** Who a member asks (the studio's Owner). */
   owner: { id: string; name: string }
@@ -54,6 +67,8 @@ export type CreditSummary = {
   memberCapRemaining: number | null
   /** The viewer's own open ask, if any. */
   openAsk: { id: string; kind: 'pool' | 'monthly'; at: number } | null
+  /** (S42 D-07) When the viewer asked the Owner to upgrade, while the plan is still the one asked from — the lock card says it, once. */
+  upgradeAsk: { at: number } | null
 }
 
 const DAY = 86_400_000
@@ -130,7 +145,9 @@ export { aboutRenders }
 
 /* ── refusals (1.0's 402 / 403 family, integration A-06) ── */
 export type Refusal =
-  | { error: 'insufficient_credits'; needed: number; balance: number | null }
+  | { error: 'insufficient_credits'; needed: number; balance: number | null
+      /** (pending modules S41b-4 — 1.0's R8: T8 in place of T13, once) the Owner's welcome AI credits ran out on this press — the sheet says so */
+      welcome?: true }
   | { error: 'member_cap_reached'; needed: number; remaining: number; cap: number }
   | { error: 'forbidden'; rule: string }
 export const isRefusal = (r: unknown): r is Refusal => !!r && typeof r === 'object' && 'error' in r && ['insufficient_credits', 'member_cap_reached', 'forbidden'].includes(String((r as { error: unknown }).error))
@@ -144,14 +161,27 @@ export function ledgerWords(row: { reason: string; actionKey: string; credits: n
     case 'spend': case 'shadow_spend': {
       const unit = isActionKey(row.actionKey) ? CREDIT_SCHEDULE[row.actionKey].credits : 0
       const n = unit > 0 ? Math.round(Math.abs(row.credits) / unit) : 1
-      const versions = row.actionKey.startsWith('render_') && row.actionKey !== 'render_defurnish' ? ` · ${n} ${n === 1 ? 'version' : 'versions'}` : ''
+      const versions = makesRenders(row.actionKey) && row.actionKey !== 'render_defurnish' ? ` · ${n} ${n === 1 ? 'version' : 'versions'}` : ''   // (S20) a repair is of one version
       return `${actionLabel(row.actionKey)}${versions}`
     }
     case 'refund': return `${actionLabel(row.actionKey)} didn’t finish — credits back`
-    case 'topup': return 'Top-up bought'
+    case 'topup': return row.actionKey === 'auto_topup' ? 'Auto top-up' : 'Top-up bought'   // (pending modules S19) the studio's auto top-up
     case 'refresh': return row.credits < 0 ? 'Unused monthly credits ended' : row.actionKey === 'plan_change' ? 'The new plan’s credits' : `${month}’s AI credits are in`
     case 'grant': return row.actionKey === 'welcome' ? 'Welcome AI credits' : 'AI credits added'
     case 'adjust': return 'Balance adjusted'
     default: return row.reason
+  }
+}
+
+/** (pending modules S19 — REG-708) The ghosts' seed from the credits (lib/ghost-shape.tsx `useSeedFlag`), read by the layouts with the summary
+    they already load: `locked.<feature>` for each Pro feature, and what the lock and Plan & billing say (who may change the plan, the trial
+    while the studio can take it, auto top-up on or off) — so a route's loader, streamed before its page, lands in the page's shape on a cold
+    load too. */
+export function creditsSeed(s: Pick<CreditSummary, 'locked' | 'trialOpen' | 'viewer' | 'autoTopUp'> | null | undefined): Record<string, boolean> {
+  return {
+    ...Object.fromEntries(PRO_FEATURES.map((f) => [`locked.${f}`, !!s?.locked?.includes(f)])),
+    'credits.trialOpen': !!s?.trialOpen,
+    'credits.mayChange': !!s?.viewer?.canChangePlan,
+    'credits.autoTopUp': !!s?.autoTopUp,
   }
 }

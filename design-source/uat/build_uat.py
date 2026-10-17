@@ -10,7 +10,7 @@ from openpyxl.formatting.rule import FormulaRule
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
 
-HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'story')   # the chapters (ch1…ch16.json), their files and the nine checklists
+HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'story')   # the chapters (ch1…ch25.json), their files and the nine checklists
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), 'OpenMaison-2.0-UAT.xlsx')
 
 TESTERS = ['Dane', 'Oliva', 'Swati']
@@ -24,19 +24,28 @@ CHAPTERS = {
     7: ('A rival quote', 'Quote X-Ray against another studio’s quote.'),
     8: ('Sign the deal', 'Sophia’s contract, sent and signed.'),
     9: ('Win, park or lose', 'Won, On Hold, Lost, Resume, Return, Delete.'),
-    10: ('A designer’s day', 'View as Sarah, James and Hui Min — what each role sees and may do.'),
+    10: ('A designer’s day', 'View as Sarah, James, Hui Min and Nurul — what each role sees and may do.'),
     11: ('The owner’s week', 'Tasks, the bell, Insights and the studio-wide lists.'),
     12: ('On your phone', 'The key tasks again, on a phone.'),
     13: ('Design her room', 'AI Visualizer: Sophia’s living room, from her photo to the look she picks.'),
     14: ('Plans and AI credits', 'The studio’s AI credits, Plans inside the app, the price before every press, running out, and the usage page.'),
     15: ('Find anything', 'The studio-wide search: from the side navigation or ⌘K, by name, phone or number, one kind at a time, on a phone.'),
     16: ('Keys', 'Keyboard shortcuts: the ? list beside the page, lists and a lead from the keyboard, G then …, the editors, tips, the single-key switch.'),
+    17: ('Won becomes a project', 'Sophia’s win becomes a project: what it needs before work starts, the Start, the Projects list, a project with no lead, and the lead’s records carried on.'),
+    18: ('The schedule', 'The list that is also the timeline: from the quote, moves with Undo, the milestone’s layers, reminders, Share changes and templates.'),
+    19: ('Updates and the client portal', 'Updates with photos and review, Invite to Portal, the client’s own portal (sign in, what needs them, confirm a stage), the household and the portal’s set-up.'),
+    20: ('Money in', 'Contract value, variation orders, invoices from the payment schedule, then payments: the client’s proof, receipts, reminders and reversals.'),
+    21: ('Choices and the ending', 'Choices on the project and the portal, Complete handover with its checklist, the owner’s review, Reopen, Delete and Restore, and the rules.'),
+    22: ('Meetings', 'A meeting held moves its lead the way the studio’s rule allows; a live meeting with the co-pilot, from the client’s consent to the brief, saved to the lead and shared; an invitation the client answers.'),
+    23: ('Messages', 'The team’s own conversations beside the clients’: the studio’s room, two people, a named group and its people, a lead’s Team conversation, and a designer’s view.'),
+    24: ('Plan it in 3D', 'Wall elevations with the usual heights for the carpenter, a layout’s 3D picture and its turning clip, and a client’s floor-plan photo made into a 3D picture.'),
+    25: ('Outside the studio', 'Market Insights, the studio’s Qanvast lead credits and reviews, and the privacy link at the foot of the client portal.'),
 }
 RESULTS = ['✅ Works', '🟡 Works, but…', '❌ Doesn’t work', '🔍 Couldn’t find it', '⏭️ Skipped']
 STATUSES = ['New', 'Fixing', 'Fixed – please re-test', 'Won’t change', 'Talk to Dane']
 RETESTS = ['✅ Fixed now', '❌ Still not right']
 TYPES = ['I did this in 1.0 and can’t find it', 'Confusing', 'Bug (not in the story)', 'Idea']
-MODULES = ['Shell', 'Company', 'Settings', 'Price book', 'Templates', 'Leads', 'Lead details', 'Tasks', 'Quotes', 'Quote X-Ray', 'Contracts', 'Notifications', 'Insights', 'AI Visualizer', 'AI credits', 'Phone']
+MODULES = ['Shell', 'Company', 'Settings', 'Price book', 'Templates', 'Leads', 'Lead details', 'Tasks', 'Quotes', 'Quote X-Ray', 'Contracts', 'Notifications', 'Insights', 'AI Visualizer', 'AI credits', 'Projects', 'Money', 'Client portal', 'Meetings', 'Messages', '3D Space Planner', 'Market Insights', 'Qanvast Ops', 'Phone']
 AUDITS = {'LEADS': 'Leads', 'QTPL': 'Quote templates', 'QED': 'Quote editor', 'CTR': 'Contracts', 'XRAY': 'Quote X-Ray', 'SET': 'Accounts Setup → Settings', 'PB': 'Price book', 'VIZ': 'AI Visualizer', 'CR': 'AI credits & plans'}
 
 FONT = 'Arial'
@@ -55,7 +64,7 @@ CENTER = Alignment(horizontal='center', vertical='top', wrap_text=True)
 
 # ── data ──────────────────────────────────────────────────────────────────────────────────────────
 steps = []
-for n in range(1, 17):
+for n in range(1, 26):
     p = os.path.join(HERE, f'ch{n}.json')
     if not os.path.exists(p):
         print(f'!! missing ch{n}.json'); continue
@@ -237,7 +246,7 @@ def block(top, label, key_col, keys, key_label):
         c = S.cell(row=tot, column=cc, value=f'=SUM({L_}{hdr + 2}:{L_}{tot - 1})'); c.font = f(bold=True); c.alignment = Alignment(horizontal='center')
         c.border = Border(top=Side(style='thin', color=INK))
     return tot + 2
-nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 17)], 'Chapter')
+nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 26)], 'Chapter')
 used_modules = [m for m in MODULES if any(r.get('module') == m for r in steps)]
 block(nxt, 'By module', mod_c, [(m, m) for m in used_modules], 'Module')
 S.column_dimensions['A'].width = 26; S.column_dimensions['B'].width = 8
@@ -301,10 +310,13 @@ put('Walk through 2.0 the way a studio would on its first day, and tell us what 
 gap()
 put('The story', size=13, bold=True)
 put('Demo Studio has just moved from OpenMaison 1.0 to 2.0. Its team, leads and quotes came across with it. You are Dane, the studio owner, '
-    'logging in for the first time. Over fourteen chapters you set up the studio, receive leads, and take one new client — Sophia Wong, '
+    'logging in for the first time. Over twenty-five chapters you set up the studio, receive leads, and take one new client — Sophia Wong, '
     '9765 4321, a 4-room HDB in Tampines — from first call to signed contract. Then you look at the studio as a designer would, '
-    'review the week, do it all again on your phone, design Sophia’s living room in the AI Visualizer, and finally '
-    'look after the studio’s plan and AI credits.', height=58)
+    'review the week, do it all again on your phone, design Sophia’s living room in the AI Visualizer, look after the studio’s '
+    'plan and AI credits, find anything and work from the keyboard. The last five chapters run Sophia’s project — and the '
+    'studio’s other jobs — from the win to the handover: the schedule, updates, her own client portal, the money and the ending. Four last '
+    'chapters cover what came after: meetings and the co-pilot, the team’s own messages, planning in 3D, and the studio’s world outside — '
+    'Market Insights, Qanvast and the portal’s fine print.', height=88)
 gap()
 put('Before you start', size=13, bold=True)
 pair('1. Open the prototype', 'In Terminal, in the openmaison-prototype folder: git pull, then npm run dev. Open http://localhost:3000 in Chrome, window at full width.', 30)
@@ -324,10 +336,13 @@ put('Good to know', size=13, bold=True)
 pair('View as', 'Click “Demo Studio” at the bottom of the left menu to see the prototype as another member (a designer, the manager, the admin). '
      'Chapter 10 uses it. Switch back to Dane when a step says so — the bottom-left always shows who you are.', 44)
 pair('WhatsApp', 'Some steps open WhatsApp in a new tab. Close it — never press Send. The prototype does not message anyone.', 18)
-pair('Client pages', 'Where the client confirms a quote or signs a contract, you copy the link from the prototype and open it in a new tab — you play the client.', 30)
+pair('Client pages', 'Where the client confirms a quote or signs a contract, you copy the link from the prototype and open it in a new tab — you play the client. '
+     'Chapter 22’s meeting links open the same way, in a private window.', 30)
+pair('Client portal', 'Chapters 19–21 and 25: open the portal’s address in a private window (Chrome: ⌘⇧N, Windows: Ctrl+Shift+N) and sign in with the client’s mobile number — '
+     'any six digits pass as the code. Keep your own window for the studio; a preview from the studio would replace the client’s sign-in in the same window.', 44)
 pair('Your phone', 'Chapter 12: when npm run dev starts, Terminal shows a “Network” address (like http://192.168.1.5:3000). Open it on a phone on the same Wi-Fi.', 30)
 pair('Sample files', 'Steps that need a file name it — open http://localhost:3000/uat-files/ plus the file name to download it.', 18)
-pair('Not in 2.0 on purpose', 'Journey mode (2.0 moves leads stage by stage), Archive (2.0 uses Delete with a Deleted list), Meetings, Dashboard, Projects, Marketplace and Chat. '
+pair('Not in 2.0 on purpose', 'Journey mode (2.0 moves leads stage by stage) and Archive (2.0 uses Delete with a Deleted list). '
      'Their buttons answer “Coming soon in OpenMaison 2.0” — that is expected, not a bug.', 44)
 pair('Something else?', 'Anything the story does not cover — especially something you did in 1.0 and cannot find here — goes in “UAT · Missing or other”.', 30)
 pair('Questions', 'Ask Vicky or Dane.', 18)
@@ -346,6 +361,6 @@ if files:
 wb.move_sheet('UAT · Lists', offset=len(wb.sheetnames))
 wb.save(OUT)
 print(f'saved {OUT}')
-print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 17)))
+print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 26)))
 print(f'checklist rows: {len(checklist)} · built-like without a step (Team check): {len(gap_rows)}')
 

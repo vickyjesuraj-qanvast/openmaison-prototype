@@ -7,7 +7,7 @@ import { snackbarRise } from '@/lib/motion'
 import styles from './upload-toast.module.css'
 
 /** One file in the toast: its name, its picture (an object URL — the mock's JPEG for a file that is not one), where it is. */
-export type UploadRow = { key: string; name: string; state: 'uploading' | 'done' | 'failed'; thumb?: string | null }
+export type UploadRow = { key: string; name: string; state: 'uploading' | 'done' | 'failed'; thumb?: string | null; /** (gaps build E, item 1) a file that is not a picture wears its kind's glyph */ glyph?: string | null }
 
 /**
  * Upload toast — the tasks attach-files modal's "Uploading" toast (902:28261, 360×200: dark 56px head + 64px file rows),
@@ -59,8 +59,13 @@ export function UploadToast({
             <div className={styles.toastRows}>
               {rows.map((row) => (
                 <div key={row.key} className={styles.toastRow} data-state={row.state}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={row.thumb ?? '/figma-assets/file-thumb-1.png'} alt="" className={styles.toastThumb} width={40} height={40} />
+                  {!row.thumb && row.glyph ? (
+                    /* (gaps build E, item 1) a PDF, a sheet, a drawing: its own glyph — the mock's photograph said every file was a picture */
+                    <span className={styles.toastGlyph} aria-hidden><Icon name={row.glyph} size={20} weight={300} /></span>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={row.thumb ?? '/figma-assets/file-thumb-1.png'} alt="" className={styles.toastThumb} width={40} height={40} />
+                  )}
                   <span className={styles.toastFile}>{row.name}</span>
                   {row.state === 'uploading' ? (
                     <>

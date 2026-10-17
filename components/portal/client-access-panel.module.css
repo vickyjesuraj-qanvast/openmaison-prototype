@@ -1,0 +1,38 @@
+/* (Projects round 4a, board 8) The Client access panel on the house Drawer (560): three sections, each a 14/600 title over a bordered list
+   on the card table's rows — the person, what they can see, what waits on them — and the drawer's foot (Withdraw access · Done). */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.title { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.box { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; padding: var(--om-spacing-3) var(--om-spacing-4); }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+a.row { color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+a.row:hover { background: var(--om-color-primary-variant); }
+/* (REG-1062) the client's mark is the house avatar's square (avatar.module.css, 36 r4, 14/Medium) on the primary tint — never a circle */
+.initials { composes: avatar from '../om/avatar.module.css'; width: 36px; height: 36px; font: var(--om-type-subtitle-m); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: break-word; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: break-word; }
+.chip { flex: none; display: inline-flex; }
+.meta[data-late] { color: var(--om-color-tertiary-red-default); }
+.state { flex: none; display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: right; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.address { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.addressText { overflow-wrap: anywhere; color: var(--om-color-on-surface-default); }
+.link { composes: link from '../om/text-link.module.css'; }
+.foot { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.empty { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.note { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-yellow-variant1); color: var(--om-color-on-tertiary-yellow-variant); font: var(--om-type-body-m); }
+.loading { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* (Projects round 9, Q-45) a section switched off for every client reads quieter, and leads to Company › Client portal where it is turned on */
+a.row[data-off] .name, a.row[data-off] .state { color: var(--om-color-on-surface-secondary); }
+/* (fix-G, G-36) a row's keyboard ring sits inside the box, so the box's rounded clip never cuts its sides */
+a.row:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: -2px; }
+/* (fix-G, G-21 · G-22) a person's row on a narrow screen: the chip steps under the name (names never break inside a word); the row's ⋮ keeps
+   the right edge, so the client's row and the household's line up */
+@media (max-width: 400px) {
+  .row[data-person] { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-1); align-items: center; }
+  .row[data-person] > .initials { grid-row: 1 / span 2; align-self: start; }
+  .row[data-person] > .text { grid-column: 2; grid-row: 1; }
+  .row[data-person] > .chip { grid-column: 2; grid-row: 2; justify-self: start; }
+  .row[data-person] > :last-child:not(.chip) { grid-column: 3; grid-row: 1; }
+}

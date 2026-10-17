@@ -1,0 +1,11 @@
+/* (pending modules S28) 3D picture — the look's chips and its line, the live stage, the caption. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.lookRow { display: flex; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.stage { position: relative; height: 480px; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); }
+.caption { margin: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+@media (max-width: 767px) { .stage { height: 52dvh; min-height: 260px; } }
+.furnished { display: flex; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; margin: 0; padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.furnished > span { flex: 1 1 240px; min-width: 0; }
+.clipRow { display: flex; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; }   /* (S42 D·1) Download a turning clip and its line */
+.clipRow > span { flex: 1 1 220px; min-width: 0; }

@@ -26,7 +26,9 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
   locked?: boolean
 }) {
   return (
-    <Drawer open={open} onClose={onClose} title="eSignatures" label="eSignatures" width={400}>
+    <Drawer open={open} onClose={onClose} title="eSignatures" label="eSignatures">
+      {/* (pending modules S03) a PDF has no document to place a field in — its Insert pressed nothing; the client signs it on the page */}
+      {uploaded ? <p className={styles.signNote}>A PDF is read and signed on the page itself: the client ticks your words, then signs under it.</p> : <>
       <div className={styles.signEyebrow}>Fillable fields</div>
       <div className={styles.signRows}>
         {SIGN_FIELDS.map((f) => (
@@ -40,6 +42,7 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
         ))}
       </div>
       <p className={styles.signNote}>Place the fields where the parties sign. The client’s field is where they sign online once you send the link.</p>
+      </>}
       {gates && onGates ? (
         <div className={styles.gates} data-testid="esign-gates">
           <div className={styles.signEyebrow}>Before the client signs</div>

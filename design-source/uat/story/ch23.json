@@ -1,0 +1,80 @@
+[
+ {
+  "step": "23.01",
+  "chapter": 23,
+  "scene": "The studio talks to itself",
+  "module": "Messages",
+  "try": "Find the team’s own conversations in Messages",
+  "how": "1. Click \"Messages\" in the side navigation\n2. Read the list and the chip on each row\n3. Press the chip \"Team\" under the search, then \"All\"",
+  "expect": "One list for clients and the team. Beside the client conversations sit \"Everyone at Demo Studio\" (chip Studio — Hui Min’s timesheet reminder last), \"Site team\" (Group), \"Germaine\" (Direct) and \"Serena Koh\" (Team). The chips read All · Unread · Clients · Team; Team keeps only the studio’s own conversations.",
+  "in10": "Different from 1.0: one Messages list for clients and the team",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "23.02",
+  "chapter": 23,
+  "scene": "The studio talks to itself",
+  "module": "Messages",
+  "try": "Write to Hui Min — just the two of you",
+  "how": "1. Press \"New message\" › \"A member\" › \"Hui Min\"\n2. Type Can you check the Tampines site photos? and press \"Send\"\n3. Press \"New message\" › \"A member\" › \"Hui Min\" again",
+  "expect": "An empty conversation first: \"No messages yet\" — \"Write to Hui Min — only the two of you read it. Photos, files and voice notes go too.\" Your line lands; the list gains \"Hui Min\" with the chip Direct. The second press opens the same conversation, never a new one.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "23.03",
+  "chapter": 23,
+  "scene": "A group for a job",
+  "module": "Messages",
+  "try": "Start a group for the kitchen crew",
+  "how": "1. Press \"New message\" › \"A new group\"\n2. Press \"Create group\" with nothing filled in\n3. \"Group name\" Kitchen crew · \"People\" Germaine and Sarah\n4. Press \"Create group\"",
+  "expect": "\"New group\" says \"You’re in it. Only its people read it — never a client.\" Empty, it answers \"Name the group\" and \"Pick at least one person\". Then \"“Kitchen crew” made — everyone in it hears about it\"; the group opens with its first line \"You started the group with Germaine and Sarah\" and wears the chip Group.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "23.04",
+  "chapter": 23,
+  "scene": "A group for a job",
+  "module": "Messages",
+  "try": "Rename the group, add Alex, take Sarah out — with Undo",
+  "how": "1. Press the (i) glyph (\"People and files\") at the top of the conversation\n2. Press \"Rename\", type Kitchen team, press \"Save\", then \"Undo\"\n3. Press \"Add people\", pick Alex, press \"Add\"\n4. On Sarah’s row press \"Take out\", then \"Undo\"",
+  "expect": "A \"Details\" panel lists the people and \"Shared in this conversation\" (Media · Docs · Links). \"Renamed “Kitchen team”\" with Undo puts \"Kitchen crew\" back. \"Alex added to the group\"; \"Sarah taken out of the group\" with Undo brings her back. Each change is a line in the group.",
+  "in10": "Different from 1.0: renames and take-outs have Undo",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "23.05",
+  "chapter": 23,
+  "scene": "Talking about a lead before it is won",
+  "module": "Messages",
+  "try": "Read the team’s own talk about Serena Koh’s lead",
+  "how": "1. Open Serena Koh (a lead) and find \"Team chat\" under \"Collaborators\"\n2. Press \"Messages\" on that row\n3. Press the (i) glyph (\"People and files\") and read the panel",
+  "expect": "The row reads \"Only the team reads it · Messages\". Messages opens on Serena Koh’s Team conversation — Germaine suggests laminate for the wardrobes, Dane says \"Fine by me. Keep the kitchen as quoted.\" The panel says \"The team’s own — Serena never sees it…\" and offers \"Change who is on the lead\" in place of adding people.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "23.06",
+  "chapter": 23,
+  "scene": "Talking about a lead before it is won",
+  "module": "Messages",
+  "try": "See a group as Germaine, a designer",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Germaine\"; open \"Messages\" › \"Site team\"\n2. Press the (i) glyph and read Dane’s row and \"Media\"\n3. Press \"Leave the group\", then \"Undo\" in the message\n4. \"Demo Studio\" block › \"View as\" › \"Dane\"",
+  "expect": "Dane’s row has no \"Take out\"; it reads \"Owner · only an Owner or an Admin takes them out\". Media holds the board Michelle shared (\"Here’s the board the client signed off…\"). \"You left “Site team”\" with Undo; Undo puts Germaine back in it. The block reads Dane again.",
+  "in10": "Same as 1.0",
+  "as": "Germaine",
+  "covers": [],
+  "files": []
+ }
+]

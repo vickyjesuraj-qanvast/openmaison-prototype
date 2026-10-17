@@ -12,6 +12,18 @@ import { SurfaceFoot, SurfaceHead } from './surface-parts'
 import styles from './drawer.module.css'
 
 /**
+ * (pending modules S17 — consistency leftovers, card held:consistency-leftovers, as recommended) The side panels' width scale, as menus have
+ * theirs (REG-728's MENU_WIDTH): seven widths had grown one panel at a time (320 · 360 · 400 · 420 · 440 · 480 · 560). Four now, by what
+ * a panel holds — **narrow** 360, a tool's pane beside its canvas (an editor's panes, a contract's Outline, the keyboard list) ·
+ * **standard** 400, the mock's (Task 902:27363 · Comments 902:28619): a record's details, its comments or history, what the client sees,
+ * Column settings, the bell · **wide** 480, a panel that draws or carries its own form (a cost's lines, a ticket's thread, a wall's
+ * elevation, a layout's versions) · **widest** 560, as the canvases draw them (a milestone — Milestone.dc.html — and Invite to Portal).
+ * A panel names its step; a number is refused by the type, so a width cannot drift again.
+ */
+export const PANEL_WIDTH = { narrow: 360, standard: 400, wide: 480, widest: 560 } as const
+export type PanelWidth = keyof typeof PANEL_WIDTH
+
+/**
  * Right-anchored side panel (Task 902:27363 · Comments 902:28619): 400 wide, full viewport height, white, level-4 shadow;
  * head 64 (80 with a crumb + back arrow), scrolling body, sticky footer. Non-modal — the page behind stays live;
  * Esc and ✕ close it (Esc only while it is the topmost surface: a dialog / menu / picker opened from the panel owns Esc
@@ -19,7 +31,7 @@ import styles from './drawer.module.css'
  * (non-modal). Spec: design-source/context/lead-tasks/03-panel-tags.txt · 04-comments-attach.txt.
  */
 export function Drawer({
-  open, title, crumb, onBack, actions, footer, onClose, children, width = 400, label, kbPanel = false,
+  open, title, crumb, onBack, actions, footer, onClose, children, width = 'standard', label, kbPanel = false,
 }: {
   open: boolean
   title: string
@@ -31,7 +43,8 @@ export function Drawer({
   footer?: ReactNode
   onClose: () => void
   children: ReactNode
-  width?: number
+  /** (pending modules S17) a step of PANEL_WIDTH — the mock's 400 unless the panel holds more */
+  width?: PanelWidth
   label?: string
   /** (REG-711) The ? panel: keys pressed inside it still reach the page, so they can be tried with the list open. */
   kbPanel?: boolean
@@ -43,10 +56,11 @@ export function Drawer({
   /* (REG-353) ≤767 the canvas draws this panel as a bottom sheet (2c Task · 2d Task comments): it comes up off the
      bottom edge under a scrim instead of sliding in from a right edge the phone does not have, and wears the grabber. */
   const sheet = useSheetLayout()
+  const px = PANEL_WIDTH[width]
   const slide = {
-    initial: { x: width, opacity: 0.6 },
+    initial: { x: px, opacity: 0.6 },
     animate: { x: 0, opacity: 1, transition: { duration: duration.modal, ease: ease.decelerate } },
-    exit: { x: width, opacity: 0.6, transition: { duration: duration.modalExit, ease: ease.standard } },
+    exit: { x: px, opacity: 0.6, transition: { duration: duration.modalExit, ease: ease.standard } },
   }
 
   return (
@@ -59,7 +73,7 @@ export function Drawer({
         <motion.aside
           ref={panel}
           className={styles.drawer}
-          style={sheet ? undefined : { width }}
+          style={sheet ? undefined : { width: px }}
           role="dialog"
           aria-label={label ?? title}
           data-kb-panel={kbPanel || undefined}

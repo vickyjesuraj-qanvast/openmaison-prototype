@@ -1,0 +1,20 @@
+/* (REG-924) The Projects listing's toolbar — the Leads listing's row (components/leads/toolbar.module.css), composed, never copied. */
+.bar { composes: bar from '../leads/toolbar.module.css'; }
+.left { composes: left from '../leads/toolbar.module.css'; align-items: center; }
+.right { composes: right from '../leads/toolbar.module.css'; }
+.title { composes: title from '../leads/toolbar.module.css'; }
+.filterWrap { composes: filterWrap from '../leads/toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../leads/toolbar.module.css'; }
+.viewAll { composes: viewAll from '../leads/toolbar.module.css'; }
+.pillWrap { position: relative; display: inline-flex; min-width: 0; }
+
+/* (parity Q-08) The search is the Leads listing's slot: the house box, kept at 280 from 768 up, its glyph only on a phone. */
+.searchSlot { composes: searchSlot from '../leads/toolbar.module.css'; }
+/* (REG-354) One row on a phone: the search folds into its glyph (ToolbarSearch); the open box takes the row. (parity Q-08) A phone only now —
+   from 768 the box is in the row beside the pill. */
+@media (max-width: 767px) {
+  .bar:has([data-om-search-open]) .left { display: none; }
+}
+
+/* (gaps build I, I-Q1) List · Workload — the Leads listing's toggle; unlike the kanban, the workload reads on a phone too, so it stays in the row */
+.viewWrap { display: inline-flex; flex-shrink: 0; }

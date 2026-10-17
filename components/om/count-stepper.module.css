@@ -1,0 +1,4 @@
+/* (pending modules S19) the credits' stepper — Plans' Seats box (REG-702) — (S44I, B5) a house piece now: the Items table's Add several counts lines on it too */
+.stepper { display: inline-flex; align-items: center; height: 36px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); flex-shrink: 0; }
+.stepper b { width: 40px; text-align: center; font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; }
+.stepper[data-wide] b { width: 56px; }

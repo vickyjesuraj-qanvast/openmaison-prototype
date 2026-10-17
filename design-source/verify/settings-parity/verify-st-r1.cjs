@@ -1,6 +1,7 @@
 // Settings parity round 1 (REG-645) — Settings in 1.0's shape: the modules Studio · Lead management · Quotes & pricing · Notifications
-// on Company's frame (tab strip, ?section=, ?from=), Studio's team / entities / Who may do what (from the enforced rules), the studio's
-// GST (registration + the rate a new line starts with), one read-only look, the real next quote number, the studio's name from its
+// on Company's frame (tab strip, ?section=, ?from=), Studio's Who may do what (from the enforced rules — its team and entities cards went
+// to Company › Members and Profile, one-home N-06), the studio's
+// GST (the rate a new line starts with — its registration is the studio's entity switch on Company › Profile since one-home N-13), one read-only look, the real next quote number, the studio's name from its
 // record, the copy slips.
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
@@ -25,18 +26,22 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
   await step('Settings opens on Studio, the modules as a tab strip', async () => {
     await page.goto(`${BASE}/settings`); await page.getByTestId('settings-studio').waitFor(); await ready(page)
     const tabs = await page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab').allInnerTexts()
-    ok('six modules in 1.0’s order', tabs.join(' · ') === 'Studio · Lead management · Quotes & pricing · Notifications · Projects · Finance', tabs.join(' · '))
-    ok('Studio is the open tab', (await page.getByRole('tab', { name: 'Studio' }).getAttribute('aria-selected')) === 'true')
-    const owner = await page.getByTestId('team-owner').innerText()
-    ok('the team by role: Dane is the Owner, marked You', /Dane/.test(owner) && /you/i.test(owner))
-    ok('Manager and Designers listed with who they report to', /James/.test(await page.getByTestId('team-manager').innerText()) && /reports to James/.test(await page.getByTestId('team-designer').innerText()))
-    const ents = page.getByTestId('studio-entity')
-    ok('the issuing entities: the studio first', (await ents.count()) >= 1 && /The studio/.test(await ents.first().innerText()))
-    ok('settings are the Owners’ and Admins’', JSON.stringify(await reach(page, 'settings')) === '["yes","yes","no","no"]')
-    ok('a quote is deleted by an Owner, an Admin or its creator', JSON.stringify(await reach(page, 'delete-quote')) === '["yes","yes","own","own"]')
-    ok('a Manager assigns within the team; a Designer does not', JSON.stringify(await reach(page, 'assign')) === '["yes","yes","team","no"]')
-    ok('approval: Managers and Designers only as the backup', JSON.stringify(await reach(page, 'approve')) === '["yes","yes","backup","backup"]')
-    ok('everyone sees every lead (the studio’s setting)', JSON.stringify(await reach(page, 'see')) === '["yes","yes","yes","yes"]')
+    // REG-848 (Dane UAT 2.14) put the modules in the order the work runs
+    // (pending modules S14, a deliberate change of this rule) the first module is named for what it holds — Roles & access (?section=studio)
+    // (pending modules S23, a deliberate change of this rule) Meetings is a module of its own, after Lead management
+    ok('seven modules in the order the work runs', tabs.join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Notifications', tabs.join(' · '))
+    ok('Roles & access is the open tab', (await page.getByRole('tab', { name: 'Roles & access' }).getAttribute('aria-selected')) === 'true')
+    // (one-home N-06, a deliberate change of this rule) Studio no longer copies Company: no Team or Issuing entities card — the module head's
+    // Kept in Company: Members · Profile links open the records.
+    ok('no Team or Issuing entities copy in Settings › Studio', (await page.getByTestId('studio-team').count()) === 0 && (await page.getByTestId('studio-entities').count()) === 0)
+    const kept = await page.getByTestId('settings-studio').getByTestId('module-links').innerText()
+    ok('Kept in Company: Members · Profile', /Members/.test(kept) && /Profile/.test(kept), kept)
+    ok('the role columns still count the active team', /Owner · 1/i.test(await page.getByRole('table', { name: 'Who may do what' }).getByRole('row').first().innerText())   /* the head is set in capitals — innerText reads them */)
+    ok('settings are the Owners’ and Admins’', JSON.stringify(await reach(page, 'settings')) === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('a quote is deleted by an Owner, an Admin or its creator', JSON.stringify(await reach(page, 'delete-quote')) === '["yes","yes","own","own","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('a Manager assigns within the team; a Designer does not', JSON.stringify(await reach(page, 'assign')) === '["yes","yes","team","no","yes","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('approval: Managers and Designers only as the backup', JSON.stringify(await reach(page, 'approve')) === '["yes","yes","backup","backup","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('everyone sees every lead (the studio’s setting)', JSON.stringify(await reach(page, 'see')) === '["yes","yes","yes","yes","yes","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     await shot('01-studio')
   })
 
@@ -44,29 +49,34 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     sql(`insert or replace into settings (key, value, updated_at) values ('lead_visibility', '"assigned"', strftime('%s','now'))`)
     sql(`insert or replace into settings (key, value, updated_at) values ('quote_rules', '{"roundStep":0,"paymentLock":true,"backupApproverId":"sarah","preparedBy":"member"}', strftime('%s','now'))`)
     await page.goto(`${BASE}/settings?section=studio`); await page.getByTestId('studio-roles').waitFor(); await ready(page)
-    ok('assigned only: a Manager sees the team’s, a Designer her own', JSON.stringify(await reach(page, 'see')) === '["yes","yes","team","own"]')
-    ok('the payment lock: only Owners and Admins', JSON.stringify(await reach(page, 'payments')) === '["yes","yes","no","no"]')
+    ok('assigned only: a Manager sees the team’s, a Designer her own', JSON.stringify(await reach(page, 'see')) === '["yes","yes","team","own","yes","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
+    ok('the payment lock: only Owners and Admins', JSON.stringify(await reach(page, 'payments')) === '["yes","yes","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     ok('the backup approver is named', /Sarah/.test(await page.getByTestId('backup-line').innerText()))
     await page.getByTestId('studio-roles').scrollIntoViewIfNeeded(); await shot('02-roles-following-settings')
     sql(`delete from settings where key='quote_rules'`)
   })
 
-  await step('modules in the address; Projects is still to come; the studio’s own name', async () => {
+  await step('modules in the address; Finance live with money out; the studio’s own name', async () => {
     await page.goto(`${BASE}/settings`); await ready(page)
     await page.getByRole('tab', { name: 'Lead management' }).click(); await page.waitForURL(/section=leads/); await page.getByTestId('settings-leads').waitFor(); await ready(page)
     const help = await page.getByTestId('settings-leads').locator('p').first().innerText()
     ok('Lead management applies to Demo Studio (from the record, no Pte Ltd)', /every lead in Demo Studio —/.test(help), help)
     ok('Kept in Company: Integrations · Questionnaire · Members', /Integrations/.test(await page.getByTestId('module-links').innerText()) && /Questionnaire/.test(await page.getByTestId('module-links').innerText()))
-    ok('the stage movement card names the fixed stages', /New, Contacted, Met, Quote Sent and Won/.test(await page.getByText('How leads move from one stage').innerText()))
+    /* (pending modules, a deliberate change of this rule) S05: the Stage movement card became Lead stages — the stages are its rows, How leads move inside it */
+    ok('the stage movement card names the fixed stages', await (async () => { const t = await page.getByTestId('lead-stages').innerText(); return ['New', 'Contacted', 'Met', 'Quote Sent', 'Won', 'On Hold', 'Lost'].every((s) => t.includes(s)) && /How leads move/i.test(t) })())
     ok('the On Hold field reads well', (await page.getByLabel('Add an On Hold reason').count()) === 1)
     ok('the reasons, saved equal to the defaults, say so', /These are the defaults\./.test(await page.getByTestId('lead-reasons').innerText()))
     await shot('03-lead-management')
-    await page.getByRole('tab', { name: 'Projects' }).click(); await snack(page, 'Coming soon in OpenMaison 2.0')
-    ok('Projects stays put', /section=leads/.test(page.url()))
+    // REG-921 (Projects round 1) made Settings › Projects live; the gaps build's money out (F1, REG-1261…) made Settings › Finance live
+    await page.getByRole('tab', { name: 'Finance' }).click(); await page.waitForURL(/section=finance/)
+    ok('Finance opens its own module now (money out)', /section=finance/.test(page.url()))
+    await page.goto(`${BASE}/settings?section=leads`); await page.getByTestId('settings-leads').waitFor(); await ready(page)
     sql(`update settings set value = json_set(value, '$.name', 'Acme Interiors Pte Ltd') where key='studio'`)
     await page.reload(); await page.getByTestId('settings-leads').waitFor(); await ready(page)
     ok('a renamed studio reads its new name', /every lead in Acme Interiors —/.test(await page.getByTestId('settings-leads').locator('p').first().innerText()))
     sql(`update settings set value = '${STUDIO0}' where key='studio'`)
+    await page.getByRole('tab', { name: 'Projects' }).click(); await page.waitForURL(/section=projects/).catch(() => {})
+    ok('Projects opens its own module (REG-921)', /section=projects/.test(page.url()), page.url())
   })
 
   await step('Quotes & pricing: the real next number, GST', async () => {
@@ -74,12 +84,24 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     const next = `OM-${Number(sql(`select max(cast(substr(number, 4) as integer)) from quotes`)) + 1}`
     ok('the example is the next quote’s number', (await page.getByTestId('number-example').innerText()) === next, `${await page.getByTestId('number-example').innerText()} vs ${next}`)
     ok('Kept in Company: Templates · Price book', /Templates/.test(await page.getByTestId('module-links').innerText()) && /Price book/.test(await page.getByTestId('module-links').innerText()))
-    const gst = page.getByTestId('gst'); await gst.scrollIntoViewIfNeeded()
-    await gst.locator('label').first().click(); await snack(page, 'not registered for GST')
-    ok('registration off is saved', sql(`select json_extract(value, '$.gstRegistered') from settings where key='studio'`) === '0')
+    /* (one-home N-13, a deliberate change of this rule) Settings › Quotes & pricing keeps only the rate; whether the studio is registered is its
+       own issuing entity's switch on Company › Profile, saved with the company details into the same record (settings `studio`). */
+    let gst = page.getByTestId('gst'); await gst.scrollIntoViewIfNeeded()
+    ok('Settings keeps only the rate — no registration switch here', (await gst.locator('input[type="checkbox"]').count()) === 0)
+    const registered = async (on) => {
+      await page.goto(`${BASE}/company/profile`); await page.getByTestId('entities').waitFor(); await ready(page)
+      const sw = page.getByTestId('studio-gst'); await sw.scrollIntoViewIfNeeded()
+      if ((await sw.locator('input[type="checkbox"]').isChecked()) !== on) await sw.click()
+      await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
+      await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('settings-quotes').waitFor(); await ready(page)
+      gst = page.getByTestId('gst'); await gst.scrollIntoViewIfNeeded()
+    }
+    await registered(false)
+    ok('registration off (on Company › Profile) is saved', sql(`select json_extract(value, '$.gstRegistered') from settings where key='studio'`) === '0')
     ok('the rate rests while off', await gst.getByLabel('GST rate (%)').isDisabled())
     await shot('04-gst-off')
-    await gst.locator('label').first().click(); await snack(page, 'is registered for GST — new quotes carry it')
+    await registered(true)
+    ok('registration on again', sql(`select json_extract(value, '$.gstRegistered') from settings where key='studio'`) === '1')
     await gst.getByLabel('GST rate (%)').fill('8.5')   // a rate takes one decimal (the amount filter kept whole numbers — reader E, price book audit)
     await gst.getByRole('button', { name: 'Save rate' }).click(); await snack(page, 'New lines start at 8.5% GST')
     ok('the rate is saved', sql(`select json_extract(value, '$.gstPct') from settings where key='studio'`) === '8.5')
@@ -102,13 +124,15 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
   await step('one read-only look for a Designer', async () => {
     as('sarah')
     await page.goto(`${BASE}/settings?section=leads`); await page.getByTestId('settings-leads').waitFor(); await ready(page)
-    ok('the line under the title', /Only Owners and Admins change these\./.test(await page.getByTestId('read-only-line').innerText()))
+    ok('the line under the title', /Only Owners and Admins change these\./.test(await page.getByTestId('read-only-line').first().innerText()))
+    /* (S42 B-12) the Lead stages card says it again in its own head — Manage Stages lands there (#lead-stages), past the module's line */
+    ok('the Lead stages card says it too', (await page.getByTestId('lead-stages').getByTestId('read-only-line').count()) === 1)
     ok('the stage movement choices are shown, disabled', await page.getByRole('radio', { name: /^Linear/ }).isDisabled())
     ok('nothing to add or remove', (await page.getByLabel('Add a source').count()) === 0 && (await page.getByRole('button', { name: /^(Remove|Retire) / }).count()) === 0)
     ok('the demo’s simulate button is not offered', (await page.getByRole('button', { name: /Simulate an enquiry/ }).count()) === 0)
     await shot('06-read-only-leads')
     await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('settings-quotes').waitFor(); await ready(page)
-    ok('the GST switch is disabled', await page.getByTestId('gst').locator('input[type="checkbox"]').isDisabled())
+    ok('the GST rate is shown, disabled', await page.getByTestId('gst').getByLabel('GST rate (%)').isDisabled())   // (one-home N-13) the registration switch is Profile's now
     ok('no Save rate or Save numbering', (await page.getByRole('button', { name: 'Save rate' }).count()) === 0 && (await page.getByRole('button', { name: 'Save numbering' }).count()) === 0)
     ok('the number pattern shows, disabled', await page.getByLabel('Prefix').isDisabled())
     ok('the trades show, nothing to press on them', (await page.getByTestId('trade').count()) > 0 && (await page.getByTestId('trade').getByRole('button').count()) === 0)
@@ -138,7 +162,7 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
         ok(`${w}: ${sec} fits the width`, over <= 0, `${over}px over`)
       }
       await p.goto(`${BASE}/settings?section=studio`); await ready(p)
-      for (const t of ['Who may do what', 'Issuing entities']) {
+      for (const t of ['Who may do what']) {   // (one-home N-06) the Issuing entities table left Settings › Studio
         const clip = await p.getByRole('table', { name: t }).evaluate((e) => e.scrollWidth - e.clientWidth)
         ok(`${w}: ${t} shows every column`, clip <= 0, `${clip}px clipped`)
       }

@@ -23,6 +23,10 @@
 .fieldRow > * { flex: 1; min-width: 0; }
 .helper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-top: var(--om-spacing-1); }
 .fieldWrap { display: flex; flex-direction: column; width: 100%; }
+/* (pending modules S05 — testers' L-4) the second client's fields: the section's 24 rhythm between them; its text buttons start the line, the
+   quote's General Info way (REG-588) */
+.secondList { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
+.secondRemove { display: inline-flex; align-self: flex-start; margin-top: var(--om-spacing-1); }
 
 .moreToggle {
   display: inline-flex; gap: var(--om-spacing-1); align-items: center;
@@ -99,7 +103,10 @@
 }
 
 /* (REG-609) Round 3: the document fill's link row, the attached files' tiles, the duplicate dialog's line. */
-.fillRow { display: flex; justify-content: flex-end; width: 100%; }
+.fillRow { display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-1); width: 100%; }
+/* (S42F) Fill from a document's own answer: what filled (the form's helper words) — and, in the dialog, why nothing did (the field error's red) */
+.fillNote { align-self: stretch; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* a sentence reads from the left, as every helper line does */
+.fillError { display: block; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); margin-top: var(--om-spacing-3); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); }
 .dupText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 

@@ -1,0 +1,6 @@
+/* (parity map, FB-101 · FB-103) The colour field of the brand kit's Colours card (Company › Profile's sheet: the 48px swatch with the native
+   picker behind it, the hex field beside) — composed, never copied, for the invoice paper's and an issuing entity's accent. */
+.colour { composes: colour from '../../company/profile-view.module.css'; }
+.swatch { composes: swatch from '../../company/profile-view.module.css'; }
+.colourField { composes: colourField from '../../company/profile-view.module.css'; }
+.swatch[data-empty] { border-style: dashed; border-color: var(--om-color-on-surface-border); }

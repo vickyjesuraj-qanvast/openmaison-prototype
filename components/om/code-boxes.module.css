@@ -1,0 +1,8 @@
+/* (pending modules S30) A one-time code's boxes — the client portal's sign-in (Projects round 4a, board 5) as the house piece: six 56-tall boxes
+   in a row that shares the column, the digit in the heading face, the focus ring in the page's primary (inside the portal, its studio's colour). */
+.codeLabel { margin: 0 0 var(--om-spacing-2); padding: 0; font: var(--om-type-subtitle-m); }
+.code { border: 0; margin: 0; padding: 0; min-width: 0; }
+.digits { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--om-spacing-2); }
+.digit { height: 56px; min-width: 0; box-sizing: border-box; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); text-align: center; font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); outline: none; }
+.digit:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.digit[aria-invalid='true'] { border-color: var(--om-color-tertiary-red-default); }

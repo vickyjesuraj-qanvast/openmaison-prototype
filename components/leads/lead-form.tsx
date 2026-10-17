@@ -15,71 +15,53 @@ import { displayCustomValue, validateCustomValue, type CustomFieldDef, type Cust
 import { DateField } from '@/components/om/date-field'
 import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
-import { SOURCES, PROPERTY_TYPES, DISTRICTS, STYLE_OPTIONS, KEY_COLLECTION_OPTIONS, CONDITION_OPTIONS } from '@/lib/leads/enums'
+import { SOURCES, PROPERTY_TYPES, DISTRICTS, STYLE_OPTIONS, KEY_COLLECTION_OPTIONS, CONDITION_OPTIONS, isCommercialType } from '@/lib/leads/enums'
 import { bottomSheet, modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { useSheetLayout } from '@/components/om/sheet'
-import { BUDGET_MAX, BUDGET_MIN, EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
-import { parseInputDate, groupDigits, inputDate, isNric, isSgPhone, phoneDigits, phoneTyped } from '@/lib/format'
+import { MSG, hasErrors } from '@/lib/forms'
+import { groupDigits, inputDate, phoneDigits, phoneTyped } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
+import { NAME_MAX, PROJECT_TYPES, ROOMS } from '@/lib/projects/model'
 import styles from './lead-form.module.css'
+import { validateLeadForm, type LeadFormData, type LeadFormErrors } from '@/lib/leads/lead-input'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { CORE_FIELDS, DOCUMENT_ACCEPT, FILL_FIELDS, fieldList, readLeadDocument, unreadWords, type FillField } from '@/lib/leads/document-fill'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 
 /* The three option lists live in lib/leads/enums.ts since the parity round (REG-607): only 'Contemporary' / 'Collected' / 'New'
    are mock-visible; the rest came from the testers (REG-549) and from 1.0's Singapore lists. */
 export const AREA_UNITS = ['sq ft', 'sq m'] as const
+/* (pending modules S41b-3) the form's details and its validation live in lib/leads/lead-input.ts (the trial's server checks them too) — named here as before */
+export { validateLeadForm }
+export type { LeadFormData }
 
-/* (REG-609, parity Q-28) The scripted stand-in for 1.0's AI read of a document (Auto Fill's pattern, REG-319): fixed values into the
-   fields still empty, and the "document" joins the attached files. Demo values, invented for the fill. */
-const DOCUMENT_FILE = 'Enquiry - Nurul Hassan.pdf'
-const DOCUMENT_FILL: Partial<Record<Exclude<keyof LeadFormData, 'assignees'>, string>> = {
-  name: 'Nurul Hassan', phone: '91234589', email: 'nurul.hassan@gmail.com', source: 'Website', propertyType: 'Condo 3-bedder',
-  propertyAddress: 'Parc Esta, Sims Avenue', district: 'East', budget: '85,000', style: 'Scandinavian', keyCollection: 'in 3 months',
-  condition: 'New', areaSize: '1100', notes: 'Website enquiry: full renovation of a 3-bedder before moving in — keys in about 3 months, likes a Scandinavian look.',
-}
+/* (REG-609, parity Q-28) Fill from a document — (S42F) now the picked file's OWN words, read by rule in the browser (lib/leads/document-fill.ts):
+   what it plainly names lands in the fields still empty (1.0's rule), the file joins the attached files, and one line says what filled and
+   what wasn't found. It used to fill one fixed sample lead whatever file was picked (the audit's E-05 family). */
 type Dup = NonNullable<Awaited<ReturnType<typeof findDuplicateLead>>>
 
-export type LeadFormData = {
-  name: string
-  phone: string
-  source: string
-  propertyType: string
-  propertyAddress: string
-  email: string
-  leadAddress: string
-  budget: string        // grouped digits, e.g. "70,000"
-  startDate: string     // d/m/yyyy
-  style: string
-  keyCollection: string
-  condition: string
-  areaSize: string
-  areaUnit: string
-  notes: string
-  /** (REG-607) 1.0's Area / District, the client's IC / NRIC and the studio's customer reference. */
-  district: string
-  nric: string
-  customerId: string
-  /** Member ids (REG-231). Many-to-many, like `lead_assignees` — never a single id. */
-  assignees: string[]
-}
-
-type LeadFormErrors = FieldErrors<'name' | 'phone' | 'email' | 'budget' | 'startDate' | 'assignees' | 'nric'>
 
 /** A field the modal can be opened ON — the info column's "Add" links name the row the user actually pressed. */
 export type LeadFormField = keyof LeadFormData
+/** (parity P-09) A project's Edit details: the lead form's field block as it is, then the project's own section — its name, type and rooms. */
+export type ProjectFormValues = { name: string; projectType: string; scope: string[] }
+export type ProjectFormField = 'projectName' | 'projectType' | 'scope'
 /** What the host holds while the modal is open: which mode, and optionally the field it was opened on. */
 /** `prefill` (UX audit L11): a new lead that starts with what the host already knows — the listing's "Add lead with 9123 4599". */
-export type LeadFormOpen = ({ mode: 'create'; prefill?: Partial<Pick<LeadFormData, 'phone' | 'name'>> } | { mode: 'edit'; lead: LeadRow }) & { focus?: LeadFormField }
+/** (pending modules S05) …and Maison AI's "Add a lead for Mrs Chua, 9123 4567, HDB 4-Room, budget 80k, from Instagram": the form opens filled in. */
+export type LeadFormOpen = ({ mode: 'create'; prefill?: Partial<Pick<LeadFormData, 'phone' | 'name' | 'propertyType' | 'budget' | 'source' | 'email'>> } | { mode: 'edit'; lead: LeadRow }) & { focus?: LeadFormField | ProjectFormField }
 /** Fields that live behind "Additional info": opening on one of them has to expand that section first. */
 const IN_MORE: ReadonlySet<LeadFormField> = new Set<LeadFormField>([
   'email', 'leadAddress', 'budget', 'startDate', 'style', 'keyCollection', 'condition', 'areaSize', 'areaUnit', 'notes', 'nric', 'customerId',
+  'client2Name', 'client2Nric', 'client2Phone',   // (pending modules S05)
 ])
 
 const emptyForm = (): LeadFormData => ({
   name: '', phone: '', source: '', propertyType: '', propertyAddress: '',
   email: '', leadAddress: '', budget: '', startDate: '', style: '',
-  keyCollection: '', condition: '', areaSize: '', areaUnit: 'sq ft', notes: '', district: '', nric: '', customerId: '', assignees: [],
+  keyCollection: '', condition: '', areaSize: '', areaUnit: 'sq ft', notes: '', district: '', nric: '', customerId: '',
+  companyName: '', companyUen: '', client2Name: '', client2Nric: '', client2Phone: '', assignees: [],
 })
 
 const fromLead = (lead: LeadRow): LeadFormData => ({
@@ -103,27 +85,11 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
   district: lead.area ?? '',
   nric: lead.icNumber ?? '',
   customerId: lead.customerId ?? '',
+  companyName: lead.companyName ?? '', companyUen: lead.companyUen ?? '',   // (pending modules S05)
+  client2Name: lead.client2Name ?? '', client2Nric: lead.client2Nric ?? '', client2Phone: lead.client2Phone ?? '',
   assignees: lead.assignees.map((m) => m.id),   // the only place edit mode learns the lead's current owners
 })
 
-/**
- * Pure validation — required fields are exactly the mock's starred ones (Lead name*, Lead phone number*).
- * `requireAssignee` closes the door REG-130 already guards elsewhere: past New a lead must keep an owner, which the
- * Assign popover enforces (`requireOne`). Without it the form would be a second way to clear the last one.
- */
-export function validateLeadForm(data: LeadFormData, requireAssignee = false): LeadFormErrors {
-  const errors: LeadFormErrors = {}
-  if (requireAssignee && data.assignees.length === 0) errors.assignees = MSG.assignee
-  if (!data.name.trim()) errors.name = MSG.required
-  if (!isSgPhone(phoneDigits(data.phone))) errors.phone = MSG.phone   // (REG-287 / REG-547) the one phone rule, not a local copy
-  if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) errors.email = MSG.email
-  const budgetDigits = data.budget.replace(/,/g, '').trim()
-  if (budgetDigits && !/^\d+$/.test(budgetDigits)) errors.budget = MSG.number
-  else if (budgetDigits && (Number(budgetDigits) < BUDGET_MIN || Number(budgetDigits) > BUDGET_MAX)) errors.budget = MSG.budgetRange   // (REG-607, parity Q-14) 1.0's bounds
-  if (data.startDate.trim() && !parseInputDate(data.startDate)) errors.startDate = MSG.date
-  if (data.nric.trim() && !isNric(data.nric)) errors.nric = MSG.nric   // (REG-607, parity Q-35)
-  return errors
-}
 
 /* Phone field: "+65 | divider | digits" per 779:24644 — a TextField with a leading prefix.
    (REG-287) The box holds the STORED 8-digit local number, so what a person pastes has to be reduced to it by the
@@ -132,12 +98,16 @@ export function validateLeadForm(data: LeadFormData, requireAssignee = false): L
    before `phoneDigits` could ever see the country code. Typing is still capped at 8 by the slice below, so the
    value the field can hold is unchanged. The box SHOWS the digits grouped as they are typed — "9123 4", "9123 4567"
    (REG-456, user feedback 2026-09-16) — while `value` stays the bare digits the rule above produces. */
-function PhoneField({ value, onChange, error, inputRef }: {
+export function PhoneField({ value, onChange, error, inputRef, label = 'Lead phone number', required = true }: {
   value: string; onChange: (v: string) => void; error?: string; inputRef?: RefObject<HTMLInputElement | null>
+  /** (REG-927) New project's "Client's phone number" — the same field. */
+  label?: string
+  /** (pending modules S05) the second client's mobile is optional */
+  required?: boolean
 }) {
   return (
     <TextField
-      label="Lead phone number" required value={phoneTyped(value)} error={error} inputRef={inputRef}   /* (REG-456) shown "9123 4567", stored "91234567" */
+      label={label} required={required} value={phoneTyped(value)} error={error} inputRef={inputRef}   /* (REG-456) shown "9123 4567", stored "91234567" */
       type="tel" inputMode="tel" numeric="digits" trailingIcon={null}
       leading={<span className={styles.prefix}>+65<span className={styles.divider} /></span>}
       onChange={(v) => onChange(phoneDigits(v).slice(0, 8))}
@@ -187,8 +157,15 @@ function AreaField({
 const openInNewTab = (leadId: string) => { window.open(`/leads/${leadId}`, '_blank', 'noopener') }
 
 export function LeadFormModal({
-  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, customFields = [], customValues,
+  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, customFields = [], customValues, project, trial = false,
 }: {
+  /** (pending modules S41b-3) The website's no-account trial: the same form for someone with no studio — no Assign member (no team), no
+   *  duplicate check (it would read a studio's leads), no Fill from a document or Attach files (nothing to keep a file in until they sign up). */
+  trial?: boolean
+  /** (parity P-09 · D-08, the owner's pick 2026-10-08) A project's Edit details: the same form on the project's lead — titled "Edit details",
+   *  with the project's own section (name · type · rooms) after Additional info, handed back as `extras.project`. Absent, the lead's form is
+   *  exactly as before. */
+  project?: { name: string; projectType: string | null; scope: readonly string[] }
   /** (REG-612, parity Q-25) The studio's active custom fields, rendered in Additional info; `customValues` seeds an edit. */
   customFields?: CustomFieldDef[]
   customValues?: CustomValues
@@ -205,7 +182,7 @@ export function LeadFormModal({
   onClose: () => void
   /** Return false when the save failed (the modal stays open for retry). */
   /** `extras.files` (REG-609, parity C-08): the documents attached on creation, by name. */
-  onSubmit: (mode: 'create' | 'edit', data: LeadFormData, leadId?: string, extras?: { files: string[]; customValues: CustomValues }) => boolean | Promise<boolean>
+  onSubmit: (mode: 'create' | 'edit', data: LeadFormData, leadId?: string, extras?: { files: string[]; customValues: CustomValues; /** (gaps build E, item 1) the picked files themselves, so the host uploads their bytes once the lead exists */ picked?: File[]; /** (parity P-09) a project's own fields */ project?: ProjectFormValues }) => boolean | Promise<boolean>
   /** Host clock for the date picker's "today"; falls back to the clock at mount. */
   now?: number
 }) {
@@ -222,11 +199,20 @@ export function LeadFormModal({
   const emailRef = useRef<HTMLInputElement | null>(null)
   const budgetRef = useRef<HTMLInputElement | null>(null)
   const assigneeRef = useRef<HTMLInputElement | null>(null)
-  /* (REG-609) Round 3 of the parity programme: the attached documents, the scripted document fill, the duplicate dialog. */
+  /* (REG-609) Round 3 of the parity programme: the attached documents, Fill from a document (S42F: it reads the picked file by rule —
+     lib/leads/document-fill.ts), the duplicate dialog. (S43D, F2-03) */
   const [files, setFiles] = useState<string[]>([])
+  const [picked, setPicked] = useState<File[]>([])   // (gaps build E, item 1) the files behind the names, uploaded with their bytes
   const [fillOpen, setFillOpen] = useState(false)
+  const [fillBusy, setFillBusy] = useState<string | null>(null)   // (S42F) the file being read
+  const [fillError, setFillError] = useState<string | null>(null)   // (S42F) why it filled nothing — the dialog stays open
+  const [fillNote, setFillNote] = useState<string | null>(null)   // (S42F) what the read filled, under the link
+  const docInput = useRef<HTMLInputElement | null>(null)
   const [dup, setDup] = useState<Dup | null>(null)
   const [custom, setCustom] = useState<CustomValues>({})   /* (REG-612) the custom fields' values */
+  const [proj, setProj] = useState<ProjectFormValues>({ name: '', projectType: PROJECT_TYPES[0], scope: [] })   /* (parity P-09) */
+  const [second, setSecond] = useState(false)   /* (pending modules S05 — testers' L-4) the second client's fields, shown once added (or filled) */
+  const projectNameRef = useRef<HTMLInputElement | null>(null)
   const fileInput = useRef<HTMLInputElement | null>(null)
   const [mountedAt] = useState(() => Date.now())
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
@@ -235,10 +221,13 @@ export function LeadFormModal({
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open && form) {
-      setData(form.mode === 'edit' ? fromLead(form.lead) : { ...emptyForm(), ...(selfAssign ? { assignees: [selfAssign.id] } : {}), ...(form.prefill ?? {}) })   // (REG-609) a Designer's lead is theirs · (UX audit L11) the host's prefill
-      setFiles([]); setFillOpen(false); setDup(null)
+      const seed = form.mode === 'edit' ? fromLead(form.lead) : { ...emptyForm(), ...(selfAssign ? { assignees: [selfAssign.id] } : {}), ...(form.prefill ?? {}) }
+      setData(seed)   // (REG-609) a Designer's lead is theirs · (UX audit L11) the host's prefill
+      setSecond(!!(seed.client2Name || seed.client2Nric || seed.client2Phone) || form.focus === 'client2Name')   // (pending modules S05)
+      setFiles([]); setPicked([]); setFillOpen(false); setDup(null); setFillBusy(null); setFillError(null); setFillNote(null)
       setCustom(form.mode === 'edit' ? { ...(customValues ?? {}) } : {})
-      setExpanded(form.mode === 'edit' || (form.focus ? IN_MORE.has(form.focus) : false))
+      if (project) setProj({ name: project.name, projectType: project.projectType ?? PROJECT_TYPES[0], scope: [...project.scope] })   // (parity P-09)
+      setExpanded(form.mode === 'edit' || (form.focus ? (IN_MORE as ReadonlySet<string>).has(form.focus) : false))
       setSubmitted(false)
       setSubmitting(false)
     }
@@ -254,7 +243,7 @@ export function LeadFormModal({
    * opens on its first field for the same reason (user 2026-08-31). Two frames: one for the modal's entrance, one for
    * "Additional info" to finish expanding when the target lives inside it.
    */
-  const focusTarget: LeadFormField | null = form ? form.focus ?? (form.mode === 'create' ? 'name' : null) : null
+  const focusTarget: LeadFormField | ProjectFormField | null = form ? form.focus ?? (form.mode === 'create' ? 'name' : null) : null
   useEffect(() => {
     if (!open || !focusTarget) return
     let inner = 0
@@ -284,11 +273,14 @@ export function LeadFormModal({
 
   const set = <K extends keyof LeadFormData>(k: K) => (v: LeadFormData[K]) =>
     setData((d) => ({ ...d, [k]: v }))
+  const commercial = isCommercialType(data.propertyType)   // (pending modules S05 — testers' L-3)
 
   // Errors are shown only after the first submit attempt, then re-computed live so each clears as it is fixed.
   // Past New, the lead must keep an owner — the same gate the Assign popover applies (REG-130).
   const requireAssignee = !!form && form.mode === 'edit' && form.lead.stage !== 'New'
   const errors: LeadFormErrors = submitted ? validateLeadForm(data, requireAssignee) : {}
+  /* (parity P-09) the project's name is required, as Rename's was; its type always holds one of the three */
+  const projectNameError = submitted && project && !proj.name.trim() ? MSG.required : undefined
 
   const submit = async () => {
     if (!form || submittingRef.current) return
@@ -296,17 +288,20 @@ export function LeadFormModal({
     setSubmitted(true)
     /* (REG-612) A required custom field is a field like any other: the section opens on it and the save waits. */
     if (customFields.some((f) => validateCustomValue(f, custom[f.id]))) { setExpanded(true); if (!hasErrors(errs)) return }
+    if (project && !proj.name.trim() && !hasErrors(errs)) { projectNameRef.current?.focus(); return }   // (parity P-09)
     if (hasErrors(errs)) {
       // A hidden error must become visible, or the button reads as a no-op.
-      if (errs.email || errs.budget || errs.startDate) setExpanded(true)
+      if (errs.email || errs.budget || errs.startDate || errs.nric || errs.client2Name || errs.client2Nric || errs.client2Phone) setExpanded(true)
       const first = errs.name ? nameRef : errs.phone ? phoneRef : errs.assignees ? assigneeRef : errs.email ? emailRef : errs.budget ? budgetRef : null
       if (first === emailRef || first === budgetRef) requestAnimationFrame(() => first.current?.focus())   // the section may be expanding this very tick — focus once it has mounted
-      else first?.current?.focus()
+      else if (first) first.current?.focus()
+      else if (errs.client2Name || errs.client2Nric || errs.client2Phone) requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="dialog"] [data-field="client2Name"] [aria-invalid="true"]')?.focus())   // (pending modules S05) the second client's first error
+      else if (errs.companyUen) requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="dialog"] [data-field="companyName"] [aria-invalid="true"]')?.focus())   // (S42 B-06) the UEN
       return
     }
     /* (REG-609, parity Q-18) The duplicate pre-check — 1.0's dup-check before save, fail-open: a live lead with this phone or
        email stops the save with a choice (Open existing lead · Create anyway). An edit never checks. */
-    if (form.mode === 'create') {
+    if (form.mode === 'create' && !trial) {
       submittingRef.current = true; setSubmitting(true)
       const hit = await findDuplicateLead({ phone: data.phone, email: data.email }).catch(() => null)
       submittingRef.current = false; setSubmitting(false)
@@ -318,32 +313,56 @@ export function LeadFormModal({
     if (!form) return
     submittingRef.current = true
     setSubmitting(true)
-    const ok = await onSubmit(form.mode, data, form.mode === 'edit' ? form.lead.id : undefined, { files, customValues: custom })
+    const ok = await onSubmit(form.mode, data, form.mode === 'edit' ? form.lead.id : undefined, { files, customValues: custom, picked: picked.filter((p) => files.includes(p.name)), ...(project ? { project: { ...proj, name: proj.name.trim().replace(/\s+/g, ' ') } } : {}) })
     setSubmitting(false)
     // On success the modal is closing: keep the ref set so clicks landing on
     // the exiting tree can't re-submit; it resets when the modal next opens.
     if (ok === false) submittingRef.current = false
   }
-  /* (REG-609, parity Q-28) Fill from a document: the fixed values land only where the field is still empty (1.0's rule), the
-     "document" is attached, and Additional info opens so the filled fields are in view. */
-  const fillFromDocument = () => {
-    setFillOpen(false)
-    setData((d) => {
-      const next: Record<string, unknown> = { ...d }
-      for (const [k, v] of Object.entries(DOCUMENT_FILL)) if (!String(next[k] ?? '').trim()) next[k] = v
-      return next as LeadFormData
+  /* (REG-609, parity Q-28) Fill from a document — (S42F) the picked file is read by rule: what it names lands only where the field is still
+     empty (1.0's rule; what was typed is kept and said so), the file is attached (its bytes upload with the lead), Additional info opens when a
+     filled field lives there, and the line under the link says what filled and what wasn't found. Nothing read: the dialog stays open and
+     says why under the drop zone — no field changes, nothing is attached. */
+  const fillFromDocument = async (file?: File) => {
+    if (!file || fillBusy) return
+    setFillBusy(file.name); setFillError(null)
+    const r = await readLeadDocument(file, {
+      sources, ownEmails: team.map((m) => m.email ?? '').filter(Boolean), ownPhones: team.map((m) => phoneDigits(m.phone ?? '')).filter(Boolean),
     })
-    setFiles((fs) => (fs.includes(DOCUMENT_FILE) ? fs : [...fs, DOCUMENT_FILE]))
-    setExpanded(true)
+    setFillBusy(null)
+    if (!r.ok) { setFillError(unreadWords(r, file.name)); return }
+    const now = data as unknown as Record<string, string>
+    const filled: FillField[] = [], kept: FillField[] = []
+    for (const k of FILL_FIELDS) {
+      const v = r.fill[k]
+      if (!v) continue
+      const had = String(now[k] ?? '').trim()
+      if (!had) filled.push(k)
+      else if ((k === 'phone' ? phoneDigits(had) : had.toLowerCase()) !== (k === 'phone' ? v : v.toLowerCase())) kept.push(k)
+    }
+    const missing = CORE_FIELDS.filter((k) => !r.fill[k])
+    setData((d) => { const next = { ...d } as unknown as Record<string, string>; for (const k of filled) next[k] = r.fill[k]!; return next as unknown as LeadFormData })
+    setFiles((fs) => (fs.includes(file.name) ? fs : [...fs, file.name]))
+    setPicked((ps) => [...ps.filter((p) => p.name !== file.name), file])
+    if (filled.some((k) => (IN_MORE as ReadonlySet<string>).has(k))) setExpanded(true)
+    setFillNote([
+      filled.length ? `Filled from ${file.name}: ${fieldList(filled)}.` : `Read ${file.name} — nothing new to fill.`,
+      kept.length ? `Kept what you typed for ${fieldList(kept)}.` : null,
+      missing.length ? `Not found: ${fieldList(missing)}.` : null,
+    ].filter(Boolean).join(' '))
+    setFillOpen(false)
   }
   const dialogs = (
     <>
       <Dialog open={fillOpen} onClose={() => setFillOpen(false)} title="Fill from a document" width={400} size="compact" nested portal
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setFillOpen(false)}>Cancel</Button>
-                       <Button onPress={fillFromDocument}>Upload</Button></>}>
-        <Dropzone title={<>Drop in the document or <b>browse</b></>}
-                  helper="An enquiry email, a PDF or a screenshot — the details fill the empty fields, and the file is attached to the lead."
-                  onPick={() => fillFromDocument()} accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx" />
+                       <Button onPress={() => docInput.current?.click()} isDisabled={!!fillBusy}>{fillBusy ? 'Reading…' : 'Upload'}</Button></>}>
+        <Dropzone title={fillBusy ? <>Reading <b>{fillBusy}</b>…</> : <>Drop in the document or <b>browse</b></>}
+                  helper="An enquiry as a PDF, a spreadsheet or a text file — the client’s details it names fill the empty fields, and the file is attached to the lead."
+                  onBrowse={() => { if (!fillBusy) docInput.current?.click() }} onPick={(f) => { void fillFromDocument(f) }} label="Choose the document" />
+        <input ref={docInput} type="file" accept={DOCUMENT_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="fill-document-input"
+               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void fillFromDocument(f) }} />
+        {fillError ? <span className={styles.fillError} role="alert" data-testid="fill-document-error">{fillError}</span> : null}
       </Dialog>
       <Dialog open={!!dup} onClose={() => setDup(null)} title={dup?.matchedOn === 'email' ? 'A lead with this email already exists' : 'A lead with this phone already exists'} width={400} size="form" alert nested portal
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => { const id = dup?.id; setDup(null); if (id) openInNewTab(id) }}>Open existing lead</Button>
@@ -365,18 +384,21 @@ export function LeadFormModal({
              or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
           <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
-                      aria-label={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}>
+                      aria-label={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel */}
-            <SurfaceHead title={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'} onClose={onClose} className={styles.heading} />
+            <SurfaceHead title={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'} onClose={onClose} className={styles.heading} />   {/* (parity P-09) one title grammar on a project */}
 
             <div ref={scrollRef} className={styles.body}>
               <div className={styles.section}>
-                {form.mode === 'create' ? (
-                  /* (REG-609, parity Q-28) The scripted stand-in for 1.0's document read — Auto Fill's sparkle and words. */
+                {form.mode === 'create' && !trial ? (
+                  /* (REG-609, parity Q-28) Fill from a document, 1.0's document read in Auto Fill's sparkle and words — (S42F) it reads the picked
+                     file by rule (lib/leads/document-fill.ts), no model and no sample. (S43D, F2-03) */
                   <div className={styles.fillRow}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setFillOpen(true)}>Fill from a document</LinkButton>
+                    <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => { setFillError(null); setFillOpen(true) }}>Fill from a document</LinkButton>
+                    {/* (S42F) what the read filled and what it didn't find — the file's own words, never a sample */}
+                    {fillNote ? <span className={styles.fillNote} role="status" data-testid="fill-document-note">{fillNote}</span> : null}
                   </div>
                 ) : null}
                 <div className={styles.fieldWrap} data-field="name">
@@ -389,6 +411,17 @@ export function LeadFormModal({
                   <TextField label="Lead source" mode="select" value={data.source} options={data.source && !sources.includes(data.source) ? [data.source, ...sources] : sources} onChange={set('source')} />   {/* (REG-599) */}
                   <TextField label="Property type" mode="select" value={data.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
                 </div>
+                {/* (pending modules S05 — testers' L-3) An office or a shop: the company the lead works for and its UEN — the lead's name is the
+                    contact person; the NRIC / FIN under Additional info steps back. Shown only for a commercial property type. */}
+                {commercial ? (
+                  <div className={styles.fieldWrap} data-field="companyName" data-testid="lead-company">
+                    <div className={styles.fieldRow}>
+                      <TextField label="Company name" value={data.companyName} onChange={set('companyName')} maxLength={120} trailingIcon={null} />
+                      <TextField label="UEN" value={data.companyUen} onChange={(v) => set('companyUen')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.companyUen} />   {/* (S42 B-06) */}
+                    </div>
+                    <span className={styles.helper}>The lead’s name is the contact person at the company.</span>
+                  </div>
+                ) : null}
                 <div className={styles.fieldWrap} data-field="propertyAddress">
                   <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />
                   <span className={styles.helper}>Client project address.</span>
@@ -397,10 +430,10 @@ export function LeadFormModal({
                 <div className={styles.fieldWrap} data-field="district">
                   <TextField label="District" mode="select" value={data.district} options={DISTRICTS} onChange={set('district')} />
                 </div>
-                {/* Assign member (REG-231) — after Property address, per the request. Carries its own data-field. */}
-                <AssigneeField team={assignable ? team.filter((m) => assignable.includes(m.id) || data.assignees.includes(m.id)) : team} value={data.assignees} onChange={set('assignees')}
+                {/* Assign member (REG-231) — after Property address, per the request. Carries its own data-field. (S41b-3) none in the trial. */}
+                {trial ? null : <AssigneeField team={assignable ? team.filter((m) => assignable.includes(m.id) || data.assignees.includes(m.id)) : team} value={data.assignees} onChange={set('assignees')}
                                error={errors.assignees} inputRef={assigneeRef}
-                               locked={selfAssign && form.mode === 'create' ? 'This lead will be assigned to you. Your manager routes leads to teammates.' : undefined} />   {/* (REG-609, parity C-07) 1.0's lock note */}
+                               locked={selfAssign && form.mode === 'create' ? 'This lead will be assigned to you. Your manager routes leads to teammates.' : undefined} />}   {/* (REG-609, parity C-07) 1.0's lock note */}
               </div>
 
               <div className={styles.section}>
@@ -425,9 +458,31 @@ export function LeadFormModal({
                         <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
                         {/* (REG-607, parity Q-35) 1.0 keeps the client's IC and the studio's own reference on the lead; every new quote starts with them. */}
                         <div className={styles.fieldRow} data-field="nric">
-                          <TextField label="NRIC / FIN" value={data.nric} onChange={(v) => set('nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.nric} />
+                          {/* (pending modules S05 — testers' L-3) a company has a UEN, not an NRIC — one already typed stays, never lost */}
+                          {commercial && !data.nric ? null : <TextField label="NRIC / FIN" value={data.nric} onChange={(v) => set('nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.nric} />}
                           <TextField label="Customer ID" value={data.customerId} onChange={set('customerId')} maxLength={60} trailingIcon={null} />
                         </div>
+                        {/* (pending modules S05 — testers' L-4) A second client — co-owners: every new quote starts with them as its own second
+                            client (REG-588's words: "Second client" · "NRIC (second client)"), and Client access offers them as someone from the household. */}
+                        {second ? (
+                          <div className={styles.fieldWrap} data-field="client2Name" data-testid="lead-second-client">
+                            <div className={styles.secondList}>
+                              <div className={styles.fieldRow}>
+                                <TextField label="Second client" value={data.client2Name} onChange={set('client2Name')} maxLength={120} trailingIcon={null} error={errors.client2Name} />
+                                <TextField label="NRIC / FIN (second client)" value={data.client2Nric} onChange={(v) => set('client2Nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.client2Nric} />
+                              </div>
+                              <PhoneField label="Mobile (second client)" required={false} value={data.client2Phone} onChange={set('client2Phone')} error={errors.client2Phone} />
+                            </div>
+                            <span className={styles.helper}>A co-owner. New quotes name them beside {data.name.trim() ? data.name.trim().split(/\s+/)[0] : 'the client'}.</span>
+                            <span className={styles.secondRemove}>
+                              <Button appearance="text" onPress={() => { setData((d) => ({ ...d, client2Name: '', client2Nric: '', client2Phone: '' })); setSecond(false) }}>Remove the second client</Button>
+                            </span>
+                          </div>
+                        ) : (
+                          <div className={styles.fieldWrap} data-field="client2Name">
+                            <span className={styles.secondRemove}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></span>
+                          </div>
+                        )}
                         <div className={styles.fieldRow} data-field="budget">
                           <TextField label="Estimated budget (S$)" value={data.budget} numeric="amount"
                                      onChange={set('budget')} trailingIcon={null}
@@ -468,12 +523,12 @@ export function LeadFormModal({
                             </div>
                           </div>
                         ) : null}
-                        {form.mode === 'create' ? (
+                        {form.mode === 'create' && !trial ? (
                           /* (REG-609, parity C-08) Documents at creation — the Move stage window's Attach row; each file lands in the Files tab with the lead. */
                           <div className={styles.fieldWrap} data-field="files">
                             <SectionRow label="Attach files (optional)" action={<LinkButton icon="attach_file" onClick={() => fileInput.current?.click()}>Attach</LinkButton>} />
                             <input ref={fileInput} type="file" multiple hidden aria-hidden tabIndex={-1}
-                                   onChange={(e) => { const names = Array.from(e.target.files ?? []).map((f) => f.name); e.target.value = ''; if (names.length) setFiles((fs) => [...fs, ...names.filter((n) => !fs.includes(n))]) }} />
+                                   onChange={(e) => { const list = Array.from(e.target.files ?? []); const names = list.map((f) => f.name); e.target.value = ''; if (names.length) { setFiles((fs) => [...fs, ...names.filter((n) => !fs.includes(n))]); setPicked((ps) => [...ps.filter((p) => !names.includes(p.name)), ...list]) } }} />
                             {files.length ? (
                               <div className={styles.tiles} data-testid="attached-files">
                                 {files.map((f) => <FileTile key={f} name={f} kind={/\.pdf$/i.test(f) ? 'pdf' : 'image'} onDelete={() => setFiles((fs) => fs.filter((x) => x !== f))} />)}
@@ -487,11 +542,30 @@ export function LeadFormModal({
                   ) : null}
                 </AnimatePresence>
               </div>
+              {project ? (
+                /* (parity P-09 · D-08) The project's own section after the lead's block — the Custom fields block's look (a titled group of the
+                   house fields): its name (Rename's field, REG-925 — the ⋮ no longer renames), its type and the rooms in its scope (the
+                   project details dialog's fields, gaps build A — 7). */
+                <div className={styles.section} data-testid="project-details-section">
+                  <div className={styles.fieldWrap} data-field="projectName">
+                    <span className={styles.customTitle}>Project</span>
+                    <TextField label="Project name" required value={proj.name} maxLength={NAME_MAX} onChange={(v) => setProj((x) => ({ ...x, name: v }))} trailingIcon={null}
+                               error={projectNameError} inputRef={projectNameRef} />
+                  </div>
+                  <div className={styles.fieldWrap} data-field="projectType">
+                    <TextField label="Project type" required mode="select" value={proj.projectType} options={[...PROJECT_TYPES]} onChange={(v) => setProj((x) => ({ ...x, projectType: v }))} />
+                  </div>
+                  <div className={styles.customChips} data-field="scope">
+                    <span className={styles.customLabel}>Rooms in the scope</span>
+                    <Chips multiple label="Rooms in the scope" options={ROOMS} value={proj.scope} onChange={(v) => setProj((x) => ({ ...x, scope: ROOMS.filter((r) => v.includes(r)) }))} testId="scope-chips" />
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
               <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={submitting}>Cancel</Button>
-              <Button onPress={() => { void submit() }} isDisabled={submitting}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
+              <Button onPress={() => { void submit() }} isDisabled={submitting} data-testid={project ? 'details-save' : undefined}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
             </SurfaceFoot>
           </motion.div>
         </motion.div>

@@ -1,0 +1,21 @@
+/*
+ * (simplify S-10) Finance › To do on the house pieces: Finance's page and toolbar (finance.module.css), the house tables (plan.module.css) and the
+ * Money tab's cells (money.module.css) are composed, never copied. What is here is To do's own: the one red (a debt of ours past its day, S-05)
+ * and the "what to know" line. Tokens only.
+ */
+.page { composes: page from '../finance.module.css'; gap: var(--om-spacing-6); }
+.late { color: var(--om-color-tertiary-red-default); }
+.know { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* the phone's chips: one row that scrolls (the house chip rail) */
+.rail { width: 100%; min-width: 0; }
+/* (parity map, MO-084 · FB-009) Recently — the quiet list at To do's end: the kind's chip, what happened over its project and when, the amount */
+.recent { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentRow { display: grid; grid-template-columns: 96px minmax(0, 1fr) max-content; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentKind { display: inline-flex; min-width: 0; }
+.recentText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.recentText > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recentAmount { text-align: right; font: var(--om-type-body-m); }
+@media (max-width: 767px) {
+  .recentRow { grid-template-columns: minmax(0, 1fr) max-content; }
+  .recentKind { grid-column: 1 / -1; }
+}

@@ -237,7 +237,7 @@
   "area": "An item",
   "feature": "Unit, cost type, waste %",
   "now": "Built",
-  "why": "Unit and kind; no waste % (Finance)"
+  "why": "Unit, kind and “Waste (%)” on purchase items, added on orders (S12)"
  },
  {
   "key": "PB",
@@ -381,7 +381,7 @@
   "area": "Imports and exports",
   "feature": "Vendor default markup",
   "now": "Built in parity round 4",
-  "why": "Bulk Set markup re-prices items; no vendor directory"
+  "why": "Bulk “Set markup” re-prices items; Finance › Vendors keep no markup"
  },
  {
   "key": "PB",
@@ -452,8 +452,8 @@
   "id": "QU-08",
   "area": "The book inside a quote",
   "feature": "Auto-match, AI suggestions, smart search",
-  "now": "Platform",
-  "why": "The platform's (Q-16)"
+  "now": "Built",
+  "why": "“Match N lines” to My Items by rule, new items offered (S12); no AI search"
  },
  {
   "key": "PB",
@@ -493,7 +493,7 @@
   "area": "Around the book",
   "feature": "AI around the book",
   "now": "Platform",
-  "why": "The platform's (Q-16)"
+  "why": "Draft with Maison AI reads the book by rule (S04); models stay the platform’s"
  },
  {
   "key": "PB",
@@ -508,8 +508,8 @@
   "id": "PZ-01",
   "area": "Touchpoints",
   "feature": "Purchase orders, waste, Finance vendors",
-  "now": "Later",
-  "why": "Finance module"
+  "now": "Built",
+  "why": "Orders from the quote add each item’s waste; vendors from Finance › Vendors (S12)"
  },
  {
   "key": "PB",

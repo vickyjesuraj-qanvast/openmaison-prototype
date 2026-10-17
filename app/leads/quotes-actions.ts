@@ -1,22 +1,24 @@
 'use server'
 
+import { requirePlan } from '@/lib/credits/plan-gate'
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray, sql, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts, leadTasks, leads, members, notifications, quoteComparisons, quoteFiles, quoteItemComments, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, quotePayments, taskAssignees, type QuoteItem, type QuotePayment } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
-import { canDeleteQuote, statusBlock } from '@/lib/quotes/policy'
-import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
+import { asksBeforeMarking as isClientStatus, canDeleteQuote, statusBlock } from '@/lib/quotes/policy'
+import { VO_DELETE_RULE, variationDeleteBlock } from '@/lib/projects/money'   // (parity map, MI-104)
+import { sessionMemberId } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
 import { revalidateLead } from '@/lib/leads/queries'
-import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
+import { isFixedRow, presetRows, scheduleAnchors } from '@/lib/quotes/payments'
 import { projectRef, validUntil, propertyFamily } from '@/lib/quotes/refs'
 import { parseDefaults, parseDesign, type TemplateDefaults } from '@/lib/templates/model'
 import { cleanGroups, viewForTemplate } from '@/lib/templates/picker'
 import { presetByKey } from '@/lib/templates/presets'
 import { quoteItems } from '@/lib/db/schema'
-import { resolveTokens } from '@/lib/quotes/text'
+import { quoteTokenValues, resolveTokens } from '@/lib/quotes/text'
 import { fetchStudio, fetchNumbering, NUMBERING_KEY, fetchQuoteApproval, fetchQuoteRules, isApprover } from '@/lib/settings/queries'
 import { changesPayments, defaultNextNumber, formatQuoteNumber, initialsOf, isDefaultNumbering, nextSequence } from '@/lib/settings/types'
 import { settings } from '@/lib/db/schema'
@@ -27,12 +29,18 @@ import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
 import { fetchLeadContracts } from '@/lib/leads/contracts'
 import { createQuoteItem, createQuoteItems, type BulkLine } from '@/app/quotes/items-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) the editors' answers, a refusal thrown on
+import { newShareToken } from '@/lib/projects/invoices-token'
+import { syncPreparedSnapshot } from '@/lib/quotes/prepared-server'
+import { deskRefusal, offDesk } from '@/lib/quotes/desk'   // (S45C) the editors' role rule (S44Z)
+import type { Refusal } from '@/lib/company/template-rules'
 
 /* Lead Details › Quotes (910-36240). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every quote milestone. */
 const touch = (leadId: string) => revalidateLead(leadId)
-const ME = sessionMemberSql   // (REG-667) the signed-in member, resolved inside each write
+/* (REG-286 · REG-667 · pending modules S43A) Every write stamp is the signed-in member — this browser's (`sessionMemberId()`), read before a
+   transaction opens and passed in as a value. */
 
 /**
  * Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). (REG-561) A studio with its own
@@ -58,8 +66,10 @@ async function nextNumber(creator?: { name: string } | null, at = new Date(), pr
  * and stamping that template's "used n ago". A template id that is not the studio's is refused.
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-export async function createQuote(leadId: string, templateId: string | null = null, opts: { id?: string } = {}): Promise<string> {
-  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate, icNumber: leads.icNumber, customerId: leads.customerId }).from(leads).where(eq(leads.id, leadId))
+export async function createQuote(leadId: string, templateId: string | null = null, opts: { id?: string } = {}): Promise<string | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
+  if (templateId) { const lock = await requirePlan('template_editor'); if (lock) throw new Error(lock.error) }   // (pending modules S19) picking a template is Pro
+  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate, icNumber: leads.icNumber, customerId: leads.customerId, client2Name: leads.client2Name, client2Nric: leads.client2Nric }).from(leads).where(eq(leads.id, leadId))
   if (!lead) throw new Error('lead not found')
   // (REG-489) The template's Defaults tab decides what the quote starts with; the quote pins the template's current version.
   let template: { id: string; version: number; defaults: TemplateDefaults; view: 'none' | 'category' | 'room' | 'section' } | null = null
@@ -72,21 +82,25 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   /* (REG-580) A Blank Quote prints through the studio's default template, so it starts with that template's settings too — the same
      split, validity, GST, signature, texts and working columns a quote from it would get, with an empty table (no starter sections). */
   let blank: TemplateDefaults | null = null
+  /* (S44Q — row 312, triage §12.10 · M11) …and it is pinned to that template's version as a quote from a tile is: it printed through the
+     default's LATEST design for ever — a template edited after the quote went out changed the client's paper, and a new default changed it
+     again. Nothing about its look changes on the day it is made. */
+  let pin: { id: string; version: number } | null = null
   if (!templateId) {
-    const [def] = await db.select({ defaultsJson: quoteTemplates.defaultsJson }).from(quoteTemplates).where(and(eq(quoteTemplates.isDefault, true), eq(quoteTemplates.status, 'published'), isNull(quoteTemplates.deletedAt)))
-    if (def) blank = { ...parseDefaults(def.defaultsJson), starterGroups: [] }
+    const [def] = await db.select({ id: quoteTemplates.id, version: quoteTemplates.version, defaultsJson: quoteTemplates.defaultsJson }).from(quoteTemplates).where(and(eq(quoteTemplates.isDefault, true), eq(quoteTemplates.status, 'published'), isNull(quoteTemplates.deletedAt)))
+    if (def) { blank = { ...parseDefaults(def.defaultsJson), starterGroups: [] }; pin = { id: def.id, version: def.version } }
   }
   const defaults = template?.defaults ?? blank
   // (REG-403) The editor's General Info opens filled from the records that exist: the lead's property type and address,
   // and the signed-in member as "Prepared by". The section order / state stays null = the default (lib/quotes/sections.ts).
-  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.id, await sessionMemberId()))
   /* (REG-704, AI credits B-12) a quote read from a file is created under the id its read was charged to (`quote:<id>`), so Usage ties
      the 5 AI credits to this quote and its lead; an id already taken falls back to a fresh one */
   const asked = opts.id && UUID.test(opts.id) ? opts.id : null
   const taken = asked ? (await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.id, asked))).length > 0 : true
   const id = asked && !taken ? asked : randomUUID(); const now = new Date()
   const studio = await fetchStudio()
-  const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
+  const tokens = quoteTokenValues({ client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' })   // (S44Q, row 311) the studio's tokens land as live fields
   const textOf = async (textId: string | null) => { if (!textId) return null; const [t] = await db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.id, textId), isNull(quoteTextTemplates.deletedAt))); return t ? resolveTokens(t.body, tokens) : null }   // (REG-581) a deleted text never seeds
   const [termsHtml, notesHtml] = await Promise.all([textOf(defaults?.termsTemplateId ?? null), textOf(defaults?.notesTemplateId ?? null)])
   // Project Ref # and Quote Valid Until are records from the start (REG-403 / lib/quotes/refs.ts): the property's family, the
@@ -95,7 +109,10 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
   await db.insert(quotes).values({
     id, leadId, number: await nextNumber(me ?? null, now, lead.propertyType), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
-    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, nric: lead.icNumber ?? null, customerId: lead.customerId ?? null /* (REG-607) the lead's IC and reference start every quote */, templateId, templateVersion: template?.version ?? null,
+    confirmToken: newShareToken(),   // (pending modules S04) the confirmation link's own key — never the quote's id
+    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, nric: lead.icNumber ?? null, customerId: lead.customerId ?? null /* (REG-607) the lead's IC and reference start every quote */,
+    client2Name: lead.client2Name ?? null, client2Nric: lead.client2Nric ?? null,   // (pending modules S05 — testers' L-4) the lead's second client starts every quote as its own (REG-588)
+    templateId: templateId ?? pin?.id ?? null, templateVersion: template?.version ?? pin?.version ?? null,   // (S44Q, row 312) a Blank Quote is pinned too
     validUntil: defaults ? new Date(now.getTime() + defaults.validityDays * 86_400_000) : validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
     gstEnabled: studio.gstRegistered && (defaults?.gstEnabled ?? true), clientSignatureRequired: defaults?.signatureRequired ?? true, termsHtml, notesHtml,   // (REG-645) a studio not registered for GST starts quotes without it
     itemsColumns: columnsJson(defaults?.columns ?? null),   // (REG-538) the template's working columns
@@ -134,7 +151,9 @@ export type AppliedDefaults = {
  * templates (only where the template names one), the working columns, and the starter sections when the table is still
  * empty. The lines stay. Never silent: the editor asks first.
  */
-export async function applyTemplateDefaults(quoteId: string, templateId: string): Promise<AppliedDefaults> {
+export async function applyTemplateDefaults(quoteId: string, templateId: string): Promise<AppliedDefaults | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
+  { const lock = await requirePlan('template_editor'); if (lock) throw new Error(lock.error) }   // (pending modules S19) a template's defaults are Pro
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
   if (q.status !== 'Draft') throw new Error('only a draft takes a template’s defaults')
@@ -144,19 +163,25 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
   const view = viewForTemplate(parseDesign(t.designJson, presetByKey('letter').design()))
   const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, q.leadId))
   if (!lead) throw new Error('lead not found')
-  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.id, await sessionMemberId()))
   const studio = await fetchStudio()
-  const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
+  const tokens = quoteTokenValues({ client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' })   // (S44Q, row 311) the studio's tokens land as live fields
   const textOf = async (textId: string | null) => { if (!textId) return null; const [x] = await db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.id, textId), isNull(quoteTextTemplates.deletedAt))); return x ? resolveTokens(x.body, tokens) : null }   // (REG-581)
   const [termsHtml, notesHtml] = await Promise.all([textOf(defaults.termsTemplateId), textOf(defaults.notesTemplateId)])
   const now = new Date()
   const rows = presetRows(defaults.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: q.createdAt, propertyType: q.propertyType ?? lead.propertyType }), await fetchPaymentSplits())
   /* (REG-589) With the schedule locked to Owners and Admins, a designer's Apply defaults leaves the milestones as they are. */
-  const [rules, [meRole]] = await Promise.all([fetchQuoteRules(), db.select({ role: members.role }).from(members).where(eq(members.isYou, true))])
+  const [rules, [meRole]] = await Promise.all([fetchQuoteRules(), db.select({ role: members.role }).from(members).where(eq(members.id, await sessionMemberId()))])
   const keepPayments = !changesPayments(meRole?.role, rules.paymentLock)
   if (!keepPayments) {
+    /* (S44O — UAT row 297, her UAT ask 2026-10-15) a quote that opens with a fixed design fee keeps it first, with its own word: the template's
+       split (shares only, MI-021) shares what the fee leaves — Apply defaults rewrote the schedule as % rows and the fee was gone */
+    const [first] = await db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position).limit(1)
+    const fee = first && isFixedRow(first, 0) ? first : null
+    const next = fee ? [{ name: fee.name, description: fee.description, pct: 0, dueKind: fee.dueKind, dueAt: fee.dueAt, fixedMinor: fee.fixedMinor, fixedLabel: fee.fixedLabel }, ...rows] : rows
     await db.delete(quotePayments).where(eq(quotePayments.quoteId, quoteId))
-    await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
+    await db.insert(quotePayments).values(next.map((r, position) => ({ id: randomUUID(), quoteId, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt,
+      fixedMinor: position === 0 ? r.fixedMinor ?? null : null, fixedLabel: position === 0 && r.fixedMinor ? r.fixedLabel ?? null : null, createdAt: now, updatedAt: now })))
   }
   const [had] = await db.select({ n: sql<number>`count(*)` }).from(quoteItems).where(eq(quoteItems.quoteId, quoteId))
   const groups = cleanGroups(defaults.starterGroups)
@@ -168,8 +193,11 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
       visibility: 'visible', collapsed: false, createdAt: now, updatedAt: now,
     })))
   }
+  /* (S43D, F2-04 — 1.0's quotes/port Phase 9 §B.7) a template's GST default never turns GST on under an issuing entity that is not
+     GST-registered (REG-593: the picked entity's own registration, else the studio's) — the rule a new quote already keeps (REG-645) */
+  const registered = q.issuingEntity ? ((await (await import('@/lib/templates/queries')).fetchBrand()).details.entities.find((e) => e.name === q.issuingEntity)?.gstRegistered ?? true) : studio.gstRegistered
   const patch = {
-    validUntil: new Date(now.getTime() + defaults.validityDays * 86_400_000), gstEnabled: defaults.gstEnabled, clientSignatureRequired: defaults.signatureRequired,
+    validUntil: new Date(now.getTime() + defaults.validityDays * 86_400_000), gstEnabled: registered && defaults.gstEnabled, clientSignatureRequired: defaults.signatureRequired,
     termsHtml: termsHtml ?? q.termsHtml, notesHtml: notesHtml ?? q.notesHtml, itemsColumns: columnsJson(defaults.columns) ?? q.itemsColumns,
     itemsView: seedGroups ? 'none' : q.itemsView, updatedAt: now,
   }
@@ -179,20 +207,28 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
     db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId)).orderBy(quoteItems.position, quoteItems.createdAt),
   ])
   touch(q.leadId); revalidatePath(`/quotes/${quoteId}`); revalidatePath(`/quotes/${quoteId}/preview`)
-  return { updatedAt: now.getTime(), validUntil: patch.validUntil.getTime(), gstEnabled: patch.gstEnabled, signatureRequired: patch.clientSignatureRequired, termsHtml: patch.termsHtml, notesHtml: patch.notesHtml, itemsColumns: patch.itemsColumns, itemsView: patch.itemsView, payments, items }
+  /* (pending modules S41b-1) the lines go back to the editor as this member may see them */
+  const { linesFor, sightOf } = await import('@/lib/quotes/cost-sight')
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  return { updatedAt: now.getTime(), validUntil: patch.validUntil.getTime(), gstEnabled: patch.gstEnabled, signatureRequired: patch.clientSignatureRequired, termsHtml: patch.termsHtml, notesHtml: patch.notesHtml, itemsColumns: patch.itemsColumns, itemsView: patch.itemsView, payments, items: linesFor(items, sightOf(await fetchViewer())) }
 }
 
 /** (REG-538) ⋯ › Duplicate and Edit: a Draft copy of the quote — lines, schedule, files, settings, template — with its own number, titled "(copy)". */
-export async function duplicateQuote(quoteId: string): Promise<string> {
+export async function duplicateQuote(quoteId: string): Promise<string | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
-  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.id, await sessionMemberId()))
   const id = randomUUID(); const now = new Date()
   await db.insert(quotes).values({
     ...q, id, number: await nextNumber(me ?? null, now, q.propertyType), title: `${q.title} (copy)`, status: 'Draft', createdAt: now, updatedAt: now, createdBy: me?.id ?? q.createdBy, revisedAt: null, discountsJson: q.discountsJson,
     sentAt: null, approvedAt: null, dueAt: null, archivedAt: null, deletedAt: null, validUntil: q.validUntil && q.validUntil > now ? q.validUntil : validUntil(now),
     /* (parity §8.2 · E-10, REG-624) A copy is a new quote: version 1, no client confirmation, no approval on its record. */
     version: 1, confirmedAt: null, confirmedBy: null, signedAt: null, approvedBy: null, submittedAt: null, submittedBy: null, reviewNote: null, reviewedBy: null, reviewedAt: null, clientSentAt: null,
+    /* (pending modules S04) its own links and none of the original's client record: a new confirmation token, no view-only link (the copied
+       token broke the unique index — S02's link made every Duplicate fail), never opened, no kept preparer, not signed, nothing asked or declined */
+    confirmToken: newShareToken(), viewToken: null, viewTokenAt: null, viewTokenBy: null, clientViewedAt: null, clientLastViewedAt: null, clientViewCount: 0,
+    preparedJson: null, gstRule: null /* (S44O — C3) a new quote follows today's GST rule */, draftBrief: null, signedAmountMinor: null, changeAskedAt: null, changeAskedNote: null, declinedAt: null, declinedNote: null, declinedBy: null, confirmedVia: null, confirmedMarkedBy: null,
   })
   const [items, payments, files] = await Promise.all([
     db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId)).orderBy(quoteItems.position, quoteItems.createdAt),
@@ -211,24 +247,33 @@ export async function duplicateQuote(quoteId: string): Promise<string> {
  * (REG-627, quote editor parity Q-16) Upload a quote: a new quote on the lead from the template the window chose (or blank), its lines as the
  * upload read them — each group into the template's starter section of that name when there is one, else a new section at the end; lines
  * with no group at the top level. Every line goes through the paste path's own bounds (`createQuoteItems`). Returns the new quote's id.
+ * (pending modules S12 — card held:price-book, "cost filled after an upload") then the lines whose whole price sits in their cost take their
+ * **sure** My Items match — the item's cost, the client's price kept (1.0 filled its high tier after a parse); `matched` says how many.
  */
-export async function createQuoteFromUpload(leadId: string, templateId: string | null, groups: { name: string | null; lines: BulkLine[] }[], quoteId?: string): Promise<string> {
-  const id = await createQuote(leadId, templateId, { id: quoteId })
+export async function createQuoteFromUpload(leadId: string, templateId: string | null, groups: { name: string | null; lines: BulkLine[] }[], quoteId?: string): Promise<{ id: string; matched: number } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
+  if (templateId) { const lock = await requirePlan('template_editor'); if (lock) throw new Error(lock.error) }   // (pending modules S19)
+  const id = await orThrow(createQuote(leadId, templateId, { id: quoteId }))
   const tops = (await db.select().from(quoteItems).where(and(eq(quoteItems.quoteId, id), isNull(quoteItems.parentId)))).filter((i) => i.kind === 'group')
   for (const g of groups.slice(0, 60)) {
     const lines = g.lines.slice(0, 500)
     if (!lines.length) continue
     const name = (g.name ?? '').trim().slice(0, 200)
-    if (!name) { await createQuoteItems(id, lines); continue }
-    const host = tops.find((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ?? await createQuoteItem(id, { kind: 'group', name })
-    await createQuoteItems(id, lines, { parentId: host.id })
+    if (!name) { await orThrow(createQuoteItems(id, lines)); continue }
+    const host = tops.find((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ?? await orThrow(createQuoteItem(id, { kind: 'group', name }))
+    await orThrow(createQuoteItems(id, lines, { parentId: host.id }))
   }
-  return id
+  const { fillUploadFromBook } = await import('@/lib/quotes/book-fill')
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const matched = await fillUploadFromBook(id, await fetchViewer())
+  if (matched) { const [q] = await db.select({ leadId: quotes.leadId }).from(quotes).where(eq(quotes.id, id)); if (q) touch(q.leadId); revalidatePath(`/quotes/${id}`) }
+  return { id, matched }
 }
 
 /** Template tile kebab › Set as default (REG-412): one default at a time, studio-wide. (audit 2026-09-26, E7) The Create Quote modal's tile
     goes through Company › Templates' own action, so REG-646's rule holds here too: only an Owner or an Admin sets the studio's default. */
 export async function setDefaultTemplate(templateId: string) {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const { setDefaultTemplate: set } = await import('@/app/company/templates-actions')
   return set(templateId)
 }
@@ -243,28 +288,34 @@ async function leadOf(quoteId: string): Promise<string | null> {
  * Signed stamped it too, which dated an approval that never happened — Draft › Signed is one click, and a studio
  * with Quote approval off (quoteStatuses()) has no Approved step at all. Approval Date stays "-" until then (REG-176).
  */
-export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Promise<void> {
+export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Promise<void | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   // (REG-286) A server action is a public endpoint: `status` is written straight into the column the row menu, the
   // filters and the Overview widget's track all read back, so it must be one of the five (isQuoteStatus, 910:36673).
   if (!isQuoteStatus(status)) throw new Error(`Unknown quote status: ${String(status)}`)
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) return
-  const [meRow] = await db.select({ id: members.id, role: members.role }).from(members).where(eq(members.isYou, true))
+  const [meRow] = await db.select({ id: members.id, role: members.role }).from(members).where(eq(members.id, await sessionMemberId()))
   /* (REG-590) With approval required, Approved is an approver's word: an Owner, an Admin or the studio's backup approver. */
   if (status === 'Approved' && (await fetchQuoteApproval()) === 'required') { if (!(await isApprover(meRow?.id, meRow?.role))) throw new Error('only an approver marks a quote Approved') }
   /* (UX audit Q3) Nothing reaches the client's statuses before an approver's OK (lib/quotes/policy.ts `statusBlock`). */
-  const blocked = statusBlock({ target: status, current: q.status, approval: await fetchQuoteApproval(), approver: await isApprover(meRow?.id, meRow?.role) })
+  const approval = await fetchQuoteApproval(), approver = await isApprover(meRow?.id, meRow?.role)
+  const blocked = statusBlock({ target: status, current: q.status, approval, approver })
   if (blocked) throw new Error(blocked)
   const now = new Date()
   const patch: Partial<typeof quotes.$inferInsert> = { status, updatedAt: now }
+  /* (S44Q — row 334) an approver marking their Draft (or one waiting) as with the client approves it, stamped as their Send stamps it (REG-624) */
+  if (approval === 'required' && approver && (q.status === 'Draft' || q.status === 'Sent for Approval') && isClientStatus(status) && !q.approvedAt) { patch.approvedAt = now; patch.approvedBy = meRow?.id ?? null }
   if ((status === 'Sent for Approval' || status === 'Sent to Client') && !q.sentAt) patch.sentAt = now
   if (status === 'Approved' && !q.approvedAt) { patch.approvedAt = now; patch.approvedBy = meRow?.id ?? null }   // (REG-624) on the record as who approved
   if (status === 'Sent for Approval' && q.status !== 'Sent for Approval') { patch.submittedAt = now; patch.submittedBy = meRow?.id ?? null }
   if (status === 'Sent to Client' && !q.clientSentAt) patch.clientSentAt = now
   if (status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed') patch.visibility = 'Shared'   // (REG-625) the client has it
   if (status === 'Signed' && !q.signedAt) patch.signedAt = now   // (REG-626) signed by hand — the date the lists and the Won step read
-  if (status === 'Confirmed' && !q.confirmedAt) { patch.confirmedAt = now; if (!q.sentAt) patch.sentAt = now }   // (REG-587) marked by hand — the client said so on the phone
+  if (status === 'Signed' && q.status !== 'Signed') patch.signedAmountMinor = q.amountMinor   // (pending modules S03 — 1.0 froze it at signing) the contract's value
+  if (status === 'Confirmed' && !q.confirmedAt) { patch.confirmedAt = now; if (!q.sentAt) patch.sentAt = now; patch.confirmedVia = 'marked'; patch.confirmedMarkedBy = meRow?.id ?? null }   // (REG-587) marked by hand — the client said so on the phone · (S44F — NB-04) on the record as marked, and by whom (a variation order's rule)
   await db.update(quotes).set(patch).where(eq(quotes.id, quoteId))
+  await syncPreparedSnapshot(quoteId)   // (pending modules S04) with the client now: the paper keeps its preparer
   touch(q.leadId)
 }
 
@@ -275,7 +326,8 @@ export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Prom
  * assigned to whoever prepared the quote — moving it keeps the task's date in step, and clearing it removes the task while it
  * is still open (a completed one stays as history). The task remembers its quote (`quote_id`), so there is never a second.
  */
-export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<void> {
+export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<void | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const [q] = await db.select({ leadId: quotes.leadId, number: quotes.number, title: quotes.title, preparedBy: quotes.preparedBy }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) return
   await db.update(quotes).set({ dueAt, updatedAt: new Date() }).where(eq(quotes.id, quoteId))
@@ -285,12 +337,13 @@ export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<
       await db.update(leadTasks).set({ dueAt, updatedAt: new Date() }).where(eq(leadTasks.id, task.id))
     } else {
       const id = randomUUID(); const now = new Date()
-      const owner = q.preparedBy ?? await sessionMemberId()
+      const me = await sessionMemberId()
+      const owner = q.preparedBy ?? me
       await db.transaction(async (tx) => {
         await tx.insert(leadTasks).values({
           id, leadId: q.leadId, quoteId, title: `Follow up on quote ${q.number}`, kind: 'Follow-up',   /* (REG-608) a follow-up is a task of its own kind */
           description: `${q.title} is due on ${displayDate(dueAt)} — chase the client for a decision before then.`,
-          dueAt, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: null,
+          dueAt, done: false, createdAt: now, creatorId: me, seenAt: null, updatedAt: null,
         })
         await tx.insert(taskAssignees).values({ taskId: id, memberId: owner })
       })
@@ -304,7 +357,8 @@ export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<
 }
 
 /** Row kebab › Archive (910:36723) — soft; `restore` is the snackbar's Undo. */
-export async function archiveQuote(quoteId: string, restore = false): Promise<void> {
+export async function archiveQuote(quoteId: string, restore = false): Promise<void | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const leadId = await leadOf(quoteId); if (!leadId) return
   await db.update(quotes).set({ archivedAt: restore ? null : new Date() }).where(eq(quotes.id, quoteId))
   touch(leadId); revalidatePath('/quotes')   // (sweep S1) Tools › Quotes lists it too — the row stayed there after Archive
@@ -316,16 +370,18 @@ export async function archiveQuote(quoteId: string, restore = false): Promise<vo
  * asks no role, so neither does Unarchive; Who sees leads decides which rows show.
  */
 export type ArchivedQuoteRow = { id: string; number: string; title: string; leadId: string; leadName: string; status: string; amountMinor: number; archivedAt: number }
-export async function listArchivedQuotes(leadId: string | null): Promise<ArchivedQuoteRow[]> {
+export async function listArchivedQuotes(leadId: string | null, kind: 'quote' | 'variation' = 'quote'): Promise<ArchivedQuoteRow[]> {
+  if (await offDesk()) return []   // (S45C) the editors' role rule (S44Z): Marketing reads nothing here
   const seen = await visibleLeadIds(await fetchViewer())
   const rows = await db.select({ q: quotes, leadName: leads.name }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
-    .where(and(isNotNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt), leadId ? eq(quotes.leadId, leadId) : undefined))
+    .where(and(isNotNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt), eq(quotes.kind, kind), leadId ? eq(quotes.leadId, leadId) : undefined))   // (fix-G, G-11) a variation order is never in a quote list (REG-1000)
   return rows.filter((r) => !seen || seen.has(r.q.leadId)).map((r) => ({
     id: r.q.id, number: r.q.number, title: r.q.title, leadId: r.q.leadId, leadName: r.leadName, status: r.q.status, amountMinor: r.q.amountMinor,
     archivedAt: r.q.archivedAt!.getTime(),
   })).sort((a, b) => b.archivedAt - a.archivedAt)
 }
-export async function unarchiveQuotes(quoteIds: string[]): Promise<{ restored: number }> {
+export async function unarchiveQuotes(quoteIds: string[]): Promise<{ restored: number } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const seen = await visibleLeadIds(await fetchViewer())
   const rows = quoteIds.length ? await db.select({ id: quotes.id, leadId: quotes.leadId }).from(quotes).where(and(inArray(quotes.id, quoteIds), isNotNull(quotes.archivedAt), isNull(quotes.deletedAt))) : []
   const back = rows.filter((q) => !seen || seen.has(q.leadId))
@@ -347,6 +403,7 @@ export type StageDocuments = {
  * A quote has no signed stamp of its own: the Signed move stamps `updatedAt` (setQuoteStatus), so that is its signed date.
  */
 export async function fetchStageDocuments(leadId: string): Promise<StageDocuments> {
+  if (await offDesk()) return { quotes: [], contracts: [] }   // (S45C) the editors' role rule (S44Z): Marketing reads nothing here
   const [q, c] = await Promise.all([fetchLeadQuotes(leadId), fetchLeadContracts(leadId)])
   return {
     quotes: q.quotes.map((x) => ({
@@ -362,25 +419,31 @@ export async function fetchStageDocuments(leadId: string): Promise<StageDocument
  * Row kebab › Delete / bulk Delete — soft, so Deleted Quotes (the toolbar's kebab) lists them. (REG-625, parity Q-28) Only an Owner, an
  * Admin or the member who created a quote deletes it: the others in the list are left and counted back.
  */
-export async function deleteQuotes(quoteIds: string[]): Promise<{ deleted: number; refused: number }> {
+export async function deleteQuotes(quoteIds: string[]): Promise<{ deleted: number; refused: number; /** (parity map, MI-104) the rule that kept one */ error?: string } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   if (!quoteIds.length) return { deleted: 0, refused: 0 }
   const viewer = await fetchViewer()
-  const rows = await db.select({ id: quotes.id, leadId: quotes.leadId, createdBy: quotes.createdBy }).from(quotes).where(and(inArray(quotes.id, quoteIds), isNull(quotes.deletedAt)))
-  const mine = rows.filter((q) => canDeleteQuote(viewer, q))
+  const rows = await db.select({ id: quotes.id, leadId: quotes.leadId, createdBy: quotes.createdBy, kind: quotes.kind, status: quotes.status, projectId: quotes.projectId }).from(quotes).where(and(inArray(quotes.id, quoteIds), isNull(quotes.deletedAt)))
+  /* (parity map, MI-104 — 1.0's rule) an approved variation order is part of the contract: it is never deleted (it dropped out of the contract
+     with no re-size) — the rule answers for it; a Draft, one with the client or one they declined still deletes */
+  const held = rows.filter((q) => q.kind === 'variation' && !!variationDeleteBlock(q.status))
+  const mine = rows.filter((q) => !held.includes(q) && canDeleteQuote(viewer, q))
   if (mine.length) await db.update(quotes).set({ deletedAt: new Date() }).where(inArray(quotes.id, mine.map((q) => q.id)))
   for (const leadId of new Set(mine.map((q) => q.leadId))) touch(leadId)
+  for (const projectId of new Set(mine.map((q) => q.projectId).filter((x): x is string => !!x))) revalidatePath(`/projects/${projectId}/money`)   // (parity map, MI-104) a VO deleted from Money
   revalidatePath('/quotes')
-  return { deleted: mine.length, refused: rows.length - mine.length }
+  return { deleted: mine.length, refused: rows.length - mine.length, ...(held.length ? { error: VO_DELETE_RULE } : {}) }
 }
 
 /* ── (REG-625, parity Q-27) Deleted Quotes: the list, Restore, Delete forever, Empty Trash ── */
 export type DeletedQuoteRow = { id: string; number: string; title: string; leadId: string; leadName: string; status: string; amountMinor: number; deletedAt: number; mine: boolean; heldBy: string | null }
 /** The deleted quotes on a lead (or, with null, on every lead the member sees), newest deletion first. */
-export async function listDeletedQuotes(leadId: string | null): Promise<DeletedQuoteRow[]> {
+export async function listDeletedQuotes(leadId: string | null, kind: 'quote' | 'variation' = 'quote'): Promise<DeletedQuoteRow[]> {
+  if (await offDesk()) return []   // (S45C) the editors' role rule (S44Z): Marketing reads nothing here
   const viewer = await fetchViewer()
   const seen = await visibleLeadIds(viewer)
   const rows = await db.select({ q: quotes, leadName: leads.name }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
-    .where(and(isNotNull(quotes.deletedAt), isNull(leads.deletedAt), leadId ? eq(quotes.leadId, leadId) : undefined))
+    .where(and(isNotNull(quotes.deletedAt), isNull(leads.deletedAt), eq(quotes.kind, kind), leadId ? eq(quotes.leadId, leadId) : undefined))   // (fix-G, G-11) Deleted Quotes lists quotes; a project's Money tab its variation orders
   const held = await contractHolds(rows.map((r) => r.q.id))
   return rows.filter((r) => !seen || seen.has(r.q.leadId)).map((r) => ({
     id: r.q.id, number: r.q.number, title: r.q.title, leadId: r.q.leadId, leadName: r.leadName, status: r.q.status, amountMinor: r.q.amountMinor,
@@ -393,7 +456,8 @@ async function contractHolds(quoteIds: string[]): Promise<Map<string, string>> {
   const rows = await db.select({ quoteId: contracts.fromQuoteId, title: contracts.title }).from(contracts).where(and(inArray(contracts.fromQuoteId, quoteIds), isNull(contracts.deletedAt)))
   return new Map(rows.filter((r) => r.quoteId).map((r) => [r.quoteId!, r.title]))
 }
-export async function restoreQuotes(quoteIds: string[]): Promise<{ restored: number; refused: number }> {
+export async function restoreQuotes(quoteIds: string[]): Promise<{ restored: number; refused: number } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const viewer = await fetchViewer()
   const rows = quoteIds.length ? await db.select({ id: quotes.id, leadId: quotes.leadId, createdBy: quotes.createdBy }).from(quotes).where(and(inArray(quotes.id, quoteIds), isNotNull(quotes.deletedAt))) : []
   const mine = rows.filter((q) => canDeleteQuote(viewer, q))
@@ -404,7 +468,8 @@ export async function restoreQuotes(quoteIds: string[]): Promise<{ restored: num
 }
 /** Delete forever: the quote and everything that is only its own — lines, payments, file links, kept versions; a task it raised keeps
     its history without the link, a comparison keeps its reading, its notifications go. A quote a live contract reads stays. */
-export async function deleteQuotesForever(quoteIds: string[]): Promise<{ deleted: number; refused: number }> {
+export async function deleteQuotesForever(quoteIds: string[]): Promise<{ deleted: number; refused: number } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const viewer = await fetchViewer()
   const rows = quoteIds.length ? await db.select({ id: quotes.id, leadId: quotes.leadId, createdBy: quotes.createdBy }).from(quotes).where(and(inArray(quotes.id, quoteIds), isNotNull(quotes.deletedAt))) : []
   const held = await contractHolds(rows.map((q) => q.id))
@@ -428,7 +493,8 @@ export async function deleteQuotesForever(quoteIds: string[]): Promise<{ deleted
   return { deleted: gone.length, refused: rows.length - gone.length }
 }
 /** Empty Trash: every deleted quote on the lead (or every one the member sees) that they may delete and no contract holds. */
-export async function emptyQuoteTrash(leadId: string | null): Promise<{ deleted: number; refused: number }> {
-  const rows = await listDeletedQuotes(leadId)
+export async function emptyQuoteTrash(leadId: string | null, kind: 'quote' | 'variation' = 'quote'): Promise<{ deleted: number; refused: number } | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
+  const rows = await listDeletedQuotes(leadId, kind)
   return deleteQuotesForever(rows.map((r) => r.id))
 }

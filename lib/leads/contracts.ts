@@ -4,11 +4,12 @@ import { db } from '@/lib/db'
 import { contracts, leads, quotes, type Contract } from '@/lib/db/schema'
 import { fetchBrand } from '@/lib/templates/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
-import { fetchQuoteApproval } from '@/lib/settings/queries'
-import { namedQuotesOf } from '@/lib/contracts/queries'
+import { fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
+import { countStandardDocs, namedQuotesOf } from '@/lib/contracts/queries'
 import { defaultQuote } from '@/lib/contracts/snapshot'
 import type { QuoteForSend } from '@/lib/contracts/readiness'
 import type { ContractViewer } from '@/lib/contracts/policy'
+import { fetchContractRules } from '@/lib/contracts/link-server'
 
 /* Lead Details › Contracts (931-38609) — one loader for the tab. Archived / deleted contracts leave the list. */
 
@@ -23,8 +24,14 @@ export type LeadContractsData = {
   /** (UX audit C2) The quotes the contracts name, by id, and Settings' quote approval — the tab's send checks. */
   quotes: Record<string, QuoteForSend>
   approvalRequired: boolean
+  /** (S44Q — row 334) the member approves quotes: their send approves a Draft quote a contract names */
+  canApprove: boolean
   /** (UX audit C6) The quote a new contract will name — the lead's Signed quote, else its latest (createContractDoc's rule) — for the empty state. */
   nextQuote: { number: string; amountMinor: number } | null
+  /** (pending modules S03) the studio's Signing links window, in days — a send or a reminder says it */
+  linkDays: number
+  /** (pending modules S03) how many standard PDFs the library holds — Send together offers them with one of the lead's own */
+  standardDocs: number
   now: number
 }
 
@@ -38,11 +45,11 @@ export async function fetchLeadContracts(leadId: string): Promise<LeadContractsD
     fetchViewer(),
     fetchQuoteApproval(),
     db.select({ number: quotes.number, amountMinor: quotes.amountMinor, status: quotes.status }).from(quotes)
-      .where(and(eq(quotes.leadId, leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),
+      .where(and(eq(quotes.leadId, leadId), eq(quotes.kind, 'quote'), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),   // (REG-1079) never a variation order
   ])
   const next = defaultQuote(leadQuotes)
   return {
     contracts: rows, lead: { name: lead?.name ?? '', phone: lead?.phone ?? '', stage: lead?.stage ?? '' }, studioName: brand.details.name, viewer: { id: viewer.id, role: viewer.role },
-    quotes: await namedQuotesOf(rows), approvalRequired: approval === 'required', nextQuote: next ? { number: next.number, amountMinor: next.amountMinor } : null, now: Date.now(),
+    quotes: await namedQuotesOf(rows), approvalRequired: approval === 'required', canApprove: await isApprover(viewer.id, viewer.role), nextQuote: next ? { number: next.number, amountMinor: next.amountMinor } : null, linkDays: (await fetchContractRules()).linkDays, standardDocs: await countStandardDocs(), now: Date.now(),
   }
 }

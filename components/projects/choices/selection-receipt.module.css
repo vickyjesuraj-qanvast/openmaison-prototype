@@ -1,0 +1,28 @@
+/* (gaps build D, item 7) The selection receipt on the invoice's own paper (invoice-paper.module.css, composed — never copied): the letterhead,
+   the title block, the parties and the lines are the receipt's; its own parts are the pick's tick, the pick block and the fingerprint. */
+.paper { composes: paper from '../money/invoice-paper.module.css'; }
+.head { composes: head from '../money/invoice-paper.module.css'; }
+.logo { composes: logo from '../money/invoice-paper.module.css'; }
+.studio { composes: studio from '../money/invoice-paper.module.css'; }
+.studioName { composes: studioName from '../money/invoice-paper.module.css'; }
+.studioLine { composes: studioLine from '../money/invoice-paper.module.css'; }
+.body { composes: body from '../money/invoice-paper.module.css'; }
+.top { composes: top from '../money/invoice-paper.module.css'; }
+.docTitle { composes: docTitle from '../money/invoice-paper.module.css'; }
+.facts { composes: facts from '../money/invoice-paper.module.css'; }
+.parties { composes: parties from '../money/invoice-paper.module.css'; }
+.party { composes: party from '../money/invoice-paper.module.css'; }
+.eyebrow { composes: eyebrow from '../money/invoice-paper.module.css'; }
+.lines { composes: lines from '../money/invoice-paper.module.css'; }
+.amt { composes: amt from '../money/invoice-paper.module.css'; }
+.lineSub { composes: lineSub from '../money/invoice-paper.module.css'; }
+.note { composes: note from '../money/invoice-paper.module.css'; }
+.optName { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+.lines tr[data-picked] td { font: var(--om-type-subtitle-m); }
+.tick { display: inline-flex; color: var(--om-color-tertiary-green-default); }
+.pickBlock { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-4) var(--om-spacing-5); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.pickBlock strong { font: var(--om-type-subheading-m); }
+.pickBlock span { color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.fingerprint { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.hash { font: var(--om-type-body-s); font-variant-numeric: tabular-nums; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+@media print { .pickBlock { background: none; border: var(--om-border-1) solid var(--om-color-surface-variant); } }

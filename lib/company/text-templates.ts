@@ -30,9 +30,11 @@ export async function fetchTextTemplatesData(): Promise<TextTemplatesData> {
   const v = await fetchViewer()
   return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), now: Date.now(), viewer: { id: v.id, role: v.role } }
 }
-export type TextTemplateEditorData = { template: TextTemplateRow; now: number }
+export type TextTemplateEditorData = { template: TextTemplateRow; now: number
+  /** (pending modules S29) The studio's other live templates of its kind — the writing help's Add what's missing reads their words. */
+  siblings: { title: string; body: string }[] }
 export async function fetchTextTemplateEditor(id: string): Promise<TextTemplateEditorData | null> {
   const data = await fetchTextTemplatesData()
   const t = data.templates.find((x) => x.id === id)
-  return t ? { template: t, now: data.now } : null
+  return t ? { template: t, now: data.now, siblings: data.templates.filter((x) => x.id !== t.id && x.kind === t.kind).map((x) => ({ title: x.title, body: x.body })) } : null
 }

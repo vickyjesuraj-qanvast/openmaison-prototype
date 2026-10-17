@@ -8,18 +8,20 @@ import { Dropzone } from '@/components/leads/move-stage/fields'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
 import { PHOTO_ACCEPT } from '@/lib/visualizer/policy'
 import { useMediaQuery } from '@/lib/breakpoint'
-import { UPLOAD_MAX_BYTES, isHeic } from '../editor-model'
+import { ROOM_ACCEPT, UPLOAD_MAX_BYTES, isHeic, untyped } from '../picture-reader'
 import styles from './dialogs.module.css'
 
-/** What the pickers offer: JPG, PNG and WebP, and HEIC — the editor opens it where the browser can, and says so where it can't. */
-export const ROOM_ACCEPT = `${PHOTO_ACCEPT},image/heic,image/heif,.heic,.heif`   // (REG-735) the landing's welcome picks with it too
+/** What the pickers offer: JPG, PNG and WebP, and HEIC — (pending modules S20) on every browser: Safari draws it, elsewhere the editor
+    turns it into a JPEG first (lib/heic.ts). */
+export { ROOM_ACCEPT }   // (REG-735) the landing's welcome picks with it too
 
 /** (critic 19) Why a file can't be a room photo, in words the studio can act on — or null when it can. A drop skips the picker's accept
     list, so a PDF or a very large export reaches here; each gets its own answer. A HEIC goes on: the editor redraws every room photo as
-    a 1600px JPEG, so a big phone photo is fine up to 40 MB. */
+    a 1600px JPEG, so a big phone photo is fine up to 40 MB. (pending modules S20) A file the device gave no type goes on too — its own
+    bytes say whether it is a HEIC, and the editor's reader refuses it if it isn't a picture. */
 export function photoProblem(f: File): string | null {
   const name = f.name || 'That file'
-  if (!isHeic(f) && !PHOTO_ACCEPT.split(',').includes(f.type)) return f.type.startsWith('image/') ? `${name} is a picture we can’t read — use a JPG, PNG, WebP or HEIC.` : `${name} isn’t a photo — use a JPG, PNG, WebP or HEIC.`
+  if (!isHeic(f) && !untyped(f) && !PHOTO_ACCEPT.split(',').includes(f.type)) return f.type.startsWith('image/') ? `${name} is a picture we can’t read — use a JPG, PNG, WebP or HEIC.` : `${name} isn’t a photo — use a JPG, PNG, WebP or HEIC.`
   if (f.size > UPLOAD_MAX_BYTES) return `${name} is over 40 MB — export a smaller copy and try again`
   return null
 }

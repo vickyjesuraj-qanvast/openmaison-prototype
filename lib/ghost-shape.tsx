@@ -19,9 +19,17 @@ const Shape = createContext<boolean | null>(null)
     browser has no memory of the page yet, so even a first visit's loader lands in the right shape. */
 const Seed = createContext<Record<string, boolean>>({})
 
-/** The app shell's seed of the studio's first-run pages. */
-export function GhostSeed({ shapes, children }: { shapes: Record<string, boolean>; children: ReactNode }) {
-  return <Seed.Provider value={shapes}>{children}</Seed.Provider>
+/** (pending modules S31) The open studio's name as a sentence says it — ghosts that draw it ("Roles & access at Demo Studio") draw the studio's. */
+const StudioName = createContext<string | null>(null)
+
+/** The app shell's seed of the studio's first-run pages (and, S31, the open studio's name). */
+export function GhostSeed({ shapes, studio, children }: { shapes: Record<string, boolean>; studio?: string; children: ReactNode }) {
+  return <Seed.Provider value={shapes}><StudioName.Provider value={studio ?? null}>{children}</StudioName.Provider></Seed.Provider>
+}
+
+/** (pending modules S31) The open studio's name for a ghost's words — the demo's outside the shell or before it is known. */
+export function useSeedStudio(fallback = 'Demo Studio'): string {
+  return useContext(StudioName) ?? fallback
 }
 
 /** The reveal's ghost, told the shape the page is about to show. */
@@ -32,6 +40,19 @@ export function GhostShape({ first, children }: { first: boolean; children: Reac
 /** The page, once it has shown a shape: remembered for its loader's next time (per browser). */
 export function useRememberShape(page: string | null, first: boolean) {
   useEffect(() => { if (page) setFlagPref(shapeKey(page), first) }, [page, first])
+}
+
+/** (parity map, PR-022) A ghost drawn for who is signed in — the app shell's seed of the viewer (`role.accounting`, lib/ghost-shapes.server.ts).
+    Read as the server knows it now, never remembered per browser: Demo Studio › View as changes it. False outside the shell. */
+export function useViewerShape(key: `role.${string}`): boolean {
+  return useContext(Seed)[key] === true
+}
+
+/** (pending modules S17) A flag the server knows now (the app shell's seed), `fallback` outside the shell or before it is known — a gallery's
+    Folders row (`lib.<tableKey>.folders`). */
+export function useSeedFlag(key: string, fallback: boolean): boolean {
+  const v = useContext(Seed)[key]
+  return v === undefined ? fallback : v
 }
 
 /** A ghost's question: does this page open on its first run? The reveal's knowledge, else what this browser saw last, else what the server

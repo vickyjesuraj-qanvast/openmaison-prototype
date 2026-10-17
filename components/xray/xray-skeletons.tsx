@@ -1,4 +1,11 @@
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
+import { GhostField, GhostHead2, Line, phoneOnly, Words } from '@/components/shell/ghost-kit'
+import { DROP_HELP, SETUP_WORDS, XRAY_INTRO } from './intro-copy'
+import cc from '@/components/om/choice-card.module.css'
+import fields from '@/components/leads/move-stage/fields.module.css'
+import k from '@/components/shell/ghost-kit.module.css'
+import ws from './xray-workspace.module.css'
+import { ProLockedGhost } from '@/components/credits/pro-locked-ghost'
 import shell from '@/components/shell/skeleton.module.css'
 import detail from '@/components/shell/detail-skeleton.module.css'
 import styles from './xray-skeletons.module.css'
@@ -8,7 +15,8 @@ import styles from './xray-skeletons.module.css'
  * Leads listing's and Lead Details'). The setup: the header, the intro card, the setup card beside Recent comparisons. The
  * record: the L2 header, then the centred reading column — summary with its three tiles, Say this, key points, the table.
  */
-export function XraySetupSkeleton({ scoped = false, intro = true }: { scoped?: boolean; /** (sweep S3) the intro card was dismissed — its bone isn't drawn either */ intro?: boolean }) {
+export function XraySetupSkeleton({ scoped = false, intro = true, locked = false }: { scoped?: boolean; /** (sweep S3) the intro card was dismissed — its bone isn't drawn either */ intro?: boolean
+  /** (pending modules S19) the studio is on Free: the setup card is the lock */ locked?: boolean }) {
   return (
     <GhostSheet label="Loading Quote X-Ray">
       {scoped ? (
@@ -20,22 +28,62 @@ export function XraySetupSkeleton({ scoped = false, intro = true }: { scoped?: b
         <div className={shell.header}><Bone w={132} h={28} /></div>
       )}
       <div className={styles.content}>
-        {intro ? <div className={styles.intro}><Bone w="62%" h={18} /><Bone w="48%" h={14} /><Bone w="52%" h={14} /><Bone w="44%" h={14} /></div> : null}
-        <div className={styles.columns}>
-          <div className={styles.card}>
-            <Bone w={296} h={40} r="var(--om-radius-full)" />
-            <div className={styles.grid}>
-              <div className={styles.side}><Bone w={40} h={12} /><Bone w="100%" h={48} r={4} /><Bone w="70%" h={16} /><Bone w="100%" h={64} r={8} /><Bone w="100%" h={64} r={8} /></div>
-              <div className={styles.side}><Bone w={160} h={12} /><Bone w="100%" h={148} r={8} /></div>
+        {/* (pending modules S19 — REG-708) the intro in the page's own classes and words: its title, the three points, the note and the close —
+            the four bars it was drew it 40px short, and every block under it rose at the hand-off */}
+        {intro ? (
+          <div className={ws.intro} aria-hidden>
+            <div className={ws.introText}>
+              <Words className={ws.introTitle}>{XRAY_INTRO.title}</Words>
+              <ul className={ws.introList}>
+                {XRAY_INTRO.points.map(([b, rest]) => <li key={b}><Bone w={18} h={18} r={4} /><span className={k.words}><span className={k.wordBars}><b>{b}</b>{rest}</span></span></li>)}
+              </ul>
+              <Words className={ws.introNote}>{XRAY_INTRO.note}</Words>
             </div>
-            <div className={styles.foot}><Bone w={180} h={14} /><Bone w={96} h={40} r={4} /></div>
+            <Bone w={24} h={24} r={4} />
           </div>
+        ) : null}
+        <div className={styles.columns}>
+          {/* (pending modules S21 — REG-708) the setup card in the page's own classes and words: the toggle, the lead (a field, or the page's lead
+              with its quote when scoped), the dropzone as the page draws it, the foot — it was drawn 90px taller than the page before a lead */}
+          {locked ? <ProLockedGhost feature="quote_xray" /> : <div className={ws.card} aria-hidden>
+            <Bone w={256} h={36} r={4} />
+            <div className={ws.grid}>
+              <div className={ws.side}>
+                <Words className={ws.eyebrow}>{SETUP_WORDS.lead}</Words>
+                {scoped ? (
+                  <>
+                    <span className={ws.lockedLead}><Line w={92} lh={20} /><Bone w={104} h={20} r={4} /></span>
+                    <div className={ws.quotes}>
+                      <Words className={ws.question}>{SETUP_WORDS.question}</Words>
+                      <span className={cc.card}><span className={cc.text}><Line w="64%" lh={20} /><Line w="92%" lh={16} h={10} /><span className={phoneOnly}><Line w="36%" lh={16} h={10} /></span></span><Bone w={20} h={20} r="50%" /></span>
+                    </div>
+                  </>
+                ) : <GhostField />}
+              </div>
+              <div className={ws.side}>
+                <Words className={ws.eyebrow}>{SETUP_WORDS.other}</Words>
+                <div className={fields.dropzone}><Words className={fields.dropTitle}>{SETUP_WORDS.other}</Words><Words className={fields.dropHelper}>{DROP_HELP}</Words></div>
+              </div>
+            </div>
+            <div className={ws.foot}><Line w={180} lh={20} /><Bone w={94} h={36} r={4} /></div>
+          </div>}
           <div className={styles.recents}>
             <div className={styles.recentsHead}><Bone w={148} h={12} /></div>
             {[196, 164, 212, 180].map((w, i) => <div key={i} className={styles.recent}><Bone w={w} h={16} /><Bone w={Math.round(w * 0.6)} h={12} /></div>)}
           </div>
         </div>
       </div>
+    </GhostSheet>
+  )
+}
+
+/** (pending modules S19) A comparison opened on a Free studio: the record's header (no New comparison; the kit's L2 head, which folds to the
+    title alone on a phone as PageHeaderL2 does) over the lock. */
+export function XrayLockedRecordSkeleton() {
+  return (
+    <GhostSheet label="Loading comparison">
+      <GhostHead2 crumb={96} title={220} chips={[80]} />
+      <div className={styles.column}><ProLockedGhost feature="quote_xray" kept="This comparison is kept" /></div>
     </GhostSheet>
   )
 }

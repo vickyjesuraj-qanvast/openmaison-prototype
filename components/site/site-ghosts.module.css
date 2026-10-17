@@ -1,0 +1,11 @@
+/* (pending modules S35) The site's ghosts: the paper under the bones, and the boxes a bone takes the page's own shape from. */
+.page { flex: 1; min-height: 80vh; background: var(--site-paper); }
+.button { display: block; }
+.titleLines { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.lines { display: flex; flex-direction: column; gap: 10px; }
+.picture { display: block; aspect-ratio: 4 / 3; }
+.cover { display: block; aspect-ratio: 16 / 9; margin-bottom: var(--om-spacing-2); }
+.back { display: block; margin-bottom: var(--om-spacing-8); }
+.updated { display: block; margin-top: var(--om-spacing-5); }
+/* (pending modules S36) a sample room's tile on the AI Visualizer trial's start: its 3:2 picture and its name row */
+.tile { display: block; aspect-ratio: 3 / 2.3; }

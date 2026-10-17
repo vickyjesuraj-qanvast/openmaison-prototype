@@ -1,0 +1,49 @@
+# C — Updates and Choices (studio side): the fixes (package fix-C, 2026-10-06)
+
+Findings file: `C-updates-and-choices.md` (32). Register rows: `design-source/context/parity/projects-build/reg-fix-C.md`.
+Status per finding: **Fixed** (what changed, where) · **Not a bug** (the rule) · **Owned by another package** (which).
+
+**Counts:** 29 fixed · 0 not a bug · 3 owned elsewhere (C-07 → F · C-17 → A · C-20 → A). One rule kept against the finding's recommended
+form: C-29's toolbar stays wrapping (REG-437 chose wrap over a sideways scroll) — the stray rule is what went.
+
+**Checks (2026-10-06, one build, each probe on its own fresh copy of the repaired scratch DB, :3122):** fix-C 49/49 (new,
+`design-source/verify/projects/verify-pj-fix-C.cjs`, 1440 + 390 / 320 touch) · r1 83/83 · r2 83/83 · r3 86/86 · r4a 72/72 · r4b 74/74 ·
+r5 90/90 · r6 79/79 · r7 63/63 · r8 65/65 · r9 65/65. Changed to the new rules: r3 (an edit is held, not sent back to In review — C-01;
+the card's video / document open the viewer, the media route checked by file id — C-05; R70b's photo name), r8 (one money format — C-21;
+"on the portal" — C-28; a move's own Undo snackbar — C-12). `tsc` clean · `eslint` 0 errors · `design:lint` nothing new. Repair: all checks
+pass on a copy of `local.db` and on a fresh baseline rebuild; a second run changes nothing. Shots: `shots/C-after/` (+ `design-source/verify/projects/fix-C/`).
+
+| ID | Sev | Outcome | What changed |
+|---|---|---|---|
+| C-01 | Major | Fixed | An edit to a published update by someone whose posts are reviewed is **held** (`project_updates.pending`, JSON `UpdatePendingRecord`, migration generated as 0067 here): the client keeps the published words, date and "Seen by"; the card shows the change with the band "Changes wait for review — {who} {when}. {Client} still sees the version from {day}." (Send back · Approve for runners; ⋮ Edit the change · Discard the change + Undo). Approve swaps the words in, keeps `published_at`, stamps `edited_*`; Send back keeps the change with its reason (Edit · Resubmit); an in-review approve also keeps a first publish date. `app/projects/updates-actions.ts` (`saveProjectUpdate`, `applyHeld`, `approve…`, `sendBack…`, `resubmit…`, `discardUpdateChanges`, `restoreUpdateChanges`), `lib/projects/updates-model.ts` (`UpdatePendingRecord`, `parsePending`, `pendingWaits`), `lib/projects/updates.ts` (pending view + media, in-review counts include a held change), `update-card.tsx`, `project-updates.tsx`, `update-composer.tsx`, Activity sentences (`changes: true`) |
+| C-02 | Major | Fixed | A changed pick keeps its variation order in step through money's own order (no money rule changed): `lib/projects/pick-variation.ts` (`planPickVariation` · `applyPickVariation` · `undoPickVariation`) — a **Draft** VO's line is rewritten to the new pick (name, words, sign, price; total re-summed with the editor's `quoteTotals`; title follows) or the Draft is deleted (soft) when the new pick changes nothing; a VO past Draft refuses the change with the rule (`voPickBlock`, choices-model). Same for `editChoiceOption` on the chosen option. The Change the pick dialog names the VO (`voPickLine`) or the refusal before Save; the card's *Open VO-n* shows whenever an order exists. The change answers with Undo (`undoChoosePick`: pick, VO line / undelete, wait, event). |
+| C-03 | Major | Fixed | ≤767 the post head wraps: name · time · ⋮ on the first line, the chips on their own line (`updates.module.css` `.postKebab` / `.tags` order); ⋮ always in the card |
+| C-04 | Major | Fixed | A pick ends its milestone's wait in the same write (`endWaitForPick` in `lib/projects/choices.ts`, called by `chooseForClient` and the portal's `chooseOption`): the milestone waits on the client, its note names the choice (`waitNamesChoice`) or nothing, and no other choice on it still waits. Event detail `waitEnded` (Activity's card says "{milestone} no longer waits on the client"), the team's bell body says so, the studio's snackbar says so and its Undo restores the wait (`restoreWaitForPick`). Repair **R74b** applies the rule to picks made before it. |
+| C-05 | Major | Fixed | The file viewer plays a kept video (`<video>`), shows a kept PDF (`<iframe>`), offers Download on an Office file, and Download fetches the kept bytes for any kind (`FileViewData.bytes` = the project's media route, `lib/leads/files.ts`; `file-viewer.tsx` + css); the zoom bar stays the picture's (hidden for those three). The update card's video tile and document rows open the house viewer (`fileHref`), never raw bytes in a tab. |
+| C-06 | Minor | Fixed | A fresh upload removed with ✕ is kept in `dropped` and discarded with the composer's save or close (`update-composer.tsx`). The reload-mid-compose orphan is left (no marker tells a composer upload from a Files upload into Site updates; a sweep would delete the latter) |
+| C-07 | Minor | Owned by F | every household-naming finding is package F's (the brief); F records the opener |
+| C-08 | Minor | Fixed | `ProjectUpdatesData.client` carries `invited` + `section` (the portal's Updates switch); `clientReach` gives the one sentence ("{Client} sees it once invited to the portal." / Updates switched off); empty state, composer subtitle, snackbars and the preview follow it; the empty state offers *Invite {client}* (the Client access panel) |
+| C-09 | Minor | Fixed | `post` from In review is a send under the rule now (`saveProjectUpdate` `sends`); the band offers its author **Post** when review is off; the composer offers Save changes · Post |
+| C-10 | Minor | Fixed | `unshareChoice` answers the share's `sharedBy` / `sharedAt`; Undo's `reshareChoice` puts them back |
+| C-11 | Minor | Fixed | `saveChoice` refuses moving a locked chosen choice off its milestone ("The pick is locked — {milestone} has started"); the Edit dialog shows the field read-only with that line |
+| C-12 | Minor | Fixed | Move earlier / later: "{option} moved — now 2nd of 3" with Undo (`moveChoiceOption` answers the order before, `restoreChoiceOptionOrder`) |
+| C-13 | Minor | Fixed | Draft a variation order hands its message over the move (`?drafted=1`, read once by the quote editor as `?restored=` is); a variation order's crumb names the project tab it came from (`voCrumb` in `editor-header.tsx`, from `?from=`) |
+| C-14 | Minor | Fixed | Updates' and Choices' `act` refresh the page when `run` reports a refusal |
+| C-15 | Minor | Fixed | `answerReview`: approve, send back, a post under the rule and discard mark the update's `update_review` rows read; delete removes them (restore asks again); a `?open=` to a gone update says "This update is not there any more" |
+| C-16 | Minor | Fixed | Completed project: empty state "No choices were put to {client} on this project."; an open shared choice reads "Never chosen — the project is complete", no due chip, no red |
+| C-17 | Minor | Owned by A | A-10 makes every Status-card reason press (same rows, same files `project-overview.tsx` + `attention.ts`) |
+| C-18 | Minor | Fixed | A shared choice counts as waiting / overdue only when the client can see it (`choiceReach`: invited, Choices on — `choiceFactsFor`); the card's chip is never red for them; words "… sees it once invited to the portal"; the band offers *Invite {client}* (Client access panel), as does the empty state |
+| C-19 | Minor | Fixed | ≤767 the lock's reason wraps under the band's words; the pick line's button drops under the line (`choices.module.css`, `.pickLineText` / `.pickLineAction`) |
+| C-20 | Minor | Owned by A | A-16 gives the project's Activity its own chips (Schedule · Updates · Money · Choices) |
+| C-21 | Minor | Fixed | Option tile "+S$240 + GST" when the project charges GST (`priceText(minor, gstPct)`); one money format in the pick line and the client's notice ("+S$261.60 on the contract (S$240.00 + GST)"); r8 probe helpers follow |
+| C-22 | Minor | Fixed | After an edit the studio card stops saying "Seen by" ("{Client} hasn't seen the change yet") until they open it again (`seenSince`); the portal's card wears **Changed** (`PortalUpdate.changed`, `ClientUpdateCard changed`) and the open re-stamps (`openedSince(…, editedAt)`, `markUpdatesSeen`) |
+| C-23 | Minor | Fixed | Choose dialog: the current pick ticked from the start, a real radio group (one Tab stop, arrows / Home / End move the pick), "No change to the price" without the full stop |
+| C-24 | Minor | Fixed | `saveProjectUpdate` refuses a milestone not live on this project ("That milestone is not on this project any more") |
+| C-25 | Minor | Fixed | Files › Delete (tab and viewer) says when a file is on a published update: "It is on the update “…” — {Client} sees it there, and it leaves that update too." (`LeadFilesData.onUpdates`, `FileViewData.onUpdate`, `TrashDialog seen`) |
+| C-26 | Polish | Fixed | The Chosen band takes the settled tone (`data-tone="changes"`) |
+| C-27 | Polish | Fixed | Repair **R70b** renames Benjamin's update photos by id: living-room-flooring.jpg · kitchen-cabinets-fixed.jpg · wardrobe-carcass.jpg (only while they carry the sample's name) |
+| C-28 | Polish | Fixed | Bell bodies with one dash ("{project} · {client} can see it now"); the chip says **Draft**; the client named again, never "them" |
+| C-29 | Polish | Fixed | The composer's drop well on touch reads "Add photos, videos or documents"; the rich editor's toolbar keeps REG-437's wrap but drops its rules ≤767 (no stray divider leading a line) |
+| C-30 | Polish | Fixed | *A line for {client}* is a 3-row multi-line field — the house `TextField` gains `multiline` (a textarea in the same box, label and states) |
+| C-31 | Polish | Fixed | ≤767 option names take two lines before they cut |
+| C-32 | Polish | Fixed | An update's first Activity line names its files ("… with 2 photos, a video and a document"); the uploads its author made for it fold into that line |

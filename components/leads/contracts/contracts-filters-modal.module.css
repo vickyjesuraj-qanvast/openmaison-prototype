@@ -31,3 +31,4 @@
   .sortRow label { min-block-size: 44px; inline-size: 100%; }
   .row { height: auto; min-height: 44px; }
 }
+.headSort { composes: rowRole from '../../om/filters-modal.module.css'; }   /* (pending modules S03) the head's own order, said — the projects Filters' line */

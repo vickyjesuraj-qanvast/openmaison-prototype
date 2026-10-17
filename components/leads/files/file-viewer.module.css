@@ -209,3 +209,38 @@
   .zoomFit { width: auto; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-3); }
   .zoomLabel { display: inline; font: var(--om-type-caption-s); white-space: nowrap; }
 }
+
+/* (fix-C, C-05) A video plays and a PDF shows inside the canvas, from the bytes the upload kept; an Office file shows its glyph with Download.
+   The canvas's own box and padding, no zoom bar (they bring their own controls). */
+.media { max-width: 100%; max-height: 100%; border-radius: var(--om-radius-1); background: var(--om-color-on-surface-default); }
+.doc { width: 100%; height: 100%; border: 0; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+.docCard { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); color: var(--om-color-on-surface-secondary); font: var(--om-type-subtitle-m); text-align: center; overflow-wrap: anywhere; }
+.docDownload { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
+.audio { width: min(400px, 100%); }   /* (S43E W3-01) a kept recording's player under its name */
+.canvas:has(.doc) { padding: var(--om-spacing-6); }
+
+/* ── (gaps build E, item 3 — 1.0's lightbox strip, H-146 · H-152) The file over its folder's strip ─────────────────────────────────
+   The column holds the canvas and, under it, every file of the folder: the house square thumbnail (components/om/thumb.module.css,
+   REG-820) at 48, the open one ringed in the primary colour, scrolling sideways inside its own row (centred while it fits); a top rule
+   as the header's bottom one. A page (a PDF's first page, a video's first frame) shows its top. */
+.column { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.column > .canvas { min-height: 0; }
+.strip { flex-shrink: 0; background: var(--om-color-surface-default); box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); }
+.stripList {
+  list-style: none; margin: 0; display: flex; gap: var(--om-spacing-2);
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+  padding: var(--om-spacing-3) var(--om-spacing-6);
+}
+.stripList > li { flex-shrink: 0; display: flex; }
+.stripList > li:first-child { margin-left: auto; }
+.stripList > li:last-child { margin-right: auto; }
+.stripItem { composes: thumb from '../../om/thumb.module.css'; width: 48px; height: 48px; padding: 0; border: 0; cursor: pointer; }
+.stripItem > img[data-page] { object-position: top; }
+.stripItem::before { content: ''; position: absolute; inset: 0; z-index: 1; background: transparent; transition: background-color var(--motion-hover); pointer-events: none; }
+.stripItem:hover::before { background: var(--om-color-hover-08p); }
+.stripItem[aria-current='true'] { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; cursor: default; }
+.stripItem[aria-current='true']::before { background: transparent; }
+.stripItem:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+@media (max-width: 767px) {
+  .stripList { padding: var(--om-spacing-2) var(--om-spacing-4); }
+}

@@ -1,0 +1,18 @@
+/*
+ * (gaps build H — H-Q21) Company › Profile › About the studio, for clients — on the profile's card (./profile-view.module.css, composed by
+ * the component), what it adds: the year's short field, the awards' rows, the photos' grid (the house square thumbnail at 120).
+ */
+.year { max-width: 200px; }
+.awards { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.award { display: grid; grid-template-columns: 1fr 120px 36px; gap: var(--om-spacing-3); align-items: start; }
+.photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.photo { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 120px; }
+.pic { composes: thumb from '../om/thumb.module.css'; width: 120px; height: 90px; }
+.coverMark { font: var(--om-type-caption-s); color: var(--om-color-primary-default); }
+.photoTools { display: flex; gap: var(--om-spacing-1); align-items: center; }
+.fileInput { display: none; }
+.actions { display: flex; gap: var(--om-spacing-2); justify-content: flex-end; }
+.label { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin: 0; }
+@media (max-width: 767px) {
+  .award { grid-template-columns: 1fr 96px 36px; }
+}

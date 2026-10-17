@@ -9,6 +9,9 @@ const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toStr
 // (REG-665) The demo files the libraries' entries into folders (repair R59); this round's checks were written for — and read — each
 // library flat, so the test copy is unfiled and its folders put away first. Folders have their own probes (design-source/verify/folders/).
 sql(`UPDATE quote_templates SET folder_id = NULL; UPDATE contract_templates SET folder_id = NULL; UPDATE task_templates SET folder_id = NULL; UPDATE quote_text_templates SET folder_id = NULL; UPDATE payment_templates SET folder_id = NULL; UPDATE price_book_items SET folder_id = NULL; UPDATE price_book_sections SET folder_id = NULL; UPDATE library_folders SET deleted_at = strftime('%s', 'now') WHERE deleted_at IS NULL`)
+// The entity's letterhead logo: the probe brings its own picture (it used to read one left in the scratch folder)
+const LOGO = `${S}/entity-logo.png`
+if (!require('fs').existsSync(LOGO)) require('fs').copyFileSync(require('path').join(__dirname, '../../../public/figma-assets/avatar-user.png'), LOGO)
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n')[0]) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 async function snack(page, text, timeout = 6000) { await page.getByText(text, { exact: false }).first().waitFor({ timeout }) }
@@ -38,7 +41,7 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
     const lh = e1.getByTestId('entity-letterhead')
     await lh.getByLabel('Registered address').fill('8 Ubi Road 2 #05-01, Singapore 408538'); await lh.getByLabel('UEN / Co. Reg. No.').fill('202400001K'); await lh.getByLabel('GST Reg. No.').fill('M91234567X')
     const [fc] = await Promise.all([page.waitForEvent('filechooser'), e1.getByRole('button', { name: /logo/ }).click()])
-    await fc.setFiles(`${S}/entity-logo.png`); await snack(page, 'Logo added')
+    await fc.setFiles(LOGO); await snack(page, 'Logo added')
     await shot('01-profile-filled')
     await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
     const brand = sql("select value from settings where key='brand'")
@@ -129,7 +132,10 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
   })
   await step('editor Q-16: ordinals + a footnote', async () => {
     await outlineRow('Payment schedule').click(); await insp.waitFor()
-    await insp.getByText('1st · 2nd', { exact: true }).first().click()
+    /* (pending modules S44T, a deliberate change of this rule — UAT row 354: four marks, (a) · (b) · (c) joined them, so the choice is a select) */
+    await page.waitForTimeout(800)   // the inspector settles on the block first — a select opens on press, and a press mid-swap is lost
+    await insp.getByLabel('Milestones are marked').click(); await page.waitForTimeout(300)
+    await page.getByRole('option', { name: '1st · 2nd · 3rd' }).click()
     await insp.getByLabel('Footnote under the schedule').fill('Cheques payable to Demo Studio Pte Ltd'); await page.waitForTimeout(1100)
     const body = (await page.locator('[data-page]').allInnerTexts()).join('\n')
     ok('schedule marked 1st and footnoted', body.includes('1st') && body.includes('Cheques payable to Demo Studio Pte Ltd'))

@@ -1,6 +1,8 @@
 import type { QuestionType } from '@/lib/leads/question-model'
 
 /* (REG-612, parity Q-21) The studio's question bank — 1.0's six question types, and how each lands on a lead's questionnaire card. Pure. */
+/** (pending modules S17) The bank card's help — the page and its ghost read this one sentence, so they can't drift apart. */
+export const BANK_HELP = 'Customise the questions homeowners answer about their project. New leads start with the active questions; an older lead adds them from its Questionnaire tab. Ask the client sends the lead’s questionnaire to the portal.'
 export const BANK_TYPES = ['text', 'yes_no', 'number', 'single_select', 'multi_select', 'date'] as const
 export type BankType = (typeof BANK_TYPES)[number]
 export const BANK_TYPE_LABELS: Record<BankType, string> = { text: 'Text', yes_no: 'Yes / No', number: 'Number', single_select: 'Single select', multi_select: 'Multi select', date: 'Date' }

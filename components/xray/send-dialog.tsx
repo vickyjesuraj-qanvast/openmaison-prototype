@@ -69,7 +69,7 @@ export function SendDialog({ open, onClose, comparisonId, draft, sent, defaults,
         <SendFields>
           <RecipientFields name={name} phone={phone} phoneLabel="Client phone" onName={(v) => { setName(v); setText((t) => (t === draft(name) ? draft(v) : t)) }} onPhone={setPhone}
                            nameError={touched && !nameOk ? 'Enter the client’s name' : undefined} phoneError={touched && !phoneOk ? MSG.phone : undefined} />
-          <MessageField value={text} onChange={setText} onReset={() => setText(draft(name))} canReset={text !== draft(name)} />
+          <MessageField value={text} onChange={setText} onReset={() => setText(draft(name))} canReset={text !== draft(name)} names={[name]} />
         </SendFields>
       </Dialog>
       <ConfirmDialog open={asking} nested title="Discard your changes?" message="The message goes back to what it was when you opened it." confirmLabel="Discard" cancelLabel="Keep editing"

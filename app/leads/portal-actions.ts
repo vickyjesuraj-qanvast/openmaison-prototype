@@ -1,27 +1,18 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { homeownerLeadLinks } from '@/lib/db/schema'
-import { ensureHomeownerLink } from '@/lib/leads/portal'
+import { recordAsk } from '@/lib/portal/ask'   // (parity map, CP-110)
 import { revalidateLead } from '@/lib/leads/queries'
-import { logLeadEvent } from '@/lib/leads/events'
 
 /*
- * (REG-609, parity Q-22) Invite to Portal › Send and Ask the client › Send leave a record — the link's stamps, read back as
- * "Invited on" / "Asked on" and as Activity lines. WhatsApp still opens on the press: the platform's own send is not the
- * prototype's to make. A repeat press re-stamps (1.0 resends when already invited).
+ * (REG-609, parity Q-22) Ask the client › Send leaves a record — the link's stamps, read back as "Asked on" and as Activity lines.
+ * WhatsApp still opens on the press: the platform's own send is not the prototype's to make. (pending modules S02) The old
+ * `invitePortal` — Invite to Portal's Send, with 1.0's *Show chat history* (H-Q16 dropped it, REG-1327) — had no caller since the
+ * Client access panel took the invite (`inviteClient`, app/portal/studio-actions.ts); it is gone with its unmounted modal.
  */
-export async function invitePortal(leadId: string, o: { showHistory: boolean }): Promise<void> {
-  const link = await ensureHomeownerLink(leadId)
-  await db.update(homeownerLeadLinks).set({ invitedAt: new Date(), chatHistoryVisible: o.showHistory }).where(eq(homeownerLeadLinks.id, link.id))
-  await logLeadEvent(db, leadId, 'invite_sent')   /* (REG-613) every invite, not only the latest stamp */
-  revalidateLead(leadId)
-}
-
-export async function askClient(leadId: string): Promise<void> {
-  const link = await ensureHomeownerLink(leadId)
-  await db.update(homeownerLeadLinks).set({ lastAskedAt: new Date() }).where(eq(homeownerLeadLinks.id, link.id))
-  await logLeadEvent(db, leadId, 'questionnaire_asked')   /* (REG-613) */
+/** The quick ask with no list (every question): (gaps build D, item 9) 1.0's five minutes between asks; (parity map, CP-110) the client told —
+    the portal's bell, `client_questions` — and invited by the ask when they never were (lib/portal/ask.ts `recordAsk`). */
+export async function askClient(leadId: string): Promise<void | { error: string }> {
+  const r = await recordAsk(leadId, null)   /* (REG-613) the Activity line inside */
+  if ('error' in r) return r
   revalidateLead(leadId)
 }

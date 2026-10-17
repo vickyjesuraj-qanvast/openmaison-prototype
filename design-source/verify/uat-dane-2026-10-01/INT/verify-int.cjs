@@ -76,7 +76,7 @@ async function ready(page) { await page.waitForLoadState('networkidle').catch(()
   await step('On Hold phone line', async () => {
     await d.goto(`${BASE}/leads`); await ready(d)
     const r = await d.evaluate(() => {
-      const row = [...document.querySelectorAll('[role="row"]')].find((x) => /On hold till:/.test(x.textContent || '')); if (!row) return 'no On Hold row'
+      const row = [...document.querySelectorAll('[role="row"]')].find((x) => x.querySelector('[data-testid="hold-line"]')); if (!row) return 'no On Hold row'   // (pending modules, a deliberate change of this rule) S05: the day has its own line
       const pr = row.querySelector('[class*="phoneRow"]'); const cell = pr?.closest('[role="cell"]'); const btn = pr?.querySelector('button')
       if (!pr || !cell || !btn) return 'missing parts'
       const c = cell.getBoundingClientRect(), b = btn.getBoundingClientRect(), ph = pr.querySelector('[class*="phone"]')

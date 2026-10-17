@@ -1,0 +1,93 @@
+/* (gaps build J, J-Q19) The 3D Space Planner's editor: the AI Visualizer's app frame — pinned to the viewport, the top bar, then
+   [rail 320 | stage | inspector 300]. ≤1024 the camera-app model: the stage, a selection bar over it, the dock; panels in sheets. */
+.editor { --pl-rail: 320px; --pl-insp: 300px; position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); background: var(--om-color-surface-bg); }
+.body { flex: 1; min-height: 0; display: flex; }
+.rail { flex: 0 0 var(--pl-rail); width: var(--pl-rail); min-height: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tabs3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tabs4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stage { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.inspector { flex: 0 0 var(--pl-insp); width: var(--pl-insp); min-height: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+/* the note under the bar: read-only, changed elsewhere */
+.note { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; padding: var(--om-spacing-1) var(--om-spacing-4); background: var(--om-color-tertiary-yellow-variant); color: var(--om-color-on-surface-default); font: var(--om-type-body-s); }
+.note[data-tone='info'] { background: var(--om-color-primary-variant); }
+.noteText { flex: 1; min-width: 0; }
+
+/* the stage's own controls, floating on it */
+.float { position: absolute; z-index: 2; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-1); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); }
+.zoomBar { left: var(--om-spacing-4); bottom: var(--om-spacing-4); }
+.zoomPct { min-width: 48px; text-align: center; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.viewSwitch { left: 50%; top: var(--om-spacing-4); transform: translateX(-50%); }
+.roomsBar { left: var(--om-spacing-4); right: var(--om-spacing-4); top: var(--om-spacing-4); justify-content: flex-start; max-width: calc(100% - 32px); width: fit-content; overflow: hidden; }
+.roomsBar[data-below] { top: calc(var(--om-spacing-4) + 52px); }
+.wallsBar { left: var(--om-spacing-4); bottom: var(--om-spacing-4); padding: var(--om-spacing-1) var(--om-spacing-3); gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.hint { right: calc(var(--om-spacing-4) + 72px); bottom: var(--om-spacing-4); padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 320px; }
+.pad { left: 50%; bottom: var(--om-spacing-4); transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); gap: var(--om-spacing-1); }
+.pad > :nth-child(1) { grid-column: 2; grid-row: 1; }
+.pad > :nth-child(2) { grid-column: 1; grid-row: 2; }
+.pad > :nth-child(3) { grid-column: 2; grid-row: 2; }
+.pad > :nth-child(4) { grid-column: 3; grid-row: 2; }
+.padKey { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.padKey:active, .padKey[data-on] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.padKey:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+
+/* an empty layout: the house empty state on the stage */
+.emptyWrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: var(--om-spacing-6); pointer-events: none; }
+/* tracing a floor plan: the card waits at the foot, clear of the plan it asks you to draw over */
+.emptyWrap[data-low] { align-items: flex-end; padding-bottom: 88px; }
+.emptyWrap > * { pointer-events: auto; max-width: 520px; padding: var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); }
+
+/* ≤1024: the selection bar over the dock, the dock */
+.selBar { position: absolute; z-index: 3; left: var(--om-spacing-3); right: var(--om-spacing-3); bottom: var(--om-spacing-3); display: flex; align-items: center; gap: var(--om-spacing-1); min-height: 52px; padding: var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
+.selName { flex: 1; min-width: 0; display: flex; flex-direction: column; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.selName > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.selSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.selWarn { color: var(--om-color-tertiary-red-default); }
+.dock { flex-shrink: 0; background: var(--om-color-surface-default); }
+.sheetBody { padding: 0 var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+/* the FAB keeps clear of the inspector beside the stage */
+.editor[data-insp] [data-fab] { right: calc(var(--pl-insp) + 20px); }
+@media (max-width: 1024px) {
+  .zoomBar { bottom: calc(var(--om-spacing-3) + 64px); left: var(--om-spacing-3); }
+  .wallsBar { bottom: calc(var(--om-spacing-3) + 64px); left: var(--om-spacing-3); }
+  .hint { display: none; }
+  .pad { bottom: calc(var(--om-spacing-3) + 64px); }
+  .editor[data-has-sel] .zoomBar, .editor[data-has-sel] .wallsBar, .editor[data-has-sel] .pad { bottom: calc(var(--om-spacing-3) + 64px); }
+}
+@media (max-width: 767px) {
+  .viewSwitch { left: var(--om-spacing-3); top: var(--om-spacing-3); transform: none; }
+  .roomsBar { top: calc(var(--om-spacing-3) + 52px); left: var(--om-spacing-3); right: var(--om-spacing-3); }
+  .roomsBar[data-below] { top: calc(var(--om-spacing-3) + 52px); }
+}
+
+/* (parity map, TD-075) the level switch — top right on the stage, once there are two levels; ≤767 under the view switch */
+.levelsBar { right: var(--om-spacing-4); top: var(--om-spacing-4); max-width: calc(100% - 32px); overflow-x: auto; }
+.levelsBar > * { flex-wrap: nowrap; }
+.roomsBar[data-levels] { top: calc(var(--om-spacing-4) + 52px); }   /* the rooms' chips step under the level switch, never under it */
+@media (max-width: 767px) {
+  .levelsBar { right: auto; left: var(--om-spacing-3); top: calc(var(--om-spacing-3) + 52px); max-width: calc(100% - 24px); }
+  .roomsBar[data-levels] { top: calc(var(--om-spacing-3) + 104px); }
+}
+/* (parity map, TD-092) Present: the stage alone, full screen — the bar, the panels, the dock and the editing floats step away */
+.editor[data-present] > header, .editor[data-present] .note, .editor[data-present] .rail, .editor[data-present] .zoomBar,
+.editor[data-present] .wallsBar, .editor[data-present] .hint, .editor[data-present] .pad { display: none; }
+.presentTitle { left: var(--om-spacing-5); top: var(--om-spacing-5); flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--om-spacing-2) var(--om-spacing-4); }
+.presentName { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.presentSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.presentBar { left: 50%; bottom: calc(var(--om-spacing-5) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); gap: var(--om-spacing-2); padding: var(--om-spacing-1) var(--om-spacing-2); }
+.presentCount { min-width: 64px; text-align: center; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.presentRule { width: 1px; height: 24px; background: var(--om-color-surface-variant); }
+/* (pending modules S28) placing the listed rooms on a floor-plan photo: the next room, how far along, the picture — top left of the stage */
+.guide { left: var(--om-spacing-4); top: var(--om-spacing-4); max-width: min(680px, calc(100% - 32px)); flex-wrap: nowrap; gap: var(--om-spacing-2) var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-4); }
+.guide[data-levels] { top: calc(var(--om-spacing-4) + 52px); }
+.guideText { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.guideTitle { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.guideSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.guideActions { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .guide { left: var(--om-spacing-3); right: var(--om-spacing-3); top: calc(var(--om-spacing-3) + 52px); max-width: none; flex-wrap: wrap; padding-left: var(--om-spacing-3); }
+  .guideText { flex-basis: 180px; }
+  .guideActions { flex-shrink: 1; }
+  .guide[data-levels] { top: calc(var(--om-spacing-3) + 104px); }
+}

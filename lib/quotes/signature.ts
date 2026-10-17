@@ -50,3 +50,21 @@ export function memberSignatureOf(m: { name: string; signatureKind: string | nul
   if (m.signatureKind === 'image') return isSignatureImage(m.signatureData) ? { kind: 'image', name, data: m.signatureData } : null
   return { kind: m.signatureKind, name, data: m.signatureData }
 }
+
+/**
+ * (pending modules S03 — 1.0's member_signatures.auto_apply: "Automatically stamp your signature on quotes you prepare … Revocable anytime")
+ * A member's signature goes on the documents they prepare only once they said yes: Your profile › Your signature holds the switch, and
+ * saving a signature in Signature Settings answers it for a member who never had (the dialog says what Save does). 'no' keeps it off every
+ * quote and contract; null = never answered (nothing printed). The member's own views — Your profile, the quote's Signature section — show it
+ * either way.
+ */
+export const SIGNATURE_CONSENTS = ['yes', 'no'] as const
+export type SignatureConsent = (typeof SIGNATURE_CONSENTS)[number]
+export const consentsToSign = (m: { signatureConsent?: string | null } | null | undefined) => m?.signatureConsent === 'yes'
+/** The signature a document prints for its preparer: their saved one, when they allowed it — else none. */
+export function appliedSignatureOf(m: { name: string; signatureKind: string | null; signatureName: string | null; signatureData: string | null; signatureConsent?: string | null } | null | undefined): MemberSignature | null {
+  return consentsToSign(m) ? memberSignatureOf(m) : null
+}
+/** The switch's words (invented copy, 1.0's card as the model). */
+export const CONSENT_LABEL = 'Put it on the quotes and contracts I prepare'
+export const CONSENT_HELP = 'Off, the studio signature box stays blank and you sign by hand. You can change this any time.'

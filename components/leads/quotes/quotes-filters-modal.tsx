@@ -62,9 +62,12 @@ const DUES: { key: QuoteDue; label: string }[] = [
 ]
 
 export function QuotesFiltersModal({
-  open, value, onApply, onClose, now, approval,
+  open, value, onApply, onClose, now, approval, headSort = null, onClearHead,
 }: {
   open: boolean
+  /** (pending modules S04) the column a head sorts by, while it does — the Sort pane says so; picking an order here takes it off */
+  headSort?: string | null
+  onClearHead?: () => void
   value: QuoteFilters
   onApply: (v: QuoteFilters) => void
   onClose: () => void
@@ -96,7 +99,7 @@ export function QuotesFiltersModal({
     if (open) { setDraft(value); setTab('sort') }
   }
 
-  const dots = activeQuoteGroups(draft)
+  const dots = { ...activeQuoteGroups(draft), sort: activeQuoteGroups(draft).sort || !!headSort }
   const toggleStatus = (s: QuoteStatus) =>
     setDraft((d) => ({ ...d, status: d.status.includes(s) ? d.status.filter((x) => x !== s) : [...d.status, s] }))
   // Single-select chips: the selected chip clears itself; leaving Custom drops the typed range (the listing's rule).
@@ -139,7 +142,8 @@ export function QuotesFiltersModal({
                 {tab === 'sort' ? (
                   <>
                     <span className={styles.sectionTitle}>Sort by</span>
-                    <RadioGroup aria-label="Sort by" value={draft.sort} onChange={(v) => setDraft((d) => ({ ...d, sort: v as QuoteSort }))}>
+                    {headSort ? <span className={styles.headSort} data-testid="filters-head-sort">Sorted by the {headSort} column. Choose an order below to sort by it instead.</span> : null}
+                    <RadioGroup aria-label="Sort by" value={headSort ? '' : draft.sort} onChange={(v) => { onClearHead?.(); setDraft((d) => ({ ...d, sort: v as QuoteSort })) }}>
                       {SORTS.map((s) => (
                         <div key={s.key} className={styles.sortRow}><Radio value={s.key}>{s.label}</Radio></div>
                       ))}

@@ -1,0 +1,51 @@
+/*
+ * (pending modules S27 — api:designer-portfolio-profiles) A member's public card — the one shape every reader draws (a Hangout page, the
+ * client portal's Our team, the Public profile's preview): the photo or the tinted initial, the name, the title and years, what they are
+ * known for (MetaChips), two lines about them, and their work as a strip of pictures — each opens the work's pictures in the house dialog.
+ */
+.card { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.top { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+.face { width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--om-radius-full); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--tint, var(--om-color-primary-variant)); color: var(--om-color-on-primary-default); font: var(--om-type-heading-h4); }
+.face > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.name { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.title { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.known { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1); margin-top: var(--om-spacing-1); }
+.bio { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.when { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); align-items: flex-start; }
+.whenGlyph { display: inline-flex; flex-shrink: 0; }
+.workHead { margin: 0; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: 200px; gap: var(--om-spacing-3); overflow-x: auto; padding-bottom: var(--om-spacing-1); scrollbar-width: thin; min-width: 0; }
+.tile { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; border-radius: var(--om-radius-2); color: inherit; }
+.tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.pic { aspect-ratio: 3 / 2; width: 100%; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.pic > img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--motion-toggle); }
+@media (hover: hover) { .tile:hover .pic > img { transform: scale(1.03); } }
+.tileName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.tileFacts { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.count { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+
+/* the work's pictures: the one picked large, the others a row of thumbs under it */
+.viewer { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.stage { position: relative; aspect-ratio: 3 / 2; width: 100%; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); }
+.stage > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nav { position: absolute; top: 50%; transform: translateY(-50%); }
+.prev { left: var(--om-spacing-3); }
+.next { right: var(--om-spacing-3); }
+.navBtn { background: var(--om-color-surface-default); border-radius: var(--om-radius-full); box-shadow: var(--om-elevation-level-2); }
+.caption { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.thumbs { display: flex; gap: var(--om-spacing-2); overflow-x: auto; min-width: 0; }
+.thumb { width: 72px; height: 48px; flex-shrink: 0; padding: 0; border: var(--om-border-2) solid transparent; border-radius: var(--om-radius-1); overflow: hidden; cursor: pointer; background: none; }
+.thumb[aria-current='true'] { border-color: var(--om-color-primary-default); }
+.thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.desc { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .strip { grid-auto-columns: 168px; }
+}
+
+/* the card's ghost (designer-card-ghost.tsx): the face's 56 place, the bone in it */
+.faceGhost { display: inline-flex; flex-shrink: 0; width: 56px; height: 56px; }
+
+/* (REG-708) a ghost's block of lines in one of the page's own paragraphs — the lines stacked with no gap, as the paragraph wraps */
+.ghostLines { display: flex; flex-direction: column; }

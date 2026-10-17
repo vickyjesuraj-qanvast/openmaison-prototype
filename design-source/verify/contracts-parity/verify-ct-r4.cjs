@@ -13,6 +13,7 @@ async function snack(page, text, timeout = 8000) { await page.getByText(text, { 
 const as = (id) => sql(`update members set is_you = case id when '${id}' then 1 else 0 end`)
 const byLead = (name) => sql(`select c.id || '|' || l.id from contracts c join leads l on l.id = c.lead_id where l.name = '${name}' order by c.created_at limit 1`).split('|')
 const [OLIVIA, OLIVIA_LEAD] = byLead('Olivia Martinez'), [RYAN, RYAN_LEAD] = byLead('Ryan D’Souza'), [BEN, BEN_LEAD] = byLead('Benjamin Han')
+const OLIVIA_TITLE = sql(`select title from contracts where id='${OLIVIA}'`)   // read up front: a CLI read during a server write locks it out (SQLITE_BUSY)
 const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id}`); await page.getByTestId('contract-editor').waitFor(); await ready(page) }
 
 ;(async () => {
@@ -63,7 +64,8 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     sql(`insert or replace into settings (key, value, updated_at) values ('lead_visibility', '"assigned"', strftime('%s','now'))`)
     as('sarah')
     await page.goto(`${BASE}/contracts/${OLIVIA}`); await ready(page)
-    ok('Olivia’s contract is not Sarah’s to open', /could not be found|not found/i.test(await page.locator('body').innerText()))
+    /* (pending modules, a deliberate change of this rule — S41b-2) the not-found is the house's app-wide page now ("This page isn’t here") */
+    ok('Olivia’s contract is not Sarah’s to open', /could not be found|not found|This page isn’t here/i.test(await page.locator('body').innerText()))
     await page.goto(`${BASE}/contracts`); await ready(page)
     ok('Tools › Contracts lists none of the leads she doesn’t see', !/Olivia Martinez|Ryan D’Souza/.test(await page.locator('main, body').first().innerText()))
     as('dane')
@@ -77,9 +79,17 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     ok('“Ryan” finds Ryan’s contract by its lead', /Ryan/.test(t) && !/Olivia/.test(t))
     await page.locator('input[type=search], [role=searchbox]').first().fill('')
     sql(`insert into contracts (id, lead_id, title, status, created_at, body, recipient_name, recipient_phone, source, created_by, from_quote_id) select 'probe-ct4-b1', lead_id, 'Bundle A', 'Draft', strftime('%s','now'), body, recipient_name, recipient_phone, 'composed', 'dane', from_quote_id from contracts where id='${OLIVIA}'`)
+    as('germaine')   // (S44Q — row 334, a deliberate change of this rule) an approver's send approves the Draft quote it names now; the hold is a non-approver's — Germaine, a Designer
     await page.reload(); await ready(page)
     await page.getByRole('button', { name: 'More options' }).last().click()
     const item = page.getByRole('menuitem', { name: 'Send together for signature' })
+    // (REG-780 · UX audit C2 + C4) both documents name OM-10001, a Draft under required approval: Send together is greyed and its row names it
+    ok('Send together waits while the quote they name is a Draft, saying so', (await item.getAttribute('aria-disabled')) === 'true' && /OM-10001 is still a Draft/.test(await item.innerText()), (await item.innerText()).replace(/\n/g, ' · '))
+    await page.keyboard.press('Escape')
+    as('dane')
+    sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${OLIVIA}')`)   // the studio stands behind its quote now
+    await page.reload(); await ready(page)
+    await page.getByRole('button', { name: 'More options' }).last().click()
     ok('Send together is live on the studio list', (await item.getAttribute('aria-disabled')) !== 'true')
     await item.click()
     await page.getByRole('dialog', { name: /Send together — which lead/ }).waitFor()
@@ -126,20 +136,26 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
   await step('Automation makes tasks; sending and marking signed notify the studio', async () => {
     sql(`insert or ignore into lead_assignees (id, lead_id, member_id, assigned_at) values ('probe-ct4-la', '${OLIVIA_LEAD}', 'germaine', strftime('%s','now'))`)   // someone to tell: the lead's member
     const before = Number(sql(`select count(*) from notifications where kind='contract_sent'`))
+    // (REG-780, UX audit C2) the quote it names must not be a Draft under required approval — approved (idempotent with the step above)
+    sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${OLIVIA}')`)
     await openEditor(page, OLIVIA)
     await page.getByRole('button', { name: 'Automation' }).click()
     await page.getByRole('switch', { name: 'Remind me to follow up' }).or(page.getByLabel('Remind me to follow up')).first().click({ force: true })
     await page.getByRole('switch', { name: 'Remind me to thank the client' }).or(page.getByLabel('Remind me to thank the client')).first().click({ force: true })
     await page.waitForTimeout(800); await page.keyboard.press('Escape')
     ok('both switches are on', sql(`select reminders || thank_you from contracts where id='${OLIVIA}'`) === '11')
-    await page.getByRole('button', { name: 'Copy signing link' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(1200)
+    // (REG-786, UX audit C8) a Draft's copy icon says it sends: "Copy link — marks it Sent"
+    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(1200)
     ok('a follow-up task, three days out, on the contract', sql(`select count(*) from lead_tasks where contract_id='${OLIVIA}' and kind='Follow-up' and done=0 and due_at between strftime('%s','now','+2 days') and strftime('%s','now','+4 days')`) === '1')
     ok('the studio heard it went out', Number(sql(`select count(*) from notifications where kind='contract_sent'`)) > before)
     await openEditor(page, OLIVIA)
     await page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Signed)$/ }).first().click()
     await page.getByRole('menuitemradio', { name: /^Signed/ }).click()
     await page.getByRole('dialog', { name: 'Mark as signed' }).getByRole('button', { name: 'Mark as signed' }).click()
-    await snack(page, 'Contract marked Signed'); await page.waitForTimeout(1500)
+    // (REG-779, UX audit C1) "{title} marked Signed", and while the lead isn't Won (Olivia's is New) the snackbar offers Move to Won
+    await snack(page, `${OLIVIA_TITLE} marked Signed`)
+    ok('the snackbar leads on to Won', await page.getByRole('status').filter({ hasText: 'marked Signed' }).getByRole('button', { name: 'Move to Won' }).first().isVisible())
+    await page.waitForTimeout(1500)
     ok('the follow-up closed', sql(`select done from lead_tasks where contract_id='${OLIVIA}' and title like 'Follow up on%'`) === '1')
     ok('the thank-you task is there', sql(`select count(*) from lead_tasks where contract_id='${OLIVIA}' and title like 'Thank %' and done=0`) === '1')
     ok('the marking notified the studio', Number(sql(`select count(*) from notifications where kind='quote_signed' and title like '%was marked signed'`)) >= 1)
@@ -151,7 +167,7 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     await page.getByRole('menuitemradio', { name: /^Sent to Client/ }).click()
     await page.getByRole('dialog', { name: /Move back to/ }).getByRole('button', { name: 'Move back' }).click(); await snack(page, 'Contract marked Sent to Client'); await page.waitForTimeout(800)
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
-    const row = page.getByRole('row').filter({ hasText: 'General Contract Agreement' }).first()
+    const row = page.getByRole('row').filter({ hasText: OLIVIA_TITLE }).first()   // (REG-788, R66) the demo's agreement is named after its paper, "Interior Design Service Agreement"
     await row.hover(); await row.getByRole('button', { name: /^More actions for/ }).click(); await page.getByRole('menuitem', { name: 'Archive' }).click(); await snack(page, 'Contract archived'); await page.waitForTimeout(600)
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/activity`); await ready(page)
     const t = await page.locator('main').innerText()

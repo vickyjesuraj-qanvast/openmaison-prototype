@@ -1,0 +1,9 @@
+/* (pending modules S31) Signing up — sign-in's page (the client portal's sign-in, composed: components/auth/sign-in.module.css and
+   components/portal/portal.module.css), with the house choice cards for how you work. */
+.choices { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.choice { display: contents; }
+/* the ghost's card: the choice card's own box, its words as bars */
+.choiceGhost { cursor: default; }
+.choiceGhost:hover { background: var(--om-color-surface-default); }
+/* the member step's way on is a link drawn as the page's step button */
+.goLink { display: flex; align-items: center; justify-content: center; text-decoration: none; }

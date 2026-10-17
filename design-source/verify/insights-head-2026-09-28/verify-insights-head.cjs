@@ -27,7 +27,7 @@ const type = (el) => { const c = getComputedStyle(el); return { size: c.fontSize
   console.log('  ', JSON.stringify(ref))
 
   console.log('1440 — Insights › By team member')
-  await page.goto(`${BASE}/leads/insights`, { waitUntil: 'networkidle' })
+  await page.goto(`${BASE}/company/reports/leads`, { waitUntil: 'networkidle' })
   const table = page.getByTestId('insights-members')
   await table.waitFor({ timeout: 15000 }); await page.waitForTimeout(1000)
   const m = await table.evaluate((t, { l, tp }) => {
@@ -62,7 +62,7 @@ const type = (el) => { const c = getComputedStyle(el); return { size: c.fontSize
   console.log('1024 — scrolled sideways: the frozen edge\'s shadow')
   const tctx = await browser.newContext({ viewport: { width: 1024, height: 900 } })
   const tp = await tctx.newPage()
-  await tp.goto(`${BASE}/leads/insights`, { waitUntil: 'networkidle' })
+  await tp.goto(`${BASE}/company/reports/leads`, { waitUntil: 'networkidle' })
   const tt = tp.getByTestId('insights-members')
   await tt.waitFor({ timeout: 15000 }); await tp.waitForTimeout(900)
   const room = await tt.evaluate((t) => t.scrollWidth - t.clientWidth)

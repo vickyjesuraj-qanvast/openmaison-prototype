@@ -66,6 +66,13 @@ export type TextFieldProps = {
    *  hold the typed words anywhere, any case — ↓ into the list, ↑ from its top back to the box, Enter takes the first match, Esc closes,
    *  "No matches" when none do. A letter typed on the closed field opens the list with it in the box. */
   searchable?: boolean
+  /** (fix-C, C-30) A text field that takes a few lines and keeps their breaks — a textarea with this many rows, the box growing with it;
+   *  the label, states and messages are the field's own. Text mode only, never with `below`. */
+  multiline?: number
+  /** (S44P — her UAT ask 2026-10-15, row 319) A select's last row, under a rule: an action that makes a new option ("New category…") — it
+   *  opens what makes it, the field keeps its value until the caller picks the new one. `help` is its second line — the rule, when the
+   *  viewer may not (the row then reads disabled and says why, REG-728). */
+  action?: { label: string; onSelect: () => void; disabled?: boolean; help?: string; testId?: string }
 }
 
 /**
@@ -76,7 +83,7 @@ export type TextFieldProps = {
 export function TextField({
   label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, below, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
-  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps, searchable = false,
+  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps, searchable = false, multiline, action,
 }: TextFieldProps) {
   const id = useId()
   const readOnlyScope = useReadOnly()
@@ -139,7 +146,7 @@ export function TextField({
     if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key !== ' ' || typed.current.text !== '')) {
       const now = e.timeStamp
       typed.current = { text: (now - typed.current.at < 700 ? typed.current.text : '') + e.key.toLowerCase(), at: now }
-      const hit = items.find((el) => (el.textContent ?? '').trim().toLowerCase().startsWith(typed.current.text))
+      const hit = items.find((el) => !el.hasAttribute('data-action') && (el.textContent ?? '').trim().toLowerCase().startsWith(typed.current.text))   // (S44P) the foot's action is no option to find by its letters
       if (hit) { e.preventDefault(); hit.focus() }
       return
     }
@@ -172,7 +179,7 @@ export function TextField({
     <div className={className ? `${styles.field} ${className}` : styles.field}
          data-kind={mode} data-size={size === 's' ? 's' : undefined} data-floated={floated || undefined} data-active={(focused || open) || undefined}
          data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}
-         data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined}>
+         data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined} data-multiline={multiline && mode === 'text' && !below ? '' : undefined}>
       <div ref={setBox} className={styles.box}
            onMouseDown={(e) => { if (mode !== 'text') { e.preventDefault(); (e.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus(); activate() } }}>
         {/* The control row. It only gets a wrapper when `below` is in play — otherwise the DOM is exactly as it was. */}
@@ -213,7 +220,18 @@ export function TextField({
         {icon ? <span className={styles.trail} aria-hidden><Icon name={icon} size={16} /></span> : null}
         </div> : (<>
         {leading ? <span className={styles.leading}>{leading}</span> : null}
-        {mode === 'text' ? (
+        {mode === 'text' && multiline ? (
+          /* (fix-C, C-30) a few lines, their breaks kept */
+          <textarea
+            id={id} autoFocus={autoFocus} className={styles.control} name={name} rows={multiline}
+            value={value} placeholder={placeholder} maxLength={maxLength} disabled={disabled} required={required}
+            aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
+            onChange={(e) => onChange?.(e.target.value)}
+            onFocus={() => { setFocused(true); onFocus?.() }}
+            onBlur={() => { setFocused(false); onBlur?.() }}
+            onKeyDown={onKeyDown}
+          />
+        ) : mode === 'text' ? (
           <input
             {...inputProps}
             id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
@@ -270,6 +288,20 @@ export function TextField({
               </button>
             ))}
             {searchable && shownOptions.length === 0 ? <div className={`${menuStyles.item} ${styles.noMatches}`} role="status">No matches</div> : null}
+            {action ? (
+              /* (S44P, row 319) the list's own action at its foot — walked by the arrows as the options are; picking it closes the list on
+                 the field (focus comes back there when what it opens closes) and hands over */
+              <>
+                <div className={menuStyles.divider} role="separator" />
+                <button type="button" role="option" aria-selected={false} aria-disabled={action.disabled || undefined} className={menuStyles.item} data-action="" data-testid={action.testId}
+                        onClick={action.disabled ? undefined : () => { setMenuOpen(false); controlRef.current?.focus(); action.onSelect() }}>
+                  <span className={menuStyles.itemStack}>
+                    <span className={menuStyles.itemLabel}><Icon name="add" size={20} />{action.label}</span>
+                    {action.help ? <span className={menuStyles.itemHelp}>{action.help}</span> : null}
+                  </span>
+                </button>
+              </>
+            ) : null}
           </div>
         </PortalMenu>
       ) : null}

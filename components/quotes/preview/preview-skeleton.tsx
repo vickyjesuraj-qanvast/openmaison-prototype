@@ -1,5 +1,8 @@
+'use client'
+
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
 import { Line, Slot } from '@/components/shell/ghost-kit'
+import { useSeedFlag } from '@/lib/ghost-shape'   // (pending modules S41b-1)
 import qp from './quote-preview.module.css'
 import styles from './preview-skeleton.module.css'
 
@@ -10,6 +13,7 @@ import styles from './preview-skeleton.module.css'
  * of controls under the title); the sheet is the document's A4 (794 wide), fitted to the stage where it is narrower.
  */
 export function PreviewSkeleton() {
+  const costs = useSeedFlag('role.costs', true)   // (pending modules S41b-1) no Internal copy for a member who doesn't see costs
   return (
     <GhostSheet label="Loading preview">
       <div className={styles.page}>
@@ -23,7 +27,7 @@ export function PreviewSkeleton() {
             </div>
           </div>
           <div className={qp.actions}>
-            <span className={qp.internal}><Slot kind="switch" /><Line w={80} lh={20} h={12} /></span>
+            {costs ? <span className={qp.internal}><Slot kind="switch" /><Line w={80} lh={20} h={12} /></span> : null}
             <Slot kind="btn" w={202} />
             <Slot kind="btn" w={119} />
             <Slot kind="btn" w={155} />

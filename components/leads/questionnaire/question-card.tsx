@@ -25,7 +25,7 @@ import styles from './question-card.module.css'
  * The inputs are the app's 48px `TextField` / `DateField` where 02 draws "Text Field 36" (REG-189, as REG-176).
  */
 export function QuestionCard({
-  question, now, mode, onAnswer, onCancel, onSave, saving, askedAt = null,
+  question, now, mode, onAnswer, onCancel, onSave, saving, askedAt = null, changes = 0, onHistory,
 }: {
   question: Question
   /** Server "now" (ms) for the "1d ago" stamp — never Date.now() in render. */
@@ -37,6 +37,9 @@ export function QuestionCard({
   saving?: boolean
   /** (UX audit 2026-09-30, T12) When the client was last asked this question (ms) — the unanswered card wears "Asked · 30 Sep". */
   askedAt?: number | null
+  /** (gaps build D, item 9 — 1.0 M-170) how many times the answer was overwritten; the clock opens its history */
+  changes?: number
+  onHistory?: () => void
 }) {
   const [draft, setDraft] = useState<string | string[]>(() => seedDraft(question))
   const [submitted, setSubmitted] = useState(false)
@@ -81,6 +84,14 @@ export function QuestionCard({
         <div className={styles.answer}>
           <p className={styles.a}><span className={styles.aLabel}>A: </span>{answerText(question)}</p>
           <span className={styles.when}>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
+          {/* (gaps build D, item 9 — 1.0's clock icon) an answer changed since it was first given keeps every version: old → new, who, when */}
+          {changes > 0 && onHistory ? (
+            <Tooltip label="Answer history">
+              <button type="button" className={styles.iconBtn} aria-label="Answer history" onClick={onHistory} data-testid="question-history">
+                <Icon name="history" size={20} />
+              </button>
+            </Tooltip>
+          ) : null}
           {question.answeredBy === 'studio' ? (
             <Tooltip label="Edit answer">
               {/* Bare 20 icon button — components/leads/detail/info-column.tsx `.iconBtn` in the secondary colour (931:47006 edit 20/Regular #666666). */}
@@ -101,33 +112,36 @@ function seedDraft(q: Question): string | string[] {
 }
 
 /** The type's input (02-question-types.txt). Labels are the Question Types names verbatim. */
-function AnswerInput({ question, value, onChange, error, today }: {
+export function AnswerInput({ question, value, onChange, error, today, label }: {
   question: Question
   value: string | string[]
   onChange: (v: string | string[]) => void
   error: string | undefined
   today: Date
+  /** (fix-F, F-05) the field's label for someone who isn't the studio — the client's portal says "Your answer" · "Pick one" · "Pick any";
+      the studio's tab keeps the Question Types names */
+  label?: string
 }) {
   const str = typeof value === 'string' ? value : ''
   const list = Array.isArray(value) ? value : []
   switch (question.type) {
     case 'number':
-      return <TextField label={QUESTION_TYPE_LABELS.number} value={str} numeric="digits" onChange={onChange} error={error} />
+      return <TextField label={label ?? QUESTION_TYPE_LABELS.number} value={str} numeric="digits" onChange={onChange} error={error} />
     case 'single': {
       // The question's own options; a seeded single-select without any falls back to the type's "(yes/no)" pair (02: "Yes" / "No").
       const opts = parseOptions(question)
-      return <SingleSelect label={QUESTION_TYPE_LABELS.single} options={opts.length ? opts : ['Yes', 'No']} value={str} onChange={onChange} error={error} />
+      return <SingleSelect label={label ?? QUESTION_TYPE_LABELS.single} options={opts.length ? opts : ['Yes', 'No']} value={str} onChange={onChange} error={error} />
     }
     case 'multi':
-      return <MultiSelect label={QUESTION_TYPE_LABELS.multi} options={parseOptions(question)} value={list} onChange={onChange} error={error} />
+      return <MultiSelect label={label ?? QUESTION_TYPE_LABELS.multi} options={parseOptions(question)} value={list} onChange={onChange} error={error} />
     case 'date':
-      return <DateField label={QUESTION_TYPE_LABELS.date} value={str} onChange={onChange} today={today} error={error} />
+      return <DateField label={label ?? QUESTION_TYPE_LABELS.date} value={str} onChange={onChange} today={today} error={error} />
     default:
       // components/om/text-field.tsx has no multiline mode, so the Text answer is the DS TextArea (52 tall per 931:47090,
       // see question-card.module.css .textArea); it carries its own error line (DS FieldError) in the TextField's style.
       // (REG-729) Labelled like its siblings — the Question Types name — as every DS TextArea is; the placeholder shows once it has focus.
       return (
-        <TextArea label={QUESTION_TYPE_LABELS.text} placeholder="Enter your answer" value={str} onChange={onChange}
+        <TextArea label={label ?? QUESTION_TYPE_LABELS.text} placeholder="Enter your answer" value={str} onChange={onChange}
                   isInvalid={!!error} errorMessage={error} className={styles.textArea} />
       )
   }

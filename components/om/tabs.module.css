@@ -40,3 +40,6 @@ button.tab { border: 0; background: none; cursor: pointer; }   /* (REG-645) a mo
 @media (hover: none) {
   .tab { min-width: 44px; }
 }
+
+/* (gaps build, package A — 12) A tab with a count: its label and the DS Badge's count side by side, on the label's own line. */
+.withCount { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }

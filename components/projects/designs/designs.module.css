@@ -1,0 +1,51 @@
+/*
+ * (simplify S-03 — Design › Designs, the owner's "build everything" 2026-10-09) A project's Designs view, on house pieces only: the tab toolbar
+ * (om/tab-toolbar.module.css), the Overview's card (leads/detail/card), a share's tiles on the house thumbnail (om/thumb.module.css, REG-820),
+ * a layout on the project-layouts dialog's own row (planner/project-layouts-dialog.module.css) — composed, never copied.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+
+/* a shared set of renders: its line (what · when · by whom · opened), the studio's note, its pictures */
+.share { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+.shareHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+.shareText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.shareName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.shareLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.message { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.tiles { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.tile { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 136px; min-width: 0; border: 0; padding: 0; background: none; cursor: pointer; text-align: left; }
+.tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.tileImg { composes: thumb from '../../om/thumb.module.css'; width: 136px; height: 136px; }
+.tileName { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tileSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tileChip { align-self: flex-start; }
+
+/* the project's layouts — the Plan the space in 3D dialog's rows */
+.list { composes: list from '../../planner/project-layouts-dialog.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
+.row { composes: row from '../../planner/project-layouts-dialog.module.css'; }
+.glyph { composes: glyph from '../../planner/project-layouts-dialog.module.css'; }
+.text { composes: text from '../../planner/project-layouts-dialog.module.css'; }
+.name { composes: name from '../../planner/project-layouts-dialog.module.css'; }
+.sub { composes: sub from '../../planner/project-layouts-dialog.module.css'; }
+.chips { display: inline-flex; flex-wrap: wrap; gap: var(--om-spacing-2); justify-content: flex-end; }
+
+/* the renders filed in Files */
+.saved { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
+.savedThumb { composes: thumb from '../../om/thumb.module.css'; width: 96px; height: 96px; }
+.savedThumb:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (simplify round 2) the line that says the client can't see these, with its door — the Invite to Portal panel's own note (its paused line),
+   composed; the door is the house text link (REG-729) */
+.reach { composes: note from '../../portal/client-access-panel.module.css'; align-items: center; flex-wrap: wrap; column-gap: var(--om-spacing-2); }
+.reachText { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.reachLink { composes: link from '../../om/text-link.module.css'; flex-shrink: 0; margin-left: auto; white-space: nowrap; }
+
+@media (max-width: 767px) {
+  .share { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
+  .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile { width: auto; }
+  .tileImg { width: 100%; height: auto; aspect-ratio: 1; }
+  .list, .saved { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
+}

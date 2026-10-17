@@ -1,0 +1,20 @@
+/* (fix-E, E-26) Deleted Projects' own on the Deleted sheets' stylesheet (components/contracts/deleted-contracts-sheet.module.css): the
+   project's number under its name — Make the project again and Activity name a deleted project by it — and, on a phone, each value with its
+   label ("Client · Tan Wei Ling", Settings' event table rule, sweep S4 #9) and the selection box beside the name, not on a line of its own. */
+.twoLine { display: flex; flex-direction: column; min-width: 0; }
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.number { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .phoneRow.phoneRow { grid-template-columns: 40px minmax(0, 1fr); }
+  .phoneRow > :not(:first-child):not(:nth-child(2)) { grid-column: 1 / -1; }
+  .labelled[data-label]::before { content: attr(data-label) ' ·'; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* the cell's own gap spaces it from the value */
+}
+
+/* (parity P-36, D-10) The mocked Deleted Leads sheet's look (779:26316) — composed from its stylesheet, never copied: the retention banner on
+   top (the project's own words, Q-11: they stay until deleted forever), Restore and Delete Forever as its two text links 24 apart at the row's
+   start, the note under the table. */
+.banner { composes: banner from '../leads/deleted-sheet.module.css'; }
+.bannerClose { composes: bannerClose from '../leads/deleted-sheet.module.css'; }
+.link { composes: link from '../leads/deleted-sheet.module.css'; }
+.note { composes: note from '../leads/deleted-sheet.module.css'; }
+.actions.actions { justify-content: flex-start; gap: var(--om-spacing-6); }

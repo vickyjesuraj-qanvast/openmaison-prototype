@@ -37,6 +37,17 @@ export function FieldError({ message }: { message?: string }) {
   return message ? <span className={styles.fieldError} role="alert">{message}</span> : null
 }
 
+/** (S43B · F1-01) What Auto Fill read, under the log it filled — what filled, what was kept, what wasn't found, or why a file couldn't be read
+    (lib/leads/contact-fill.ts `fillWords`). The log's own callout look (REG-320), so it reads as the log's, in the Move stage window and Notes. */
+export function AutoFillNote({ text }: { text: string }) {
+  return (
+    <p className={styles.callout} role="status" data-testid="auto-fill-note">
+      <Icon name="info" size={16} weight={300} />
+      <span>{text}</span>
+    </p>
+  )
+}
+
 /** `required` (UX audit 2026-09-30, L2) marks a mandatory attach row the way ChoiceChips marks its label — "…*". */
 export function SectionRow({ label, action, required = false }: { label: string; action?: ReactNode; required?: boolean }) {
   return (
@@ -48,13 +59,15 @@ export function SectionRow({ label, action, required = false }: { label: string;
 }
 
 /** DS Link text (780:92851): 14 Semi Bold primary, optional 20px leading icon (or any `leading` glyph — the 17px sparkle), H g4; hover on-primary-variant. */
-export function LinkButton({ icon, leading, children, onClick }: {
+export function LinkButton({ icon, leading, children, onClick, ariaLabel }: {
   icon?: string; leading?: ReactNode; children: ReactNode; onClick?: (e: MouseEvent<HTMLButtonElement>) => void
+  /** (pending modules S05) the press's full name, where the words alone don't say what it opens */
+  ariaLabel?: string
 }) {
   const ro = useReadOnly()
   if (ro) return null   // read-only stage: no Attach / Add / Reset affordances
   return (
-    <button type="button" className={styles.link} onClick={onClick}>
+    <button type="button" className={styles.link} onClick={onClick} aria-label={ariaLabel}>
       {leading ?? (icon ? <Icon name={icon} size={20} /> : null)}
       {children}
     </button>
@@ -76,10 +89,14 @@ export function FileTile({ name, onDelete, thumb, kind = 'pdf' }: { name: string
   const ro = useReadOnly()
   return (
     <div className={styles.tile}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className={styles.tileImg} src={thumb ?? '/figma-assets/chat-screenshot-thumb.png'} alt="" />
+      {/* (pending modules S05) a real file with no picture (a PDF before its first page is drawn) wears its kind's glyph in the box — the
+          mock's screenshot stays for a tile that names no file (`thumb` absent) */}
+      {thumb === null
+        ? <span className={styles.tileBox} aria-hidden><Icon name={kind === 'pdf' ? 'picture_as_pdf' : kind === 'image' ? 'image' : 'draft'} size={24} /></span>
+        // eslint-disable-next-line @next/next/no-img-element
+        : <img className={styles.tileImg} src={thumb ?? '/figma-assets/chat-screenshot-thumb.png'} alt="" />}
       <div className={styles.tileRow}>
-        <span className={styles.tilePdf}><Icon name={kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={20} fill /></span>
+        <span className={styles.tilePdf}><Icon name={kind === 'pdf' ? 'picture_as_pdf' : kind === 'doc' ? 'draft' : 'image'} size={20} fill /></span>
         <span className={styles.tileName}>{name}</span>
         {ro ? null : (
           <Tooltip label="Remove file">
@@ -106,8 +123,9 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
 
 /**
  * Upload target (780:90940 · 780:91263 · 780:92744 / 780:92808): 2px dashed on-surface/border, p40, 14 Semi Bold title with
- * "browse" underlined in the same ink, 12 helper. Any file the user picks or drops is accepted — the prototype then
- * shows the mock's own file (the panels decide which) after the "Uploading..." state.
+ * "browse" underlined in the same ink, 12 helper. The file the user picks or drops goes to the host, which reads it and keeps it
+ * (pending modules S05). (S43E, F3-02 W2-01) A drop that carries no file (a link, a bit of text) or an empty pick reaches no host:
+ * it used to arrive as `undefined`, and the Won step's signed contract took that for an upload of the mock's file.
  * `accept` is unset by default (Auto Fill takes a screenshot from any app); the quote / contract dropzones pass PDF.
  * `variant="notes"` = Notes › Auto Fill (931:45344, spec 02): 552×168, the helper 237 wide and centred.
  * Keyboard: the box is a real tab stop; Enter / Space open the file picker (audit 2026-08-30).
@@ -144,7 +162,7 @@ export function Dropzone({ title, helper, onPick, onPickMany, uploading, accept,
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onBrowse) onBrowse(); else inputRef.current?.click() } }}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
-      onDrop={(e) => { e.preventDefault(); setOver(false); if (onPickMany) onPickMany([...e.dataTransfer.files]); else onPick(e.dataTransfer.files[0]) }}
+      onDrop={(e) => { e.preventDefault(); setOver(false); const files = [...e.dataTransfer.files]; if (!files.length) return; if (onPickMany) onPickMany(files); else onPick(files[0]) }}
       role="button"
       tabIndex={0}
       aria-label={label}
@@ -152,7 +170,7 @@ export function Dropzone({ title, helper, onPick, onPickMany, uploading, accept,
       <span className={styles.dropTitle}>{title}</span>
       {helper ? <span className={styles.dropHelper}>{helper}</span> : null}
       <input ref={inputRef} type="file" accept={accept} className={styles.fileInput} tabIndex={-1} aria-hidden multiple={!!onPickMany}
-             onChange={(e) => { const list = [...(e.target.files ?? [])]; e.target.value = ''; if (onPickMany) { if (list.length) onPickMany(list) } else onPick(list[0]) }} />
+             onChange={(e) => { const list = [...(e.target.files ?? [])]; e.target.value = ''; if (!list.length) return; if (onPickMany) onPickMany(list); else onPick(list[0]) }} />
     </div>
   )
 }

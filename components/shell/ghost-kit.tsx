@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Bone } from './skeleton'
 import { tabBones } from '@/lib/company/sections'
 import k from './ghost-kit.module.css'
+import tf from '@/components/om/text-field.module.css'   // (pending modules S17) a helper's own line
+import ch from '@/components/om/chips.module.css'   // (pending modules S17) the house chips' boxes
 
 /**
  * (REG-708) The ghost kit. Every page's ghost is its own layout drawn with bones: the page's containers keep their own classes (the card, the
@@ -24,6 +26,57 @@ export function Line({ w, lh = 20, h = 12, className, style }: { w: W; lh?: numb
  */
 export function Words({ children, className, as: Tag = 'span', style }: { children: string; className?: string; as?: 'span' | 'p' | 'h2' | 'h3' | 'div'; style?: CSSProperties }) {
   return <Tag className={className ? `${className} ${k.words}` : k.words} style={style} aria-hidden><span className={k.wordBars}>{children}</span></Tag>
+}
+
+/**
+ * (pending modules S17) A DS text button, drawn to its own box: 36 tall, padded as the button pads (8 · 4 before an icon), the 20 icon box and
+ * the label in the button's type as a bar — so a row of them (a module's *Kept in Company:* links, a member's Preferences · About page) wraps
+ * in the ghost where it wraps on the page. Pass the page's own label.
+ */
+export function GhostTextButton({ label, icon = false, iconEnd = false, className }: { label: string; icon?: boolean; /** a trailing glyph (More details ▾) */ iconEnd?: boolean; className?: string }) {
+  return (
+    <span className={`${k.textBtn}${icon ? ` ${k.textBtnIcon}` : ''}${iconEnd ? ` ${k.textBtnIconEnd}` : ''}${className ? ` ${className}` : ''}`} aria-hidden>
+      {icon ? <Bone w={18} h={18} r={4} /> : null}
+      <span className={k.words}><span className={k.wordBars}>{label}</span></span>
+      {iconEnd ? <Bone w={18} h={18} r={4} /> : null}
+    </span>
+  )
+}
+
+/** (pending modules S17) The house chips (components/om/chips) as a ghost: each chip its own box — the chip's padding, its stroke's width and
+    its type, 44 tall with a finger — filled with the bone colour, so the row wraps where the page's does. Pass the page's own labels. */
+export function GhostChips({ labels, widths, rail = false, className }: { labels?: readonly string[]; /** chips whose words are data (a count): their desk widths */ widths?: readonly number[]; /** one row, as a chip rail scrolls them */ rail?: boolean; className?: string }) {
+  return (
+    <span className={`${ch.chips}${rail ? ` ${k.chipRail}` : ''}${className ? ` ${className}` : ''}`} aria-hidden>
+      {labels ? labels.map((l, i) => <span key={`${l}-${i}`} className={`${ch.chip} ${k.chipGhost}`}>{l}</span>)
+        : (widths ?? []).map((w, i) => <span key={i} className={`${ch.chip} ${k.chipGhost}`} style={{ width: w }} />)}
+    </span>
+  )
+}
+
+/** (pending modules S17) A MetaChip (the DS Tag at 20) drawn as its own box — its padding, its caption-xs capitals — filled with the bone colour,
+    so it is the chip's width exactly. Pass the page's own words. */
+export function GhostChip({ label }: { label: string }) {
+  return <span className={k.chipBox} aria-hidden>{label}</span>
+}
+
+/**
+ * (pending modules S17) A cell the page's stylesheet labels on a phone — the card tables' stacked rows print their column's name before the
+ * value (`::before { content: attr(data-label) }`, Settings' event tables, the Lead stages' count). Spread onto the ghost's cell with the
+ * page's own class: the name takes its room as a bar, its letters hidden, exactly where the page prints it; a desk, which prints no name,
+ * draws nothing.
+ */
+/** (pending modules S17) A `Line` a phone draws and a desk doesn't — a name's second line where a phone's narrow column wraps it. */
+export const phoneOnly = k.phoneOnly
+/** (pending modules S17) A piece a desk draws and a phone doesn't (`Slot desk`'s rule, for any piece). */
+export const deskOnly = k.desk
+
+export const labelled = (className: string | undefined, label: string) => ({ className: `${className ?? ''} ${k.labelled}`, 'data-label': label })
+
+/** (pending modules S17) A tile's or a row's help line that wraps to a second line in a phone's narrow column — one block, the lines' own
+    16 apart (no gap between them), the second drawn on a phone only. */
+export function HelpLines({ w, w2 }: { w: W; w2: W }) {
+  return <span style={{ display: 'flex', flexDirection: 'column' }}><Line w={w} lh={16} h={10} /><Line w={w2} lh={16} h={10} className={k.phoneOnly} /></span>
 }
 
 /** Several lines of a paragraph, the last one short. */
@@ -50,12 +103,13 @@ export function Slot({ kind, w, className, style, desk, fill }: { kind: SlotKind
   )
 }
 
-/** An outlined TextField (text-field.module.css): the 48 box — 36 at size s, 44 where a finger drives it — and, with a helper, its 16px line 4 below. */
-export function GhostField({ helper, size, w }: { helper?: W | boolean; size?: 's'; w?: W }) {
+/** An outlined TextField (text-field.module.css): the 48 box — 36 at size s, 44 where a finger drives it — and, with a helper, its 16px line 4 below.
+    (pending modules S17) `say` = the helper's own words, set in the field's support line, so a helper that wraps on the page wraps here. */
+export function GhostField({ helper, say, size, w }: { helper?: W | boolean; say?: string; size?: 's'; w?: W }) {
   return (
     <span className={k.fieldCol} style={w !== undefined ? { width: w } : undefined}>
       <Slot kind={size === 's' ? 'fieldS' : 'field'} w="100%" />
-      {helper ? <Line w={helper === true ? '64%' : helper} lh={16} h={10} /> : null}
+      {say ? <span className={tf.support}><span className={k.words}><span className={k.wordBars}>{say}</span></span></span> : helper ? <Line w={helper === true ? '64%' : helper} lh={16} h={10} /> : null}
     </span>
   )
 }
@@ -90,8 +144,24 @@ export function GhostHead2({ crumb = 96, title, chips = [], actions = [] }: { cr
 }
 
 /** The om Tabs strip: one bone per tab, as wide as its label reads. */
-export function GhostTabs({ labels }: { labels: readonly string[] }) {
-  return <div className={k.tabs} aria-hidden>{tabBones([...labels]).map((w, i) => <Bone key={i} w={w} h={14} />)}</div>
+export function GhostTabs({ labels, active = 0 }: { labels: readonly string[]
+  /** (S42 audit A-10) the open tab's place — where the strip scrolls ≤1024 (the live strip centres it, components/om/tabs.tsx), so the hand-over
+      never jumps sideways. Drawn in CSS from the bones' own geometry (the strip's width read as `cqw`), so even the server's loader stands there. */
+  active?: number }) {
+  const widths = tabBones([...labels])
+  if (active <= 0 || active >= widths.length) return <div className={k.tabs} aria-hidden>{widths.map((w, i) => <Bone key={i} w={w} h={14} />)}</div>
+  /* ≤1024 the row's own padding 16 and gap 20 (the live strip's); a tab on touch is at least 44 wide (REG-273) — the centre of the open one and
+     the row's whole width, as the live strip measures them */
+  const box = widths.map((w) => Math.max(44, w))
+  const centre = 16 + box.slice(0, active).reduce((s, w) => s + w + 20, 0) + box[active]! / 2
+  const total = 16 + box.reduce((s, w) => s + w, 0) + 20 * (box.length - 1) + 16
+  return (
+    <div className={`${k.tabs} ${k.tabsScroll}`} aria-hidden>
+      <div className={k.tabsRow} data-active="" style={{ '--ghost-tab-centre': `${centre}px`, '--ghost-tab-total': `${total}px` } as CSSProperties}>
+        {widths.map((w, i) => <span key={i} className={k.tabBone}><Bone w={w} h={14} /></span>)}
+      </div>
+    </div>
+  )
 }
 
 /** A toolbar: at the left a title (a number: its width) or any node; at the right the tools (a width = a button, 'icon' = a 36 square). */

@@ -1,0 +1,23 @@
+/* (gaps build J) The planner's gallery: a layout's cover is its own top view. */
+.menuRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+.menuRow > :first-child { color: var(--om-color-on-surface-secondary); }
+.cover { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: var(--om-spacing-3); background: var(--om-color-surface-bg); }
+.cover svg { width: 100%; height: 100%; }
+.coverEmpty { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.glyph { width: 100%; height: 100%; display: inline-flex; align-items: center; justify-content: center; padding: 2px; color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-bg); }
+.glyph svg { width: 100%; height: 100%; }
+/* (parity map, TD-073) the first run's examples — each its own furnished top view */
+.examples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-3); width: 100%; }
+.example { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-1); padding: var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; text-align: left; }
+@media (hover: hover) { .example:hover:not(:disabled) { border-color: var(--om-color-primary-default); } }
+.example:disabled { cursor: default; opacity: 0.7; }
+.example:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.exampleArt { display: flex; align-items: center; justify-content: center; height: 96px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow: hidden; }
+.exampleArt svg { width: 100%; height: 100%; padding: var(--om-spacing-2); }
+.exampleName { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+@media (max-width: 767px) { .examples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* (parity map, TD-098) opened from Tools › Floorplan to 3D Isometric: one quiet line above the gallery */
+.isoNote { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-surface-default); }
+.isoText { flex: 1; min-width: 200px; font: var(--om-type-body-s); }
+.isoLink { min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subtitle-s); color: var(--om-color-primary-default); }
+.isoLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

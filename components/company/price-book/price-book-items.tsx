@@ -27,6 +27,7 @@ import { LIBRARY_ROOT, folderBlock, type Folder } from '@/lib/company/folder-lib
 import { changedFieldsWord, type ItemChange } from '@/lib/company/price-book-changes'
 import type { PriceBookItem } from '@/lib/db/schema'
 import { PriceBookItemsGhost } from './price-book-ghost'
+import { oneSpelling } from '@/lib/settings/trades'
 
 type Row = PriceBookItemRow & LibraryItem
 const toRow = (i: PriceBookItemRow): Row => ({ ...i, title: i.name, updatedAt: i.updatedAt ?? i.createdAt })
@@ -52,6 +53,9 @@ const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <Pric
  */
 export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookData; from?: string; folders?: Folder[] }) {
   const { items, deletedItems, now, viewer, runsBook } = data
+  /* (pending modules S41b-1 — 1.0's Cost & Margin Visibility) a member who doesn't see costs: the items came with their cost folded into their
+     price (lib/company/price-book.ts), and the Cost and Markup columns, the export's two, Set markup and the dialog's two boxes are left out */
+  const costs = data.costs !== false
   const router = useRouter()
   const snackbar = useSnackbar()
   const { run } = useRun()
@@ -77,16 +81,18 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   /* (REG-627, parity Q-18) The export's sheet: the list's own columns plus the description, money with its two decimals.
      (REG-653, price book parity Q-14) Every item or what the list shows; Kind and Link come back on an import (the columns map by name). */
   const downloadItems = (format: ExportFormat, scope: 'all' | 'shown' = 'all') => {
-    const head = ['Item', 'Kind', 'Description', 'Unit', 'Cost', 'Markup', 'Unit price', 'Category', 'Vendor', 'Website link', 'Used by', ...(withProposed ? ['Status'] : [])]   // (sweep S5 #29) the dialog's names; the import reads them back (Status it leaves aside)
+    /* (pending modules S12) + Waste % after the price — 1.0's CSV column; the import maps it back by name */
+    const head = ['Item', 'Kind', 'Description', 'Unit', ...(costs ? ['Cost', 'Markup'] : []), 'Unit price', 'Waste %', 'Category', 'Vendor', 'Website link', 'Used by', ...(withProposed ? ['Status'] : [])]   // (sweep S5 #29) the dialog's names; the import reads them back (Status it leaves aside)
     const d2 = (m: number) => (m / 100).toFixed(2)
     const list = exportable(scope === 'shown' && exportShown ? exportShown : items)
-    const body = list.map((i) => [i.name, ITEM_KIND_LABEL[kindOf(i)], i.description ?? '', i.unit, d2(i.costMinor), d2(i.markupMinor), d2(unitPrice(i)), i.category ?? '', i.vendor ?? '', i.link ?? '', String(i.usedBy), ...(withProposed ? [i.status === 'proposed' ? 'Proposed' : 'Approved'] : [])])
+    const body = list.map((i) => [i.name, ITEM_KIND_LABEL[kindOf(i)], i.description ?? '', i.unit, ...(costs ? [d2(i.costMinor), d2(i.markupMinor)] : []), d2(unitPrice(i)), String(i.wastePct ?? 0), i.category ?? '', i.vendor ?? '', i.link ?? '', String(i.usedBy), ...(withProposed ? [i.status === 'proposed' ? 'Proposed' : 'Approved'] : [])])
     return downloadBlob(buildTable('OpenMaison — My Items', head, body, format), `my-items.${format.toLowerCase()}`)
   }
   /* (REG-653, price book parity Q-15) The list's bulk changes: Set category · Set vendor · Set markup · Delete — the Owners' and Admins'. */
   const [bulkEdit, setBulkEdit] = useState<{ kind: BulkEdit; ids: string[]; clear: () => void } | null>(null)
   const [bulkDelete, setBulkDelete] = useState<{ ids: string[]; clear: () => void } | null>(null)
-  const categories = useMemo(() => [...new Set([...data.trades, ...items.map((i) => i.category).filter((c): c is string => !!c)])].sort((a, b) => a.localeCompare(b)), [data.trades, items])
+  /* (S44P, M14 — row 341, triage §12.12) a category typed in two cases is one entry — the trades' own spelling first, else the first item's */
+  const categories = useMemo(() => oneSpelling(data.trades, items.map((i) => i.category)), [data.trades, items])
   const kindsPresent = useMemo(() => ITEM_KINDS.filter((k) => items.some((i) => kindOf(i) === k)), [items])
   const proposedCount = items.filter((i) => i.status === 'proposed').length
   const block = (t: PriceBookItemRow) => itemChangeBlock(viewer, t)
@@ -147,7 +153,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       bulk={runsBook ? (ids, clear) => [
         { label: 'Set category', onClick: () => setBulkEdit({ kind: 'category', ids, clear }) },
         { label: 'Set vendor', onClick: () => setBulkEdit({ kind: 'vendor', ids, clear }) },
-        { label: 'Set markup', onClick: () => setBulkEdit({ kind: 'markup', ids, clear }) },
+        ...(costs ? [{ label: 'Set markup', onClick: () => setBulkEdit({ kind: 'markup', ids, clear }) }] : []),
         { label: 'Delete', tone: 'danger', onClick: () => setBulkDelete({ ids, clear }) },
       ] : undefined}
       filters={[...(imported && imported.size ? [{ key: 'imported', label: 'Just imported', test: (t: Row) => imported.has(t.id), attention: (n: number) => `${n} just imported`, icon: 'upload_file' }] : []), ...(proposedCount ? [{ key: 'proposed', label: 'Proposed', test: (t: Row) => t.status === 'proposed', attention: (n: number) => `${n} proposed` }] : []), ...kindsPresent.map((k) => ({ key: k, label: ITEM_KIND_LABEL[k], test: (t: Row) => t.status !== 'proposed' && kindOf(t) === k }))]}
@@ -178,9 +184,13 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
           cell: (t) => <span className={table.status}><span className={table.statusWord} data-tone={t.status === 'proposed' ? 'await' : undefined}>{t.status === 'proposed' ? 'Proposed' : 'Approved'}</span>{t.status === 'proposed' && t.proposer ? <span className={table.statusNote}>by {t.proposer}</span> : null}</span> },
         { key: 'kind', label: 'Kind', track: '110px', cell: (t) => <span>{ITEM_KIND_LABEL[kindOf(t)]}</span> },
         { key: 'unit', label: 'Unit', track: '96px', cell: (t) => <span className={styles.oneLine}>{t.unit}</span> },
-        { key: 'cost', label: 'Cost', track: '120px', sortable: (t) => t.costMinor, cell: (t) => <span className={styles.num}>{money2(t.costMinor)}</span> },
-        { key: 'markup', label: 'Markup', track: '120px', sortable: (t) => t.markupMinor, cell: (t) => <span className={styles.num}>{money2(t.markupMinor)}</span> },
+        ...(costs ? [
+          { key: 'cost', label: 'Cost', track: '120px', sortable: (t: Row) => t.costMinor, cell: (t: Row) => <span className={styles.num}>{money2(t.costMinor)}</span> },
+          { key: 'markup', label: 'Markup', track: '120px', sortable: (t: Row) => t.markupMinor, cell: (t: Row) => <span className={styles.num}>{money2(t.markupMinor)}</span> },
+        ] : []),
         { key: 'price', label: 'Unit price', track: '130px', sortable: (t) => unitPrice(t), cell: (t) => <span className={styles.num}>{money2(unitPrice(t))}</span> },
+        /* (pending modules S12) the share a purchase order from the quote orders on top — off until Column settings turns it on (a purchasing detail) */
+        { key: 'waste', label: 'Waste', track: '96px', hidden: true, sortable: (t) => t.wastePct ?? 0, cell: (t) => <span className={`${styles.num} ${t.wastePct ? '' : styles.muted}`}>{t.wastePct ? `${t.wastePct}%` : '--'}</span> },
         { key: 'category', label: 'Category', track: '150px', sortable: (t) => (t.category ?? '\uffff').toLowerCase(), cell: (t) => <span className={`${styles.oneLine} ${t.category ? '' : styles.muted}`}>{t.category ?? '--'}</span> },   /* (sweep S5 #33) an empty cell reads "--" (REG-228) */
         { key: 'vendor', label: 'Vendor', track: '160px', sortable: (t) => (t.vendor ?? '\uffff').toLowerCase(), cell: (t) => <span className={`${styles.oneLine} ${t.vendor ? '' : styles.muted}`}>{t.vendor ?? '--'}</span> },
         { key: 'used', label: 'Used by', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span className={styles.oneLine}>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</span> : <span className={`${styles.oneLine} ${styles.muted}`}>Not on a quote yet</span>) },   /* (sweep S5 #9) one line, never cut */
@@ -198,7 +208,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
         start: (place) => (runsBook
           ? { primary: { label: 'Import from a spreadsheet', icon: 'upload_file', onPress: () => setImportOpen(true) }, secondary: { label: 'New item', icon: 'add', onPress: () => setEdit({ open: true, item: null, folderId: place.folderId }) } }
           : { primary: { label: 'Propose an item', icon: 'add', onPress: () => setEdit({ open: true, item: null, folderId: place.folderId }) } }) }}>   {/* (sweep S5 #22) the help offers what this member can do */}
-      <ItemDialog open={edit.open} item={editItem} onClose={() => setEdit({ open: false, item: null })} onSave={save} trades={data.trades} now={now}
+      <ItemDialog open={edit.open} item={editItem} onClose={() => setEdit({ open: false, item: null })} onSave={save} trades={data.trades} units={data.units} now={now} costs={costs} canAddTrade={runsBook} canAddUnit={runsBook}
                   proposing={!runsBook} readOnly={editItem ? block(editItem) : null}
                   onBringBack={editItem && !block(editItem) ? (h) => bringBack(editItem, h) : undefined}
                   proposal={editItem && editItem.status === 'proposed' ? { by: editItem.proposer, at: editItem.createdAt.getTime(), canReview: runsBook, onApprove: (edited) => { if (editItem) return approve(editItem, edited) }, onSendBack: () => { if (editItem) askSendBack(editItem) } } : null} />
@@ -210,7 +220,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: exportable(items).length, shown: exportable(exportShown).length, noun: 'items' } : undefined}
                     option={proposedCount ? { label: 'Include proposed items', checked: withProposed, onChange: setWithProposed } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
-      <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items} trades={data.trades}
+      <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items} trades={data.trades} units={data.units} costs={costs}
                          onImport={(lines, vendor, match, kind) => { setImportOpen(false); void run('import the items', async () => {
                            const r = (await settle(importPriceBookItems(lines, vendor, match, kind))) as { added: number; updated: number; skipped: number; batch: ImportBatch; touched: string[] }; router.refresh()
                            const said = [r.added ? `${r.added} ${r.added === 1 ? 'item' : 'items'} added` : null, r.updated ? `${r.updated} updated` : null, r.skipped ? `${r.skipped} skipped` : null].filter(Boolean).join(' · ') || 'Nothing imported'

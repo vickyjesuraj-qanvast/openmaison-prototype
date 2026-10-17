@@ -22,11 +22,13 @@ const [out = WELCOME_AFTER.image, walls = WELCOME_AFTER.walls, floor = WELCOME_A
 const sample = sampleByKey(WELCOME_AFTER.sample)!
 const detection = sampleDetection(sample)
 const room = { sampleKey: sample.key, detection, name: sample.name }
+/* (pending modules S43C) the owner's living room: its three painted walls (the TV wall's oak panels and the cabinet stay oak) */
+const WALLS = ['cream painted side wall', 'cream painted back wall', 'cream painted TV wall']
 const idOf = (label: string, list: { id: string; label: string }[]) => { const x = list.find((d) => d.label === label); if (!x) throw new Error(`no ${label}`); return x.id }
 const pending: Pending = {
   ...emptyPending(), variants: 1, quality: 'fast',
-  materials: { [idOf('white painted back wall', detection.surfaces)]: walls, [idOf('white wall above the window', detection.surfaces)]: walls, [idOf('light oak floor', detection.surfaces)]: floor },
-  furniture: { [idOf('grey fabric sofa', detection.furniture)]: { action: 'customize', customizeColor: colour, customizeMaterial: material, replacementDesc: null, refImage: null } },
+  materials: { ...Object.fromEntries(WALLS.map((w) => [idOf(w, detection.surfaces), walls])), [idOf('beige stone floor', detection.surfaces)]: floor },
+  furniture: { [idOf('cream bouclé sofa', detection.furniture)]: { action: 'customize', customizeColor: colour, customizeMaterial: material, replacementDesc: null, refImage: null } },
 }
 const r = await runPass({ kind: 'edit', base: { key: ORIGINAL, url: sample.original, finishes: NO_FINISHES }, room, pending, resolve: (id) => resolveMaterial(id, [], []) })
 if ('error' in r) throw new Error(r.error)

@@ -1,0 +1,27 @@
+/*
+ * (pending modules S22) The Dashboard — no stylesheet of its own beyond its frame: the page's content box (Market Insights' `.content`, the house
+ * 24 / 16 insets), the lead Overview's card grid weighted act : glance (the project Overview's `.grid` · `.act` · `.glance`), and the house
+ * number tiles two to a row in the narrow glance stack. Composed, never copied.
+ */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+.grid { min-width: 0; }
+.col { min-width: 0; }
+/* Where it stands: the tiles inside the card's own 20 inset; two to a row in the glance stack at a desk (the house row is one line from 1025 —
+   five tiles there would be under the ~176 floor), an odd last tile taking the row as a phone's does */
+.tiles { padding: 0 var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+@media (min-width: 1025px) {
+  .tiles .standTiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles .standTiles[data-odd] > :last-child { grid-column: 1 / -1; }
+}
+/* A phone reads the page in its order — what needs you, your tasks, what is next, where it stands, the team, the updates, the article: the
+   columns dissolve (the lead Overview's rule) and each card takes its place (the lead's and the project's own `order`s are for their own cards — these outrank them, 0,4,0). */
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  .content .grid .col > [data-card='needs'] { order: 0; }
+  .content .grid .col > [data-card='my-work'] { order: 1; }
+  .content .grid .col > [data-card='coming-up'] { order: 2; }
+  .content .grid .col > [data-card='stands'] { order: 3; }
+  .content .grid .col > [data-card='team'] { order: 4; }
+  .content .grid .col > [data-card='updates'] { order: 5; }
+  .content .grid .col > [data-card='article'] { order: 6; }
+}

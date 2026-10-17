@@ -5,7 +5,8 @@ import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import type { LeadReturn, Member } from '@/lib/db/schema'
-import { displayDateTimeTight, money } from '@/lib/format'
+import { displayDate, displayDateTimeTight, money } from '@/lib/format'
+import { appealUntil, appealWindowPassed } from '@/lib/leads/return-model'   // (S42 B-10)
 import { returnTags } from '@/lib/leads/return-tags'
 import { Card } from './card'
 import styles from './returned-card.module.css'
@@ -14,8 +15,10 @@ import styles from './returned-card.module.css'
  * LEAD RETURNED card (processing 858:25188 · rejected + appeal 858:24095 · approved 858:24144).
  * Spec: design-source/context/lead-overview/05-*.txt.
  */
-export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab }: {
+export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab, now }: {
   ret: LeadReturn
+  /** (S42 B-10) the page's clock — past Qanvast's window the banner says the day it ran to */
+  now: number
   returnedBy: Member | null
   onView: () => void
   onAppeal: () => void
@@ -73,6 +76,7 @@ export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab 
       ) : null },
       { key: 'Returned on', value: displayDateTimeTight(ret.returnedAt) },
       { key: 'Reason', value: ret.reason },
+      ...(ret.appealOf ? [{ key: 'Appeal of', value: 'The return Qanvast rejected' }] : []),   // (pending modules S05) an appeal says so
     ]
   }
 
@@ -82,7 +86,9 @@ export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab 
         {showAppeal ? (
           <button type="button" className={styles.banner} onClick={onAppeal}>
             <span className={styles.bannerText}>
-              Submit an appeal within <b>{`${ret.appealDays} days`}</b> with more supporting documents/information here.
+              {appealWindowPassed(ret, now)
+                ? <>Qanvast’s {ret.appealDays} days ran to <b>{displayDate(appealUntil(ret)!)}</b> — it may still look at an appeal with more supporting documents/information here.</>
+                : <>Submit an appeal within <b>{`${ret.appealDays} days`}</b> with more supporting documents/information here.</>}
             </span>
             <span className={styles.bannerIcon}><Icon name="chevron_right" size={24} /></span>
           </button>

@@ -2,6 +2,7 @@ import 'server-only'
 import { asc, desc, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadTasks, leads, members, tags, taskTemplates, templateTasks, type Member, type Tag, type TaskTemplate } from '@/lib/db/schema'
+import { withYou } from '@/lib/db/session'   // (pending modules S43A) "you" = this request's member
 import { fetchViewer } from '@/lib/leads/visibility'
 
 /* Company › Templates › Tasks (REG-538): the checklists the team adds to a lead in one go, as a library with an editor. */
@@ -17,7 +18,7 @@ export async function fetchTaskTemplatesData(): Promise<TaskTemplatesData> {
     db.select().from(taskTemplates).orderBy(desc(taskTemplates.updatedAt), asc(taskTemplates.createdAt)),
     db.select().from(templateTasks).orderBy(asc(templateTasks.sortOrder)),
     db.select({ templateId: leadTasks.templateId, n: sql<number>`count(distinct coalesce(${leadTasks.leadId}, 'studio'))` }).from(leadTasks).where(isNotNull(leadTasks.templateId)).groupBy(leadTasks.templateId),
-    db.select().from(members),
+    db.select().from(members).then(withYou),
     db.select().from(tags).orderBy(asc(tags.createdAt)),
     db.select({ id: leads.id, name: leads.name }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
   ])

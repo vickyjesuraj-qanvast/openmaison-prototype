@@ -1,0 +1,38 @@
+/*
+ * (pending modules S39) Company › Reports › Studio health — Leads › Insights' page (REG-611), composed, never copied, as Meetings' is
+ * (./meetings-report.module.css): its range bar, sections, gate and the By team member table on the table core with its phone cards. This sheet
+ * keeps only what this page adds: the space between its groups, the chart card set in the page's flow, the section titles as headings.
+ */
+.bar { composes: bar from '../../leads/insights/insights-view.module.css'; }
+.barEnd { composes: barEnd from '../../leads/insights/insights-view.module.css'; }
+.caption { composes: caption from '../../leads/insights/insights-view.module.css'; }
+.section { composes: section from '../../leads/insights/insights-view.module.css'; }
+.sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; }
+.sectionTitle { composes: sectionTitle from '../../leads/insights/insights-view.module.css'; margin: 0; }   /* a heading here (each group is a region named by it) */
+.sectionHelp { composes: sectionHelp from '../../leads/insights/insights-view.module.css'; }
+.empty { composes: empty from '../../leads/insights/insights-view.module.css'; }
+.foot { composes: foot from '../../leads/insights/insights-view.module.css'; }
+.gate { composes: gate from '../../leads/insights/insights-view.module.css'; }
+.gateTitle { composes: gateTitle from '../../leads/insights/insights-view.module.css'; }
+.gateBody { composes: gateBody from '../../leads/insights/insights-view.module.css'; }
+.memberCell { composes: memberCell from '../../leads/insights/insights-view.module.css'; }
+.memberText { composes: memberText from '../../leads/insights/insights-view.module.css'; }
+.memberName { composes: memberName from '../../leads/insights/insights-view.module.css'; }
+.memberRole { composes: memberRole from '../../leads/insights/insights-view.module.css'; }
+.num { composes: num from '../../leads/insights/insights-view.module.css'; }
+.card { composes: card from '../../leads/insights/insights-view.module.css'; }
+.head { composes: head from '../../leads/insights/insights-view.module.css'; }
+.hCell { composes: hCell from '../../leads/insights/insights-view.module.css'; }
+.hLabel { composes: hLabel from '../../leads/insights/insights-view.module.css'; }
+.row { composes: row from '../../leads/insights/insights-view.module.css'; }
+.cell { composes: cell from '../../leads/insights/insights-view.module.css'; }
+.pin { composes: pin from '../../leads/insights/insights-view.module.css'; }
+
+/* the page's sections after the first stand apart by the Company pages' section gap (Meetings' rule) */
+.block { margin-top: var(--om-spacing-8); }
+/* the house chart's card sits in the page's flow: its article margin gives way to the section gap above */
+.chart { min-width: 0; }
+.chart > figure { margin: 0; }
+/* the ghost's plot: the house chart's line plot is 240 tall, 200 when it is under 480 wide (article-chart.tsx LinePlot) — a phone */
+.plotGhost { display: block; height: 240px !important; }   /* over the bone's own inline height */
+@media (max-width: 543px) { .plotGhost { height: 200px !important; } }

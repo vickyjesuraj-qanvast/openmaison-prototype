@@ -1,0 +1,25 @@
+/* (gaps build J) The Top view: the drawing fills the stage; the box takes the pointer and the keys (data-kb-own). */
+.box { position: absolute; inset: 0; overflow: hidden; background: var(--om-color-surface-bg); touch-action: none; outline: none; cursor: grab; }
+.box:active { cursor: grabbing; }
+.box:focus-visible { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+.box[data-drawing] { cursor: crosshair; }
+.box[data-moving-underlay] { cursor: move; }
+.box [data-piece-id], .box [data-opening], .box [data-room-id] { cursor: pointer; }
+.svgWrap { position: absolute; inset: 0; }
+.grid { pointer-events: none; }
+.gridLine { stroke: var(--om-color-surface-variant); }
+.handle rect, .handle > circle:not(.hit) { fill: var(--om-color-surface-default); stroke: var(--om-color-primary-default); }
+.handle[data-cursor='ns'] { cursor: ns-resize; }
+.handle[data-cursor='ew'] { cursor: ew-resize; }
+.handle[data-cursor='nwse'] { cursor: nwse-resize; }
+.handle[data-cursor='rot'] { cursor: grab; }
+.hit { fill: transparent; stroke: none; }
+.stem { stroke: var(--om-color-primary-default); }
+.draw { fill: var(--om-color-primary-variant); fill-opacity: 0.35; stroke: var(--om-color-primary-default); }
+.ring { fill: none; stroke: var(--om-color-primary-default); }
+/* (parity map, TD-081) the Ruler: a crosshair on the plan, the line and its length in the primary colour (a measure, never a warning) */
+.box[data-ruler], .box[data-ruler] [data-piece-id], .box[data-ruler] [data-opening], .box[data-ruler] [data-room-id] { cursor: crosshair; }
+.rulerLine { stroke: var(--om-color-primary-default); }
+.rulerEnd { fill: var(--om-color-surface-default); stroke: var(--om-color-primary-default); }
+.rulerPill { fill: var(--om-color-primary-default); }
+.rulerText { font: var(--om-type-subtitle-xs); fill: var(--om-color-on-primary-default); }

@@ -129,7 +129,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   ok(await wizard().locator('button[data-selected]').filter({ hasText: 'Gerald contract.pdf' }).count() === 1, 'C1: the signed contract is picked')
   await shot('c1-handoff-won')
   await wizard().getByRole('button', { name: 'Save & Convert to Project' }).click(); await p.waitForTimeout(1500)
-  ok(/Project created for Gerald Tan · OM-19001/.test(await snack().innerText()), 'C1: Save & Convert — "Project created for Gerald Tan · OM-19001"')
+  ok(/Project P-\d{4}-\d{3} created/.test(await snack().innerText()), 'C1: Save & Convert — "Project P-… created" (REG-1052)')
   ok(sql(`select stage from leads where id='${L.gerald}'`) === 'Won', 'C1: the lead is Won')
 
   // ── L2 · T1 · L9 · T3 · L10 — a contact log saved in Notes on a New lead, its photo, then the move ─────────────────────
@@ -147,7 +147,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.waitForTimeout(300)
   const today = new Date()
   const dayLabel = `${today.getDate()} ${['January','February','March','April','May','June','July','August','September','October','November','December'][today.getMonth()]} ${today.getFullYear()}`
-  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel }).click()
+  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel, exact: true }).click()   // exact: on the 1st–9th, "6 October" also names the 16th and the 26th
   await p.waitForTimeout(200)
   const clock = new Date()
   const hm = (d) => `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`
@@ -210,7 +210,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   // the case the audit met: every field filled but the screenshot — the one error sits below the fold, and Save brings it into view
   await wizard().getByRole('radio', { name: 'Call' }).click()
   await wizard().locator('button[aria-haspopup="dialog"]').first().click(); await p.waitForTimeout(300)
-  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel }).click()
+  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel, exact: true }).click()
   await p.locator('#om-date-picker').getByRole('button', { name: 'Done' }).click()
   await wizard().getByRole('combobox', { name: /Outcome/ }).click()
   await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click(); await p.waitForTimeout(300)
@@ -235,7 +235,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   ok(await ed2.getByText('Attach screenshots of your messages').isVisible(), 'T3: WhatsApp — screenshots of your messages')
   await ed2.locator('button[aria-haspopup="dialog"]').first().click()
   await p.waitForTimeout(300)
-  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel }).click()
+  await p.locator('#om-date-picker').getByRole('button', { name: dayLabel, exact: true }).click()
   await p.locator('#om-date-picker').getByRole('button', { name: 'Done' }).click()
   await ed2.getByRole('combobox', { name: /Outcome/ }).click()
   await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click()

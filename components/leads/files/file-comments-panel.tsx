@@ -13,6 +13,7 @@ import { relativeTime } from '@/lib/format'
 import { CommentComposer } from '@/components/leads/tasks/comment-composer'
 import type { Member } from '@/lib/db/schema'
 import type { FileViewData } from '@/lib/leads/files'
+import { avatarSrc } from '@/lib/company/member-photo'
 import styles from './file-comments-panel.module.css'
 
 /**
@@ -23,7 +24,7 @@ import styles from './file-comments-panel.module.css'
  * the Tasks comments panel, components/leads/tasks/comments-panel.tsx (902:28619). Spec: design-source/context/lead-files/03-viewer-panels.txt.
  */
 export function FileCommentsPanel({
-  comments, me, now, onAdd, onEdit, onDelete, onClose,
+  comments, me, now, onAdd, onEdit, onDelete, onClose, readOnly = false,
 }: {
   comments: FileViewData['comments']
   me: Member
@@ -31,6 +32,8 @@ export function FileCommentsPanel({
   onAdd: (body: string) => void
   onEdit: (id: string, body: string) => void
   onDelete: (id: string) => void
+  /** (pending modules S06) the viewer reads only (Accounting): the thread, with no composer and no comment menu */
+  readOnly?: boolean
   onClose: () => void
 }) {
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -79,14 +82,14 @@ export function FileCommentsPanel({
                     <div className={styles.meta}>
                       <span className={styles.author}>{mine ? 'You' : c.author?.name ?? 'Member'}</span>
                       <span className={styles.time}>{relativeTime(c.createdAt, new Date(now))}</span>
-                      <div className={styles.kebabWrap}>
+                      {readOnly ? null : <div className={styles.kebabWrap}>
                         {/* (REG-729) The house kebab in a head: IconButton 24 bare, a 24 glyph (it was a 20 box) */}
                         <Tooltip label="Comment actions" disabled={menuFor === c.id}>
                           <IconButton icon="more_horiz" label="Comment actions" size={24} variant="bare" iconSize={24} className={styles.kebabBtn}
                                       aria-haspopup="menu" aria-expanded={menuFor === c.id}
                                       onClick={(e) => { kebab.current = e.currentTarget; setMenuFor((m) => (m === c.id ? null : c.id)) }} />
                         </Tooltip>
-                      </div>
+                      </div>}
                     </div>
                     {isEditing && editing ? (
                       /* Edit state (tasks frame 75): the text becomes a 36px active field, then Cancel · Save right-aligned. */
@@ -126,9 +129,9 @@ export function FileCommentsPanel({
 
       {/* Footer (931:39946), p16/24, top rule. (UX audit 2026-09-30, T8) The mock's one-line field with no Submit is the task panel's composer
           now (components/leads/tasks/comment-composer.tsx): multi-line, Enter posts, Shift+Enter breaks the line, Submit beside the caption. */}
-      <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
+      {readOnly ? null : <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
         <CommentComposer me={me} onSubmit={onAdd} />
-      </SurfaceFoot>
+      </SurfaceFoot>}
     </div>
   )
 }
@@ -139,11 +142,12 @@ export function FileCommentsPanel({
  */
 function CommentAvatar({ member }: { member: Member | null }) {
   const name = member?.name ?? ''
-  if (member?.color === 'photo') {
+  const src = avatarSrc(member?.color)   // (pending modules S01) the member's own photo, or the demo's portrait
+  if (src) {
     return (
       <span className={styles.avatar} aria-hidden title={name}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.avatarPhoto} src="/figma-assets/avatar-user.png" alt="" />
+        <img className={styles.avatarPhoto} src={src} alt="" />
       </span>
     )
   }

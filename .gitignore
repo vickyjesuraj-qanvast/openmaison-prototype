@@ -14,6 +14,11 @@ next-env.d.ts
 local.db
 local.db-shm
 local.db-wal
+# (pending modules S31) the studios started on this prototype — a database each, beside the demo's
+*.db.studios/
+# (pending modules S41b-3) the website's no-account trial workspaces — a database beside the demo's
+*.db.trial.db
+*.db.trial.db-*
 *.sqlite
 *.sqlite3
 

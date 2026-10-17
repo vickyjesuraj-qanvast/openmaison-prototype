@@ -1,0 +1,25 @@
+/* (gaps build J) The inspector's rows — sections under the Visualizer's Panel head. */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.head { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; }
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-2); }
+.cm { min-width: 0; }
+/* a length's unit at the field's end — its label keeps the field's width */
+.unit { padding-right: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.turn { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
+.turn > .cm { width: 92px; }
+.help { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.link { align-self: flex-start; min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subtitle-s); color: var(--om-color-primary-default); }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.warn { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-red-variant1); color: var(--om-color-on-tertiary-red-variant); font: var(--om-type-body-s); }
+.openings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.opening { display: flex; align-items: center; gap: var(--om-spacing-1); }
+.openingPick { flex: 1; min-width: 0; min-height: 40px; display: flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); text-align: left; }
+@media (hover: hover) { .openingPick:hover { background: var(--om-color-hover-08p); } }
+.openingPick:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.finish { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 48px; padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; text-align: left; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); }
+@media (hover: hover) { .finish:hover { background: var(--om-color-hover-04p); } }
+.finish:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.swatch { width: 24px; height: 24px; flex-shrink: 0; border-radius: var(--om-radius-1); background: var(--sw); box-shadow: inset 0 0 0 1px var(--om-color-on-surface-border); }
+.finishText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.finishLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.foot { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

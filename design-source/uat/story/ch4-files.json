@@ -11,7 +11,12 @@
   },
   {
     "name": "sophia-floor-plan.pdf",
-    "purpose": "4.05: attached to Sophia Wong's lead when she is created; 5.14 finds it in her Files tab.",
-    "content": "Any one-page PDF, e.g. a simple rectangle floor sketch with the text 'Sophia Wong — 4-room HDB, Blk 201 Tampines Street 21 — floor plan (sample)'. Under 2 MB. The file name matters, the content does not (the prototype stores the name only)."
+    "purpose": "4.05: attached to Sophia Wong’s lead when she is created; 5.14 finds it in her Files tab; 6.41 uploads it as a quote — read by its own words, it holds no quote lines and is refused.",
+    "content": "Any one-page PDF with real text, e.g. a simple rectangle floor sketch with the text 'Sophia Wong — 4-room HDB, Blk 201 Tampines Street 21 — floor plan (sample)' and room names. Under 2 MB. No priced lines (no quantities with amounts), so Upload a quote reads nothing from it."
+  },
+  {
+    "name": "rachel-ong-enquiry.pdf",
+    "purpose": "4.02: one client’s website enquiry for \"Fill from a document\" — read by its own words, it fills the lead form’s empty fields (S42).",
+    "content": "A4, one page, real selectable text (Helvetica 11 pt), one item per line, nothing else on the page that reads as a name, a phone or an email. Exactly these lines: 'Website enquiry' / 'Sent from the studio website contact form' / (blank) / 'Name: Rachel Ong' / 'Mobile: 9634 2817' / 'Email: rachel.ong@example.com' / 'Source: Instagram' / 'Property type: Condo 3-bedder' / 'Address: 12 Simei Street 3' / 'District: East' / 'Budget (S$): 85,000' / 'Remarks: Wants a brighter kitchen and a study nook for two'. Its values match no demo lead, member or other UAT file. Made by gen_files.py."
   }
 ]

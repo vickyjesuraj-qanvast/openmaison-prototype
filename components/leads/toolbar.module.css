@@ -7,11 +7,11 @@
    components/om/scope-pill.module.css — the copy that lived here is gone. */
 
 /* Search — 280px trigger/input; focused = 2px primary border (spec). */
-/* (REG-276) The search is the DS SearchBar now — it draws the 280x36 outlined field, its own leading glyph,
-   its clear affordance and an INSIDE focus ring. Only the width and the wrapper live here; the hand-rolled
-   .search / .searchInput / .searchClear rules retired with the markup they styled. */
-.searchWrap { display: inline-flex; }
-.search { width: 280px; }
+/* (REG-276) The search is the DS SearchBar — it draws the 280x36 outlined field, its own leading glyph, its clear affordance and an INSIDE
+   focus ring. (parity P-19, B-08) Through the house ToolbarSearch now (components/om/toolbar-search.tsx: the 280 box, the glyph, the fold),
+   as Projects and the tab toolbars; the slot is this row's hook on it and draws no box of its own, so the glyph and the box sit in the row as
+   the house lays them out. */
+.searchSlot { display: contents; }
 
 /* A2: active-filter count badge on the filter icon button — (REG-729) the tab toolbar's, written once. */
 .filterWrap { composes: filterWrap from '../om/tab-toolbar.module.css'; }
@@ -25,22 +25,32 @@
 .viewAll[data-folded] { position: absolute; visibility: hidden; pointer-events: none; }
 
 /* ── Mobile (1082:25269, REG-298/299) ─────────────────────────────────────────────────────────────────
-   The mocked row is the pill on the left and the filter glyph on the right, both 36 — search moved to the top
-   bar and the view toggle is gone (one view: cards). `.right` dissolves into the bar so the filter can sit at
-   the far edge with the pill's box taking the rest; the search box, when the bar's glyph reveals it, wraps
-   onto its own full-width line beneath. The pill's touch box is the house ScopePill's (REG-273 · REG-729). */
+   The mocked row is the pill on the left and the filter glyph on the right, both 36, and the view toggle is gone (one view: cards).
+   `.right` dissolves into the bar so the tools sit at the far edge with the pill's box taking the rest. The pill's touch box is the house
+   ScopePill's (REG-273 · REG-729).
+   (parity P-19, B-08 — a deliberate change of REG-298's "search lives in the top bar", which ⌘K took, REG-709) The search glyph sits before
+   Filters, as on Projects and the tab toolbars (REG-354); opened, the box shares the row and the pill steps aside while it is open (REG-375,
+   Projects' `.bar:has([data-om-search-open]) .left`). Scoped to this row's slot, so the Projects toolbar that composes `.bar` keeps its own. */
 @media (max-width: 767px) {
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .right { display: contents; }
-  .searchWrap { display: none; order: 3; }
-  .searchWrap[data-open] { display: inline-flex; flex-basis: 100%; }
-  .search { width: 100%; }
   .viewWrap { display: none; }
+  .bar:has(.searchSlot [data-om-search-open]) .left { display: none; }
+}
+/* (parity P-19, Q-08) From 768 up the 280 box stays in the row — Leads' way, the owner's pick for both listings (there is no info column
+   beside a listing, so the box fits at 768). The house piece folds through the tablet band (toolbar-search.module.css, REG-384, for the
+   lead's tabs); this row keeps its box there: the glyph (the slot's child without the field) steps out, the box's holder comes back and the
+   DS field keeps its desk 280. (A `fold` choice on ToolbarSearch itself would say this in one word — outcome-KD1.md, for both listings.) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .searchSlot.searchSlot > :not(:has(input)) { display: none; }
+  .searchSlot.searchSlot > :has(input) { display: inline-flex; flex: none; }
+  .searchSlot.searchSlot [data-size='md'] { width: 280px; }
 }
 /* (REG-307) Parity with the Notes toolbar's twin (notes-toolbar.module.css): the DS md SearchBar is 36 tall and a
-   fingertip wants 44, so the BOX stands up on a touch pointer — the glyph, the type and the stroke are the DS's. */
+   fingertip wants 44, so the BOX stands up on a touch pointer — the glyph, the type and the stroke are the DS's. Doubled: the DS sets the
+   md height at the same weight. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .searchWrap .search[data-size='md'] { height: 44px; }
+  .searchSlot.searchSlot [data-size='md'] { height: 44px; }
 }
 
 /* (REG-735) The bare row's title (the studio's first visit) — the tab toolbars' */

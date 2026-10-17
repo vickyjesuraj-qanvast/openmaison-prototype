@@ -37,7 +37,9 @@ async function tab(page, name) { await left(page).getByRole('tab', { name }).cli
 async function choose(scope, label, option) { await scope.getByRole('combobox', { name: label }).click(); await scope.page().getByRole('option', { name: option, exact: true }).click(); await scope.page().waitForTimeout(500) }
 async function more(page) { const b = right(page).getByRole('button', { name: 'More options' }); if ((await b.getAttribute('aria-expanded')) !== 'true') await b.click(); await page.waitForTimeout(300) }
 async function flip(scope, label) { await scope.locator('label', { hasText: label }).first().click(); await scope.page().waitForTimeout(500) }
-const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAll('[data-page] tr[data-area], [data-page] tr[data-line], [data-page] tr[data-band]')].slice(0, 14).map((tr) => `${tr.hasAttribute('data-band') ? 'S' : tr.hasAttribute('data-area') ? 'R' : 'L'}:${(tr.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()}`))
+/* (pending modules S44T, a deliberate change of this rule — call C4, UAT rows 302 · 306: with the # column first, a section band's mark stands in
+   the # column's cell and its name in the next — the band reads across its cells, "A Hacking Works", as it read in one cell before) */
+const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAll('[data-page] tr[data-area], [data-page] tr[data-line], [data-page] tr[data-band]')].slice(0, 14).map((tr) => `${tr.hasAttribute('data-band') ? 'S' : tr.hasAttribute('data-area') ? 'R' : 'L'}:${(tr.hasAttribute('data-band') ? [...tr.children].map((c) => c.textContent ?? '').join(' ') : tr.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()}`))
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -150,7 +152,7 @@ const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAl
     await choose(right(page), 'Item numbers', 'B · 1 Kitchen · 1.1')
     const rooms = await cells(page)
     ok('g-numbering “B · 1 Kitchen · 1.1”: rooms numbered in their section, lines room.line', rooms.slice(0, 6).join(' ') === 'S:A Hacking Works R:1 L:1.1 R:2 L:2.1 R:3', rooms.join(' '))
-    const masonry = await canvas(page).evaluate(() => { const rows = [...document.querySelectorAll('[data-page] tr')]; const i = rows.findIndex((r) => r.hasAttribute('data-band') && /Masonry/.test(r.textContent || '')); return rows.slice(i, i + 6).map((r) => (r.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()) })
+    const masonry = await canvas(page).evaluate(() => { const rows = [...document.querySelectorAll('[data-page] tr')]; const i = rows.findIndex((r) => r.hasAttribute('data-band') && /Masonry/.test(r.textContent || '')); return rows.slice(i, i + 6).map((r) => (r.hasAttribute('data-band') ? [...r.children].map((c) => c.textContent ?? '').join(' ') : r.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()) })   // (S44T, C4) the band across its cells
     ok('g-numbering a room’s lines count under it (B · 1 · 1.1 · 1.2 · 2)', masonry.join('|') === 'B Masonry Works|1|1.1|1.2|2|2.1', masonry.join('|'))
     await shot(page, 'g-numbering-rooms', { x: 300, y: 56, width: 820, height: 760 })
     await right(page).getByText('1 · 2 · 3', { exact: true }).click()
@@ -160,7 +162,7 @@ const cells = (page) => canvas(page).evaluate((root) => [...root.querySelectorAl
     await choose(right(page), 'Item numbers', '1 · a · i')
     const rom = await cells(page)
     ok('g-numbering “1 · a · i”: section number, room letter, line in roman', rom.slice(0, 3).join(' ') === 'S:1 Hacking Works R:a L:i', rom.join(' '))
-    const romM = await canvas(page).evaluate(() => { const rows = [...document.querySelectorAll('[data-page] tr')]; const i = rows.findIndex((r) => r.hasAttribute('data-band') && /Masonry/.test(r.textContent || '')); return rows.slice(i, i + 4).map((r) => (r.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()) })
+    const romM = await canvas(page).evaluate(() => { const rows = [...document.querySelectorAll('[data-page] tr')]; const i = rows.findIndex((r) => r.hasAttribute('data-band') && /Masonry/.test(r.textContent || '')); return rows.slice(i, i + 4).map((r) => (r.hasAttribute('data-band') ? [...r.children].map((c) => c.textContent ?? '').join(' ') : r.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' ').trim()) })   // (S44T, C4) the band across its cells
     ok('g-numbering roman lines run i · ii under a room', romM.join('|') === '2 Masonry Works|a|i|ii', romM.join('|'))
     await shot(page, 'g-numbering-roman', { x: 300, y: 56, width: 820, height: 760 })
     await right(page).getByText('A · B · C', { exact: true }).click(); await page.waitForTimeout(300)

@@ -9,8 +9,12 @@ import { homeownerLeadLinks, homeownerProfiles, leads, type HomeownerLeadLink } 
  * has one homeowner profile (by phone) and one link carrying its portal token. The invite and the questionnaire ask are
  * stamped on the link, and the Overview, the Questionnaire tab and Activity read them back.
  */
-export type PortalLink = { invitedAt: Date | null; askedAt: Date | null; token: string; chatHistoryVisible: boolean }
-export const toPortalLink = (l: HomeownerLeadLink): PortalLink => ({ invitedAt: l.invitedAt, askedAt: l.lastAskedAt, token: l.portalToken, chatHistoryVisible: l.chatHistoryVisible })
+/* (pending modules S02 — H-Q16, REG-1327) 1.0's *Show chat history* is not carried: `homeowner_lead_links.chat_history_visible` stays in the
+   table (migrations are additive) at its default, and nothing writes or reads it. */
+export type PortalLink = { invitedAt: Date | null; askedAt: Date | null; token: string
+  /** (Projects r4a) the access's state: first and last sign-in, and a withdrawal */
+  openedAt: Date | null; lastOpenedAt: Date | null; withdrawnAt: Date | null }
+export const toPortalLink = (l: HomeownerLeadLink): PortalLink => ({ invitedAt: l.invitedAt, askedAt: l.lastAskedAt, token: l.portalToken, openedAt: l.openedAt, lastOpenedAt: l.lastOpenedAt, withdrawnAt: l.withdrawnAt })
 
 export async function fetchPortalLink(leadId: string): Promise<PortalLink | null> {
   const [l] = await db.select().from(homeownerLeadLinks).where(eq(homeownerLeadLinks.leadId, leadId)).limit(1)
@@ -31,7 +35,7 @@ export async function ensureHomeownerLink(leadId: string): Promise<HomeownerLead
     ;[profile] = await db.select().from(homeownerProfiles).where(eq(homeownerProfiles.id, id)).limit(1)
   }
   const id = randomUUID()
-  await db.insert(homeownerLeadLinks).values({ id, homeownerId: profile!.id, leadId, portalToken: randomUUID(), chatHistoryVisible: true, invitedAt: null, lastAskedAt: null, createdAt: now })
+  await db.insert(homeownerLeadLinks).values({ id, homeownerId: profile!.id, leadId, portalToken: randomUUID(), invitedAt: null, lastAskedAt: null, createdAt: now })
   const [link] = await db.select().from(homeownerLeadLinks).where(eq(homeownerLeadLinks.id, id)).limit(1)
   return link!
 }

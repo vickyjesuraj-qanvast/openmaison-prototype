@@ -21,6 +21,23 @@ export function parseStageMovement(v: unknown): StageMovement {
 }
 
 /**
+ * (pending modules S05 — card held:leads, "Edit the lead funnel (Manage Stages)"; 1.0's Accounts › Pipeline Stages, funnel-editor.tsx) What a
+ * stage asks for, the studio's to set — 1.0's per-status flags in 2.0's shape. The stages themselves stay the one journey every screen, the
+ * client's portal, Activity and Reports read (New · Contacted · Met · Quote Sent · Won · On Hold · Lost — REG-111's rules on top); what
+ * moving into a step requires is where studios differ:
+ *   contactNextStep  1.0's "Follow-up required": moving to Contacted asks for the next call or meeting's date (off by default — REG-319
+ *                    made it optional; a client who said no needs none)
+ *   wonContract      1.0's "Contract required": the Won step asks for the client's signed contract (on by default — the mock's step);
+ *                    off, a studio whose signed quote is the agreement wins the lead on the quote alone
+ */
+export type LeadStageRules = { contactNextStep: boolean; wonContract: boolean }
+export const DEFAULT_LEAD_STAGE_RULES: LeadStageRules = { contactNextStep: false, wonContract: true }
+export function parseLeadStageRules(v: unknown): LeadStageRules {
+  const o = (v && typeof v === 'object' ? v : {}) as Partial<LeadStageRules>
+  return { contactNextStep: o.contactNextStep === true, wonContract: o.wonContract !== false }
+}
+
+/**
  * Quote approval — studio-level policy set under Settings › Leads (user brief 2026-08-30).
  * Studios differ on whether a quote is reviewed inside the studio before it reaches the client, so the quote's
  * lifecycle is not one fixed list: the two approval statuses exist only where approval is required.
@@ -146,18 +163,21 @@ export const tradeKey = (name: string) => name.trim().toLowerCase()
  */
 export type RoundStep = 0 | 1 | 5 | 10
 export const ROUND_STEP_OPTIONS: { key: RoundStep; label: string }[] = [{ key: 0, label: 'Not rounded' }, { key: 1, label: 'The nearest S$1' }, { key: 5, label: 'The nearest S$5' }, { key: 10, label: 'The nearest S$10' }]
-export type QuoteRules = { roundStep: RoundStep; paymentLock: boolean; backupApproverId: string | null; /** (REG-618, parity Q-25) what `{prepared_by}` prints */ preparedBy: PreparedByMode }
+export type QuoteRules = { roundStep: RoundStep; paymentLock: boolean; backupApproverId: string | null; /** (REG-618, parity Q-25) what `{prepared_by}` prints */ preparedBy: PreparedByMode
+  /** (S44Q — row 357, her UAT ask 2026-10-15) the confirmation link lets the client tick the optional works they want (on — as it always has);
+      off, the link lists them with their prices, read-only, and the client asks the designer to add one */
+  clientPicksOptional: boolean }
 /** (REG-590) Who approves a quote or publishes a template under approval: an Owner, an Admin, or the backup approver. Pure — `isApprover` and Settings' roles table read it. */
 export const approves = (role: string | null | undefined, memberId: string | null | undefined, backupApproverId: string | null) =>
   role === 'Owner' || role === 'Admin' || (!!memberId && backupApproverId !== null && backupApproverId === memberId)
 /** (REG-589) Who changes a quote's payment schedule: everyone, or only Owners and Admins while the studio locks it. */
 export const changesPayments = (role: string | null | undefined, paymentLock: boolean) => !paymentLock || role === 'Owner' || role === 'Admin'
-export const DEFAULT_QUOTE_RULES: QuoteRules = { roundStep: 0, paymentLock: false, backupApproverId: null, preparedBy: 'member' }
+export const DEFAULT_QUOTE_RULES: QuoteRules = { roundStep: 0, paymentLock: false, backupApproverId: null, preparedBy: 'member', clientPicksOptional: true }
 export const PREPARED_BY_OPTIONS: { key: PreparedByMode; label: string }[] = [{ key: 'member', label: 'The member who prepared the quote' }, { key: 'team', label: 'Every member on the lead' }, { key: 'studio', label: 'The studio’s name' }]
 export function parseQuoteRules(v: unknown): QuoteRules {
   const r = (v ?? {}) as Partial<Record<keyof QuoteRules, unknown>>
   return { roundStep: r.roundStep === 1 || r.roundStep === 5 || r.roundStep === 10 ? r.roundStep : 0, paymentLock: r.paymentLock === true, backupApproverId: typeof r.backupApproverId === 'string' && r.backupApproverId ? r.backupApproverId : null,
-    preparedBy: r.preparedBy === 'team' || r.preparedBy === 'studio' ? r.preparedBy : 'member' }
+    preparedBy: r.preparedBy === 'team' || r.preparedBy === 'studio' ? r.preparedBy : 'member', clientPicksOptional: r.clientPicksOptional !== false }
 }
 /** (REG-651, price book parity Q-02) A unit whose price is a rate per area or length — rounding it to a whole step moves every line priced by it. */
 export const isRateUnit = (unit: string | null | undefined): boolean => !!unit && /\b(sq\.?\s*ft|sqft|sq\.?\s*m|sqm|m2|m²|ft\s*run|m\s*run|ft|m|metres?|meters?|feet|foot)\b/i.test(unit.trim())
@@ -209,6 +229,12 @@ export const LEAD_VISIBILITY_OPTIONS: { key: LeadVisibility; title: string; help
   { key: 'assigned', title: 'Only the leads assigned to them', help: 'Managers see their own leads and their team’s; Designers see their own. Owners and Admins still see everything.' },
 ]
 export const parseLeadVisibility = (v: unknown): LeadVisibility => (v === 'assigned' ? 'assigned' : 'everyone')
+/* (pending modules S14 — card held:settings-company, "Who sees leads … also governs projects, quotes and contracts", as recommended) The card's
+   one home is Settings › Roles & access; its help names everything it decides, and every other place points there with these words.
+   *(invented copy)* */
+export const VISIBILITY_HREF = '/settings?section=studio#lead-visibility'
+export const VISIBILITY_HELP = 'It decides who sees each lead and everything on it — its project, quotes, contracts, files and X‑Ray readings, and its row in Qanvast Ops. Owners and Admins always see every lead and assign anyone.'
+export const VISIBILITY_POINTER = 'Who sees which leads — and each lead’s project, quotes and contracts — is set under'
 
 /* ── (REG-602) Lead capture — the website's email intake and Meta Lead Ads ────────────────────────── */
 export type MetaForm = { id: string; name: string; on: boolean }
@@ -227,7 +253,10 @@ export const EMAIL_PLATFORMS = ['@homereno.sg', '@homerenoguru.sg', '@houzz.com.
 export const platformSource = (domain: string): string => (/homereno/i.test(domain) ? 'Homereno' : /houzz/i.test(domain) ? 'Houzz' : /renopedia/i.test(domain) ? 'Renopedia' : /qanvast/i.test(domain) ? 'Qanvast' : 'Email')
 export type EmailSource = { connected: boolean; address: string; platforms: string[]; custom: string[]; lastSyncAt: number | null; stats: { found: number; created: number; duplicates: number; failed: number } }
 export const DEFAULT_EMAIL_SOURCE: EmailSource = { connected: false, address: '', platforms: [...EMAIL_PLATFORMS], custom: [], lastSyncAt: null, stats: { found: 0, created: 0, duplicates: 0, failed: 0 } }
-export const webhookUrl = (token: string) => `https://in.openmaison.sg/api/webhooks/leads/${token}`
+/** (pending modules S34) The address external systems POST a lead to — OpenMaison's intake host, which the deployment points at
+    app/api/webhooks/leads/[token] (a real route); `NEXT_PUBLIC_INTAKE_URL` names another host. */
+const INTAKE_URL = (process.env.NEXT_PUBLIC_INTAKE_URL || 'https://in.openmaison.sg').replace(/\/$/, '')
+export const webhookUrl = (token: string) => `${INTAKE_URL}/api/webhooks/leads/${token}`
 
 export type LeadCapture = {
   /** The intake address the website form emails; derived from the studio name until the studio sets its own slug. */

@@ -1,4 +1,6 @@
 // Quote editor parity round 1 (REG-623) — Playwright against :3011 on a test copy of the DB.
+// (one-home N-16) The vendor steps pick from Company › Finance › Vendors and add to it — the probe adds Hafary and Kim Hock Builders to the
+// test copy's directory (never run it on local.db).
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const S = process.env.S, DB = process.env.TESTDB, BASE = 'http://localhost:3011'
@@ -47,31 +49,38 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
     ok('Vinyl flooring reads Floor Xpert', t.includes('Floor Xpert'), t)
   })
 
-  await step('vendor: pick one from My Items’ vendors', async () => {
+  /* (one-home N-16, a deliberate change of this rule) The cell picks from Company › Finance › Vendors — type-ahead over the directory — not
+     from My Items' own list; a name the directory doesn't hold is added to it (F1-Q4: anyone adds a vendor) and lands on the line. */
+  await step('vendor: pick one from the vendor directory, type-ahead', async () => {
     const r = row(page, L.elec); await r.scrollIntoViewIfNeeded()
     await r.getByRole('button', { name: 'Add a vendor to Electrical point, new' }).click()
     const menu = page.getByRole('menu').last()
     const opts = await menu.getByRole('menuitemradio').allInnerTexts()
-    ok('the menu lists the price book’s vendors', ['Floor Xpert', 'Hafary', 'Soon Bee Huat'].every((v) => opts.includes(v)), opts.join(' · '))
+    const dir = sql(`select name from vendors where is_active = 1 and merged_into is null order by name`).split('\n').filter(Boolean)
+    ok('the menu lists Company › Finance › Vendors', dir.length > 0 && dir.every((v) => opts.some((o) => o.startsWith(v))), opts.join(' · '))
     await shot('01-vendor-menu')
-    await menu.getByRole('menuitemradio', { name: 'Hafary', exact: true }).click()
+    await menu.locator('input').first().fill('Hafary'); await page.waitForTimeout(250)
+    if (dir.includes('Hafary')) await menu.getByRole('menuitemradio', { name: /^Hafary/ }).click()
+    else await menu.getByRole('menuitem', { name: 'Add Hafary as a vendor' }).click()
     await waitSave(page)
     ok('stored on the line', sql(`select vendor from quote_items where id='${L.elec}'`) === 'Hafary')
+    ok('and Hafary is in the directory', sql(`select count(*) from vendors where name = 'Hafary' and is_active = 1 and merged_into is null`) === '1')
   })
 
-  await step('vendor: Add vendor names a new one', async () => {
+  await step('vendor: Add vendor names a new one — into the directory', async () => {
     const r = row(page, L.tv); await r.scrollIntoViewIfNeeded()
     await r.getByRole('button', { name: 'Add a vendor to TV console and feature wall' }).click()
     await page.getByRole('menu').last().getByRole('menuitem', { name: /Add vendor/ }).click()
     const dlg = page.getByRole('dialog', { name: 'Add vendor' }); await dlg.waitFor()
-    await dlg.getByRole('textbox').first().fill('Woodcraft Carpentry')
+    await dlg.getByRole('textbox').first().fill('Kim Hock Builders')
     await dlg.getByRole('button', { name: /Save|Add|Done/ }).last().click()
     await waitSave(page)
     // (sweep S1 · U-04) the vendor added from a line lands on that line at once — no second pick
-    ok('and lands on the line', sql(`select vendor from quote_items where id='${L.tv}'`) === 'Woodcraft Carpentry')
+    ok('and lands on the line', sql(`select vendor from quote_items where id='${L.tv}'`) === 'Kim Hock Builders')
+    ok('and in Company › Finance › Vendors', sql(`select count(*) from vendors where name = 'Kim Hock Builders' and is_active = 1`) === '1')
     await r.getByRole('button', { name: /^Vendor of TV console and feature wall/ }).click()
     const opts = await page.getByRole('menu').last().getByRole('menuitemradio').allInnerTexts()
-    ok('the new vendor is offered', opts.includes('Woodcraft Carpentry'), opts.join(' · '))
+    ok('the new vendor is offered', opts.some((o) => o.startsWith('Kim Hock Builders')), opts.join(' · '))
     await page.keyboard.press('Escape')
   })
 

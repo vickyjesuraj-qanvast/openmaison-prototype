@@ -1,0 +1,516 @@
+<title>Projects &amp; Finance Parity Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a ledger — each row reads left to right, 1.0's place → the status that bridges them → 2.0's place; summary before detail. */
+:root {
+  --paper: #f5f5f9;
+  --surface: #ffffff;
+  --sunk: #eeedf4;
+  --ink: #1c1a2e;
+  --ink-2: #545169;
+  --ink-3: #85829a;
+  --rule: #e2e0ec;
+  --accent: #5a2be0;
+  --accent-ink: #ffffff;
+  --accent-soft: #eee8ff;
+  --focus: #5a2be0;
+  /* status — semantic, apart from the accent */
+  --s-kept: #1d8653;
+  --s-changed: #2c66d1;
+  --s-moved: #0c807f;
+  --s-merged: #9c4f94;
+  --s-partial: #b86e00;
+  --s-simulated: #5d6f93;
+  --s-held: #8f8ca0;
+  --s-dropped: #5d5a6c;
+  --s-missing: #cf2f3c;
+  --s-kept-bg: #e3f4ea; --s-changed-bg: #e5edfb; --s-moved-bg: #ddf2f1; --s-merged-bg: #f6e6f4; --s-partial-bg: #fcefd9;
+  --s-simulated-bg: #e8ecf4; --s-held-bg: #efeef3; --s-dropped-bg: #e9e8ee; --s-missing-bg: #fde4e6;
+  --flag: #cf2f3c;
+  --ok: #1d8653;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Public Sans", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-xs: 0.75rem; --t-s: 0.8125rem; --t-m: 0.9375rem; --t-l: 1.125rem; --t-xl: 1.5rem; --t-xxl: clamp(1.9rem, 4vw, 2.75rem);
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13121b; --surface: #1c1b27; --sunk: #242332; --ink: #ecebf4; --ink-2: #b4b1c6; --ink-3: #8a87a0; --rule: #302e40;
+    --accent: #a68bff; --accent-ink: #13121b; --accent-soft: #2b2447; --focus: #b9a3ff;
+    --s-kept: #4cc68a; --s-changed: #7aa6ff; --s-moved: #3cc2c0; --s-merged: #e08ad7; --s-partial: #f0aa45; --s-simulated: #9fb0d4;
+    --s-held: #9f9cb2; --s-dropped: #c3c0d2; --s-missing: #ff6b76;
+    --s-kept-bg: #173326; --s-changed-bg: #1b2a47; --s-moved-bg: #143534; --s-merged-bg: #3a1f38; --s-partial-bg: #3a2a12;
+    --s-simulated-bg: #232b3b; --s-held-bg: #29283a; --s-dropped-bg: #2b2a36; --s-missing-bg: #431c22;
+    --flag: #ff6b76; --ok: #4cc68a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #13121b; --surface: #1c1b27; --sunk: #242332; --ink: #ecebf4; --ink-2: #b4b1c6; --ink-3: #8a87a0; --rule: #302e40;
+  --accent: #a68bff; --accent-ink: #13121b; --accent-soft: #2b2447; --focus: #b9a3ff;
+  --s-kept: #4cc68a; --s-changed: #7aa6ff; --s-moved: #3cc2c0; --s-merged: #e08ad7; --s-partial: #f0aa45; --s-simulated: #9fb0d4;
+  --s-held: #9f9cb2; --s-dropped: #c3c0d2; --s-missing: #ff6b76;
+  --s-kept-bg: #173326; --s-changed-bg: #1b2a47; --s-moved-bg: #143534; --s-merged-bg: #3a1f38; --s-partial-bg: #3a2a12;
+  --s-simulated-bg: #232b3b; --s-held-bg: #29283a; --s-dropped-bg: #2b2a36; --s-missing-bg: #431c22;
+  --flag: #ff6b76; --ok: #4cc68a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: var(--t-m); line-height: 1.5; }
+.wrap { max-width: 1360px; margin: 0 auto; padding-inline: 24px; padding-block: 40px 96px; display: flex; flex-direction: column; gap: 40px; }
+@media (max-width: 600px) { .wrap { padding-inline: 16px; padding-block: 24px 72px; gap: 32px; } }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: var(--t-xxl); font-weight: 700; line-height: 1.1; }
+h2 { font-size: var(--t-xl); font-weight: 700; line-height: 1.2; }
+h3 { font-size: var(--t-l); font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.mono { font-family: var(--f-mono); font-size: 0.92em; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.eyebrow { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 600; }
+
+/* ── header ── */
+header.top { display: flex; flex-direction: column; gap: 14px; max-width: 74ch; }
+header.top .lede { color: var(--ink-2); font-size: var(--t-l); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--ink-3); font-size: var(--t-s); }
+.meta b { color: var(--ink-2); font-weight: 600; }
+
+/* ── summary ── */
+.summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.figures { display: flex; flex-wrap: wrap; gap: 28px 44px; align-items: flex-end; }
+.fig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fig .n { font-family: var(--f-display); font-size: 2.25rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.fig .l { font-size: var(--t-s); color: var(--ink-2); }
+.fig.gap .n { color: var(--s-missing); }
+.fig.part .n { color: var(--s-partial); }
+.bar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--sunk); width: 100%; }
+.bar.big { height: 22px; border-radius: 4px; }
+.bar span { display: block; height: 100%; min-width: 0; }
+.bar span + span { box-shadow: inset 1px 0 0 var(--surface); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: var(--t-s); color: var(--ink-2); }
+.legend .k { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.defs { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 24px; font-size: var(--t-s); color: var(--ink-2); }
+.defs div { display: flex; gap: 8px; align-items: baseline; }
+.defs b { color: var(--ink); font-weight: 600; white-space: nowrap; }
+
+.areas { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--r); background: var(--surface); }
+.areas table { width: 100%; border-collapse: collapse; min-width: 720px; font-size: var(--t-s); }
+.areas th { text-align: left; font-weight: 600; color: var(--ink-3); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.areas td { padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: middle; font-variant-numeric: tabular-nums; }
+.areas tr:last-child td { border-bottom: 0; }
+.areas td.name button { all: unset; cursor: pointer; font-weight: 600; color: var(--ink); }
+.areas td.name button:hover { color: var(--accent); }
+.areas td.name button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.areas td.barcell { width: 38%; }
+.areas .num { text-align: right; white-space: nowrap; }
+.areas .gapn { color: var(--s-missing); font-weight: 600; }
+.areas .partn { color: var(--s-partial); font-weight: 600; }
+.areas .zero { color: var(--ink-3); font-weight: 400; }
+
+/* ── decisions callout ── */
+.decide { border: 1px solid var(--rule); border-left: 3px solid var(--s-missing); background: var(--surface); border-radius: var(--r); padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+.decide.none { border-left-color: var(--s-kept); }
+.decide ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 8px 28px; }
+.decide li { display: flex; gap: 10px; align-items: baseline; min-width: 0; font-size: var(--t-s); }
+.decide li button { all: unset; cursor: pointer; color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+.decide li button:hover { text-decoration-color: var(--accent); }
+.decide li button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.decide li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.decide .area-tag { color: var(--ink-3); }
+
+/* ── controls ── */
+.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); padding-block: 12px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
+.crow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 0 12px; height: 38px; }
+.search input { border: 0; outline: 0; background: transparent; flex: 1; min-width: 0; height: 100%; }
+.search:focus-within { border-color: var(--focus); }
+.chip { border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: var(--t-s); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; min-height: 32px; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.chip .c { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.chip:hover { border-color: var(--ink-3); }
+.sel { border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; height: 38px; padding: 0 10px; min-width: 0; max-width: 100%; flex: 0 1 auto; }
+.count { font-size: var(--t-s); color: var(--ink-3); margin-left: auto; }
+.linkbtn { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 4px 2px; font-size: var(--t-s); }
+
+/* ── the ledger ── */
+.ledger { display: flex; flex-direction: column; gap: 36px; }
+.area-sec { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 140px; }
+.area-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }
+.area-head .cnt { color: var(--ink-3); font-size: var(--t-s); }
+.area-note { font-size: var(--t-s); color: var(--ink-2); max-width: 90ch; background: var(--sunk); border-radius: 6px; padding: 10px 14px; }
+.group-h { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 600; padding: 14px 0 6px; border-bottom: 1px solid var(--rule); }
+.colhead { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 112px minmax(0, 1.35fr) 168px; gap: 18px; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; padding: 0 14px; }
+.rows { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); }
+.row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 112px minmax(0, 1.35fr) 168px; gap: 18px; padding: 14px; border-top: 1px solid var(--rule); scroll-margin-top: 150px; position: relative; }
+.rows > .group-h + .row, .rows > .row:first-child { border-top: 0; }
+.rows > .group-h { padding: 12px 14px 6px; border-bottom: 1px solid var(--rule); background: var(--sunk); }
+.rows > .group-h:first-child { border-radius: var(--r) var(--r) 0 0; }
+.row.lit { background: var(--accent-soft); }
+.row .rid { font-family: var(--f-mono); font-size: var(--t-xs); color: var(--ink-3); }
+.row h4 { margin: 2px 0 2px; font-size: var(--t-m); font-weight: 600; line-height: 1.35; }
+.row .what { font-size: var(--t-s); color: var(--ink-2); }
+.row .who { display: inline-block; margin-top: 6px; font-size: var(--t-xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.side { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: var(--t-s); }
+.side .lbl { display: none; }
+.side .place { color: var(--ink); overflow-wrap: anywhere; }
+.side .refs, .side .dec { font-family: var(--f-mono); font-size: var(--t-xs); color: var(--ink-3); overflow-wrap: anywhere; }
+.side .how { color: var(--ink-2); }
+.side .none { color: var(--ink-3); }
+.files { font-size: var(--t-xs); color: var(--ink-3); margin-top: 6px; }
+.files summary { cursor: pointer; width: max-content; }
+.files code { display: block; font-family: var(--f-mono); overflow-wrap: anywhere; color: var(--ink-2); margin-top: 3px; }
+.st { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: var(--t-xs); font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.sev { font-size: var(--t-xs); color: var(--ink-2); }
+.sev b { font-weight: 600; text-transform: capitalize; }
+.sev.high b { color: var(--s-missing); }
+.sev.medium b { color: var(--s-partial); }
+.arrow { color: var(--ink-3); font-size: var(--t-xs); }
+.same { font-size: var(--t-xs); color: var(--ink-3); }
+.was { font-size: var(--t-xs); color: var(--ink-2); }
+.regs { font-family: var(--f-mono); font-size: var(--t-xs); color: var(--ink-3); }
+.row[data-built] { box-shadow: inset 3px 0 0 var(--s-kept); }
+.same .linkbtn { padding: 0; font-family: var(--f-mono); font-size: var(--t-xs); }
+
+/* review */
+.rev { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.rev .btns { display: flex; gap: 6px; }
+.rbtn { flex: 1; white-space: nowrap; border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; padding: 5px 8px; min-height: 32px; cursor: pointer; font-size: var(--t-s); display: inline-flex; justify-content: center; align-items: center; gap: 5px; }
+.rbtn:hover:not(:disabled) { border-color: var(--ink-3); }
+.rbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rbtn.ok[aria-pressed="true"] { background: var(--s-kept-bg); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.rbtn.fl[aria-pressed="true"] { background: var(--s-missing-bg); border-color: var(--flag); color: var(--flag); font-weight: 600; }
+.note { font-size: var(--t-xs); color: var(--ink-2); background: var(--s-missing-bg); border-radius: 6px; padding: 6px 8px; overflow-wrap: anywhere; }
+.note .by { color: var(--ink-3); display: block; margin-top: 2px; }
+.editor { display: flex; flex-direction: column; gap: 6px; }
+.editor textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; background: var(--surface); font-size: var(--t-s); }
+.editor .eb { display: flex; gap: 6px; }
+.editor .save { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.rev-status { font-size: var(--t-xs); color: var(--ink-3); }
+
+.s-kept { color: var(--s-kept); background: var(--s-kept-bg); }
+.s-changed { color: var(--s-changed); background: var(--s-changed-bg); }
+.s-moved { color: var(--s-moved); background: var(--s-moved-bg); }
+.s-merged { color: var(--s-merged); background: var(--s-merged-bg); }
+.s-partial { color: var(--s-partial); background: var(--s-partial-bg); }
+.s-simulated { color: var(--s-simulated); background: var(--s-simulated-bg); }
+.s-held { color: var(--s-held); background: var(--s-held-bg); }
+.s-dropped { color: var(--s-dropped); background: var(--s-dropped-bg); }
+.s-missing { color: var(--s-missing); background: var(--s-missing-bg); }
+.row[data-status="missing"]:not([data-built]) { box-shadow: inset 3px 0 0 var(--s-missing); }
+.row[data-status="partial"]:not([data-built]) { box-shadow: inset 3px 0 0 var(--s-partial); }
+
+.empty { padding: 32px; text-align: center; color: var(--ink-2); background: var(--surface); border: 1px dashed var(--rule); border-radius: var(--r); }
+
+/* new in 2.0 + method */
+.new2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.new2 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.new2 .card ul { margin: 0; padding-left: 18px; font-size: var(--t-s); color: var(--ink-2); display: flex; flex-direction: column; gap: 6px; }
+.new2 .card li b { color: var(--ink); font-weight: 600; }
+.method { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; font-size: var(--t-s); color: var(--ink-2); }
+.method h3 { font-size: var(--t-m); margin-bottom: 6px; color: var(--ink); }
+.method ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+section > .sh { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-width: 80ch; }
+section > .sh p { color: var(--ink-2); font-size: var(--t-s); }
+.banner { font-size: var(--t-s); color: var(--ink-2); background: var(--sunk); border-radius: 6px; padding: 8px 12px; }
+
+@media (max-width: 1080px) {
+  .colhead { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 18px; }
+  .row .feat { grid-column: 1 / -1; }
+  .row .st { grid-column: 1 / -1; flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .row .rev { grid-column: 1 / -1; }
+  .row .rev .btns { max-width: 320px; }
+  .side .lbl { display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+  .row .st { order: 2; }
+  .row .v1 { order: 3; }
+  .row .v2 { order: 4; }
+  .row .rev { order: 5; }
+}
+@media (max-width: 600px) {
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .controls { position: static; }
+}
+@media (prefers-reduced-motion: no-preference) { .row.lit { transition: background 600ms ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">OpenMaison · 1.0 → 2.0 parity</span>
+    <h1>Projects &amp; Finance Parity Map</h1>
+    <p class="lede">Every feature and rule of OpenMaison 1.0's Projects and Finance, traced to where it lives in 2.0 today, so nothing gets left behind.</p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="summary" aria-labelledby="sum-h">
+    <h2 id="sum-h" class="sr">Where 1.0 landed</h2>
+    <div class="figures" id="figures"></div>
+    <div class="bar big" id="bigbar" role="img"></div>
+    <div class="legend" id="legend"></div>
+    <div class="areas"><table>
+      <thead><tr><th>Area</th><th class="num">Features</th><th>How they landed</th><th class="num">Missing</th><th class="num">Partly</th><th class="num">Reviewed</th></tr></thead>
+      <tbody id="area-rows"></tbody>
+    </table></div>
+  </section>
+
+  <section id="decide-sec"></section>
+
+  <section aria-labelledby="map-h">
+    <div class="sh">
+      <h2 id="map-h">The map</h2>
+      <p>Each row reads left to right: where it is in 1.0, how it landed, where it is in 2.0. Mark a row <b>Right</b> once you agree, or <b>Flag</b> it with a note. Your marks are saved with this page, so Claude can read them back.</p>
+      <p class="banner" id="rev-banner" hidden></p>
+    </div>
+    <div class="controls" id="controls">
+      <div class="crow">
+        <label class="search" for="q"><span aria-hidden="true" style="color:var(--ink-3)">⌕</span><input id="q" type="search" placeholder="Search features, places, REG ids, files…" autocomplete="off"></label>
+        <select class="sel" id="area-sel" aria-label="Area"></select>
+        <select class="sel" id="rev-sel" aria-label="Your review">
+          <option value="all">Every row</option>
+          <option value="unreviewed">Not reviewed yet</option>
+          <option value="flagged">Flagged</option>
+          <option value="ok">Marked right</option>
+        </select>
+      </div>
+      <div class="crow" id="status-chips" role="group" aria-label="Status"></div>
+      <div class="crow"><span class="count" id="count" aria-live="polite"></span></div>
+    </div>
+    <div class="ledger" id="ledger"></div>
+  </section>
+
+  <section aria-labelledby="new-h">
+    <div class="sh"><h2 id="new-h">New in 2.0</h2><p>What 2.0 has in these areas that 1.0 did not, as the readers found it.</p></div>
+    <div class="new2" id="new2"></div>
+  </section>
+
+  <section aria-labelledby="how-h">
+    <div class="sh"><h2 id="how-h">How this map was made</h2></div>
+    <div class="method" id="method"></div>
+  </section>
+</div>
+
+<script type="application/json" id="map-data">/*__DATA__*/</script>
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById('map-data').textContent)
+  const STATUS = [
+    ['kept', 'Kept', 'In 2.0, doing the same job.'],
+    ['changed', 'Changed', 'In 2.0, but it works differently.'],
+    ['moved', 'Moved', 'In 2.0, under another home.'],
+    ['merged', 'Merged', 'Folded into another 2.0 feature.'],
+    ['partial', 'Partly', 'Some of it is in 2.0; the row says what is not.'],
+    ['simulated', 'Stand-in', 'In the prototype as a stand-in the developers wire for real.'],
+    ['held', 'Held', 'You decided to build it later.'],
+    ['dropped', 'Dropped', 'You decided not to carry it.'],
+    ['missing', 'Missing', 'Not in 2.0 and no decision found. Needs your call.'],
+  ]
+  const LABEL = Object.fromEntries(STATUS.map(([k, l]) => [k, l]))
+  const IN2 = new Set(['kept', 'changed', 'moved', 'merged'])
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  const $ = (id) => document.getElementById(id)
+  const ALL = []
+  DATA.areas.forEach((a) => a.rows.forEach((r) => { r._area = a.key; r._areaName = a.name; ALL.push(r) }))
+  const byId = new Map(ALL.map((r) => [r.id, r]))
+  const countBy = (rows) => { const c = Object.fromEntries(STATUS.map(([k]) => [k, 0])); rows.forEach((r) => { c[r.status] = (c[r.status] || 0) + 1 }); return c }
+  const barHtml = (rows) => { const c = countBy(rows); const n = rows.length || 1
+    return STATUS.filter(([k]) => c[k]).map(([k, l]) => `<span style="width:${(c[k] / n * 100).toFixed(3)}%;background:var(--s-${k})" title="${l}: ${c[k]}"></span>`).join('') }
+
+  /* review marks (db) */
+  let marks = new Map()
+  let db = null, user = null, canWrite = false, me = null, names = {}
+  const editing = new Set()
+
+  /* ── meta + summary ── */
+  $('meta').innerHTML = DATA.meta.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')
+  function paintSummary () {
+    const c = countBy(ALL)
+    const in2 = [...IN2].reduce((s, k) => s + c[k], 0)
+    const reviewed = ALL.filter((r) => marks.has(r.id)).length
+    const flagged = ALL.filter((r) => marks.get(r.id)?.state === 'flag').length
+    $('figures').innerHTML = [
+      ['', ALL.length, '1.0 features and rules mapped'],
+      ['', in2, 'in 2.0 (kept, changed, moved or merged)'],
+      ['part', c.partial, 'partly in 2.0'],
+      ['', c.simulated, 'stand-ins for the developers'],
+      ['', c.held + c.dropped, 'held or dropped by your call'],
+      ['', ALL.filter((r) => r.built && (r.status === 'missing' || r.status === 'partial')).length, 'missing or partly there, now built (10 Oct)'],
+      ['gap', ALL.filter((r) => r.status === 'missing' && !r.built && !r.waits).length, 'still missing, with no decision'],
+      ['', `${reviewed}`, `reviewed by you${flagged ? ` · ${flagged} flagged` : ''}`],
+    ].map(([cls, n, l]) => `<div class="fig ${cls}"><span class="n">${esc(n)}</span><span class="l">${esc(l)}</span></div>`).join('')
+    $('bigbar').innerHTML = barHtml(ALL)
+    $('bigbar').setAttribute('aria-label', STATUS.filter(([k]) => c[k]).map(([k, l]) => `${l} ${c[k]}`).join(', '))
+    $('legend').innerHTML = STATUS.map(([k, l]) => `<span class="k"><span class="sw" style="background:var(--s-${k})"></span>${esc(l)} <span class="mono">${c[k]}</span></span>`).join('')
+    $('area-rows').innerHTML = DATA.areas.map((a) => { const ac = countBy(a.rows); const rv = a.rows.filter((r) => marks.has(r.id)).length
+      return `<tr><td class="name"><button type="button" data-goarea="${esc(a.key)}">${esc(a.name)}</button></td><td class="num">${a.rows.length}</td><td class="barcell"><div class="bar">${barHtml(a.rows)}</div></td>`
+        + `<td class="num ${ac.missing ? 'gapn' : 'zero'}">${ac.missing}</td><td class="num ${ac.partial ? 'partn' : 'zero'}">${ac.partial}</td><td class="num">${rv} / ${a.rows.length}</td></tr>` }).join('')
+  }
+  const SEVR = { high: 0, medium: 1, low: 2, '': 3 }
+  function paintDecide () {
+    /* each gap once: a row whose twin (same gap, another area) is already listed is folded into it */
+    const pick = (rows) => { const seen = new Set(); return rows.filter((r) => { if (seen.has(r.id)) return false; seen.add(r.id); (r.same || []).forEach((x) => seen.add(x)); return true }) }
+    const sortSev = (a, b) => (SEVR[a.severity] ?? 3) - (SEVR[b.severity] ?? 3)
+    const builtN = ALL.filter((r) => r.built && (r.status === 'missing' || r.status === 'partial')).length
+    const waits = ALL.filter((r) => r.waits)
+    const gaps = pick(ALL.filter((r) => r.status === 'missing' && !r.built && !r.waits).sort(sortSev))
+    const parts = pick(ALL.filter((r) => r.status === 'partial' && !r.built && !r.waits && (r.severity === 'high' || r.severity === 'medium')).sort(sortSev)).filter((r) => !gaps.some((g) => (g.same || []).includes(r.id)))
+    const sec = $('decide-sec')
+    if (!gaps.length && !parts.length && builtN) {
+      sec.innerHTML = `<div class="decide none"><div class="sh" style="margin:0"><h2>Built — nothing is missing without a decision</h2><p>On 10 Oct 2026 every missing and partly-there row below was built into 2.0 (REG-1560…1670): ${builtN} rows, each marked <b>Built</b> with its register rows. ${waits.length ? `${waits.length === 1 ? 'One waits' : `${waits.length} wait`} on your call about regions beyond Singapore:` : ''}</p></div>${waits.length ? `<ul>${waits.map((r) => `<li><span class="pill s-held">Waits on you</span><span><button type="button" data-go="${esc(r.id)}">${esc(r.feature)}</button> <span class="area-tag">${esc(r._areaName)}</span></span></li>`).join('')}</ul>` : ''}</div>`
+      return
+    }
+    if (!gaps.length && !parts.length) { sec.innerHTML = `<div class="decide none"><h2>Nothing is missing without a decision</h2><p>Every 1.0 feature in these areas is in 2.0, a stand-in, or held or dropped by your call.</p></div>`; return }
+    const li = (r) => { const m = marks.get(r.id)
+      return `<li><span class="pill s-${r.status}">${esc(LABEL[r.status])}${r.severity ? ` · ${esc(r.severity)}` : ''}</span><span><button type="button" data-go="${esc(r.id)}">${esc(r.feature)}</button> <span class="area-tag">${esc(r._areaName)}${(r.same || []).length ? ` · also ${esc(r.same.join(', '))}` : ''}${m ? ` · ${m.state === 'flag' ? 'flagged' : 'marked right'}` : ''}</span></span></li>` }
+    sec.innerHTML = `<div class="decide"><div class="sh" style="margin:0"><h2>Needs a decision</h2><p>${gaps.length} ${gaps.length === 1 ? 'feature is' : 'features are'} missing from 2.0 with no decision behind ${gaps.length === 1 ? 'it' : 'them'}${parts.length ? `, and ${parts.length} more ${parts.length === 1 ? 'is' : 'are'} only partly there with a medium or high severity` : ''}. Each gap is listed once, even when two areas found it. Open one to see where it lives in 1.0.</p></div><ul>${[...parts, ...gaps].map(li).join('')}</ul></div>`
+  }
+
+  /* ── controls ── */
+  const state = { q: '', area: 'all', rev: 'all', statuses: new Set() }
+  try { const s = JSON.parse(localStorage.getItem('pfmap.filters') || 'null'); if (s) { state.q = s.q || ''; state.area = s.area || 'all'; state.rev = s.rev || 'all'; state.statuses = new Set(s.statuses || []) } } catch (e) {}
+  const save = () => { try { localStorage.setItem('pfmap.filters', JSON.stringify({ q: state.q, area: state.area, rev: state.rev, statuses: [...state.statuses] })) } catch (e) {} }
+  $('area-sel').innerHTML = `<option value="all">Every area</option>` + DATA.areas.map((a) => `<option value="${esc(a.key)}">${esc(a.name)}</option>`).join('')
+  $('q').value = state.q; $('area-sel').value = state.area; $('rev-sel').value = state.rev
+  function paintChips () {
+    const c = countBy(ALL)
+    $('status-chips').innerHTML = STATUS.filter(([k]) => c[k]).map(([k, l]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${state.statuses.has(k)}"><span class="sw" style="background:var(--s-${k})"></span>${esc(l)} <span class="c">${c[k]}</span></button>`).join('')
+      + (state.statuses.size ? `<button type="button" class="linkbtn" id="clear-st">Clear status</button>` : '')
+  }
+  $('status-chips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-st]'); if (b) { const k = b.dataset.st; state.statuses.has(k) ? state.statuses.delete(k) : state.statuses.add(k); save(); paintChips(); paintLedger(); return }
+    if (e.target.id === 'clear-st') { state.statuses.clear(); save(); paintChips(); paintLedger() }
+  })
+  let qt = null
+  $('q').addEventListener('input', (e) => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value; save(); paintLedger() }, 120) })
+  $('area-sel').addEventListener('change', (e) => { state.area = e.target.value; save(); paintLedger() })
+  $('rev-sel').addEventListener('change', (e) => { state.rev = e.target.value; save(); paintLedger() })
+
+  const hay = (r) => [r.id, r.group, r.feature, r.what, r.v1, r.v1_code, r.v1_refs, r.v2, r.v2_code, r.how, r.decision, r.who, LABEL[r.status], r._areaName, r.built ? 'built ' + r.built.join(' ') : '', r.waits || ''].join(' ').toLowerCase()
+  const HAY = new Map(ALL.map((r) => [r.id, hay(r)]))
+  function visible (r) {
+    if (state.area !== 'all' && r._area !== state.area) return false
+    if (state.statuses.size && !state.statuses.has(r.status)) return false
+    const m = marks.get(r.id)
+    if (state.rev === 'unreviewed' && m) return false
+    if (state.rev === 'flagged' && m?.state !== 'flag') return false
+    if (state.rev === 'ok' && m?.state !== 'ok') return false
+    const q = state.q.trim().toLowerCase()
+    if (q && !q.split(/\s+/).every((w) => HAY.get(r.id).includes(w))) return false
+    return true
+  }
+
+  /* ── ledger ── */
+  const side = (lbl, place, extra) => `<div class="side ${lbl === '1.0' ? 'v1' : 'v2'}"><span class="lbl">${lbl}</span>${place ? `<span class="place">${esc(place)}</span>` : '<span class="none">Not in 2.0</span>'}${extra}</div>`
+  function rowHtml (r) {
+    const files = (r.v1_code || r.v2_code) ? `<details class="files"><summary>Files</summary>${r.v1_code ? `<code>1.0 · ${esc(r.v1_code)}</code>` : ''}${r.v2_code ? `<code>2.0 · ${esc(r.v2_code)}</code>` : ''}</details>` : ''
+    const v2place = r.v2 || (r.status === 'held' ? 'Held for later' : r.status === 'dropped' ? 'Dropped by decision' : '')
+    return `<article class="row" id="${esc(r.id)}" data-status="${esc(r.status)}"${r.built ? ' data-built=""' : ''}>
+      <div class="feat"><span class="rid">${esc(r.id)}</span><h4>${esc(r.feature)}</h4><p class="what">${esc(r.what)}</p>${r.who ? `<span class="who">${esc(r.who)}</span>` : ''}${files}</div>
+      ${side('1.0', r.v1, r.v1_refs ? `<span class="refs">${esc(r.v1_refs)}</span>` : '')}
+      <div class="st">${r.built ? `<span class="pill s-kept">Built</span><span class="was">was ${esc((LABEL[r.status] || r.status).toLowerCase())}</span><span class="regs">${esc(r.built.slice(0, 3).join(' · '))}${r.built.length > 3 ? ' …' : ''}</span>` : r.waits ? `<span class="pill s-held">Waits on you</span><span class="was">was ${esc((LABEL[r.status] || r.status).toLowerCase())}</span>` : `<span class="pill s-${esc(r.status)}">${esc(LABEL[r.status] || r.status)}</span>`}${r.severity && !r.built ? `<span class="sev ${esc(r.severity)}"><b>${esc(r.severity)}</b> severity</span>` : ''}${r.waits ? `<span class="was">${esc(r.waits)}</span>` : ''}${(r.same || []).length ? `<span class="same">Same gap as ${r.same.map((x) => `<button type="button" class="linkbtn" data-go="${esc(x)}">${esc(x)}</button>`).join(' ')}</span>` : ''}</div>
+      ${side('2.0', v2place, `${r.how ? `<span class="how">${esc(r.how)}</span>` : ''}${r.decision ? `<span class="dec">${esc(r.decision)}</span>` : ''}`)}
+      <div class="rev" data-rev="${esc(r.id)}"></div>
+    </article>`
+  }
+  function paintLedger () {
+    const shown = ALL.filter(visible)
+    $('count').textContent = `${shown.length} of ${ALL.length} rows`
+    if (!shown.length) { $('ledger').innerHTML = `<div class="empty">No row matches these filters. <button type="button" class="linkbtn" id="reset">Show every row</button></div>`; return }
+    let html = ''
+    for (const a of DATA.areas) {
+      const rows = shown.filter((r) => r._area === a.key); if (!rows.length) continue
+      let inner = '', g = null
+      for (const r of rows) { if (r.group !== g) { g = r.group; inner += `<div class="group-h">${esc(g || 'General')}</div>` } inner += rowHtml(r) }
+      html += `<section class="area-sec" id="area-${esc(a.key)}"><div class="area-head"><h3>${esc(a.name)}</h3><span class="cnt">${rows.length === a.rows.length ? `${a.rows.length} rows` : `${rows.length} of ${a.rows.length} rows`}</span></div>`
+        + (a.notes ? `<p class="area-note">${esc(a.notes)}</p>` : '')
+        + `<div class="colhead" aria-hidden="true"><span>1.0 feature</span><span>Where in 1.0</span><span>Status</span><span>Where in 2.0</span><span>Your review</span></div><div class="rows">${inner}</div></section>`
+    }
+    $('ledger').innerHTML = html
+    shown.forEach((r) => paintReview(r.id))
+  }
+  $('ledger').addEventListener('click', (e) => {
+    if (e.target.id === 'reset') { state.q = ''; state.area = 'all'; state.rev = 'all'; state.statuses.clear(); $('q').value = ''; $('area-sel').value = 'all'; $('rev-sel').value = 'all'; save(); paintChips(); paintLedger() }
+  })
+
+  /* go to a row, clearing filters that hide it */
+  function goTo (id) {
+    const r = byId.get(id); if (!r) return
+    if (!visible(r)) { state.q = ''; state.area = 'all'; state.rev = 'all'; state.statuses.clear(); $('q').value = ''; $('area-sel').value = 'all'; $('rev-sel').value = 'all'; save(); paintChips(); paintLedger() }
+    const el = $(id); if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    el.classList.add('lit'); setTimeout(() => el.classList.remove('lit'), 1800)
+  }
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-go]'); if (g) { goTo(g.dataset.go); return }
+    const a = e.target.closest('[data-goarea]'); if (a) { state.area = a.dataset.goarea; $('area-sel').value = state.area; save(); paintLedger(); $('area-' + state.area)?.scrollIntoView({ block: 'start' }) }
+  })
+
+  /* ── review cell ── */
+  const day = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) } catch (e) { return '' } }
+  function paintReview (id) {
+    const cell = document.querySelector(`[data-rev="${CSS.escape(id)}"]`); if (!cell) return
+    const m = marks.get(id)
+    const dis = !db || !canWrite ? ' disabled' : ''
+    if (editing.has(id)) {
+      const cur = m?.state === 'flag' ? m.note || '' : (cell.querySelector('textarea')?.value ?? '')
+      cell.innerHTML = `<div class="editor"><label class="eyebrow" for="n-${esc(id)}">What's not right?</label><textarea id="n-${esc(id)}" maxlength="2000">${esc(cur)}</textarea><div class="eb"><button type="button" class="rbtn save" data-act="save" data-id="${esc(id)}">Save flag</button><button type="button" class="rbtn" data-act="cancel" data-id="${esc(id)}">Cancel</button></div></div>`
+      return
+    }
+    const by = m?.by ? (names[m.by] || '') : ''
+    cell.innerHTML = `<div class="btns"><button type="button" class="rbtn ok" data-act="ok" data-id="${esc(id)}" aria-pressed="${m?.state === 'ok'}"${dis}>✓ Right</button><button type="button" class="rbtn fl" data-act="flag" data-id="${esc(id)}" aria-pressed="${m?.state === 'flag'}"${dis}>⚑ Flag</button></div>`
+      + (m?.state === 'flag' ? `<div class="note">${esc(m.note || 'Flagged')}<span class="by">${esc(by || 'Flagged')}${m.at ? ` · ${esc(day(m.at))}` : ''} · <button type="button" class="linkbtn" data-act="edit" data-id="${esc(id)}" style="padding:0">Edit</button></span></div>`
+        : m?.state === 'ok' && by ? `<span class="rev-status">${esc(by)} · ${esc(day(m.at))}</span>` : '')
+  }
+  async function write (id, body) {
+    try {
+      if (body) await db.collection('marks').doc(id).set(body); else await db.collection('marks').doc(id).delete()
+    } catch (e) {
+      const b = $('rev-banner'); b.hidden = false
+      b.textContent = e && e.code === 'invalid_argument' ? 'You can read this page, but your marks can’t be saved here — ask the owner for Contributor access.' : 'That mark didn’t save. Check your connection and press it again.'
+      if (e && e.code === 'invalid_argument') { canWrite = false; ALL.forEach((r) => paintReview(r.id)) }
+    }
+  }
+  $('ledger').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-act]'); if (!b || !db) return
+    const id = b.dataset.id, act = b.dataset.act, m = marks.get(id)
+    const stamp = () => ({ by: me || null, at: new Date().toISOString() })
+    if (act === 'ok') { if (m?.state === 'ok') { marks.delete(id); paintReview(id); paintSummary(); await write(id, null) } else { const body = { state: 'ok', note: '', ...stamp() }; marks.set(id, body); paintReview(id); paintSummary(); await write(id, body) } }
+    if (act === 'flag') { if (m?.state === 'flag') { marks.delete(id); paintReview(id); paintSummary(); await write(id, null) } else { editing.add(id); paintReview(id); document.getElementById('n-' + id)?.focus() } }
+    if (act === 'edit') { editing.add(id); paintReview(id); document.getElementById('n-' + id)?.focus() }
+    if (act === 'cancel') { editing.delete(id); paintReview(id) }
+    if (act === 'save') { const note = (document.getElementById('n-' + id)?.value || '').trim(); editing.delete(id); const body = { state: 'flag', note, ...stamp() }; marks.set(id, body); paintReview(id); paintSummary(); paintDecide(); await write(id, body) }
+  })
+
+  /* ── new in 2.0 + method ── */
+  $('new2').innerHTML = DATA.areas.filter((a) => a.new_in_2?.length).map((a) => `<div class="card"><h3>${esc(a.name)}</h3><ul>${a.new_in_2.map((n) => `<li><b>${esc(n.feature)}</b>${n.v2 ? ` — ${esc(n.v2)}` : ''}${n.note ? `. ${esc(n.note)}` : ''}</li>`).join('')}</ul></div>`).join('') || '<p class="empty">None recorded.</p>'
+  $('method').innerHTML = DATA.method.map(([h, items]) => `<div><h3>${esc(h)}</h3><ul>${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')
+
+  paintSummary(); paintDecide(); paintChips(); paintLedger()
+  if (/^#[A-Za-z0-9._~-]+$/.test(location.hash)) setTimeout(() => goTo(location.hash.slice(1)), 60)
+
+  /* ── light up review marks when the store answers ── */
+  ;(async () => {
+    try { user = window.claude ? await window.claude.use('user') : null } catch (e) { user = null }
+    try { db = window.claude ? await window.claude.use('db') : null } catch (e) { db = null }
+    const banner = $('rev-banner')
+    if (!db) { banner.hidden = false; banner.textContent = 'Review marks need you signed in to claude.ai. You can still read and filter the map.'; ALL.forEach((r) => paintReview(r.id)); return }
+    try { me = user ? await user.id() : null } catch (e) { me = null }
+    let w = null; try { w = user ? await user.can('data.write') : null } catch (e) { w = null }
+    canWrite = w !== false
+    if (!canWrite) { banner.hidden = false; banner.textContent = 'You can read this page and see the marks, but not add your own.' }
+    db.collection('marks').limit(1000).onSnapshot(async (snap) => {
+      marks = new Map(snap.docs.filter((d) => d.exists).map((d) => [d.id, d.data()]))
+      const ids = [...new Set([...marks.values()].map((m) => m.by).filter(Boolean))]
+      if (user && ids.length) { try { const ps = await user.profiles(ids); names = Object.fromEntries(ids.map((i) => [i, ps[i]?.name || ''])) } catch (e) {} }
+      paintSummary(); paintDecide()
+      if (state.rev !== 'all' && !editing.size) paintLedger(); else ALL.forEach((r) => paintReview(r.id))
+    }, () => { banner.hidden = false; banner.textContent = 'Review marks stopped updating. Reload the page to see the latest.' })
+  })()
+})()
+</script>

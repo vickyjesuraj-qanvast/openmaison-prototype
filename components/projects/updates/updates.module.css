@@ -1,0 +1,139 @@
+/*
+ * (REG-951, Projects round 3) A project's Updates tab — built on the house pieces, composed, never copied: the tab toolbar
+ * (components/om/tab-toolbar.module.css), the Activity tab's column of toolbar · chips · list, the Files grid's day heads, the detail
+ * card's white box (components/leads/detail/card.module.css), the house square thumbnail (components/om/thumb.module.css), the quote's
+ * approval / sent banner as each post's review band (components/quotes/editor/template-bar.module.css), the upload rows of the house
+ * upload toast (components/leads/files/upload-toast.module.css) and the quote Items' pulse for a post just made.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+
+/* The toolbar: "All Updates" · search · Post an update */
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex: 1 1 auto; flex-wrap: nowrap; }
+}
+@media (max-width: 767px) { .bar { flex-wrap: nowrap; } }
+
+/* The feed: one group per day, newest first (the Files grid's group head, 931:39121) */
+.feed { display: flex; flex-direction: column; gap: var(--om-spacing-8); }
+.day { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.dayHead { display: flex; align-items: center; min-height: 24px; margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.posts { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+/* One post: the detail card's white box; the band, when it has one, runs along its top edge */
+.post { composes: card from '../../leads/detail/card.module.css'; position: relative; overflow: hidden; scroll-margin-block: 120px; }
+.post[data-fresh]::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .post[data-fresh]::after { animation-duration: .01ms; } }
+
+/* The review band: the quote's banner, inset to the card's own sides */
+.band { composes: banner from '../../quotes/editor/template-bar.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5); }
+.bandIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
+.bandText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
+.bandActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
+.bandWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
+@media (max-width: 767px) { .band { padding: var(--om-spacing-2) var(--om-spacing-4); } }
+
+.postBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+.postHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.whoName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whoMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.tags { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.postKebab { display: inline-flex; flex-shrink: 0; }
+/* (fix-C, C-03) On a phone the author keeps their line — name, time, ⋮ — and the chips step onto their own line under it (the choice
+   card's MetaChips under its title); the ⋮ never leaves the card. A long wait line wraps under the band's words (C-19). */
+@media (max-width: 767px) {
+  .postHead { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .postKebab { order: 1; }
+  .tags { order: 2; flex: 1 1 100%; flex-wrap: wrap; flex-shrink: 1; min-width: 0; }
+  .tags:empty { display: none; }
+  .band .bandWait { flex-shrink: 1; min-width: 0; }
+}
+.postTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+/* The words, as the editor wrote them — read in full (REG-212), at a reading measure */
+.html { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); max-width: 72ch; overflow-wrap: anywhere; }
+.html :where(p, ul, ol) { margin: 0 0 var(--om-spacing-2); }
+.html :where(p, ul, ol):last-child { margin-bottom: 0; }
+.html :where(ul, ol) { padding-left: var(--om-spacing-5); }
+.postFoot { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Photos and videos: the house square, 136 — a row that wraps; documents: a row each */
+.media { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.tile { composes: thumb from '../../om/thumb.module.css'; width: 136px; height: 136px; text-decoration: none; cursor: pointer; }
+.tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tileIcon { width: 40%; height: auto; }
+.tileLabel { position: absolute; left: var(--om-spacing-1); bottom: var(--om-spacing-1); padding: 0 var(--om-spacing-1); border-radius: var(--om-radius-0-5); background: var(--om-color-on-surface-default); color: var(--om-color-surface-default); font: var(--om-type-caption-xs); }
+.docs { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.doc { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; max-width: 480px; padding: var(--om-spacing-2); border-radius: var(--om-radius-1); text-decoration: none; color: inherit; }
+.doc:hover { background: var(--om-color-surface-bg); }
+.docThumb { composes: thumb from '../../om/thumb.module.css'; }
+.docName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docSize { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+@media (max-width: 767px) {
+  .media { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tile { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+  .postBody { padding: var(--om-spacing-4); }
+}
+
+/* ── The composer (a form dialog; a bottom sheet on a phone) ── */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.richBox { composes: richBox from '../../company/price-book/price-book.module.css'; }
+.eyebrow { composes: eyebrow from '../../company/price-book/price-book.module.css'; }
+.uploads { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); overflow: hidden; }
+.upRow { composes: toastRow from '../../leads/files/upload-toast.module.css'; }
+.upThumb { composes: thumb from '../../om/thumb.module.css'; width: 40px; height: 40px; }
+.upName { composes: toastFile from '../../leads/files/upload-toast.module.css'; }
+.upStatus { composes: toastStatus from '../../leads/files/upload-toast.module.css'; }
+.upIcon { composes: toastIcon from '../../leads/files/upload-toast.module.css'; }
+.spin { composes: spin from '../../leads/files/upload-toast.module.css'; }
+.upFailed { composes: toastFailed from '../../leads/files/upload-toast.module.css'; }
+.upRetry { composes: toastRetry from '../../leads/files/upload-toast.module.css'; }
+.upHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.footNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* "As the client sees it" — the portal's page ground under the client's card, at the phone's width (portal canvas, Updates) */
+.preview { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.previewCaption { align-self: stretch; text-align: center; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* The client's card (portal canvas › Updates): white, r8, p16, 10 between its lines */
+.client { width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 10px; padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-sizing: border-box; }
+.clientDate { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.clientTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.clientHtml { composes: html; max-width: none; }
+.clientPhotos { display: grid; gap: var(--om-spacing-2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.clientPhotos[data-n='1'] { grid-template-columns: minmax(0, 1fr); }
+.clientPhotos[data-n='2'], .clientPhotos[data-n='4'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.clientPhoto { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.clientPhotos[data-n='1'] .clientPhoto, .clientPhotos[data-n='2'] .clientPhoto, .clientPhotos[data-n='4'] .clientPhoto { aspect-ratio: 4 / 3; }
+.clientVideo { display: block; width: 100%; border-radius: var(--om-radius-2); background: var(--om-color-on-surface-default); }
+.clientFile { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; font: var(--om-type-subtitle-m); color: var(--om-color-primary-default); text-decoration: none; overflow-wrap: anywhere; }
+.clientMilestone { align-self: flex-start; }
+
+/* (Projects round 4b) The same card on the portal's Updates and the home's Latest update: the column's width (`data-wide`), 24 inside at a
+   desk as board 7 draws its cards, "New" in the studio's colour on one the client has not opened, photos that open the viewer, "+n" on the
+   last when there are more. The colour is the page's primary — the portal sets it to the studio's brand. */
+.client[data-wide] { max-width: none; padding: var(--om-spacing-6); gap: var(--om-spacing-3); }
+.clientNew { margin-right: var(--om-spacing-2); vertical-align: 1px; }   /* (REG-1060) a MetaChip; only its place here */
+.clientPhotoBtn { position: relative; display: block; padding: 0; border: 0; border-radius: var(--om-radius-2); background: none; cursor: zoom-in; }
+.clientPhotoBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.clientDate[data-aside] { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); }
+.clientMore { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: var(--om-radius-2); background: color-mix(in srgb, var(--om-color-on-surface-default) 55%, transparent); color: var(--om-color-surface-default); font: var(--om-type-heading-h4); }
+/* at a desk board 7 draws a wide card's photos three across at 4:3, however many there are — a lone photo never runs the card's width */
+@media (min-width: 768px) {
+  .client[data-wide] .clientPhotos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .client[data-wide] .clientPhoto { aspect-ratio: 4 / 3; }
+}
+@media (max-width: 767px) {
+  .client[data-wide] { padding: var(--om-spacing-4); gap: 10px; }
+}
+
+/* (gaps build D, item 10 — 1.0 D-29 · D-54) Before and after: the two photo fields side by side over the house slider, at the photos' 4:3 */
+.compare { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.compareFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.compareBox { width: 100%; aspect-ratio: 4 / 3; border-radius: var(--om-radius-2); }
+.compareRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+@media (max-width: 767px) { .compareFields { grid-template-columns: minmax(0, 1fr); } }

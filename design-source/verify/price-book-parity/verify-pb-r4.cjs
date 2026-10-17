@@ -29,6 +29,9 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
 ;(async () => {
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 }, acceptDownloads: true })
+  // REG-797 (UX audit S8): My Items opens as the list for a member who never picked a view; this round was written on the grid, so the
+  // member's first pick is the grid (their own toggles still stick)
+  await ctx.addInitScript(() => { try { if (localStorage.getItem('om.price-book-items.list') === null) localStorage.setItem('om.price-book-items.list', '0') } catch {} })
   const page = await ctx.newPage()
   page.setDefaultTimeout(12000)
   const shot = (n, p = page) => p.screenshot({ path: `${S}/shots-pb4/${n}.png` })
@@ -42,7 +45,8 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     await page.getByTestId('import-dialog').locator('input[type=file]').setInputFiles(CSV)
     const map = page.getByRole('dialog', { name: 'Import into My Items' }); await map.waitFor(); await page.waitForTimeout(500)
     ok('it says where the rows came from', /from “supplier-list\.csv”/.test(await map.innerText()))
-    ok('Kind is a mapping', (await map.getByRole('combobox', { name: 'Kind' }).innerText()).includes('Kind') || (await map.getByRole('combobox', { name: 'Kind' }).inputValue().catch(() => '')) === 'Kind')
+    // exact: REG-796 (UX audit S7) added the mapping's "Rows with no Kind" select
+    ok('Kind is a mapping', (await map.getByRole('combobox', { name: 'Kind', exact: true }).innerText()).includes('Kind') || (await map.getByRole('combobox', { name: 'Kind', exact: true }).inputValue().catch(() => '')) === 'Kind')
     const notes = await page.getByTestId('import-notes').innerText()
     ok('the preview says what matches, what repeats, which trade is new', /2 rows match items already in My Items/.test(notes) && /1 row repeats an item earlier in the file/.test(notes) && /New trade for Settings › Quotes & pricing: Glass works/.test(notes), notes.replace(/\n/g, ' / '))
     const states = await page.getByTestId('import-row').evaluateAll((rows) => rows.map((r) => r.firstElementChild?.textContent ?? ''))   // (sweep S5 #8) In My Items leads the row

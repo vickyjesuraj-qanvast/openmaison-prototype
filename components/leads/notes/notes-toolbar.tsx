@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
@@ -15,6 +15,8 @@ export type NotesToolbarProps = {
   query: string
   onQuery: (q: string) => void
   onNew: (kind: NoteKind) => void
+  /** (simplify S-03 · Q-02) On a project: the Files & notes group's view switch in the "All Notes & Logs" title's place. */
+  views?: ReactNode
 }
 
 /**
@@ -29,14 +31,14 @@ export type NotesToolbarProps = {
  * New ▾ keeps the siblings' position (first control on the right, as Add Task / New Quote).
  * Menus toggle on their own trigger (REG-153); the chevron points up while open.
  */
-export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
+export function NotesToolbar({ query, onQuery, onNew, views }: NotesToolbarProps) {
   const [menu, setMenu] = useState<'new' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   return (
     <div className={styles.bar}>
       {/* (REG-318, user 2026-09-02) The tab's title, as every sibling has ("All Tasks", "All Quotes"): the REG-293 scope
           pill is gone — the kind filter went back to the mock's chips in the list head (931:44884, notes-list.tsx). */}
-      <h2 className={styles.title}>All Notes &amp; Logs</h2>
+      {views ?? <h2 className={styles.title}>All Notes &amp; Logs</h2>}
 
       <div className={styles.actions}>
         <span className={styles.menuWrap}>

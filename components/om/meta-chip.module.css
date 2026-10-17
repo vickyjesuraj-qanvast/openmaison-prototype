@@ -21,3 +21,4 @@
 .chip[data-color='green'] { background: var(--om-color-tertiary-green-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-green-variant1); color: var(--om-color-on-tertiary-green-variant); }
 .chip[data-color='yellow'] { background: var(--om-color-tertiary-yellow-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-yellow-variant1); color: var(--om-color-on-tertiary-yellow-variant); }
 .chip[data-color='red'] { background: var(--om-color-tertiary-red-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-red-variant1); color: var(--om-color-on-tertiary-red-variant); }
+.chip[data-color='blue'] { background: var(--om-color-tertiary-blue-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-blue-variant1); color: var(--om-color-on-tertiary-blue-variant); }   /* (REG-1060) */

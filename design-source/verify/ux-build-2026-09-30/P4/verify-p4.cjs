@@ -35,6 +35,9 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
 
   /* ── S1: the Bank details block — nothing printed for the client without bank details; Preview names it with the way to Profile ── */
   await step('S1', async () => {
+    /* (REG-969, Projects round 4a demo R71) the demo's studio entity now carries its bank (DBS) and PayNow: empty them on the scratch DB so
+       the entity has no bank details to print, as this check needs */
+    sql(`update settings set value = json_set(value, '$.details.entities[0].bankName', '', '$.details.entities[0].accountName', '', '$.details.entities[0].accountNo', '', '$.details.entities[0].payNow', '', '$.details.entities[0].swift', '', '$.details.entities[0].payNowQr', json('null')) where key = 'brand'`)
     sql(`update quote_templates set design_json = json_insert(design_json, '$.blocks[#]', json('{"id":"probe-bank","kind":"bank","title":"Payment details","titleStyle":{"role":"body","weight":700},"style":{"role":"body"},"layout":"row","qr":true,"qrWidth":22,"box":"tint"}')) where id='${DEFAULT_TPL}'`)
     const { ctx, page } = await desk()
     await page.goto(`${BASE}/quotes/${Q1}/preview`); await ready(page, 1500)
@@ -162,7 +165,7 @@ const row = (page, q) => page.locator(`[data-kb-id="${q}"]`).first()
     await page.getByRole('tab', { name: 'Valid until' }).click(); await page.getByRole('radio', { name: 'Passed' }).check({ force: true }); await page.waitForTimeout(500)
     await shot(page, 'q5-filter-valid-until')
     await page.getByRole('button', { name: 'Done' }).click(); await page.waitForTimeout(400)
-    const passed = Number(sql(`select count(*) from quotes where deleted_at is null and archived_at is null and valid_until < strftime('%s', date('now','localtime'), 'utc')`))
+    const passed = Number(sql(`select count(*) from quotes where deleted_at is null and archived_at is null and kind = 'quote' and valid_until < strftime('%s', date('now','localtime'), 'utc')`))   /* (fix-G, G-10) every quote list holds quotes, not variation orders */
     ok('Q5 Filters › Valid until › Passed', await page.locator('[data-kb-row]').count() === passed, `${passed}`)
     sql(`update quotes set valid_until = strftime('%s','now','+2 days') where id='${Q6}'`)
     await page.goto(`${BASE}/quotes`); await ready(page, 1200)

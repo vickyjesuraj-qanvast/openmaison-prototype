@@ -3,8 +3,6 @@
 .actions { display: inline-flex; align-items: center; gap: var(--om-spacing-6); }
 .link { composes: link from '../../../om/text-link.module.css'; white-space: nowrap; }   /* (REG-729) the house text link */
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 14/400 ink + the 20px switch (1263:36237) */
-.aiMark { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
-.aiMark img { width: 17px; height: 17px; display: block; }
 .anchor { position: relative; display: inline-flex; }
 .menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .menuIcon[data-on] { color: var(--om-color-primary-default); }

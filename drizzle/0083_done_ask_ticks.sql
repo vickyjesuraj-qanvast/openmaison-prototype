@@ -1,0 +1,1 @@
+ALTER TABLE `project_milestones` ADD `done_ask_json` text;

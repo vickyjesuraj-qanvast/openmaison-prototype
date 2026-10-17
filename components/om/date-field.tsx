@@ -19,7 +19,7 @@ type Common = Omit<TextFieldProps, 'mode' | 'options' | 'onChange' | 'open' | 'o
  * Date field: a read-only DS Text Field that opens the Material date picker —
  * typing is not possible, so the value is always a real date (user 2026-08-29).
  */
-export function DateField({ value, onChange, today, onKeyDown, icon = 'event', ...rest }: Common) {
+export function DateField({ value, onChange, today, onKeyDown, icon = 'event', min, max, ...rest }: Common & { /** (fix-D, D-32) the days that can be picked */ min?: Date | null; max?: Date | null }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement | null>(null)
   const key = useId()
@@ -28,7 +28,7 @@ export function DateField({ value, onChange, today, onKeyDown, icon = 'event', .
       <TextField {...rest} mode="trigger" value={value} trailingIcon={icon} boxRef={box} open={open}
                  onOpen={() => setOpen((o) => !o)}
                  onKeyDown={(e) => { if (e.key === 'ArrowDown' && open) { e.preventDefault(); focusDatePicker() } onKeyDown?.(e) }} />
-      <DatePicker open={open} anchorRef={box} anchorKey={key} value={parseInputDate(value)} today={today} label={rest.label}
+      <DatePicker open={open} anchorRef={box} anchorKey={key} value={parseInputDate(value)} today={today} label={rest.label} min={min} max={max}
                   onSelect={(d) => { onChange(inputDate(d)); setOpen(false) }} onClose={() => setOpen(false)} />
     </>
   )

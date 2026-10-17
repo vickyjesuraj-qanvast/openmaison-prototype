@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { leadAssignees, leadNotes, leads, members, stageLogs } from '@/lib/db/schema'
 import { parseInputDateTime } from '@/lib/format'
 import type { LeadFacts } from './tat'
+import { onLeads } from '@/lib/settings/roles'
 
 /* (REG-611) Insights — the facts every turnaround derives from, per live lead. The report itself is pure (lib/leads/tat.ts). */
 
@@ -42,7 +43,7 @@ export function factsFrom(lead: { id: string; name: string; stage: string; creat
 }
 
 export async function fetchInsights(): Promise<InsightsData> {
-  const rows = await db.select({ id: leads.id, name: leads.name, stage: leads.stage, createdAt: leads.createdAt }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.createdAt))
+  const rows = await db.select({ id: leads.id, name: leads.name, stage: leads.stage, createdAt: leads.createdAt }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.direct, false))).orderBy(asc(leads.createdAt))   // (REG-911) a direct project never was a lead
   const ids = rows.map((l) => l.id)
   const [assigns, logs, notes, team] = await Promise.all([
     ids.length ? db.select({ leadId: leadAssignees.leadId, memberId: leadAssignees.memberId, assignedAt: leadAssignees.assignedAt }).from(leadAssignees).where(inArray(leadAssignees.leadId, ids)) : Promise.resolve([]),
@@ -51,5 +52,5 @@ export async function fetchInsights(): Promise<InsightsData> {
     db.select({ id: members.id, name: members.name, role: members.role, color: members.color }).from(members),
   ])
   const facts = rows.map((l) => factsFrom(l, assigns.filter((a) => a.leadId === l.id), logs.filter((g) => g.leadId === l.id), notes.filter((n) => n.leadId === l.id)))
-  return { facts, team, now: Date.now() }
+  return { facts, team: team.filter((m) => onLeads(m.role)), now: Date.now() }   // (parity map, FB-114) Accounting is on no lead — no row By team member
 }

@@ -27,7 +27,8 @@ export function textCss(style: TextStyle | undefined, brand: BrandKit, defaultRo
 export function moneyText(minor: number, currency: ItemsBlock['currency'] | 'S$'): { sign: string; figure: string } {
   const v = Math.abs(minor) / 100
   const figure = `${minor < 0 ? '−' : ''}${new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}`
-  return currency === 'S$' ? { sign: '', figure: `S$${figure}` } : currency === '$ ' ? { sign: '$', figure } : { sign: '', figure }
+  /* (fix-D, D-08) the house money format: the minus before the currency — "−S$545.00", never "S$−545.00" */
+  return currency === 'S$' ? { sign: '', figure: minor < 0 ? `−S$${figure.slice(1)}` : `S$${figure}` } : currency === '$ ' ? { sign: '$', figure } : { sign: '', figure }
 }
 
 /** Row padding by density, in px. */

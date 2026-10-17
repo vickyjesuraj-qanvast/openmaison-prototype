@@ -172,7 +172,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
       <HouseStyleDialog open={houseOpen} brand={brand} sample={sample} onClose={() => setHouseOpen(false)}
                         onCreate={(key, name) => { setHouseOpen(false); void create((folderId) => createTemplate({ name, source: { kind: 'preset', key }, folderId }), 'create the template', at) }} />
       <RecreateDialog open={recreateOpen} brand={brand} sample={sample} onClose={() => setRecreateOpen(false)}
-                      onCreate={(key, name, sourceFile) => { setRecreateOpen(false); void create((folderId) => createTemplate({ name, source: { kind: 'preset', key, sourceFile }, folderId }), 'create the template', at) }} />
+                      onCreate={(key, name, sourceFile, reading) => { setRecreateOpen(false); void create((folderId) => createTemplate({ name, source: { kind: 'preset', key, sourceFile, reading }, folderId }), 'create the template', at) }} />
     </LibraryGallery>
   )
 }

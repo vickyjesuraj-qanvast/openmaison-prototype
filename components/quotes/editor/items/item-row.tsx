@@ -2,17 +2,25 @@
 
 import { useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
+import { Keys } from '@/components/om/keys'
+import { MetaChip } from '@/components/om/meta-chip'
+import { kitHtml } from '@/lib/templates/kit-html'
+import { sanitizeRichHtml } from '@/lib/rich-html'
+import type { ColorKey } from '@/lib/templates/model'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import type { QuoteItem } from '@/lib/db/schema'
 import { HIGHLIGHT_KIND, htmlToPlain, ITEM_KIND_ICON, ITEM_KIND_LABEL, isHighlight, isItemKind, isVisibility, printAsWord, type ColumnKey, type ColumnSettings, type Highlight, type ItemKind, type ItemsDensity, type PrintAs, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
-import { belowCost, depthOf, descendantIds, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
+import { belowCost, depthOf, descendantIds, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, sectionWordOf, unitPriceMinor, whyNoNumber } from '@/lib/quotes/math'
 import type { ItemPatch } from '@/app/quotes/items-actions'
 import { LinkCell, MoneyCell, NumberCell, TextCell } from './cell-input'
+import { useVariation } from './variation-context'
 import { DescriptionDialog } from './description-dialog'
 import { LabelMenu, RowMenu, ThumbMenu, UnitMenu, VisibilityMenu } from './table-menus'
+import { VendorMenu } from './vendor-menu'   // (one-home N-16)
 import { changeTag, type LineChange } from './line-change'
+import type { Tree } from './items-table'
 import styles from './items-table.module.css'
 
 export const COL_CLASS: Record<ColumnKey, string | undefined> = {
@@ -25,13 +33,32 @@ export const COL_CLASS: Record<ColumnKey, string | undefined> = {
 /** Per-column widths (px) — the user's drag, else the content fit (items-table.tsx); a column not in it keeps COL_CLASS's mocked width. */
 export type ColWidths = Partial<Record<ColumnKey | 'item', number>>
 
+/** What the rows' pickers offer: the labels in use on the quote and the studio's own lists — (S44I — M9) its units, (row 290) its trades. */
+export type RowLabels = { rooms: string[]; categories: string[]; sections: string[]; vendors: string[]; tradeNotes?: Record<string, string>; units: string[]; trades: string[]
+  /** (S44I — S43D's NB-07 (b)) the studio's GST rate: a line at another rate wears a quiet "Own rate" */
+  gstPct?: number }
+/** (S44I, B3) The adds a section's foot (and the phone's "Add to {section}") offers. */
+export type FootAdd = 'item' | 'sub' | 'book' | 'paste'
+/** (S45C — NB-07 (c)) A drag-fill from a selected run: the run (top to bottom, as shown) and the rows the drag reached below and above it,
+    nearest first. */
+export type FillSeries = { run: string[]; below: string[]; above: string[] }
+
 export type RowHandlers = {
   onPatch: (id: string, patch: ItemPatch) => void
+  /** (S44I, B3) A foot's add: a line, a sub-section, the Price book or pasted lines — last in that section. */
+  onFoot: (section: QuoteItem, what: FootAdd) => void
+  /** (S44I, B5) ⋮ › Add Item › Several…: n blank lines above or below the row (a section: at its top). */
+  onAddSeveral: (item: QuoteItem, n: number, where: 'above' | 'below') => void
+  /** (S44I, B10) Enter / Esc in the name of a line an add press just made: `value` = what the box holds now. */
+  onChainKey: (item: QuoteItem, key: 'enter' | 'escape', value: string) => void
+  /** (S44I — row 290) A trade picked in a section's name box: the section is named after it and files its lines under it. */
+  onTradePick: (item: QuoteItem, trade: string) => void
   /** A checkbox press; `range` (Shift held) selects the run from the last row touched, as the Tasks table does (REG-475). */
   onSelect: (id: string, on: boolean, range?: boolean) => void
   onSelectRun: (ids: string[]) => void
-  /** Drag-fill released / Cmd+D (REG-477): the source cell's column value into every target line. */
-  onFill: (col: string, sourceId: string, targetIds: string[]) => void
+  /** Drag-fill released / Cmd+D (REG-477): the source cell's column value into every target line — (S45C) or, with `series`, the selected
+      run's series continued into them. */
+  onFill: (col: string, sourceId: string, targetIds: string[], series?: FillSeries) => void
   onInsertBelow: (item: QuoteItem) => void
   onMenu: (item: QuoteItem, action: RowMenuAction) => void
   onChooseGroup: (item: QuoteItem, groupId: string | null) => void
@@ -39,10 +66,8 @@ export type RowHandlers = {
   onPrintAs: (item: QuoteItem, v: PrintAs | null) => void
   onHighlight: (item: QuoteItem, v: Highlight | null) => void
   onUploadImage: (item: QuoteItem) => void
-  /** Upload Logo (REG-415: coming soon) — the house snackbar, never a silent no-op. */
-  onComingSoon: () => void
-  /** (sweep S1 · U-04) the line that asked: the new label lands on it */
-  onAddLabel: (kind: 'room' | 'category' | 'section' | 'vendor', itemId?: string) => void
+  /** (sweep S1 · U-04) the line that asked: the new label lands on it · (one-home N-16) a vendor's `name` given goes to the directory at once */
+  onAddLabel: (kind: 'room' | 'category' | 'section' | 'vendor', itemId?: string, name?: string) => void
   /** (REG-623) A cell's word to the studio — a link that is not a web address. */
   onNote: (message: string) => void
   /** (REG-627, parity Q-30) The line's comments. */
@@ -59,6 +84,7 @@ export type RowHandlers = {
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
 export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors, comments = 0, change = null,
+  tree, carried = false, count, dropInto = false, chained = false, runCol = null, runEnd = false,
 }: {
   /** (UX audit Q10) On a revision: the line is new since the kept version, or its name, quantity, price or discount changed — tinted, tagged. */
   change?: LineChange | null
@@ -76,7 +102,15 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   selected: boolean
   groups: QuoteItem[]
   selectedCount: number
-  labels: { rooms: string[]; categories: string[]; sections: string[]; vendors: string[]; tradeNotes?: Record<string, string> }
+  labels: RowLabels
+  /** (S44I, B11) The tree guides it draws (a child row, or a section with its stem). */
+  tree?: Tree
+  /** (S44I, B4) Going along with a drag of the ticked lines (dimmed in place); the lifted row's count; a folded section a drop goes into. */
+  carried?: boolean
+  count?: number
+  dropInto?: boolean
+  /** (S44I, B10) A line an add press just made, its name holding the caret: Enter adds another, Esc finishes. */
+  chained?: boolean
   /** (REG-571) In the lifted block · slid aside by px · the lifted row's indent cue for the slot's depth · the slide's transform. */
   dragging: boolean
   shift: number
@@ -91,10 +125,16 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   fillCol: ColumnKey | null
   inFill: boolean
   onFillStart: (col: ColumnKey, id: string) => void
+  /** (S45C — NB-07 (c)) The run of cells selected down a column that takes this row's cell, and whether this row ends it — the run's
+      corner square (its fill handle) sits on its last cell, wherever the focus is. */
+  runCol?: ColumnKey | null
+  runEnd?: boolean
   h: RowHandlers
 }) {
+  const variation = useVariation()   // (Projects round 5) a variation order's omissions: a minus quantity
   const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'vendor' | 'thumb' | 'vis' | 'row' | null>(null)
   const [descOpen, setDescOpen] = useState(false)
+
   /* The row is ACTIVE while an editable control holds the focus — a cell input, a select, the description — or one of its
      select menus is open; never because a button in it (the group's fold, the checkbox, the chip, the kebab) was pressed
      (owner 2026-09-15: "when i expand the description is getting active which shouldn't"). `data-edit` marks the controls. */
@@ -119,8 +159,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const childCount = isGroup ? [...descendantIds(all, [item.id])].filter((id) => id !== item.id && all.find((x) => x.id === id)?.kind === 'item').length : 0
   /* (REG-556) Highlight: an ink colours the words, a fill tints the row — both from the kit. (REG-555) Print as: the word the client reads. */
   const hl: Highlight | null = isHighlight(item.highlight) ? item.highlight : null
-  const word = isGroup ? '' : printAsWord(item)
+  const word = printAsWord(item)   // (S44I — M17) a section prints a word too
+  const fromSection = isGroup ? null : sectionWordOf(all, item)   // (S44I — M17) a line under a section that prints a word
   const rich = !!item.descriptionHtml   // (REG-557) a formatted description edits in the dialog, never in the one-line box
+  /* (S44I — call C2) a name with emphasis, breaks or a kit colour reads as written and edits in Words on this line */
+  const richName = !isGroup && !!item.nameHtml
+  const nameShown = richName ? kitHtml(sanitizeRichHtml(item.nameHtml), { colors: brandColors as Record<ColorKey, string> }) : ''
+  const noNumber = details.autonumber && !number ? whyNoNumber(all, item) : null
+
   const vis: Visibility = isVisibility(item.visibility) ? item.visibility : 'visible'
   const kind: ItemKind | null = isItemKind(item.icon) ? item.icon : null
   const patch = (p: ItemPatch) => h.onPatch(item.id, p)
@@ -142,14 +188,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
     const body = (() => {
       switch (key) {
         case 'qty':
-          return isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />
+          return isGroup ? null : <NumberCell value={item.qty} signed={variation} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />
         case 'unit':
           return isGroup ? null : (
             <>
               <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')} onKeyDown={clearKey(!!item.unit, () => patch({ unit: null }))}>
                 <span>{item.unit ?? 'Unit · e.g. sqft'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>   {/* (REG-560) the tester's hint: the empty cell names what goes in it */}
               </button>
-              <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
+              <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} units={labels.units} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
             </>
           )
         case 'cost':
@@ -167,7 +213,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         case 'discount':
           return isGroup ? null : <NumberCell value={item.discountPct} suffix="%" max={100} onCommit={(v) => patch({ discountPct: v })} ariaLabel={`Discount of ${item.name}`} />
         case 'gst':
-          return isGroup ? null : <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />
+          return isGroup ? null : (
+            <>
+              <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />
+              {/* (S44I — S43D's NB-07 (b)) a line at its own rate says so, quietly, under its figure */}
+              {labels.gstPct !== undefined && item.gstPct !== labels.gstPct ? <Tooltip label={`This line’s own GST rate — the studio’s is ${labels.gstPct}%`}><span className={styles.ownRate} data-testid="own-rate" tabIndex={0}>Own rate</span></Tooltip> : null}
+            </>
+          )
         case 'room': case 'category': case 'section': {
           const ref = key === 'room' ? roomRef : key === 'category' ? catRef : secRef
           const value = item[key]
@@ -184,14 +236,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             </>
           )
         }
-        case 'vendor':   // (REG-623, parity Q-08) who supplies the line: My Items' vendors, the ones added on this quote, the ones in use
+        case 'vendor':   // (REG-623, parity Q-08) who supplies the line · (one-home N-16) picked from Company › Finance › Vendors, type-ahead (vendor-menu.tsx)
           return isGroup ? null : (
             <>
               <button ref={vendorRef} type="button" className={styles.pick} data-edit="" data-empty={item.vendor ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'vendor'} aria-label={item.vendor ? `Vendor of ${item.name}: ${item.vendor}` : `Add a vendor to ${item.name}`} onClick={() => toggle('vendor')} onKeyDown={clearKey(!!item.vendor, () => patch({ vendor: null }))}>
                 <span>{item.vendor ?? 'Add vendor'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
               </button>
-              <LabelMenu open={menu === 'vendor'} anchor={vendorRef} options={labels.vendors} value={item.vendor} onClose={() => setMenu(null)} title="Vendor/Sub"
-                         onPick={(v) => patch({ vendor: v })} addLabel="Add vendor" onAdd={() => h.onAddLabel('vendor', item.id)} />
+              <VendorMenu open={menu === 'vendor'} anchor={vendorRef} value={item.vendor} onClose={() => setMenu(null)}
+                          onPick={(v) => patch({ vendor: v })} onAdd={() => h.onAddLabel('vendor', item.id)} onAddNamed={(name) => h.onAddLabel('vendor', item.id, name)} />
             </>
           )
         case 'website':   // (REG-623, parity Q-09) a product or spec page, never printed
@@ -211,7 +263,8 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       }
     })()
     return (
-      <div key={key} role="cell" className={cls} style={st} data-col={key} data-fill={(inFill && fillCol === key) || undefined} data-below={(under && key === 'unitPrice') || undefined}>
+      <div key={key} role="cell" className={cls} style={st} data-col={key} data-fill={(inFill && fillCol === key) || undefined} data-below={(under && key === 'unitPrice') || undefined}
+           data-run={runCol === key || undefined} data-run-end={(runCol === key && runEnd) || undefined}>
         {body}
         {fillable(key) ? <span className={styles.fillHandle} data-fill-handle aria-hidden onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); onFillStart(key, item.id) }} /> : null}
       </div>
@@ -224,6 +277,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
          data-highlight={hl ? HIGHLIGHT_KIND[hl] : undefined} style={hl || dragStyle ? ({ ...(hl ? { '--hl': brandColors[hl] } : {}), ...dragStyle } as CSSProperties) : undefined}
          data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || menu === 'vendor' || undefined}
          data-dragging={dragging || undefined} data-drop-depth={dropDepth ?? undefined} data-shift={shift ? '' : undefined} data-fresh={fresh || undefined} data-full={showFull || undefined}
+         data-carried={carried || undefined} data-drop-into={dropInto || undefined} data-chained={chained || undefined}
          onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
          onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ix', `${Math.round(e.clientX - r.left)}px`) }}>
       {/* (REG-527, owner 2026-09-18) A + on the row's bottom edge that follows the pointer, so adding a line below never means
@@ -247,9 +301,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           <Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on, shiftHeld.current)} aria-label={`Select ${item.name}`} />
         </span>
       </div>
-      {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{item.noNumber && !isGroup ? <Tooltip label="No number — the numbering skips this line"><span className={styles.muted} aria-label="No number">–</span></Tooltip> : number}</div> : null}
+      {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{noNumber ? <Tooltip label={NO_NUMBER_WHY[noNumber]}><span className={styles.muted} aria-label="No number" tabIndex={0}>–</span></Tooltip> : number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
-        {isGroup || child ? <span className={styles.groupBar} aria-hidden /> : null}
+        {/* (S44I, B11 — call C1 as recommended, her ask 2026-10-15; REVERSES REG-457 / REG-440's child half) a section keeps its 4px bar and its
+            band; its lines sit on white and the tree's guides say whose they are */}
+        {isGroup ? <span className={styles.groupBar} aria-hidden /> : null}
+        {tree ? <Guides tree={tree} /> : null}
+        {count ? <span className={styles.liftCount} data-testid="lift-count"><MetaChip>{count} lines</MetaChip></span> : null}
         {/* (Dane UAT 6.11, g-photowell) A section or sub-section never prints a picture (slices.tsx prints line photos only) — no well on its
             row, so its name has the room; a line keeps the mock's well (1260:31253), as the phone's cards already do. */}
         {details.images && !isGroup ? (
@@ -266,14 +324,22 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           </Tooltip>
         ) : null}
         {isGroup ? null : <ThumbMenu open={menu === 'thumb'} anchor={thumbRef} icon={kind} onClose={() => setMenu(null)}
-                   onUpload={() => h.onUploadImage(item)} onIcon={(k) => patch({ icon: k, thumb: null, thumbCount: 0 })} onLogo={h.onComingSoon} />}
+                   onUpload={() => h.onUploadImage(item)} onIcon={(k) => patch({ icon: k, thumb: null, thumbCount: 0 })} />}
         <div className={styles.itemText}>
           {/* The name is text-wide; a press on the row's remaining width still lands the caret in it. */}
-          <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) nameRef.current?.focus() }}>
-            <TextCell value={item.name} kind="name" inputRef={nameRef} placeholder={isGroup ? 'New section' : 'Type item name'} onCommit={(v) => patch({ name: v })} ariaLabel={isGroup ? 'Section name' : 'Item name'} />
+          <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) { if (richName) setDescOpen(true); else nameRef.current?.focus() } }}>
+            {richName ? (
+              /* (S44I — call C2) the name as it prints — its emphasis, its breaks, its kit colour — opening Words on this line */
+              <button type="button" className={styles.nameRich} data-testid="name-rich" aria-label={`${item.name} — edit the words on this line`} onClick={() => setDescOpen(true)} dangerouslySetInnerHTML={{ __html: nameShown }} />
+            ) : (
+              <TextCell value={item.name} kind="name" inputRef={nameRef} placeholder={isGroup ? (depth ? 'New sub-section' : 'New section') : 'Type item name'} onCommit={(v) => patch({ name: v })} ariaLabel={isGroup ? 'Section name' : 'Item name'}
+                        onEscape={chained ? (v) => h.onChainKey(item, 'escape', v) : undefined}
+                        suggest={isGroup && labels.trades.length ? { title: 'Your trades', help: 'Its lines file under this trade', options: (typed) => tradesFor(labels.trades, typed, item.name), onPick: (t) => h.onTradePick(item, t) } : undefined} />
+            )}
             {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">{depth ? 'Sub-section' : 'Section'}</Tag></span> : null}   {/* (REG-567) the mock's "Group" reads "Section", as the templates say */}
+            {isGroup && item.pricedAfter ? <span className={styles.groupTag} data-testid="priced-after"><Tooltip label="Priced after the contract — out of the quote’s total and its payment split; printed after the items as an estimate"><span tabIndex={0}><Tag appearance="outlined" color="yellow">Priced after</Tag></span></Tooltip></span> : null}   {/* (S44T — call C1) */}
             {isGroup && item.printOneLine ? <span className={styles.groupTag}><Tooltip label="Prints for the client as one line — the section’s name and its total. The lines stay yours."><span><Tag appearance="outlined">One line</Tag></span></Tooltip></span> : null}   {/* (REG-585) */}
-            {word ? <span className={styles.groupTag}><Tooltip label={item.printAs === 'behalf' ? 'Paid on the client’s behalf — counts, no GST' : `Prints “${word}” in place of the amount — not counted`}><span><Tag appearance="outlined">{word}</Tag></span></Tooltip></span> : null}   {/* (REG-555) */}
+            {word ? <span className={styles.groupTag} data-testid={isGroup ? 'section-word' : undefined}><Tooltip label={item.printAs === 'behalf' ? 'Paid on the client’s behalf — counts, no GST' : isGroup ? `Prints “${word}” in place of its amount — its lines print no amounts and aren’t counted` : `Prints “${word}” in place of the amount — not counted`}><span><Tag appearance="outlined">{word}</Tag></span></Tooltip></span> : null}   {/* (REG-555) · (S44I — M17) a section's word */}
             {!isGroup && item.optional ? <span className={styles.groupTag}><Tag appearance="outlined">Optional</Tag></span> : null}   {/* (REG-492) */}
             {!isGroup && item.optional && item.clientChoice ? <span className={styles.groupTag} data-testid="client-choice"><Tooltip label={item.clientChoice === 'want' ? 'Ticked on the confirmation link — clear its Optional mark to add it to the totals' : 'Left unticked on the confirmation link'}><span><Tag appearance="outlined" color={item.clientChoice === 'want' ? 'green' : undefined}>{item.clientChoice === 'want' ? 'Client wants it' : 'Client said no'}</Tag></span></Tooltip></span> : null}   {/* (REG-626, parity Q-32) */}
             {under ? <span className={styles.groupTag} data-testid="below-cost"><Tooltip label={`Sells for ${money2(lineTotalMinor(item))}, costs ${money2(lineCostMinor(item))} — ${money2(lineCostMinor(item) - lineTotalMinor(item))} under its cost`}><span><Tag appearance="outlined" color="red">Below cost</Tag></span></Tooltip></span> : null}   {/* (REG-623) */}
@@ -298,9 +364,12 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
               </Tooltip>
             ) : null}
           </div>
-          {!details.description ? null : showFull || rich ? (
+          {chained ? (
+            /* (S44I, B10 — call C4 as recommended) while a line an add press just made holds the caret: Enter adds another, Esc finishes */
+            <span className={styles.chainHint} data-testid="chain-hint"><Keys spec="enter" /> adds another · <Keys spec="esc" /> to finish</span>
+          ) : !details.description ? null : showFull || rich ? (
             /* (REG-557) A formatted description shows its plain text (bullets kept) and opens the editor on a press — the one-line box cannot hold the formatting. */
-            <button type="button" className={`${styles.desc} ${styles.descBtn}`} data-rich={rich || undefined} data-full={showFull || undefined} onClick={() => setDescOpen(true)}>{(rich ? htmlToPlain(item.descriptionHtml!) : item.description) || 'Add a description'}</button>
+            <button type="button" className={`${styles.desc} ${styles.descBtn}`} data-rich={rich || undefined} data-full={showFull || undefined} onClick={() => setDescOpen(true)}>{(rich ? htmlToPlain(item.descriptionHtml!) : item.description) || (rich && /<img\b/i.test(item.descriptionHtml!) ? 'A picture' : 'Add a description')}</button>
           ) : (
             <>
               {/* At rest the description is text clamped to the density's lines (1260:31372: the base state is two); while the
@@ -313,7 +382,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
               <TextCell value={item.description ?? ''} kind="desc" inputRef={descRef} placeholder="Add a description" onCommit={(v) => patch({ description: v })} ariaLabel="Description" />
             </>
           )}
-          {!isGroup && details.description ? (
+          {!isGroup && details.description && !chained ? (
             /* (owner 2026-09-17, REG-478) The icon alone, hanging under the description box's right end as the ✕ / ✓ pair does
                (REG-472) — the mock's chip carried the word (1271:40880). mousedown swallowed: the box keeps its focus, so the
                row stays active through the press (the button only shows on an active row). */
@@ -326,15 +395,20 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         </div>
         {/* Expand = the S 400 modal with a bigger box (REG-444) — the in-house rich editor since REG-557 (bullets · numbers · bold · underline);
             Save writes through the row's patch, so it autosaves and undoes like a cell. A section's dialog edits its note under the band. */}
-        <DescriptionDialog open={descOpen} name={item.name} kind={isGroup ? 'section' : 'item'} value={item.description ?? ''} html={item.descriptionHtml} onClose={() => setDescOpen(false)} tradeNote={isGroup ? labels.tradeNotes?.[item.name.trim().toLowerCase()] : undefined}
-                           onSave={(text, html) => { if (text !== (item.description ?? '') || html !== (item.descriptionHtml ?? null)) patch({ description: text, descriptionHtml: html }) }} />
+        <DescriptionDialog open={descOpen} name={item.name} nameHtml={item.nameHtml} kind={isGroup ? 'section' : 'item'} value={item.description ?? ''} html={item.descriptionHtml} onClose={() => setDescOpen(false)} tradeNote={isGroup ? labels.tradeNotes?.[item.name.trim().toLowerCase()] : undefined} line={{ priceBookItemId: item.priceBookItemId, category: item.category }} brandColors={brandColors}
+                           onSave={(p) => patch(p)} />
       </div>
       {columns.map(cell)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       {/* (Dane UAT 6.15, g-expanded) A line selling under its cost: its Unit Price and Total figures turn the error red beside the tag (REG-623) —
           only while the Cost column is on, as the tag. */}
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`} data-below={under || undefined}>
-        {word && item.printAs !== 'behalf' ? (
+        {fromSection ? (
+          /* (S44I — M17) a line in a section that prints a word: its figure stays the studio's, struck — the section's word stands for it */
+          <Tooltip label={`In “${fromSection.name}”, which prints “${printAsWord(fromSection)}” — ${money2(total)} not counted`}>
+            <span className={styles.totalWord} tabIndex={0} data-testid="line-under-word"><span className={styles.total} data-struck="">{money2(total)}</span><span className={styles.totalUnder}>{printAsWord(fromSection)}</span></span>
+          </Tooltip>
+        ) : word && item.printAs !== 'behalf' ? (
           /* (REG-555) The word the client reads stands where the amount would; the line's own figure stays under it for the studio —
              struck through, as it leaves the totals (REG-623: "S$1,950.00 · not counted" needed 160 px of the cell's 100 and lost its
              start; the words moved to the tooltip). */
@@ -356,9 +430,38 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           </Tooltip>
         </span>
         <RowMenu open={menu === 'row'} anchor={kebabRef} item={item} groups={groups} all={all} selectedCount={selected ? selectedCount : 1} brandColors={brandColors}
-                 onClose={() => setMenu(null)} onAction={(a) => h.onMenu(item, a)} onChooseGroup={(g) => h.onChooseGroup(item, g)}
-                 onPrintAs={(v) => h.onPrintAs(item, v)} onHighlight={(v) => h.onHighlight(item, v)} />
+                 onClose={() => setMenu(null)} onAction={(a) => { if (a === 'description') setDescOpen(true); else h.onMenu(item, a) }} onChooseGroup={(g) => h.onChooseGroup(item, g)}
+                 onPrintAs={(v) => h.onPrintAs(item, v)} onHighlight={(v) => h.onHighlight(item, v)} onAddSeveral={(n, where) => h.onAddSeveral(item, n, where)} />
       </div>
     </div>
+  )
+}
+
+/** (S44I — row 290) The studio's trades that fit a section's name as it is typed: all of them while it still says New section (a new one —
+    its words selected, REG-573), else those holding what is typed; never the name it already has. */
+function tradesFor(trades: string[], typed: string, current: string): string[] {
+  const t = typed.trim().toLowerCase()
+  const fresh = /^new (sub-)?section$/i.test(t || current.trim())
+  return trades.filter((x) => x.toLowerCase() !== t && (fresh || (t !== '' && x.toLowerCase().includes(t)))).slice(0, 8)
+}
+
+/** (S44I — row 308) Why the # cell is empty: the print passes over the row too. */
+const NO_NUMBER_WHY = {
+  skip: 'No number — the numbering skips this line',
+  hidden: 'Hidden from the client — the numbering passes over it, as the print does',
+  empty: 'No number while it’s empty — the print leaves out an empty sub-section',
+} as const
+
+/** (S44I, B11 — the team's sections prototype, Branches) The tree in a row's ITEM cell: a line through each ancestor whose branch runs on, this
+    row's tee or (the last child) elbow, and an open section's stem down to its first row. Drawn only — never read aloud. */
+export function Guides({ tree }: { tree: Tree }) {
+  const level = tree.guides.length + 1
+  return (
+    <span className={styles.guides} aria-hidden data-guides="">
+      {tree.guides.map((on, k) => (on ? <span key={k} className={styles.gPass} data-level={k + 1} /> : null))}
+      {tree.branch ? <span className={styles.gBranch} data-level={level} data-branch={tree.branch} /> : null}
+      {tree.branch === 'tee' ? <span className={styles.gPass} data-level={level} data-own="" /> : null}
+      {tree.stem ? <span className={styles.gStem} data-level={tree.branch ? level + 1 : 1} /> : null}
+    </span>
   )
 }

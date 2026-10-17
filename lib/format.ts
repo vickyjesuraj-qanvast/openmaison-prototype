@@ -129,7 +129,7 @@ export function relativeTime(d: Date, now = new Date()): string {
   if (mi < 60) return `${mi}m ago`
   const h = Math.floor(mi / 60)
   if (h < 24) return `${h}h ago`
-  const days = Math.floor(h / 24)
+  const days = Math.max(1, calendarDaysBetween(d, now))   // (parity P-29) whole calendar days, as every other count — never one fewer late in the day
   if (days < 30) return `${days}d ago`
   return displayDate(d)
 }
@@ -184,6 +184,10 @@ export function groupDigits(raw: string): string {
     starting 6 (landline), 8 or 9 (mobile). Every phone box — the lead form, Invite to Portal, the contract's signing
     recipient — asks this of the bare digits, never a local length check. */
 export const isSgPhone = (digits: string): boolean => /^[689]\d{7}$/.test(digits)
+/** (fix-G, G-05) A Singapore MOBILE number — 8 or 9 first. The client portal's sign-in sends a one-time code by SMS, which a landline (6…)
+    can never take: every number that signs in to the portal (the client's, the household's) asks this, in the browser and on the server. */
+export const isSgMobile = (digits: string): boolean => /^[89]\d{7}$/.test(digits)
+export const SG_MOBILE_MSG = 'Enter a Singapore mobile number — 8 or 9 first'
 
 export function phoneDigits(raw: string | null | undefined): string {
   const d = digitsOnly(raw ?? '')
@@ -276,5 +280,41 @@ export function titleCaseName(input: string): string {
 
 /** (REG-563) A Singapore NRIC / FIN as typed: a letter, seven digits, a letter — spaces ignored, case free. */
 export const isNric = (v: string) => /^[STFGM]\d{7}[A-Z]$/i.test(v.replace(/\s+/g, ''))
+/** (S42 B-06) A Singapore UEN as ACRA issues it — a business's 8 digits and a letter (53012345A), a company's year and 5 digits and a letter
+    (201912345K), or another entity's T/S, year, two-letter type, 4 digits and a letter (T09LL0001B). Spaces ignored, case free. */
+export const isUen = (v: string) => /^(\d{8}[A-Z]|\d{9}[A-Z]|[ST]\d{2}[A-Z]{2}\d{4}[A-Z])$/i.test(v.replace(/\s+/g, ''))
 /** (REG-563) "S1234567A" → "•••••567A": only the last four characters are kept, which is all a signed document shows. */
 export const maskNric = (v: string) => { const t = v.replace(/\s+/g, '').toUpperCase(); return `${'•'.repeat(Math.max(0, t.length - 4))}${t.slice(-4)}` }
+
+/* ── (parity P-28 · P-29 · Q-03 · Q-13 · Q-14, 2026-10-08) One way to count and write time and money on both records ─────────────────
+   Every report, record and listing counts days on the calendar (the Schedule's rule, REG-1131: never elapsed milliseconds, which read one day
+   fewer before midnight) and writes them "n days" in words — never weeks. A span under two days keeps its minutes and hours (turnaround needs
+   them, 1.0's "30m" · "26.3h"). Empty is the house "--". */
+const DAY_MS = 86_400_000
+/** The calendar day a moment falls on (local), as a whole number — differences are whole days. */
+export const calendarDay = (at: number | Date): number => { const d = at instanceof Date ? at : new Date(at); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS) }
+/** Calendar days from one moment to another (0 on the same day). */
+export const calendarDaysBetween = (from: number | Date, to: number | Date): number => calendarDay(to) - calendarDay(from)
+/** "1 day" · "12 days" — never weeks. */
+export const dayWords = (n: number): string => `${n} ${Math.abs(n) === 1 ? 'day' : 'days'}`
+/** A span in the house words: under an hour "30m", under two days "26.3h", else calendar days "12 days"; null → "--". */
+export function spanWords(from: number | null | undefined, to: number | null | undefined): string {
+  if (from == null || to == null) return '--'
+  const ms = to - from
+  if (ms < 3_600_000) return `${Math.max(0, Math.round(ms / 60_000))}m`
+  if (ms < 48 * 3_600_000) { const r = Math.round((ms / 3_600_000) * 10) / 10; return `${Number.isInteger(r) ? r : r.toFixed(1)}h` }
+  return dayWords(calendarDaysBetween(from, to))
+}
+/** A duration given only as milliseconds (a median, a mean): under two days as `spanWords`, else whole days rounded — "n days"; null → "--". */
+export function durationWords(ms: number | null | undefined): string {
+  if (ms == null) return '--'
+  if (ms < 48 * 3_600_000) return spanWords(0, ms)
+  return dayWords(Math.round(ms / DAY_MS))
+}
+/** (Q-03) A sum on a record's CARD, as the lead's mocked Quotes card writes it: "S$ 77,900" — a space, whole dollars. Money documents
+    (invoices, the Money tab, Finance, the quote editor) keep their cents. */
+export const moneyCard = (minor: number): string => `S$ ${money(minor)}`
+
+/** (pending modules S16 — 1.0's rail and dock wrote "99+") A count on a glyph: the number up to 99, then "99+", so a busy studio's badge keeps to
+    its corner instead of running over the icon. The control's accessible name keeps the whole number. */
+export const badgeCount = (n: number): string => (n > 99 ? '99+' : String(n))

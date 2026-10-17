@@ -24,6 +24,12 @@
 .reset { display: inline-flex; align-self: flex-start; margin-left: calc(-1 * var(--om-spacing-3)); }
 .area { width: 100%; min-height: 72px; }
 .fieldsAnchor { position: relative; display: inline-flex; flex-shrink: 0; margin-top: 10px; }
+/* (pending modules S29) a paragraph's tools: Insert a field, and Write with AI under it */
+.txtTools { display: inline-flex; flex-direction: column; gap: var(--om-spacing-1); flex-shrink: 0; margin-top: 10px; }
+.txtTools > .fieldsAnchor { margin-top: 0; }
+.txtToolsBare { display: contents; }
+/* (S44G — NB-08) the Text block's Insert a field: a text button in the rich editor's tool line, its menu anchored under it */
+.fieldsAnchorText { position: relative; display: inline-flex; }   /* a field with no Write with AI keeps its one icon where it was */
 .swatches { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
 .swatch { width: 24px; height: 24px; border-radius: var(--om-radius-full); border: var(--om-border-1) solid var(--om-color-surface-variant); cursor: pointer; padding: 0; position: relative; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-default); }
 .swatch[data-on] { box-shadow: 0 0 0 2px var(--om-color-surface-default), 0 0 0 4px var(--om-color-primary-default); }
@@ -81,3 +87,14 @@
 .cardName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cardActions { display: inline-flex; flex-shrink: 0; margin-right: calc(-1 * var(--om-spacing-1)); }
 .cardMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* (pending modules S11) The cover looks under the cover's More options: one row per look — its page drawn small, its name and 1.0's line —
+   a pressable row as the inspector's other lists (36 at rest, 44 on touch). */
+.looks { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.look { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 44px; padding: var(--om-spacing-1) var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left; color: var(--om-color-on-surface-default); }
+.look:hover { background: var(--om-color-hover-04p); }
+.look:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.lookThumb { flex-shrink: 0; display: inline-flex; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-default); }
+.lookText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.lookName { font: var(--om-type-body-m); }
+.lookLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

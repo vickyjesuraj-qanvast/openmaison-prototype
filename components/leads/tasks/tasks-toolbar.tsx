@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useParams, usePathname } from 'next/navigation'
+import { QuoteTasksDialog } from '@/components/projects/schedule/suggest-tasks-dialog'   // (parity map, TD-022) P-E's one entry
+import { readQuoteTaskSuggestions } from '@/app/projects/schedule-actions'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
@@ -9,7 +12,9 @@ import { ScopePill } from '@/components/om/scope-pill'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
-import { TASK_SCOPE_LABEL, type TaskScope } from '@/lib/leads/task-filters'
+import { TASK_SCOPE_LABEL, TASK_SOURCE_LABEL, type TaskScope, type TaskSource } from '@/lib/leads/task-filters'
+import { DropdownDivider } from '@/components/leads/dropdown'
+import { SegmentedButton, SegmentedButtonItem } from '@/components/ds'
 import styles from './tasks-toolbar.module.css'
 
 export type TasksMenuAction = 'saveAll' | 'manage' | 'export' | 'deleteAll'
@@ -36,6 +41,10 @@ export type TasksToolbarProps = {
   onMenu: (action: TasksMenuAction) => void
   /** (REG-466) On the rail's Tasks page Add Task and the kebab sit in the page header, as the Leads header carries Add Lead and its kebab. */
   inHeader?: boolean
+  /** (gaps build, package C — 16) The rail's Tasks page: whose tasks — All · Leads · Projects; on a phone it rides in the scope's sheet. */
+  source?: { value: TaskSource; onChange: (s: TaskSource) => void }
+  /** (simplify S-03 · S-06) On a project: the Tasks group's view switch (All tasks · Compliance) in the "All Tasks" title's place. */
+  views?: ReactNode
 }
 
 /**
@@ -47,6 +56,19 @@ export function AddTaskButton({ onAdd, header = false }: { onAdd: (kind: 'new' |
   const [open, setOpen] = useState(false)
   const sheet = useSheetLayout()
   const pick = (fn: () => void) => () => { setOpen(false); fn() }
+  /* (parity map, TD-022 — P-E) on a project's Tasks, a third way in: Suggest tasks from the quote — offered only once the project has a signed
+     quote with lines to suggest from (read once, quietly; nothing shows while it reads or when it can't) */
+  const pathname = usePathname()
+  const params = useParams<{ id?: string | string[] }>()
+  const projectId = pathname?.startsWith('/projects/') && typeof params?.id === 'string' ? params.id : null
+  const [fromQuote, setFromQuote] = useState(false)
+  const [quoteOpen, setQuoteOpen] = useState(false)
+  useEffect(() => {
+    if (!projectId) return
+    let live = true
+    void readQuoteTaskSuggestions(projectId).then((r) => { if (live) setFromQuote(!('error' in r) && !!r.quote && r.groups.length > 0) }, () => { if (live) setFromQuote(false) })
+    return () => { live = false }
+  }, [projectId])
   return (
     <span className={styles.menuWrap}>
       {sheet ? (
@@ -69,13 +91,15 @@ export function AddTaskButton({ onAdd, header = false }: { onAdd: (kind: 'new' |
       <Dropdown open={open} onClose={() => setOpen(false)} align={header ? 'right' : 'left'} sheetTitle="Add Task">
         <DropdownItem onSelect={pick(() => onAdd('new'))}>Create New Task</DropdownItem>
         <DropdownItem onSelect={pick(() => onAdd('template'))}>Use Template</DropdownItem>
+        {projectId && fromQuote ? <DropdownItem onSelect={pick(() => setQuoteOpen(true))} help="The signed quote’s lines, by section">Suggest tasks from the quote</DropdownItem> : null}
       </Dropdown>
+      {projectId ? <QuoteTasksDialog open={quoteOpen} projectId={projectId} onClose={() => setQuoteOpen(false)} /> : null}
     </span>
   )
 }
 
 /** The kebab (902:27154): Save all as Template · Manage Templates · Export all as... · Delete all. */
-export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) => void }) {
+export function TasksMoreButton({ onMenu, group }: { onMenu: (action: TasksMenuAction) => void; /** (gaps build, package C — 16) the Tasks page's Group by project */ group?: { on: boolean; onToggle: () => void } }) {
   const [open, setOpen] = useState(false)
   const pick = (fn: () => void) => () => { setOpen(false); fn() }
   return (
@@ -88,6 +112,7 @@ export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) 
         <DropdownItem onSelect={pick(() => onMenu('manage'))}>Manage Templates</DropdownItem>
         <DropdownItem onSelect={pick(() => onMenu('export'))}>Export all as...</DropdownItem>
         <DropdownItem tone="danger" onSelect={pick(() => onMenu('deleteAll'))}>Delete all</DropdownItem>   {/* (REG-728) the row's own tone */}
+        {group ? <><DropdownDivider /><DropdownItem role="menuitemcheckbox" checked={group.on} onSelect={pick(group.onToggle)}>Group by project</DropdownItem></> : null}
       </Dropdown>
     </span>
   )
@@ -98,8 +123,9 @@ export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) 
  * "All Tasks" · Add Task (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, todos, searchPlaceholder, inHeader = false, bare = false }: TasksToolbarProps) {
+export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, todos, searchPlaceholder, inHeader = false, bare = false, source, views }: TasksToolbarProps) {
   const [scopeOpen, setScopeOpen] = useState(false)
+  const sheet = useSheetLayout()
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
 
   return (
@@ -113,7 +139,19 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
             {(Object.keys(TASK_SCOPE_LABEL) as TaskScope[]).map((k) => (
               <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>
             ))}
+            {/* (gaps build, package C — 16) on a phone the toolbar is one row: whose tasks rides in this sheet */}
+            {sheet && source ? <><DropdownDivider />{(Object.keys(TASK_SOURCE_LABEL) as TaskSource[]).map((k) => (
+              <DropdownItem key={`src-${k}`} role="menuitemradio" checked={source.value === k} onSelect={pick(() => source.onChange(k))}>{k === 'all' ? 'Leads and projects' : TASK_SOURCE_LABEL[k]}</DropdownItem>
+            ))}</> : null}
           </Dropdown>
+          {/* (gaps build, package C — 16) whose tasks: All · Leads · Projects */}
+          {source && !sheet ? (
+            <span className={styles.source} data-testid="task-source">
+              <SegmentedButton aria-label="Whose tasks" selectedKeys={[source.value]} onSelectionChange={(keys) => { const k = [...keys][0]; if (k === 'all' || k === 'leads' || k === 'projects') source.onChange(k) }}>
+                {(Object.keys(TASK_SOURCE_LABEL) as TaskSource[]).map((k) => <SegmentedButtonItem key={k} id={k}>{TASK_SOURCE_LABEL[k]}</SegmentedButtonItem>)}
+              </SegmentedButton>
+            </span>
+          ) : null}
           {todos?.length ? (
             <span className={styles.todos} data-testid="task-todos">
               {todos.map((t) => (
@@ -122,9 +160,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
             </span>
           ) : null}
         </span>
-      ) : (
-        <h2 className={styles.title}>All Tasks</h2>
-      )}
+      ) : (views ?? <h2 className={styles.title}>All Tasks</h2>)}
       <div className={styles.actions}>
         {bare ? null : (<>
         {inHeader ? null : <AddTaskButton onAdd={onAdd} />}

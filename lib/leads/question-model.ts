@@ -31,3 +31,23 @@ export function validateAnswer(type: string, value: string | string[]): string |
   if (type === 'number' && !/^\d+$/.test(value.trim())) return MSG.required
   return undefined
 }
+
+/* ── (gaps build D, item 9 — 1.0 M-170 · M-173 · M-175) the answer history and the ask's pace ────────────────────────────────────── */
+
+/** One change to an answer, as the card's clock lists it (the raw stored answers — `answerText` words them). */
+export type AnswerChange = { before: string | null; after: string | null; byKind: 'studio' | 'client'; byName: string | null; at: number }
+/** A stored answer in words, whatever its type (a multi answer is its picks joined). */
+export const answerWords = (raw: string | null): string => {
+  if (raw === null || raw === '') return 'No answer'
+  if (raw.startsWith('[')) { try { const v = JSON.parse(raw); if (Array.isArray(v)) return v.map(String).join(', ') || 'No answer' } catch { /* plain text */ } }
+  return raw
+}
+/** How long after an ask the client may be asked again — 1.0's 5-minute throttle on *Ask the client* (M-173). */
+export const ASK_AGAIN_MS = 5 * 60_000
+/** Why an ask is refused now, or null — "Asked 2 minutes ago — ask again after 3:45 pm". */
+export function askAgainBlock(lastAskedAt: number | null, now: number): string | null {
+  if (lastAskedAt === null || now - lastAskedAt >= ASK_AGAIN_MS) return null
+  const mins = Math.max(1, Math.round((now - lastAskedAt) / 60_000))
+  const at = new Date(lastAskedAt + ASK_AGAIN_MS).toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+  return `Asked ${mins === 1 ? 'a minute' : `${mins} minutes`} ago — ask again after ${at}`
+}

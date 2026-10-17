@@ -1,0 +1,5 @@
+/* (Projects round 9, Q-42) Someone else from the household: their rows are Client access's own (client-access-panel.module.css .row ·
+   .initials · .text · .name · .meta), with the listing's row menu at the end; the add dialog is the house form dialog's fields. */
+.more { display: inline-flex; flex: none; margin-right: calc(-1 * var(--om-spacing-2)); }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.lede { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

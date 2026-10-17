@@ -92,7 +92,9 @@
   .head { display: none; }
   .head, .row, .totalRow { min-width: 0; }
   .cell.cSel, .cell.cName { position: static; clip-path: none; box-shadow: none; }   /* the doubled class above needs the same weight to be released */
-  .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel desc amount' 'sel desc due'; align-items: start; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) 40px var(--om-spacing-3) 0; }
+  /* (S44T — bug fix, found with UAT row 310's word) the right side clears the pinned delete — a touch's 44 box and its inset — so a share,
+     a fixed fee's word or an amount is never drawn under it */
+  .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel desc amount' 'sel desc due'; align-items: start; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) 56px var(--om-spacing-3) 0; }
   .row .cell { padding: 0; }
   .cSel { grid-area: sel; padding-left: var(--om-spacing-2); align-self: center; }
   .cName { grid-area: name; white-space: normal; }
@@ -103,7 +105,7 @@
   .cDue { grid-area: due; padding-right: 0; }
   .cPct, .cAmount, .cDue { padding-left: var(--om-spacing-3); }
   .del.del { opacity: 1; pointer-events: auto; right: var(--om-spacing-2); top: var(--om-spacing-2); transform: none; }
-  .totalRow { grid-template-columns: 36px 1fr auto; grid-template-areas: 'sel name pct' 'sel name amount'; padding: var(--om-spacing-3) 40px var(--om-spacing-3) 0; row-gap: var(--om-spacing-1); }
+  .totalRow { grid-template-columns: 36px 1fr auto; grid-template-areas: 'sel name pct' 'sel name amount'; padding: var(--om-spacing-3) 56px var(--om-spacing-3) 0; row-gap: var(--om-spacing-1); }   /* (S44T) its figures under the rows' */
   .totalRow .cell { padding: 0; }
   .totalRow .cSel { grid-area: sel; }
   .totalRow .cName { grid-area: name; align-self: center; }
@@ -127,3 +129,11 @@
 
 /* (REG-589) A locked schedule: the cells read as text — no hover box, no caret. */
 .cellBtn:disabled { cursor: default; }
+
+/* (parity map, MI-021) The first payment as a fixed fee: the house Chips (% · S$) at the end of its name, the share cell's word in the
+   secondary colour (a fee has no share), the name ellipsising before the chips. */
+.nameRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.nameRow > .cellBtn { flex: 1 1 auto; width: auto; min-width: 0; }
+.feeSwitch { flex: none; flex-wrap: nowrap; gap: var(--om-spacing-1); }
+.feeWord { display: block; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+@media (max-width: 1024px) { .nameRow { flex-wrap: wrap; row-gap: var(--om-spacing-1); } }

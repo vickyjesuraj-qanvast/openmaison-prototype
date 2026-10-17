@@ -1,0 +1,14 @@
+/* (REG-927) New project — the lead form's field rhythm (lead-form.module.css: fields 24 apart, two to a row), on the house Dialog. */
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.row { composes: fieldRow from '../leads/lead-form.module.css'; }
+.intro { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.group { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin-bottom: calc(-1 * var(--om-spacing-2)); }
+.dupText { composes: dupText from '../leads/lead-form.module.css'; }
+.help { composes: helper from '../leads/lead-form.module.css'; }
+/* (gaps build, package A) the scope's chips under their caption — the lead form's chip group */
+.chipGroup { composes: customChips from '../leads/lead-form.module.css'; }
+.chipLabel { composes: customLabel from '../leads/lead-form.module.css'; }
+
+@media (max-width: 767px) {
+  .row { flex-direction: column; gap: var(--om-spacing-6); }
+}

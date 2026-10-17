@@ -1,0 +1,17 @@
+/*
+ * (pending modules S06 — card `held:finance`, REG-1577's call for Vicky, taken as recommended) **The house categorical palette** — the one set
+ * of hues a chart gives its categories (identity, not magnitude or status). The design system has no chart palette, so this is built from its
+ * own ramps, in a fixed order, and validated with the dataviz six checks (scripts/validate_palette.js, light, on the white surface):
+ *   1 primary (#5500ff) · 2 tertiary yellow d80 (#c17e22) · 3 tertiary blue (#4e58b4) · 4 tertiary green (#469e59)
+ *   lightness band PASS · chroma floor PASS · CVD worst adjacent ΔE 25.6 (deutan) PASS · normal-vision 27.9 PASS · contrast ≥ 3:1 PASS.
+ * Red is left out on purpose: it is the house's "late, and ours to fix" (S-05) and never names a category. A fifth category is never a made-up
+ * hue: it folds into "Other", which wears the disabled grey (the legend names it). Slots are given in order, never cycled. Identity is never
+ * colour alone — every chart that uses these names each slot in its legend. Compose a slot: `composes: c1 from '…/om/category-palette.module.css'`.
+ */
+/* (pending modules S25) each slot also names its hue as `--cat`, so a mark that isn't a box (an SVG line, a dot) takes the same hue — `stroke:
+   var(--cat)` — from this one list; a box keeps its background. Nothing else changes. */
+.c1 { --cat: var(--om-color-primary-default); background: var(--cat); }
+.c2 { --cat: var(--om-primitive-tertiary-yellow-d80); background: var(--cat); }
+.c3 { --cat: var(--om-color-tertiary-blue-default); background: var(--cat); }
+.c4 { --cat: var(--om-color-tertiary-green-default); background: var(--cat); }
+.other { --cat: var(--om-color-on-surface-disabled); background: var(--cat); }

@@ -47,7 +47,7 @@ const PRESETS: { key: Exclude<ContractDatePreset, ''>; label: string }[] = [
 ]
 
 export function ContractsFiltersModal({
-  open, value, onApply, onClose, now,
+  open, value, onApply, onClose, now, headSort = null, onClearHead,
 }: {
   open: boolean
   value: ContractFilters
@@ -55,6 +55,9 @@ export function ContractsFiltersModal({
   onClose: () => void
   /** Day-granular clock for the pickers' "today" ring (falls back to the mount time — never Date.now() in render). */
   now?: number
+  /** (pending modules S03) a column head's own order, while one is on — the projects Filters' words; choosing an order here takes it off */
+  headSort?: string | null
+  onClearHead?: () => void
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const [tab, setTab] = useState<Group>('sort')
@@ -79,7 +82,7 @@ export function ContractsFiltersModal({
     if (open) { setDraft(value); setTab('sort') }
   }
 
-  const dots = activeContractGroups(draft)
+  const dots = { ...activeContractGroups(draft), sort: activeContractGroups(draft).sort || !!headSort }
   const toggleStatus = (s: ContractStatus) =>
     setDraft((d) => ({ ...d, status: d.status.includes(s) ? d.status.filter((x) => x !== s) : [...d.status, s] }))
   // Single-select chips: the selected chip clears itself; leaving Custom drops the typed range (the listing's rule).
@@ -122,7 +125,8 @@ export function ContractsFiltersModal({
                 {tab === 'sort' ? (
                   <>
                     <span className={styles.sectionTitle}>Sort by</span>
-                    <RadioGroup aria-label="Sort by" value={draft.sort} onChange={(v) => setDraft((d) => ({ ...d, sort: v as ContractSort }))}>
+                    {headSort ? <span className={styles.headSort} data-testid="filters-head-sort">Sorted by the {headSort} column. Choose an order below to sort by it instead.</span> : null}
+                    <RadioGroup aria-label="Sort by" value={headSort ? '' : draft.sort} onChange={(v) => { onClearHead?.(); setDraft((d) => ({ ...d, sort: v as ContractSort })) }}>
                       {SORTS.map((s) => (
                         <div key={s.key} className={styles.sortRow}><Radio value={s.key}>{s.label}</Radio></div>
                       ))}

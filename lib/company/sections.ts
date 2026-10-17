@@ -3,6 +3,8 @@
  * page with its peers as a tab strip (REG-498). Templates' tabs are the kinds — no "All templates" (owner 2026-09-18: it only
  * repeated the tabs) — and Templates lands on Quotes; every kind is live (REG-485 · 534 · 538). Client-safe.
  */
+import { opensPath } from '@/lib/settings/roles'   // (parity map, PR-022)
+
 export type CompanySection = { key: string; icon: string; label: string; help: string; href?: string }
 export type CompanyGroup = { title: string; items: CompanySection[] }
 
@@ -15,13 +17,19 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
     { key: 'materials', icon: 'texture', label: 'Materials', help: 'Your own finishes for the AI Visualizer', href: '/company/materials' },   /* (REG-677, AI Visualizer Q-18) 1.0's studio library, now managed */
     { key: 'plan', icon: 'diamond', label: 'Plan & AI credits', help: 'Your plan, the AI credits the team uses, invoices', href: '/company/plan' },   /* (REG-704, AI credits Q-22) 1.0's Usage & credits, on Company's frame */
+    { key: 'portal', icon: 'home', label: 'Client portal', help: 'The page your clients sign in to — its address, Live or Paused, who has access', href: '/company/portal' },   /* (Projects r4a, Q-44 · board 9) */
   ] },
   { title: 'Operations', items: [
-    { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },
-    { key: 'reports', icon: 'analytics', label: 'Reports', help: 'Sales, pipeline and team' },
+    { key: 'finance', icon: 'finance', label: 'Finance', help: 'Purchase orders, bills, expenses, vendors and commission', href: '/company/finance' },   /* (REG-1360, owner 2026-10-08) the money pages live here — the rail's own Finance item is gone · (REG-1361) its reports went to Reports, so the help no longer names them */
+    { key: 'reports', icon: 'analytics', label: 'Reports', help: 'Leads, projects and money, for the whole studio', href: '/company/reports' },   /* (REG-1361, owner 2026-10-08) every report in one place — Leads · Projects · Finance */
     { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, webhooks and Gmail', href: '/company/integrations' },   /* (REG-602) live */
   ] },
 ]
+
+/** (parity map, PR-022 · FB-114) The Company panel's sections this member opens — all of them, but for Accounting only Finance and Reports
+    (lib/settings/roles.ts `opensPath`, the rule the shell's gate reads); a group with none left is not drawn. */
+export const companyGroupsFor = (role: string | null | undefined): CompanyGroup[] =>
+  COMPANY_GROUPS.map((g) => ({ ...g, items: g.items.filter((s) => !s.href || opensPath(role, s.href)) })).filter((g) => g.items.length > 0)
 
 export type TemplateKind = { key: string; icon: string; label: string; title: string; help: string; href: string; live: boolean }
 /* (REG-535, owner 2026-09-18) Contracts sits beside Quotes — the two live kinds first. (REG-508) No Notes kind — owner 2026-09-18: a quote's Additional Notes are free text with their own My Templates in the quote editor. */
@@ -32,7 +40,8 @@ export const TEMPLATE_KINDS: TemplateKind[] = [
   { key: 'contracts', icon: 'contract', label: 'Contracts', title: 'Contract templates', help: 'The agreement a signed quote becomes.', href: '/company/templates/contracts', live: true },   /* (REG-534) live */
   { key: 'tasks', icon: 'task', label: 'Tasks', title: 'Task templates', help: 'Checklists the team adds to a lead in one go.', href: '/company/templates/tasks', live: true },   /* (REG-538) live */
   { key: 'terms', icon: 'gavel', label: 'T&Cs & Notes', title: 'Terms and Notes templates', help: 'The clauses and the notes a quote can carry.', href: '/company/templates/terms', live: true },   /* (REG-538) one page, a Terms · Notes segment — the owner kept Notes off the strip (REG-508) */
-  { key: 'payments', icon: 'payments', label: 'Payments', title: 'Payment templates', help: 'Milestone splits the studio offers.', href: '/company/templates/payments', live: true },   /* (REG-538) live */
+  { key: 'payments', icon: 'payments', label: 'Payment schedules', title: 'Payment schedule templates', help: 'Milestone splits the studio offers.', href: '/company/templates/payments', live: true },   /* (REG-538) live · (one-home N-14) "Payments" also named Finance's Payments out and Settings › Projects' client payments */
+  { key: 'schedules', icon: 'calendar_month', label: 'Schedules', title: 'Schedule templates', help: 'The milestones a project’s schedule can start from.', href: '/company/templates/schedules', live: true },   /* (Projects round 2, Q-12) */
 ]
 export const templateKind = (key: string) => TEMPLATE_KINDS.find((k) => k.key === key)
 
@@ -58,3 +67,25 @@ export const tabBones = (labels: string[]) => labels.map((l) => Math.max(32, Mat
 
 /** (REG-704, AI credits Q-22) Company › Plan & AI credits: Usage · Plan & billing. */
 export const PLAN_TABS = [{ label: 'Usage', href: '/company/plan' }, { label: 'Plan & billing', href: '/company/plan/billing' }] as const
+
+/** (REG-1361, owner 2026-10-08: "All the reports related should be under the company reports right?") Company › Reports — the studio's
+    reports in one place: Leads (what Leads › Insights was), Projects (Projects › Insights), (pending modules S23) Meetings (1.0's Meeting
+    Insights), Finance (Finance › Reports), (pending modules S39) Studio health (1.0's Accounts › Studio Health — how the team and its clients
+    use OpenMaison, from the studio's own records). Every viewer sees the tabs; a tab they may not read shows its gate. `reads` = who reads it:
+    Owners and Admins, and for Projects Managers too (their team). */
+export type ReportsTab = { key: 'leads' | 'projects' | 'meetings' | 'finance' | 'health'; label: string; href: string; managers?: boolean }
+export const REPORTS_TABS: ReportsTab[] = [
+  { key: 'leads', label: 'Leads', href: '/company/reports/leads' },
+  { key: 'projects', label: 'Projects', href: '/company/reports/projects', managers: true },
+  /* (pending modules S23) 1.0's Meeting Insights › Analytics (with coaching) and its Objections report — Owners and Admins */
+  { key: 'meetings', label: 'Meetings', href: '/company/reports/meetings' },
+  { key: 'finance', label: 'Finance', href: '/company/reports/finance' },
+  /* (pending modules S39) 1.0's Studio Health, its right form — Owners and Admins, last: the business reports first, then how the app is used */
+  { key: 'health', label: 'Studio health', href: '/company/reports/health' },
+]
+/** Where Company › Reports lands — the first tab this viewer reads (a Manager: Projects); someone who reads none lands on the first and its gate. */
+export const reportsHome = (runsStudio: boolean, isManager: boolean, /** (parity map, FB-114) Accounting reads Finance's tab only */ books = false) =>
+  books && !runsStudio ? REPORTS_TABS.find((t) => t.key === 'finance')!.href : (REPORTS_TABS.find((t) => runsStudio || (t.managers && isManager)) ?? REPORTS_TABS[0]!).href
+
+/** (Projects r4a, board 9) Company › Client portal: Set-up · Clients. */
+export const CLIENT_PORTAL_TABS = [{ label: 'Set-up', href: '/company/portal' }, { label: 'Clients', href: '/company/portal/clients' }] as const

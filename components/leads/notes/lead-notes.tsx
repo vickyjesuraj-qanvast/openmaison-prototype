@@ -1,23 +1,25 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Link } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import { Tooltip } from '@/components/om/tooltip'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
 import { LinkButton } from '@/components/leads/move-stage/fields'
 import { AttachFilesModal, type UploadAnswer } from '@/components/leads/tasks/attach-files-modal'
 import { refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { uploadPicked as uploadPickedFile } from '@/components/leads/files/upload-picture'
 import { moveStageHref } from '@/lib/leads/move-link'
+import { FILL_ORDER, fillWords, readContactFile, type ContactFill } from '@/lib/leads/contact-fill'   // (S43B · F1-01)
 import { withFrom } from '@/lib/nav'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateTimeDot, formatInputDateTime, parseInputDateTime } from '@/lib/format'
-import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
+import { displayDateTimeDot, displayDue, parseInputDateTime } from '@/lib/format'
+import { bodyHtml, bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
+import { refineNoteHtml, refineTitle } from '@/lib/leads/note-refine'   // (pending modules S05)
 import type { LeadNotesData, NoteRow } from '@/lib/leads/notes'
 import { filterByQuery } from '@/lib/search'
 import { reminderTaskTitle } from '@/lib/leads/enums'
@@ -53,6 +55,11 @@ import styles from './lead-notes.module.css'
 
 const DRAFT_ID = 'draft'
 /** The unsaved item: the draft fields + its attachments + the per-item state a saved note keeps in the sets below. */
+/** (pending modules S23) A next step to meet in person, on a day ahead, plans the meeting (lib/meetings/plan-from-log.ts) — the save's snackbar says so. */
+function logSavedWords(d?: NoteDraft): string {
+  const at = d && d.nextStepMode === 'In person' ? parseInputDateTime(d.nextStepWhen) : null
+  return at && at.getTime() > Date.now() ? `Contact log saved · a meeting is planned for ${displayDue(at)}` : 'Contact log saved'
+}
 type DraftItem = NoteDraft & { id: typeof DRAFT_ID; fileIds: string[]; createdAt: number; editing: boolean; showErrors: boolean }
 const freshDraft = (kind: NoteKind, at: number): DraftItem => ({ ...emptyDraft(kind), id: DRAFT_ID, fileIds: [], createdAt: at, editing: kind === 'contact', showErrors: false })
 const fieldsOf = (d: NoteDraft): NoteDraft => ({ kind: d.kind, title: d.title, body: d.body, channel: d.channel, when: d.when, outcome: d.outcome, nextStepWhen: d.nextStepWhen, nextStepMode: d.nextStepMode })
@@ -64,10 +71,8 @@ const normalise = (d: NoteDraft): NoteDraft => ({ ...fieldsOf(d), title: d.title
 const without = <T,>(set: Set<T>, ids: T[]) => { const s = new Set(set); ids.forEach((id) => s.delete(id)); return s }
 const withId = <T,>(set: Set<T>, id: T) => new Set(set).add(id)
 
-/* Auto Fill (plan › Rules, invented copy logged in the register): what the "uploaded" conversation fills in, and the Add tasks suggestion. */
-const AUTO_FILL_BODY = 'Client confirmed the renovation scope over WhatsApp and asked for a site visit next week.'
-const AUTO_FILL_DAYS = 3
-const AUTO_FILL_HOUR = 19
+/* Auto Fill → Add tasks (plan › Rules): the Add tasks suggestion. (S43B · F1-01) What fills the log is the picked file's own words, read by rule
+   (lib/leads/contact-fill.ts) — the scripted sentence and clock (AUTO_FILL_BODY · AUTO_FILL_DAYS · AUTO_FILL_HOUR) are gone. */
 const SUGGESTIONS = ['Prepare sample designs and floor plan illustrations for the client']
 
 /* (UX audit 2026-09-30, T3) A Met-stage meeting log reads as what it is — "Meeting log", its remarks or where it happened. */
@@ -79,11 +84,15 @@ const secondaryOf = (n: NoteRow, cur: NoteDraft) => {
 }
 
 /** `stage` (UX audit 2026-09-30, L2): the lead's stage — a contact log saved on a New lead offers the move to Contacted. */
-export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data: LeadNotesData; stage?: string | null }) {
+/** `base` (gaps build, package A — M-02): the address its links are built on — a project carries the lead's Notes & Logs on (`/projects/<id>`),
+    as Tasks and Files do; the lead's own page by default. */
+export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'lead', views }: { leadId: string; data: LeadNotesData; stage?: string | null; base?: string
+  /** (parity P-12) the host's record — a project passes "project", so the empty kind's line says "this project" */ noun?: 'lead' | 'project'
+  /** (simplify S-03 · Q-02) on a project: the Files & notes view switch in the toolbar's title place */ views?: ReactNode }) {
+  const base = baseIn ?? `/leads/${leadId}`
   const { notes, files, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
   const { run, fail } = useRun()
 
   /* ── items ── */
@@ -121,6 +130,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
   const [deleting, setDeleting] = useState<{ id: string; kind: NoteKind } | null>(null)
   const [attachFor, setAttachFor] = useState<string | null>(null)
   const [autoFillFor, setAutoFillFor] = useState<string | null>(null)
+  const [fillNote, setFillNote] = useState<{ id: string; text: string } | null>(null)   // (S43B · F1-01) what Auto Fill read, at the top of that log
   const [tasksFor, setTasksFor] = useState<{ id: string; autoAdded: string; /** (REG-608) the schedule's moment, the reminder's due date */ when: string; picked: Set<string> } | null>(null)
 
   const byId = new Map(notes.map((n) => [n.id, n]))
@@ -204,7 +214,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
   // on this tab the quick link raises `om:notes:new` with { kind }.
   useCreateIntent<NoteKind>({
     event: CREATE_EVENTS.notes,
-    landing: { href: `/leads/${leadId}/notes`, values: ['note', 'contact'] },
+    landing: { href: `${base}/notes`, values: ['note', 'contact'] },
     onIntent: (value, detail) => { const kind = value ?? (detail as { kind?: NoteKind } | undefined)?.kind; startDraft(kind === 'contact' ? 'contact' : 'note') },
   })
 
@@ -225,7 +235,10 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
     if (id === DRAFT_ID) { setDraft((prev) => (prev ? { ...prev, ...patch } : prev)); return }
     const n = byId.get(id); if (!n) return
     const next = { ...(edits[id] ?? draftFrom(n)), ...patch }
-    setEdits((e) => { const c = { ...e }; if (same(next, draftFrom(n))) delete c[id]; else c[id] = next; return c })
+    /* (pending modules S05, found) back to what the row says — but a save of something else is in flight or not yet read back: the edit
+       stays, so the autosave writes it again after (Refine's Undo while Refine's own save was on its way) */
+    const settledHere = !inflight.current.has(id) && !pending[id]
+    setEdits((e) => { const c = { ...e }; if (same(next, draftFrom(n)) && settledHere) delete c[id]; else c[id] = next; return c })
   }
   const clearEdit = (id: string) => {
     setEdits((e) => { const c = { ...e }; delete c[id]; return c })
@@ -274,7 +287,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
       if (savedDraftId) return
       const fileIds = draft?.fileIds ?? []
       inflight.current.add(id); setSavingId(id)
-      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (contact) snackbar(logSaved(newId)); offerReminder(id, d) }
+      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (contact) snackbar(logSaved(newId, d)); offerReminder(id, d) }
       catch { fail(`save the ${noun}`) }
       finally { inflight.current.delete(id); setSavingId(null) }
       return
@@ -282,7 +295,9 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
     const n = byId.get(id); if (!n) return
     if (same(d, draftFrom(n))) { clearEdit(id); return }   // nothing changed — just leave editing
     inflight.current.add(id); setSavingId(id)
-    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (contact) snackbar(logSaved(id)); offerReminder(id, d) }
+    /* (pending modules S05, found) what changed while the save was in flight — typing, Refine, Refine's Undo — stays the edit: the saved
+       snapshot only stands in where nothing newer is there, or the newer change was thrown away (an Undo that "did nothing") */
+    try { await updateNote(id, d); setEdits((e) => (e[id] && !same(e[id], d) ? e : { ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (contact) snackbar(logSaved(id, d)); offerReminder(id, d) }
     catch { fail(`save the ${noun}`) }
     finally { inflight.current.delete(id); setSavingId(null) }
   }
@@ -303,9 +318,9 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
      (the Move stage window with this log filled in); otherwise Add tasks (the Tasks tab's add row). `?from=` rides along (REG-465). */
   const origin = useSearchParams().get('from')
   const keepFrom = (href: string) => (origin ? withFrom(href, origin) : href)
-  const logSaved = (id: string) => (stage === 'New'
-    ? { message: 'Contact log saved', actionLabel: 'Move to Contacted', onAction: () => router.push(keepFrom(moveStageHref(leadId, 'contacted', { log: id }))) }
-    : { message: 'Contact log saved', actionLabel: 'Add tasks', onAction: () => router.push(keepFrom(`/leads/${leadId}/tasks?add=1`)) })
+  const logSaved = (id: string, d?: NoteDraft) => (stage === 'New'
+    ? { message: logSavedWords(d), actionLabel: 'Move to Contacted', onAction: () => router.push(keepFrom(moveStageHref(leadId, 'contacted', { log: id }))) }
+    : { message: logSavedWords(d), actionLabel: 'Add tasks', onAction: () => router.push(keepFrom(`${base}/tasks?add=1`)) })
   /* (UX audit 2026-09-30, T1 — supersedes REG-149's stand-in here) Attach files › a picked file goes through the Files tab's own upload
      (`uploadFile`, REG-684: an image keeps its picture) and hands its real id back, so the modal ticks it and the log / note saves with a
      file that exists. A refused upload says so and the modal's row reads Failed. */
@@ -329,12 +344,36 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
   }
 
   /* ── Auto Fill → Add tasks (plan › Rules) ── */
-  const autoFill = () => {
-    const id = autoFillFor; setAutoFillFor(null); if (!id) return
-    const at = new Date()   // the clock is read in the handler, never in render
-    const next = new Date(at); next.setDate(next.getDate() + AUTO_FILL_DAYS); next.setHours(AUTO_FILL_HOUR, 0, 0, 0)
-    change(id, { channel: 'WhatsApp', when: formatInputDateTime(at), outcome: 'Connected', nextStepWhen: formatInputDateTime(next), nextStepMode: 'In person', body: AUTO_FILL_BODY })
-    setTasksFor({ id, autoAdded: reminderTaskTitle(formatInputDateTime(next), 'In person'), when: formatInputDateTime(next), picked: new Set() })   // (REG-319) the same reminder title everywhere
+  /* (S43B · F1-01 — her "fix all the pending things" 2026-10-15, as recommended) The picked file is READ by rule (lib/leads/contact-fill.ts,
+     the Move stage window's reader): what it plainly says lands only where the log is still empty; the file is uploaded to the lead's Files and
+     attached to the log — a picture too, filling nothing; the line at the top of the log says what happened. A read that filled something offers
+     Add tasks, its Auto added row the next step the file named (REG-319) — none named, no Auto added row. */
+  const autoFill = async (file: File) => {
+    const id = autoFillFor; if (!id) return
+    const cur = currentOf(id)
+    const read = await readContactFile(file, { kind: 'contact', now: new Date(), members: data.team.map((m) => ({ name: m.name, email: m.email })) })
+    const filled: (keyof ContactFill)[] = [], kept: (keyof ContactFill)[] = []
+    let patch: Partial<NoteDraft> = {}
+    if (read.ok && cur) {
+      for (const k of FILL_ORDER) {
+        if (k === 'where') continue
+        const v = read.fill[k]
+        if (!v) continue
+        const had = String(cur[k] ?? '').trim()
+        if (!had) filled.push(k)
+        else if (had !== v) kept.push(k)
+      }
+      patch = Object.fromEntries(filled.map((k) => [k, read.fill[k]!])) as Partial<NoteDraft>
+      if (filled.length) change(id, patch)
+    }
+    setFillNote({ id, text: fillWords({ file: file.name, kind: 'contact', read, filled, kept }) })
+    setAutoFillFor(null)
+    const up = await uploadPicked(file)
+    if (up && !('error' in up)) setAttached(id, [...attachedIds(id), up.id], 'attach the file')
+    if (filled.length) {
+      const when = patch.nextStepWhen ?? ''
+      setTasksFor({ id, autoAdded: when ? reminderTaskTitle(when, patch.nextStepMode ?? '') : '', when, picked: new Set() })   // (REG-319) the same reminder title everywhere
+    }
   }
   const addTasks = () => {
     const t = tasksFor; setTasksFor(null); if (!t) return
@@ -362,6 +401,26 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
   const isDirty = (id: string) => (id === DRAFT_ID ? (draft ? draftDirty(draft) : false) : !!edits[id] && !pending[id])
   const isEditing = (id: string) => (id === DRAFT_ID ? !!draft?.editing : contactEditing.has(id))
   const errorsFor = (id: string, d: NoteDraft) => ((id === DRAFT_ID ? !!draft?.showErrors : showErrors.has(id)) ? validateDraft(d) : {})
+  /* (pending modules S05 — card held:leads, "Notes › AI chip › Refine — Coming soon · keep without a model") Refine, by rule (lib/leads/note-refine.ts):
+     the shorthand spelt out, sentences opening on a capital, one space, a full stop where a line ends — the note's words and formatting
+     otherwise as typed; it autosaves like any edit, and Undo puts the note back as it was. Nothing is metered (1.0 had no Refine). */
+  const refine = () => {
+    if (!selectedId || !selected || selected.kind === 'contact') return
+    const id = selectedId
+    const key = id === DRAFT_ID ? draftKey : null
+    const before = { title: selected.title, body: selected.body }
+    const b = refineNoteHtml(bodyHtml(selected.body)), t = refineTitle(selected.title)
+    if (!b.changes && !t.changes) { snackbar({ message: 'Nothing to refine — the note already reads cleanly' }); return }
+    change(id, { title: t.title, body: b.html })
+    snackbar({ message: 'Note refined', actionLabel: 'Undo', onAction: () => {
+      /* A new note saves itself a moment after typing pauses (REG-263): by the Undo its draft may have become its own row (REG-285's
+         retirement, `carried`) — the Undo follows it there, through the latest render's state. */
+      const l = latest.current
+      l.change(key && l.draftKey !== key && l.carried?.key === key ? l.carried.id : id, before)
+    } })
+  }
+  const latest = useRef({ draftKey, carried, change })
+  useEffect(() => { latest.current = { draftKey, carried, change } })
 
   /* ── Notes autosave (REG-263, user 2026-09-01: "it can be auto saved like apple notes … why do we need a
      button") ── a NOTE commits itself ~900ms after typing pauses; the timer re-arms on every change (the key
@@ -441,7 +500,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
       {/* (REG-293) The tab's own row, as every sibling has: the "All Notes & Logs (n) ▾" scope pill (the kind chips'
           successor) and the search on the left, New ▾ on the right — the lead listing's bar over one list. */}
       <NotesToolbar
-        query={query} onQuery={setQuery}
+        query={query} onQuery={setQuery} views={views}
         /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
         onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
       />
@@ -456,6 +515,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
           onItemMenu={itemMenu}
           filter={filter} onFilter={setFilter}
           onNew={startDraft}   /* (REG-546) */
+          noun={noun}   /* (parity P-12) */
         />
       </div>
       <div className={styles.pane}>
@@ -491,7 +551,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
           <PaneToolbar
             title={selected ? 'Note' : undefined}
             onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
-            onRefine={comingSoon}
+            onRefine={refine}   /* (pending modules S05) */
             onFormat={(cmd) => document.execCommand(cmd)}
             formattingDisabled={!selectedId || !selected}
           />
@@ -510,6 +570,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
                   editing={isEditing(selectedId)}
                   autoFocus={mayFocusEditor}
                   today={new Date(now)}
+                  fillNote={fillNote?.id === selectedId ? fillNote.text : null}
                 />
               ) : sheetLayout ? null : (
                 <NoteEditor
@@ -525,7 +586,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
             <AttachmentsColumn
               files={attachments}
               onRemove={(fileId: string) => setAttached(selectedId, attachedIds(selectedId).filter((id) => id !== fileId), 'remove the file')}
-              onOpen={(file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)}
+              onOpen={(file: LeadFile) => router.push(`${base}/files/${file.id}`)}
             />
           ) : null}
         </div>
@@ -616,7 +677,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
               <AttachmentsColumn
                 files={attachments}
                 onRemove={(fileId: string) => setAttached(noteSheetId, attachedIds(noteSheetId).filter((id) => id !== fileId), 'remove the file')}
-                onOpen={(file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)}
+                onOpen={(file: LeadFile) => router.push(`${base}/files/${file.id}`)}
               />
             ) : null}
           </div>
@@ -664,12 +725,13 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
               editing={isEditing(contactId)}
               autoFocus={mayFocusEditor}
               today={new Date(now)}
+              fillNote={fillNote?.id === contactId ? fillNote.text : null}
             />
             {attachments.length > 0 ? (
               <AttachmentsColumn
                 files={attachments}
                 onRemove={(fileId: string) => setAttached(contactId, attachedIds(contactId).filter((id) => id !== fileId), 'remove the file')}
-                onOpen={(file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)}
+                onOpen={(file: LeadFile) => router.push(`${base}/files/${file.id}`)}
               />
             ) : null}
           </div>
@@ -691,7 +753,7 @@ export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data
       />
       {/* AutoFillDialog / SuggestedTasksDialog = the Move stage window's, in their Notes variant (164 · 166, spec 02): 600 wide,
           the 64px modal header (20/Bold + rule, 779:26016), body p24; Add tasks with 14/Semi Bold group labels, leading boxes and the rule. */}
-      <AutoFillDialog open={!!autoFillFor} title="Auto Fill" width={600} variant="notes" onClose={() => setAutoFillFor(null)} onUpload={autoFill} />
+      <AutoFillDialog open={!!autoFillFor} title="Auto Fill" width={600} variant="notes" onClose={() => setAutoFillFor(null)} onUpload={autoFill} />   {/* (S43B · F1-01) reads the file */}
       <SuggestedTasksDialog
         open={!!tasksFor} title="Add tasks" width={600} variant="notes"
         autoAdded={tasksFor?.autoAdded ?? ''}

@@ -56,3 +56,11 @@
   .anchor > button { position: relative; }
   .anchor > button::after { content: ''; position: absolute; inset: -4px; }
 }
+
+/* (gaps build D, item 9) the answer history: one row per change, newest first — who and when over what it was and what it became */
+.history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.historyRow { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-3) 0; }
+.historyRow + .historyRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.historyWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.historyChange { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.historyChange s { color: var(--om-color-on-surface-secondary); }

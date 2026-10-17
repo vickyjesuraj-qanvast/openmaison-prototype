@@ -1,0 +1,15 @@
+/*
+ * (parity map 2026-10-10 — UC-082 · UC-083) Sent messages' safeguards: OpenMaison's pause, a large send waiting for the Owner (Send · Drop),
+ * Try again now — composed from the house pieces: the detail card's white box for a held send, the house text link's ink for the pause
+ * line's icon. Nothing of the log's own table is copied (settings.module.css keeps it).
+ */
+.pause { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2);
+  background: var(--om-color-tertiary-yellow-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.pauseIcon { flex: none; margin-top: 1px; }
+.held { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.heldRow { composes: card from '../../components/leads/detail/card.module.css'; display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; }
+.heldText { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.heldTitle { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.heldLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.heldActions { display: inline-flex; gap: var(--om-spacing-2); }
+.retry { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

@@ -1,0 +1,42 @@
+/* (pending modules S29) Write with AI's trigger and its proposal (the house Dialog, l 800 — a bottom sheet on a phone). The words are drawn
+   as their editor draws them (the rich editor's 16/24 body, a contract's headings), the added words on the primary tint and the words taken
+   out struck in the disabled grey; screen readers hear "added" / "removed" before each. */
+.anchor { position: relative; display: inline-flex; }
+.anchor > :first-child { flex: 1 1 auto; }   /* a phone stretches the slot (the rich editor's own line, REG-420): the button fills it */
+.aiMark { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+.aiMark img { width: 17px; height: 17px; display: block; }
+
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.rowLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.lines { margin: 0; padding-left: var(--om-spacing-5); list-style: disc; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.lines:has(> li:only-child) { list-style: none; padding-left: 0; }   /* one line needs no bullet */
+.none { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.foot { margin: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+
+.paper { border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); padding: var(--om-spacing-4) var(--om-spacing-6);
+  font: var(--om-type-body-l); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--om-color-surface-default); }
+.paper[data-view='before'] { background: var(--om-color-surface-bg); }
+.paper p { margin: 0 0 var(--om-spacing-4); }
+.paper p:last-child { margin-bottom: 0; }
+.paper h1 { margin: 0 0 var(--om-spacing-4); font: var(--om-type-heading-h3); }
+.paper h2 { margin: var(--om-spacing-4) 0 var(--om-spacing-2); font: var(--om-type-heading-h5); }
+.paper h3 { margin: var(--om-spacing-3) 0 var(--om-spacing-2); font: var(--om-type-heading-h6); }
+.paper ul, .paper ol { margin: 0 0 var(--om-spacing-4); padding-left: var(--om-spacing-6); white-space: normal; }
+.paper ul { list-style: disc; }
+.paper ol { list-style: decimal; }
+.paper a { color: var(--om-color-primary-default); text-decoration: underline; }
+.paper img { max-width: 100%; height: auto; }
+/* a contract's chips and signature fields read as they do on the paper */
+.paper :global(.om-token) { display: inline-block; padding: 0 var(--om-spacing-2); margin: 0 1px; border-radius: var(--om-radius-1); background: var(--om-color-surface-variant); color: var(--om-color-on-surface-default); font: var(--om-type-subtitle-m); white-space: nowrap; }
+.paper :global(.om-sign) { display: inline-flex; align-items: flex-end; min-width: 160px; height: 48px; padding: var(--om-spacing-2) var(--om-spacing-3); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.paper ins { text-decoration: none; background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); border-radius: var(--om-radius-1); }
+.paper del { text-decoration: line-through; color: var(--om-color-on-surface-disabled); }
+/* what the marks mean, for a screen reader (a visual mark alone says nothing) */
+.paper ins::before, .paper del::before { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.paper ins::before { content: ' added: '; }
+.paper del::before { content: ' removed: '; }
+
+@media (max-width: 767px) {
+  .paper { padding: var(--om-spacing-3) var(--om-spacing-4); }
+}

@@ -6,7 +6,7 @@ import table from './templates-table.module.css'
 import styles from './library-gallery.module.css'
 import emptyStyles from '@/components/om/empty-state.module.css'
 
-/** A bone whose box the stylesheet sizes per width (the pill is 114 × 36 at a desk, 72 × 44 on a touch tablet or a phone). */
+/** A bone whose box the stylesheet sizes per width (the pill is 114 × 36 at a desk, 72 × 36 on a touch tablet or a phone). */
 const Box = ({ cls }: { cls: string }) => <span className={`${styles.gBox} ${cls}`}><Bone w="100%" style={{ height: '100%' }} /></span>
 
 /**
@@ -70,7 +70,7 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
         <div className={`${gallery.toolbarEnd} ${styles.end}`}>
           {pill ? <div className={styles.scopes}><Box cls={styles.gPill!} /></div> : null}
           <div className={styles.tools}>
-            {newFolder ? <span className={styles.folderSlot}><Box cls={styles.gIcon!} /></span> : null}
+            {newFolder ? <span className={styles.folderSlot} data-keep={newW ? '' : undefined}><Box cls={styles.gIcon!} /></span> : null}   {/* (pending modules S17) a plain New keeps New Folder on a phone, as the page's does */}
             <span className={`${styles.gBox} ${styles.gNew}`} style={newW ? ({ '--g-new': `${newW}px` } as CSSProperties) : undefined}><Bone w="100%" style={{ height: '100%' }} /></span>
             <Box cls={styles.gSearch!} />
             {filters ? <Box cls={styles.gIcon!} /> : null}

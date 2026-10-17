@@ -6,7 +6,7 @@
   "module": "Shell",
   "try": "Start from the studio's day-one data",
   "how": "1. Open http://localhost:3000\n2. Click the ✦ \"Maison AI\" button, bottom right\n3. Click \"Reset prototype to base\"\n4. Click \"Reset\"",
-  "expect": "A \"Reset the prototype?\" box warns that anything tried is lost; after \"Reset\" the Leads page reloads.",
+  "expect": "A \"Reset the prototype?\" box warns that anything tried is lost; after \"Reset\" the page reloads on the Dashboard, the studio’s front door (\"Good morning, Dane.\" — or afternoon, evening).",
   "in10": "New in 2.0",
   "as": "Dane",
   "covers": [],
@@ -19,7 +19,7 @@
   "module": "Shell",
   "try": "Find your way around the side navigation",
   "how": "1. Point at the logo, top left, and click \"Expand navigation\"\n2. Read the items from top to bottom\n3. Click \"Collapse navigation\"",
-  "expect": "Search (\"⌘K\"), Dashboard, Tasks, Projects, Leads, Marketplace, Company, Qanvast Ops; then the studio’s AI credits (Maison AI’s spark on a warm tile, the number; \"AI credits\" when expanded), Tools, Chat, Notifications, Settings; Demo Studio at the bottom.",
+  "expect": "Search (\"⌘K\"), Dashboard, Tasks, Projects, Leads, Marketplace, Company, Qanvast Ops; then the studio’s AI credits (Maison AI’s spark on a warm tile, the number; \"AI credits\" when expanded), Tools, Messages, Notifications, Settings; Demo Studio at the bottom.",
   "in10": "Different from 1.0: Settings in the side navigation, not the profile menu",
   "as": "Dane",
   "covers": [
@@ -34,7 +34,7 @@
   "module": "Leads",
   "try": "See the studio's leads at a glance",
   "how": "1. Click \"Leads\" in the side navigation\n2. Look at the chip above the table, the rows and the bottom of the screen",
-  "expect": "The chip reads \"All Leads (27)\"; unopened new leads (Marcus Chen, Nur Aisyah) have a coloured left edge; a \"Review imported leads\" bar waits below.",
+  "expect": "The chip reads \"All Leads (31)\"; unopened new leads (Chloe Tan, Rahul Menon) have a coloured left edge; a \"Review imported leads\" bar waits below.",
   "in10": "Different from 1.0: unopened new leads are marked",
   "as": "Dane",
   "covers": [
@@ -65,9 +65,9 @@
   "scene": "Your leads at a glance",
   "module": "Leads",
   "try": "Try editing the lead stages",
-  "how": "1. Click the \"All Leads (27)\" chip\n2. Read the stage list\n3. Click \"Manage Stages\"",
-  "expect": "Each stage is listed with its count under Active and Inactive; \"Manage Stages\" answers \"Coming soon in OpenMaison 2.0\".",
-  "in10": "Different from 1.0: stages are fixed; 1.0 edited its funnel",
+  "how": "1. Click the \"All Leads (31)\" chip\n2. Read the stage list\n3. Click \"Manage Stages\", read the \"Lead stages\" card, then go back",
+  "expect": "Each stage is listed with its count under Active and Inactive; \"Manage Stages\" opens Settings › Lead management on \"Lead stages\" — each stage, what it keeps on the lead and its \"Leads now\", then \"How leads move\".",
+  "in10": "Different from 1.0: stages are fixed; a studio sets what each asks",
   "as": "Dane",
   "covers": [
    "LEADS:G-08",
@@ -99,7 +99,7 @@
   "module": "Company",
   "try": "See where the studio's records are kept",
   "how": "1. Click \"Company\" in the side navigation\n2. Read the two groups\n3. Press Esc",
-  "expect": "\"Studio\": Profile, Members, Questionnaire, Templates (\"1 awaiting\"), Price book (\"1 proposed\"). \"Operations\": Finance and Reports marked \"Soon\", Integrations.",
+  "expect": "\"Studio\": Profile, Members, Questionnaire, Templates (\"1 awaiting\"), Price book (\"1 proposed\"), Materials, Plan & AI credits, Client portal. \"Operations\": Finance (with \"n to approve\"), Reports, Integrations.",
   "in10": "Different from 1.0: records under Company, rules under Settings",
   "as": "Dane",
   "covers": [
@@ -115,7 +115,7 @@
   "module": "Notifications",
   "try": "Check what is waiting for you in the bell",
   "how": "1. Click \"Notifications\" (the bell) in the side navigation\n2. Read the list\n3. Close it without clicking a row",
-  "expect": "A \"Notifications\" panel lists notices newest first, e.g. \"New lead: Nur Aisyah\"; unread ones have a dot; \"Notification settings\" sits at the foot.",
+  "expect": "A \"Notifications\" panel lists \"Notices\" and what is \"Due\", each newest first, e.g. \"New lead: Chloe Tan\"; unread ones have a dot; \"Notification settings\" sits at the foot.",
   "in10": "Different from 1.0: follow-ups due appear in the same list",
   "as": "Dane",
   "covers": [
@@ -131,12 +131,38 @@
   "module": "Shell",
   "try": "Ask Maison AI for help on the Leads page",
   "how": "1. On Leads, click the ✦ \"Maison AI\" button\n2. Read the suggestions\n3. Click \"Which leads need follow-up today?\"",
-  "expect": "Suggestions about your leads sit above \"Reset prototype to base\"; picking one answers \"Coming soon in OpenMaison 2.0\".",
-  "in10": "Different from 1.0: scripted suggestions only, in the prototype",
+  "expect": "Three suggestions about your leads — \"Draft intro WhatsApp for …\", \"Summarise this week’s new leads\" and \"Which leads need follow-up today?\" — sit above \"Reset prototype to base\"; the last answers \"n leads to follow up today\", a row per lead that opens it.",
+  "in10": "Different from 1.0: answered by rule from your own leads",
   "as": "Dane",
   "covers": [
    "LEADS:L-15"
   ],
+  "files": []
+ },
+ {
+  "step": "1.10",
+  "chapter": 1,
+  "scene": "Signing in",
+  "module": "Shell",
+  "try": "Sign out, then sign back in",
+  "how": "1. Click \"Demo Studio\" at the bottom of the side navigation\n2. Click \"Sign out\"\n3. Open http://localhost:3000/leads\n4. Type dane@demostudio.sg and click \"Send me a code\"\n5. Type any six digits and click \"Sign in\"",
+  "expect": "Sign out opens \"Sign in to OpenMaison\", saying \"You’ve signed out.\"; Leads sends you back to sign-in; the code step says where the code went, that \"Keep me signed in for 30 days\" is ticked, and that no text or email is sent; any six digits bring you back to Leads as Dane — on this browser only: another browser that is signed in stays who it is.",
+  "in10": "Same as 1.0 (a mobile number and a 6-digit code), with a work email as the other way in; demo only: no code is sent, any six digits work",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "1.11",
+  "chapter": 1,
+  "scene": "Signing in",
+  "module": "Shell",
+  "try": "Start a new studio of your own, then go back to the demo",
+  "how": "1. Click \"Demo Studio\" at the bottom of the side navigation and click \"Sign out\"\n2. On \"Sign in to OpenMaison\", click \"Start your studio\"\n3. Keep \"I run a studio\" and click \"Continue\"\n4. Type a studio name, your name and a mobile number that starts with 8 or 9 (not one in the demo), then click \"Send me a code\"\n5. Type any six digits and click \"Start my studio\"\n6. Click \"Set up your studio\" in the welcome\n7. Click your studio at the bottom of the side navigation, then \"Demo Studio\" under \"Studios · demo only\"",
+  "expect": "The new studio opens on its Dashboard with \"Welcome, <your name>\"; \"Set up your studio\" opens Settings › Roles & access on \"Set up your studio\", \"1 of 7 done\" — Quote template is ticked, since on Free your quotes print with the studio’s default (\"… your own templates come with Pro\"); the side navigation shows your studio’s name and its first letter; Company › Plan & AI credits shows Free with 180 AI credits. \"Demo Studio\" brings back the demo as Dane, and \"Switched to Demo Studio\" says so; your studio stays in the list until Maison AI › \"Reset prototype to base\", whose question then adds \"— and the studio started here is removed\".",
+  "in10": "Different from 1.0: 1.0 had no way for a studio to sign itself up (OpenMaison staff made each one); demo only: no code is sent, and the new studio opens in a space of its own while the demo stays as it was",
+  "as": "Dane",
+  "covers": [],
   "files": []
  }
 ]

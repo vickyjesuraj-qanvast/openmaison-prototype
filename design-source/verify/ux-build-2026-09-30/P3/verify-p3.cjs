@@ -307,10 +307,11 @@ const taskId = (title, lead) => one(`select id from lead_tasks where title = '${
   ok((await ask.innerText()).includes(`Questions to ask (${open - 1} of ${open})`), 'unticking one: "Questions to ask (n of m)"')
   await shot('t12-ask-dialog')
   await p.getByRole('button', { name: 'Send via WhatsApp' }).click()
-  ok(await seen(`${open - 1} questions sent to Olivia Martinez`), `"${open - 1} questions sent to Olivia Martinez"`)
+  /* (parity map CP-110, a deliberate change of this rule) the snackbar says where the questions are now */
+  ok(await seen(`Asked Olivia Martinez — ${open - 1} questions are on their page`), `"Asked Olivia Martinez — ${open - 1} questions are on their page"`)
   await p.waitForTimeout(900)
   const asked = await p.locator('[data-testid="question-asked"]').allInnerTexts()
-  ok(asked.length === open - 1 && asked.every((t) => /^Asked · \d{1,2} [A-Z][a-z]{2}$/.test(t.trim())), `each asked card wears "Asked · d Mon" (${asked.length})`)
+  ok(asked.length === open - 1 && asked.every((t) => /^Asked · \d{1,2} [A-Z][a-z]{2}$/.test(t.trim())), `each asked card wears "Asked · d Mon" (${asked.length}: ${asked.map((t) => JSON.stringify(t)).join(' ')})`)
   const unticked = p.locator('[data-testid="question-card"]', { hasText: firstQ })
   ok((await unticked.locator('[data-testid="question-asked"]').count()) === 0, 'the unticked question wears none')
   const card = await p.locator('[data-testid="questionnaire-summary"]').boundingBox(), line = await p.locator('[data-testid="asked-on"]').boundingBox()

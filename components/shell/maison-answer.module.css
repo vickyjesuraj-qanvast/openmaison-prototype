@@ -1,0 +1,38 @@
+/*
+ * (gaps build I, I-Q18) Maison AI's answer inside its sheet (components/leads/ai-sheet.module.css): the back control and the answer's line
+ * on the sheet's own 16 sides, the rows as the house menu row (components/leads/dropdown — 40 tall, a label over its grey meta, the hover
+ * plate), one filled button at most. The sheet keeps its head and its foot.
+ */
+.panel { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-4) var(--om-spacing-4); min-width: 0; }
+.top { display: flex; align-items: center; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-2)); }
+.title { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.text { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.rows { display: flex; flex-direction: column; max-height: 264px; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(-1 * var(--om-spacing-2)); }
+.row {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 40px;
+  padding: var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left;
+  transition: background-color var(--motion-hover);
+  flex-shrink: 0;   /* (pending modules S10, a bug fix) inside the 264-tall list a long answer's rows were squeezed to 40 and their words ran over each other */
+}
+.row:hover, .row:focus-visible { background: var(--om-color-hover-04p); outline: none; }
+.row[data-static] { cursor: default; }
+.row[data-static]:hover { background: none; }
+/* (parity map, TD-107) the Ask box under the sheet's head — the house field, its helper "Answers from your records" */
+.ask { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-2); }   /* the top 8 seats the field's floated label clear of the head */
+.rowLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.rowMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.lines { margin: 0; padding-left: var(--om-spacing-5); list-style: disc; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.actions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); }
+.loading { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (hover: none) {
+  .row { min-height: 44px; }
+}
+/* (pending modules S10 — "charts drawn inside the answer") a report row's share of the answer's largest figure: a 4px bar under its words, the
+   house primary on its track; the figure itself is in the words, so the bar is decorative */
+.bar { display: block; width: 100%; height: 4px; margin-top: var(--om-spacing-1); border-radius: var(--om-radius-1); background: var(--om-color-surface-variant); overflow: hidden; }
+.bar > span { display: block; height: 100%; border-radius: inherit; background: var(--om-color-primary-default); }
+/* (pending modules S10) Recent — the member's own questions, under the suggestions: a caption with Clear, then the house rows */
+.recent { display: flex; flex-direction: column; padding: 0 var(--om-spacing-4) var(--om-spacing-2); }
+.recentHead { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin: 0 calc(-1 * var(--om-spacing-2)) 0 0; }
+.recentTitle { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.recentRows { display: flex; flex-direction: column; margin: 0 calc(-1 * var(--om-spacing-2)); }

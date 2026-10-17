@@ -75,6 +75,9 @@
 }
 /* Hover: the DS 4% overlay over the tile fill (icon-button hover, no hover in the dump). */
 .tile:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+/* (pending modules S19) a link to a Pro feature on a Free studio: the Pro tag on the tile's top-right corner, clear of the centred glyph */
+.tile { position: relative; }
+.pro { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); padding: 0 var(--om-spacing-1); font: var(--om-type-caption-xs); background: var(--om-color-surface-default); }
 .label {
   width: 100%;
   font: var(--om-type-caption-s);                 /* 12/500/16 */

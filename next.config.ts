@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { OLD_REDIRECTS } from './lib/links/old-addresses'
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
@@ -30,6 +31,15 @@ const nextConfig: NextConfig = {
     /* (REG-673) The AI Visualizer saves renders and room photos through server actions as data URLs (up to three versions of a
        1600 px photo per Generate); the 1 MB default refused them. */
     serverActions: { bodySizeLimit: '12mb' },
+  },
+
+  /* (pending modules S35) 1.0's website lived at the domain's root — its addresses (printed, bookmarked, indexed) land on the same page of the site
+     here. (pending modules S41b-2) …and 1.0's studio app's addresses — bookmarks, and the links its notifications already sent (bell rows,
+     emails, WhatsApp) — land on their 2.0 homes: the fixed part of the one list of every 1.0 address (lib/links/old-addresses.ts; the
+     query-placed part is proxy.ts's, the record-placed part small routes under the old address). Temporary (307) while the prototype's
+     addresses may still move; the developers make them permanent once the site's home is settled. */
+  async redirects() {
+    return OLD_REDIRECTS.map((r) => ({ source: r.source, destination: r.destination, permanent: false }))
   },
 
   transpilePackages: ['@openmaison/react'],   // @openmaison/icons is unused: the prototype renders Material Symbols (audit 2026-08-30)

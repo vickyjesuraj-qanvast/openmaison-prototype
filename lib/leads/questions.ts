@@ -5,12 +5,16 @@ import { leadEvents, leads, questions, type Question } from '@/lib/db/schema'
 import type { LeadEventDetail } from '@/lib/leads/events'
 import { fetchPortalLink } from '@/lib/leads/portal'
 import { missingBankQuestions } from '@/lib/company/scope-questions'
+import { fetchAnswerHistory } from './answer-history'
+import type { AnswerChange } from './question-model'
 
 /* Lead Details › Questionnaire (931-46769) — one loader for the tab. */
 
 export type LeadQuestionsData = { leadId: string; questions: Question[]; leadName: string; now: number; /** (REG-609) the last Ask the client › Send */ askedAt: Date | null; /** (REG-612) enabled bank questions this lead does not carry yet */ bankCount: number
   /** (UX audit 2026-09-30, T12) When each question was last asked, by question id (ms) — the card's "Asked · 30 Sep" chip */
-  askedOn: Record<string, number> }
+  askedOn: Record<string, number>
+  /** (gaps build D, item 9) each question's answer history, newest first */
+  history: Record<string, AnswerChange[]> }
 
 /**
  * (T12) Each question's last ask, read from the asks on the lead's record: an ask that names its questions counts for those; one from
@@ -37,8 +41,9 @@ export async function fetchLeadQuestions(leadId: string): Promise<LeadQuestionsD
     missingBankQuestions(leadId),   /* (REG-612) */
     db.select({ at: leadEvents.at, detail: leadEvents.detail }).from(leadEvents).where(and(eq(leadEvents.leadId, leadId), eq(leadEvents.kind, 'questionnaire_asked'))),   /* (T12) */
   ])
+  const history = await fetchAnswerHistory(leadId)   // (gaps build D, item 9)
   // Unanswered first — those are the ones still needing work; answered ones are a record (user 2026-08-30).
   // Array.prototype.sort is stable, so each group keeps the tab's own sortOrder / createdAt sequence.
   const byOutstanding = [...rows].sort((a, b) => Number(a.answer !== null) - Number(b.answer !== null))
-  return { leadId, questions: byOutstanding, leadName: lead[0]?.name ?? '', now: Date.now(), askedAt: portal?.askedAt ?? null, bankCount: missing.length, askedOn: askedOnOf(rows, asks) }
+  return { leadId, questions: byOutstanding, leadName: lead[0]?.name ?? '', now: Date.now(), askedAt: portal?.askedAt ?? null, bankCount: missing.length, askedOn: askedOnOf(rows, asks), history }
 }

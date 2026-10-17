@@ -1,0 +1,65 @@
+/*
+ * (gaps build H — H-Q1…H-Q9) Tickets: the project's tab, the studio's list, the drawer — composed from the house pieces: the tab toolbar
+ * (components/om/tab-toolbar.module.css), the detail card's box (components/leads/detail/card.module.css), the conversation's lines
+ * (../threads/thread.module.css), the house square thumbnail. One ticket = one card row: its number, subject and chips, the line under it,
+ * the newest word, who looks after it.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; flex: 1; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.card { composes: card from '../../leads/detail/card.module.css'; display: grid; grid-template-columns: 1fr auto; gap: var(--om-spacing-1) var(--om-spacing-4);
+  padding: var(--om-spacing-4) var(--om-spacing-5); text-align: left; cursor: pointer; font: inherit; color: inherit; width: 100%; border: 0;
+  transition: box-shadow var(--motion-hover), background-color var(--motion-hover); scroll-margin-block: 120px; }
+.card:hover { background: var(--om-color-hover-04p); }
+.card:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.card[data-turn='studio'] { box-shadow: inset 3px 0 0 var(--om-color-primary-default), inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; flex-wrap: wrap; }
+.number { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.subject { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { grid-column: 1; margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.last { grid-column: 1; margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side { grid-column: 2; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-2); }
+.turn { font: var(--om-type-body-xs); color: var(--om-color-primary-default); white-space: nowrap; }
+.turn[data-turn='client'] { color: var(--om-color-on-surface-secondary); }
+
+/* The drawer's body: the report, then the thread */
+.report { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.reportHead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
+.reportSubject { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.reportBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+.photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.photo { composes: thumb from '../../om/thumb.module.css'; width: 64px; height: 64px; padding: 0; border: 0; cursor: zoom-in; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-s); margin: 0; }
+.facts dt { color: var(--om-color-on-surface-secondary); }
+.facts dd { margin: 0; color: var(--om-color-on-surface-default); min-width: 0; }
+.tools { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.escalated { display: flex; gap: var(--om-spacing-2); align-items: flex-start; padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-red-variant); font: var(--om-type-body-s); }
+.closedNote { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.footWrap { flex: 1; min-width: 0; }
+.footRow { display: flex; flex: 1; align-items: center; gap: var(--om-spacing-3); }
+.drawerBody { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+
+/* Forms */
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.field textarea { min-block-size: 96px; }
+.formRow { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.formPhotos { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.formPick { composes: thumb from '../../om/thumb.module.css'; width: 56px; height: 56px; }
+.unpick { position: absolute; top: 0; right: 0; z-index: 1; width: 20px; height: 20px; border: 0; padding: 0; border-radius: var(--om-radius-1);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); }
+.fileInput { display: none; }
+.help { margin: 0; font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+
+@media (max-width: 767px) {
+  .card { grid-template-columns: 1fr; padding: var(--om-spacing-4); }
+  .side { grid-column: 1; grid-row: auto; flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+/* (parity map 2026-10-10, UC-047) Filters — the house tab toolbar's button with its count */
+.filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
+.scopeRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }

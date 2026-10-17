@@ -11,11 +11,12 @@ import { DangerButton, Dialog, SurfaceHead, surfaceClasses } from '@/components/
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { displayDate, money, titleCaseName, phoneLocal } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
+import type { DeletedLead } from '@/lib/leads/queries'
 import styles from './deleted-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 
-type Key = 'name' | 'stage' | 'source' | 'budget' | 'propertyType' | 'created' | 'archived'
+type Key = 'name' | 'stage' | 'source' | 'budget' | 'propertyType' | 'created' | 'deleted'
 const COLS: { key: Key; label: string; width: number }[] = [
   { key: 'name', label: 'Lead Name', width: 176 },
   { key: 'stage', label: 'Stage', width: 146 },
@@ -23,7 +24,7 @@ const COLS: { key: Key; label: string; width: number }[] = [
   { key: 'budget', label: 'Budget (S$)', width: 138 },
   { key: 'propertyType', label: 'Property Type', width: 158 },
   { key: 'created', label: 'Created', width: 137 },
-  { key: 'archived', label: 'Archived', width: 137 },
+  { key: 'deleted', label: 'Deleted', width: 137 },   // (parity Q-11) the delete date's head reads "Deleted" — REG-502: never an Archive (the mock said "Archived")
 ]
 const ACTIONS_W = 252
 
@@ -36,7 +37,7 @@ function sortValue(l: Lead, key: Key): string | number {
     case 'budget': return l.budgetMinor
     case 'propertyType': return l.propertyType
     case 'created': return l.createdAt.getTime()
-    case 'archived': return l.deletedAt?.getTime() ?? 0
+    case 'deleted': return l.deletedAt?.getTime() ?? 0
   }
 }
 
@@ -44,7 +45,8 @@ export function DeletedLeadsSheet({
   open, deleted, onClose, onRestore, onDeleteForever, onEmptyTrash,
 }: {
   open: boolean
-  deleted: Lead[]
+  /** (fix-E, E-01 · E-09) each with the project that keeps it from being deleted forever */
+  deleted: DeletedLead[]
   onClose: () => void
   onRestore: (ids: string[]) => void | Promise<void>
   onDeleteForever: (ids: string[]) => void | Promise<void>
@@ -115,6 +117,17 @@ export function DeletedLeadsSheet({
   // title case here, wherever the name is printed, and a lead saved as "test" reads "Test" as it does in the listing.
   const confirmLead = confirm?.kind === 'forever' && confirm.ids.length === 1 ? deleted.find((l) => l.id === confirm.ids[0]) : undefined
   const confirmName = confirmLead ? titleCaseName(confirmLead.name) : undefined
+  /* (fix-E, E-01 · E-09) A lead whose project still exists is never purged (the project would go with it, unseen): the confirms count only
+     what will go and name what stays. */
+  const heldWhy = (l: DeletedLead) => (l.heldBy ? (l.heldBy.deleted ? `${l.heldBy.number} is in Deleted Projects — delete it forever there first` : `its project ${l.heldBy.number} is live — delete the project first`) : null)
+  const stayLine = (list: DeletedLead[]) => {
+    const held = list.filter((l) => l.heldBy)
+    if (!held.length) return null
+    return held.length === 1 ? `${titleCaseName(held[0]!.name)} stays: ${heldWhy(held[0]!)}.` : `${held.length} leads stay — their projects still exist; delete those first.`
+  }
+  const foreverList = confirm?.kind === 'forever' ? deleted.filter((l) => confirm.ids.includes(l.id)) : []
+  const foreverGo = foreverList.filter((l) => !l.heldBy).length
+  const emptyGo = deleted.filter((l) => !l.heldBy).length
 
   return (
     <>
@@ -204,12 +217,15 @@ export function DeletedLeadsSheet({
                         <div className={styles.cell} style={{ width: cw('budget', 138) }} role="cell"><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
                         <div className={styles.cell} style={{ width: cw('propertyType', 158) }} role="cell"><span className={styles.plain}>{l.propertyType}</span></div>
                         <div className={styles.cell} style={{ width: cw('created', 137) }} role="cell"><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
-                        <div className={styles.cell} style={{ width: cw('archived', 137) }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
+                        <div className={styles.cell} style={{ width: cw('deleted', 137) }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
                         <div className={`${styles.cell} ${styles.actions}`} style={{ width: ACTIONS_W }} role="cell">
                           <button type="button" className={styles.link} disabled={pending.has(l.id)}
                                   onClick={() => { prune([l.id]); void run([l.id], () => onRestore([l.id])) }}>Restore</button>
-                          <button type="button" className={styles.link} data-danger disabled={pending.has(l.id)}
-                                  onClick={() => setConfirm({ kind: 'forever', ids: [l.id] })}>Delete Forever</button>
+                          {/* (fix-E, E-09) a lead whose project still exists says why it can't go, in place of a press that would refuse */}
+                          <Tooltip label={heldWhy(l) ? `Can’t delete forever — ${heldWhy(l)}` : ''} disabled={!l.heldBy}>
+                            <button type="button" className={styles.link} data-danger disabled={pending.has(l.id) || !!l.heldBy} data-testid="deleted-lead-forever"
+                                    onClick={() => setConfirm({ kind: 'forever', ids: [l.id] })}>Delete Forever</button>
+                          </Tooltip>
                         </div>
                       </div>
                     ))}
@@ -238,28 +254,31 @@ export function DeletedLeadsSheet({
       {/* Permanent-delete confirmations — unmocked; destructive actions must confirm (REG). `nested`: over the open sheet, the lighter
           scrim on the layer above it (REG-725). */}
       <Dialog nested open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
-              title={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `Delete ${confirm.ids.length} leads forever?` : 'Delete this lead forever?'}
+              title={foreverGo > 1 ? `Delete ${foreverGo} leads forever?` : foreverList.length && !foreverGo ? 'These leads can’t be deleted forever' : 'Delete this lead forever?'}
               subtitle={confirmName}
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
-                <DangerButton disabled={busy} onClick={() => {
+                <DangerButton disabled={busy || foreverGo === 0} onClick={() => {
                   if (confirm?.kind === 'forever') { const ids = confirm.ids; prune(ids); void run(ids, () => onDeleteForever(ids)) }
                   setConfirm(null)
                 }}>Delete Forever</DangerButton>
               </>}>
-        <span className={styles.confirmText}>This can’t be undone. The lead and its tasks will be removed permanently.</span>
+        <span className={styles.confirmText}>{foreverGo ? `This can’t be undone. ${foreverGo > 1 ? 'The leads and their tasks' : 'The lead and its tasks'} will be removed permanently.` : null}{stayLine(foreverList) ? <>{foreverGo ? ' ' : ''}<span data-testid="forever-stays">{stayLine(foreverList)}</span></> : null}</span>
       </Dialog>
 
       <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
               title="Empty trash?"
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
-                <DangerButton disabled={busy} onClick={() => {
-                  const ids = deleted.map((l) => l.id); setSelected(new Set()); void run(ids, () => onEmptyTrash()); setConfirm(null)
+                <DangerButton disabled={busy || emptyGo === 0} onClick={() => {
+                  const ids = deleted.filter((l) => !l.heldBy).map((l) => l.id); setSelected(new Set()); void run(ids, () => onEmptyTrash()); setConfirm(null)
                 }}>Empty Trash</DangerButton>
               </>}>
-        <span className={styles.confirmText}>
-          All {deleted.length} deleted {deleted.length === 1 ? 'lead' : 'leads'} will be removed permanently. This can’t be undone.
+        {/* (fix-E, E-01) the count is the set it removes — never a direct project's client, never a lead whose project still exists */}
+        <span className={styles.confirmText} data-testid="empty-trash-count">
+          {emptyGo === deleted.length ? `All ${deleted.length} deleted ${deleted.length === 1 ? 'lead' : 'leads'} will be removed permanently. This can’t be undone.`
+            : emptyGo ? `${emptyGo} of the ${deleted.length} deleted leads will be removed permanently. This can’t be undone.` : null}
+          {stayLine(deleted) ? <>{emptyGo ? ' ' : ''}{stayLine(deleted)}</> : null}
         </span>
       </Dialog>
     </>

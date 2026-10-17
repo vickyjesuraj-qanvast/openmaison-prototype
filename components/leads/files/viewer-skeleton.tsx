@@ -6,7 +6,8 @@ import styles from './viewer-skeleton.module.css'
  * canvas bone inside the section container's p100/120, with the 130×50 zoom bar bone at the bottom centre — the viewer's
  * own layout, not the Lead Details frame (page-checklist › Load & refresh; audit 2026-08-30, VIEWER-GHOST-MISMATCH).
  */
-export function ViewerSkeleton() {
+/** `strip`: the row of the folder's files under the canvas (gaps build E, item 3) — the route's ghost draws it, as most folders hold several. */
+export function ViewerSkeleton({ strip = true }: { strip?: boolean } = {}) {
   return (
     <GhostSheet label="Loading file">
       <div className={styles.header}>
@@ -17,9 +18,12 @@ export function ViewerSkeleton() {
         </div>
       </div>
       <div className={styles.stage}>
-        <div className={styles.canvas}>
-          <Bone w="100%" r={2} className={styles.image} style={{ height: '100%' }} />
-          <Bone w={130} h={50} r={8} className={styles.zoom} />
+        <div className={styles.column}>
+          <div className={styles.canvas}>
+            <Bone w="100%" r={2} className={styles.image} style={{ height: '100%' }} />
+            <Bone w={130} h={50} r={8} className={styles.zoom} />
+          </div>
+          {strip ? <div className={styles.strip}>{[0, 1, 2, 3, 4, 5].map((i) => <Bone key={i} w={48} h={48} r={4} />)}</div> : null}
         </div>
       </div>
     </GhostSheet>

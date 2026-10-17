@@ -2,6 +2,7 @@ import 'server-only'   // libSQL must never reach the browser bundle: the tag he
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadReturns, members, returnAttachments, type LeadFile, type LeadReturn, type Member } from '@/lib/db/schema'
+import { withYou } from '@/lib/db/session'   // (pending modules S43A) "you" = this request's member
 
 /* Qanvast lead return (931:48236) — the return record with its attachments and people, for the LEAD RETURNED card and the details modal. */
 
@@ -13,7 +14,7 @@ export async function fetchReturnDetail(leadId: string): Promise<ReturnDetail | 
   if (!ret) return null
   const [links, team] = await Promise.all([
     db.select().from(returnAttachments).where(eq(returnAttachments.returnId, ret.id)).orderBy(asc(returnAttachments.createdAt)),
-    db.select().from(members),
+    db.select().from(members).then(withYou),
   ])
   const files = links.length ? await db.select().from(leadFiles).where(and(inArray(leadFiles.id, links.map((l) => l.fileId)), isNull(leadFiles.deletedAt))) : []
   const byId = new Map(files.map((f) => [f.id, f]))

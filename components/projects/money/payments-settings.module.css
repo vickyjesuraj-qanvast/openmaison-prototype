@@ -1,0 +1,5 @@
+/* (parity map, FB-112) Client payments' bank-feed ask under How clients pay: the row's words as the card table's name cell, the press after
+   them on a wide card and under them on a narrow one. */
+.feed { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3) var(--om-spacing-6); flex-wrap: wrap; padding: var(--om-spacing-2) 0; }
+.feed > :first-child { flex: 1 1 320px; min-width: 0; }
+.feedAction { flex: 0 0 auto; }

@@ -1,4 +1,5 @@
 import { Tooltip } from './tooltip'
+import { avatarSrc } from '@/lib/company/member-photo'
 import styles from './avatar.module.css'
 
 /**
@@ -14,6 +15,8 @@ import styles from './avatar.module.css'
  * name is printed beside it (pickers, filter lists, creator / owner cells, the info column) the caller passes
  * `tooltip={false}` and the avatar stays decorative. The native `title` it used to carry is gone: the browser's
  * own bubble is neither the DS's nor its timing.
+ * (pending modules S01) A member's own photo — set in Your profile, or by an Owner or an Admin on Company › Members — rides in the same
+ * `color` (`photo:<pictureId>|<look under it>`, lib/company/member-photo.ts), so every avatar here shows it.
  */
 export function Avatar({
   name,
@@ -28,10 +31,11 @@ export function Avatar({
   tooltip?: boolean
 }) {
   const a11y = tooltip ? { role: 'img' as const, 'aria-label': name } : { 'aria-hidden': true as const }
-  const avatar = color === 'photo' ? (
+  const src = avatarSrc(color)
+  const avatar = src ? (
     <span className={styles.avatar} data-size={size} {...a11y}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className={styles.photo} src="/figma-assets/avatar-user.png" alt="" />
+      <img className={styles.photo} src={src} alt="" />
     </span>
   ) : (
     <span className={styles.avatar} data-size={size} style={{ background: color }} {...a11y}>

@@ -41,14 +41,14 @@ export function isBlock(text: string, where: 'cell' | 'add'): boolean {
   return rows.length > 1 || (rows.length === 1 && rows[0]!.length > 1)
 }
 
-export const PASTE_FIELDS = ['name', 'description', 'kind', 'qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'vendor', 'link', 'skip'] as const
+export const PASTE_FIELDS = ['name', 'description', 'kind', 'qty', 'unit', 'cost', 'markup', 'unitPrice', 'waste', 'discount', 'gst', 'room', 'category', 'section', 'vendor', 'link', 'skip'] as const
 /** (REG-653, price book parity Q-13) What a quote's paste maps, and what an import into My Items maps — the book keeps no quantity,
     discount, GST, room or section label, and a quote line's kind is its icon, so each list offers only what its target keeps. */
-export const QUOTE_PASTE_FIELDS = PASTE_FIELDS.filter((f) => f !== 'kind')
+export const QUOTE_PASTE_FIELDS = PASTE_FIELDS.filter((f) => f !== 'kind' && f !== 'waste')   // (pending modules S12) waste is the book's, never a line's
 export const BOOK_PASTE_FIELDS = PASTE_FIELDS.filter((f) => !['qty', 'discount', 'gst', 'room', 'section'].includes(f))
 export type PasteField = (typeof PASTE_FIELDS)[number]
 export const PASTE_FIELD_LABEL: Record<PasteField, string> = {
-  name: 'Item', description: 'Description', kind: 'Kind', qty: 'Qty', unit: 'Unit', cost: 'Cost', markup: 'Markup', unitPrice: 'Unit Price',
+  name: 'Item', description: 'Description', kind: 'Kind', qty: 'Qty', unit: 'Unit', cost: 'Cost', markup: 'Markup', unitPrice: 'Unit Price', waste: 'Waste %',
   discount: 'Discount (%)', gst: 'GST (%)', room: 'Room', category: 'Category', section: 'Section label', vendor: 'Vendor/Sub', link: 'Website Link', skip: 'Skip this column',   // (REG-623)
 }
 /** What a sheet's header row tends to call each field (Singapore renovation quotes: "Description of work", "Rate", "Amount"). */
@@ -61,6 +61,7 @@ const ALIASES: Record<Exclude<PasteField, 'skip'>, string[]> = {
   cost: ['cost', 'cost price', 'unit cost', 'buy', 'purchase', 'purchase price', 'supplier price', 'rate'],
   markup: ['markup', 'mark up', 'margin'],
   unitPrice: ['unit price', 'price', 'selling', 'sell', 'selling price', 'unit rate', 'sale price'],
+  waste: ['waste', 'waste %', 'waste factor', 'waste factor %', 'wastage', 'wastage %', 'waste percent', 'waste pct'],   // (pending modules S12) 1.0's CSV column, "Waste %"
   discount: ['discount', 'disc', 'discount %', 'disc %', 'discount pct'],
   gst: ['gst', 'tax', 'vat', 'gst %', 'tax %'],
   room: ['room', 'area', 'location', 'space', 'zone'],
@@ -96,18 +97,21 @@ export function toNumber(v: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 const looksNumeric = (col: string[]) => col.some((v) => v !== '') && col.every((v) => v === '' || toNumber(v) !== null)
-const looksUnit = (col: string[]) => col.some((v) => v !== '') && col.every((v) => v === '' || UNITS.some((u) => u.toLowerCase() === v.toLowerCase()))
+/* (S44I — M9) a unit is one of the studio's own (Settings › Quotes & pricing › Units), the seven it always had when none are given */
+const looksUnit = (col: string[], units: readonly string[] = UNITS) => col.some((v) => v !== '') && col.every((v) => v === '' || units.some((u) => u.toLowerCase() === v.toLowerCase()))
+/** (S44I, B7) A typed or pasted list's own marks — "• ", "- ", "* ", "· ", "1. ", "1) " — are not the line's words; "1.5 m skirting" is. */
+export const stripListMark = (v: string) => v.replace(/^\s*(?:[•\-–*·]\s+|\d{1,3}[.)]\s+)/, '')
 /** No header: the first text column is the name and a second one the description, unit-looking text the unit, then the
     numbers left to right — a whole-number column first is the quantity, the next the cost, and a column that multiplies the
     two (the sheet's "Amount") is skipped: totals are derived here. */
-export function guessColumns(rows: string[][]): PasteField[] {
+export function guessColumns(rows: string[][], units: readonly string[] = UNITS): PasteField[] {
   const width = rows[0]?.length ?? 0
   const cols = Array.from({ length: width }, (_, c) => rows.map((r) => r[c] ?? ''))
   const out: PasteField[] = cols.map(() => 'skip')
-  const text = cols.map((col, c) => col.some((v) => v !== '') && !looksNumeric(col) && !looksUnit(col) ? c : -1).filter((c) => c >= 0)
+  const text = cols.map((col, c) => col.some((v) => v !== '') && !looksNumeric(col) && !looksUnit(col, units) ? c : -1).filter((c) => c >= 0)
   if (text.length) out[text[0]!] = 'name'
   if (text.length > 1) out[text[1]!] = 'description'
-  cols.forEach((col, c) => { if (looksUnit(col)) out[c] = 'unit' })
+  cols.forEach((col, c) => { if (looksUnit(col, units)) out[c] = 'unit' })
   const nums = cols.map((col, c) => (looksNumeric(col) ? c : -1)).filter((c) => c >= 0)
   const pcts = nums.filter((c) => cols[c]!.some((v) => /%$/.test(v)))
   if (pcts[0] !== undefined) out[pcts[0]] = 'discount'
@@ -132,8 +136,9 @@ export type PasteLine = {
   discountPct?: number; gstPct?: number; room?: string | null; category?: string | null; section?: string | null
   /** (REG-623) */ vendor?: string | null; link?: string | null
   /** (REG-653, Q-13) My Items' kind — design · fee · labour · delivery · purchase — read from the key or its label */ kind?: string
+  /** (pending modules S12) My Items' waste share, 0–50 — "10" or "10%" */ wastePct?: number
 }
-export function toLines(rows: string[][], map: PasteField[], header: boolean): PasteLine[] {
+export function toLines(rows: string[][], map: PasteField[], header: boolean, units: readonly string[] = UNITS): PasteLine[] {
   const out: PasteLine[] = []
   for (const r of rows.slice(header ? 1 : 0)) {
     if (r.every((c) => c === '')) continue
@@ -144,14 +149,15 @@ export function toLines(rows: string[][], map: PasteField[], header: boolean): P
       if (f === 'skip' || v === '') return
       const n = toNumber(v)
       switch (f) {
-        case 'name': line.name = v.slice(0, 200); break
+        case 'name': line.name = stripListMark(v).trim().slice(0, 200); break   // (S44I, B7) a list's own mark is not the name
         case 'description': line.description = v.slice(0, 2000); break
         case 'kind': { const k = ITEM_KINDS.find((x) => x === v.trim().toLowerCase() || ITEM_KIND_LABEL[x].toLowerCase() === v.trim().toLowerCase()); if (k) line.kind = k; break }
         case 'qty': if (n !== null && n >= 0) line.qty = n; break
-        case 'unit': line.unit = (UNITS.find((u) => u.toLowerCase() === v.toLowerCase()) ?? v).slice(0, 40); break
+        case 'unit': line.unit = (units.find((u) => u.toLowerCase() === v.toLowerCase()) ?? v).slice(0, 40); break   // (S44I — M9) the studio's spelling
         case 'cost': if (n !== null && n >= 0) line.costMinor = Math.round(n * 100); break
         case 'markup': if (n !== null) { if (/%$/.test(v)) markupPct = n; else line.markupMinor = Math.round(n * 100) } break
         case 'unitPrice': if (n !== null && n >= 0) unitPrice = Math.round(n * 100); break
+        case 'waste': if (n !== null && n >= 0) line.wastePct = Math.round(Math.min(50, n) * 10) / 10; break   // (pending modules S12) 1.0's ceiling
         case 'discount': if (n !== null) line.discountPct = Math.min(100, Math.max(0, n)); break
         case 'gst': if (n !== null) line.gstPct = Math.min(100, Math.max(0, n)); break
         case 'room': line.room = v.slice(0, 60); break
@@ -180,6 +186,12 @@ export const EXPORT_HEAD = ['#', 'Item', 'Description', 'Qty', 'Unit', 'Cost', '
 /** The money columns in EXPORT_HEAD: they print with two decimals. */
 export const EXPORT_MONEY_COLS = [5, 6, 7, 15]
 const dollars = (minor: number) => Math.round(minor) / 100
+/** (pending modules S41b-1) The export's Cost and Markup columns (their place in EXPORT_HEAD): a member who doesn't see costs exports and
+    copies the sheet without them (1.0's price-book export: "CSV without Unit Cost and Markup % columns"). */
+export const EXPORT_COST_COLS = [5, 6]
+export function exportCells<T>(row: readonly T[], costs: boolean): T[] {
+  return costs ? [...row] : row.filter((_, i) => !EXPORT_COST_COLS.includes(i))
+}
 
 /** Every line in table order (a group before its children, with its sums), or only the ids given, as sheet cells. */
 export function exportRows(items: QuoteItem[], only?: Set<string>): SheetCell[][] {

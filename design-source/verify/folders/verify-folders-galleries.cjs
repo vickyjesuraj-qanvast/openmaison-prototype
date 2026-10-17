@@ -146,6 +146,8 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
 
   await step('each library', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
+    // REG-797 (UX audit S8): My Items opens as the list; this walk reads every library's cards, so it picks the grid as a member can
+    await page.addInitScript(() => { try { localStorage.setItem('om.price-book-items.list', '0') } catch {} })
     const libs = [['contracts', '/company/templates/contracts', 'Residential'], ['tasks', '/company/templates/tasks', 'Handover'], ['texts', '/company/templates/terms', 'Carpentry'], ['payments', '/company/templates/payments', 'Big jobs'], ['book-items', '/company/price-book', 'Doors and windows'], ['book-sections', '/company/price-book/sections', 'Kitchens']]
     for (const [lib, path, name] of libs) {
       await page.goto(`${BASE}${path}`); await ready(page)

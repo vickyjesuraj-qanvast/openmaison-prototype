@@ -55,6 +55,10 @@
   display: flex; align-items: center;
   cursor: inherit;
 }
+/* (fix-C, C-30) A multi-line field: the box grows with its rows (48 for one), the label rests in the first line, the words wrap and keep breaks. */
+.field[data-multiline] .box { height: auto; min-height: 48px; align-items: stretch; padding-top: 14px; padding-bottom: 14px; cursor: text; }   /* 14 + body-m's 20 + 14 = the field's 48 for one row */
+.field[data-multiline] .control { display: block; height: auto; white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; resize: none; }
+.field[data-multiline]:not([data-floated]) .label { top: 24px; }
 .control:focus, .control:focus-visible { outline: none; box-shadow: none; }   /* the box carries the DS active stroke; no inner ring */
 .control::placeholder { color: var(--om-color-on-surface-secondary); opacity: 0; transition: opacity var(--motion-toggle); }
 .field[data-floated] .control::placeholder { opacity: 1; }   /* the placeholder only appears once the label has moved out of the way */

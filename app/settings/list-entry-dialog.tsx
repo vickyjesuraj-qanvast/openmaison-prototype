@@ -5,6 +5,7 @@ import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { MSG } from '@/lib/forms'
+import { listedAs } from '@/lib/settings/trades'   // (S44P, row 264) the message names the entry the name matches
 import styles from './settings.module.css'
 
 export type EntryEdit = { name: string; position: number; gate?: number }
@@ -19,7 +20,7 @@ export const GATE_HELP = 'Blank asks for none — the Lost dialog says how many 
  */
 export function ListEntryDialog({ open, title, entry, total, withGate = false, note, taken, onClose, onSave }: {
   open: boolean; title: string; entry: EntryEdit | null; total: number; withGate?: boolean
-  /** (sweep S4 #23) A name the list refused as taken: said on the Name field while it is still what is typed. */
+  /** (sweep S4 #23) A name the list refused as taken: said on the Name field while it is still what is typed. (S44P) The entry it matches. */
   taken?: string | null
   /** One line under the fields — what a rename does, or what this entry asks for. */
   note?: string
@@ -37,7 +38,7 @@ export function ListEntryDialog({ open, title, entry, total, withGate = false, n
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={save}>Save</Button></>}>
       {draft ? (
         <div className={styles.entryForm} data-testid="list-entry">
-          <TextField label="Name" required value={draft.name} autoFocus maxLength={40} onChange={(v) => setDraft({ ...draft, name: v })} error={tried && empty ? MSG.required : taken && draft.name.trim().toLowerCase() === taken.trim().toLowerCase() ? `${taken.trim()} is already in the list` : undefined}
+          <TextField label="Name" required value={draft.name} autoFocus maxLength={40} onChange={(v) => setDraft({ ...draft, name: v })} error={tried && empty ? MSG.required : taken ? listedAs([taken], draft.name) : undefined}
                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
           <TextField label="Place in the list" mode="select" options={positions} value={String(draft.position)} onChange={(v) => setDraft({ ...draft, position: Number(v) })} />
           {withGate ? <TextField label={GATE_LABEL} value={draft.gate ? String(draft.gate) : ''} numeric="digits" maxLength={2} trailingIcon={null}

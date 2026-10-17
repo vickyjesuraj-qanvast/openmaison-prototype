@@ -1,0 +1,40 @@
+/*
+ * (pending modules S45A — H-UHD-1) Company › Reports › Leads › Sales — Leads › Insights' page (REG-611), composed, never copied, as Studio
+ * health's is (./studio-health-report.module.css): its sections, empty lines, foot and the tables on the table core with their phone cards.
+ * This sheet keeps only what the report adds: the space between its sections, a two-line cell, a total row, the chart card in the page's flow.
+ */
+.section { composes: section from '../../leads/insights/insights-view.module.css'; }
+.sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; flex-wrap: wrap; }   /* a section's tools (the flow's two chips) take their own line on a phone rather than squeeze the title */
+.sectionTitle { composes: sectionTitle from '../../leads/insights/insights-view.module.css'; margin: 0; }   /* a heading here (each section is a region named by it) */
+.sectionHelp { composes: sectionHelp from '../../leads/insights/insights-view.module.css'; }
+.sectionNote { composes: sectionHelp from '../../leads/insights/insights-view.module.css'; }   /* what the figures say — its own line under the help */
+.sectionTools { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.empty { composes: empty from '../../leads/insights/insights-view.module.css'; }
+.foot { composes: foot from '../../leads/insights/insights-view.module.css'; }
+.tiles { composes: tiles from '../../leads/insights/insights-view.module.css'; }
+.memberCell { composes: memberCell from '../../leads/insights/insights-view.module.css'; }
+.memberText { composes: memberText from '../../leads/insights/insights-view.module.css'; }
+.memberName { composes: memberName from '../../leads/insights/insights-view.module.css'; }
+.memberRole { composes: memberRole from '../../leads/insights/insights-view.module.css'; }
+.num { composes: num from '../../leads/insights/insights-view.module.css'; }
+.card { composes: card from '../../leads/insights/insights-view.module.css'; }
+.head { composes: head from '../../leads/insights/insights-view.module.css'; }
+.hCell { composes: hCell from '../../leads/insights/insights-view.module.css'; }
+.hLabel { composes: hLabel from '../../leads/insights/insights-view.module.css'; }
+.row { composes: row from '../../leads/insights/insights-view.module.css'; }
+.cell { composes: cell from '../../leads/insights/insights-view.module.css'; }
+.pin { composes: pin from '../../leads/insights/insights-view.module.css'; }
+/* a total row's figures read as Finance's reports' totals do (books.module.css `.strong`) */
+.strong { composes: strong from '../../finance/books/books.module.css'; }
+
+/* the sections after the first stand apart by the Company pages' section gap (Meetings' and Studio health's rule) */
+.block { margin-top: var(--om-spacing-8); }
+/* a cell of two lines — what it is over what it stands on (the member cell's text column, without the avatar) */
+.two { composes: memberText from '../../leads/insights/insights-view.module.css'; }
+.cellWithChip { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+/* the house chart's card sits in the page's flow (Studio health's rule): its article margin gives way to the section's own gap */
+.chart { min-width: 0; }
+.chart > figure { margin: 0; }
+/* the ghost's plot: the house chart's line plot is 240 tall, 200 under 480 wide (article-chart.tsx LinePlot) — a phone */
+.plotGhost { display: block; height: 240px !important; }   /* over the bone's own inline height */
+@media (max-width: 543px) { .plotGhost { height: 200px !important; } }

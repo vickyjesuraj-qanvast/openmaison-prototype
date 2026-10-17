@@ -13,7 +13,7 @@
 .mQuote { width: 300px; }   /* (UX audit C2) the quote's number, amount and status tag */
 .mDate { width: 200px; }
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 52px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
-.barEnd { margin-left: auto; }
+.barEnd { margin-left: auto; display: flex; gap: var(--om-spacing-2); }
 .signTop { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
 .stage { flex: 1; display: flex; justify-content: center; align-items: flex-start; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
 /* (REG-708) The editors' body (contract-editor.module.css .body): the Outline card at the left, 264 wide, the paper centred in the rest. */
@@ -25,4 +25,9 @@
 .lines { display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-2); }
 .card { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 @media (max-width: 1024px) { .stage { flex-direction: column-reverse; align-items: stretch; } .card { width: auto; } .actions > :nth-child(n+3) { display: none; } .bar > :nth-child(n+4) { display: none; } .outline { display: none; } }
+/* (pending modules S29) a phone's bar: the tools on one line, its end (Write with AI · Insert a field · eSignatures) on the next, as the page */
+@media (max-width: 767px) {
+  .bar { height: auto; min-height: 52px; flex-wrap: wrap; row-gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-4); }
+  .bar > .barEnd { display: flex; flex-basis: 100%; justify-content: flex-end; gap: var(--om-spacing-2); }
+}
 @media (max-width: 767px) { .paper { padding: 24px; min-height: 480px; } .stage { padding: var(--om-spacing-4); } .meta { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .metaEnd { flex: 1 1 100%; flex-wrap: wrap; } .mRec { width: 100%; } .mDate { width: 168px; } .mRec, .mQuote, .mDate { height: 44px; } }

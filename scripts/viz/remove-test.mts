@@ -32,21 +32,26 @@ const REMOVE: { action: 'remove' | 'replace' | 'customize'; replacementDesc: str
 
 /** Where each Remove used to go wrong — the crops looked at 3×. */
 const CASES: { name: string; pieces: string[]; materials?: Record<string, string>; picks?: Record<string, Partial<typeof REMOVE>>; crops: Record<string, Box> }[] = [
-  { name: 'sofa', pieces: ['grey fabric sofa'], crops: { whole: [0.1, 0.45, 0.9, 1], armchair: [0.27, 0.52, 0.42, 0.7], rug: [0.38, 0.64, 0.88, 1], table: [0.44, 0.63, 0.74, 0.8] } },
-  { name: 'sofa+floor', pieces: ['grey fabric sofa'], materials: { 'light oak floor': 'floor-006' }, crops: { whole: [0.1, 0.45, 0.9, 1], rug: [0.38, 0.64, 0.88, 1] } },
-  { name: 'coffee-table', pieces: ['oak coffee table'], crops: { whole: [0.4, 0.55, 0.9, 0.85], console: [0.5, 0.6, 0.8, 0.73], rug: [0.44, 0.64, 0.76, 0.82] } },
-  { name: 'rug', pieces: ['jute area rug'], crops: { whole: [0.35, 0.6, 0.9, 1], throw: [0.58, 0.68, 0.76, 1] } },
-  { name: 'armchair', pieces: ['upholstered armchair'], crops: { whole: [0.24, 0.42, 0.44, 0.72], lamp: [0.3, 0.44, 0.36, 0.68] } },
-  { name: 'console', pieces: ['oak TV console'], crops: { whole: [0.45, 0.42, 0.82, 0.76] } },
-  { name: 'lamp', pieces: ['floor lamp'], crops: { whole: [0.28, 0.44, 0.38, 0.68] } },
-  { name: 'fig', pieces: ['fiddle leaf fig in a terracotta pot'], crops: { whole: [0.78, 0.38, 1, 0.78] } },
-  { name: 'tv', pieces: ['wall-mounted TV'], crops: { whole: [0.54, 0.42, 0.8, 0.64] } },
-  { name: 'art', pieces: ['framed abstract art'], crops: { whole: [0.35, 0.33, 0.46, 0.53] } },
-  { name: 'sofa+table', pieces: ['grey fabric sofa', 'oak coffee table'], crops: { whole: [0.1, 0.45, 0.9, 1] } },
-  { name: 'sofa+armchair', pieces: ['grey fabric sofa', 'upholstered armchair'], crops: { whole: [0.1, 0.45, 0.9, 1] } },
-  /* what is rebuilt of a piece takes a finish laid on it in the same Generate — the wood of it never does */
-  { name: 'sofa+chair-replace', pieces: ['grey fabric sofa'], picks: { 'upholstered armchair': { action: 'replace', replacementDesc: 'Mid-Century armchair' } }, crops: { armchair: [0.27, 0.52, 0.42, 0.7] } },
-  { name: 'sofa+rug-customize', pieces: ['grey fabric sofa'], picks: { 'jute area rug': { action: 'customize', customizeColor: 'Navy' } }, crops: { whole: [0.1, 0.45, 0.9, 1] } },
+  /* (pending modules S43C) the owner's living room: each piece, the pairs that stand on or in front of each other, a finish laid with them */
+  { name: 'sofa', pieces: ['cream bouclé sofa'], crops: { whole: [0, 0.4, 0.6, 1], corner: [0.25, 0.4, 0.45, 0.62], rug: [0.08, 0.6, 0.6, 1] } },
+  { name: 'sofa+floor', pieces: ['cream bouclé sofa'], materials: { 'beige stone floor': 'floor-006' }, crops: { whole: [0, 0.4, 0.6, 1] } },
+  { name: 'coffee-table', pieces: ['travertine coffee table'], crops: { whole: [0.38, 0.45, 0.65, 0.9] } },
+  { name: 'rug', pieces: ['jute area rug'], crops: { whole: [0.05, 0.6, 0.95, 1] } },
+  { name: 'armchair', pieces: ['olive velvet armchair'], crops: { whole: [0.55, 0.45, 0.75, 0.72] } },
+  { name: 'side-table', pieces: ['walnut side table'], crops: { whole: [0, 0.45, 0.25, 0.95] } },
+  { name: 'lamp', pieces: ['mushroom table lamp'], crops: { whole: [0, 0.45, 0.2, 0.7] } },
+  { name: 'stool', pieces: ['travertine side table'], crops: { whole: [0.62, 0.5, 0.76, 0.72] } },
+  { name: 'tree', pieces: ['potted olive tree'], crops: { whole: [0.26, 0.3, 0.46, 0.56] } },
+  { name: 'tv', pieces: ['wall-mounted TV'], crops: { whole: [0.76, 0.18, 1, 0.66] } },
+  { name: 'soundbar', pieces: ['black soundbar'], crops: { whole: [0.76, 0.5, 0.96, 0.66] } },
+  { name: 'vase', pieces: ['olive branches in a glass vase'], crops: { whole: [0.86, 0.38, 1, 0.7] } },
+  { name: 'art', pieces: ['framed abstract art'], crops: { whole: [0.05, 0.05, 0.3, 0.52] } },
+  { name: 'sofa+table', pieces: ['cream bouclé sofa', 'travertine coffee table'], crops: { whole: [0, 0.4, 0.7, 1] } },
+  { name: 'lamp+side-table', pieces: ['mushroom table lamp', 'walnut side table'], crops: { whole: [0, 0.45, 0.3, 0.95] } },
+  { name: 'tv+soundbar', pieces: ['wall-mounted TV', 'black soundbar'], crops: { whole: [0.72, 0.15, 1, 0.7] } },
+  /* what a Remove rebuilds of a piece behind takes a finish laid on it in the same Generate */
+  { name: 'table+sofa-recolour', pieces: ['travertine coffee table'], picks: { 'cream bouclé sofa': { action: 'customize', customizeColor: 'Navy' } }, crops: { whole: [0.3, 0.45, 0.65, 0.9] } },
+  { name: 'sofa+rug-customize', pieces: ['cream bouclé sofa'], picks: { 'jute area rug': { action: 'customize', customizeColor: 'Navy' } }, crops: { whole: [0, 0.4, 0.9, 1] } },
 ]
 /** The photo and the render side by side, a box of each, enlarged. */
 async function pair(img: Img, [x0, y0, x1, y1]: Box, file: string) {
@@ -78,50 +83,44 @@ const lab = (im: Img, [x0, y0, x1, y1]: Box) => {
   return rgbToLab(Math.round(r / n), Math.round(g / n), Math.round(b / n))
 }
 const fmt = (l: number[]) => `L${l[0]!.toFixed(0)} a${l[1]!.toFixed(1)} b${l[2]!.toFixed(1)}`
-const sofaRm = made.get('sofa'), tableRm = made.get('coffee-table'), rugRm = made.get('rug'), chairRm = made.get('armchair')
+/* (pending modules S43C) the owner's living room — the places a Remove could leave a ghost, measured against the room around them */
+const sofaRm = made.get('sofa'), tableRm = made.get('coffee-table'), rugRm = made.get('rug'), chairRm = made.get('armchair'), tvRm = made.get('tv'), sideRm = made.get('lamp+side-table')
 if (sofaRm) {
-  /* (wave F) read below the table's shadow — it lies on the laid rug as it lies on the rug beside the throw */
-  const laid = lab(sofaRm, [0.46, 0.815, 0.6, 0.87]), seen = lab(sofaRm, [0.72, 0.8, 0.82, 0.9])
-  check(Math.abs(laid[0] - seen[0]) < 6 && Math.hypot(laid[1] - seen[1], laid[2] - seen[2]) < 4, 'Sofa out: the rug laid under it reads as the rug that shows', `${fmt(laid)} vs ${fmt(seen)}`)
-  const cols: number[] = []; for (let x = 0.62; x < 0.72; x += 0.0034) cols.push(lab(sofaRm, [x, 0.8, x + 0.0034, 0.9])[0])
-  let jump = 0; for (let k = 1; k < cols.length; k++) jump = Math.max(jump, Math.abs(cols[k]! - cols[k - 1]!))
-  check(jump < 3, 'Sofa out: no seam in the rug where the throw hung', `largest step between neighbouring columns ΔL ${jump.toFixed(1)}`)
-  /* (wave F) the join below the table's right leg: the laid rug and the rug beside it the same light and colour (look at the crops for
-     the rest — the ribs' run, no strip of the throw's edge) */
-  const laidJ = lab(sofaRm, [0.64, 0.82, 0.67, 0.86]), realJ = lab(sofaRm, [0.685, 0.82, 0.715, 0.86])
-  check(Math.abs(laidJ[0] - realJ[0]) < 3 && Math.hypot(laidJ[1] - realJ[1], laidJ[2] - realJ[2]) < 3, 'Sofa out: the rug laid under it meets the rug by the table’s leg in one tone', `${fmt(laidJ)} vs ${fmt(realJ)}`)
-  const leg = lab(sofaRm, [0.4585, 0.7, 0.4645, 0.745]), rugBy = lab(sofaRm, [0.475, 0.815, 0.5, 0.85])
-  check(leg[0] < rugBy[0] - 12, 'Sofa out: the coffee table stands on a front left leg', `leg ${fmt(leg)} vs the rug beside it ${fmt(rugBy)}`)
-}
-/* (wave F) a rug Customize after the sofa Remove: the laid rug beside where the throw hung reads as the rug beside it — under the table's
-   shadow as the rug there is, never a lighter patch */
-const navyRm = made.get('sofa+rug-customize')
-if (navyRm) {
-  const laidS = lab(navyRm, [0.62, 0.78, 0.66, 0.81]), realS = lab(navyRm, [0.69, 0.78, 0.72, 0.81])
-  check(Math.abs(laidS[0] - realS[0]) < 3, 'Sofa out + rug Customize: the laid rug by the table’s leg is in the shade the rug beside it has', `${fmt(laidS)} vs ${fmt(realS)}`)
+  /* the rug laid under the sofa reads as the rug that shows */
+  const laid = lab(sofaRm, [0.2, 0.86, 0.3, 0.92]), seen = lab(sofaRm, [0.6, 0.86, 0.7, 0.92])
+  check(Math.abs(laid[0] - seen[0]) < 8 && Math.hypot(laid[1] - seen[1], laid[2] - seen[2]) < 5, 'Sofa out: the rug laid under it reads as the rug that shows', `${fmt(laid)} vs ${fmt(seen)}`)
+  /* the side wall behind it is the wall above, not a sofa's ghost */
+  const wall = lab(sofaRm, [0.15, 0.56, 0.25, 0.6]), above = lab(sofaRm, [0.15, 0.42, 0.25, 0.46])
+  check(Math.abs(wall[0] - above[0]) < 10 && Math.hypot(wall[1] - above[1], wall[2] - above[2]) < 5, 'Sofa out: the wall behind it is the wall', `${fmt(wall)} vs ${fmt(above)}`)
+  /* the lamp and the side table in front stay as they are */
+  const lamp = lab(sofaRm, [0.035, 0.6, 0.065, 0.63]), was = lab(photo, [0.035, 0.6, 0.065, 0.63])
+  check(Math.abs(lamp[0] - was[0]) < 3, 'Sofa out: the lamp in front stays', `${fmt(lamp)} vs the photo’s ${fmt(was)}`)
 }
 if (tableRm) {
-  const leg = lab(tableRm, [0.5425, 0.664, 0.5485, 0.683]), gap = lab(tableRm, [0.525, 0.668, 0.535, 0.682])
-  check(leg[0] < 40 && leg[2] > gap[2] + 5, 'Coffee table out: the console stands on a left leg, over the dark under it', `leg ${fmt(leg)} vs under the console ${fmt(gap)}`)
-  /* (wave F) the floor strip laid beside the console's end is the floor's light, not the wall's (no pale block) */
-  const strip = lab(tableRm, [0.485, 0.667, 0.505, 0.678]), floorLeft = lab(tableRm, [0.425, 0.66, 0.445, 0.67])
-  check(Math.abs(strip[0] - floorLeft[0]) < 5, 'Coffee table out: the floor beside the console’s end is the floor beside it', `${fmt(strip)} vs ${fmt(floorLeft)}`)
+  /* the rug is woven back where the table's drum stood, in the light between the sofa's shade on its left and the sun on its right */
+  const laid = lab(tableRm, [0.47, 0.75, 0.55, 0.79]), left = lab(tableRm, [0.38, 0.75, 0.44, 0.79]), right = lab(tableRm, [0.62, 0.75, 0.7, 0.79])
+  const lo = Math.min(left[0], right[0]) - 3, hi = Math.max(left[0], right[0]) + 3
+  check(laid[0] >= lo && laid[0] <= hi && Math.hypot(laid[1] - (left[1] + right[1]) / 2, laid[2] - (left[2] + right[2]) / 2) < 5, 'Coffee table out: the rug is laid where its drum stood, in the light around it', `${fmt(laid)} between ${fmt(left)} and ${fmt(right)}`)
+  /* no tabletop or drum left: the drum's place is the rug's own texture (its weave varies), never a flat patch */
+  const v: number[] = []; for (let x = 0.47; x < 0.55; x += 0.004) v.push(lab(tableRm, [x, 0.77, x + 0.004, 0.775])[0])
+  const sd = Math.sqrt(v.reduce((a, b) => a + (b - v.reduce((p, q) => p + q, 0) / v.length) ** 2, 0) / v.length)
+  check(sd > 1.2, 'Coffee table out: the drum’s place carries the rug’s weave', `ΔL spread ${sd.toFixed(1)}`)
 }
 if (rugRm) {
-  const fringe = lab(rugRm, [0.645, 0.9, 0.665, 0.935]), floor = lab(rugRm, [0.7, 0.9, 0.75, 0.94])
-  check(Math.abs(fringe[0] - floor[0]) < 6, 'Rug out: no rug left between the throw’s fringe strands', `fringe zone ${fmt(fringe)} vs the floor ${fmt(floor)}`)
-}
-/* (wave F) the fig taken out, the console keeps its own shade on the wall beside it */
-const figRm = made.get('fig')
-if (figRm) {
-  const shade = lab(figRm, [0.79, 0.63, 0.81, 0.69]), was = lab(photo, [0.79, 0.63, 0.81, 0.69])
-  check(Math.abs(shade[0] - was[0]) < 6, 'Fig out: the console’s shade on the wall right of it stays', `${fmt(shade)} vs the photo’s ${fmt(was)}`)
+  const was = lab(rugRm, [0.45, 0.88, 0.6, 0.92]), floor = lab(rugRm, [0.45, 0.955, 0.6, 0.99])
+  check(Math.abs(was[0] - floor[0]) < 14 && Math.hypot(was[1] - floor[1], was[2] - floor[2]) < 6, 'Rug out: the floor where it lay is the floor in front of it', `${fmt(was)} vs ${fmt(floor)}`)
 }
 if (chairRm) {
-  const wall = lab(chairRm, [0.395, 0.57, 0.41, 0.64]), away = lab(chairRm, [0.425, 0.57, 0.45, 0.64])
-  check(Math.abs(wall[0] - away[0]) < 5, 'Armchair out: no ghost of its shade on the wall', `${fmt(wall)} vs ${fmt(away)}`)
-  const pole: number[] = []; for (let y = 0.55; y < 0.6; y += 0.0017) pole.push(lab(chairRm, [0.3262, y, 0.3278, y + 0.0017])[0])
-  check(Math.max(...pole) - Math.min(...pole) < 10, 'Armchair out: the lamp’s pole runs on even, no pale stub', `pole L ${Math.min(...pole).toFixed(0)}…${Math.max(...pole).toFixed(0)}`)
+  const glass = lab(chairRm, [0.6, 0.47, 0.65, 0.52]), beside = lab(chairRm, [0.53, 0.47, 0.57, 0.52])
+  check(Math.abs(glass[0] - beside[0]) < 14, 'Armchair out: the balcony behind it, no chair ghost', `${fmt(glass)} vs ${fmt(beside)}`)
+}
+if (tvRm) {
+  const wall = lab(tvRm, [0.85, 0.35, 0.9, 0.45]), above = lab(tvRm, [0.85, 0.12, 0.9, 0.2])
+  check(Math.abs(wall[0] - above[0]) < 12 && Math.hypot(wall[1] - above[1], wall[2] - above[2]) < 5, 'TV out: the wall where it hung is the wall above it', `${fmt(wall)} vs ${fmt(above)}`)
+}
+if (sideRm) {
+  const floor = lab(sideRm, [0.03, 0.85, 0.08, 0.89]), front = lab(sideRm, [0.03, 0.95, 0.08, 0.99])
+  check(Math.abs(floor[0] - front[0]) < 14, 'Lamp and side table out: the floor where the table stood', `${fmt(floor)} vs ${fmt(front)}`)
 }
 console.log(failed ? `${failed} check(s) failed` : 'all checks passed')
 process.exit(failed ? 1 : 0)

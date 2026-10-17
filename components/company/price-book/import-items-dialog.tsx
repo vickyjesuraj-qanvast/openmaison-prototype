@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Button, TextArea } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
-import { TextField } from '@/components/om/text-field'
+import { VendorNameField } from '@/components/finance/vendor-name-field'
+import { useVendorDirectory } from '@/components/finance/use-vendor-directory'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -23,8 +24,14 @@ import styles from './price-book.module.css'
  * (REG-653, price book parity Q-13) Or a file — a supplier's CSV or XLSX, or the book's own export — read in the browser as the leads
  * import reads one; the limit is said before anything is read; the mapping step matches each row to the book (`book`), says what is new,
  * what matches, what repeats and which trades are new, and the vendor typed here fills only the rows without one.
+ * (pending modules S12 — card held:price-book, "the import's vendor are free text, not Finance › Vendors · revisit (one vendor list, N-16)") That
+ * vendor picks from Company › Finance › Vendors (the item dialog's field); the server spells it, and every row's own, as the directory does.
  */
-export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
+export function ImportItemsDialog({ open, onClose, onImport, book, trades, costs = true, units }: {
+  /** (S44I — M9) the studio's units — a mapped unit takes the studio's spelling */
+  units?: readonly string[]
+  /** (pending modules S41b-1) the member sees costs — else the mapping offers no Cost or Markup column */
+  costs?: boolean
   open: boolean; onClose: () => void; onImport: (lines: PasteLine[], vendor: string | null, match: BookMatch, kind: ItemKind) => void | Promise<void>
   book: { name: string; vendor: string | null; status?: string }[]; trades: string[]
 }) {
@@ -35,6 +42,7 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
   /* (UX audit S7) The Kind a row without one takes — every such row became Purchase unasked */
   const [kind, setKind] = useState<ItemKind>('purchase')
   const [mapping, setMapping] = useState(false)
+  const vendors = useVendorDirectory(open)   // (pending modules S12, one-home N-16)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setText(''); setFile(null); setVendor(''); setKind('purchase'); setMapping(false) } }
   const ready = !!file || (text.trim().length > 0 && isBlock(text, 'add'))
@@ -68,10 +76,10 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
           <div className={styles.pasteBox}>
             <TextArea label="Or paste the rows here" value={text} onChange={(v: string) => setText(v)} description={text.trim() && !ready ? 'That looks like a single value — paste whole rows with tabs between the columns.' : undefined} />
           </div>
-          <TextField label="Vendor (optional)" value={vendor} onChange={setVendor} maxLength={80} helper="For rows without a vendor of their own" />
+          <VendorNameField label="Vendor (optional)" value={vendor} onChange={setVendor} directory={vendors.list} onAdd={vendors.add} maxLength={80} helper="For rows without a vendor of their own — from Company › Finance › Vendors" testId="import-vendor" />
         </div>
       </Dialog>
-      <PasteItemsDialog open={open && mapping} text={text} grid={file?.rows ?? null} source={file?.name ?? null} anchor={null} target="book" book={book} trades={trades} vendor={vendor.trim() || null}
+      <PasteItemsDialog open={open && mapping} text={text} grid={file?.rows ?? null} source={file?.name ?? null} anchor={null} target="book" book={book} trades={trades} vendor={vendor.trim() || null} costs={costs} units={units}
                         bookKind={{ label: 'Rows with no Kind', options: ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k]), value: ITEM_KIND_LABEL[kind], onChange: (v) => setKind(ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === v) ?? 'purchase') }}
                         onClose={onClose} onBack={() => setMapping(false)} onAdd={(lines, _place, match) => { setMapping(false); void onImport(lines, vendor.trim() || null, match ?? 'update', kind) }} />
     </>

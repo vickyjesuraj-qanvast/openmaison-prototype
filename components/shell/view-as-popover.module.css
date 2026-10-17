@@ -3,3 +3,8 @@
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
 .titleRow > :first-child { margin-bottom: 0; }
 .help { margin: 0 0 var(--om-spacing-2); padding: 0 var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (pending modules S01) you, View as and the studio plan make a tall menu: on a short window it keeps inside the viewport and scrolls in
+   itself (the panel's own rule is "no max height", so this one is stated with the weight to win whatever order the sheets load in, REG-670) */
+.fits.fits.fits { max-height: calc(100dvh - 2 * var(--om-spacing-2)); overflow-y: auto; }
+/* (pending modules S16) the DS switch as the Open to new leads row's mark — the row takes the press; the switch keeps its own box */
+.switchMark { display: inline-flex; flex-shrink: 0; pointer-events: none; }

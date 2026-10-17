@@ -56,6 +56,9 @@ button.groupLabel:hover .toggleIcon { background: var(--om-color-hover-08p); }  
   white-space: nowrap; overflow: hidden;
 }
 .dot { font: var(--om-type-body-s); }
+/* (pending modules S22) the Dashboard's tasks name their lead or project after the kind — the one part of the line that gives way, cut, so the
+   due day always shows */
+.where { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .meta [data-tone='red'] { color: var(--om-color-tertiary-red-default); }           /* #db382a */
 .meta [data-tone='yellow'] { color: var(--om-color-on-tertiary-yellow-variant); }  /* #c17e22 */
 .chev {

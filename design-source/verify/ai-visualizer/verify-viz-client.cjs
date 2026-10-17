@@ -17,6 +17,9 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   const shot = (n) => page.screenshot({ path: `${OUT}/${n}.png`, fullPage: n.includes('share') })
 
   console.log('1 · the client’s link')
+  // The demo's link was sent two days before the repair ran and lasts a week (R61); as the calendar passes it the link expires, so the
+  // scratch copy keeps it open from today — the probe is about what an open link does
+  sql(`update render_share_links set expires_at = strftime('%s','now') + 5 * 86400 where token='${TOKEN}' and expires_at < strftime('%s','now') + 86400`)
   const views0 = Number(sql(`select view_count from render_share_links where token='${TOKEN}'`))
   await page.goto(`${B}/renders/${TOKEN}`); await page.waitForTimeout(1500)
   check('the letterhead and the studio’s note', (await page.getByText('Hi Kevin, three ideas from our meeting', { exact: false }).count()) === 1)
@@ -81,8 +84,8 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   console.log('5 · Company › Materials')
   await page.goto(`${B}/company/materials`); await page.waitForTimeout(1500)
   check('four studio materials (one in Floors)', (await page.getByTestId('library-card').count()) === 3 && (await page.getByText('Floors').count()) >= 1)
-  await page.getByRole('button', { name: 'New', exact: true }).click(); await page.waitForTimeout(300)
-  await page.getByRole('menuitem', { name: /New material/ }).click(); await page.waitForTimeout(500)
+  // REG-801 (UX audit S12): a library with one way in has one plain button — New material — not a New ▾ menu
+  await page.getByRole('button', { name: 'New material', exact: true }).click(); await page.waitForTimeout(500)
   await page.getByLabel('Name').fill('Terracotta clay tile')
   await page.getByTestId('material-save').click(); await page.waitForTimeout(1500)
   check('a new material joins the library', (await page.getByTestId('library-card').filter({ hasText: 'Terracotta clay tile' }).count()) === 1)

@@ -1,4 +1,7 @@
 import type { Pt } from './engine/pixels'
+import { light as livingRoomLight } from './sample-rooms/living-room'
+import { light as bedroomLight } from './sample-rooms/bedroom'
+import { light as kitchenLight } from './sample-rooms/kitchen'
 
 /* AI Visualizer (REG-674) — lighting: 1.0's `relight-controls.tsx` (B-93…B-99). Pure and client-safe. */
 
@@ -47,26 +50,7 @@ export type LightFixture = { kind: FixtureKey; x: number; y: number }
     list as a piece (the pot of basil and the vases on the kitchen sill, the pampas on the bedroom's): after dark they keep their own
     tone, never the sky's. The reading's pieces in front of a window (the sofa) are taken out at render time (round 2). */
 export type RoomLight = { windows: Pt[][]; occluders?: Pt[][]; fixtures: LightFixture[] }
-export const SAMPLE_LIGHT: Record<string, RoomLight> = {
-  'living-room': {
-    windows: [[{ x: 0.064, y: 0.157 }, { x: 0.216, y: 0.246 }, { x: 0.216, y: 0.69 }, { x: 0.072, y: 0.763 }]],
-    /* (the floor lamp by the armchair is a piece of the reading now — its light comes with it, and goes when it's taken out) */
-    fixtures: [{ kind: 'downlights', x: 0.24, y: 0.115 }, { kind: 'downlights', x: 0.543, y: 0.058 }, { kind: 'downlights', x: 0.613, y: 0.163 }, { kind: 'downlights', x: 0.975, y: 0.095 }],
-  },
-  bedroom: {
-    windows: [[{ x: 0.058, y: 0 }, { x: 0.15, y: 0 }, { x: 0.195, y: 0.075 }, { x: 0.195, y: 0.556 }, { x: 0.06, y: 0.596 }]],
-    occluders: [[{ x: 0.171, y: 0.58 }, { x: 0.171, y: 0.527 }, { x: 0.176, y: 0.515 }, { x: 0.18, y: 0.47 }, { x: 0.183, y: 0.43 }, { x: 0.19, y: 0.41 }, { x: 0.2, y: 0.43 }, { x: 0.21, y: 0.412 }, { x: 0.219, y: 0.425 }, { x: 0.205, y: 0.5 }, { x: 0.202, y: 0.58 }]],
-    fixtures: [],
-  },
-  kitchen: {
-    windows: [[{ x: 0.03, y: 0.125 }, { x: 0.19, y: 0.203 }, { x: 0.19, y: 0.487 }, { x: 0.03, y: 0.515 }]],
-    occluders: [
-      [{ x: 0.033, y: 0.455 }, { x: 0.034, y: 0.44 }, { x: 0.044, y: 0.419 }, { x: 0.06, y: 0.412 }, { x: 0.076, y: 0.417 }, { x: 0.091, y: 0.424 }, { x: 0.097, y: 0.44 }, { x: 0.092, y: 0.46 }, { x: 0.091, y: 0.522 }, { x: 0.044, y: 0.522 }, { x: 0.042, y: 0.463 }],
-      [{ x: 0.183, y: 0.492 }, { x: 0.183, y: 0.472 }, { x: 0.189, y: 0.462 }, { x: 0.195, y: 0.458 }, { x: 0.197, y: 0.448 }, { x: 0.2, y: 0.438 }, { x: 0.21, y: 0.436 }, { x: 0.217, y: 0.445 }, { x: 0.221, y: 0.46 }, { x: 0.22, y: 0.492 }],
-    ],
-    fixtures: [{ kind: 'downlights', x: 0.359, y: 0.137 }, { kind: 'downlights', x: 0.533, y: 0.167 }, { kind: 'downlights', x: 0.683, y: 0.19 }],
-  },
-}
+export const SAMPLE_LIGHT: Record<string, RoomLight> = { 'living-room': livingRoomLight, bedroom: bedroomLight, kitchen: kitchenLight }
 /** A piece the reading marks as lighting, as the fixture it is: a pendant (or a chandelier) hangs; a lamp or a sconce is an accent. */
 export function fixtureOfPiece(label: string, box: [number, number, number, number] | undefined, x: number, y: number): LightFixture | null {
   const l = label.toLowerCase()

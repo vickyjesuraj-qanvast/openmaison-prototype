@@ -2,6 +2,7 @@ import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: 
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadNotes, members, noteAttachments, stageLogs, type LeadFile, type LeadNote, type Member } from '@/lib/db/schema'
+import { withYou } from '@/lib/db/session'   // (pending modules S43A) "you" = this request's member
 import { parseInputDateTime } from '@/lib/format'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 
@@ -24,12 +25,14 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     /* Newest first (REG-262, user 2026-09-01) — the mock's frames drew creation order (162/165). */
     db.select().from(leadNotes).where(eq(leadNotes.leadId, leadId)).orderBy(desc(leadNotes.createdAt)),
     db.select().from(leadFiles).where(and(eq(leadFiles.leadId, leadId), isNull(leadFiles.deletedAt))).orderBy(asc(leadFiles.createdAt)),
-    db.select().from(members),
+    db.select().from(members).then(withYou),
   ])
   const ids = rows.map((n) => n.id)
   const links = ids.length ? await db.select().from(noteAttachments).where(inArray(noteAttachments.noteId, ids)).orderBy(asc(noteAttachments.createdAt)) : []
   const byFile = new Map(files.map((f) => [f.id, f]))
   const byMember = new Map(team.map((m) => [m.id, m]))
+  /** (pending modules S05) a stage log's files, by the ids it keeps — gone ones (trashed) drop out */
+  const attachedOf = (ids: unknown): LeadFile[] => (Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string').map((id) => byFile.get(id)).filter((f): f is LeadFile => !!f) : [])
   const notes: NoteRow[] = rows.map((n) => ({
     ...n,
     attachments: links.filter((l) => l.noteId === n.id).map((l) => byFile.get(l.fileId)).filter((f): f is LeadFile => !!f),
@@ -46,7 +49,7 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     .where(and(eq(stageLogs.leadId, leadId), eq(stageLogs.toStage, 'Contacted')))
     .orderBy(desc(stageLogs.createdAt))
   const stageRow = contactedRows.find((r) => isWizardPayload(r.payload))
-  type PayloadLog = { channel?: string | null; when?: string; outcome?: string; nextStepWhen?: string; nextStepMode?: string; notes?: string; noteId?: string }
+  type PayloadLog = { channel?: string | null; when?: string; outcome?: string; nextStepWhen?: string; nextStepMode?: string; notes?: string; noteId?: string; /** (pending modules S05) */ fileIds?: string[] }
   /* (UX audit 2026-09-30, L2) A contact log saved here and then carried into the Contacted step (`?move=contacted&log=<id>`) is the
      same contact: it stays listed once, as the note it is, not again as a stage row. */
   const noteIds = new Set(rows.map((n) => n.id))
@@ -59,7 +62,7 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     nextStepAt: l.nextStepWhen ? parseInputDateTime(l.nextStepWhen) : null,
     nextStepMode: l.nextStepMode ?? null,
     authorId: null, createdAt: stageRow!.createdAt, updatedAt: null,
-    attachments: [], author: null, origin: 'stage' as const, stageKind: 'Contacted' as const,
+    attachments: attachedOf(l.fileIds), author: null, origin: 'stage' as const, stageKind: 'Contacted' as const,   // (pending modules S05) the log's own files
   }])
 
   /* (UX audit 2026-09-30, T3 — extends REG-265) The Met stage's meeting logs appear beside Contacted's, read-only the same way: the
@@ -68,7 +71,7 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     .where(and(eq(stageLogs.leadId, leadId), eq(stageLogs.toStage, 'Met')))
     .orderBy(desc(stageLogs.createdAt))
   const metRow = metRows.find((r) => isWizardPayload(r.payload) && Array.isArray((r.payload as { meetings?: unknown }).meetings))
-  type PayloadMeeting = { where?: string; when?: string; notes?: string }
+  type PayloadMeeting = { where?: string; when?: string; notes?: string; /** (pending modules S05) */ fileIds?: string[] }
   const meetingNotes: NoteRow[] = ((metRow?.payload as { meetings?: PayloadMeeting[] } | null)?.meetings ?? []).filter((m) => m.where || m.when).map((m, i) => ({
     id: `stage-${metRow!.id}-m${i}`,
     leadId, kind: 'contact', title: '', body: m.notes ?? '',
@@ -76,7 +79,7 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     contactedAt: m.when ? parseInputDateTime(m.when) : null,
     outcome: null, nextStepAt: null, nextStepMode: null,
     authorId: null, createdAt: metRow!.createdAt, updatedAt: null,
-    attachments: [], author: null, origin: 'stage' as const, stageKind: 'Met' as const,
+    attachments: attachedOf(m.fileIds), author: null, origin: 'stage' as const, stageKind: 'Met' as const,
   }))
 
   const merged = [...notes, ...stageNotes, ...meetingNotes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())

@@ -1,3 +1,4 @@
+import type { PickedPdf } from '@/lib/contracts/pdf'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { MSG } from '@/lib/forms'
 import { parseInputDateTime } from '@/lib/format'
@@ -11,6 +12,9 @@ export type ContactLog = {
   nextStepWhen: string
   nextStepMode: string
   files: string[]
+  /** (pending modules S05 — REG-149's 'Q-101' stand-in retired) the lead's files the log attaches, by id, beside their names in `files` —
+      the Notes tab lists them under the log; an older log holds names alone */
+  fileIds?: string[]
   notes: string
   collapsed?: boolean
   /** (UX audit 2026-09-30, L2) The Notes-tab contact log this entry was filled from (`?move=contacted&log=<id>`) — the Notes list
@@ -22,8 +26,13 @@ export type MeetingLog = {
   where: string
   when: string
   files: string[]
+  /** (pending modules S05) the meeting's documents, by id (as a contact log's) */
+  fileIds?: string[]
   notes: string
   collapsed?: boolean
+  /** (pending modules S23) The meeting this log IS (lib/meetings) — its co-pilot session and brief. A meeting held on a lead is its Met log, never
+      a second record of where and when: the Meetings tab reads this log's where and when, and lists a log with no meeting as itself. */
+  meetingId?: string
 }
 
 export type WizardData = {
@@ -35,17 +44,30 @@ export type WizardData = {
   /** (UX audit 2026-09-30, Q1) The picked system quote's id — the move stamps THAT quote Sent to Client (names can repeat). Older logs lack it. */
   quoteSelectedId?: string | null
   quoteUploaded: string | null             // Uploaded file name
+  /** (pending modules S05) The uploaded quote itself, on its way to Files › Quotes & BOQ — lifted out before the stage log is kept. */
+  quoteFile?: PickedPdf | null
   quoteAmount: string
+  /** (pending modules S05) the Quote Sent step's optional meeting documents and render — the lead's files, by id (they were tiles the step
+      never kept) */
+  quoteMeetingFiles?: string[]
+  quoteRenderFiles?: string[]
   wonQuoteTab: 'system' | 'upload'
   wonQuote: string | null                  // From System signed quote
   wonQuoteUploaded: string | null          // Uploaded signed quote (780:92744)
+  /** (pending modules S05) The uploaded signed quote itself, kept in the lead's Files with the project — lifted out before the stage log is kept. */
+  wonQuoteFile?: PickedPdf | null
   wonQuoteAmount: string                   // Only asked in the upload flow — the file can't tell us the amount
   wonContractTab: 'system' | 'upload'
   wonContract: string | null
   wonContractUploaded: string | null
+  /** (pending modules S03) The picked PDF itself, on its way to the contract the step makes — lifted out before the stage log is kept. */
+  wonContractFile?: PickedPdf | null
   milestones: { name: string; meta: string; pct: number }[]
   projectType: string
 }
+
+/* (S43B · F1-01) Auto Fill reads the picked file by rule (lib/leads/contact-fill.ts) — the scripted next step (AUTO_FILL_DAYS on at
+   AUTO_FILL_HOUR) is gone; testers' L-6 stays there: a file that names no moment gives the log the upload's. */
 
 /** The system's own files (780:91468 / 780:92744) — first in every From System list and selected by default (user 2026-08-29). */
 export const SYSTEM_QUOTE = 'Whole-home renovation'
@@ -105,7 +127,9 @@ export function emptyWizardData(assignees: string[]): WizardData {
  * dates. Keys are the field names the panels render errors under; `stageComplete` derives from it.
  */
 export type StageErrors = Partial<Record<string, string>>
-export function validateStage(stage: Stage, d: WizardData): StageErrors {
+/** (pending modules S05 — Manage Stages) What the studio set a step to ask for (Settings › Lead management › Lead stages); absent = the defaults. */
+export type StageAsks = { contactNextStep?: boolean; wonContract?: boolean }
+export function validateStage(stage: Stage, d: WizardData, asks: StageAsks = {}): StageErrors {
   const e: StageErrors = {}
   switch (stage) {
     case 'New': if (d.assignees.length === 0) e.assignees = MSG.assignee; break   // New is complete only once someone owns the lead (user 2026-08-29)
@@ -117,6 +141,8 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
         if (!l.outcome) e[k('outcome')] = MSG.required
         // (REG-319, mock 781:58313) The schedule pair is optional for every outcome; a date that IS entered must parse.
         if (l.nextStepWhen && !parseInputDateTime(l.nextStepWhen)) e[k('nextStepWhen')] = MSG.dateTime
+        /* (pending modules S05) …unless the studio asks for it (1.0's "Follow-up required") — never for a client who said they're not interested */
+        else if (asks.contactNextStep && !l.nextStepWhen && l.outcome && l.outcome !== 'Not interested') e[k('nextStepWhen')] = MSG.required
         if (l.files.length === 0) e[k('files')] = MSG.attach
       })
       break
@@ -142,8 +168,11 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
         if (!d.wonQuoteUploaded) e.wonQuote = MSG.attach
         const a = amountError(d.wonQuoteAmount); if (a) e.wonQuoteAmount = a
       }
-      if (d.wonContractTab === 'system') { if (!d.wonContract) e.wonContract = MSG.choose }
-      else if (!d.wonContractUploaded) e.wonContract = MSG.attach
+      /* (pending modules S05) the signed contract, unless the studio wins a lead on its signed quote alone (1.0's "Contract required" off) */
+      if (asks.wonContract !== false) {
+        if (d.wonContractTab === 'system') { if (!d.wonContract) e.wonContract = MSG.choose }
+        else if (!d.wonContractUploaded) e.wonContract = MSG.attach
+      }
       const total = d.milestones.reduce((n, m) => n + (Number.isFinite(m.pct) ? m.pct : 0), 0)
       if (total !== 100) e.milestones = MSG.milestones
       if (!d.projectType) e.projectType = MSG.required
@@ -152,6 +181,26 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
     default: break
   }
   return e
+}
+
+/** The window's field names, in the words its labels use — a refusal names the field it is about. */
+const FIELD_WORD: Record<string, string> = {
+  channel: 'Contacted via', when: 'Date & Time', outcome: 'Outcome', nextStepWhen: 'the next call or meeting', nextStepMode: 'Preferred mode', files: 'the proof of contact',
+  where: 'Where', assignees: 'Members', quote: 'the quote', quoteAmount: 'Quote amount', wonQuote: 'the signed quote', wonQuoteAmount: 'Quote amount',
+  wonContract: 'the signed contract', milestones: 'the payment split', projectType: 'Project type',
+}
+/**
+ * (S43B · F1-07 — her "fix all the pending things" 2026-10-15, as recommended; S05's note for the developers) The server's answer to a stage's
+ * fields that `validateStage` refuses — the window's own message, named by its field, in the house's refusal shape: "The Contacted step isn’t
+ * complete — Log 1’s Contacted via: choose an option". Null when the step is complete. (invented copy, reg-S43B)
+ */
+export function stageRefusal(stage: Stage, errors: StageErrors): string | null {
+  const first = Object.entries(errors).find(([, v]) => !!v)
+  if (!first) return null
+  const [key, msg] = first
+  const m = /^(logs|meetings)\.(\d+)\.(\w+)$/.exec(key)
+  const field = m ? `Log ${Number(m[2]) + 1}’s ${FIELD_WORD[m[3]!] ?? m[3]}` : FIELD_WORD[key] ?? key
+  return `The ${stage} step isn’t complete — ${field}: ${msg!.replace(/^./, (c) => c.toLowerCase())}`
 }
 
 /**
@@ -174,7 +223,7 @@ export const STAGE_FIELDS: Record<(typeof STAGES)[number], (keyof WizardData)[]>
   'New': [],
   'Contacted': ['logs'],
   'Met': ['meetings'],
-  'Quote Sent': ['quoteTab', 'quoteSelected', 'quoteSelectedId', 'quoteUploaded', 'quoteAmount'],
+  'Quote Sent': ['quoteTab', 'quoteSelected', 'quoteSelectedId', 'quoteUploaded', 'quoteAmount', 'quoteMeetingFiles', 'quoteRenderFiles'],
   'Won': ['wonQuoteTab', 'wonQuote', 'wonQuoteUploaded', 'wonQuoteAmount', 'wonContractTab', 'wonContract', 'wonContractUploaded', 'milestones', 'projectType'],
 }
 

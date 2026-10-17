@@ -10,6 +10,7 @@ import { GO, keyDef } from '@/lib/keys/registry'
 import { alternatives, keysPlain } from '@/lib/keys/spec'
 import { flagOn, markUsed, mouseUse, openShortcuts, runHandler, SINGLE_KEYS, tipShown, toggleShortcuts, useShortcutsOpen } from '@/lib/keys/store'
 import { withFrom } from '@/lib/nav'
+import { leaveThen } from '@/components/company/leave-guard'   // (pending modules S16) a key that moves asks first, as a press on a link does (REG-791)
 import {
   currentList, isTyping, isVisible, keepTrail, layerOpen, leadStep, marked, MODAL, outOfReach, ownsArrows, ownsKeys, press, readTrail,
   rowsOf, tabRow, tabsOf, toggle, wordsOf,
@@ -112,7 +113,7 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
       if (href) {
         const from = new URLSearchParams(location.search).get('from') ?? readTrail()?.from
         fire(d > 0 ? 'lead.next' : 'lead.prev')
-        router.push(from ? withFrom(href, from) : href)
+        leaveThen(() => router.push(from ? withFrom(href, from) : href))
         return true
       }
       if (/^\/leads\/[^/]+/.test(location.pathname) && readTrail()) {
@@ -142,7 +143,10 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
       const g = GO.find((x) => x.key === c)
       if (!g) return
       fire(g.id)
-      if (g.href) router.push(g.href)
+      /* (pending modules S16 — a bug fix) G then … moved in script, past the unsaved-edits guard REG-791 says it honours: an edited Company or
+         Settings form now asks Save · Discard · Keep editing first, as the rail's own links do */
+      const href = g.href
+      if (href) leaveThen(() => router.push(href))
       else openNotifications()
     }
 

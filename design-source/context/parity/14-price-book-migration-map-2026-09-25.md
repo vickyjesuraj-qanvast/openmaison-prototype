@@ -39,6 +39,7 @@ times are unix seconds; people are `members.id`; every write is a server action 
 | `price_book_history` | **`price_book_changes`** (`id` · `item_id` · `kind` created · imported · edited · approved · sent_back · deleted · restored · `changes` JSON `{ field: [before, after] }` real changes only · `note` · `by` · `at`) | 1.0 logged every field as changed "from —": port only the rows whose price figures really moved, as `edited` with `changes.costMinor` / `markupMinor`, and one `imported` row per item noted *Ported from 1.0* | R2 |
 | `price_book_pricing_tiers` | — | not built (Q-06): each item's bands are listed in the port log; a studio prices a break on the line or as its own item | — |
 | `vendors` (+ `default_markup_percent`) | `price_book_items.vendor` (the name); *Set markup* re-prices | the directory is Finance's | R4 |
+| `price_book_vendor_prices` (1.0 migration 425, the newer branch `deployment/qanvast` 340cbc74f — after this map was first written) | `price_book_items` — **each vendor's own entry** | every (item, vendor) row's cost and sell become that vendor's entry's `cost_minor` + `markup_minor`; a blank side is the item's base price (1.0's `resolveVendorPricing`); the pure mapper `lib/port/price-book-vendor-prices.ts` (`vendorEntries` · `portVendorPrices` · `directoryLookup`, S45C — sample rows in `design-source/verify/pending-modules/pm2-s45c-pure.mts`) | S45C |
 | `studio_quote_categories` (as the book's category) | `settings.trades` + `price_book_items.category` | a category outside the trades joins them (`addTrades`); a rename carries items whatever the case (`renameTrade`) | R1 |
 | `studio_assemblies` (packages) | `price_book_sections` (`lines_json` = `SavedSection`) + `created_by` · `updated_by` | a line keeps `visibility` · `optional` · `noNumber` · `rebateMinor` · `thumb` · `priceBookItemId` (through the id map), a section `printOneLine` · `printAsText` · `highlight` · `visibility` | R2 · R3 |
 | `price_book_suggestions` · `embedding` · `platform_market_rates` · `crowd_rate_signals` · the drift cron | — | the platform's (Q-16) | — |
@@ -68,9 +69,20 @@ the Quotes port (map 06), which need the id map:
 
 1. **Classify** — Singapore studios only (D-157); count every store of §2 into the port log; show the owner the × 100 suspects (D-237).
 2. **Items** — one `price_book_items` row per vendor (the first vendor's row keeps the 1.0 uuid, the k-th a deterministic id from `(item, vendor)`
-   so a re-run is `INSERT OR IGNORE`); prices by §2; `status` `live`, or `proposed` for a pending item; `deleted_at` for an archived or
+   so a re-run is `INSERT OR IGNORE`); prices by §2 — **each vendor's own price where 1.0 kept one** (step 2a); `status` `live`, or `proposed` for a pending item; `deleted_at` for an archived or
    rejected one; `created_by` · `updated_by` through the member map (the studio's first Owner when 1.0 names nobody); `link` from `spec_url`
    (cleaned; else NULL, logged); `description_html` NULL (1.0's specs were plain).
+2a. **Per-vendor prices** (S45C) — after Finance › Vendors is ported (its `vendors` rows, merges recorded in `merged_into`), run
+   `portVendorPrices(items, vendorPrices, directoryLookup(vendors, idOf))` from `lib/port/price-book-vendor-prices.ts` over the studio's
+   `studio_price_book` rows (the category joined to its name) and its `price_book_vendor_prices` rows. It answers the vendor split of step 2:
+   one entry per linked vendor (`vendor_ids`, else `vendor_id`; a priced vendor no longer linked is kept too), each keeping the item's name,
+   unit and category, its `vendor` the Finance › Vendors name, its cost and mark-up from that vendor's own cost and sell (a blank side = the
+   item's base price; D-152 · D-153 · D-155), the ids of step 2. Copy the item's other columns (kind, description, link, picture, status, who,
+   folder) onto each entry. Write its `notes` to the port log — `sell-no-cost` · `cost-no-sell` · `no-price` · `rounded` ·
+   `vendor-not-in-directory` (the entry lands with no vendor, never a made-up name) · `price-for-unlinked-vendor` · `same-vendor-twice` (two
+   1.0 vendors merged into one: one entry, the kept vendor's own price first, as 1.0's `repointVendorPrices`) · `orphan-price`. A quote line
+   that named a vendor (map 06) points at that vendor's entry. Nothing visible changes: 2.0 already holds the same product from two vendors as
+   two entries (REG-594).
 3. **History** — one `imported` row per item (`note` *Ported from 1.0*, `by` = `created_by`, `at` = `created_at`), then 1.0's price edits as
    `edited` rows; a rejected item's note as a `sent_back` row.
 4. **Sections** — the packages as `price_book_sections` (templates D-165); each line's `priceBookItemId` through the id map.

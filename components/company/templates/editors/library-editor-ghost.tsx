@@ -54,7 +54,8 @@ export function LibraryEditorGhost({ kind }: { kind: keyof typeof CARD }) {
                 </>
               ) : kind === 'terms' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>{[16, 16, 16, 16, 40, 60, 16].map((w, i) => <Bone key={i} w={w} h={16} />)}<span style={{ marginLeft: 'auto' }}><Slot kind="btn" w={110} /></span></div>
+                  {/* (pending modules S29) the toolbar's end: Write with AI · Insert a field */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>{[16, 16, 16, 16, 40, 60, 16].map((w, i) => <Bone key={i} w={w} h={16} />)}<span style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}><Slot kind="btn" w={124} /><Slot kind="btn" w={110} /></span></div>
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => <Line key={i} w={cycle(['36%', '22%', '100%', '84%', '26%', '100%', '62%', '30%', '96%'], i)} lh={20} h={10} />)}
                 </div>
               ) : (

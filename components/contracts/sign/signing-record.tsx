@@ -9,10 +9,14 @@ export type SigningRecordData = {
   nric: string | null
   signatureKind: string | null
   phone: string | null
+  /** (S42 B-03) how the code was checked — `demo_code`: the prototype's stand-in, no text went (the record says so) */
+  method?: string | null
   device: string | null
   timezone: string | null
   viewedAt: Date | null
   acceptedAt: Date | null
+  /** (gaps build D, item 6) when the client ticked the CaseTrust deposit-protection disclosure */
+  caseTrustAt?: Date | null
   hash: string | null
   /** A bundle: the documents one signature covered. */
   documents?: string[]
@@ -30,10 +34,11 @@ export function SigningRecord({ r, compact }: { r: SigningRecordData; compact?: 
         ['Signed by', r.signedBy],
         ['Signature', r.signatureKind === 'draw' ? 'Drawn by hand' : 'Typed name'],
         ['NRIC / FIN', r.nric ?? 'Not given'],
-        ['Confirmed by', r.phone ? `A one-time code sent to ${r.phone}` : 'A one-time code by phone'],
+        ['Confirmed by', r.method === 'demo_code' ? 'A one-time code — demo only, no text was sent' : r.phone ? `A one-time code sent to ${r.phone}` : 'A one-time code by phone'],
         ['Device', [r.device, r.timezone].filter(Boolean).join(' · ') || null],
         ['Link opened', when(r.viewedAt)],
         ['Accepted', when(r.acceptedAt)],
+        ['CaseTrust disclosure', r.caseTrustAt ? `Read and ticked ${when(r.caseTrustAt)}` : null],   // (gaps build D, item 6)
         ['Signed', when(r.signedAt)],
         ['Documents', r.documents?.length ? r.documents.join(' · ') : null],
         ['Fingerprint', r.hash ? `${r.hash.slice(0, 16)}…` : null],

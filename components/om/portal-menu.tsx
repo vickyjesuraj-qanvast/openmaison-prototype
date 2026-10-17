@@ -66,7 +66,10 @@ export function PortalMenu({
     /* The menu is as tall as its rows up to the room the viewport leaves on the side it opens (audit 2026-09-15): a fixed
        320 cap clipped the row menu's ninth row ("Remove") and the Add Item list's third match behind an inner scroll with
        no cue. Below when it fits (or there is more room below than above), else above. */
-    if (spaceBelow < 340 && r.top > spaceBelow) {
+    /* (fix-B, B-33) a menu taller than the room below (a schedule row's ⋮ near the foot) opens above when there is more room there —
+       its own rows' height, not a fixed 340, so its last row (Delete) is never cut at the viewport's edge */
+    const need = Math.min(el.scrollHeight, 480)
+    if ((spaceBelow < 340 || spaceBelow - 4 - EDGE < need) && r.top > spaceBelow) {
       el.style.bottom = `${window.innerHeight - r.top + 4}px`
       el.style.top = 'auto'
       el.style.maxHeight = `${Math.max(120, r.top - 4 - EDGE)}px`

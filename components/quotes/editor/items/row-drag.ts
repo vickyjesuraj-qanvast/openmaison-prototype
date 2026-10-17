@@ -24,7 +24,8 @@ import { scrollParentOf } from '@/components/om/use-stuck'
 export type DragRow = {
   id: string
   parentId: string | null
-  kind: 'item' | 'group' | 'bucket'
+  /** (S44I, B4) `foot`: an open section's foot row — a drop on it lands last in that section (its `parentId`). */
+  kind: 'item' | 'group' | 'bucket' | 'foot'
   /** The View-by bucket the row is shown under (null in View by: None); a line stays in its own unless `crossBucket`. */
   bucket: string | null
   /** A section whose lines are shown (not folded): the slot under its title is its first place. */
@@ -33,13 +34,18 @@ export type DragRow = {
   hasSubs: boolean
   /** A bucket row that never moves and that nothing follows (Uncategorized, always the view's last). */
   fixed?: boolean
+  /** (S44T — call C1 · S44I) The row is a section priced after the contract, or inside one: those stay together at the table's end. */
+  after?: boolean
 }
-/** `bucket`: the View-by bucket a line was dropped into when it is not the one it came from (View by › Category only). */
-export type DropSlot = { parentId: string | null; anchorId: string | null; where: 'before' | 'after' | 'inside'; bucket?: string | null }
-type Live = { id: string; block: Set<string>; shift: Map<string, number>; depth: number }
+/** `bucket`: the View-by bucket a line was dropped into when it is not the one it came from (View by › Category only).
+    (S44I, B4) `end` = last in `parentId` (dropped on its section's foot); `into` = the first place of a FOLDED section (`inside` on its row). */
+export type DropSlot = { parentId: string | null; anchorId: string | null; where: 'before' | 'after' | 'inside' | 'end'; bucket?: string | null; into?: boolean }
+type Live = { id: string; block: Set<string>; shift: Map<string, number>; depth: number; into: string | null; carry: Set<string>; count: number }
 type Rect = { top: number; bottom: number }
 type Session = {
   id: string; idx: number; n: number; block: Set<string>
+  /** (S44I, B4) the other ticked rows that move with this one (their rows and everything under them), and their top rows for the rules */
+  carry: Set<string>; carryRows: DragRow[]
   rows: DragRow[]; rects: Rect[]; blockH: number
   sc: HTMLElement | null; root: HTMLElement; handle: HTMLElement; pointerId: number
   startY: number; lastClientY: number; active: boolean; slot: DropSlot | null; t: number; raf: number
@@ -54,7 +60,8 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
   root: RefObject<HTMLElement | null>
   /** The rows as displayed, in order, with what the slot rules need. */
   rowsRef: RefObject<DragRow[]>
-  onDrop: (id: string, slot: DropSlot) => void
+  /** (S44I, B4) `carried` = the other ticked rows that went with it (empty for a one-row drag). */
+  onDrop: (id: string, slot: DropSlot, carried: string[]) => void
   /** (Dane UAT) View by › Category: a line may be dropped into another bucket (its category follows). */
   crossBucket?: boolean
 }) {
@@ -67,16 +74,27 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
   const depthOf = (s: Session, parentId: string | null) => { let d = 0; let p = parentId; const byId = new Map(s.rows.map((r) => [r.id, r])); while (p) { d++; p = byId.get(p)?.parentId ?? null } return d }
 
   const cross = useRef(crossBucket); useEffect(() => { cross.current = crossBucket })
+  /** One moving row's own rule: never inside itself; a section joins only a top section, and only without sub-sections of its own; (S44T, C1)
+      a section priced after the contract stays at the top. */
+  const fits = (s: Session, r: DragRow, slot: DropSlot): boolean => {
+    if (r.kind !== 'group' || slot.parentId === null) return true
+    const p = s.rows.find((x) => x.id === slot.parentId)
+    return !!p && p.parentId === null && !r.hasSubs && !(r.after && r.parentId === null)
+  }
   const valid = (s: Session, slot: DropSlot): boolean => {
     const dragged = s.rows[s.idx]!
-    if (slot.parentId && s.block.has(slot.parentId)) return false
+    if (slot.parentId && (s.block.has(slot.parentId) || s.carry.has(slot.parentId))) return false
     const anchor = slot.anchorId ? s.rows.find((r) => r.id === slot.anchorId) : null
     if (dragged.kind === 'bucket') return !!anchor && anchor.kind === 'bucket' && !(anchor.fixed && slot.where === 'after')   // a bucket goes between buckets, never past the fixed last
     if (anchor && anchor.bucket !== dragged.bucket && !(cross.current && dragged.kind === 'item')) return false
-    if (dragged.kind === 'group') {
-      if (slot.parentId === null) return true
-      const p = s.rows.find((r) => r.id === slot.parentId)
-      return !!p && p.parentId === null && !dragged.hasSubs
+    if (![dragged, ...s.carryRows].every((r) => fits(s, r, slot))) return false
+    /* (S44T — call C1, S44I) at the top of the table the sections priced after the contract keep their own part at the end: a marked section
+       lands among them, anything else above them */
+    if (slot.parentId === null && slot.where !== 'inside') {
+      const o = others(s), t = targetIndex(s, slot)
+      const marked = dragged.kind === 'group' && dragged.parentId === null && !!dragged.after
+      const prev = o[t - 1]?.r, next = o[t]?.r
+      if (marked ? !!next && !next.after : !!prev?.after) return false
     }
     return true
   }
@@ -85,7 +103,7 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
     const o = others(s)
     const k = o.findIndex(({ r }) => r.id === slot.anchorId)
     if (k < 0) return o.length
-    if (slot.where === 'before') return k
+    if (slot.where === 'before' || slot.where === 'end') return k   // (S44I, B4) `end`: just above the section's foot
     if (slot.where === 'inside') return k + 1
     if (o[k]!.r.kind === 'bucket') { let end = k + 1; while (end < o.length && o[end]!.r.kind !== 'bucket') end++; return end }   // after a bucket = past all its lines
     // after: past the anchor and every displayed row under it
@@ -116,7 +134,7 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
       s.active = true
       s.root.dataset.rowDrag = ''
       document.documentElement.classList.add('om-row-dragging')   // the page-wide grab cursor + no text selection (globals.css)
-      setLive({ id: s.id, block: s.block, shift: new Map(), depth: depthOf(s, s.rows[s.idx]!.parentId) })
+      setLive({ id: s.id, block: s.block, shift: new Map(), depth: depthOf(s, s.rows[s.idx]!.parentId), into: null, carry: s.carry, count: s.carryRows.length + 1 })
     }
     const blockTop = s.rects[s.idx]!.top, blockBottom = s.rects[s.idx + s.n - 1]!.bottom
     const dy = Math.max(s.rects[0]!.top - blockTop, Math.min(s.rects[s.rects.length - 1]!.bottom - blockBottom, dyRaw))
@@ -134,20 +152,26 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
       for (const { r, i } of o) {
         const rc = s.rects[i]!
         if (y < rc.top || y >= rc.bottom) continue
-        const upper = y < (rc.top + rc.bottom) / 2
+        const f = (y - rc.top) / Math.max(1, rc.bottom - rc.top)
+        /* (S44I, B4 — the team's sections prototype) a section's row: its top 30 % means before it, the middle means INTO it — its first place,
+           open or folded (a folded one wears a ring, nothing slides) — and its bottom 30 % after it when folded, into it when open; a foot means
+           the end of its section */
         slot = r.kind === 'bucket' ? { parentId: null, anchorId: r.id, where: 'inside', bucket: r.bucket }   // a bucket's title: its first place
-          : upper ? { parentId: r.parentId, anchorId: r.id, where: 'before', bucket: r.bucket }
-          : r.kind === 'group' && r.open ? { parentId: r.id, anchorId: r.id, where: 'inside', bucket: r.bucket }
+          : r.kind === 'foot' ? { parentId: r.parentId, anchorId: r.id, where: 'end', bucket: r.bucket }
+          : r.kind === 'group' ? (f < 0.3 ? { parentId: r.parentId, anchorId: r.id, where: 'before', bucket: r.bucket }
+            : f < 0.7 || r.open ? { parentId: r.id, anchorId: r.id, where: 'inside', bucket: r.bucket, ...(r.open ? {} : { into: true }) }
+            : { parentId: r.parentId, anchorId: r.id, where: 'after', bucket: r.bucket })
+          : f < 0.5 ? { parentId: r.parentId, anchorId: r.id, where: 'before', bucket: r.bucket }
           : { parentId: r.parentId, anchorId: r.id, where: 'after', bucket: r.bucket }
         break
       }
     }
     if (!slot || !valid(s, slot)) return   // keep the last good slot
-    const t = targetIndex(s, slot)
-    const same = s.slot && s.slot.anchorId === slot.anchorId && s.slot.where === slot.where && s.slot.parentId === slot.parentId
+    const t = slot.into ? s.idx : targetIndex(s, slot)
+    const same = s.slot && s.slot.anchorId === slot.anchorId && s.slot.where === slot.where && s.slot.parentId === slot.parentId && !!s.slot.into === !!slot.into
     if (same) return
     s.slot = slot; s.t = t
-    setLive({ id: s.id, block: s.block, shift: shifts(s, t), depth: depthOf(s, slot.parentId) })
+    setLive({ id: s.id, block: s.block, shift: slot.into ? new Map() : shifts(s, t), depth: depthOf(s, slot.parentId), into: slot.into ? slot.parentId : null, carry: s.carry, count: s.carryRows.length + 1 })
   }
 
   /** A bucket on the move: before the bucket whose block the pointer is in (its upper half), else after that block. */
@@ -190,17 +214,18 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
     cancelAnimationFrame(s.raf)
     if (!s.active) { cleanup(s); return }
     const slot = commit ? s.slot : null
-    const moved = !!slot && !samePlace(s, slot, s.t)
+    const carried = s.carryRows.map((r) => r.id)
+    const moved = !!slot && (!!slot.into || carried.length > 0 || !samePlace(s, slot, s.t))
     const blockTop = s.rects[s.idx]!.top
     s.root.dataset.rowSettle = ''
-    s.root.style.setProperty('--row-dy', `${Math.round(moved ? gapTop(s, s.t) - blockTop : 0)}px`)
+    s.root.style.setProperty('--row-dy', `${Math.round(moved && !slot?.into ? gapTop(s, s.t) - blockTop : 0)}px`)   // into a folded section: it settles home, then goes in
     session.current = null
     /* the drop names the bucket only when it is not the one the line came from */
     const from = s.rows[s.idx]!.bucket
-    const out = slot ? { parentId: slot.parentId, anchorId: slot.anchorId, where: slot.where, ...(slot.bucket !== undefined && slot.bucket !== from && s.rows[s.idx]!.kind !== 'bucket' ? { bucket: slot.bucket } : {}) } : null
+    const out = slot ? { parentId: slot.parentId, anchorId: slot.anchorId, where: slot.where, ...(slot.into ? { into: true } : {}), ...(slot.bucket !== undefined && slot.bucket !== from && s.rows[s.idx]!.kind !== 'bucket' ? { bucket: slot.bucket } : {}) } : null
     window.setTimeout(() => {
       // The order lands and the transforms clear in one render, so the settled block never jumps back first.
-      if (moved && out) latest.current(s.id, out)
+      if (moved && out) latest.current(s.id, out, carried)
       cleanup(s)
     }, SETTLE)
   }
@@ -209,7 +234,8 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
   const onCancel = () => end(false)
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); end(false) } }
 
-  const start = (id: string, e: ReactPointerEvent<HTMLElement>) => {
+  /** (S44I, B4) `carry`: the other ticked rows — they move with this one, in the table's order, in one write. */
+  const start = (id: string, e: ReactPointerEvent<HTMLElement>, carry: string[] = []) => {
     if (e.button !== 0 || session.current) return
     const rootEl = root.current
     if (!rootEl) return
@@ -224,7 +250,10 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
     let n = 1
     while (idx + n < rows.length && block.has(rows[idx + n]!.id)) n++
     const sc = scrollParentOf(rootEl)
-    const s: Session = { id, idx, n, block, rows, rects: [], blockH: 0, sc, root: rootEl, handle: e.currentTarget, pointerId: e.pointerId, startY: 0, lastClientY: e.clientY, active: false, slot: null, t: idx, raf: 0 }
+    const carryRows = rows.filter((r) => carry.includes(r.id) && !block.has(r.id) && r.kind !== 'bucket' && r.kind !== 'foot')
+    const carrySet = new Set<string>(carryRows.map((r) => r.id))
+    for (const r of rows) { let p = parentOf.get(r.id) ?? null; while (p) { if (carrySet.has(p)) { carrySet.add(r.id); break } p = parentOf.get(p) ?? null } }
+    const s: Session = { id, idx, n, block, carry: carrySet, carryRows, rows, rects: [], blockH: 0, sc, root: rootEl, handle: e.currentTarget, pointerId: e.pointerId, startY: 0, lastClientY: e.clientY, active: false, slot: null, t: idx, raf: 0 }
     const rectOf = (rid: string): Rect => { const el = rootEl.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(rid)}"], [data-drag-id="${CSS.escape(rid)}"]`); const r = el?.getBoundingClientRect(); return r ? { top: toDoc(s, r.top), bottom: toDoc(s, r.bottom) } : { top: 0, bottom: 0 } }
     s.rects = rows.map((r) => rectOf(r.id))
     s.blockH = s.rects[idx + n - 1]!.bottom - s.rects[idx]!.top
@@ -237,12 +266,14 @@ export function useRowDrag({ root, rowsRef, onDrop, crossBucket = false }: {
 
   useEffect(() => () => { const s = session.current; if (s) cleanup(s) }, [])   // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** What a row wears while a drag runs: lifted (in the block), slid aside (px), and the lifted row's indent cue for the slot's depth. */
-  const rowProps = (id: string): { dragging: boolean; shift: number; dropDepth: number | null; dragStyle?: CSSProperties } => {
+  /** What a row wears while a drag runs: lifted (in the block), slid aside (px), and the lifted row's indent cue for the slot's depth.
+      (S44I, B4) A ticked row going along is `carried` (dimmed, in its place); the lifted row counts them (`count`); a folded section the
+      drop would go into is `dropInto` (a ring round its row). */
+  const rowProps = (id: string): { dragging: boolean; shift: number; dropDepth: number | null; dragStyle?: CSSProperties; carried?: boolean; count?: number; dropInto?: boolean } => {
     if (!live) return { dragging: false, shift: 0, dropDepth: null }
-    if (live.block.has(id)) return { dragging: true, shift: 0, dropDepth: id === live.id ? live.depth : null }
+    if (live.block.has(id)) return { dragging: true, shift: 0, dropDepth: id === live.id ? live.depth : null, ...(id === live.id && live.count > 1 ? { count: live.count } : {}) }
     const px = live.shift.get(id) ?? 0
-    return { dragging: false, shift: px, dropDepth: null, dragStyle: px ? { transform: `translateY(${px}px)` } : undefined }
+    return { dragging: false, shift: px, dropDepth: null, dragStyle: px ? { transform: `translateY(${px}px)` } : undefined, ...(live.carry.has(id) ? { carried: true } : {}), ...(live.into === id ? { dropInto: true } : {}) }
   }
   return { start, rowProps, dragging: live?.id ?? null }
 }

@@ -28,7 +28,7 @@
 .check { width: 18px; height: 18px; margin: 3px; }    /* the checkbox glyph at its drawn 18 (globals.css) */
 .avatar { width: 24px; height: 24px; border-radius: var(--om-radius-full); overflow: hidden; }
 .avatar40 { width: 40px; height: 40px; border-radius: var(--om-radius-full); overflow: hidden; }
-.switch { width: 32px; height: 20px; border-radius: var(--om-radius-full); overflow: hidden; }   /* the DS switch at sm (REG-460) */
+.switch { width: 40px; height: 20px; border-radius: var(--om-radius-full); overflow: hidden; }   /* the DS switch at sm (REG-460): its 40 × 20 track (pending modules S15 — the bone was 32 wide, 8px short of the switch it stands for) */
 .tile { height: 100%; width: 100%; }
 .pill { height: 32px; }                               /* a house chip (components/om/chips) — 44 where a finger drives it */
 .search { height: 36px; width: 280px; }               /* ToolbarSearch's box */
@@ -39,12 +39,34 @@
 .wordBars { background: linear-gradient(to bottom, transparent 22%, var(--om-color-surface-variant) 22%, var(--om-color-surface-variant) 78%, transparent 78%); border-radius: var(--om-radius-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .fieldCol { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; width: 100%; }
 
+/* (pending modules S17) A DS text button (the house text link's box): 36 tall, p0/8 (p0/8/0/4 with its icon), 4 between the 20 icon box and the
+   label, the label in the button's type — the bar is its own width at every size. */
+.textBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-2); flex-shrink: 0; box-sizing: border-box; font: var(--om-type-subheading-m); white-space: nowrap; }
+.textBtnIcon { padding-left: var(--om-spacing-1); }
+.textBtnIcon > :first-child { margin: 1px 0; }   /* the 18 glyph in the button's 20-tall icon box (its width is the glyph's) */
+.textBtnIconEnd { padding-right: var(--om-spacing-1); }
+.textBtnIconEnd > :last-child { margin: 1px; }   /* a trailing glyph at 20 */
+/* (pending modules S17) A house chip's box (chips.module.css .chip) in the bone colour: its stroke kept for its width, its letters hidden. */
+.chipGhost.chipGhost { background: var(--om-color-surface-variant); border-color: transparent; color: transparent; cursor: default; user-select: none; }
+.chipRail.chipRail { flex-wrap: nowrap; overflow: hidden; }   /* a chip rail's one row (components/om/chip-rail), cut at the screen's edge as the rail's is */
+/* (pending modules S17) A MetaChip's box (meta-chip.module.css .chip) in the bone colour: its letters hidden, its width the words'. */
+.chipBox { display: inline-flex; align-items: center; height: 20px; padding: var(--om-spacing-1) var(--om-spacing-2); box-sizing: border-box; border-radius: var(--om-radius-1); background: var(--om-color-surface-variant); color: transparent; font: var(--om-type-caption-xs); text-transform: uppercase; white-space: nowrap; flex-shrink: 0; user-select: none; }
+/* (pending modules S17) A line a phone draws and a desk doesn't (a name that wraps to a second line in a phone's narrow column). */
+.phoneOnly { display: none; }
+@media (max-width: 767px) { .phoneOnly.phoneOnly { display: flex; } }
+/* (pending modules S17) A labelled cell's name, where the page's stylesheet prints it (a phone): a bar of the bone colour, the letters hidden. */
+.labelled::before { color: transparent !important; background: linear-gradient(to bottom, transparent 22%, var(--om-color-surface-variant) 22%, var(--om-color-surface-variant) 78%, transparent 78%); border-radius: var(--om-radius-1); }
+
 /* A table on the listing's model (REG-430): the frame, a head row, rows; ≤1024 the tracks hold and the box scrolls sideways. */
 .table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-default); }
 .tHead, .tRow { display: flex; align-items: center; }
 .tRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .tCell { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-4); min-width: 0; }
 .tStack { flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
+/* (S42 audit C-27) a bar given as a share of its column ("70%") is a share of the cell: the line takes the cell's width (it took its own, so a
+   percentage drew nothing — the Finance tables' Project and Vendor columns, a stack's second line). A bar in pixels draws as before. */
+.tCell > .line:only-child { flex: 1 1 0%; }
+.tStack > .line { align-self: stretch; }
 
 /* The Add row under a table (the tasks tables' "+ Add Task"): p0/24, the line in the middle. */
 .tFoot { display: flex; align-items: center; padding: 0 var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
@@ -61,8 +83,16 @@
 .toolbarStart { margin-right: auto; display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 .toolbarEnd { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
+/* (S42 audit A-10) A strip opened on a later tab: the bones ride in a row the frame clips, moved ≤1024 as far as the live strip scrolls to centre
+   its open tab — from the row's own numbers (`--ghost-tab-centre` · `--ghost-tab-total`, ghost-kit.tsx) and the frame's width (`cqw`). */
+.tabsScroll { padding: 0; gap: 0; container-type: inline-size; }
+.tabsRow { display: flex; align-items: center; gap: var(--om-spacing-6); padding: 0 var(--om-spacing-6); height: 100%; width: max-content; flex-shrink: 0; }
+.tabBone { display: flex; justify-content: center; flex-shrink: 0; }
+
 @media (max-width: 1024px) {
   .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); }
+  .tabs.tabsScroll { padding: 0; gap: 0; }
+  .tabsRow { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); transform: translateX(calc(-1 * clamp(0px, var(--ghost-tab-centre) - 50cqw, var(--ghost-tab-total) - 100cqw))); }
   .table { overflow-x: auto; }
   .tHead, .tRow { width: max-content; min-width: 100%; }
 }
@@ -83,6 +113,10 @@
   .pList { display: flex; }
   .table.hasPhone { display: none; }
   .head { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); min-height: 60px; }
+  /* (pending modules S17) the title's own line (heading-h3's 24): when the actions wrap under it the page's header is 12 + 24 + 8 + 36 + 12 —
+     the ghost's 36 title row made it 12 taller (Client portal's header) */
+  .headTitle { min-height: 24px; }
+  .headTitle > * { max-height: 24px; }   /* the title's bone in the title's 24 line (its 28 overrode it in the wrapped row) */
   .headActions { flex-wrap: wrap; }
   /* the header owns the block's lift on a phone unless a tab strip follows it (page-header.module.css ≤767, REG-369) */
   .head:not(:has(+ .tabs)) { box-shadow: var(--om-elevation-level-1); }
@@ -94,3 +128,5 @@
   .toolbar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .toolbarEnd { flex-wrap: wrap; }
 }
+/* (S42 audit A-10) a tab on touch is at least 44 wide (REG-273) — its bone's box too, so the row measures as the live one */
+@media (hover: none) { .tabBone { min-width: 44px; } }

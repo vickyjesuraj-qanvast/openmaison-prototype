@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
@@ -16,10 +16,22 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ago } from '@/lib/templates/ago'
-import { displayDateLong } from '@/lib/format'
-import { eventDef, type FeedRow } from '@/lib/notifications/model'
+import { dueLine } from '@/lib/notifications/due-line'
+import { eventDef, type FeedAct, type FeedRow } from '@/lib/notifications/model'
 import { fetchFeedAction, markAllNotificationsRead, markNotificationRead } from '@/app/notifications/actions'
+/* (simplify round 2 · P2 §6.7) the approvals' own server actions and note dialog — the bell answers with what the record answers with */
+import { NoteDialog } from '@/components/templates/editor/review-bar'
+import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
+import { dayLabel } from '@/lib/projects/schedule-model'
+import { approveProjectUpdate, sendBackProjectUpdate } from '@/app/projects/updates-actions'
+import { sendBackInvoice } from '@/app/projects/money-actions'
+import { sendBackPo } from '@/app/finance/po-actions'
+import { answerExpense, undoExpenseAnswer } from '@/app/finance/cost-actions'
+import { answerMoreTime, approveMilestoneDone, reopenShareAsk, sendBackMilestoneDone, sendBackShareAsk, shareSchedule, undoMarkDone, undoMilestoneStatus, undoMoreTimeAnswer } from '@/app/projects/schedule-actions'
+import { approveHandover, sendBackHandover, undoCompleteHandover } from '@/app/projects/ending-actions'
 import styles from './notifications-panel.module.css'
+import { answerUpgradeOffer, undoPutAway } from '@/app/credits/nudge-actions'   // (pending modules S41b-4) the Free plan's upgrade offer, answered in its row
+import { openPlans, openTopUp } from '@/components/credits/credits-client'
 import { leaveThen } from '@/components/company/leave-guard'   // (UX audit S2) unsaved Company / Settings edits ask before the move
 
 /** The rail's bell and the phone bar's bell both raise this; the panel lives once in the shell. */
@@ -28,18 +40,24 @@ export const openNotifications = () => window.dispatchEvent(new CustomEvent(OPEN
 
 const CHANNEL_WORD: Record<string, string> = { email: 'email', whatsapp: 'WhatsApp' }
 
-/** (UX audit V8) A follow-up's due line — "Due Mon, 28 Sep ’26 · 2 days late", "Due today · 3 h late", "Due in 12 min" — so an overdue row says
-    how late it is, never a bare "Due". `at` is when it came due (a due-soon row: 30 minutes before it does). (Dane UAT 5.13) The day wears its
-    weekday, as every date people plan by does. */
-export function dueLine(r: Pick<FeedRow, 'kind' | 'at'>, now: number): string {
-  if (r.kind === 'task_due_soon') { const m = Math.max(1, Math.round((r.at + 30 * 60_000 - now) / 60_000)); return `Due in ${m} min` }
-  const due = new Date(r.at), today = new Date(now)
-  const day = due.toDateString() === today.toDateString() ? 'today' : displayDateLong(due)
-  const late = now - r.at
-  if (late < 60_000) return `Due ${day}`
-  const days = Math.floor(late / 86_400_000), hours = Math.floor(late / 3_600_000), mins = Math.floor(late / 60_000)
-  return `Due ${day} · ${days >= 1 ? `${days} ${days === 1 ? 'day' : 'days'}` : hours >= 1 ? `${hours} h` : `${mins} min`} late`
+/* (simplify round 2) A Done's send-back and a more-time decline open the Schedule panel's own ask dialog — loaded only once the bell holds one */
+const AskDialog = lazy(() => import('@/components/projects/schedule/milestone-panel').then((m) => ({ default: m.AskDialog })))
+const first = (name: string | null | undefined, fallback: string) => (name ? name.trim().split(/\s+/)[0] ?? name : fallback)
+const changes = (n: number) => `${n} ${n === 1 ? 'change' : 'changes'}`
+/** The Send back a row's record uses, in its words (each record's NoteDialog / AskDialog props, as the record passes them). */
+function noteWords(a: FeedAct): { title: string; label: string; help: string; action: string; required: boolean } {
+  const client = a.client ?? 'the client'
+  switch (a.kind) {
+    case 'update': return { title: 'Send back', label: 'Why does it go back?', help: `${a.by ?? 'Whoever wrote it'} reads this on the update; ${client} never sees it.`, action: 'Send back', required: true }
+    case 'invoice': return { title: 'Send back', label: 'What should change?', help: `${a.by ?? 'Whoever submitted it'} reads this on the Money tab; ${client} never sees it.`, action: 'Send back', required: true }
+    case 'handover': return { title: 'Send back', label: 'What does the handover still need?', help: 'Whoever asked reads this on the project; the client never sees it.', action: 'Send back', required: true }
+    case 'share': return { title: 'Send back', label: 'Why it isn’t shared yet', help: `${first(a.by, 'Whoever asked')} reads this; ${client} sees nothing.`, action: 'Send back', required: true }
+    default: return { title: 'Send back', label: 'What should change?', help: 'Whoever made it reads it.', action: 'Send back', required: true }   // a PO, an expense (money out's own words)
+  }
 }
+
+/* (pending modules S18) the due line is pure now — the daily summary writes the same words the bell draws (lib/notifications/due-line.ts) */
+export { dueLine }
 
 /**
  * (REG-604) The bell's feed: a drawer from the right (a bottom sheet on a phone, the Drawer's own rule) listing what happened —
@@ -57,6 +75,7 @@ export function NotificationsPanel() {
   const [rows, setRows] = useState<FeedRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(0)
+  const [noting, setNoting] = useState<FeedRow | null>(null)   // (simplify round 2) the approval row whose Send back dialog is open
   /* (sweep S4 #10) a failed first load says so with a retry — never "Loading…" for ever; a failed refresh keeps what was shown and says so */
   const load = useCallback(async () => {
     setFailed(false)
@@ -88,24 +107,138 @@ export function NotificationsPanel() {
   useEffect(() => {
     if (!open || sheet) return
     const onDown = (e: MouseEvent) => { const t = e.target as Node; if (panel.current?.contains(t) || (t instanceof Element && t.closest('[data-notifications-tile], [data-om-snackbar], [role="dialog"]'))) return; close() }
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); close() } }
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape' && !noting) { e.stopPropagation(); close() } }   // (simplify round 2) a send-back dialog's Esc is its own
     let lastW = window.innerWidth
     const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; close() } }
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
     window.addEventListener('keydown', onKey)
     window.addEventListener('resize', onResize)
     return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); window.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize) }
-  }, [open, sheet, close])
+  }, [open, sheet, close, noting])
   /* (UX audit V8) what counts as unread is a notice nobody has opened — a follow-up that is due is work, listed apart ("Due") and never in the count */
   const unread = rows?.filter((r) => r.readAt === null && !r.derived).length ?? 0
   const due = rows?.filter((r) => r.derived) ?? []
   const notices = rows?.filter((r) => !r.derived) ?? []
   /* (Dane UAT 11.06) Work that is late leads: while any Due row is overdue — its red "late" part showing (`late` below) — Due comes first; otherwise
      the Updates the badge counts. The two groups and the badge stay REG-810's. */
-  const late = (r: FeedRow) => r.kind !== 'task_due_soon' && (now || r.at) - r.at >= 60_000
-  const groups = [{ key: 'notices', label: 'Updates', list: notices }, { key: 'due', label: 'Due', list: due }]
+  const late = (r: FeedRow) => r.kind !== 'task_due_soon' && r.kind !== 'invoice_ready' && (now || r.at) - r.at >= 60_000
+  /* (pending modules S18 — card held:notifications, one-home N-14: the bell's "Updates" shared its word with a project's Updates tab — the
+     client's site updates; as recommended, her "build all of them" 2026-10-11) the notices are headed Notices — the word every line of this
+     file already uses for them; Due stays */
+  const groups = [{ key: 'notices', label: 'Notices', list: notices }, { key: 'due', label: 'Due', list: due }]
   if (due.some(late)) groups.reverse()
+  /* ── (simplify round 2 · P2 §6.7) An approval waiting on this member answers in its row: Approve runs the record's own action — the same
+     sentence and Undo the record gives, its refusal said — and Send back opens the record's own note dialog. An approval that sends something
+     through a dialog the approver must see (a PO to its vendor, an invoice to the client) is "Approve and send", opening that send on Money
+     (`&do=approve`), where WhatsApp opens on the press (REG-534). The row then reads again: answered, it is a plain link. ── */
+  const { run } = useRun()
+  const [acting, setActing] = useState<string | null>(null)
+  const reread = (r: FeedRow) => {
+    const marked = r.readAt === null ? markNotificationRead(r.id).catch(() => undefined) : Promise.resolve()
+    void marked.then(() => { void load(); router.refresh() })
+  }
+  const undoThen = (what: string, fn: () => Promise<unknown>, done: string) => () => { void run(what, fn, done, { refresh: true }).then(() => { void load() }) }
+  const refused = (what: string, e: unknown, r: FeedRow) => snackbar({ message: couldnt(what, refusalOf(e)), ...(r.href ? { actionLabel: 'Open it', onAction: () => { setOpen(false); const href = r.href!; leaveThen(() => router.push(withFrom(href, pathname))) } } : {}) })
+  const approve = async (r: FeedRow) => {
+    const a = r.act
+    if (!a || acting) return
+    if (a.door) {
+      const door = a.door
+      setOpen(false)
+      if (r.readAt === null) void markNotificationRead(r.id).catch(() => undefined)
+      leaveThen(() => router.push(withFrom(door, pathname)))
+      return
+    }
+    setActing(r.id)
+    try {
+      if (a.kind === 'update') {
+        const x = await approveProjectUpdate(a.id)
+        if ('error' in x) { refused('approve the update', x.error, r); return }
+        snackbar({ message: `“${a.title}” approved` })
+      } else if (a.kind === 'expense') {
+        const x = await answerExpense(a.id, { approve: true })
+        if ('error' in x) { refused('approve the expense', x.error, r); return }
+        snackbar({ message: `“${a.title}” approved`, actionLabel: 'Undo', onAction: undoThen('undo it', () => undoExpenseAnswer(x.undo), 'It waits for approval again') })
+      } else if (a.kind === 'done') {
+        const x = await approveMilestoneDone(a.id)
+        if ('error' in x) { refused(`approve ${a.title}`, x.error, r); return }
+        snackbar({ key: 'schedule-status', message: x.sentence, actionLabel: 'Undo', onAction: undoThen('undo the approval', () => undoMarkDone(x.undo), 'The approval is undone') })
+      } else if (a.kind === 'more_time') {
+        /* the panel's own default: a draft update for the client with the new day (P2 §6.7) */
+        const x = await answerMoreTime(a.id, { approve: true, note: '', draftUpdate: true })
+        if ('error' in x) { refused('approve more time', x.error, r); return }
+        snackbar({ key: 'schedule-move', message: x.sentence, actionLabel: 'Undo', onAction: undoThen('undo the answer', () => undoMoreTimeAnswer(x.undo), 'The ask waits again') })
+      } else if (a.kind === 'share' && a.projectId) {
+        /* exactly what was asked, with its note — an Owner's or an Admin's share answers the ask (as Share in the dialog does); it reaches the client, so no Undo */
+        const x = await shareSchedule(a.projectId, { note: a.note ?? '', only: a.only?.length ? a.only : null })
+        if ('error' in x) { refused('share the schedule', x.error, r); return }
+        const client = a.client ?? 'the client'
+        snackbar({ message: x.live ? `Shared ${changes(x.n)} with ${client}` : `Schedule kept for ${client} — they see it once you invite them` })
+      } else if (a.kind === 'handover') {
+        const x = await approveHandover(a.id, {})
+        if ('error' in x) { refused('approve the handover', x.error, r); return }   // items still open with no reason: "Open it" goes to the review
+        const undo = x.undo
+        snackbar({ key: 'project-completed', message: `${a.title} is completed`, ...(undo ? { actionLabel: 'Undo', onAction: undoThen('undo the handover', () => undoCompleteHandover(undo), `${a.title} is in progress again`) } : {}) })
+      } else return
+      reread(r)
+    } catch (e) { refused('approve it', e, r) } finally { setActing(null) }
+  }
+  /** Send back (a more-time ask: Decline), from the record's own dialog; true once it lands, so the dialog closes. */
+  const sendBack = async (r: FeedRow, note: string): Promise<boolean> => {
+    const a = r.act
+    if (!a) return false
+    try {
+      let done: Parameters<typeof snackbar>[0] | null = null
+      if (a.kind === 'update') { const x = await sendBackProjectUpdate(a.id, { note }); if ('error' in x) { refused('send the update back', x.error, r); return false } done = { message: `Sent back to ${a.by ?? 'its author'}` } }
+      else if (a.kind === 'invoice') { const x = await sendBackInvoice(a.id, { note }); if ('error' in x) { refused('send the invoice back', x.error, r); return false } done = { message: `Sent back to ${a.by ?? 'whoever submitted it'}` } }
+      else if (a.kind === 'po') { const x = await sendBackPo(a.id, { note }); if ('error' in x) { refused('send it back', x.error, r); return false } done = { message: `${a.title} sent back with your note` } }
+      else if (a.kind === 'expense') {
+        const x = await answerExpense(a.id, { approve: false, note }); if ('error' in x) { refused('send it back', x.error, r); return false }
+        done = { message: `“${a.title}” sent back with your note`, actionLabel: 'Undo', onAction: undoThen('undo it', () => undoExpenseAnswer(x.undo), 'It waits for approval again') }
+      } else if (a.kind === 'handover') { const x = await sendBackHandover(a.id, { note }); if ('error' in x) { refused('send the handover back', x.error, r); return false } done = { message: 'Handover sent back' } }
+      else if (a.kind === 'share') {
+        const x = await sendBackShareAsk(a.id, { note }); if ('error' in x) { refused('send the changes back', x.error, r); return false }
+        done = { message: `Sent back to ${first(a.by, 'whoever asked')} with your note`, actionLabel: 'Undo', onAction: undoThen('undo', () => reopenShareAsk(x.undo), 'The ask waits again') }
+      } else if (a.kind === 'done') {
+        const x = await sendBackMilestoneDone(a.id, { note }); if ('error' in x) { refused(`send ${a.title} back`, x.error, r); return false }
+        done = { message: x.sentence, actionLabel: 'Undo', onAction: undoThen('undo the send-back', () => undoMilestoneStatus(x.undo), 'It waits for approval again') }
+      } else if (a.kind === 'more_time') {
+        const x = await answerMoreTime(a.id, { approve: false, note, draftUpdate: false }); if ('error' in x) { refused('decline more time', x.error, r); return false }
+        done = { key: 'schedule-move', message: x.sentence, actionLabel: 'Undo', onAction: undoThen('undo the answer', () => undoMoreTimeAnswer(x.undo), 'The ask waits again') }
+      }
+      if (done) snackbar(done)
+      reread(r)
+      return true
+    } catch (e) { refused('send it back', e, r); return false }
+  }
+  const [noteBusy, setNoteBusy] = useState(false)
+  const submitNote = (note: string) => {
+    const r = noting
+    if (!r || noteBusy) return
+    setNoteBusy(true)
+    void sendBack(r, note).then((ok) => { if (ok) setNoting(null) }).finally(() => setNoteBusy(false))
+  }
+  const asksSchedule = rows?.some((r) => r.act?.kind === 'done' || r.act?.kind === 'more_time') ?? false
+  /* (pending modules S41b-4 — 1.0's plg nudge dialog, in the bell) The Owner's upgrade offer answers in its row: its one way on (See plans, or
+     Buy AI credits for "Only n left") opens at once over the page and the offer leaves the bell; Not now puts it away — one sentence, Undo —
+     and it never comes back for that moment. A refused answer puts the row back and says what failed. */
+  const answerOffer = (r: FeedRow, answer: 'plans' | 'topup' | 'not_now') => {
+    const prev = rows
+    setRows((rs) => rs?.filter((x) => x.id !== r.id) ?? rs)
+    if (answer !== 'not_now') { setOpen(false); if (answer === 'topup') openTopUp(); else openPlans() }
+    void answerUpgradeOffer({ id: r.id, answer }).then((x) => {
+      if ('error' in x) { setRows(prev); snackbar({ message: couldnt(answer === 'not_now' ? 'put the offer away' : 'answer the offer', refusalOf(x.error)) }); return }
+      router.refresh()
+      if (x.sentence) snackbar({ key: 'upgrade-offer', message: x.sentence, actionLabel: 'Undo', onAction: () => {
+        void undoPutAway({ id: r.id, read: r.readAt !== null }).then((u) => {
+          if ('error' in u) { snackbar({ message: couldnt('bring the offer back', refusalOf(u.error)) }); return }
+          void load(); router.refresh()
+        }, (e) => snackbar({ message: couldnt('bring the offer back', refusalOf(e)) }))
+      } })
+    }, (e) => { setRows(prev); snackbar({ message: couldnt('answer the offer', refusalOf(e)) }) })
+  }
   const openRow = (r: FeedRow) => {
+    if (r.offer) { answerOffer(r, r.offer.primary); return }   // (pending modules S41b-4) the offer's words press its one way on
     setOpen(false)
     if (!r.derived && r.readAt === null) {
       setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: Date.now() } : x)) ?? rs)
@@ -124,7 +257,9 @@ export function NotificationsPanel() {
       () => { router.refresh(); snackbar({ message: due ? `All read — ${due} ${due === 1 ? 'follow-up is' : 'follow-ups are'} due and ${due === 1 ? 'stays' : 'stay'} until done` : 'All caught up' }) },
       () => { setRows(prev); snackbar({ message: 'Couldn’t mark the notifications as read — please try again' }) })
   }
-  const footer = <div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); leaveThen(() => router.push(withFrom('/settings?section=notifications', pathname))) }}>Notification settings</Button></div>
+  /* (pending modules S18) Notification settings opens what the member can change for themselves — Your profile › Your notifications (mute a
+     notice, a daily summary); its line links on to the studio's rules in Settings › Notifications */
+  const footer = <div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); leaveThen(() => router.push(`${withFrom('/profile', pathname)}#notifications`)) }} data-testid="notifications-settings-link">Notification settings</Button></div>
   const actions = unread > 0 ? (
     <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
   ) : undefined
@@ -156,10 +291,24 @@ export function NotificationsPanel() {
                           <span className={styles.text}>
                             <span className={styles.title}>{r.title}</span>
                             {r.body ? <span className={styles.sub}>{r.body}</span> : null}
-                            <span className={styles.meta}>{r.derived ? <span className={styles.due} data-late={late(r) || undefined}>{dueLine(r, now || r.at)}</span> : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
+                            <span className={styles.meta}>{r.derived ? <span className={styles.due} data-late={late(r) || undefined}>{dueLine(r, now || r.at)}</span> : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}{r.summary ? ' · in your daily summary' : ''}</span>   {/* (pending modules S18) its email waits for the member's summary */}
                           </span>
                           {r.readAt === null && !r.derived ? <span className={styles.dot} aria-label="Unread" /> : null}
                         </button>
+                        {/* (simplify round 2 · P2 §6.7) an approval waiting on you: answered here, phone and desk alike; the words above still open the record */}
+                        {r.act ? (
+                          <div className={styles.acts} data-testid="notification-acts" data-act={r.act.kind}>
+                            <Button appearance="text" onPress={() => { void approve(r) }} isDisabled={acting === r.id} data-testid="notification-approve">{r.act.door ? 'Approve and send' : 'Approve'}</Button>
+                            <Button appearance="text" variant="secondary" onPress={() => setNoting(r)} isDisabled={acting === r.id} data-testid="notification-send-back">{r.act.kind === 'more_time' ? 'Decline' : 'Send back'}</Button>
+                          </div>
+                        ) : null}
+                        {/* (pending modules S41b-4) the Free plan's upgrade offer: its one way on, and Not now */}
+                        {r.offer ? (
+                          <div className={styles.acts} data-testid="notification-offer" data-trigger={r.offer.trigger}>
+                            <Button appearance="text" onPress={() => answerOffer(r, r.offer!.primary)} data-testid="offer-go">{r.offer.label}</Button>
+                            <Button appearance="text" variant="secondary" onPress={() => answerOffer(r, 'not_now')} data-testid="offer-not-now">Not now</Button>
+                          </div>
+                        ) : null}
                       </li>
                     )
                   })}
@@ -170,26 +319,55 @@ export function NotificationsPanel() {
         )}
       </div>
   )
+
+  /* (simplify round 2) the records' own Send back dialogs, over the bell (its popover steps under their scrim while one is open) */
+  const noteAct = noting?.act ?? null
+  const words = noteAct && noteAct.kind !== 'done' && noteAct.kind !== 'more_time' ? noteWords(noteAct) : null
+  const dialogs = (
+    <>
+      <NoteDialog open={!!words} title={words?.title ?? 'Send back'} label={words?.label ?? ''} help={words?.help ?? ''} action={words?.action ?? 'Send back'} required maxLength={300} busy={noteBusy}
+                  onClose={() => setNoting(null)} onSubmit={submitNote} />
+      {asksSchedule ? (
+        <Suspense fallback={null}>
+          <AskDialog open={noteAct?.kind === 'done'} title={`Send ${noteAct?.title ?? 'it'} back?`} action="Send back" testId="send-back-dialog" onClose={() => setNoting(null)}
+                     lede="It stays as it is, not done. Whoever marked it done reads your note." note={{ label: 'What is still to do', required: true, max: 300 }}
+                     onSubmit={async (v) => (noting ? sendBack(noting, v.note) : false)} />
+          <AskDialog open={noteAct?.kind === 'more_time'} title={`Decline more time on ${noteAct?.title ?? 'it'}?`} action="Decline" testId="decline-more-dialog" onClose={() => setNoting(null)}
+                     lede={noteAct?.kind === 'more_time' ? `It keeps ending ${noteAct.end !== undefined ? dayLabel(noteAct.end) : 'as it is'}. ${first(noteAct.by, 'Whoever asked')} reads your note.` : ''}
+                     note={{ label: 'A note (optional)', required: false, max: 300 }}
+                     onSubmit={async (v) => (noting ? sendBack(noting, v.note) : false)} />
+        </Suspense>
+      ) : null}
+    </>
+  )
   /* (F109) Notification settings sits in the surface's own footer, below the scrolling list — it was drawn over the rows of a long feed */
   if (sheet) {
     return (
-      <Drawer open={open} onClose={close} title="Notifications" label="Notifications" width={400} footer={footer} actions={actions}>
-        {content}
-      </Drawer>
+      <>
+        <Drawer open={open} onClose={close} title="Notifications" label="Notifications" footer={footer} actions={actions}>
+          {content}
+        </Drawer>
+        {dialogs}
+      </>
     )
   }
   if (typeof document === 'undefined') return null
-  return createPortal(
-    <AnimatePresence>
-      {open ? (
-        <motion.div ref={place} className={styles.panel} role="dialog" aria-label="Notifications" data-om-menu
-                    variants={anchoredSurface} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', zIndex: 130, transformOrigin: 'top left' }}>
-          <SurfaceHead title="Notifications" actions={actions} onClose={close} />
-          <div className={styles.scroll}>{content}</div>
-          <SurfaceFoot>{footer}</SurfaceFoot>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>,
-    document.body,
+  return (
+    <>
+      {createPortal(
+        <AnimatePresence>
+          {open ? (
+            <motion.div ref={place} className={styles.panel} role="dialog" aria-label="Notifications" data-om-menu
+                        variants={anchoredSurface} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', zIndex: noting ? 105 : 130, transformOrigin: 'top left' }}>
+              <SurfaceHead title="Notifications" actions={actions} onClose={close} />
+              <div className={styles.scroll}>{content}</div>
+              <SurfaceFoot>{footer}</SurfaceFoot>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>,
+        document.body,
+      )}
+      {dialogs}
+    </>
   )
 }

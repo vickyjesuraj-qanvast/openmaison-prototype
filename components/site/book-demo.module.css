@@ -1,0 +1,9 @@
+/* (pending modules S35) Book a demo's two dialogs: the four fields on the house form's 16 gap, the note under them; Calendly's page filling the
+   tall dialog's body (its own scroll inside). */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.scheduler { position: relative; height: 100%; min-height: 560px; display: flex; background: var(--om-color-surface-default); }
+.frame { position: relative; flex: 1; width: 100%; min-height: 560px; border: 0; background: transparent; }
+/* the line under the clear frame while Calendly loads; gone once it has */
+.waiting { position: absolute; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .scheduler, .frame { min-height: 70dvh; } }

@@ -1,0 +1,1 @@
+ALTER TABLE `price_book_items` ADD `waste_pct` real DEFAULT 0 NOT NULL;

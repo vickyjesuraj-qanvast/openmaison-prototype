@@ -4,12 +4,21 @@
  * a wide gap between items becomes a column break ("  "), so a tabular lead sheet keeps its columns for the reader.
  */
 export async function pdfLines(buf: ArrayBuffer): Promise<string[]> {
+  return (await pdfReading(buf)).lines
+}
+
+/** (pending modules S11) The PDF's lines with its page count and its first page's size in points (A4 595 × 842, Letter 612 × 792) — what
+    "Upload my existing quote" reads a quote's layout from. `maxPages` stops early on a long file (a quote's shape shows on its first pages). */
+export async function pdfReading(buf: ArrayBuffer, maxPages = Infinity): Promise<{ lines: string[]; pages: number; size: { w: number; h: number } | null; firstPageLines: number }> {
   const pdfjs = await import('pdfjs-dist')
   pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs'
   const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise
   const lines: string[] = []
-  for (let p = 1; p <= doc.numPages; p += 1) {
+  let size: { w: number; h: number } | null = null
+  let firstPageLines = 0
+  for (let p = 1; p <= Math.min(doc.numPages, maxPages); p += 1) {
     const page = await doc.getPage(p)
+    if (p === 1) { const vp = page.getViewport({ scale: 1 }); size = { w: vp.width, h: vp.height } }
     const content = await page.getTextContent()
     type Item = { str: string; x: number; y: number; w: number; h: number }
     const items: Item[] = []
@@ -27,7 +36,8 @@ export async function pdfLines(buf: ArrayBuffer): Promise<string[]> {
       cur.push(it)
     }
     flush()
+    if (p === 1) firstPageLines = lines.length
     lines.push('')
   }
-  return lines
+  return { lines, pages: doc.numPages, size, firstPageLines }
 }

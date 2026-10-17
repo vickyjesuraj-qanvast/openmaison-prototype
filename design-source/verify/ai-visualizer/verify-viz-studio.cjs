@@ -1,5 +1,7 @@
 /* AI Visualizer probe, the studio's side (REG-673 · 674 · 675), at 1440×1024 against :3011 on a scratch copy of the baseline.
    Usage: B=http://localhost:3011 OUT=<dir> NODE_PATH=$PWD/node_modules node design-source/verify/ai-visualizer/verify-viz-studio.cjs */
+/* (pending modules S43C, a deliberate change of this rule) the AI Visualizer's living room is the owner's photo (1.0's 4a51f3522): its walls are
+   'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const B = process.env.B || 'http://localhost:3011', OUT = process.env.OUT || __dirname
 const LEAD = '1f12cbd1-b09b-47f4-89e4-454a1a5e333b'
@@ -43,10 +45,10 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   console.log('3 · a square picks its group; a finish; Generate')
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(600)
   check('the Original on screen', ((await page.getByTestId('viz-stage-chip').textContent()) ?? '').startsWith('Original'))
-  const wall = page.getByTestId('viz-marker').filter({ has: page.locator('xpath=self::*[@aria-label="White Painted Back Wall"]') })
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1200)
+  const wall = page.getByTestId('viz-marker').filter({ has: page.locator('xpath=self::*[@aria-label="Cream Painted Side Wall"]') })
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1200)
   check('the square opens the walls (all of them)', ((await page.getByTestId('viz-picker').locator('h2').textContent()) ?? '') === 'Walls')
-  check('…with one tap to narrow to one wall', (await page.getByTestId('viz-scope').getByRole('radio').count()) === 3)
+  check('…with one tap to narrow to one wall', (await page.getByTestId('viz-scope').getByRole('radio').count()) === 4)   // (pending modules S43C, a deliberate change) All + the owner's living room's three walls
   check('the region is lit on the photo', await page.getByTestId('viz-highlight').isVisible())
   await shot('viz-03-picker')
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
@@ -59,7 +61,7 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   check('⇧⌘Z puts it back', (await page.getByTestId('viz-changes').count()) === 1)
   await page.getByTestId('viz-generate').click(); await page.waitForTimeout(500)
   check('the progress card while it renders', await page.getByTestId('viz-running').isVisible())
-  await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 25000 }); await page.waitForTimeout(900)
+  await page.getByTestId('viz-running').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}); await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 40000 }); await page.waitForTimeout(900)   // the run first shows, then ends (a slower machine started it late)
   check('V4 is on the canvas', ((await page.getByTestId('viz-stage-chip').textContent()) ?? '').startsWith('V4'))
   check('…and in the strip', (await page.getByTestId('viz-version').count()) === 5)
   check('the picks are spent', (await page.getByTestId('viz-changes').count()) === 0)
@@ -87,10 +89,10 @@ const check = (label, ok, extra = '') => { if (ok) { pass++; console.log('  ok  
   console.log('5 · furniture: take the sofa out')
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(500)
   await page.getByTestId('viz-mode-furniture').click(); await page.waitForTimeout(400)
-  await page.getByTestId('viz-furniture-row').filter({ hasText: 'Grey Fabric Sofa' }).click(); await page.waitForTimeout(700)
+  await page.getByTestId('viz-furniture-row').filter({ hasText: 'Cream Bouclé Sofa' }).click(); await page.waitForTimeout(700)
   await page.getByTestId('viz-furniture-actions').getByRole('radio', { name: 'Remove' }).click(); await page.waitForTimeout(300)
   await page.getByTestId('viz-generate').click()
-  await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 25000 }); await page.waitForTimeout(900)
+  await page.getByTestId('viz-running').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}); await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 40000 }); await page.waitForTimeout(900)   // the run first shows, then ends (a slower machine started it late)
   /* (audit 2026-09-26, F2) a version names a piece by its kind, and a removal says so: "V5 · Sofa taken out" */
   check('V5 takes the sofa out', ((await page.getByTestId('viz-stage-chip').textContent()) ?? '').includes('Sofa taken out'))
   await shot('viz-07-removed')

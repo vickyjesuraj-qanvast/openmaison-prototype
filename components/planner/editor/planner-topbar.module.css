@@ -1,0 +1,3 @@
+/* (gaps build J) The planner bar's own slot: the view switch in the middle (the rest is the Visualizer bar's stylesheet);
+   (parity map, TD-081) the View ▾ beside it. */
+.middle { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-2); }

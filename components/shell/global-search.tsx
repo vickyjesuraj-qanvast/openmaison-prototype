@@ -1,5 +1,6 @@
 'use client'
 
+import { bringCardIntoView } from '@/components/company/use-hash-landing'
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -18,10 +19,14 @@ import { withFrom } from '@/lib/nav'
 import { Keys } from '@/components/om/keys'
 import { useFlagPref } from '@/lib/prefs'
 import { hasHandler, markUsed, openShortcuts, runHandler, SINGLE_KEYS } from '@/lib/keys/store'
-import { CREATE, JUMP_TO, PAGES, SCOPES, createHits, marks, pageHits, scopeOf, type SearchHit, type SearchResult, type SearchScope } from '@/lib/global-search/model'
+import { ACCOUNTING_JUMP_TO, CREATE, JUMP_TO, MARKETING_JUMP_TO, PAGES, SCOPES, accountingPage, createHits, marketingPage, marks, pageHits, scopeOf, scopesFor, type SearchHit, type SearchResult, type SearchScope } from '@/lib/global-search/model'
 import { isVisible, layerOpen, marked, press } from '@/components/shell/shortcuts/dom'
 import styles from './global-search.module.css'
 import { leaveThen } from '@/components/company/leave-guard'   // (UX audit S2) unsaved Company / Settings edits ask before the move
+import { signOut } from '@/app/sign-in/actions'   // (S42 audit A-08) Go to › Sign out
+import { forgetMember } from '@/lib/auth/forget'
+import { couldnt } from '@/components/leads/tasks/use-run'
+import { useSnackbar } from '@/components/om/snackbar'
 
 /**
  * (REG-709, owner 2026-09-28: "an amazing global search … a popover window like what we have for company tab with a search bar and the results
@@ -74,7 +79,7 @@ function landOn(anchor: string, mark: string): () => void {
   const find = () => { const el = document.getElementById(anchor) ?? document.querySelector<HTMLElement>(`[data-testid="${CSS.escape(anchor)}"]`); return isVisible(el) ? el : null }
   return when(find, (el) => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' })
+    bringCardIntoView(el, !reduce)   // (pending modules S11) the one card landing: a tall card shows its title under the sticky header
     if (!mark) return
     el.classList.add(mark)
     setTimeout(() => el.classList.remove(mark), 1800)
@@ -85,11 +90,15 @@ const LANDS = /^\/(settings|company)(\/|$)/
 
 const Marked = ({ text, q }: { text: string; q: string }) => <>{marks(text, q).map((p, i) => (p.hit ? <mark key={i} className={styles.mark}>{p.text}</mark> : <span key={i}>{p.text}</span>))}</>
 
-export function GlobalSearch() {
+/** (simplify S-14 · F1 §6.9.6) `member` — a Manager or a Designer: their empty search offers Log an expense · New purchase order · Record a
+    supplier bill under Create (the shell knows who is signed in; the search does not ask).
+    (parity map, FB-114) `accounting` — Accounting: the books' scopes, pages and Create rows only (the server reads the same rule). */
+export function GlobalSearch({ member = false, accounting = false, marketing = false, owner = false }: { member?: boolean; accounting?: boolean; /** (S44O — call C6) Marketing: the leads' scopes, pages and Create rows only (the server reads the same rule) */ marketing?: boolean; /** (pending modules S41b-5) the Owner's own pages (Qanvast Ops › Lead credits · Reviews) */ owner?: boolean } = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
   const sheet = useSheetLayout()
+  const snackbar = useSnackbar()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState<SearchScope>('all')
@@ -177,15 +186,17 @@ export function GlobalSearch() {
   /* What the list shows: typed → the groups (and "Show all" under All) then the pages; empty → recent searches, recently opened, Go to. */
   const q = query.trim()
   const shown = q && result ? result : null   // while a newer answer loads, the last one stays (dimmed)
-  const pages = useMemo(() => (q && scope === 'all' ? pageHits(q).slice(0, 4) : []), [q, scope])
-  const creates = useMemo(() => (q && scope === 'all' ? createHits(q) : []), [q, scope])
+  const pages = useMemo(() => (q && scope === 'all' ? pageHits(q, { accounting, marketing, member, owner }).slice(0, 4) : []), [q, scope, accounting, marketing, member, owner])
+  const creates = useMemo(() => (q && scope === 'all' ? createHits(q, { accounting, marketing, member }) : []), [q, scope, accounting, marketing, member])
   const sections: { key: string; label: string; count?: number; items: Item[] }[] = useMemo(() => {
     if (!q) {
       const out: { key: string; label: string; items: Item[] }[] = []
       if (recent.length) out.push({ key: 'recent', label: 'Recent searches', items: recent.map((text) => ({ type: 'recent' as const, text })) })
-      if (opened.length) out.push({ key: 'opened', label: 'Recently opened', items: opened.map((hit) => ({ type: 'hit' as const, hit })) })
-      out.push({ key: 'go', label: 'Go to', items: JUMP_TO.map((id) => PAGES.find((p) => p.id === id)!).filter(Boolean).map((p) => ({ type: 'hit' as const, hit: { kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank: 0 } })) })
-      out.push({ key: 'create', label: 'Create', items: createHits('').map((hit) => ({ type: 'hit' as const, hit })) })   // (UX audit V9)
+      /* (parity map, FB-114) what this browser opened before, only where Accounting may go */
+      const reopen = accounting ? opened.filter((h) => accountingPage(h.href)) : marketing ? opened.filter((h) => marketingPage(h.href)) : opened   // (S44O — C6)
+      if (reopen.length) out.push({ key: 'opened', label: 'Recently opened', items: reopen.map((hit) => ({ type: 'hit' as const, hit })) })
+      out.push({ key: 'go', label: 'Go to', items: (accounting ? ACCOUNTING_JUMP_TO : marketing ? MARKETING_JUMP_TO : JUMP_TO).map((id) => PAGES.find((p) => p.id === id)!).filter(Boolean).map((p) => ({ type: 'hit' as const, hit: { kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank: 0 } })) })
+      out.push({ key: 'create', label: 'Create', items: createHits('', { member, accounting, marketing }).map((hit) => ({ type: 'hit' as const, hit })) })   // (UX audit V9)
       return out
     }
     const groups = (shown?.groups ?? []).map((g) => ({
@@ -198,7 +209,7 @@ export function GlobalSearch() {
       ...(creates.length ? [{ key: 'create', label: 'Create', count: creates.length, items: creates.map((hit) => ({ type: 'hit' as const, hit })), best: creates[0]!.rank }] : []),
     ].sort((a, b) => b.best - a.best)
     return [...groups, ...tail.map((g) => ({ key: g.key, label: g.label, count: g.count, items: g.items }))]
-  }, [q, recent, opened, shown, scope, pages, creates])
+  }, [q, recent, opened, shown, scope, pages, creates, member, accounting, marketing])
   const items = sections.flatMap((s) => s.items)
   const at = Math.min(active, Math.max(0, items.length - 1))
   /* each section's first row's place in the keyboard's walk */
@@ -215,6 +226,12 @@ export function GlobalSearch() {
     const { hit } = item
     /* (REG-715, Q-03) Go to › Keyboard shortcuts opens the ? panel over the page you are on */
     if (hit.kind === 'page' && hit.href === '#shortcuts') { setOpen(false); openShortcuts(); return }
+    /* (S42 audit A-08) Go to › Sign out: the studio menu's own leave — unsaved edits ask first, then the session ends and sign-in opens */
+    if (hit.kind === 'page' && hit.href === '#sign-out') {
+      setOpen(false)
+      leaveThen(() => { void signOut().then((r) => { forgetMember(); window.location.assign(r.to) }, () => snackbar({ message: couldnt('sign you out') })) })
+      return
+    }
     if (q) remember(q)
     if (hit.kind !== 'page' && hit.kind !== 'create') write(OPENED_KEY, [{ ...hit, rank: 0 }, ...read<SearchHit>(OPENED_KEY).filter((h) => !(h.kind === hit.kind && h.id === hit.id))].slice(0, 5))
     const href = hit.kind === 'page' || hit.kind === 'create' ? hit.href : withFrom(hit.href, here)
@@ -227,9 +244,11 @@ export function GlobalSearch() {
       if (path === pathname) { pressCreate(pick); return }
       writeCreate(path, pick)
     }
-    /* (UX audit S3) a card on this very page: only the hash moves, so the arrival runs here */
+    /* (UX audit S3) a card on this very page: only the hash moves, so the arrival runs here — (pending modules S08, bug fix) only while the card
+       IS on the page: another Settings module's card, or one the page draws only when asked (Set up your studio's `setup=1`), takes the page */
     const hash = href.includes('#') ? href.slice(href.indexOf('#') + 1) : ''
-    if (hash && path === pathname && LANDS.test(pathname)) { window.history.replaceState(null, '', href); landOn(hash, styles.landed ?? ''); return }
+    const onPage = (a: string) => !!(document.getElementById(a) ?? document.querySelector(`[data-testid="${CSS.escape(a)}"]`))
+    if (hash && path === pathname && LANDS.test(pathname) && onPage(hash)) { window.history.replaceState(null, '', href); landOn(hash, styles.landed ?? ''); return }
     leaveThen(() => router.push(href))   // (UX audit S2) an unsaved Company / Settings form asks first
   }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -282,7 +301,7 @@ export function GlobalSearch() {
     <>
       <div className={styles.field}>
         <Icon name="search" size={20} weight={300} />
-        <input ref={input} className={styles.input} value={query} placeholder="Search leads, quotes, contracts, tasks, files…" aria-label="Search the studio"
+        <input ref={input} className={styles.input} value={query} placeholder={accounting ? 'Search projects, invoices, POs, bills, vendors, tasks…' : marketing ? 'Search leads, tasks, notes, files…' : 'Search leads, projects, quotes, contracts, tasks, files…'} aria-label="Search the studio"
                role="combobox" aria-expanded aria-controls="gs-list" aria-autocomplete="list" aria-activedescendant={items.length ? `gs-opt-${at}` : undefined}
                onChange={(e) => { setQuery(e.target.value); setActive(0) }} onKeyDown={onKeyDown} spellCheck={false} autoComplete="off" />
         {loading ? <span className={styles.spinner} aria-hidden /> : null}
@@ -290,7 +309,7 @@ export function GlobalSearch() {
         {sheet ? null : <Keys spec="esc" />}   {/* (REG-728) the house key chip */}
       </div>
       <ChipRail className={styles.scopes} label="Search in">
-        <Chips label="Search in" options={SCOPES.map((s) => ({ value: s.key, label: s.label }))} value={scope} onChange={(v) => { setScope(v as SearchScope); setActive(0); input.current?.focus() }} />
+        <Chips label="Search in" options={scopesFor(accounting, marketing).map((s) => ({ value: s.key, label: s.label }))} value={scope} onChange={(v) => { setScope(v as SearchScope); setActive(0); input.current?.focus() }} />
       </ChipRail>
       <div ref={list} id="gs-list" className={styles.list} role="listbox" aria-label="Results" data-loading={loading || undefined} aria-busy={loading || undefined}>
         {typing && !shown ? (
@@ -299,7 +318,7 @@ export function GlobalSearch() {
           <div className={styles.empty} role="status">
             <Icon name="search" size={32} weight={300} />
             <span className={styles.emptyTitle}>Nothing matches “{q}”{scope === 'all' ? '' : ` in ${SCOPES.find((s) => s.key === scope)?.label}`}</span>
-            <span className={styles.emptyHelp}>Try a name, a phone number, a quote number like OM-10004, or a room.</span>
+            <span className={styles.emptyHelp}>{marketing ? 'Try a client’s name, a phone number or an email.' : 'Try a name, a phone number, a quote number like OM-10004, or a room.'}</span>   {/* (S44O — C6) Marketing finds no quote — the hint never offers one (invented copy) */}
             {scope === 'all' ? null : <Button appearance="text" className={styles.emptyAction} onPress={() => { setScope('all'); input.current?.focus() }}>Search everything</Button>}   {/* (REG-729) the DS text button (36) */}
           </div>
         ) : sections.map((s, si) => (

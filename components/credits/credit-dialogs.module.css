@@ -22,6 +22,11 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2400ms; } }
 
+/* (pending modules S19) the top-up's amount: the quick amounts, the stepper and its words, then the checkout */
+.topup { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.amountPick { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.amountRow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-3); }
+
 /* the moments */
 .block { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .meter { height: 6px; border-radius: 3px; background: var(--om-color-surface-variant); overflow: hidden; }

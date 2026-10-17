@@ -166,6 +166,10 @@ button.avatarRow:focus-visible .avatar { outline: var(--om-border-2) solid var(-
 .panel[data-expanded] .studio { opacity: 1; }
 .studioName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .studioOwner { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (pending modules S31) a studio started on the prototype: a long name ends in "…" in the wide rail; with no logo yet, its initial on the
+   house tint in the avatar's own box */
+.studioName, .studioOwner { overflow: hidden; text-overflow: ellipsis; }
+.studioInitial { display: flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-subtitle-m); }
 .studioOwner[data-viewing] { color: var(--om-color-primary-default); }   /* (REG-667) Viewing as … */
 
 .item:focus-visible, .avatar:focus-visible, .logoTile:focus-visible, .pinBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

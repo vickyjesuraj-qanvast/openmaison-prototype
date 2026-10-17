@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { spring } from '@/lib/motion'
 import { Button } from '@/components/ds'
@@ -10,12 +10,14 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadQuestionsData } from '@/lib/leads/questions'
-import { summarise } from '@/lib/leads/question-model'
+import { answerWords, summarise } from '@/lib/leads/question-model'
+import { Dialog } from '@/components/om/dialog'
+import { displayDateTime } from '@/lib/format'
 import { answerQuestion, askClientQuestions } from '@/app/leads/questions-actions'
 import { QuestionCard } from './question-card'
 import { SummaryCard } from './summary-card'
 import { QuestionnaireEmpty } from './questionnaire-empty'
-import { AskClientDialog } from './ask-client-dialog'
+import { AskClientDialog, askedLine } from './ask-client-dialog'
 import { addStudioQuestions } from '@/app/leads/questions-actions'
 import styles from './lead-questionnaire.module.css'
 
@@ -30,8 +32,10 @@ import styles from './lead-questionnaire.module.css'
  * Answers from this side are always "By Studio" (REG-189); Save → `answerQuestion` → "Answer saved";
  * "Send via WhatsApp" (REG-288) → "Notification sent to <lead>" (REG-188).
  */
-export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
-  const { questions, leadName, now, askedAt, leadId, bankCount, askedOn } = data
+export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQuestionsData; /** (parity P-12) the host's record — a project passes "project" */ noun?: 'lead' | 'project'
+  /** (simplify S-03) on a project: the Client group's view switch in the title's place */ views?: ReactNode }) {
+  const { questions, leadName, now, askedAt, leadId, bankCount, askedOn, history = {} } = data
+  const [historyOf, setHistoryOf] = useState<string | null>(null)   // (gaps build D, item 9) the question whose answer history is open
   const snackbar = useSnackbar()
   const router = useRouter()
   const { fail } = useRun()
@@ -85,7 +89,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
       try {
         const r = await askClientQuestions(leadId, list)
         if (typeof r !== 'number') { fail('ask the client', r.error); return }
-        snackbar({ message: `${r === 1 ? '1 question' : `${r} questions`} sent to ${leadName}` }); router.refresh()
+        snackbar({ message: askedLine(leadName, r) })   /* (parity map, CP-110) where the questions are now */; router.refresh()
       } catch { fail('record the ask') }
     })()
   }
@@ -103,13 +107,13 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
   return (
     <div className={styles.tab} data-testid="lead-questionnaire">
       <div className={styles.bar}>
-        <h2 className={styles.title}>All Questions</h2>
+        {views ?? <h2 className={styles.title}>All Questions</h2>}
         {!noQuestions && bankCount > 0 ? <Button appearance="text" onPress={addBank}>{`Add the studio’s ${bankCount} new question${bankCount === 1 ? '' : 's'}`}</Button> : null}   {/* (REG-612) */}
         {noQuestions ? <Tooltip label="No questions yet">{askButton}</Tooltip> : askButton}
       </div>
 
       {noQuestions ? (
-        <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} />
+        <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} noun={noun} />
       ) : (
         <div className={styles.layout}>
           <div className={styles.questions}>
@@ -125,6 +129,8 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
                 onSave={(value: string | string[]) => { void saveAnswer(q.id, value) }}
                 saving={saving && answering === q.id}
                 askedAt={askedOn[q.id] ?? null}   /* (T12) the card says it was asked, and when */
+                changes={(history[q.id] ?? []).filter((h) => h.before !== null).length}   /* (gaps build D, item 9) overwrites only — a first answer is not a change */
+                onHistory={() => setHistoryOf(q.id)}
               />
               </motion.div>
             ))}
@@ -138,6 +144,19 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
       )}
 
       <AskClientDialog open={askOpen} leadName={leadName} onClose={() => setAskOpen(false)} onSend={send} questions={unanswered} />
+      {/* (gaps build D, item 9 — 1.0 M-170 · M-175) every version of an answer, newest first: who changed it, when, and from what to what */}
+      <Dialog open={!!historyOf} onClose={() => setHistoryOf(null)} title="Answer history" size="form" width={600}
+              subtitle={questions.find((q) => q.id === historyOf)?.text}
+              footer={<Button variant="secondary" appearance="outlined" onPress={() => setHistoryOf(null)}>Close</Button>}>
+        <ol className={styles.history} data-testid="question-history-list">
+          {(historyOf ? history[historyOf] ?? [] : []).map((h, i) => (
+            <li key={`${h.at}-${i}`} className={styles.historyRow}>
+              <span className={styles.historyWho}>{`${h.byName ?? (h.byKind === 'client' ? leadName : 'The studio')} · ${h.byKind === 'client' ? 'on the portal' : 'for the client'} · ${displayDateTime(new Date(h.at))}`}</span>
+              <span className={styles.historyChange}>{h.before === null ? <>First answer: <b>{answerWords(h.after)}</b></> : <><s>{answerWords(h.before)}</s>{' → '}<b>{answerWords(h.after)}</b></>}</span>
+            </li>
+          ))}
+        </ol>
+      </Dialog>
     </div>
   )
 }

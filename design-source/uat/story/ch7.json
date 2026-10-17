@@ -167,8 +167,8 @@
   "scene": "Tell Sophia",
   "module": "Quote X-Ray",
   "try": "Send Sophia the summary on WhatsApp (without really sending)",
-  "how": "1. Click \"Send to client\"\n2. Check the message never names Urban Nest Interiors, and change a word\n3. Click \"Open WhatsApp\" — a WhatsApp tab opens: close it, do not send\n4. Click \"Send to client\" again",
-  "expect": "The wardrobe point goes as your question; the header shows \"Sent …\"; the dialog reopens on your edited text, with \"Reset to draft\".",
+  "how": "1. Click \"Send to client\"\n2. Check the message never names Urban Nest Interiors, and change a word\n3. Click \"Send via WhatsApp\" — a WhatsApp tab opens: close it, do not send\n4. Click \"Send to client\" again",
+  "expect": "The wardrobe point goes as your question; the header shows \"Sent …\"; the dialog reopens on your edited text, with \"Reset message\".",
   "in10": "Different from 1.0: what you sent is kept and shown",
   "as": "Dane",
   "covers": [
@@ -192,8 +192,8 @@
   "module": "Quote X-Ray",
   "try": "Compare two files with no lead attached",
   "how": "1. Click \"Tools\" › \"Quote X-Ray\", then \"Upload two quotes\"\n2. Drop uat-files/kitchen-moodboard.jpg on \"The other studio’s quote\" and read the message\n3. Drop uat-files/sophia-items-to-paste.xlsx on \"Your quote\" and uat-files/cove-interior-quotation.pdf on \"The other studio’s quote\"\n4. Click \"Compare\"",
-  "expect": "The photo is refused (\"We couldn’t read this one…\"); the PDF reads \"20 lines read from Cove Interior’s quote\"; the result opens.",
-  "in10": "Same as 1.0",
+  "expect": "The photo is refused (\"kitchen-moodboard.jpg is a photo or a scan — it has no words to read here…\"); the PDF is known by its words: \"20 lines read from Cove Interior’s quote\"; the result opens.",
+  "in10": "Different from 1.0: a PDF is read by its words; photos aren’t",
   "as": "Dane",
   "covers": [
    "XRAY:XS-02",
@@ -251,7 +251,7 @@
   "scene": "Other leads’ readings",
   "module": "Lead details",
   "try": "Mark a lost lead with the competitor from X-Ray",
-  "how": "1. Open Vivien Lee from the Leads list\n2. Click \"Stage: Quote Sent\" › \"Lost\"\n3. Keep the reason \"Went with another firm\" and read \"Competitor (optional)\"\n4. Click \"Save & Move\"",
+  "how": "1. Open Vivien Lee from the Leads list\n2. Click \"Stage: Quote Sent\" › \"Lost\"\n3. In \"Reason\" pick \"Went with another firm\", then read \"Competitor (optional)\"\n4. Click \"Save & Move\"",
   "expect": "Competitor already reads \"Flo Design\", noted \"From the Quote X-Ray of …\"; after saving, \"Moved to Lost\" and Vivien Lee shows Lost.",
   "in10": "Different from 1.0: the competitor comes from the lead’s X-Ray",
   "as": "Dane",
@@ -259,5 +259,24 @@
    "XRAY:XZ-01"
   ],
   "files": []
+ },
+ {
+  "step": "7.14",
+  "chapter": 7,
+  "scene": "Compare two files without a lead",
+  "module": "Quote X-Ray",
+  "try": "Read any studio's PDF quote by its words",
+  "how": "1. Click \"Tools\" › \"Quote X-Ray\", then \"Upload two quotes\"\n2. Drop uat-files/sophia-items-to-paste.xlsx on \"Your quote\" and uat-files/urban-nest-competitor-quote.pdf on \"The other studio’s quote\"\n3. Read the file's tile, then click \"Compare\"\n4. In the result, read \"Say this\" and the \"Item by item\" table",
+  "expect": "The PDF is read by its words — the tile reads \"23 lines read from Urban Nest Design & Renovation’s quote · S$40,210.00 — the same as its own total\"; its lines are lump sums, so nothing is flagged \"Their numbers don’t add up\" (that only comes when a line’s amount isn’t its rate × quantity). A scanned or photographed quote is refused with the reason.",
+  "in10": "Different from 1.0: any text PDF is read by rule (1.0 sent it to a model); a scan is refused (S21)",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XR-01",
+   "XRAY:XR-03"
+  ],
+  "files": [
+   "uat-files/sophia-items-to-paste.xlsx",
+   "uat-files/urban-nest-competitor-quote.pdf"
+  ]
  }
 ]

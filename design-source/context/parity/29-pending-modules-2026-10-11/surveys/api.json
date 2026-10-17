@@ -1,0 +1,395 @@
+{
+  "group": "Capabilities behind the API that no audit has covered",
+  "modules": [
+    {
+      "key": "maison-bot-assistant",
+      "name": "mAIson Bot, the AI assistant chat",
+      "what": "A chat panel on every page, and a chat-first Home screen, where a member asks anything in their own words. A language model (Gemini through OpenRouter) answers from the studio's records through 66 tools: it reads leads, projects, quotes, tasks and finance reports, draws charts, drafts client WhatsApps and follow-ups, and creates or changes records (leads, tasks, projects, invoices, expenses, POs, variation orders, payments) with no confirm step. It reads attachments (photos, PDFs, sheets, voice notes) and also answers questions inside the meeting co-pilot.",
+      "who": "studio",
+      "where_in_1": "mAIson Bot panel from the top bar on every (main) page; Dashboard › Home screen 'Chat' (chat-first home); Settings › ID Buddy AI; switched per studio by Admin › Settings 'maison-bot'",
+      "v1_code": "src/app/api/buddy/route.ts, src/app/api/buddy/chat/route.ts, src/lib/agents/* (loop, tools, executors, system-prompt, page-tool-map), src/components/layout/id-buddy-panel.tsx, src/components/layout/buddy-chart-renderer.tsx, src/components/dashboard/chat-first-home.tsx, src/lib/hooks/use-maison-stream.ts",
+      "size": {
+        "pages": 0,
+        "components": 4,
+        "api_routes": 2,
+        "tables": 0,
+        "loc": 14100
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "The Maison AI button and sheet on every page: suggestions per page that act (run · answer · propose), the AI brief on a lead and on a project, and the Ask box (REG-1644). The Ask box answers by rule, with no model, on four topics: the schedule, one milestone, compliance, and money for Owners and Admins.",
+      "pending": [
+        "Free questions on any topic (leads, quotes, tasks, the team) answered by a language model; 2.0's Ask box knows four topics, by rule",
+        "Getting things done by chat: create or update a lead, task, project, invoice, expense, PO or variation order; record a payment; generate the milestone invoices",
+        "Draft a client WhatsApp or a follow-up from a lead's record, ready to copy",
+        "Charts in an answer, and finance answers beyond Reports' tiles: cash-flow forecast, money owed by age (to the studio and by it), statement of account",
+        "Attachments in the chat: read a photo, PDF, spreadsheet or voice note, for example a competitor's quote",
+        "One-tap prompts on a lead or project: Optimize Quote · Draft Follow-up · Analyze Lead · Generate Moodboard · Site Update",
+        "Lead scoring, quote benchmarking and a render made from the chat",
+        "The chat-first Home screen (it goes with the Dashboard)"
+      ],
+      "depends_on": "an LLM (OpenRouter / Gemini) and a credits rule for chat; her mocks for a chat thread inside the sheet; a decision on which writes need a confirm card",
+      "held_by": "Dashboard (the chat-first home); REG-552 (the co-pilot's Q&A)",
+      "recommendation": "needs her mocks / decision",
+      "why": "This was 1.0's broadest AI feature, and 2.0 only imitates it with rules. A real version needs a model and a clear rule for what the assistant may change on its own. Until then, the rule-based Ask box is a safe demo.",
+      "effort": "XL",
+      "questions": [
+        "Should Maison AI become a real chat thread that takes any question (needs a model), or stay as suggestions plus answers by rule?",
+        "May the assistant create or change records from a chat (an invoice, a payment), and if so, always behind a confirm card?",
+        "Is chat free, or does it cost AI credits as renders do?"
+      ]
+    },
+    {
+      "key": "ai-writing-help-quotes",
+      "name": "AI writing help on quote text",
+      "what": "On a quote's text sections (cover letter, scope notes, terms), a ✨ menu offers Regenerate · Improve · Shorten · Expand · Translate (into clearer English). It sends the section's text to the mAIson Bot model and replaces the section with the answer. Price tables and payment terms are locked out.",
+      "who": "studio",
+      "where_in_1": "The quote document editor (the digitizer's Layout / document view) › a section's ✨ AI menu",
+      "v1_code": "src/components/leads/quote-document-editor.tsx (handleAiAction, ~6296–6400), POST /api/buddy/chat with skipTools",
+      "size": {
+        "pages": 0,
+        "components": 1,
+        "api_routes": 0,
+        "tables": 0,
+        "loc": 150
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "Improve · Shorten · Expand · Rewrite · Plain English on a quote's Terms and Notes (the rich editor) and on a contract's text; no quote audit listed it"
+      ],
+      "depends_on": "an LLM; a credits price",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "This saves studios time on the wordiest part of a quote, and the button is small. It is AI, though, so it needs a model, a price in credits and a place in the rich editor's toolbar.",
+      "effort": "S",
+      "questions": [
+        "Do you want AI rewrite on Terms / Notes (and contracts)? If yes, at what credit price, or free?"
+      ]
+    },
+    {
+      "key": "copilot-objections-competitors",
+      "name": "Co-pilot playbooks: objections, rivals",
+      "what": "There are two settings lists under Accounts › AI & Copilot. Objection Responses holds the studio's recommended answer to ten kinds of client objection (price, timeline, trust, scope, competition…), seeded from platform defaults. Competitor List holds the names of rival studios. During a live meeting, the co-pilot logs every objection the client raises and shows a card when a competitor is named; an Objections report counts them.",
+      "who": "studio",
+      "where_in_1": "Accounts › AI & Copilot › Objection Responses · Competitor List; Tools › Co-pilot analytics › Objections",
+      "v1_code": "src/app/api/objections/records/*, src/app/api/competitors/records/*, src/components/settings/objection-responses-settings.tsx, src/components/settings/competitor-list-settings.tsx, src/components/copilot/objections-report.tsx, src/data/copilot-objection-defaults.ts, src/lib/copilot/analysis-pass.ts",
+      "size": {
+        "pages": 0,
+        "components": 3,
+        "api_routes": 4,
+        "tables": 3,
+        "loc": 2650
+      },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "The Objection Responses library (ten kinds, platform defaults, edit, on / off)",
+        "The Competitor List",
+        "The co-pilot's objection log and Objections report",
+        "Note: in 1.0 nothing reads either list. The co-pilot spots competitors on its own and never shows the studio's saved answer, so both lists are saved and unused"
+      ],
+      "depends_on": "the meeting co-pilot (live audio, transcription, an LLM)",
+      "held_by": "REG-552 (Meetings / co-pilot wait for mocks)",
+      "recommendation": "needs her mocks / decision",
+      "why": "These only mean something inside the meeting co-pilot, which is held. Build them with it, and make the saved answers actually appear in the meeting, which 1.0 never did.",
+      "effort": "S",
+      "questions": [
+        "When the co-pilot is mocked, should the studio's competitor list also feed the Lost dialog's competitor field?"
+      ]
+    },
+    {
+      "key": "industry-news",
+      "name": "Industry news on the Home screen",
+      "what": "An Industry News card on the chat-first Home screen shows Singapore property and design headlines from RSS feeds (PropertyGuru, EdgeProp, CNA Housing, Home & Decor, SquareRooms). They are sorted into property · design · regulation · market, cached for an hour, and each one links out to its source.",
+      "who": "studio",
+      "where_in_1": "Dashboard › Home screen 'Chat' › Industry News card",
+      "v1_code": "src/app/api/news/route.ts, src/components/dashboard/home-widgets.tsx (NewsWidget), src/components/dashboard/chat-first-home.tsx, src/lib/region-config.ts (newsSources)",
+      "size": {
+        "pages": 0,
+        "components": 1,
+        "api_routes": 1,
+        "tables": 0,
+        "loc": 340
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "The Industry News card and its RSS feed reader"
+      ],
+      "depends_on": "outside RSS feeds; the Dashboard",
+      "held_by": "Dashboard",
+      "recommendation": "skip",
+      "why": "It only exists on the held Dashboard and is not part of a studio's work. Decide whether to keep it when the Dashboard is designed.",
+      "effort": "S",
+      "questions": []
+    },
+    {
+      "key": "designer-portfolio-profiles",
+      "name": "Designer portfolio profiles",
+      "what": "Each designer has a profile: photo, bio, years of experience, specialisations, and portfolio projects, each with a set of pictures. The only screen that shows them is the public Qanvast Hangouts event page, where homeowners pick a designer to meet. The editor component is never mounted, so a studio cannot edit a profile anywhere in 1.0.",
+      "who": "public",
+      "where_in_1": "/hangouts/[eventId] (designer cards in the meetings step); public GET /api/id-profile/[memberId]",
+      "v1_code": "src/app/api/id-profile/[memberId]/route.ts, src/app/api/id-profiles/records/** (profile, projects, images), src/components/id-profile/profile-editor.tsx (never imported), src/lib/queries/id-profiles.ts, src/app/api/hangouts/meetings/route.ts",
+      "size": {
+        "pages": 0,
+        "components": 1,
+        "api_routes": 6,
+        "tables": 3,
+        "loc": 1200
+      },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "partial",
+      "in_2": "A member's portal title, bio and photo on the client portal's About › Our team (members.portal_*); a member's specialty (Company › Members, lead preferences)",
+      "pending": [
+        "Years of experience and specialisations on a designer's public card",
+        "Portfolio projects with pictures per designer",
+        "A screen to edit any of it (1.0 has none: its editor is dead code)"
+      ],
+      "depends_on": "Qanvast Hangouts (the only reader)",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "Nothing a studio uses reads it, and 1.0 never let anyone edit it. It belongs with Hangouts if that is ever brought over; the portal's Our team already covers the client-facing need.",
+      "effort": "M",
+      "questions": []
+    },
+    {
+      "key": "my-account-profile",
+      "name": "My account (your own profile)",
+      "what": "Settings › Your Profile lets each member change their own name, email, phone and photo. Email and phone are checked as unique across the platform, and the phone is normalised. Every name and phone the app shows for a member comes from here; an Owner cannot correct another member's details.",
+      "who": "studio",
+      "where_in_1": "Settings (personal) › Your Profile",
+      "v1_code": "src/app/api/identity/profile/route.ts, src/app/(main)/settings/page.tsx (profile section), src/lib/queries/studio.ts (useUpdateProfile)",
+      "size": {
+        "pages": 1,
+        "components": 1,
+        "api_routes": 1,
+        "tables": 1,
+        "loc": 250
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Company › Members adds a member with name, phone and email (Owner / Admin). Each member's signature is set from the quote editor's Signature Settings. A portal bio and photo exist for About › Our team. The Accounts Setup audit marked this Partial (ST-16, E-63) and decided nothing.",
+      "pending": [
+        "A page where I change my own name, email, phone and photo",
+        "A member's own uploaded photo (2.0 shows a tinted initial, or one fixed demo photo)",
+        "My signature as a card on that page (contracts Q-30 said 'later')"
+      ],
+      "depends_on": "authentication (email / phone changes and password are the developers' lane)",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "Every member expects to fix their own name or photo. In 2.0, nobody can change a member's name, email or phone once the member is added. It is small, but it is a new screen.",
+      "effort": "S",
+      "questions": [
+        "Where does 'My account' live: the studio block's menu (with View as), or a Settings module?",
+        "Can an Owner or Admin also correct another member's name and phone in Company › Members?"
+      ]
+    },
+    {
+      "key": "link-previews",
+      "name": "Link previews for shared links",
+      "what": "A 1200×630 card (logo, tagline, product screenshot) is generated for social and WhatsApp link previews. It is set on the marketing site and the app's root, so every link a studio pastes (signing, renders, invoices) shows a card instead of a bare URL.",
+      "who": "public",
+      "where_in_1": "/api/og (edge image); metadata in src/app/layout.tsx, (marketing)/*, renders/[token]/layout.tsx",
+      "v1_code": "src/app/api/og/route.tsx, src/app/api/og/card-assets.ts",
+      "size": {
+        "pages": 0,
+        "components": 0,
+        "api_routes": 1,
+        "tables": 0,
+        "loc": 140
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "/renders/[token] has its own studio-named preview (title, description, render image). No other link has one.",
+      "pending": [
+        "A preview card on every link sent to a client: /sign, /sign/bundle, /confirm, /invoice, /receipt, /po, /my/[slug], /space, /f",
+        "Note: 1.0's card says 'OpenMaison', which breaks 1.0's own rule that clients never hear the platform's name"
+      ],
+      "depends_on": "",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "Studios send almost every link on WhatsApp, and a branded card with the studio's name and logo looks trustworthy where a bare URL looks like spam. It is cheap, but the card is a visible design.",
+      "effort": "S",
+      "questions": [
+        "Should a client link's preview carry the studio's name and logo (like /renders today), or no card at all?"
+      ]
+    },
+    {
+      "key": "message-delivery-providers",
+      "name": "Email and WhatsApp delivery (real)",
+      "what": "Notices really leave the app. Email goes through Resend with branded HTML templates (studio logo and colours, light and dark) for about 18 events; WhatsApp goes through 360dialog with Meta-approved templates. A five-minute job sends scheduled reminders (task due, follow-up, hold restart), an hourly job retries failed emails, and the WhatsApp webhook turns sent into delivered, read or failed. One central webhook routes WhatsApp receipts to each customer's own deployment. Clients' WhatsApp replies are only logged.",
+      "who": "system",
+      "where_in_1": "Background (crons notification-scheduled every 5 min, notification-digest hourly); webhooks /api/webhooks/whatsapp and /api/webhooks/whatsapp-central; dev previews /api/dev/email-gallery, /api/dev/email-preview; Admin › Notifications log",
+      "v1_code": "src/lib/notifications/** (dispatch, channels/email.ts, channels/whatsapp.ts, templates/**, retry, log-hub), src/lib/360dialog.ts, src/app/api/webhooks/whatsapp*/route.ts, src/app/api/cron/notification-scheduled, src/app/api/cron/notification-digest, src/app/api/dev/*",
+      "size": {
+        "pages": 0,
+        "components": 0,
+        "api_routes": 6,
+        "tables": 3,
+        "loc": 6600
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "The delivery layer (lib/notifications/delivery.ts + notification_outbox), Settings › Notifications › Events and channels, Messages to clients (editable plain-text drafts with a preview) and Sent messages with Retry (REG-1236, REG-1540, REG-1635). Reminders are worked out when read. The provider is an outbox stand-in that the developers replace with setDeliveryAdapter.",
+      "pending": [
+        "A real email and WhatsApp provider behind setDeliveryAdapter (Resend · 360dialog or another)",
+        "The production five-minute sweep that runs deliverDerived and releaseHeldMessages for every member; today these run when someone opens the bell",
+        "Delivered and Read receipts from WhatsApp; 2.0's Sent messages knows only sent, failed, held and no address",
+        "Branded HTML emails (the studio's logo and colours) in place of plain text",
+        "What happens to a client's WhatsApp reply (1.0 only logged it)"
+      ],
+      "depends_on": "an email service, a WhatsApp Business provider with approved templates, a scheduler",
+      "held_by": "",
+      "recommendation": "developers' lane",
+      "why": "This is the plumbing that makes every notice actually reach people, and 2.0 already has the seams for it. Two parts would show on screen and need her: the read receipts on Sent messages, and the look of the branded email.",
+      "effort": "L",
+      "questions": [
+        "Should Sent messages show Delivered / Read for WhatsApp once a real provider reports it?",
+        "Should a client's WhatsApp reply arrive in Messages, or stay outside the app?",
+        "Do you want to design the branded email (logo, colours), or keep plain text?"
+      ]
+    },
+    {
+      "key": "usage-analytics",
+      "name": "Usage tracking and analytics jobs",
+      "what": "The app records what people open and do (usage events, sign-in sessions). A daily job rolls each studio's day into totals: active members, leads, projects, quotes sent, invoices. A daily job on the main deployment pulls the same totals from every customer's own deployment (a 'fork'), and a weekly job deletes events older than 90 days. They feed OpenMaison's Admin › Analytics (leaderboard, feature use, funnels, a studio drill-in) and the owner's Studio Health page.",
+      "who": "platform",
+      "where_in_1": "Background (crons usage-rollup daily, fork-analytics-pull daily, usage-retention weekly); /admin/analytics/*; /accounts/usage (Studio Health)",
+      "v1_code": "src/lib/usage/* (track, rollup, funnels, phone-home), src/lib/analytics/fork-registry.ts, src/app/api/cron/usage-rollup, src/app/api/cron/fork-analytics-pull, src/app/api/cron/usage-retention, src/components/settings/usage-dashboard.tsx",
+      "size": {
+        "pages": 0,
+        "components": 0,
+        "api_routes": 3,
+        "tables": 5,
+        "loc": 960
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Only Qanvast Ops › Studios shows four portal-usage tiles for the last 30 days, counted live (lib/platform-studios.ts).",
+      "pending": [
+        "Event tracking across the app",
+        "Daily rollups per studio and per member",
+        "Pulling totals from each customer's deployment",
+        "90-day retention",
+        "The platform's Admin › Analytics dashboards (no audit decides them; Studio Health for the owner was dropped, Accounts Setup Q-16)"
+      ],
+      "depends_on": "a product-analytics service or warehouse; how customers are deployed (one platform or forks)",
+      "held_by": "Accounts Setup Q-16 (Studio Health dropped)",
+      "recommendation": "developers' lane",
+      "why": "It is OpenMaison's own telemetry, not something a studio uses. The developers should pick an analytics tool rather than port these jobs. If the platform admin dashboards are wanted, they need her design.",
+      "effort": "L",
+      "questions": [
+        "Does OpenMaison staff need the Admin › Analytics dashboards in 2.0, or will an off-the-shelf analytics tool do?"
+      ]
+    },
+    {
+      "key": "messages-free-chats",
+      "name": "Messages: free chats and groups",
+      "what": "1.0's Inbox opens a chat with anyone: any phone number, a lead who was never invited (from the lead drawer), or a New Group of hand-picked people, including studio-wide internal chats tied to no project. A conversation's members are added and removed by hand, and the list filters by All · Unread · Escalations. Its side panel groups shared files into Docs · Media · Links. A chat off the portal reaches nobody outside the app: there is no WhatsApp or SMS behind it.",
+      "who": "studio",
+      "where_in_1": "/inbox (New Chat · New Group · filters · context panel); lead drawer › Chat (?newChat=phone&leadId=)",
+      "v1_code": "src/app/(main)/inbox/page.tsx, src/components/inbox/*, src/app/api/chats/records/** (conversations, participants, messages), src/app/api/chat/upload/route.ts",
+      "size": {
+        "pages": 1,
+        "components": 10,
+        "api_routes": 6,
+        "tables": 4,
+        "loc": 3300
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Rail › Messages (/chat) and Project › Client › Messages: a Client and a Team conversation per project, a lead's conversation once the lead is invited, attachments, voice notes, location, contact cards, emoji, suggested replies by rule, search, Pin · Mute · Copy link, unread counts (REG-1626…1631, map 28 UC-063…073)",
+      "pending": [
+        "A chat with any phone or contact, or with a lead who was never invited (2.0: every conversation belongs to a home, H-Q11)",
+        "New Group with hand-picked people; studio-wide team chats not tied to a project",
+        "Add or remove a conversation's members by hand",
+        "All · Unread · Escalations filters (2.0 sorts unread first; tickets have their own place)",
+        "The Docs · Media · Links view of a conversation's shared files (2.0 files them in Files › Messages)"
+      ],
+      "depends_on": "",
+      "held_by": "H-Q11 (conversations follow the home and the team)",
+      "recommendation": "skip",
+      "why": "2.0 chose on purpose that every conversation belongs to a home or a project's team, and it has already built the parts that matter. The only real gap is a studio-wide team chat, if studios want one.",
+      "effort": "M",
+      "questions": [
+        "Do studios need one team chat that is not about a project (a studio-wide 'Team' room)?"
+      ]
+    },
+    {
+      "key": "portal-loose-ends",
+      "name": "Portal and project loose ends",
+      "what": "These are small behaviours behind 1.0's homeowner and project-aggregate APIs that no parity row carries over. A render file's 'Show to homeowner' toggle in Files puts the file on the portal's Renders tab. The project's money card says 'From signed quote · n line items'. A link at /my/[slug]/p/[token] opens a client's project in one tap.",
+      "who": "studio",
+      "where_in_1": "Project › Files & Docs › a renders-folder file › Show to homeowner; Project › Overview financial summary caption; /my/[studioSlug]/p/[portalToken]",
+      "v1_code": "src/app/api/homeowner-links/share-render, src/app/api/project-aggregates/quote-line-count, src/app/(main)/projects/[projectId]/page.tsx:1146, src/lib/homeowner-binding.ts",
+      "size": {
+        "pages": 0,
+        "components": 2,
+        "api_routes": 3,
+        "tables": 1,
+        "loc": 400
+      },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Designs are shared from the AI Visualizer or Project › Design › Designs to the portal's Designs. A file shared with the client lands in the portal's Files › Designs group (REG-1619). Money's line reads 'From the signed quote', with no count.",
+      "pending": [
+        "Share a render file from Files straight to the portal's Designs (inventory H-82…H-84; no map row)",
+        "The line count on 'From the signed quote' (map MI-014 says kept, but the count was dropped)",
+        "A redirect for 1.0's old /my/[slug]/p/[token] links (map 24 D-11, still waiting on you)",
+        "Developers' clean-up: invitePortal still writes homeowner_lead_links.chat_history_visible and invite-portal-modal.tsx still has 'Show chat history'; neither is mounted or read (H-Q16 dropped it)"
+      ],
+      "depends_on": "",
+      "held_by": "",
+      "recommendation": "build",
+      "why": "Each is a small, finished piece of 1.0 behaviour that fell between the map's rows. The old-link redirect matters most, because clients will have the 1.0 links saved on their phones.",
+      "effort": "S",
+      "questions": [
+        "Should 1.0's /p/{token} links redirect to the client's portal sign-in?"
+      ]
+    }
+  ],
+  "already_in_2": [
+    "lead-outreach-attempts (+ the AI chat-screenshot parse) → contact logs in Notes & Logs and the Move stage window; Auto Fill is the stand-in (Leads audit DEF-16, S-10); Journey mode excluded (DEF-04)",
+    "lead-artifacts (outreach evidence) → contact-log attachments; Journey evidence excluded (Leads map)",
+    "quote-generation-rules (Accounts › Quote Rules, the digitizer's Starter Quote) → held, Quote templates Q-07; starter sections + My Sections cover it",
+    "reference/plans + reference/invoices (subscription) → Company › Plan & AI credits (AI credits audit)",
+    "reference/project-types + document-templates/timeline (milestone templates) → Company › Templates › Schedules; Settings › Projects",
+    "reference/fx-rates + cron fx-rates → dropped, Singapore and S$ only (REG-1307). Map 28 still lists UC-119 as 'missing'; it should read dropped",
+    "identity/members, members/owner, members/me, studio-settings (chat identity, region, portal address) → Company › Members, Settings › Studio, Company › Client portal (Accounts Setup audit); regions held DEF-30",
+    "identity/studio-settings/payment-schedule → the default Payment schedule template (Templates › Payments)",
+    "studio-assets (logo, badge, signature, document image, font) → the brand kit + members' signatures; uploaded fonts held (Quote templates Q-14)",
+    "studio-companies → Company › Profile › issuing entities",
+    "material-catalog → Company › Materials (and the Price book) as Choices' option sources (map 28 TD-031, TD-043, FR-083)",
+    "member-signatures (+ roster) → the quote editor's Signature Settings; Members' 'Signature: not set'",
+    "document-templates (quote, invoice, PO, VO papers) → quote templates + Settings › Finance › Invoice paper; accent colour per template and a live preview on sample data still missing (map 28 FB-101, FB-102)",
+    "finance-documents + credit notes → Project › Money (Issue a credit note), Files › Payments (map 28 FB-060…062, MI-107)",
+    "quote-theme-presets → house styles Letter · Scope · Form (Quote templates DEF-05)",
+    "scope-questions → Company › Questionnaire (REG-612)",
+    "webhooks/leads (endpoints, logs, regenerate, Google Ads key, HMAC) → Company › Integrations › Webhooks, simulated (Leads parity round 6, Q-36)",
+    "email/* (Gmail connect, sync, AI parse) + cron poll-emails → Company › Integrations › Email, Sync now simulated, no poll and no model (Leads I-10, Q-36)",
+    "cron invoice-overdue → worked out from the due day on read, bell + Needs attention (REG-1040)",
+    "cron accounting-sync → Company › Integrations › Xero, simulated push with Retry (REG-1308, REG-1363); the real queue is the developers'",
+    "cron notification-digest → the daily digest held (Leads Q-42); its email retry is built (REG-1635)",
+    "cron price-drift + aggregate-rates (crowd market rates) → the platform's, held (Price book Q-16; X-Ray Q-23)",
+    "cron brand-dossier-scan (X-Ray brand ammo by web search) → curated brand notes in lib/xray/brands.ts (X-Ray Q-23)",
+    "cron copilot-analytics → held with the co-pilot (REG-552)",
+    "render/* (detect, segment, render, photorealistic, declutter, relight, style transfer/analyze, auto-furnish) → the AI Visualizer's curated in-browser engine (AI Visualizer audit)",
+    "render room-analyze, room-scan, drift-check, drift-fix → not needed by the curated engine (AI Visualizer VO-06); the platform's",
+    "render reangle, outpaint, depth, orbit-video, detect-sandbox and the /tools/*-sandbox pages → internal sandbox, decided not built (AI Visualizer VO-07, VO-08)",
+    "render floorplan-3d-sandbox (the live 'Floorplan to 3D Isometric (Beta)' tool) → the 3-D Space Planner's isometric view (REG-1656); an AI picture from an uploaded plan is not made",
+    "the planner's Photo render / Render Tour → Render in AI Visualizer (REG-1658); several renders in one go not built",
+    "demo/* (/try restyle, /try-visualizer anonymous trial with a quota) → excluded, the marketing trial (AI Visualizer audit Q-27; AI credits EX-01)",
+    "homeowner-bind (auto-binding every lead's phone, OTP sign-in, notify helpers) → invite-only Client access panel, phone + any six digits (map 28 CP-009 dropped Q-38, CP-040 simulated, CP-035 moved)",
+    "homeowner-links share-render, shared-renders, render-annotations, active-link → /renders/[token] + the portal's Designs, pins and replies (map 28 CP-021, CP-071…073, TD-121…124)",
+    "homeowner-links promote-lead-link → not needed: every project has a lead (CP-010); project-homeowner (the homeowner as a task assignee) → dropped (CP-051, TD-020)",
+    "project-aggregates financial-summary, contract-values, activity-feed → Project › Money, the Overview's Money card, the listing's Contract value, Activity (map 28 FR-033, PR-003, UC-035…045); action-items and overdue-invoices were read nowhere in 1.0 (dead) — Needs you covers the need",
+    "chats/records/** + chat/upload → Rail › Messages and Project › Client › Messages (map 28 UC-063…073); what is left is in the 'Messages: free chats and groups' card",
+    "storage/upload + storage/remove → 2.0 keeps file bytes in its own tables (gaps build E); a real object store is the developers'",
+    "dev/email-gallery + dev/email-preview → developer-only email previews; nothing to port (see the delivery card for the branded emails)"
+  ],
+  "notes": "Three helpers read parts of 1.0 (render/demo, the 13 cron jobs, homeowner/aggregates/chats); every finding was checked against 2.0's working tree, where everything since REG-822 is still uncommitted. vercel.json and src/app/api/cron match exactly (13 jobs), and there is no pg_cron or GitHub schedule in 1.0. The mAIson Bot's 66 tools were counted from src/lib/agents/tools.ts, but each executor was not traced. Appearance, Theme Skins, Home screen and Guided Tours on 1.0's personal Settings page have no API behind them and are left to the shell survey; Hangouts (the only reader of designer profiles) is outside this group. Dead code skipped: ProfileEditor, usePortfolioKPIs, the unread action-items fetch, the conversation rename hook."
+}

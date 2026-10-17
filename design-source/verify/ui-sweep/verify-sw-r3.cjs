@@ -14,7 +14,8 @@ async function ready(page) { await page.waitForLoadState('networkidle').catch(()
 const Q8 = sql(`select id from quotes where number='OM-10008'`)
 const ID = sql(`select id from quote_comparisons where quote_id='${Q8}' and other_studio='Flo Design' order by created_at limit 1`)
 const FILES = `${S}/sw3-files`; fs.mkdirSync(FILES, { recursive: true })
-const file = (name, body = '%PDF-1.4 probe') => { const p = `${FILES}/${name}`; fs.writeFileSync(p, body); return p }
+const referenceBytes = require(require('path').resolve(__dirname, '../../..', 'design-source/verify/x-ray-parity/fixtures/reference-file.cjs'))   // (S42 E-05) a reference quote is read by its words, never its name
+const file = (name, body = '%PDF-1.4 probe') => { const p = `${FILES}/${name}`; fs.writeFileSync(p, body === '%PDF-1.4 probe' ? referenceBytes(name) ?? body : body); return p }
 
 ;(async () => {
   const browser = await chromium.launch()

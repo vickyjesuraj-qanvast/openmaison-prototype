@@ -1,0 +1,30 @@
+/* (gaps build G, G-Q13) The marked plan's papers — A4 landscape (1.0 F-220), on the quote preview's stage: white, level-2 on screen, one page each
+   when printed. The plan is fitted inside its box; the legend flows onto as many pages as it needs. */
+.papers { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); }
+.paper { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; gap: 4mm; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); overflow: hidden; }
+.paper[data-flow] { height: auto; min-height: 210mm; overflow: visible; }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--om-spacing-4); padding-bottom: 3mm; box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.headMain, .headSide { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.headSide { align-items: flex-end; text-align: right; }
+.project { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.planName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.line { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.planBox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.plan { display: block; max-width: 100%; max-height: 100%; }
+.foot { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.h2 { margin: var(--om-spacing-2) 0 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.legend { width: 100%; border-collapse: collapse; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.legend th { text-align: left; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary); padding: var(--om-spacing-2); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.legend td { vertical-align: top; padding: var(--om-spacing-2); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.legend tr { break-inside: avoid; }
+.num { font: var(--om-type-subheading-m); white-space: nowrap; }
+.layer { display: block; color: var(--om-color-on-surface-secondary); }
+.words { display: block; font-style: italic; }
+.said { display: block; color: var(--om-color-on-surface-secondary); }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  .papers { gap: 0; display: block; }
+  .paper { box-shadow: none; break-after: page; }
+  .paper:last-child { break-after: auto; }
+}

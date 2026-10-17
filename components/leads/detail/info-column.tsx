@@ -10,10 +10,13 @@ import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import { displayDate, groupDigits, maskNric, money, phoneDigits, phoneLocal } from '@/lib/format'
 import { runsStudio } from '@/lib/leads/assign-policy'
+import { isCommercialType } from '@/lib/leads/enums'   // (pending modules S05)
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import styles from './info-column.module.css'
+import Link from 'next/link'
+import textLink from '@/components/om/text-link.module.css'   // (simplify S-01) the project's document rows link as the house text link
 
 /**
  * Lead Details › Overview — the lead-info column (858:24787, frame 155; collapsed / assigned states from
@@ -66,6 +69,10 @@ const BLOCKS: { icon: string; label: string; section: string | null }[] = [
   { icon: 'sticky_note_2', label: 'Other info', section: 'Other info' },
   { icon: 'list_alt', label: 'Custom fields', section: 'Custom fields' },   /* (REG-612) shown only when the studio has fields */
 ]
+/* (parity P-01 · A-01) A project's page carries this column: its own section, Project info, takes Lead info's place — in the strip too, on the
+   same glyph, so the column keeps one shape on both records. */
+const PROJECT_INFO = { icon: 'info', label: 'Project info', section: 'Project info' }
+const blocksFor = (project: boolean) => (project ? BLOCKS.map((b) => (b.section === 'Lead info' ? PROJECT_INFO : b)) : BLOCKS)
 const slug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
 const sectionId = (title: string) => `info-section-${slug(title)}`
 
@@ -74,7 +81,7 @@ export type InfoColumnProps = {
   customFields?: CustomFieldDef[]
   customValues?: CustomValues
   /** (REG-609, parity Q-22) The portal link's invite stamp — the "Portal" row. */
-  portal?: { invitedAt: Date | null } | null
+  portal?: { invitedAt: Date | null; openedAt?: Date | null; lastOpenedAt?: Date | null; withdrawnAt?: Date | null } | null
   lead: LeadRow
   /** The studio's members. (UX audit 2026-09-30, L7) The Owner row reads the lead's own assignees now. (REG-903) The signed-in member
    *  (`isYou`) among them decides whether the NRIC's Show is offered. */
@@ -85,13 +92,55 @@ export type InfoColumnProps = {
   onCopy: (what: 'phone' | 'email', value: string) => void
   onWhatsApp: () => void
   onDirections: () => void
+  /** (parity P-01 · A-01) A project's page: the column names the project in its labels, and its own section — the number, the stage, the
+   *  project type, the scope and the dates — takes Lead info's place (the lead's Source, Budget, Created, NRIC / FIN, Customer ID and Portal
+   *  stay on the lead's own record). The pencil is the frame's Edit details (a direct project) or the lead's form in place (a Won one, Q-04). */
+  project?: ProjectInfo
+  /** (pending modules S26 — card studio:team-chats, "a chat about a lead before it has a project") the record's Team conversation — the
+   *  Collaborators' door to it (a lead's before Won, carried on in the project's once Won); shown while the record has members */
+  teamChatHref?: string | null
 }
+
+/** (parity P-01) A project's own facts, as words — the page formats them. (simplify S-01) …and its documents: the signed quote and the contract
+    (Key documents left the Overview for these rows), a direct project's other quotes and contracts — each opening itself. */
+export type ProjectInfo = { number: string; stage: string; projectType: string | null; scope: string | null; start: Date | null; end: Date | null
+  documents?: ProjectInfoDocument[] }
+/** (simplify S-01) One Project info row for a document: its label, its words ("OM-10005", "Signed 21 Aug ’26"), and where it opens. */
+export type ProjectInfoDocument = { key: string; label: string; value: string | null; href?: string; testId?: string }
 
 const DASH = '--'
 
 export function InfoColumn({
-  lead, team = [], onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
+  lead, team = [], onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {}, project, teamChatHref = null,
 }: InfoColumnProps) {
+  /* (parity P-01) the record the column speaks of — its labels say "project" on a project's page */
+  const noun = project ? 'project' : 'lead'
+  const blocks = blocksFor(!!project)
+  /* (pending modules S26) the team's own conversation — one link on the Collaborators, while the record has members (the Portal row's door,
+     its twin for the team: the client never sees it) */
+  const teamChatRow = teamChatHref && lead.assignees.length ? (
+    <Row k="Team chat">
+      <span className={styles.text}>Only the team reads it{' · '}<Link className={styles.headLink} href={teamChatHref} data-testid="info-team-chat">Messages</Link></span>
+    </Row>
+  ) : null
+  /* (parity P-01 · A-01) the project's own section, in Lead info's place — on the desktop column and the phone's sheet alike */
+  const projectSection = project ? (
+    <Section title="Project info">
+      <KVList>
+        <Row k="Number" text={project.number} testId="info-project-number" />
+        <Row k="Stage" text={project.stage} testId="info-project-stage" />
+        <Row k="Project type" text={project.projectType ?? DASH} testId="info-project-type" />
+        <Row k="Scope" text={project.scope ?? DASH} testId="info-project-scope" />
+        <Row k="Start date" text={project.start ? displayDate(project.start) : DASH} testId="info-project-start" />
+        <Row k="Target end" text={project.end ? displayDate(project.end) : DASH} testId="info-project-end" />
+        {(project.documents ?? []).map((doc) => (
+          <Row key={doc.key} k={doc.label} testId={doc.testId}>
+            {doc.href && doc.value ? <Link href={doc.href} className={textLink.link}>{doc.value} <Icon name="arrow_outward" size={16} /></Link> : <span className={styles.text}>{doc.value ?? DASH}</span>}
+          </Row>
+        ))}
+      </KVList>
+    </Section>
+  ) : null
   /* (REG-612) The Custom fields section — after Other info, on the desktop column and the phone's sheet alike. */
   const customSection = customFields.length ? (
     <>
@@ -117,6 +166,17 @@ export function InfoColumn({
   const nricShown = mayShowNric && nricShownFor === lead.id
   /* (UX audit 2026-09-30, L11) On a touch screen the number calls: a tel: link beside Copy and WhatsApp (the +65 the column leaves implied). */
   const touch = useMediaQuery(TOUCH_TABLET)
+  /* (pending modules S05 — testers' L-3 · L-4) a commercial client's company and UEN; the second client (a co-owner) — their name and mobile,
+     the mobile with Copy — shown only when the lead holds them */
+  const commercial = isCommercialType(lead.propertyType)
+  const secondRow = lead.client2Name ? (
+    <Row k="Second client">
+      <span className={styles.text} data-testid="lead-second-client">
+        {lead.client2Name}{lead.client2Phone ? <>{' · '}<span className={styles.keep}>{phoneLocal(lead.client2Phone)}</span></> : ''}
+        {lead.client2Phone ? <>{' '}<Tooltip label="Copy their number"><button type="button" className={styles.iconBtn} data-size="16" aria-label={`Copy ${lead.client2Name}’s number`} onClick={() => onCopy('phone', lead.client2Phone!)}><Icon name="content_copy" size={16} weight={300} /></button></Tooltip></> : null}
+      </span>
+    </Row>
+  ) : null
 
   /* (REG-304) Whole-column state — see the file comment. */
   const mobile = useMediaQuery(MOBILE)
@@ -137,15 +197,15 @@ export function InfoColumn({
 
   if (!expanded && !mobile) {
     return (
-      <aside className={styles.column} aria-label="Lead info" data-state="collapsed" data-animate={animate || undefined}>
-        <Tooltip label="Expand lead details" side="right">
-          <button type="button" className={styles.stripToggle} aria-label="Expand lead details" aria-expanded={false} onClick={toggle}>
+      <aside className={styles.column} aria-label={project ? 'Project info' : 'Lead info'} data-state="collapsed" data-animate={animate || undefined}>
+        <Tooltip label={`Expand ${noun} details`} side="right">
+          <button type="button" className={styles.stripToggle} aria-label={`Expand ${noun} details`} aria-expanded={false} onClick={toggle}>
             <Icon name="left_panel_open" size={20} weight={300} />
           </button>
         </Tooltip>
         <div className={styles.divider} />
         <div className={styles.glyphs}>
-          {BLOCKS.filter((b) => b.section !== 'Custom fields' || customFields.length > 0).map((b) => (
+          {blocks.filter((b) => b.section !== 'Custom fields' || customFields.length > 0).map((b) => (
             <Tooltip key={b.label} label={b.label} side="right">
               <button type="button" className={styles.glyph} aria-label={b.label} onClick={() => reveal(b.section)}>
                 <Icon name={b.icon} size={24} weight={300} />
@@ -157,16 +217,16 @@ export function InfoColumn({
     )
   }
 
-  const toggleLabel = expanded ? 'Collapse lead details' : 'Expand lead details'
+  const toggleLabel = expanded ? `Collapse ${noun} details` : `Expand ${noun} details`
   return (
-    <aside className={styles.column} aria-label="Lead info" data-state={expanded ? 'expanded' : 'collapsed'} data-animate={animate || undefined}>
+    <aside className={styles.column} aria-label={project ? 'Project info' : 'Lead info'} data-state={expanded ? 'expanded' : 'collapsed'} data-animate={animate || undefined}>
       {/* Identity block (858:24788): name row · phone · email · address, 4 apart */}
       <div className={styles.identity}>
         <div className={styles.nameRow}>
           <p className={styles.name}>{lead.name}</p>
           <span className={styles.nameActions}>
-            <Tooltip label="Edit lead" shortcut="edit">
-              <button type="button" className={styles.iconBtn} aria-label="Edit lead" data-kb="edit" onClick={onEdit}>
+            <Tooltip label={project ? 'Edit details' : 'Edit lead'} shortcut="edit">
+              <button type="button" className={styles.iconBtn} aria-label={project ? 'Edit details' : 'Edit lead'} data-kb="edit" onClick={onEdit}>
                 <Icon name="edit" size={20} weight={300} />
               </button>
             </Tooltip>
@@ -253,31 +313,45 @@ export function InfoColumn({
               <LinkButton label="Assign Member" onClick={onAssign} kb="assign" />
             )}
           </Row>
+          {teamChatRow}
         </KVList>
       </Section>
 
       <div className={styles.rule} />
 
+      {projectSection ?? (
       <Section title="Lead info">
         <KVList>
           <Row k="Stage" text={lead.stage} />
           <Row k="Source" text={lead.source} />
           <Row k="Budget (S$)" text={lead.budgetMinor > 0 ? money(lead.budgetMinor) : DASH} />   {/* (UX audit 2026-09-30, L8) unknown = "--" */}
           <Row k="Created" text={displayDate(lead.createdAt)} />
+          {/* (pending modules S05 — testers' L-3) a commercial client's company and UEN, in the NRIC's place */}
+          {commercial ? <><Row k="Company" text={lead.companyName ?? DASH} testId="lead-company" /><Row k="UEN" text={lead.companyUen ?? DASH} /></> : null}
           {/* (REG-607, parity Q-35) 1.0's client IC and customer reference, printed on the quotes. */}
-          <Row k="NRIC / FIN">
+          {commercial && !lead.icNumber ? null : <Row k="NRIC / FIN">
             {lead.icNumber ? (
               <span className={styles.text} data-testid="lead-nric">
                 {nricShown ? lead.icNumber : maskNric(lead.icNumber)}
                 {mayShowNric && !nricShown ? <>{' '}<button type="button" className={styles.headLink} aria-label="Show NRIC / FIN" onClick={() => setNricShownFor(lead.id)}>Show</button></> : null}
               </span>
             ) : <span className={styles.text}>{DASH}</span>}
-          </Row>
+          </Row>}
           <Row k="Customer ID" text={lead.customerId ?? DASH} />
+          {secondRow}
           {/* (REG-609, parity Q-22) Invite to Portal leaves a record — the link's stamp reads back here. */}
-          <Row k="Portal" text={portal?.invitedAt ? `Invited ${displayDate(portal.invitedAt)}` : DASH} />
+          {/* (Projects r4a) …and the access's state: opened (last), invited, withdrawn — the Client access panel's words */}
+          {/* (parity map, UC-064) …and, invited, the door to the lead's own conversation — the client writes from their page before Won, the
+              studio answers in Messages (the smallest door: one link on the row that already says they're on the portal) */}
+          <Row k="Portal">
+            <span className={styles.text}>
+              {portal?.withdrawnAt ? `Withdrawn ${displayDate(portal.withdrawnAt)}` : portal?.lastOpenedAt ? `Opened ${displayDate(portal.lastOpenedAt)}` : portal?.invitedAt ? `Invited ${displayDate(portal.invitedAt)}` : DASH}
+              {portal?.invitedAt && !portal.withdrawnAt ? <>{' · '}<Link className={styles.headLink} href={`/chat?open=${encodeURIComponent(`lead:${lead.id}`)}&from=${encodeURIComponent(`/leads/${lead.id}`)}`} data-testid="lead-portal-messages">Client messages</Link></> : null}   {/* (S42 audit C-23, call C·5) the client's conversation — the Team chat row's "Messages" is the team's */}
+            </span>
+          </Row>
         </KVList>
       </Section>
+      )}
 
       <div className={styles.rule} />
 
@@ -339,17 +413,22 @@ export function InfoColumn({
                     <LinkButton label="Assign Member" onClick={onAssign} kb="assign" />
                   )}
                 </Row>
+                {teamChatRow}
               </KVList>
             </Section>
             <div className={styles.rule} />
+            {projectSection ?? (
             <Section title="Lead info">
               <KVList>
                 <Row k="Stage" text={lead.stage} />
                 <Row k="Source" text={lead.source} />
                 <Row k="Budget (S$)" text={lead.budgetMinor > 0 ? money(lead.budgetMinor) : DASH} />   {/* (UX audit 2026-09-30, L8) unknown = "--" */}
                 <Row k="Created" text={displayDate(lead.createdAt)} />
+                {commercial ? <><Row k="Company" text={lead.companyName ?? DASH} /><Row k="UEN" text={lead.companyUen ?? DASH} /></> : null}   {/* (pending modules S05) */}
+                {secondRow}
               </KVList>
             </Section>
+            )}
             <div className={styles.rule} />
             <Section title="Property info">
               <KVList gap={16}>
@@ -385,7 +464,7 @@ function Section({ title, link, children }: {
 }) {
   // Collapsed sections are remembered per browser, like the listing's table/kanban choice (lib/prefs.ts).
   const [open, setOpen] = useFlagPref(`om.detail.section.${slug(title)}`, true)
-  const blockIcon = BLOCKS.find((b) => b.section === title)?.icon
+  const blockIcon = [...BLOCKS, PROJECT_INFO].find((b) => b.section === title)?.icon
   const bodyId = useId()
   return (
     <section id={sectionId(title)} className={styles.section} aria-label={title}>
@@ -413,11 +492,11 @@ function KVList({ gap = 12, children }: { gap?: 12 | 16; children: ReactNode }) 
   return <dl className={styles.kv} data-gap={gap}>{children}</dl>
 }
 
-function Row({ k, text, children }: { k: string; text?: string; children?: ReactNode }) {
+function Row({ k, text, children, testId }: { k: string; text?: string; children?: ReactNode; /** (parity P-01) the project's own rows */ testId?: string }) {
   return (
     <>
       <dt className={styles.key}>{k}</dt>
-      <dd className={styles.value}>{text != null ? <span className={styles.text}>{text}</span> : children}</dd>
+      <dd className={styles.value} data-testid={testId}>{text != null ? <span className={styles.text}>{text}</span> : children}</dd>
     </>
   )
 }

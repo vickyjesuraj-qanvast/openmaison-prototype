@@ -15,7 +15,7 @@ import { displayDateLong, isOverdue, moneySGD, relativeTime } from '@/lib/format
 import { spring } from '@/lib/motion'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
-import { canReturnLead } from '@/lib/leads/stage-policy'
+import { canReturnLead, projectHoldsDelete } from '@/lib/leads/stage-policy'
 import { BLANK, stageAge } from '@/lib/leads/row-text'
 import styles from './board.module.css'
 
@@ -42,9 +42,11 @@ const FOOT_SLOTS = 7     // the mock's 288px card: (256 − 24 button − 8 gap)
 const avatarSlotsFor = (width: number) => (width <= 0 ? FOOT_SLOTS : Math.max(1, Math.floor((width - AVATAR - AVATAR_GAP) / (AVATAR + AVATAR_GAP))))
 
 function KanbanCard({
-  lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked, canDelete = true,
+  lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked, canDelete = true, onOpenProject,
 }: {
   lead: LeadRow
+  /** (fix-E, A-09) Open project, for a lead with a live project (its Delete is refused in the row). */
+  onOpenProject?: (lead: LeadRow) => void
   /** (REG-607, parity Q-41) Only Owners and Admins delete: the card menu drops the item for everyone else. */
   canDelete?: boolean
   now: number
@@ -276,10 +278,11 @@ function KanbanCard({
                 column body can no longer clip it, and PortalMenu flips on the viewport — the menu-side.ts measure retired here. A press
                 inside it still never lifts the card: its rows are buttons in a role="menu" (onPointerDown above). */}
             <PortalMenu open={menuOpen} anchor={kebabWrap} onClose={closeMenu} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={lead.name}>
-              {canDelete ? <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
+              {lead.project && onOpenProject ? <DropdownItem onSelect={() => { setMenuOpen(false); onOpenProject(lead) }} help={lead.project.number}>Open project</DropdownItem> : null}
+              {canDelete ? <DropdownItem tone="danger" disabled={!!lead.project} title={lead.project ? projectHoldsDelete(lead.project.number) : undefined} onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
               {canReturnLead(lead) ? (
                 /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */
-                <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>Return Lead</DropdownItem>
+                <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>{lead.returnStatus === 'rejected' ? 'Appeal the return' : 'Return Lead'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
               ) : null}
             </PortalMenu>
           </span>
@@ -335,9 +338,11 @@ function KanbanCard({
 }
 
 export function KanbanBoard({
-  rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked, canDelete = true,
+  rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked, canDelete = true, onOpenProject,
 }: {
   rows: LeadRow[]
+  /** (fix-E, A-09) */
+  onOpenProject?: (lead: LeadRow) => void
   /** (REG-607) */
   canDelete?: boolean
   query: string
@@ -413,7 +418,7 @@ export function KanbanBoard({
                         <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef} unseen={unseenIds?.has(lead.id)}
                                     onKebabDelete={onKebabDelete} onKebabReturn={onKebabReturn} onAssign={onAssign}
                                     onDragToStage={onDragToStage} onNameClick={onNameClick} onTaskClick={onTaskClick} pendingDrop={pendingDrop}
-                                    canDrop={canDrop} onDropBlocked={onDropBlocked} canDelete={canDelete} />
+                                    canDrop={canDrop} onDropBlocked={onDropBlocked} canDelete={canDelete} onOpenProject={onOpenProject} />
                       ))}
                     </AnimatePresence>
                     {leads.length === 0 ? (

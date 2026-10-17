@@ -1,32 +1,38 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
-import { BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, type Align, type Block, type BlockKind, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
+import { AFTER_TITLE, BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, defaultBlock, detailsLook, ELEMENT_LABEL, ITEM_COLUMN_LABEL, ITEMS_SPACE_KEYS, ITEMS_SPACE_LABEL, isCanvas, newId, rowLinesOf, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, subtotalStyleOf, type Align, type Block, type BlockKind, type BrandKit, type CanvasBlock, type CanvasElement, type Currency, type ItemsBlock, type KVRow, type KvLines, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { readFileAsDataUrl } from '@/lib/templates/files'
+import { COVER_LOOKS, coverLook, type CoverLookKey } from '@/lib/templates/covers'
+import { TemplateThumb } from '@/components/templates/render/document'
+import type { DocData } from '@/lib/templates/data'
 import { defaultElement, duplicateBlock, flowBlocks, moveBlock, patchBlock, patchElement, removeBlock } from './editor-state'
-import { ColorPick, Field, Group, Num, Seg, Sel, StyleEditor, Sub, Sw, Txt } from './inspector-controls'
+import { ColorPick, Field, Group, Num, RichTxt, Seg, Sel, StyleEditor, Sub, Sw, Txt } from './inspector-controls'
 import styles from './inspector.module.css'
 
 export type DesignSetter = (fn: (d: TemplateDesign) => TemplateDesign, opts?: { coalesce?: string }) => void
-type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-618, parity Q-19) the host resets a block to a new block's settings, with an Undo snackbar */ onResetBlock?: (id: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string>; /** (Dane UAT, Figma 1517:21) the studio's trades, named under "Group the items by" */ trades?: string[] }
+type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-618, parity Q-19) the host resets a block to a new block's settings, with an Undo snackbar */ onResetBlock?: (id: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string>; /** (Dane UAT, Figma 1517:21) the studio's trades, named under "Group the items by" */ trades?: string[]
+  /** (pending modules S11) the quote on the page, for the cover looks' small pages; the host lays a look over the cover, with an Undo snackbar */ sample?: DocData; onCoverLook?: (blockId: string, key: CoverLookKey) => void }
 
 /** (Dane UAT, Figma 1517:57) The words a new block of each kind starts with — what a box's Reset puts back. Built once, outside render. */
 const FRESH = Object.fromEntries(BLOCK_KINDS.map((k) => [k, defaultBlock(k)])) as Record<BlockKind, Block>
 const FRESH_PAGE_NO = (() => { const e = defaultElement('pageno'); return e.kind === 'pageno' ? e.format : '' })()
 
 const ALIGN_OPTS: { value: Align; label: string; icon: string }[] = [{ value: 'left', label: 'Left', icon: 'format_align_left' }, { value: 'center', label: 'Centre', icon: 'format_align_center' }, { value: 'right', label: 'Right', icon: 'format_align_right' }]
+/* (S44T — her UAT ask 2026-10-15) the new choices' words */
+const KV_LINES: { value: KvLines; label: string }[] = [{ value: 'none', label: 'None' }, { value: 'under', label: 'A line under each value' }, { value: 'boxed', label: 'Boxed' }]
+const CURRENCIES: { value: Currency; label: string }[] = [{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ with a space' }, { value: 'none', label: 'Figures only' }]
+const PCT_AT: { value: 'inline' | 'column' | 'none'; label: string }[] = [{ value: 'inline', label: 'Before the words' }, { value: 'column', label: 'In its own column' }, { value: 'none', label: 'Not printed' }]
 const ELEMENT_KINDS: CanvasElement['kind'][] = ['text', 'image', 'kv', 'rule', 'box', 'signature', 'badges', 'pageno', 'social']
 const ELEMENT_ICON: Record<CanvasElement['kind'], string> = { text: 'text_fields', image: 'image', kv: 'list_alt', rule: 'horizontal_rule', box: 'rectangle', signature: 'draw', badges: 'verified', pageno: 'tab', social: 'share' }
-const htmlToText = (h: string) => h.replace(/<\/p>\s*<p[^>]*>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-const textToHtml = (t: string) => t.split('\n').map((l) => `<p>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`).join('')
-const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')[0] : e.kind === 'kv' ? e.rows.map((r) => r.label).filter(Boolean).join(' · ') : e.kind === 'image' ? (e.src === 'logo' || e.src === 'logo-dark' ? 'Logo' : e.src === 'stamp' ? 'Stamp' : 'Picture') : e.kind === 'pageno' ? '' : e.kind === 'signature' ? `${e.columns.length} columns` : e.kind === 'social' ? e.networks.map((k) => SOCIAL_LABEL[k]).join(' · ') : ''
+const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')[0] : e.kind === 'kv' ? e.rows.map((r) => r.label).filter(Boolean).join(' · ') : e.kind === 'image' ? (e.src === 'logo' || e.src === 'logo-dark' ? 'Logo' : e.src === 'stamp' ? 'Stamp' : e.src ? 'Picture' : 'no picture chosen yet') : e.kind === 'pageno' ? '' : e.kind === 'signature' ? `${e.columns.length} columns` : e.kind === 'social' ? e.networks.map((k) => SOCIAL_LABEL[k]).join(' · ') : ''
 
 /**
  * The inspector (REG-486; 5b/5c corrected): what the selected block or element can change — the five controls that
@@ -34,7 +40,7 @@ const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')
  */
 const TOTAL_LINE_LABEL: Record<string, string> = { pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }
 
-export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, onResetBlock, values, trades = [] }: Props) {
+export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, onResetBlock, values, trades = [], sample, onCoverLook }: Props) {
   const block = design.blocks.find((b) => b.id === selection?.blockId) ?? null
   if (!block) {
     /* (REG-542) The resting state says what to do in three plain steps — "Inspector" meant nothing to a studio owner. */
@@ -55,13 +61,13 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
   }
   const element = isCanvas(block) && selection?.elementId ? block.elements.find((e) => e.id === selection.elementId) ?? null : null
   if (element && isCanvas(block)) return <ElementInspector block={block} element={element} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteElement} values={values} />
-  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} onReset={onResetBlock} values={values} trades={trades} />
+  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} onReset={onResetBlock} values={values} trades={trades} sample={sample} onCoverLook={onCoverLook} />
 }
 
 /** (Dane UAT, Figma 1517:57) A box's Reset: the words a new block of this kind starts with, put back as one undo step (never folded into the typing before it). */
 type ResetFor = (field: string) => { reset?: string; onReset?: () => void }
 
-function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, onReset, values, trades }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; onReset?: (id: string) => void; values?: Record<string, string>; trades: string[] }) {
+function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, onReset, values, trades, sample, onCoverLook }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; onReset?: (id: string) => void; values?: Record<string, string>; trades: string[]; sample?: DocData; onCoverLook?: (blockId: string, key: CoverLookKey) => void }) {
   const upd = (patch: Record<string, unknown>, coalesce?: string) => onDesign((d) => patchBlock(d, b.id, (x) => ({ ...x, ...patch }) as Block), coalesce ? { coalesce: `${b.id}:${coalesce}` } : undefined)
   const fresh = FRESH[b.kind] as unknown as Record<string, unknown>
   const rs: ResetFor = (field) => { const v = fresh[field]; return typeof v === 'string' && v ? { reset: v, onReset: () => upd({ [field]: v }) } : {} }   // a box that starts empty has nothing to put back
@@ -87,9 +93,11 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
       </div>
       <div className={styles.body}>
         <div className={styles.grid}>
-          {canvas ? <CanvasFields block={b} brand={brand} upd={upd} onDesign={onDesign} onSelect={onSelect} onReset={onReset} /> : null}
+          {canvas ? <CanvasFields block={b} design={design} brand={brand} upd={upd} onDesign={onDesign} onSelect={onSelect} onReset={onReset} sample={sample} onCoverLook={onCoverLook} /> : null}
           {b.kind === 'details' ? <>
-            <Seg label="Layout" value={b.layout} options={[{ value: 'columns', label: 'Two columns' }, { value: 'stacked', label: 'One column' }, { value: 'form', label: 'Form lines' }]} onChange={(v) => upd({ layout: v })} />
+            {/* (S44T — UAT row 322) Layout is the columns; Lines is how the rows are drawn — the old "Form lines" layout is two columns with a line under each value */}
+            <Seg label="Layout" value={detailsLook(b).layout} options={[{ value: 'columns', label: 'Two columns' }, { value: 'stacked', label: 'One column' }]} onChange={(v) => upd({ layout: v, lines: detailsLook(b).lines })} />
+            <Sel label="Lines" value={detailsLook(b).lines} options={KV_LINES} onChange={(v) => upd({ lines: v, layout: detailsLook(b).layout })} />
             <Num label="Label width" unit="mm" value={b.labelWidth} min={8} max={80} onChange={(v) => upd({ labelWidth: v })} wide />
             <KvRows label="Left column" rows={b.left} onChange={(rows) => upd({ left: rows }, 'left')} values={values} />
             <KvRows label="Right column" rows={b.right} onChange={(rows) => upd({ right: rows }, 'right')} values={values} />
@@ -98,10 +106,12 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
           {b.kind === 'title' ? <>
             <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} {...rs('title')} />
             <Txt label="Subject line" value={b.subject} onChange={(v) => upd({ subject: v }, 'subject')} values={values} />
-            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} {...rs('intro')} />
+            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} {...rs('intro')} help />
             <Group title="More options"><Sub>Text styles</Sub>{style('titleStyle', 'Title')}{style('subjectStyle', 'Subject')}{style('introStyle', 'Introduction')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
-          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} onReset={onReset} rs={rs} trades={trades} /> : null}
+          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} onReset={onReset} rs={rs} trades={trades} brand={brand}
+                                             /* (S44T — M2) the Items table's Currency: the totals and the payment schedule print it too (each can print its own after) */
+                                             onCurrency={(v) => onDesign((d) => ({ ...d, blocks: d.blocks.map((x) => (x.id === b.id || x.kind === 'totals' || x.kind === 'payments' ? { ...x, currency: v } as Block : x)) }))} /> : null}
           {b.kind === 'totals' ? <>
             <div className={styles.list} role="group" aria-label="Lines">
               {b.lines.map((l, i) => (
@@ -115,6 +125,7 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Seg label="Where it sits" value={b.layout} options={[{ value: 'right', label: 'On the right' }, { value: 'full', label: 'Full width' }]} onChange={(v) => upd({ layout: v })} />
             {b.layout === 'right' ? <Num label="Width" unit="mm" value={b.width} min={40} max={200} onChange={(v) => upd({ width: v })} wide /> : null}
             <Sel label="Lines" value={b.rules} options={[{ value: 'none', label: 'None' }, { value: 'top', label: 'A line above the total' }, { value: 'double', label: 'A double line under the total' }, { value: 'grid', label: 'Boxed' }]} onChange={(v) => upd({ rules: v })} />
+            <Sel label="Currency" value={b.currency ?? 'S$'} options={CURRENCIES} onChange={(v) => upd({ currency: v })} />   {/* (S44T — M2, rows 253 · 300) */}
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('totalStyle', 'Grand total')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'payments' ? <>
@@ -123,7 +134,14 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Sw label="Show amounts" value={b.showAmounts} onChange={(v) => upd({ showAmounts: v })} />
             <Sw label="Show due dates" value={b.showDue} onChange={(v) => upd({ showDue: v })} />
             {/* (REG-618, parity Q-16) How the milestones are marked: numbers, letters or ordinals. */}
-            <Seg label="Milestones are marked" value={b.ordinals ? 'ordinals' : b.letters ? 'letters' : 'numbers'} options={[{ value: 'numbers', label: '1 · 2 · 3' }, { value: 'letters', label: 'A · B · C' }, { value: 'ordinals', label: '1st · 2nd' }]} onChange={(v) => upd({ letters: v === 'letters', ordinals: v === 'ordinals' || undefined })} />
+            {/* (S44T — row 354) (a) · (b) · (c) joins the marks — four choices are a select: the segments no longer fit the pane (REG-542) */}
+            <Sel label="Milestones are marked" value={b.parens ? 'parens' : b.ordinals ? 'ordinals' : b.letters ? 'letters' : 'numbers'} options={[{ value: 'numbers', label: '1 · 2 · 3' }, { value: 'letters', label: 'A · B · C' }, { value: 'parens', label: '(a) · (b) · (c)' }, { value: 'ordinals', label: '1st · 2nd · 3rd' }]} onChange={(v) => upd({ letters: v === 'letters', ordinals: v === 'ordinals' || undefined, parens: v === 'parens' || undefined })} />
+            {/* (S44T — rows 355 · 310) where the share prints — a fixed row prints its own word there */}
+            <Sel label="The percentage" value={b.pctAt === 'column' && b.layout !== 'table' ? 'inline' : b.pctAt ?? 'inline'} options={b.layout === 'table' ? PCT_AT : PCT_AT.filter((o) => o.value !== 'column')} onChange={(v) => upd({ pctAt: v === 'inline' ? undefined : v })} helper="A fixed fee prints its own word there — set it on the quote" />
+            <Sel label="Currency" value={b.currency ?? 'S$'} options={CURRENCIES} onChange={(v) => upd({ currency: v })} />
+            {/* (S44T — call C5, row 294) the PayNow QR beside the schedule, as Bank details prints it */}
+            <Sw label="PayNow QR beside the schedule" value={!!b.qr} onChange={(v) => upd({ qr: v || undefined })} hint="Prints when the issuing entity has a QR uploaded in Company › Profile" />
+            {b.qr ? <Num label="QR size" unit="mm" value={b.qrWidth ?? 26} min={12} max={60} onChange={(v) => upd({ qrWidth: v })} /> : null}
             <Sw label="Total line under the milestones" value={!!b.showTotal} onChange={(v) => upd({ showTotal: v })} hint="The percentages' sum and, with amounts on, the quote total" />   {/* (REG-560, T-2) */}
             <Txt label="Footnote under the schedule" value={b.footnote ?? ''} multiline onChange={(v) => upd({ footnote: v || undefined }, 'footnote')} values={values} />   {/* (REG-618, parity Q-16) */}
             <Group title="More options"><Sw label="Title as a black band" value={b.band} onChange={(v) => upd({ band: v })} /><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
@@ -157,7 +175,8 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('headingStyle', 'Names')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'text' ? <>
-            <Txt label="Text" value={htmlToText(b.html)} multiline onChange={(v) => upd({ html: textToHtml(v) }, 'html')} values={values} />
+            {/* (S44G — NB-08) the block's words formatted with the house rich editor: b · i · u · lists · the kit's colours · links; Insert a field at the caret */}
+            <RichTxt key={b.id} label="Text" value={b.html} onChange={(html, step) => upd({ html }, step ? undefined : 'html')} brand={brand} values={values} help placeholder="Type the words this part prints" />
             <Seg label="Box around it" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Text', true)}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
@@ -210,7 +229,7 @@ function ResetBlock({ onReset }: { onReset: () => void }) {
   )
 }
 
-function CanvasFields({ block: b, brand, upd, onDesign, onSelect, onReset }: { block: CanvasBlock; brand: BrandKit; upd: (p: Record<string, unknown>) => void; onDesign: DesignSetter; onSelect: (s: Selection) => void; onReset?: (id: string) => void }) {
+function CanvasFields({ block: b, design, brand, upd, onDesign, onSelect, onReset, sample, onCoverLook }: { block: CanvasBlock; design: TemplateDesign; brand: BrandKit; upd: (p: Record<string, unknown>) => void; onDesign: DesignSetter; onSelect: (s: Selection) => void; onReset?: (id: string) => void; sample?: DocData; onCoverLook?: (blockId: string, key: CoverLookKey) => void }) {
   const [addOpen, setAddOpen] = useState(false)
   return (
     <>
@@ -241,8 +260,28 @@ function CanvasFields({ block: b, brand, upd, onDesign, onSelect, onReset }: { b
           {ELEMENT_KINDS.map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); const el = defaultElement(k); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: [...x.elements, el] } : x))); onSelect({ blockId: b.id, elementId: el.id }) }}>{ELEMENT_LABEL[k]}</DropdownItem>)}
         </Dropdown>
       </span>
-      <Group title="More options"><Sw label="Hidden from the page" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} />{onReset ? <ResetBlock onReset={() => onReset(b.id)} /> : null}</Group>
+      <Group title="More options">
+        {/* (pending modules S11 — card held:quote-templates, 1.0's five cover-page presets) the cover starts again from one of 1.0's looks */}
+        {b.kind === 'cover' && onCoverLook && sample ? <><Sub>Start the cover from a look</Sub><CoverLooks design={design} brand={brand} sample={sample} onPick={(k) => onCoverLook(b.id, k)} /></> : null}
+        <Sw label="Hidden from the page" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} />{onReset ? <ResetBlock onReset={() => onReset(b.id)} /> : null}
+      </Group>
     </>
+  )
+}
+
+/** (pending modules S11) 1.0's five cover looks as cards: the look drawn small on this template's paper and brand, its name and 1.0's line.
+    A press lays the look over the cover — its words, pictures and colour — and the host offers Undo. */
+function CoverLooks({ design, brand, sample, onPick }: { design: TemplateDesign; brand: BrandKit; sample: DocData; onPick: (k: CoverLookKey) => void }) {
+  const looks = useMemo(() => COVER_LOOKS.map((l) => { const c = coverLook(l.key, design.page.paper); return { ...l, design: { page: design.page, brand: design.brand, blocks: [{ id: `look-${l.key}`, kind: 'cover', height: 0, repeat: 'first', elements: c.elements, background: c.background }] } as TemplateDesign } }), [design.page, design.brand])
+  return (
+    <div className={styles.looks} role="list" aria-label="Cover looks" data-testid="cover-looks">
+      {looks.map((l) => (
+        <button key={l.key} type="button" role="listitem" className={styles.look} onClick={() => onPick(l.key)} data-testid="cover-look" data-look={l.key} aria-label={`Use the ${l.name} cover — ${l.line}`}>
+          <span className={styles.lookThumb}><TemplateThumb design={l.design} brand={brand} data={sample} width={64} /></span>
+          <span className={styles.lookText}><span className={styles.lookName}>{l.name}</span><span className={styles.lookLine}>{l.line}</span></span>
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -264,7 +303,7 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
       <div className={styles.body}>
         <div className={styles.grid}>
           {e.kind === 'text' ? <>
-            <Txt label="Text" value={e.text} multiline onChange={(v) => upd({ text: v }, 'text')} values={values} />
+            <Txt label="Text" value={e.text} multiline onChange={(v) => upd({ text: v }, 'text')} values={values} help />
             <span className={styles.note}>Tip: double-click the text on the page to type straight into it.</span>
             {style('style', 'Style', true)}
             <Sw label="Hide when every field is empty" value={!!e.hideIfEmpty} onChange={(v) => upd({ hideIfEmpty: v || undefined })} />
@@ -278,7 +317,7 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
             <KvRows label="Rows" rows={e.rows} onChange={(rows) => upd({ rows }, 'rows')} values={values} />
             <Num label="Label column width" unit="mm" value={e.labelWidth} min={4} max={80} onChange={(v) => upd({ labelWidth: v })} wide />
             <Num label="Space between rows" unit="mm" value={e.gap} min={0} max={10} step={0.1} onChange={(v) => upd({ gap: v })} wide />
-            <Sw label="Underline the values, like a form" value={e.lines === 'under'} onChange={(v) => upd({ lines: v ? 'under' : 'none' })} />
+            <Sel label="Lines" value={e.lines} options={KV_LINES} onChange={(v) => upd({ lines: v })} />   {/* (S44T — UAT row 322) none · under the values · boxed */}
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}</Group>
           </> : null}
           {e.kind === 'rule' ? <>
@@ -348,12 +387,17 @@ function KvRows({ label, rows, onChange, values }: { label: string; rows: KVRow[
             <div className={styles.cardLine}>
               <span className={styles.cardGrow}><TextField label="Label" value={r.label} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, label: v } : x)))} /></span>
               <span className={styles.cardActions}>
+                {/* (S44T — UAT row 248) this row's label in bold */}
+                <Tooltip label="Label in bold"><IconButton icon="format_bold" label="Label in bold" size={36} variant="bare" iconSize={20} selected={!!r.labelBold} onClick={() => onChange(rows.map((x, j) => (j === i ? { ...x, labelBold: !x.labelBold || undefined } : x)))} /></Tooltip>
                 <Tooltip label="Move up"><IconButton icon="arrow_upward" label="Move the row up" size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => onChange(swap(rows, i, i - 1))} /></Tooltip>
                 <Tooltip label="Move down"><IconButton icon="arrow_downward" label="Move the row down" size={36} variant="bare" iconSize={20} disabled={i === rows.length - 1} onClick={() => onChange(swap(rows, i, i + 1))} /></Tooltip>
                 <Tooltip label="Remove the row"><IconButton icon="close" label="Remove the row" size={36} variant="bare" iconSize={20} onClick={() => onChange(rows.filter((_, j) => j !== i))} /></Tooltip>
               </span>
             </div>
-            <Txt label="Value" value={r.value} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, value: v } : x)))} values={values} />
+            <div className={styles.cardLine}>
+              <span className={styles.cardGrow}><Txt label="Value" value={r.value} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, value: v } : x)))} values={values} /></span>
+              <span className={styles.cardActions}><Tooltip label="Value in bold"><IconButton icon="format_bold" label="Value in bold" size={36} variant="bare" iconSize={20} selected={!!r.valueBold} onClick={() => onChange(rows.map((x, j) => (j === i ? { ...x, valueBold: !x.valueBold || undefined } : x)))} /></Tooltip></span>   {/* (S44T — row 248) */}
+            </div>
           </div>
         ))}
         <span className={styles.addRow}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => onChange([...rows, { id: newId('r'), label: 'Label', value: '' }])}>Add a row</Button></span>
@@ -386,17 +430,21 @@ function SignatureColumns({ columns, onChange, values }: { columns: SignatureCol
 function ImageSource({ value, onChange, dark }: { value: string; onChange: (src: string) => void; dark?: boolean }) {
   const input = useRef<HTMLInputElement>(null)
   const named = value === 'logo' || value === 'logo-dark' || value === 'stamp'
-  const opts = [{ value: 'logo', label: 'Brand logo' }, ...(dark ? [{ value: 'logo-dark', label: 'Logo for dark backgrounds' }] : []), { value: 'stamp', label: 'Company stamp' }, { value: 'custom', label: named ? 'A picture…' : 'Uploaded picture' }]
+  const empty = !value   // (pending modules S11) a cover look's photo place, waiting for the studio's picture
+  const opts = [{ value: 'logo', label: 'Brand logo' }, ...(dark ? [{ value: 'logo-dark', label: 'Logo for dark backgrounds' }] : []), { value: 'stamp', label: 'Company stamp' }, { value: 'custom', label: named || empty ? 'A picture…' : 'Uploaded picture' }]
   return (
     <>
       <Sel label="Picture" value={named ? value : 'custom'} options={opts} onChange={(v) => { if (v === 'custom') input.current?.click(); else onChange(v) }} wide />
       <input ref={input} type="file" accept="image/*" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onChange(await readFileAsDataUrl(f, 1600)) }} />
-      {!named ? <span className={styles.addRow}><Button appearance="text" onPress={() => input.current?.click()}>Replace picture</Button></span> : null}
+      {!named ? <span className={styles.addRow}><Button appearance="text" onPress={() => input.current?.click()}>{empty ? 'Choose a picture' : 'Replace picture'}</Button></span> : null}
+      {empty ? <span className={styles.note}>Nothing prints here until you choose a picture.</span> : null}
     </>
   )
 }
 
-function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode; onReset?: (id: string) => void; rs: ResetFor; trades: string[] }) {
+function ItemsFields({ b, upd, style, onReset, rs, trades, brand, onCurrency }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string, more?: boolean) => ReactNode; onReset?: (id: string) => void; rs: ResetFor; trades: string[]; brand: BrandKit; onCurrency: (v: Currency) => void }) {
+  const space = (k: (typeof ITEMS_SPACE_KEYS)[number], v: number) => upd({ spacing: { ...(b.spacing ?? {}), [k]: v || undefined } }, `space-${k}`)
+  const bandFill = b.bandStyle === 'grey' || b.bandStyle === 'accent' || b.bandStyle === 'black'
   const col = (i: number, patch: Partial<ItemsBlock['columns'][number]>) => upd({ columns: b.columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) }, `col-${i}`)
   const nextAlign = (a: Align): Align => (a === 'left' ? 'center' : a === 'center' ? 'right' : 'left')
   const ALIGN_WORD: Record<Align, string> = { left: 'left', center: 'centre', right: 'right' }
@@ -430,6 +478,8 @@ function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; up
                 <span className={styles.cardGrow}><TextField label="Heading on the page" value={c.label} onChange={(v) => col(i, { label: v })} /></span>   {/* the column's name is on the line above; "mm" keeps the width box short */}
                 {c.key !== 'item' ? <span className={styles.rowMm}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.cardMeta}>takes the rest</span>}
               </div>
+              {/* (S44T — UAT row 309) a printed column's colour — a kit colour or any hex; the # column's colours the section and sub-section marks too */}
+              {c.on ? <ColorPick label="Colour" value={c.color} onChange={(v) => col(i, { color: v })} brand={brand} none wide /> : null}
             </div>
           ))}
         </div>
@@ -439,13 +489,17 @@ function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; up
         <Sub>Table look</Sub>
         <Sel label="Column headings" value={b.headerRow} options={[{ value: 'plain', label: 'Plain words' }, { value: 'ruled', label: 'With a line under them' }, { value: 'band', label: 'On a grey band' }, { value: 'black', label: 'On a black band' }, { value: 'none', label: 'No headings' }]} onChange={(v) => upd({ headerRow: v })} />
         <Sel label="Row height" value={b.density} options={[{ value: 'compact', label: 'Compact' }, { value: 'normal', label: 'Normal' }, { value: 'relaxed', label: 'Roomy' }]} onChange={(v) => upd({ density: v })} />
+        {/* (S44T — M1, row 252) the section heading band's own height */}
+        <Sel label="Section heading height" value={b.headingHeight ?? 'rows'} options={[{ value: 'rows', label: 'As the rows' }, { value: 'compact', label: 'Compact' }, { value: 'normal', label: 'Normal' }, { value: 'relaxed', label: 'Roomy' }]} onChange={(v) => upd({ headingHeight: v === 'rows' ? undefined : v })} />
         <Sel label="Descriptions" value={b.descriptions} options={[{ value: 'none', label: 'Not printed' }, { value: 'first', label: 'First line only' }, { value: 'full', label: 'Every line' }, { value: 'bullets', label: 'As bullet points' }]} onChange={(v) => upd({ descriptions: v })} />
         <Sw label="Item photos" value={b.photos} onChange={(v) => upd({ photos: v })} />
         <Sw label="Grid lines" value={b.grid} onChange={(v) => upd({ grid: v })} />
-        <Sw label="A line under each row" value={b.ruled} onChange={(v) => upd({ ruled: v })} />
+        {/* (S44T — UAT row 363) none · between rows (the table's last row bare) · under every row — a stored template keeps its "under each row" */}
+        {!b.grid ? <Sel label="Lines between rows" value={rowLinesOf(b)} options={[{ value: 'none', label: 'None' }, { value: 'between', label: 'Between rows' }, { value: 'under', label: 'Under every row' }]} onChange={(v) => upd({ rowLines: v, ruled: v !== 'none' })} /> : null}
         <Sw label="Shade every other row" value={b.zebra} onChange={(v) => upd({ zebra: v })} />
         <Sub>Amounts</Sub>
-        <Sel label="Currency" value={b.currency} options={[{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ with a space' }, { value: 'none', label: 'Figures only' }]} onChange={(v) => upd({ currency: v })} />
+        <Sel label="Currency" value={b.currency} options={CURRENCIES} onChange={onCurrency} helper="The totals and the payment schedule print it the same way" />   {/* (S44T — M2) */}
+        <Sel label="A zero quantity prints" value={b.zeroQty ?? 'blank'} options={[{ value: 'blank', label: 'Nothing' }, { value: 'dash', label: 'A dash (–)' }]} onChange={(v) => upd({ zeroQty: v === 'blank' ? undefined : v })} />   {/* (S44T — row 324) */}
         <Sel label="A line that costs nothing prints" value={b.zeroAmount} options={[{ value: 'FOC', label: 'FOC' }, { value: 'Inclusive', label: 'Inclusive' }, { value: '0.00', label: '0.00' }, { value: 'blank', label: 'Nothing' }]} onChange={(v) => upd({ zeroAmount: v })} />
         <Sel label="Items hidden from the client" value={b.hiddenItems} options={[{ value: 'omit', label: 'Left out' }, { value: 'no-price', label: 'Shown without a price' }]} onChange={(v) => upd({ hiddenItems: v })} helper="Lines you hid from the client in the quote editor." />
         <Sw label="Sub-total under each section" value={b.subtotals} onChange={(v) => upd({ subtotals: v })} />
@@ -457,6 +511,9 @@ function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; up
         {b.pageTotals ? <Txt label="Page total reads" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} {...rs('pageTotalLabel')} /> : null}
         <Sub>Sections and pages</Sub>
         <Sw label="Section notes" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="A section's own note prints under its heading; a section without one prints its trade's note from Settings › Quotes & pricing" />
+        {/* (S44T — UAT rows 270 · 329) how wide a section's note runs, and whether it sits inside the heading's band */}
+        {b.groupNotes ? <Sel label="Section notes run" value={b.noteWidth ?? 'table'} options={[{ value: 'table', label: 'Across the table' }, { value: 'item', label: 'Under the Item column' }]} onChange={(v) => upd({ noteWidth: v === 'table' ? undefined : v })} /> : null}
+        {b.groupNotes && bandFill ? <Sw label="Section notes sit in the heading’s band" value={!!b.noteInBand} onChange={(v) => upd({ noteInBand: v || undefined })} /> : null}
         {/* (REG-617, parity Q-11) With the Optional price column on, optional lines stay in their sections — the Optional works section has nothing left to print. */}
         {b.columns.some((c) => c.key === 'optional' && c.on)
           ? <span className={styles.note}>The Optional price column is on: lines marked optional print in their own sections, priced in that column and out of the totals.</span>
@@ -467,8 +524,15 @@ function ItemsFields({ b, upd, style, onReset, rs, trades }: { b: ItemsBlock; up
         <Sw label="Keep a section on one page" value={b.keepGroups} onChange={(v) => upd({ keepGroups: v })} />
         <Sw label="Each section on a new page" value={b.groupNewPage} onChange={(v) => upd({ groupNewPage: v })} />
         <Sw label="Fill the page with empty rows" value={b.fillPage} onChange={(v) => upd({ fillPage: v })} />
+        {/* (S44T — call C1) the part a quote's sections priced after the contract print in */}
+        <Txt label="Work priced after the contract is headed" value={b.afterTitle ?? AFTER_TITLE} fields={false} onChange={(v) => upd({ afterTitle: v }, 'afterTitle')} reset={AFTER_TITLE} onReset={() => upd({ afterTitle: undefined })} />
+        {/* (S44T — M1, rows 257 · 265 · 266 · 267 · 303) space inside the table; 0 = none */}
+        <Sub>Spacing</Sub>
+        {ITEMS_SPACE_KEYS.map((k) => <Num key={k} label={ITEMS_SPACE_LABEL[k]} unit="mm" value={b.spacing?.[k] ?? 0} min={0} max={20} step={0.5} onChange={(v) => space(k, v)} wide />)}   {/* a whole row each: a half column cut "Before a section" to "Before a secti…" */}
         <Sub>Text styles</Sub>
-        {style('style', 'Rows')}{style('headerStyle', 'Column headings')}{style('areaStyle', 'Section and room names')}{style('groupNoteStyle', 'Section notes')}{style('descriptionStyle', 'Descriptions')}
+        {/* (S44T — M3 · M2) the Items styles open with Line height; the sub-total rows have a style of their own */}
+        {style('style', 'Rows', true)}{style('headerStyle', 'Column headings', true)}{style('areaStyle', 'Section and room names', true)}{style('groupNoteStyle', 'Section notes', true)}{style('descriptionStyle', 'Descriptions', true)}
+        <StyleEditor label="Sub-totals" value={subtotalStyleOf(b)} onChange={(st) => upd({ subtotalStyle: st })} brand={brand} more />
         <Sub>Placement</Sub>
         <BlockOptions b={b} upd={upd} onReset={onReset} />
       </Group>

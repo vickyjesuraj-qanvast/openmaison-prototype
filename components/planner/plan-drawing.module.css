@@ -1,0 +1,27 @@
+/* (gaps build J, J-Q9) The layout's top view — every colour a token except a floor's or a piece's own (the material's, from the data). */
+.svg { display: block; width: 100%; height: 100%; overflow: visible; user-select: none; -webkit-user-select: none; }
+.floor { stroke: none; }
+/* a balcony or a porch: the floor reads as outside — a quieter fill */
+.outdoor { stroke: none; opacity: 0.7; }
+.roomOn { fill: none; stroke: var(--om-color-primary-default); }
+.walls { fill: var(--om-color-on-surface-default); }
+.window rect { fill: var(--om-color-surface-default); stroke: var(--om-color-on-surface-default); }
+.window line { stroke: var(--om-color-on-surface-secondary); }
+.door line, .door path { stroke: var(--om-color-on-surface-default); fill: none; }
+
+.piece { cursor: inherit; }
+.body { stroke: var(--om-color-on-surface-secondary); fill-opacity: 0.55; }
+.part { stroke: var(--om-color-on-surface-secondary); fill-opacity: 0.8; }
+.rug { stroke: var(--om-color-on-surface-border); fill-opacity: 0.45; }
+.detail { stroke: var(--om-color-on-surface-secondary); }
+.hanging { stroke: var(--om-color-on-surface-secondary); }
+.onRing { stroke: var(--om-color-primary-default); }
+.warnRing { stroke: var(--om-color-tertiary-red-default); }
+
+.label { fill: var(--om-color-on-surface-default); }
+.label[data-dark] { fill: var(--om-color-on-inverse-surface-default); }
+.name { font: var(--om-type-subtitle-s); }
+.size { font: var(--om-type-caption-xs); fill: var(--om-color-on-surface-secondary); }
+.label[data-dark] .size { fill: var(--om-color-on-inverse-surface-default); }
+.dims line { stroke: var(--om-color-on-surface-secondary); }
+.dimText { font: var(--om-type-caption-s); fill: var(--om-color-on-surface-secondary); }

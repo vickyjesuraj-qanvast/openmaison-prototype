@@ -103,7 +103,7 @@ export type DesignCard = {
   /** (verify round 1, F131) who made the design — Deleted Designs' *Made by*; `author` is whoever made its newest version. */
   maker: string | null; makerColor: string | null
 }
-export type VisualizerHome = { designs: DesignCard[]; deleted: DesignCard[]; folders: Folder[]; leads: { id: string; name: string; stage: string; propertyType: string | null; style: string | null; hasDesign: string | null }[]; viewer: { id: string; role: string }; now: number }
+export type VisualizerHome = { designs: DesignCard[]; deleted: DesignCard[]; folders: Folder[]; leads: { id: string; name: string; stage: string; propertyType: string | null; style: string | null; hasDesign: string | null; /** (pending modules S10) Maison AI's newest lead */ createdAt?: number }[]; viewer: { id: string; role: string }; now: number }
 
 export async function fetchVisualizerHome(): Promise<VisualizerHome> {
   const viewer = await fetchViewer()
@@ -113,7 +113,7 @@ export async function fetchVisualizerHome(): Promise<VisualizerHome> {
     db.select().from(projectRooms).where(isNull(projectRooms.deletedAt)).orderBy(asc(projectRooms.position), asc(projectRooms.createdAt)),
     db.select({ id: renderJobs.id, roomId: renderJobs.roomId, kind: renderJobs.kind, createdAt: renderJobs.createdAt, createdBy: renderJobs.createdBy, variantsJson: renderJobs.variantsJson }).from(renderJobs),
     db.select({ id: members.id, name: members.name, color: members.color }).from(members),
-    db.select({ id: leads.id, name: leads.name, stage: leads.stage, propertyType: leads.propertyType, style: leads.style }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
+    db.select({ id: leads.id, name: leads.name, stage: leads.stage, propertyType: leads.propertyType, style: leads.style, createdAt: leads.createdAt }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
     db.select().from(libraryFolders).where(and(eq(libraryFolders.library, 'visualizer'), isNull(libraryFolders.deletedAt))),
   ])
   const leadById = new Map(leadRows.map((l) => [l.id, l]))
@@ -150,7 +150,7 @@ export async function fetchVisualizerHome(): Promise<VisualizerHome> {
     designs: cards.filter((c) => !c.deletedAt).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()),
     deleted: cards.filter((c) => c.deletedAt),
     folders: folderRows.map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, library: 'visualizer' as const, createdAt: f.createdAt.getTime(), updatedAt: f.updatedAt.getTime(), createdBy: f.createdBy ?? null, mayChange: folderChangeBlockFor('visualizer', viewer, f.createdBy, f.createdBy ? byMember.get(f.createdBy)?.name : null) })),
-    leads: leadRows.filter((l) => !visible || visible.has(l.id)).map((l) => ({ ...l, hasDesign: byLead.get(l.id) ?? null })),
+    leads: leadRows.filter((l) => !visible || visible.has(l.id)).map((l) => ({ ...l, createdAt: l.createdAt.getTime(), hasDesign: byLead.get(l.id) ?? null })),
     viewer: { id: viewer.id, role: viewer.role }, now: Date.now(),
   }
 }
@@ -172,6 +172,8 @@ export type Pin = { id: string; key: string; x: number; y: number; body: string;
 /** Why a link that was sent no longer opens: stopped by the studio, its design deleted, its lead returned or deleted, every version gone. */
 export type LinkEnd = 'stopped' | 'design' | 'lead' | 'versions'
 export type ShareRow = { id: string; token: string; createdAt: number; expiresAt: number; revokedAt: number | null; viewCount: number; lastViewedAt: number | null; sentVia: string | null; keys: string[]
+  /** (pending modules S02) put on the client's Designs by Files' Show to client — the row says so instead of "not sent yet" */
+  fromFiles?: boolean
   /** What came back on the link — a favourite, a note, a call back — and (UX audit V1) the studio's `reply` to a note, `replyTo` naming it. */
   responses: { id: string; kind: string; versionKey: string | null; clientName: string | null; message: string | null; createdAt: number; replyTo: string | null }[]
   /** (audit 2026-09-26) the link no longer opens although nobody pressed Stop — its lead was returned or deleted, or every version on it was deleted. */
@@ -242,7 +244,7 @@ async function fetchVisualizerEditorUncached(designId: string): Promise<Visualiz
     d.leadId ? db.select({ id: leadFiles.id, name: leadFiles.name, thumb: leadFiles.thumb, kind: leadFiles.kind }).from(leadFiles).where(and(eq(leadFiles.leadId, d.leadId), isNull(leadFiles.deletedAt))) : Promise.resolve([]),
     /* (verify round 1) a render whose design was deleted for good is a plain picture of the lead's again — it may become a room */
     d.leadId ? db.select({ fileId: leadFileRenders.fileId }).from(leadFileRenders).innerJoin(leadFiles, eq(leadFiles.id, leadFileRenders.fileId)).innerJoin(visualizerDesigns, eq(visualizerDesigns.id, leadFileRenders.designId)).where(eq(leadFiles.leadId, d.leadId)) : Promise.resolve([]),
-    d.leadId ? db.select({ id: quotes.id, number: quotes.number, title: quotes.title, status: quotes.status }).from(quotes).where(and(eq(quotes.leadId, d.leadId), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)) : Promise.resolve([]),
+    d.leadId ? db.select({ id: quotes.id, number: quotes.number, title: quotes.title, status: quotes.status }).from(quotes).where(and(eq(quotes.leadId, d.leadId), eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)) : Promise.resolve([]),   // (fix-G, G-41) add to a quote: quotes, never a variation order
     d.leadId ? leadClosed(d.leadId) : Promise.resolve(false),
   ])
   const [responses, sections] = await Promise.all([
@@ -274,7 +276,7 @@ async function fetchVisualizerEditorUncached(designId: string): Promise<Visualiz
     shares: shares.map((s) => {
       const keys = parseSnapshot(s.snapshot).versions.map((v) => v.key)
       const ended: LinkEnd | null = s.revokedAt ? 'stopped' : d.deletedAt ? 'design' : closed ? 'lead' : keys.length && !keys.some((k) => liveKeys.has(k)) ? 'versions' : null
-      return { id: s.id, token: s.token, createdAt: s.createdAt.getTime(), expiresAt: s.expiresAt.getTime(), revokedAt: s.revokedAt?.getTime() ?? null, viewCount: s.viewCount, lastViewedAt: s.lastViewedAt?.getTime() ?? null, sentVia: s.sentVia, keys, responses: responses.filter((r) => r.shareLinkId === s.id).map((r) => ({ id: r.id, kind: r.kind, versionKey: r.versionKey, clientName: r.clientName, message: r.message, createdAt: r.createdAt.getTime(), replyTo: r.kind === 'reply' ? r.taskId : null })), ended }
+      return { id: s.id, token: s.token, createdAt: s.createdAt.getTime(), expiresAt: s.expiresAt.getTime(), revokedAt: s.revokedAt?.getTime() ?? null, viewCount: s.viewCount, lastViewedAt: s.lastViewedAt?.getTime() ?? null, sentVia: s.sentVia, fromFiles: !!s.fileId, keys, responses: responses.filter((r) => r.shareLinkId === s.id).map((r) => ({ id: r.id, kind: r.kind, versionKey: r.versionKey, clientName: r.clientName, message: r.message, createdAt: r.createdAt.getTime(), replyTo: r.kind === 'reply' ? r.taskId : null })), ended }
     }),
     leadImages: files.filter((f) => f.kind === 'image' && f.thumb && !renderFiles.has(f.id) && !f.thumb.startsWith('/visualizer/img/')).map((f) => ({ id: f.id, name: f.name, url: f.thumb! })),
     quotes: quoteRows.map((q) => ({ ...q, versions: sections.filter((x) => x.quoteId === q.id && x.name.endsWith(' finishes')).map((x) => x.name) })),

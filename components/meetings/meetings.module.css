@@ -1,0 +1,24 @@
+/*
+ * (pending modules S23) The meetings' dialogs and the tab's frame — on the house tokens; the fields and chips are the house pieces, these are
+ * only the gaps between them (the dialogs' body column is the house dialog's 24 gap).
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }   /* the house tab's 24 between the toolbar and the table (lead-tasks · lead-contracts) */
+.tab[data-studio] { padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); }   /* Tools › Meeting Copilot: the listing's content frame (app/leads/leads.module.css .content) */
+@media (max-width: 767px) { .tab[data-studio] { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance); } }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.groupLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-4); }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.error { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.check { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.checkHelp { margin: 0; padding-left: 28px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.group .checkHelp { padding-left: 0; }
+.notesBox textarea { min-height: 160px; }
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.fileName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.muted { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.emailRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .pair { grid-template-columns: 1fr; }
+}

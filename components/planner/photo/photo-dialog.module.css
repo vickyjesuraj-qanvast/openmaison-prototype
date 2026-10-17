@@ -1,0 +1,40 @@
+/* (pending modules S28) Make a 3D picture — the house dialog's body: the plan in a well, its line and controls, the rooms, its size. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-width: 0; }
+.step { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.error { composes: error from '../new-layout-dialog.module.css'; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.headRow { composes: headRow from '../new-layout-dialog.module.css'; }
+.h { composes: h from '../new-layout-dialog.module.css'; }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.line { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+
+/* the plan: a well that keeps its height from reading to showing, so nothing below it jumps */
+.plan { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.well { display: flex; align-items: center; justify-content: center; min-height: 320px; max-height: 440px; padding: var(--om-spacing-2); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); overflow: hidden; }
+.well[data-filled] { min-height: 0; }
+.wellText { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.picture { display: block; max-width: 100%; max-height: 420px; object-fit: contain; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+.controls { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; }
+.actions { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.switchRow { composes: switch from '../new-layout-dialog.module.css'; }
+
+/* the rooms */
+.chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; padding: var(--om-spacing-1) var(--om-spacing-1) var(--om-spacing-1) var(--om-spacing-3); }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.rowSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.addWrap { align-self: flex-start; }
+
+/* its size */
+.areaRow { display: flex; flex-direction: column; gap: var(--om-spacing-2); max-width: 360px; }
+.lengthBox { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.measured { display: flex; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; }
+
+@media (max-width: 767px) {
+  .well { min-height: 240px; max-height: 52dvh; }
+  .picture { max-height: 50dvh; }
+  .areaRow { max-width: none; }
+}

@@ -1,0 +1,19 @@
+/* (parity P-38, D-18) Who may do what, grouped by area: each group opens on a caption — the card table's own head band (its 40, its fill, its
+   caption-s in capitals, grey; components/om/card-table.module.css) across the whole row, under the row's 1px rule. It stays on a phone, where
+   the table's column head steps aside and each role is labelled in its row. */
+.group {
+  composes: head from '../../components/om/card-table.module.css';
+  grid-template-columns: minmax(0, 1fr);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+
+/* (parity map, FB-114) Five roles — the Accounting column; (S44O — call C6) six, with Marketing's. The role table's own tracks (settings.module.css .roleTable), one more role track at
+   each width, above their specificity; the phone keeps its one-column stack. Structural, so the page (rows in rowgroups) and its ghost (rows in
+   plain groups) read the same rule: the head is the first child, each row is a child of a group — the group captions keep their single track. */
+.roles.roles > :first-child, .roles.roles > * > :not(.group) { grid-template-columns: minmax(240px, 1.6fr) repeat(6, minmax(88px, 1fr)); }
+@media (min-width: 768px) and (max-width: 1024px) {
+  .roles.roles > :first-child, .roles.roles > * > :not(.group) { grid-template-columns: minmax(124px, 1.2fr) repeat(6, minmax(56px, 1fr)); }   /* (S44O — C6) six role tracks still fit a tablet's column */
+}
+@media (max-width: 767px) {
+  .roles.roles > :first-child, .roles.roles > * > :not(.group) { grid-template-columns: minmax(0, 1fr); }
+}

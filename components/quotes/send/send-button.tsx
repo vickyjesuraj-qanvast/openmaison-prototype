@@ -21,7 +21,7 @@ export type SendMode = 'next' | 'confirmation' | 'signature' | 'other'
  * sent nothing; it is this Send ▾ now, the same menu and the same dialogs). On a Draft or an Approved quote the menu ends with "Sent it
  * another way" — the old Mark as sent, named for what it does. The chevron's classes are the editor header's own (REG-732).
  */
-export function SendButton({ kind, canSend, hint, status, onSend }: { kind: SendKind; canSend: boolean; hint: string; status: string; onSend: (mode: SendMode) => void }) {
+export function SendButton({ kind, canSend, hint, status, onSend, variation = false }: { kind: SendKind; canSend: boolean; hint: string; status: string; onSend: (mode: SendMode) => void; /** (Projects round 5, F-07) a variation order: the client approves it on its link — no agreement to sign */ variation?: boolean }) {
   const [open, setOpen] = useState(false)
   const pick = (mode: SendMode) => () => { setOpen(false); onSend(mode) }
   const markable = status === 'Draft' || status === 'Approved'
@@ -33,8 +33,10 @@ export function SendButton({ kind, canSend, hint, status, onSend }: { kind: Send
                 aria-haspopup="menu" aria-expanded={open} onPress={() => setOpen((o) => !o)} data-testid="quote-send">Send</Button>
         {/* (REG-728) Rows with a description: the 320 width, the description as the house row's second line. */}
         <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.detail} sheetTitle="Send">
-          <DropdownItem onSelect={pick('confirmation')} help="The client confirms the quote on a link — no signature yet">Send for confirmation</DropdownItem>
-          <DropdownItem onSelect={pick('signature')} help="Add the T&Cs and raise the agreement to sign">Send for signature</DropdownItem>
+          {variation
+            ? <DropdownItem onSelect={pick('confirmation')} help="The client approves the change on a link — the contract value moves once they do">Send for confirmation</DropdownItem>
+            : <DropdownItem onSelect={pick('confirmation')} help="The client confirms the quote on a link — no signature yet">Send for confirmation</DropdownItem>}
+          {variation ? null : <DropdownItem onSelect={pick('signature')} help="Add the T&Cs and raise the agreement to sign">Send for signature</DropdownItem>}
           {markable ? (
             <>
               <DropdownDivider />

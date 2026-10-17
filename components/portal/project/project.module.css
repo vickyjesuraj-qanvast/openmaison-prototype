@@ -1,0 +1,175 @@
+/* (Projects round 4b) The portal's project tabs — the Client Portal Proposal's boards 2 (Schedule, and confirming a stage) · 3 (Updates) and
+   the home's two project cards of boards 1 · 7 — on the portal's own sheet (portal.module.css: the white card on the page ground, r8, the
+   studio's colour as --brand and the page's primary). Composed, never copied: the card, the step button, the link, the house viewer's
+   prev / next and zoom bar (components/leads/files/file-viewer.module.css). Colours: done / now = the brand, a stage to confirm = tertiary
+   yellow (board 2's #8a5a14), "something is not right" = tertiary red, coming up = secondary ink. */
+
+/* ── two columns at a desk, one on a phone with the blocks in board 2's order ── */
+.split { display: flex; flex-wrap: wrap; gap: var(--om-spacing-6); align-items: flex-start; }
+.main { flex: 3 1 480px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.side { flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.feed { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; max-width: 760px; }
+.homeHead { margin: var(--om-spacing-2) 0 0; font: var(--om-type-subheading-xl); }
+
+/* ── a stage to confirm (board 2's tinted card) ── */
+.confirm {
+  display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); scroll-margin-top: 88px;
+  border: var(--om-border-1) solid color-mix(in srgb, var(--brand) 40%, var(--om-color-surface-default)); border-radius: var(--om-radius-2);
+  background: color-mix(in srgb, var(--brand) 10%, var(--om-color-surface-default));
+}
+.confirm[data-answered] { background: var(--om-color-surface-default); border-color: var(--om-color-surface-variant); }
+.confirmText { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.confirmTitle { margin: 0; font: var(--om-type-subheading-l); }
+.confirmLine { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.confirmActions { display: flex; gap: var(--om-spacing-2); }
+/* board 2's two 48px buttons — the portal's step button, filled and outlined (each composes it: a composed class is not composed again) */
+.go, .goOutline { flex: 1 1 0; min-width: 0; border: 0; cursor: pointer; padding: 0 var(--om-spacing-1); text-align: center; }
+.go { composes: stepGo from '../portal.module.css'; }
+.goOutline { composes: stepGo from '../portal.module.css'; background: var(--om-color-surface-default); color: var(--brand); box-shadow: inset 0 0 0 var(--om-border-1) var(--brand); }
+.go:disabled, .goOutline:disabled { cursor: default; filter: none; opacity: 0.6; }
+.goOutline:hover { filter: none; background: var(--om-color-primary-variant); }
+.goOutline:disabled:hover { background: var(--om-color-surface-default); }
+/* (fix-F, F-40) board 2: both answers on one line at 390 — 14/500, no side padding */
+.confirmActions .go, .confirmActions .goOutline { font: var(--om-type-subtitle-m); white-space: nowrap; }
+.wasDates { color: var(--om-color-on-surface-secondary); }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.answered { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
+.answeredGlyph { flex: none; width: 28px; height: 28px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--brand); color: var(--om-color-on-primary-default); }
+/* (fix-F, F-27) "Something is not right" went through: the studio's tint and a chat glyph — it is with the designer, not a failure */
+.answered[data-kind='changes'] .answeredGlyph { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.quote { margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ── the stages (board 2's list) ── */
+.stages { composes: card from '../portal.module.css'; overflow: hidden; }
+.stageList { list-style: none; margin: 0; padding: 0; }
+.stage { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 60px; padding: var(--om-spacing-3) var(--om-spacing-4); scroll-margin-top: 88px; }
+.stage + .stage { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.stage[data-mark] { background: color-mix(in srgb, var(--brand) 6%, var(--om-color-surface-default)); }
+.dot { flex: none; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; box-shadow: inset 0 0 0 2px var(--om-color-on-surface-disabled); color: var(--om-color-on-primary-default); }
+.dot[data-tone='done'], .dot[data-tone='ask'], .dot[data-tone='changes'] { background: var(--brand); box-shadow: none; }
+.dot[data-tone='now'] { box-shadow: inset 0 0 0 2px var(--brand); }
+.dot[data-tone='now']::after { content: ''; width: 10px; height: 10px; border-radius: var(--om-radius-full); background: var(--brand); }
+.stageText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stageName { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); font: var(--om-type-subtitle-m); overflow-wrap: anywhere; }
+.stageDates { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.stageWas { font: var(--om-type-body-s); color: var(--om-color-on-primary-variant); }
+.stageWas s { margin-right: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
+.stageNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.state { flex: none; max-width: 40%; text-align: right; font: var(--om-type-subtitle-s); color: var(--brand); }
+.state[data-tone='ask'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.state[data-tone='changes'] { color: var(--om-color-on-surface-secondary); }   /* (REG-1165, F-27) with the designer: the studio's move, so grey — amber is only what waits on the client */
+.state[data-tone='next'] { color: var(--om-color-on-surface-secondary); }
+.stagesFoot { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (parity map, SC-087 — 1.0 E-238) a moment on the rail beside the stages (the project's start, an invoice sent): a quieter row — a small glyph
+   in the dot's column, its title in body-m, no state at the right; (CP-062) the line when a chip finds nothing */
+.moment { min-height: 48px; }
+.momentDot { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.momentName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.momentName a { color: inherit; }
+.momentName a:hover { text-decoration: underline; }
+.stagesNone { padding: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* (parity map, CP-062) the chips' rail takes the column's width and scrolls inside it: on a phone `.split` is a WRAPPING column, whose line is
+   as wide as its widest item — the chips' natural width would widen every stage card and the page (530 at 390) */
+.filters { width: 100%; min-width: 0; }
+
+/* ── the share's news and what changed since the client last looked ── */
+.news { composes: card cardPad from '../portal.module.css'; }
+.newsHead { margin: 0; font: var(--om-type-subheading-m); }
+.newsBody { margin: 0; font: var(--om-type-body-m); white-space: pre-wrap; overflow-wrap: anywhere; }
+.changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.change { display: flex; flex-direction: column; gap: 2px; }
+.changeName { font: var(--om-type-subtitle-m); }
+.changeWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.changeWords s { margin-right: var(--om-spacing-1); }
+
+/* ── the home's Where the work stands (boards 1 · 7) ── */
+.stands { composes: card cardPad from '../portal.module.css'; }
+.standsHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); }
+.segments { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
+.segment { height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); }
+.segment[data-s='done'] { background: var(--brand); }
+.segment[data-s='in_progress'] { background: color-mix(in srgb, var(--brand) 45%, var(--om-color-surface-default)); }
+.standsList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.standsRow { display: flex; align-items: center; gap: 10px; }
+.standsDot { flex: none; width: 12px; height: 12px; border-radius: var(--om-radius-full); box-sizing: border-box; box-shadow: inset 0 0 0 2px var(--om-color-on-surface-disabled); background: var(--om-color-surface-default); }
+.standsDot[data-s='done'] { background: var(--brand); box-shadow: none; }
+.standsDot[data-s='in_progress'] { background: color-mix(in srgb, var(--brand) 45%, var(--om-color-surface-default)); box-shadow: inset 0 0 0 2px var(--brand); }
+.standsName { flex: 1; min-width: 0; font: var(--om-type-body-m); }
+.standsRow[data-s='in_progress'] .standsName { font: var(--om-type-subtitle-m); }
+.standsDates { flex: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (simplify S-25) a Blocked stage reads paused on the home as on the Schedule page: its dot, its segment and its word in the paused tone */
+.segment[data-paused] { background: color-mix(in srgb, var(--om-color-on-tertiary-yellow-variant) 45%, var(--om-color-surface-default)); }
+.standsDot[data-paused] { background: var(--om-color-surface-default); box-shadow: inset 0 0 0 2px var(--om-color-on-tertiary-yellow-variant); }
+.standsPaused { color: var(--om-color-on-tertiary-yellow-variant); }
+.standsPhone { display: none; }
+.standsDesk { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+
+/* ── the home's Latest update, and its blocks in board 1's order on a phone (What needs you · Where the work stands · Latest update) ── */
+.latest { display: flex; flex-direction: column; }
+.eyebrow { composes: eyebrow from '../portal.module.css'; }
+.link { composes: link from '../portal.module.css'; }
+
+/* ── the photo viewer (the house file viewer's canvas, prev / next and zoom bar) ── */
+.viewer { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--om-color-surface-bg); touch-action: none; user-select: none; }
+.viewerImg { display: block; max-width: calc(100% - 2 * var(--om-spacing-20)); max-height: calc(100% - 2 * var(--om-spacing-10)); object-fit: contain; transform-origin: center; will-change: transform; }
+.viewerImg[data-animate] { transition: transform var(--motion-toggle); }
+.nav { composes: nav from '../../leads/files/file-viewer.module.css'; }
+.nav:disabled { opacity: 0.4; cursor: default; }
+.zoomBar { composes: zoomBar from '../../leads/files/file-viewer.module.css'; }
+.zoomBtn { composes: zoomBtn from '../../leads/files/file-viewer.module.css'; }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* ── the ghosts' photo rows (board 3: three across square, two across 4:3) ── */
+.ghostPhotos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-2); }
+.ghostPhotos[data-n='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (max-width: 767px) {
+  .split { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); }
+  .main, .side { display: contents; }
+  .split > *, .main > *, .side > * { order: 5; }
+  .split [data-slot='confirm'] { order: 1; }
+  .split [data-slot='news'] { order: 2; }
+  .split [data-slot='changes'] { order: 3; }
+  .split [data-slot='filters'] { order: 4; }   /* (parity map, CP-062) the chips stay right above the stages */
+  .split [data-slot='stages'] { order: 4; }
+  .homeOrder > * { display: contents; }
+  .homeOrder > * > * { order: 7; }
+  .homeOrder [data-slot='needs'] { order: 1; }
+  .homeOrder [data-slot='stands'] { order: 2; }
+  .homeOrder [data-slot='money'] { order: 2; }   /* (fix-F, F-09) board 7's Money card, after where the work stands */
+  .homeOrder [data-slot='latest'] { order: 3; }
+  .feed { gap: var(--om-spacing-4); }
+  .homeHead { font: var(--om-type-subheading-l); }
+  .confirmActions .go { height: 48px; }
+  .standsPhone { display: flex; flex-direction: column; gap: 10px; }
+  .standsDesk { display: none; }
+  .viewerImg { max-width: 100%; max-height: 100%; }
+  .nav, .zoomBar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewerImg[data-animate] { transition: none; }
+}
+
+/* (gaps build D, item 4 — M-01 · 1.0 I-254) A pause told honestly: the project on hold as one card line (the portal's card, the hold glyph in
+   the warning tone); a paused stage's dot and word in the same tone; the payment points and the resolved note under a stage, in its own lines */
+.hold { composes: card from '../portal.module.css'; display: flex; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-5); max-width: 880px; }
+.holdGlyph { flex: none; display: inline-flex; color: var(--om-color-on-tertiary-yellow-variant); padding-top: 2px; }
+.holdText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.holdLine { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.dot[data-tone='paused'] { box-shadow: inset 0 0 0 2px var(--om-color-on-tertiary-yellow-variant); color: var(--om-color-on-tertiary-yellow-variant); }
+.state[data-tone='paused'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.stagePaused { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.stageResolved { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.stagePays { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.stagePay { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.stagePay[data-state='paid'] { color: var(--om-color-tertiary-green-default); }
+.stagePay[data-state='due'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.stagePay a { color: inherit; }
+.stagePay a:hover { text-decoration: underline; }
+.homeHold { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* (gaps build D, item 10) the Updates search past three (the column's width), and the invoice chip under an update tied to an invoiced stage */
+.feedSearch { width: 100%; max-width: 760px; }
+.updateInvoice { display: inline-flex; align-items: center; gap: var(--om-spacing-2); align-self: flex-start; min-height: 32px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); text-decoration: none; overflow-wrap: anywhere; }
+.updateInvoice:hover { text-decoration: underline; }
+.updateInvoice[data-state='paid'] { color: var(--om-color-tertiary-green-default); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .updateInvoice { min-height: 44px; } }

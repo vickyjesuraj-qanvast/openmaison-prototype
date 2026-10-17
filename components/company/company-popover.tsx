@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { anchoredSurface } from '@/lib/motion'
-import { COMPANY_GROUPS, type CompanySection } from '@/lib/company/sections'
+import { COMPANY_GROUPS, type CompanyGroup, type CompanySection } from '@/lib/company/sections'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
@@ -19,7 +19,9 @@ import { leaveThen } from './leave-guard'
  * shell (REG-422) with the company's sections in two groups; Profile and Templates are pages, the rest answer coming
  * soon. The section you are on is marked. ≤767 (REG-353) it is a bottom sheet titled Company.
  */
-export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, proposed = 0, asks = 0 }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-899) the phone sheet's back to More */ onBack?: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number; /** (REG-703) members waiting for AI credits, for the Owner — on the Plan & AI credits row */ asks?: number }) {
+export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, proposed = 0, asks = 0, money = 0, groups = COMPANY_GROUPS }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-899) the phone sheet's back to More */ onBack?: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number; /** (REG-703) members waiting for AI credits, for the Owner — on the Plan & AI credits row */ asks?: number
+  /** (simplify S-16) money waiting for an Owner's or an Admin's OK — Finance › To do's To approve, on the Finance row */ money?: number
+  /** (parity map, PR-022) the sections this member opens (`companyGroupsFor`) — every one when not given */ groups?: CompanyGroup[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const comingSoon = useComingSoon()
@@ -30,7 +32,7 @@ export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, pr
   const pick = (s: CompanySection) => { onClose(); const href = s.href; if (href) leaveThen(() => router.push(href)); else comingSoon() }   // (UX audit S2) unsaved edits on the page ask first
   const list = (
     <div className={styles.groups}>
-      {COMPANY_GROUPS.map((g) => (
+      {groups.map((g) => (
         <div key={g.title} className={styles.group} role="group" aria-label={g.title}>
           <span className={styles.eyebrow} data-menu-label="" role="presentation">{g.title}</span>   {/* (REG-728) the house group title */}
           {g.items.map((s) => (
@@ -43,6 +45,7 @@ export function CompanyPopover({ open, anchor, onClose, onBack, awaiting = 0, pr
               {s.key === 'templates' && awaiting > 0 ? <span className={styles.await}>{awaiting} awaiting</span> : null}
               {s.key === 'price-book' && proposed > 0 ? <span className={styles.await}>{proposed} proposed</span> : null}
               {s.key === 'plan' && asks > 0 ? <span className={styles.await}>{asks} {asks === 1 ? 'ask' : 'asks'}</span> : null}
+              {s.key === 'finance' && money > 0 ? <span className={styles.await} data-testid="company-finance-badge">{money} to approve</span> : null}
               {s.href ? null : <span className={styles.soon}>Soon</span>}
             </button>
           ))}

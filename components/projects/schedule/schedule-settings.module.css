@@ -1,0 +1,10 @@
+/* (gaps build, package C) Settings › Projects › Schedule — the event table's own tracks (Updates' card's: the rule · who approves · its switch;
+   the table, head, rows and cells are Settings' event table) and the selects on the Project numbers card's grid. A phone keeps the stack. */
+.table > [role='row'] { grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) 88px; }
+.grid { composes: numGrid from '../../../app/settings/settings.module.css'; }
+@media (min-width: 768px) and (max-width: 1024px) {
+  .table > [role='row'] { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) 72px; }
+}
+@media (max-width: 767px) {
+  .table > [role='row'] { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,7 +1,8 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { CompanyShell } from '@/components/company/company-shell'
 import { BillingGhost } from '@/components/company/company-ghosts'
@@ -11,8 +12,11 @@ import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
-import { openManageBilling, openPlans, openTopUp, useCredits } from '@/components/credits/credits-client'
-import { askToUpgrade } from '@/app/credits/actions'
+import { Switch } from '@/components/ds'
+import { openManageBilling, openPlans, openSeats, openTopUp, refreshCredits, useCredits } from '@/components/credits/credits-client'
+import { askToUpgrade, setAutoTopUp } from '@/app/credits/actions'
+import { autoLine, type AutoTopUp } from '@/lib/credits/auto-topup'
+import { AutoTopUpDialog } from './auto-topup-dialog'
 import { aboutRenders, dayMonth, fmtCredits, type CreditSummary } from '@/lib/credits/model'
 import { allowanceFor, planRow, priceFor, sgd, sgd2, suggestedPlan, TOPUP_CREDITS, TOPUP_PRICE, type BillingCycle } from '@/lib/credits/plans'
 import type { CreditsChrome } from '@/lib/credits/chrome'
@@ -34,7 +38,8 @@ const INVOICE_DEFS = [
   { key: 'status', label: 'Status', track: 'minmax(110px, 110fr)' },
   { key: 'pdf', label: 'PDF', track: 'minmax(80px, 80fr)' },
 ] as const
-const AI_SUGGESTIONS = ['Which plan fits us?', 'What would annual save us?', 'When do our credits refresh?']
+/* (pending modules S10 — card held:maison-ai) each is asked and answered from the plan and the credits record (lib/maison-ai/answers/money.ts) */
+const AI_SUGGESTIONS = ['Which plan fits us?', 'What would annual save us?', 'When do our AI credits refresh?']
 
 /**
  * (REG-704, AI credits §5.7 · Q-19 · Q-37) Company › Plan & AI credits › Plan & billing: the plan the studio is on and what it does
@@ -43,8 +48,28 @@ const AI_SUGGESTIONS = ['Which plan fits us?', 'What would annual save us?', 'Wh
  * Manage billing, integration B-20); upgrading is Plans, inside the app. Only the Owner changes any of it (1.0's rule, Q-23) — everyone
  * else reads, with the reason on one line.
  */
-export function BillingView({ chrome, invoices, from }: { chrome: CreditsChrome; invoices: InvoiceRow[]; from?: string }) {
+export function BillingView({ chrome, invoices, auto, from }: { chrome: CreditsChrome; invoices: InvoiceRow[]; auto: { setting: AutoTopUp; thisMonth: { times: number; credits: number; cents: number } } | null; from?: string }) {
   const snackbar = useSnackbar()
+  const router = useRouter()
+  /* (pending modules S19) auto top-up: the switch puts the value back when the server refuses (REG-656); turning it on is its dialog */
+  const [autoOn, setAutoOn] = useState(auto?.setting.on ?? false)
+  const [autoSeed, setAutoSeed] = useState(auto?.setting)
+  if (autoSeed !== auto?.setting) { setAutoSeed(auto?.setting); setAutoOn(auto?.setting.on ?? false) }
+  const [autoEdit, setAutoEdit] = useState(false)
+  const autoSaved = (next: AutoTopUp, previous: AutoTopUp) => {
+    setAutoEdit(false); setAutoOn(next.on); router.refresh(); void refreshCredits()
+    snackbar({ key: 'auto-topup', message: previous.on ? 'Auto top-up changed' : 'Auto top-up is on', actionLabel: 'Undo', onAction: () => { void setAutoTopUp(previous).then((r) => { if ('error' in r) snackbar({ message: r.error }); else { setAutoOn(previous.on); router.refresh(); void refreshCredits(); snackbar({ key: 'auto-topup', message: previous.on ? 'Auto top-up is as it was' : 'Auto top-up is off' }) } }) } })
+  }
+  const autoOff = () => {
+    if (!auto) return
+    const before = auto.setting
+    setAutoOn(false)
+    void setAutoTopUp({ ...before, on: false }).then((r) => {
+      if ('error' in r) { setAutoOn(before.on); snackbar({ message: r.error }); return }
+      router.refresh(); void refreshCredits()
+      snackbar({ key: 'auto-topup', message: 'Auto top-up is off', actionLabel: 'Undo', onAction: () => { void setAutoTopUp(before).then((u) => { if ('error' in u) snackbar({ message: u.error }); else { setAutoOn(true); router.refresh(); void refreshCredits(); snackbar({ key: 'auto-topup', message: 'Auto top-up is on' }) } }) } })
+    }, () => { setAutoOn(before.on); snackbar({ message: 'Couldn’t turn off auto top-up' }) })
+  }
   const s: CreditSummary = useCredits(chrome.summary) ?? chrome.summary
   const may = s.viewer.canChangePlan
   const trusted = s.viewer.trusted
@@ -54,9 +79,10 @@ export function BillingView({ chrome, invoices, from }: { chrome: CreditsChrome;
   const [pending, start] = useTransition()
   useMaisonAi(AI_SUGGESTIONS)
   const ask = () => start(async () => {
-    const r = await askToUpgrade(suggestedPlan(s.activeMembers))
+    const r = await askToUpgrade(suggestedPlan(s.activeMembers), 'billing')
     if ('error' in r) { snackbar({ message: r.error }); return }
-    snackbar({ message: `Asked ${r.owner} to upgrade the plan` })
+    snackbar({ message: r.again ? `You asked ${r.owner} on ${dayMonth(r.askedAt)} — it’s in their bell` : `Asked ${r.owner} to upgrade the plan` })   // (S42 D-07) one ask while it waits
+    void refreshCredits()
   })
   const status = s.status === 'past_due' ? <MetaChip color="red" icon="credit_card">Payment failed</MetaChip>
     : s.cancelAtPeriodEnd ? <MetaChip color="yellow">{`Ends ${dayMonth(s.periodEnd)}`}</MetaChip>
@@ -108,21 +134,24 @@ export function BillingView({ chrome, invoices, from }: { chrome: CreditsChrome;
                 <>
                   <p className={styles.boxLine}>{plan.id === 'pro_studio' || plan.id === 'max' ? `${s.seats} seats · ` : ''}{s.billingCycle === 'yearly' ? 'annual' : 'monthly'} · {sgd(price)} a {s.billingCycle === 'yearly' ? 'year' : 'month'}</p>
                   <p className={styles.boxMeta}>{s.cancelAtPeriodEnd ? `Ends ${dayMonth(s.periodEnd)} — then Free, and the top-ups stay` : s.status === 'trialing' && s.trialEndsAt ? `Free until ${dayMonth(s.trialEndsAt)}, then ${sgd(price)} a month` : `Renews ${dayMonth(s.periodEnd)}`} · {fmtCredits(month)} AI credits a month{plan.id === 'pro_studio' ? ', shared' : ''}</p>
-                  {plan.id === 'pro_studio' ? <p className={styles.boxMeta}>{s.activeMembers} active {s.activeMembers === 1 ? 'member' : 'members'} · more seats are S$35 a month each</p> : null}
+                  {plan.id === 'pro_studio' ? <p className={styles.boxMeta} data-testid="billing-seats">{s.activeMembers} of {s.seats} seats in use — one for each member who uses the AI tools · more seats are S$35 a month each</p> : null}
+                  {/* (pending modules S19 — 1.0's seat change) fewer seats waiting for the billing date */}
+                  {plan.id === 'pro_studio' && s.scheduledSeats != null && s.scheduledSeats !== s.seats ? <p className={styles.boxMeta} data-testid="billing-seats-next">From {dayMonth(s.billingTo)}: {s.scheduledSeats} seats · {sgd(priceFor(plan, s.scheduledSeats, s.billingCycle as BillingCycle))} a {s.billingCycle === 'yearly' ? 'year' : 'month'}</p> : null}
                 </>
               )}
               {may ? (
                 <div className={styles.boxActions}>
                   <Button onPress={openPlans} data-testid="billing-change-plan">{s.planId === 'free' ? 'See plans' : 'Change plan'}</Button>
+                  {plan.id === 'pro_studio' && s.status === 'active' ? <Button variant="secondary" appearance="outlined" onPress={() => openSeats()} data-testid="billing-change-seats">Change seats</Button> : null}
                   {s.planId !== 'free' ? <Button variant="secondary" appearance="outlined" onPress={openManageBilling}>Manage billing</Button> : null}
                 </div>
               ) : (
                 <>
                   <div className={styles.boxActions}>
                     <Button variant="secondary" appearance="outlined" onPress={openPlans}>See plans</Button>
-                    {s.planId === 'free' ? <Button isDisabled={pending} onPress={ask}>{`Ask ${s.owner.name} to upgrade`}</Button> : null}
+                    {s.planId === 'free' && !s.upgradeAsk ? <Button isDisabled={pending} onPress={ask}>{`Ask ${s.owner.name} to upgrade`}</Button> : null}
                   </div>
-                  <ReadOnlyNote text={`Only ${s.owner.name} changes the plan and billing.`} />
+                  <ReadOnlyNote text={s.planId === 'free' && s.upgradeAsk ? `You asked ${s.owner.name} to upgrade on ${dayMonth(s.upgradeAsk.at)} — only ${s.owner.name} changes the plan and billing.` : `Only ${s.owner.name} changes the plan and billing.`} />
                 </>
               )}
             </section>
@@ -143,8 +172,28 @@ export function BillingView({ chrome, invoices, from }: { chrome: CreditsChrome;
                 <p className={styles.boxLine}>{fmtCredits(s.topupCredits ?? 0)} AI credits that never expire</p>
                 <p className={styles.boxMeta}>This month’s credits are used first; top-ups carry over on any plan, after a downgrade or after cancelling.</p>
                 {s.viewer.canBuy ? (
-                  <div className={styles.boxActions}><Button variant="secondary" appearance="outlined" onPress={openTopUp}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button></div>
+                  <div className={styles.boxActions}><Button variant="secondary" appearance="outlined" onPress={() => openTopUp()}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button></div>
                 ) : <ReadOnlyNote text={`Only ${s.owner.name} can buy AI credits.`} />}
+                {/* (pending modules S19 — card held:ai-credits, Q-36 as recommended) the studio's auto top-up: off until the Owner turns it on */}
+                {auto ? (
+                  <div className={styles.autoRow} data-testid="billing-auto-topup">
+                    <div className={styles.autoHead}>
+                      <span className={styles.autoTitle}>Auto top-up</span>
+                      {s.viewer.canBuy ? (
+                        <label className={styles.switchLabel}>
+                          <Switch size="sm" isSelected={autoOn} aria-label="Auto top-up" onChange={(on: boolean) => { if (on) setAutoEdit(true); else autoOff() }} />
+                          <span>{autoOn ? 'On' : 'Off'}</span>
+                        </label>
+                      ) : <MetaChip color={auto.setting.on ? 'green' : 'default'}>{auto.setting.on ? 'On' : 'Off'}</MetaChip>}
+                    </div>
+                    <p className={styles.boxMeta} data-testid="billing-auto-line">
+                      {autoOn ? `${autoLine(auto.setting)}.` : 'Off — when the studio runs low, nothing is bought until you buy it.'}
+                      {autoOn && s.viewer.canBuy ? <> <Button appearance="text" onPress={() => setAutoEdit(true)} data-testid="billing-auto-change">Change</Button></> : null}
+                    </p>
+                    {autoOn && auto.thisMonth.times ? <p className={styles.boxMeta} data-testid="billing-auto-month">This month: {auto.thisMonth.times} {auto.thisMonth.times === 1 ? 'top-up' : 'top-ups'} · {fmtCredits(auto.thisMonth.credits)} AI credits · {sgd(auto.thisMonth.cents)}</p> : null}
+                    {s.viewer.canBuy ? null : <ReadOnlyNote text={`Only ${s.owner.name} turns auto top-up on or off.`} />}
+                  </div>
+                ) : null}
               </section>
             ) : null}
 
@@ -172,6 +221,7 @@ export function BillingView({ chrome, invoices, from }: { chrome: CreditsChrome;
                         help="Every payment — the plan and each top-up" empty="No invoices yet — they appear with the first payment." />
         ) : null}
       </div>
+      {auto && s.viewer.canBuy ? <AutoTopUpDialog open={autoEdit} value={{ ...auto.setting, on: autoOn && auto.setting.on }} balance={s.balance ?? 0} onClose={() => setAutoEdit(false)} onSaved={autoSaved} /> : null}
     </CompanyShell>
   )
 }

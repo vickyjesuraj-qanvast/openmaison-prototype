@@ -1,0 +1,58 @@
+/*
+ * (simplify S-17 · S-18 · S-19 · P2 §6.8, 2026-10-09) The project's moments as sheets — Start the project, Mark {stage} done, the hand over's
+ * Tell, the hold's Tell. One rhythm for all of them (the report's concept screen, section 05): regions top to bottom (When · the schedule ·
+ * Tell {client} · Money), each under its small label and a hairline, a tick a DS Checkbox with its help line under the label (24 control + 8
+ * gap = the 32 the help is indented by). The house Dialog draws the head, the foot and the phone's bottom sheet; nothing here re-draws them.
+ * The compact change list composes Share changes' own (schedule.module.css); the preview composes the Start card's.
+ */
+.sheet { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-width: 0; }
+.region { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.region + .region { padding-top: var(--om-spacing-5); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.label { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.line { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.line[data-tone='strong'] { color: var(--om-color-on-surface-default); }
+.line[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
+.date { max-width: 280px; }
+.when { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-4); }
+.when .date { flex: 0 1 280px; }
+
+/* a tick: the DS Checkbox, its help under its words */
+.tick { display: flex; flex-direction: column; gap: var(--om-spacing-0-5); min-width: 0; }
+.help { padding-left: var(--om-spacing-8); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.help[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
+.inline { composes: link from '../../om/text-link.module.css'; font: var(--om-type-body-s); }
+.more { padding-left: var(--om-spacing-8); }
+.changes { composes: changes from './schedule.module.css'; }
+.change { composes: change from './schedule.module.css'; flex-direction: row; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); }
+.changeText { composes: changeText from './schedule.module.css'; }
+.changeName { composes: changeName from './schedule.module.css'; }
+.changeWords { composes: changeWords from './schedule.module.css'; }
+
+/* a row that says why a step can't be ticked, with its one button (Invite {client}) */
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-2) var(--om-spacing-4); }
+
+/* the photo well's picks */
+.photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); padding-left: var(--om-spacing-8); }
+.photo { composes: thumb from '../../om/thumb.module.css'; position: relative; width: 56px; height: 56px; }
+.photo img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+.photo[data-state='uploading'] { opacity: 0.5; }
+.photoDrop { position: absolute; top: -8px; right: -8px; }
+.well { padding-left: var(--om-spacing-8); }
+
+/* the Start sheet's schedule: the picker beside what it makes */
+.split { display: flex; flex-wrap: wrap; gap: var(--om-spacing-5); min-width: 0; }
+.pick { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.preview { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.fold { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); width: 100%; padding: var(--om-spacing-3) var(--om-spacing-4); border: 0; border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: left; cursor: pointer; }
+.fold:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* a loading sheet: its regions as bones (REG-708 — the ghost of the sheet as it will look) */
+.ghost { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.ghostRegion { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.ghostRegion + .ghostRegion { padding-top: var(--om-spacing-5); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.ghostTick { display: flex; align-items: center; gap: var(--om-spacing-2); }
+
+@media (max-width: 767px) {
+  .date, .when .date { max-width: none; flex-basis: 100%; }
+}

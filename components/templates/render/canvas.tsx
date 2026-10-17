@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, SOCIAL_LABEL, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type SocialKey, type TextStyle } from '@/lib/templates/model'
-import { isEmptyResolved, resolveFields } from '@/lib/templates/fields'
+import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, SOCIAL_LABEL, type BrandKit, type CanvasBlock, type CanvasElement, type KVRow, type KvLines, type SignatureColumn, type SocialKey, type TextStyle } from '@/lib/templates/model'
+import { isEmptyResolved, isVariationDoc, resolveFields, variationHeading } from '@/lib/templates/fields'
 import { stampSvg } from '@/lib/templates/assets'
 import { docLetterhead, type DocData } from '@/lib/templates/data'
 import { textCss, pt } from './styles'
@@ -59,6 +59,27 @@ export function SignatureColumns({ columns, style, headingStyle, lineWeight, lin
   )
 }
 
+/** (S44T — M5) The Details rows, for the block and the header's Details element alike: each row's label and value, either in bold when the
+    row says so, with no lines, a line under each value, or every cell boxed. */
+export function KvTable({ rows, values, lines, gap, labelWidth, valueCss, labelCss, ink, valueClass }: { rows: KVRow[]; values: Record<string, string>; lines: KvLines; gap: number; labelWidth: number; valueCss: CSSProperties; labelCss: CSSProperties; ink: string; valueClass?: string }) {
+  const boxed = lines === 'boxed'
+  /* The cells' looks are the template's own (its styles, its ink, its widths in mm) — computed here, as the rest of the print's are. */
+  const cellBox: CSSProperties = boxed ? { border: `1px solid ${ink}`, padding: `${mm(0.8)}px ${mm(1.4)}px` } : {}
+  const tableCss: CSSProperties = { ...valueCss, ...(boxed ? { borderCollapse: 'collapse', alignSelf: 'start' } : { borderSpacing: `0 ${mm(gap)}px` }) }   // boxed: a column's box as tall as its own rows
+  const labelOf = (r: KVRow): CSSProperties => ({ ...labelCss, ...(r.labelBold ? { fontWeight: 700 } : {}), width: mm(labelWidth), ...cellBox })
+  const valueOf = (r: KVRow): CSSProperties => ({ ...valueCss, ...(r.valueBold ? { fontWeight: 700 } : {}), ...(lines === 'under' ? { borderBottom: `1px solid ${ink}` } : {}), ...cellBox })
+  return (
+    <table className={styles.kv} data-lines={lines} style={tableCss}><tbody>
+      {rows.map((r) => (
+        <tr key={r.id}>
+          <td className={styles.kvLabel} style={labelOf(r)}>{resolveFields(r.label, values)}</td>
+          <td className={valueClass} style={valueOf(r)}>{resolveFields(r.value, values) || '\u00a0'}</td>
+        </tr>
+      ))}
+    </tbody></table>
+  )
+}
+
 /** (REG-618, parity Q-20) A plain outline mark per network, drawn in the text's colour — simple shapes, not the networks' own logos. */
 export function SocialMark({ kind, size }: { kind: SocialKey; size: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true as const, style: { flex: '0 0 auto' } }
@@ -103,7 +124,8 @@ function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; bloc
   switch (el.kind) {
     case 'text': {
       if (!editing && el.hideIfEmpty && isEmptyResolved(el.text, values)) return null
-      const text = editing ? el.text : resolveFields(el.text, values)
+      /* (fix-D, D-08 · G-12) a variation order's heading names the order and its contract, never the template's "Sales Contract" */
+      const text = editing ? el.text : isVariationDoc(values) && el.style?.role === 'heading' ? variationHeading(resolveFields(el.text, values), values) : resolveFields(el.text, values)
       inner = editing ? (
         <div ref={editRef} className={styles.text} style={textCss(el.style, brand)} contentEditable suppressContentEditableWarning
              onBlur={(e) => { setEditing(false); interactive?.onEditText(block.id, el.id, 'text', e.currentTarget.innerText) }}
@@ -120,19 +142,8 @@ function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; bloc
       )
       break
     }
-    case 'kv':
-      inner = (
-        <table className={styles.kv} style={{ ...textCss(el.style, brand), borderSpacing: `0 ${mm(el.gap)}px` }}>
-          <tbody>
-            {el.rows.map((r) => (
-              <tr key={r.id}>
-                <td className={styles.kvLabel} style={{ ...textCss(el.labelStyle, brand), width: mm(el.labelWidth) }}>{resolveFields(r.label, values)}</td>
-                <td className={styles.kvValue} style={{ ...textCss(el.style, brand), borderBottom: el.lines === 'under' ? `1px solid ${resolveColor('ink', brand)}` : undefined }}>{resolveFields(r.value, values) || ' '}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )
+    case 'kv':   // (S44T — UAT rows 248 · 322) bold per row; no lines, a line under each value, or boxed cells
+      inner = <KvTable rows={el.rows} values={values} lines={el.lines} gap={el.gap} labelWidth={el.labelWidth} valueCss={textCss(el.style, brand)} labelCss={textCss(el.labelStyle, brand)} ink={resolveColor('ink', brand)} valueClass={styles.kvValue} />
       break
     case 'rule': inner = <div className={styles.rule} style={{ borderTopWidth: pt(el.weight), borderTopColor: resolveColor(el.color, brand) }} />; break
     case 'box': inner = <div className={styles.box} style={{ background: el.fill ? resolveColor(el.fill, brand) : 'transparent', border: el.stroke ? `${pt(el.weight ?? 0.5)}px solid ${resolveColor(el.stroke, brand)}` : undefined }} />; break
@@ -148,7 +159,7 @@ function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; bloc
       // (REG-618, parity Q-20) Each filled network from Company › Profile: its mark and the handle as typed; nothing prints for an empty one.
       const css = textCss(el.style, brand)
       const size = (parseFloat(String(css.fontSize)) || 12) * 1.15
-      const rows = el.networks.map((k) => ({ k, v: (k === 'website' ? ctx.data.studio.website : ctx.data.studio.socials?.[k]) ?? '' })).filter((r) => r.v)   // the website is the company's Website field
+      const rows = el.networks.map((k) => ({ k, v: (k === 'website' ? docLetterhead(ctx.data).website : ctx.data.studio.socials?.[k]) ?? '' })).filter((r) => r.v)   // the website is the company's Website field — (pending modules S11) the issuing entity's own when it has one
       inner = rows.length ? (
         <div className={styles.social} data-layout={el.layout} style={{ ...css, gap: mm(el.gap) }}>
           {rows.map((r) => <span key={r.k} className={styles.socialItem} title={SOCIAL_LABEL[r.k]}><SocialMark kind={r.k} size={size} /><span>{r.v}</span></span>)}

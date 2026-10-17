@@ -34,11 +34,31 @@ export function unsignBlock(c: { status: string; signedBy: string | null }, view
  * (Q-07) What a signing link does. `open` signs; `signed` shows the signed copy; `not-sent` — a Draft, or moved back to Draft — says
  * it is not ready; `inactive` — archived, deleted, or its lead deleted — says the link no longer works (1.0's archived-lead guard, B-73).
  */
-export type LinkState = 'open' | 'signed' | 'not-sent' | 'inactive'
-export function linkState(c: { status: string; archivedAt: Date | null; deletedAt: Date | null }, leadGone: boolean): LinkState {
+/* (pending modules S03) `expired` — out for signature past its window (the studio's Signing links rule, 7 days by default): the page says so
+   and asks the client for a new link; a signed link never expires. */
+/* (S42 B-01) `quote-updating` — out for signature, but the quote it signs is being revised: the page says "Not ready yet" and carries no
+   document, the server refuses a signature, and the link opens again once the quote is back with the client (`quoteHoldsSigning`). */
+export type LinkState = 'open' | 'signed' | 'not-sent' | 'inactive' | 'expired' | 'quote-updating'
+/**
+ * (S42 B-01 — the audit's Blocker: a client signed while the studio was revising the quote, and the unsent draft became the signed quote) Whether
+ * the quote an agreement names keeps its signing link waiting. A revision (version 2 on) waits until it is with the client again — sent,
+ * confirmed or signed; a first version waits as Send's own check does (REG-634, UX audit C2): a Draft, or one waiting for approval, where
+ * Settings requires quote approval. Every signing path asks it — the link, a set's link, Mark as signed and a list's Signed.
+ */
+export function quoteHoldsSigning(q: { status: string; version: number } | null | undefined, approvalRequired: boolean): boolean {
+  if (!q) return false
+  if (q.status === 'Sent to Client' || q.status === 'Confirmed' || q.status === 'Signed') return false
+  if (q.version > 1) return true
+  if (q.status === 'Approved') return false
+  return approvalRequired && (q.status === 'Draft' || q.status === 'Sent for Approval')
+}
+/** (S42 B-01) What the studio hears when it marks a contract signed while its quote is being revised (Mark as signed, a list's Signed). */
+export const quoteHoldsSigningRule = (q: { number: string; version: number }) =>
+  q.version > 1 ? `Its quote ${q.number} is being revised — send version ${q.version} to the client first` : `Its quote ${q.number} isn’t approved yet — approve and send it first`
+export function linkState(c: { status: string; archivedAt: Date | null; deletedAt: Date | null; signExpiresAt?: Date | null }, leadGone: boolean, now: number = Date.now()): LinkState {
   if (c.deletedAt || c.archivedAt || leadGone) return 'inactive'
   if (c.status === 'Signed') return 'signed'
-  if (c.status === 'Sent to Client') return 'open'
+  if (c.status === 'Sent to Client') return c.signExpiresAt && c.signExpiresAt.getTime() <= now ? 'expired' : 'open'
   return 'not-sent'
 }
 

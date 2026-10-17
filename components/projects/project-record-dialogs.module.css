@@ -1,0 +1,23 @@
+/* (gaps build, package A) The project record's forms — the project dialogs' fields and help line, the lead form's chip group, and the card
+   table for the Contract list (components/om/card-table.module.css, as the handover checklist composes it). Composed, never copied.
+   (parity P-09) The details form's own classes went with it — Edit details is the lead form. */
+.fields { composes: fields from './project-dialogs.module.css'; }
+.help { composes: help from './project-dialogs.module.css'; }
+.chipGroup { composes: customChips from '../leads/lead-form.module.css'; }
+.chipLabel { composes: customLabel from '../leads/lead-form.module.css'; }
+.link { composes: link from '../om/text-link.module.css'; }
+
+.table { composes: table from '../om/card-table.module.css'; }
+.head { composes: head from '../om/card-table.module.css'; }
+.tableRow { composes: row from '../om/card-table.module.css'; }
+.actions { composes: actions from '../om/card-table.module.css'; }
+.actionsHead { composes: actionsHead from '../om/card-table.module.css'; }
+.srOnly { composes: srOnly from '../../app/settings/settings.module.css'; }
+.head, .tableRow { grid-template-columns: minmax(0, 1fr) auto; }
+.item { composes: item from './ending/ending.module.css'; }
+.why { composes: why from './ending/ending.module.css'; }
+
+@media (max-width: 767px) {
+  .head { display: none; }
+  .head, .tableRow { grid-template-columns: minmax(0, 1fr); }
+}

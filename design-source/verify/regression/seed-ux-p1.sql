@@ -1,0 +1,4 @@
+INSERT INTO quotes (id, lead_id, number, title, amount_minor, visibility, status, created_at, updated_at, approved_at, approved_by, submitted_by, submitted_at, version, created_by, prepared_by, kind)
+VALUES ('probe-q-app', 'bed4ded0-1ac7-48fd-a7c4-639a7a00f02f', 'OM-19001', 'Gerald kitchen', 4500000, 'Private', 'Approved', strftime('%s','now') - 86400, strftime('%s','now') - 3600, strftime('%s','now') - 3600, 'dane', 'dane', strftime('%s','now') - 7200, 1, 'dane', 'dane', 'quote');
+INSERT INTO quotes (id, lead_id, number, title, amount_minor, visibility, status, created_at, updated_at, version, created_by, prepared_by, kind)
+VALUES ('probe-q-draft', 'f54404de-f6a6-44c3-a057-921483e14aa3', 'OM-19002', 'Grace flat', 3200000, 'Private', 'Draft', strftime('%s','now') - 86400, strftime('%s','now') - 3600, 1, 'james', 'james', 'quote');

@@ -1,0 +1,9 @@
+/* (pending modules S01) A member's photo field — gaps build H's About page row (member-portal-dialog), moved here unchanged so Your profile,
+   Members › Edit details and the About page draw one piece. */
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.photoRow { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.portrait { width: 64px; height: 64px; border-radius: var(--om-radius-2); object-fit: cover; background: var(--om-color-surface-variant); }
+.fileInput { display: none; }
+/* the rule a picked file broke — the field's error line (text-field's support line in red) */
+.problem { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.locked { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* why the photo isn't the viewer's to change */

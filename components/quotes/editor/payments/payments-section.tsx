@@ -14,16 +14,18 @@ import { decimalTyped } from '@/lib/format'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
-import { useRun } from '@/components/leads/tasks/use-run'
+import { couldnt, useRun } from '@/components/leads/tasks/use-run'
+import { Chips } from '@/components/om/chips'   // (parity map, MI-021) the first payment's % · S$ switch
 import type { QuotePayment } from '@/lib/db/schema'
 import { money2 } from '@/lib/quotes/math'
-import { blankRow, dueLabel, findSplit, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, splitWord, toRows, type PaymentRow, type PaymentSplit, type ScheduleAnchors } from '@/lib/quotes/payments'
+import { FEE_FIRST_ALONE, FEE_FIRST_STAYS, asFixedFirst, asSharesFirst, blankRow, dueLabel, findSplit, fixedFeeOf, isFixedRow, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, splitWord, toRows, type PaymentRow, type PaymentSplit, type ScheduleAnchors } from '@/lib/quotes/payments'
 import { usePathname, useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { Dialog } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { saveQuoteScheduleAsTemplate } from '@/app/company/payment-templates-actions'
-import { createQuotePayment, deleteQuotePayment, reorderQuotePayments, replaceQuotePayments, updateQuotePayment, type PaymentPatch } from '@/app/quotes/payments-actions'
+import { createQuotePayment, deleteQuotePayment, readPaymentFeeFirst, reorderQuotePayments, replaceQuotePayments, updateQuotePayment, type PaymentPatch } from '@/app/quotes/payments-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into run()'s own failure line
 import { SectionCard } from '../section-card'
 import { useLevelFocus } from '../items/table-menus'
 import styles from './payments-section.module.css'
@@ -41,7 +43,7 @@ export type PaymentsSeed = {
   folders?: FolderNode[]
 }
 
-type Field = 'name' | 'description' | 'pct' | 'amount'
+type Field = 'name' | 'description' | 'pct' | 'amount' | 'word'   // (S44T — row 310) `word`: a fixed fee's own word in the % cell
 type Edit = { id: string; field: Field; draft: string }
 
 /** The table's key in the user's stored column widths (REG-427) and its mocked tracks (payments-section.module.css). */
@@ -99,12 +101,21 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const presetRef = useRef<HTMLSpanElement>(null)
   const moreRef = useRef<HTMLSpanElement>(null)
   const previous = useRef<PaymentRow[] | null>(null)
+  /* (parity map, MI-021 — 1.0's fee first, behind the studio's switch) Settings › Finance › Invoices › *May open with a fixed fee*: read once, so the
+     first payment's `% · S$` switch shows only when the studio allows it (or the row already is a fee — it can always go back to a share) */
+  const [feeFirst, setFeeFirst] = useState(false)
+  useEffect(() => { if (locked) return; let alive = true; void readPaymentFeeFirst().then((r) => { if (alive) setFeeFirst(r.feeFirst) }, () => {}); return () => { alive = false } }, [locked])
 
   /* ── the schedule as the table shows it: a % / amount being typed previews at once (the Total row and the error follow) ── */
-  const live = rows.map((r) => {
+  /* (MI-021) a fixed fee first: it bills its own amount, and an amount typed on any other row is a share of what it leaves */
+  const fee = fixedFeeOf(rows)
+  const shareBase = Math.max(0, totalMinor - fee)
+  const isFee = (r: QuotePayment, i: number) => i === 0 && fee > 0 && r.fixedMinor != null
+  const live = rows.map((r, i) => {
     if (!edit || edit.id !== r.id) return r
     if (edit.field === 'pct') { const n = Number(edit.draft); return Number.isFinite(n) && n >= 0 ? { ...r, pct: n } : r }
-    if (edit.field === 'amount' && totalMinor > 0) { const n = Math.round(Number(edit.draft.replace(/[^0-9.]/g, '')) * 100); return Number.isFinite(n) && n >= 0 ? { ...r, pct: (n / totalMinor) * 100 } : r }
+    if (edit.field === 'amount' && isFee(r, i)) { const n = Math.round(Number(edit.draft.replace(/[^0-9.]/g, '')) * 100); return Number.isFinite(n) && n > 0 ? { ...r, fixedMinor: n } : r }
+    if (edit.field === 'amount' && shareBase > 0) { const n = Math.round(Number(edit.draft.replace(/[^0-9.]/g, '')) * 100); return Number.isFinite(n) && n >= 0 ? { ...r, pct: (n / shareBase) * 100 } : r }
     return r
   })
   const amounts = paymentAmounts(live, totalMinor)
@@ -115,7 +126,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   /* ── writes ── */
   const replace = async (next: PaymentRow[]) => {
     const r = await replaceQuotePayments(quoteId, next)
+    if ('error' in r) return r   // (parity map, MI-021) a refusal reads its rule in the snackbar (run says it)
     setRows(r.rows); onSaved(r.updatedAt)
+    return r
   }
   const restore = (what: string) => {
     const prev = previous.current
@@ -136,20 +149,36 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     if (!name) return
     let id = ''
     void run('save the template', async () => {
-      id = await saveQuoteScheduleAsTemplate(quoteId, name)
-      setSplits((s) => [...s, { id, name, rows: rowsRef.current.map((r) => ({ name: r.name, description: r.description, pct: r.pct })), isPreset: false }])
-    }, { message: `${name} saved as a payment template`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/templates/payments/${id}`, pathname)) })
+      id = await orThrow(saveQuoteScheduleAsTemplate(quoteId, name))
+      setSplits((s) => [...s, { id, name, rows: rowsRef.current.filter((r, i) => !isFixedRow(r, i)).map((r) => ({ name: r.name, description: r.description, pct: r.pct })), isPreset: false }])   // (S44O — row 297) the shares, as the server keeps them
+    }, { message: fixedFeeOf(rowsRef.current) ? `${name} saved as a payment template — the shares after the fixed fee` : `${name} saved as a payment template`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/templates/payments/${id}`, pathname)) })   // (S44O, invented copy)
   }
   /* (sweep S1 #10) Every optimistic write puts the row back when the server refuses — the failure snackbar never sits beside a value that was not kept. */
   const patchRow = (id: string, patch: PaymentPatch) => {
     const before = rowsRef.current.find((r) => r.id === id)
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch, dueAt: patch.dueAt !== undefined ? (patch.dueAt ? new Date(patch.dueAt) : null) : r.dueAt } as QuotePayment : r)))
-    void run('save the payment', async () => { const r = await updateQuotePayment(id, patch); onSaved(r.updatedAt) })
+    void run('save the payment', async () => { const r = await updateQuotePayment(id, patch); if ('error' in r) return r; onSaved(r.updatedAt); return r })
       .then((ok) => { if (!ok && before) setRows((rs) => rs.map((r) => (r.id === id ? before : r))) })
+  }
+  /* (parity map, MI-021) The first payment's `% · S$` switch: a fee of what it bills now (the others' shares made 100% of what it leaves), or a
+     share again (its fee's share of the total) — nothing moves on the page; one sentence and Undo, as a preset is. */
+  const setFirstFee = (on: boolean) => {
+    const cur = rowsRef.current
+    const first = cur[0]
+    if (!first || on === (first.fixedMinor != null)) return
+    if (totalMinor <= 0) { snackbar({ message: 'Amounts follow the quote total — add items first' }); return }
+    if (on && cur.length < 2) { snackbar({ message: couldnt('make it a fixed fee', FEE_FIRST_ALONE) }); return }
+    previous.current = toRows(cur)
+    const next = on ? asFixedFirst(toRows(cur), totalMinor) : asSharesFirst(toRows(cur), totalMinor)
+    const head = next[0]!
+    void run(on ? 'make it a fixed fee' : 'make it a share', () => replace(next), {
+      message: on ? `${first.name} is a fixed fee of ${money2(head.fixedMinor ?? 0)} — the other payments share what it leaves` : `${first.name} is a share again — ${fmtPct(head.pct)} of the quote`,   // (invented copy)
+      actionLabel: 'Undo', onAction: () => restore('undo it'),
+    })
   }
   const addRow = () => {
     void run('add the payment', async () => {
-      const r = await createQuotePayment(quoteId, blankRow(anchors))
+      const r = await orThrow(createQuotePayment(quoteId, blankRow(anchors)))
       setRows((rs) => [...rs, r.row]); onSaved(r.updatedAt)
       setEdit({ id: r.row.id, field: 'name', draft: r.row.name })
     })
@@ -158,7 +187,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     previous.current = toRows(rowsRef.current)
     const at = rowsRef.current.findIndex((r) => r.id === row.id)
     setRows((rs) => rs.filter((r) => r.id !== row.id))
-    void run('remove the payment', async () => { const r = await deleteQuotePayment(row.id); onSaved(r.updatedAt) }, { message: `${row.name} removed`, actionLabel: 'Undo', onAction: () => restore('restore the payment') })
+    void run('remove the payment', async () => { const r = await orThrow(deleteQuotePayment(row.id)); onSaved(r.updatedAt) }, { message: `${row.name} removed`, actionLabel: 'Undo', onAction: () => restore('restore the payment') })
       .then((ok) => { if (!ok) { previous.current = null; setRows((rs) => (rs.some((r) => r.id === row.id) ? rs : [...rs.slice(0, at), row, ...rs.slice(at)])) } })
   }
   const reorder = (ids: string[]) => setRows((rs) => ids.map((id) => rs.find((r) => r.id === id)!).filter(Boolean))
@@ -166,7 +195,10 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const persistOrder = () => {
     const before = orderBefore.current
     orderBefore.current = null
-    void run('reorder the payments', async () => { const r = await reorderQuotePayments(quoteId, rowsRef.current.map((x) => x.id)); onSaved(r.updatedAt) })
+    /* (parity map, MI-021) the fixed fee is the first payment — a drop that moves it is put back, its rule said */
+    const fixedId = before ? rowsRef.current.find((x) => x.fixedMinor != null)?.id : null
+    if (before && fixedId && rowsRef.current[0]?.id !== fixedId) { reorder(before); snackbar({ message: couldnt('reorder the payments', FEE_FIRST_STAYS) }); return }
+    void run('reorder the payments', async () => { const r = await reorderQuotePayments(quoteId, rowsRef.current.map((x) => x.id)); if ('error' in r) return r; onSaved(r.updatedAt); return r })
       .then((ok) => { if (!ok && before) reorder(before) })
   }
 
@@ -174,8 +206,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const startEdit = (row: QuotePayment, field: Field, i: number) => {
     if (locked) return   /* (REG-589) */
     if (field === 'amount' && totalMinor <= 0) { snackbar({ message: 'Amounts follow the quote total — add items first' }); return }
+    if (field === 'pct' && isFee(row, i)) return   // (MI-021) a fixed fee has no share — its amount is the cell to change
     // The amount opens as the figure the cell showed ("S$10,000.00", 1271:37797); what is typed is read as a number.
-    const draft = field === 'name' ? row.name : field === 'description' ? (row.description ?? '') : field === 'pct' ? String(Number(row.pct.toFixed(2))) : money2(amounts[i] ?? 0)
+    const draft = field === 'name' ? row.name : field === 'description' ? (row.description ?? '') : field === 'word' ? (row.fixedLabel ?? 'Fixed fee') : field === 'pct' ? String(Number(row.pct.toFixed(2))) : money2(amounts[i] ?? 0)
     setEdit({ id: row.id, field, draft })
   }
   const commitEdit = () => {
@@ -187,8 +220,10 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     let patch: PaymentPatch | null = null
     if (e.field === 'name') { const v = e.draft.trim(); if (v && v !== row.name) patch = { name: v } }
     else if (e.field === 'description') { const v = e.draft.trim() || null; if (v !== (row.description ?? null)) patch = { description: v } }
+    else if (e.field === 'word') { const v = e.draft.replace(/\s+/g, ' ').trim().slice(0, 30); const next = v && v.toLowerCase() !== 'fixed fee' ? v : null; if (next !== (row.fixedLabel ?? null)) patch = { fixedLabel: next } }   // (S44T — row 310) empty = "Fixed fee"
     else if (e.field === 'pct') { const n = Number(e.draft); if (Number.isFinite(n) && n >= 0 && Math.abs(n - row.pct) > 0.004) patch = { pct: Number(n.toFixed(2)) } }
-    else if (e.field === 'amount' && totalMinor > 0) { const n = Math.round(Number(e.draft.replace(/[^0-9.]/g, '')) * 100); if (Number.isFinite(n) && n >= 0) { const pct = Number(((n / totalMinor) * 100).toFixed(2)); if (Math.abs(pct - row.pct) > 0.004) patch = { pct } } }
+    else if (e.field === 'amount' && isFee(row, rowsRef.current.indexOf(row))) { const n = Math.round(Number(e.draft.replace(/[^0-9.]/g, '')) * 100); if (Number.isFinite(n) && n > 0 && n !== row.fixedMinor) patch = { fixedMinor: n } }   // (MI-021) the fee itself
+    else if (e.field === 'amount' && shareBase > 0) { const n = Math.round(Number(e.draft.replace(/[^0-9.]/g, '')) * 100); if (Number.isFinite(n) && n >= 0) { const pct = Number(((n / shareBase) * 100).toFixed(2)); if (Math.abs(pct - row.pct) > 0.004) patch = { pct } } }   // (MI-021) a share of what the fee leaves
     if (patch) patchRow(row.id, patch)
   }
   const onEditBlur = () => { if (cancelled.current) { cancelled.current = false; setEdit(null); return } commitEdit() }
@@ -202,7 +237,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     return (
       <>
         <input className={styles.editInput} data-error={over || undefined} value={edit?.draft ?? ''} autoFocus inputMode={numeric ? 'decimal' : undefined}
-               aria-label={`${field === 'pct' ? 'Percentage' : field === 'amount' ? 'Amount' : field === 'name' ? 'Payment name' : 'Description'} of ${row.name}`}
+               aria-label={`${field === 'pct' ? 'Percentage' : field === 'amount' ? 'Amount' : field === 'name' ? 'Payment name' : field === 'word' ? 'The word printed for the fixed fee' : 'Description'} of ${row.name}`} maxLength={field === 'word' ? 30 : undefined}
                onChange={(e) => setEdit((cur) => (cur ? { ...cur, draft: numeric ? (field === 'pct' ? decimalTyped(e.target.value, 2) : e.target.value.replace(/[^0-9.,S$]/g, '')) : e.target.value } : cur))}   /* (sweep S1) a percentage takes digits and one point — never "S", "$" or "," */
                onKeyDown={onEditKey} onBlur={onEditBlur} />
         {/* (REG-729) The ✕ / ✓ pair as the house icon buttons (24; ✓ the filled one), raised over the next row. */}
@@ -210,7 +245,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
           <Tooltip label="Discard"><IconButton icon="close" label="Discard" size={24} className={styles.cancelBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => { cancelled.current = false; setEdit(null) }} /></Tooltip>
           <Tooltip label="Save"><IconButton icon="done" label="Save" size={24} variant="filled" className={styles.okBtn} onMouseDown={(e) => e.preventDefault()} onClick={commitEdit} /></Tooltip>
         </span>
-        <span className={styles.editGhost} aria-hidden>{field === 'amount' ? money2(amounts[i] ?? 0) : field === 'pct' ? fmtPct(row.pct) : field === 'name' ? row.name : row.description}</span>
+        <span className={styles.editGhost} aria-hidden>{field === 'amount' ? money2(amounts[i] ?? 0) : field === 'pct' ? fmtPct(row.pct) : field === 'name' ? row.name : field === 'word' ? (row.fixedLabel ?? 'Fixed fee') : row.description}</span>
       </>
     )
   }
@@ -243,7 +278,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       ) : null}
       <DropdownDivider />
       {/* (REG-538) The library behind the menu: save what this quote settled on, or manage the templates. */}
-      {custom ? <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); setSaveSplit('') }}><span className={styles.menuIcon}><Icon name="library_add" size={20} /></span>Save this split as a template</DropdownItem> : null}
+      {custom ? <DropdownItem disabled={fee > 0} help={fee > 0 ? 'A template holds shares only — the fixed fee stays on this quote' : undefined} onSelect={() => { setMenu(null); setMoreSub(null); setSaveSplit('') }}><span className={styles.menuIcon}><Icon name="library_add" size={20} /></span>Save this split as a template</DropdownItem> : null}
       <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); router.push(withFrom('/company/templates/payments', pathname)) }}><span className={styles.menuIcon}><Icon name="style" size={20} /></span>Manage payment templates</DropdownItem>
     </>
   )
@@ -296,7 +331,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       {/* (REG-538) Save this split as a template. */}
       <Dialog open={saveSplit !== null} onClose={() => setSaveSplit(null)} title="Save split as a template" size="form" width={400} portal
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setSaveSplit(null)}>Cancel</Button><Button onPress={doSaveSplit} isDisabled={!(saveSplit ?? '').trim()}>Save template</Button></>}>
-        <TextField label="Template name" required value={saveSplit ?? ''} onChange={setSaveSplit} autoFocus helper={`${splitWord(live)} — saved under Company › Templates › Payments and offered on every quote.`}
+        <TextField label="Template name" required value={saveSplit ?? ''} onChange={setSaveSplit} autoFocus helper={`${splitWord(live)} — saved under Company › Templates › Payment schedules and offered on every quote.`}
                    onKeyDown={(e) => { if (e.key === 'Enter' && (saveSplit ?? '').trim()) { e.preventDefault(); doSaveSplit() } }} />
       </Dialog>
       <div className={styles.body}>
@@ -315,13 +350,23 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
               {rows.map((row, i) => (
                 <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragStart={() => { orderBefore.current ??= rowsRef.current.map((x) => x.id) }} onDragEnd={persistOrder} locked={locked}>
                   <div role="cell" className={`${styles.cell} ${styles.cName}`} data-editing={editing(row.id, 'name') || undefined}>
-                    {editing(row.id, 'name') ? editBox(row, 'name', i) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
+                    {editing(row.id, 'name') ? editBox(row, 'name', i) : i === 0 && !locked && (feeFirst || isFee(row, i)) && rows.length > 1 ? (
+                      /* (parity map, MI-021) the first payment: a share of the quote, or a fixed fee — the house Chips beside its name */
+                      <span className={styles.nameRow}>
+                        <button type="button" className={styles.cellBtn} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>
+                        <Chips className={styles.feeSwitch} label={`Bill ${row.name} as`} testId="payment-fee-switch" value={isFee(row, i) ? 'fixed' : 'pct'} onChange={(v) => setFirstFee(v === 'fixed')}
+                               options={[{ value: 'pct', label: '%' }, { value: 'fixed', label: 'S$', disabled: !feeFirst && !isFee(row, i) }]} />
+                      </span>
+                    ) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cDesc}`} data-editing={editing(row.id, 'description') || undefined}>
                     {editing(row.id, 'description') ? editBox(row, 'description', i) : <button type="button" className={styles.cellBtn} data-empty={row.description ? undefined : ''} disabled={locked} onClick={() => startEdit(row, 'description', i)}>{row.description ?? (locked ? '' : 'Add a description')}</button>}
                   </div>
-                  <div role="cell" className={`${styles.cell} ${styles.cPct}`} data-editing={editing(row.id, 'pct') || undefined}>
-                    {editing(row.id, 'pct') ? editBox(row, 'pct', i, true) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'pct', i)}>{fmtPct(live[i]!.pct)}</button>}
+                  <div role="cell" className={`${styles.cell} ${styles.cPct}`} data-editing={editing(row.id, 'pct') || editing(row.id, 'word') || undefined}>
+                    {editing(row.id, 'pct') ? editBox(row, 'pct', i, true) : editing(row.id, 'word') ? editBox(row, 'word', i)
+                      /* (MI-021) a fixed fee has no share — (S44T, UAT row 310) its word stands there, the studio's own ("Design Fee"), printed where a share prints its % */
+                      : isFee(row, i) ? <Tooltip label="The word printed in the % place — press to change it"><button type="button" className={`${styles.cellBtn} ${styles.feeWord}`} data-testid="payment-fixed-fee" disabled={locked} onClick={() => startEdit(row, 'word', i)}>{row.fixedLabel ?? 'Fixed fee'}</button></Tooltip>
+                      : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'pct', i)}>{fmtPct(live[i]!.pct)}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cAmount}`} data-editing={editing(row.id, 'amount') || undefined}>
                     {editing(row.id, 'amount') ? editBox(row, 'amount', i, true) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'amount', i)}>{money2(amounts[i] ?? 0)}</button>}

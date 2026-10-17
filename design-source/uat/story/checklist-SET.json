@@ -5,7 +5,7 @@
   "area": "Definitions",
   "feature": "Where a studio's settings live",
   "now": "Built in parity round 1",
-  "why": "Settings takes four modules on Company's frame; records stay under Company"
+  "why": "Settings has seven modules on Company’s frame; records stay under Company"
  },
  {
   "key": "SET",
@@ -45,7 +45,7 @@
   "area": "Definitions",
   "feature": "The lead stages (the funnel)",
   "now": "Later",
-  "why": "Held (leads Q-02): seven fixed stages; Manage Stages is coming soon"
+  "why": "Seven fixed stages (Q-02); Manage Stages opens Settings › Lead stages (S05)"
  },
  {
   "key": "SET",
@@ -85,7 +85,7 @@
   "area": "Mismatches",
   "feature": "The settings page's shape",
   "now": "Built in parity round 1",
-  "why": "Four Settings modules; records under Company"
+  "why": "Seven Settings modules; records under Company"
  },
  {
   "key": "SET",
@@ -93,7 +93,7 @@
   "area": "Mismatches",
   "feature": "Roles and what they may do",
   "now": "Built in parity round 1",
-  "why": "Read-only statement of the four fixed roles; no editor"
+  "why": "Read-only statement of the five fixed roles; cost sight set per role (S41b-1)"
  },
  {
   "key": "SET",
@@ -141,7 +141,7 @@
   "area": "Mismatches",
   "feature": "The studio's GST",
   "now": "Built in parity round 1",
-  "why": "Quotes & pricing › GST holds the registration and the rate"
+  "why": "Company › Profile holds the registration; Quotes & pricing › GST the rate"
  },
  {
   "key": "SET",
@@ -205,7 +205,7 @@
   "area": "Studio",
   "feature": "Invite a member",
   "now": "Built in parity round 2",
-  "why": "Add member with name, phone, email and role"
+  "why": "Add member invites by WhatsApp (a mobile only) or email (S09, S42)"
  },
  {
   "key": "SET",
@@ -221,7 +221,7 @@
   "area": "Studio",
   "feature": "Page access and data visibility notes",
   "now": "Built",
-  "why": "Who sees leads, stated in Who may do what"
+  "why": "Who sees leads and Who sees costs and margins, in Roles & access (S14)"
  },
  {
   "key": "SET",
@@ -308,8 +308,8 @@
   "id": "ST-15",
   "area": "Studio",
   "feature": "Studio Health usage tiles",
-  "now": "Platform",
-  "why": "Platform telemetry; Leads › Insights holds response times (Q-16)"
+  "now": "Built",
+  "why": "Company › Reports › Studio health, from the studio’s own records (S39)"
  },
  {
   "key": "SET",
@@ -389,7 +389,7 @@
   "area": "Lead management",
   "feature": "Lead webhooks",
   "now": "Built",
-  "why": "A stand-in under Company › Integrations; receiving is the platform's"
+  "why": "Real: generated URLs receive POSTs; set up in Company › Integrations (S34)"
  },
  {
   "key": "SET",
@@ -420,8 +420,8 @@
   "id": "LM-13",
   "area": "Lead management",
   "feature": "Project types",
-  "now": "Later",
-  "why": "Comes with the Projects module"
+  "now": "Not built — by design",
+  "why": "Projects have three fixed types (leads Q-34); no studio editor"
  },
  {
   "key": "SET",
@@ -500,8 +500,8 @@
   "id": "QP-03",
   "area": "Quotes & pricing",
   "feature": "Document templates",
-  "now": "Later",
-  "why": "Quote, contract, task, T&C and payment libraries built; invoice, PO, VO with Finance"
+  "now": "Built",
+  "why": "Libraries in Company › Templates; invoice and PO papers in Settings › Finance"
  },
  {
   "key": "SET",
@@ -517,7 +517,7 @@
   "area": "Quotes & pricing",
   "feature": "Signing documents library",
   "now": "Built",
-  "why": "Contract templates carry the gates; a PDF library is held (contracts Q-26)"
+  "why": "Contract templates carry the gates; standard PDFs are templates too (S03)"
  },
  {
   "key": "SET",
@@ -581,7 +581,7 @@
   "area": "Quotes & pricing",
   "feature": "GST registration and rate",
   "now": "Built in parity round 1",
-  "why": "The studio's registration and rate under Quotes & pricing"
+  "why": "Registration on Company › Profile; the rate under Quotes & pricing (one home)"
  },
  {
   "key": "SET",
@@ -708,24 +708,24 @@
   "id": "AZ-02",
   "area": "Touchpoints",
   "feature": "Invoice, PO and VO templates; numbering; Accounting role",
-  "now": "Later",
-  "why": "Come with the Finance module"
+  "now": "Built",
+  "why": "Settings › Finance: papers, Document numbers, How clients pay; Accounting role"
  },
  {
   "key": "SET",
   "id": "AZ-03",
   "area": "Touchpoints",
   "feature": "Project types and timeline templates",
-  "now": "Later",
-  "why": "Come with the Projects module"
+  "now": "Built",
+  "why": "Company › Templates › Schedules; project types fixed at three (Projects build)"
  },
  {
   "key": "SET",
   "id": "AZ-04",
   "area": "Touchpoints",
   "feature": "Branding & Comms, homeowner portal, AI & Copilot groups",
-  "now": "Later",
-  "why": "Their own modules, audited later"
+  "now": "Built",
+  "why": "Brand kit and Profile’s reviews; Company › Client portal; Settings › Meetings (S14, S23)"
  },
  {
   "key": "SET",

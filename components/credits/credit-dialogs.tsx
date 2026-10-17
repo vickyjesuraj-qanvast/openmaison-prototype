@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
@@ -13,10 +13,16 @@ import { askForCredits, cancelAtPeriodEnd, completeCheckout, keepPlan, startTopU
 import { dayMonth, fmtCredits, refreshLine, type CreditSummary, type Refusal } from '@/lib/credits/model'
 import { digitsOnly, isSgPhone, phoneTyped } from '@/lib/format'
 import { MSG } from '@/lib/forms'
-import { planRow, priceFor, sgd, sgd2, TOPUP_CREDITS, TOPUP_PRICE, type BillingCycle } from '@/lib/credits/plans'
-import { openPlans, planHref, refreshCredits, seedCredits } from './credits-client'
+import { planRow, priceFor, sgd, sgd2, TOPUP_CREDITS, TOPUP_MAX, TOPUP_MIN, TOPUP_PICKS, TOPUP_STEP, topupFor, topupPrice, type BillingCycle } from '@/lib/credits/plans'
+import { aboutRenders } from '@/lib/credits/schedule'
+import { Chips } from '@/components/om/chips'
+import { CountStepper } from './count-stepper'
+import { openPlans, planHref, refreshCredits, seedCredits, type CreditWork } from './credits-client'
 import type { CreditsChrome } from '@/lib/credits/chrome'
 import styles from './credit-dialogs.module.css'
+import { leaveThen } from '@/components/company/leave-guard'   // (pending modules S16) unsaved Company / Settings edits ask before the move (REG-791)
+import { noteUpgradeMoment } from '@/app/credits/nudge-actions'   // (pending modules S41b-4) the Owner's blocking moment restarts the offers' gap
+import { WELCOME_ENDED_TITLE, welcomeEndedLine } from '@/lib/credits/nudge-model'
 
 /**
  * (REG-702 · 703) The credits dialogs — all on the house Dialog (a bottom sheet on a phone, REG-353):
@@ -57,38 +63,59 @@ export function PayLine({ status }: { status: PayStatus }) {
   return <span className={styles.status} role="status">Nothing is charged until you pay</span>
 }
 
-/** The top-up: one 1,000 pack for now. `then` runs the blocked work once the credits are in (Q-33 — "Buy and render"). */
-export function TopUpDialog({ open, onClose, chrome, then, nested = false }: { open: boolean; onClose: () => void; chrome: CreditsChrome; then?: (() => void) | null; nested?: boolean }) {
+/**
+ * The top-up — (pending modules S19) 1.0's own buy since 2026-09-28: any amount from 100 to 5,000 AI credits in fifties, at S$2 per 100,
+ * starting on 1,000 (or on what the blocked work needs). The quick amounts and the −/+ steppers set it (1.0's picker: no free typing, so
+ * nothing is snapped behind the buyer's back); the price follows before the press. `then` runs the blocked work once the credits are in
+ * (Q-33 — "Buy and render").
+ */
+export function TopUpDialog({ open, onClose, chrome, then, nested = false, credits: start = TOPUP_CREDITS }: { open: boolean; onClose: () => void; chrome: CreditsChrome; then?: (() => void) | null; nested?: boolean; credits?: number }) {
   const snackbar = useSnackbar()
   const [status, setStatus] = useState<PayStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [credits, setCredits] = useState(start)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setStatus('idle'); setError(null) } }
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setStatus('idle'); setError(null); setCredits(start) } }
+  const busy = status === 'wait' || status === 'ok'
   const pay = async () => {
     setStatus('wait'); setError(null)
-    const s = await startTopUp()
+    const s = await startTopUp({ credits })
     if ('error' in s) { setStatus('error'); setError(s.error); return }
+    if (s.payUrl) { window.location.assign(s.payUrl); return }   // (pending modules S34) a real payment provider's own checkout page
     await new Promise((r) => setTimeout(r, 900))   // the demo's payment confirmation (1.0 polls every 2 s)
     const done = await completeCheckout(s.sessionId)
     if ('error' in done) { setStatus('error'); setError(done.error); return }
     seedCredits(done.summary); setStatus('ok')
     setTimeout(() => {
       onClose()
-      snackbar({ key: 'credits-added', message: then ? `${fmtCredits(TOPUP_CREDITS)} AI credits added — carrying on` : `${fmtCredits(TOPUP_CREDITS)} AI credits added` })
+      snackbar({ key: 'credits-added', message: then ? `${fmtCredits(credits)} AI credits added — carrying on` : `${fmtCredits(credits)} AI credits added` })
       then?.()
     }, 500)
   }
+  const pick = (v: string) => { const n = Number(v); if (Number.isFinite(n)) setCredits(n) }
   return (
     <Dialog open={open} onClose={onClose} title="Buy AI credits" size="modal" width={440} nested={nested} portal={nested}
             footer={<PayLine status={status} />}>
-      <CheckoutPanel amount={TOPUP_PRICE} forWhat={`${fmtCredits(TOPUP_CREDITS)} AI credits · about ${fmtCredits(TOPUP_CREDITS / 10)} renders · never expire`} trial={false} billing={chrome.billing} status={status} error={error} onPay={() => { void pay() }} />
+      <div className={styles.topup} data-testid="topup">
+        <section className={styles.amountPick} aria-label="How many AI credits">
+          <Chips options={TOPUP_PICKS.map((n) => ({ value: String(n), label: fmtCredits(n) }))} value={(TOPUP_PICKS as readonly number[]).includes(credits) ? String(credits) : null} onChange={pick}
+                 label="AI credits to buy" disabled={busy} testId="topup-picks" />
+          <div className={styles.amountRow}>
+            <CountStepper value={credits} min={TOPUP_MIN} max={TOPUP_MAX} step={TOPUP_STEP} onChange={setCredits} less={`${TOPUP_STEP} fewer AI credits`} more={`${TOPUP_STEP} more AI credits`}
+                          format={fmtCredits} wide disabled={busy} testId="topup-amount" />
+            <span className={styles.muted}>AI credits · about {fmtCredits(aboutRenders(credits))} renders</span>
+          </div>
+          <p className={styles.meta}>{sgd(topupPrice(100))} per 100 AI credits · {fmtCredits(TOPUP_MIN)} to {fmtCredits(TOPUP_MAX)} · top-ups never expire</p>
+        </section>
+        <CheckoutPanel amount={topupPrice(credits)} forWhat={`${fmtCredits(credits)} AI credits · about ${fmtCredits(aboutRenders(credits))} renders · never expire`} trial={false} billing={chrome.billing} status={status} error={error} onPay={() => { void pay() }} />
+      </div>
     </Dialog>
   )
 }
 
 /** The moments when credits run short (§5.6). */
 export function CreditBlockDialog({ open, onClose, summary, refusal, what, needed, smaller, onBuy }: {
-  open: boolean; onClose: () => void; summary: CreditSummary; refusal: Refusal | null; what: 'render' | 'quote'; needed: number
+  open: boolean; onClose: () => void; summary: CreditSummary; refusal: Refusal | null; what: CreditWork; needed: number
   smaller: { label: string; run: () => void } | null
   /** The Owner's "Buy 1,000 and carry on" — opens the top-up over this dialog. */
   onBuy: () => void
@@ -99,9 +126,13 @@ export function CreditBlockDialog({ open, onClose, summary, refusal, what, neede
   const [asked, setAsked] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setAsked(false) }
+  /* (pending modules S41b-4 — 1.0's D4) the Owner on Free met a refusal: no upgrade offer follows it for ten minutes; the welcome credits
+     running out (T8) are said here, once, and never again in the bell */
+  const moment = open && refusal?.error === 'insufficient_credits' && summary.viewer.canBuy && summary.planId === 'free' ? (refusal.welcome ? 'T8' : refusal.balance === 0 ? 'T13' : 'T14') : null
+  useEffect(() => { if (moment) void noteUpgradeMoment({ trigger: moment }).catch(() => {}) }, [moment, refusal])
   if (!refusal) return null
   const s = summary, owner = s.owner.name
-  const noun = what === 'render' ? 'render' : 'quote read'
+  const noun = what === 'render' ? 'render' : what === 'meeting' ? 'next 10 minutes of the co-pilot' : 'quote read'   // (pending modules S23)
   const ask = (kind: 'pool' | 'monthly') => start(async () => {
     const r = await askForCredits({ kind, needed })
     if ('error' in r) { snackbar({ message: r.error }); return }
@@ -117,18 +148,20 @@ export function CreditBlockDialog({ open, onClose, summary, refusal, what, neede
       <Meter used={refusal.cap - refusal.remaining} of={refusal.cap} tone="warn" line={`${fmtCredits(refusal.cap - refusal.remaining)} of ${fmtCredits(refusal.cap)} used · yours refreshes ${refreshLine(s.periodEnd, s.now)}`} />
       {asked || s.openAsk ? <p className={styles.asked}><Icon name="check_circle" size={18} fill weight={300} />Asked {owner} · we’ll tell you when it’s answered. Your changes are kept.</p> : null}
     </>
-    foot = s.viewer.canSetAmounts ? <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button><Button onPress={() => { onClose(); router.push(planHref(`?member=${s.viewer.id}`)) }}>Change my monthly amount</Button></>
+    foot = s.viewer.canSetAmounts ? <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button><Button onPress={() => { onClose(); leaveThen(() => router.push(planHref(`?member=${s.viewer.id}`))) }}>Change my monthly amount</Button></>
       : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>{smaller ? <Button variant="secondary" appearance="outlined" onPress={() => { onClose(); smaller.run() }}>{smaller.label}</Button> : null}{asked || s.openAsk ? null : <Button isDisabled={pending} onPress={() => ask('monthly')}>{`Ask ${owner} for more`}</Button>}</>
   } else if (refusal.error === 'insufficient_credits') {
     const bal = refusal.balance
+    if (refusal.welcome) title = WELCOME_ENDED_TITLE   // (pending modules S41b-4) T8 in place of T13, once
     body = <>
       <p className={styles.p}>This {noun} needs <b>{fmtCredits(refusal.needed)}</b>.{bal != null ? <> {s.viewer.trusted ? 'The studio has' : 'There are'} <b>{fmtCredits(bal)}</b> left.</> : null} {s.viewer.canBuy ? '' : `${owner} can add AI credits.`}</p>
+      {refusal.welcome ? <p className={styles.p} data-testid="credit-block-welcome">{welcomeEndedLine()}</p> : null}
       {bal != null && s.allowance ? <Meter used={Math.max(0, s.allowance - bal)} of={s.allowance} tone="bad" line={`${fmtCredits(bal)} left · refreshes ${refreshLine(s.periodEnd, s.now)}`} /> : <p className={styles.meta}>The month refreshes {refreshLine(s.periodEnd, s.now)}.</p>}
-      {s.viewer.canBuy ? <p className={styles.meta}>Your {noun} starts as soon as the credits are in · top-ups never expire.</p> : <p className={styles.meta}>Your changes are kept — we’ll tell you when credits are in.</p>}
+      {s.viewer.canBuy ? <p className={styles.meta}>{what === 'meeting' ? 'The co-pilot carries on' : `Your ${noun} starts`} as soon as the credits are in · top-ups never expire.</p> : <p className={styles.meta}>{what === 'meeting' ? 'Your notes are kept — the co-pilot carries on when credits are in.' : 'Your changes are kept — we’ll tell you when credits are in.'}</p>}
       {asked || s.openAsk ? <p className={styles.asked}><Icon name="check_circle" size={18} fill weight={300} />Asked {owner}</p> : null}
     </>
     foot = s.viewer.canBuy
-      ? <><Button appearance="text" onPress={() => { onClose(); openPlans() }}>See plans</Button>{smaller ? <Button variant="secondary" appearance="outlined" onPress={() => { onClose(); smaller.run() }}>{smaller.label}</Button> : null}<Button onPress={onBuy}>{`Buy ${fmtCredits(TOPUP_CREDITS)} and ${what === 'render' ? 'render' : 'read'} · ${sgd(TOPUP_PRICE)}`}</Button></>
+      ? <><Button appearance="text" onPress={() => { onClose(); openPlans() }}>See plans</Button>{smaller ? <Button variant="secondary" appearance="outlined" onPress={() => { onClose(); smaller.run() }}>{smaller.label}</Button> : null}<Button onPress={onBuy}>{`Buy ${fmtCredits(topupFor(refusal.needed))} and ${what === 'render' ? 'render' : what === 'meeting' ? 'carry on' : 'read'} · ${sgd(topupPrice(topupFor(refusal.needed)))}`}</Button></>
       : <><Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>{smaller ? <Button variant="secondary" appearance="outlined" onPress={() => { onClose(); smaller.run() }}>{smaller.label}</Button> : null}{asked || s.openAsk ? null : <Button isDisabled={pending} onPress={() => ask('pool')}>{`Ask ${owner}`}</Button>}</>
   }
   return (
@@ -155,9 +188,10 @@ export function ManageBillingDialog({ open, onClose, summary }: { open: boolean;
   const [confirm, setConfirm] = useState(false)
   const s = summary, plan = planRow(s.planId)
   const price = priceFor(plan, s.seats, s.billingCycle as BillingCycle)
-  const run = (fn: () => Promise<{ ok: true } | { ok: true; until: number } | { error: string }>, done: string) => start(async () => {
+  const run = (fn: () => Promise<{ ok: true } | { ok: true; until: number } | { ok: true; url: string } | { error: string }>, done: string) => start(async () => {
     const r = await fn()
     if ('error' in r) { snackbar({ message: r.error }); return }
+    if ('url' in r) { window.open(r.url, '_blank', 'noopener'); return }   // (pending modules S34) a real provider's own billing page
     void refreshCredits(); router.refresh(); snackbar({ message: done })
   })
   return (

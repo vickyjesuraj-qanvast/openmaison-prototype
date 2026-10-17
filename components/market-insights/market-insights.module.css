@@ -1,0 +1,95 @@
+/*
+ * (pending modules S25 — 1.0's Tools › Market Insights) The reading room's listing on the house pieces: the page body and the L1 header
+ * (app/leads/leads.module.css · PageHeader), the tab toolbar's row (components/om/tab-toolbar.module.css) with the house chips in a chip rail and
+ * the house search, the gallery's card (quote-templates-gallery.module.css: `.card` · `.open` · `.thumb` · `.ribbon` — composed in the
+ * component, never copied), the house tinted note (read-only-note.module.css) and the empty card. What is its own: a cover photo fills the
+ * card's well at 3:2 (the gallery's well holds a page), the article's words on the card, the featured article's wide card, and — on a phone —
+ * each card as a row (a square of the cover, its words beside it), as a reading list reads there.
+ */
+
+/* the page under the L1 header: 24 in, the bar · the note · the featured article · the cards 24 apart */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+.bar { composes: bar from '../om/tab-toolbar.module.css'; }
+.views { flex: 1; min-width: 0; display: flex; align-items: center; }
+.rail { min-width: 0; max-width: 100%; }
+.tools { composes: actions from '../om/tab-toolbar.module.css'; }
+.note { composes: note from '../company/read-only-note.module.css'; }
+
+/* ── a card: the gallery's, holding a cover photo and the article's words ───────────────────────────────────────────────────── */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: var(--om-spacing-4); }
+.cover.cover { height: auto; aspect-ratio: 3 / 2; padding: 0; align-items: stretch; justify-content: stretch; }
+.cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.coverEmpty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); min-width: 0; flex: 1; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-height: 40px; }
+.cardExcerpt { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-height: 32px; }
+.cardMeta { margin-top: auto; padding-top: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the whole card is its link, so the open part fills it (the meta line sits at the card's foot whatever the words' length) */
+.open.open { flex: 1; }
+
+/* ── the featured article (1.0's: only on All with no search) — one wide card, its cover beside its words ─────────────────────── */
+.featured {
+  position: relative; display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 10fr); min-width: 0;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default);
+  overflow: hidden; text-decoration: none; color: inherit; transition: box-shadow var(--motion-hover);
+}
+@media (hover: hover) { .featured:hover { box-shadow: var(--om-elevation-level-2); } }
+.featured:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.featuredPic { position: relative; min-height: 360px; background: var(--om-color-surface-bg); }   /* the card's height: its words fit inside it, the photo fills it */
+.featuredPic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.featuredPic > .coverEmpty { position: absolute; inset: 0; }
+.flag { composes: ribbon from '../company/templates/quote-templates-gallery.module.css'; }
+.featuredText { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-8); min-width: 0; }
+.featuredTitle { margin: 0; font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+/* the title at the top; the first lines, the tags and the byline at the card's foot (an editorial card: whatever the title's length, the
+   foot holds its place) */
+.featuredExcerpt { margin: auto 0 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; min-height: 72px; }
+/* the ghost's lines in the featured card: the page's line heights at every width */
+.ghostFeatTitle { height: 32px; }
+.ghostFeatText { height: 24px; }
+.tags { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.byline { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; padding-top: var(--om-spacing-2); }
+.bylineText { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.author { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.when { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.read { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
+
+/* ── Show more, the source line ───────────────────────────────────────────────────────────────────────────────────────────────── */
+.more { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
+.moreCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.source { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
+
+/* (REG-375) the open search takes the row's room on a narrow bar; the categories step aside for it, as a section title does */
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .views { display: none; }
+  .bar { flex-wrap: nowrap; }
+  .featuredText { padding: var(--om-spacing-6); }
+  .featuredTitle { font: var(--om-type-heading-h3); }
+  .ghostFeatTitle { height: 24px; }
+  .featuredPic { min-height: 300px; }
+}
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  /* the featured article stacks: its cover over its words */
+  .featured { grid-template-columns: minmax(0, 1fr); }
+  .featuredPic { min-height: 0; aspect-ratio: 3 / 2; }
+  .featuredText { padding: var(--om-spacing-4); gap: var(--om-spacing-2); }
+  .featuredTitle { font: var(--om-type-heading-h4); min-height: 48px; }   /* stacked, the words flow: two lines kept for the title */
+  .featuredExcerpt { margin-top: 0; }
+  .featuredExcerpt { font: var(--om-type-body-m); min-height: 60px; }
+  .ghostFeatText { height: 20px; }
+  .read { display: none; }
+  /* a reading list: one row per article — a square of its cover, its words beside it */
+  .grid { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-3); }
+  .open.open { flex-direction: row; align-items: stretch; }
+  /* the house list square (inset, r4); every row as tall as the square and its margins, a title up to three lines fitting beside it */
+  .open.open { min-height: 128px; }
+  .cover.cover { width: 104px; flex-shrink: 0; align-self: flex-start; aspect-ratio: 1; margin: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-3); border-radius: var(--om-radius-1); }
+  .cardBody { padding: var(--om-spacing-3); gap: var(--om-spacing-0-5); }
+  .cardTitle { -webkit-line-clamp: 3; line-clamp: 3; min-height: 0; }
+  .cardExcerpt { display: none; }
+  .cardMeta { padding-top: var(--om-spacing-1); }
+}
+/* a ghost's lines inside a clamped block: one column of bars (the block keeps its own clamp and its phone rules) */
+.ghostLines { display: flex; flex-direction: column; }

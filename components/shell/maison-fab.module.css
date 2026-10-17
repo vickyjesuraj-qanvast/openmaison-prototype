@@ -54,3 +54,10 @@
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
   .wrap { transition: none; }
 }
+
+/* (gaps build E, item 3) The file viewer's strip of the folder's files runs along the bottom edge: while it is up the button steps over it
+   (REG-358's way — `components/leads/files/file-viewer.tsx` publishes the flag and the strip's measured height). */
+:global(body[data-om-file-strip]) .wrap { bottom: calc(var(--app-file-strip-height, 72px) + var(--om-spacing-4)); }
+@media (max-width: 767px) {
+  :global(body[data-om-file-strip]) .wrap { bottom: calc(var(--app-mobile-dock-height) + var(--app-file-strip-height, 64px) + var(--om-spacing-3)); }
+}

@@ -1,0 +1,20 @@
+/* (REG-926) Projects › Filters — the house Filters shell (components/om/filters-modal.module.css), composed, never copied. (parity P-17, B-14)
+   The lists and the sort rows are the Leads Filters' (the lists flush under their title, the radios 234 wide); the Members pane is its own. */
+.overlay { composes: overlay from '../om/filters-modal.module.css'; }
+.panel { composes: panel from '../om/filters-modal.module.css'; }
+.body { composes: body from '../om/filters-modal.module.css'; }
+.rail { composes: rail from '../om/filters-modal.module.css'; }
+.tab { composes: tab from '../om/filters-modal.module.css'; }
+.tabDot { composes: tabDot from '../om/filters-modal.module.css'; }
+.content { composes: content from '../om/filters-modal.module.css'; }
+.sectionTitle { composes: sectionTitle from '../om/filters-modal.module.css'; }
+.list { composes: list from '../leads/filters-modal.module.css'; }
+.sortRow { composes: sortRow from '../leads/filters-modal.module.css'; }
+.row { composes: row from '../om/filters-modal.module.css'; }
+.rowRole { composes: rowRole from '../om/filters-modal.module.css'; }
+
+@media (hover: none) {
+  .sortRow { padding-block: 0; }
+  .sortRow label { min-block-size: 44px; inline-size: 100%; }
+  .row { height: auto; min-height: 44px; }
+}

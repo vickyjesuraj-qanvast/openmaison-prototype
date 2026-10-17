@@ -1,0 +1,371 @@
+{
+  "group": "The studio app — modules not yet brought over",
+  "modules": [
+    {
+      "key": "dashboard",
+      "name": "Dashboard (the home page)",
+      "what": "The rail's first item and 1.0's front door. By default a chat-first home: a greeting, the mAIson chat box with rotating capability chips, and widgets — Priority (overdue tasks, follow-ups due, unassigned new leads), Leads, Tasks, Projects, Chats, industry News from RSS feeds, Studio Pulse and Team Workload (Owners and Admins), and an Upcoming calendar. A Classic mode (Settings › Home Screen) shows KPI tiles, margin alerts, One-Click Profit, compliance alerts, a priority feed, project status, revenue trend and top clients — most of its figures are hard-coded samples.",
+      "who": "studio",
+      "where_in_1": "/dashboard — rail › Dashboard, the logo, phone dock › Home",
+      "v1_code": "src/app/(main)/dashboard/page.tsx; src/components/dashboard/* (chat-first-home, home-widgets, inline-response, recent-updates-feed, sparkline, donut-chart); src/app/api/news; src/app/api/buddy",
+      "size": { "pages": 1, "components": 6, "api_routes": 2, "tables": 0, "loc": 4365 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Rail › Dashboard and the phone dock's Dashboard say coming soon; 2.0 opens on Leads. Many of the numbers exist elsewhere: Company › Reports, the Tasks badge, Projects' Needs attention.",
+      "pending": [
+        "A front door with a greeting and the assistant's chat box (rides on the mAIson assistant card)",
+        "Priority widget: overdue tasks, follow-ups due, unassigned new leads",
+        "Leads, Tasks, Projects and Chats count widgets that open their lists",
+        "Studio Pulse: leads per day against last week, the funnel, open escalations (Owners and Admins)",
+        "Team Workload: leads and tasks per member (Owners and Admins)",
+        "Upcoming: a month calendar of tasks and follow-ups",
+        "Industry News from Singapore property and design RSS feeds",
+        "Recent site updates across every project (Owners)",
+        "Classic mode's margin alerts, One-Click Profit and compliance alerts (held: N-02, TD-106)",
+        "Settings › Home Screen: chat-first or classic"
+      ],
+      "depends_on": "her mocks; an RSS reader for News; the assistant card for the chat box",
+      "held_by": "Dashboard",
+      "recommendation": "needs her mocks / decision",
+      "why": "It is the first rail item and a dead end today. Most widgets are counts 2.0 already works out, so a first cut is cheap once it is drawn; Classic mode's sample figures should not come over.",
+      "effort": "M",
+      "questions": [
+        "A chat-first home (the assistant on top) or a widgets dashboard?",
+        "Once it exists, should 2.0 open on the Dashboard instead of Leads?",
+        "Keep the industry News feed?"
+      ]
+    },
+    {
+      "key": "maison-assistant",
+      "name": "mAIson assistant (AI chat)",
+      "what": "A chat panel behind the mAIson button on every page, and the home's chat box, backed by a real LLM (Gemini 2.5 Flash through OpenRouter) with 67 tools. It answers free questions about leads, projects, tasks and the books (P&L, GST, AR and AP ageing, cash flow, margins), draws charts, reads attached files and takes voice input. It can also write: create or update leads, tasks, projects, invoices, expenses, purchase orders and variation orders, record payments, change members' roles, draft client messages, and run a render or a floor-plan-to-3D.",
+      "who": "studio",
+      "where_in_1": "mAIson button on every page; the Dashboard's chat box; Settings › ID Buddy AI (a switch nothing reads)",
+      "v1_code": "src/components/layout/id-buddy-panel.tsx, buddy-chart-renderer.tsx, maison-fab.tsx; src/lib/agents/* (tools, executors, loop, system-prompt); src/lib/hooks/use-maison-stream.ts; src/app/api/buddy/chat",
+      "size": { "pages": 0, "components": 3, "api_routes": 2, "tables": 0, "loc": 13270 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Maison AI button and sheet on every page: one Ask box that answers by rule from the records (the schedule, a milestone, compliance, money for Owners and Admins, starting a project — \"Answers from your records\"), plus each page's suggestions, some of which act (Projects, Lead Overview). No model, no credits (REG-1644).",
+      "pending": [
+        "Free questions on any topic — today the Ask box understands five",
+        "Leads, tasks, quotes and team questions (\"which leads need attention\", \"my overdue tasks\")",
+        "Money questions answered as reports: P&L, GST, AR and AP ageing, cash-flow forecast, commission",
+        "Charts drawn inside the answer",
+        "Changes by chat: create or update leads, tasks, projects, invoices, expenses, POs, VOs; record payments",
+        "Drafts: a WhatsApp follow-up or a client message for a picked lead",
+        "Attach a file: read a quote, find a room's surfaces, render a room, floor plan to 3D",
+        "Voice input",
+        "A conversation that carries from the home's chat box into the panel"
+      ],
+      "depends_on": "an LLM with tool calls; AI credits pricing; her design for answers that change records",
+      "held_by": "",
+      "recommendation": "build with a stand-in",
+      "why": "The rule-based Ask box is the right stand-in; widening it to the lead, task and quote questions studios ask most needs no model. The real model, and what it may change without asking, is the developers' lane plus her call.",
+      "effort": "L",
+      "questions": [
+        "May the assistant change records itself, or only propose a change the member confirms?",
+        "Should a question cost AI credits?"
+      ]
+    },
+    {
+      "key": "meetings-copilot",
+      "name": "Meeting Co-Pilot",
+      "what": "A meeting assistant. Before: pick a lead or project, set the aim, take consent, read a prep card. During (in person or a video call): a live transcript (Deepgram), AI nudges, a smart checklist, a deal score, an estimate built from what is said, renders and mood boards on request, portfolio search, a competitor's quote read on the spot, floor-plan notes. After: an AI brief (client profile, estimate, upsells, action items) saved to the lead, a draft quote, a public share link; History, Gallery, and for Owners and Admins Analytics with coaching and an Objections report. A recording can also be uploaded for a brief.",
+      "who": "studio",
+      "where_in_1": "Tools › Meeting Copilot (/tools/copilot-analytics); lead drawer › Start meeting; project › Meeting Summary card; /copilot/share/[shareId]",
+      "v1_code": "src/components/copilot/* (38 files); src/lib/copilot/*; src/app/api/copilot/* (34 routes); src/app/(main)/tools/copilot-analytics; src/app/copilot/share; src/components/projects/meeting-summary-card.tsx",
+      "size": { "pages": 2, "components": 39, "api_routes": 34, "tables": 10, "loc": 23132 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Tools › Meeting Copilot tile says Soon; the lead's Meetings tab and Meeting quick link are hidden (REG-552). The Met stage's meeting logs exist.",
+      "pending": [
+        "Start a meeting from a lead or project: aim, consent, prep card",
+        "A live transcript, in person or on a video call",
+        "AI nudges, a smart checklist and a deal score during the meeting",
+        "An estimate built from the talk, turned into a draft quote",
+        "Renders, mood boards, portfolio and a competitor's quote during the meeting",
+        "The brief afterwards — profile, estimate, upsells, action items — saved to the lead",
+        "Upload a recording for a brief",
+        "Share a brief by link",
+        "History, Gallery, Analytics with coaching, Objections report",
+        "Project › Meeting Summary card"
+      ],
+      "depends_on": "her mocks; live transcription; an LLM; recording-consent rules",
+      "held_by": "REG-552",
+      "recommendation": "needs her mocks / decision",
+      "why": "1.0's largest feature not yet in 2.0, and all of it waits on the Meetings mocks. The Visualizer, X-Ray and quote pieces it would reuse already exist in 2.0.",
+      "effort": "XL",
+      "questions": [
+        "The Meetings tab first (logs and briefs) and the live co-pilot later, or both together?",
+        "A first cut on house pieces, as Projects was built, or wait for mocks?"
+      ]
+    },
+    {
+      "key": "marketplace",
+      "name": "Marketplace (brands and deals)",
+      "what": "A directory of Qanvast's partner brands (furniture, materials, services) and their deals. Brands by category with search, filters and sort, or a Deals view; a brand page with a gallery, services, web links, socials, FAQs, its deals and WhatsApp to the brand; a deal opens its terms, how to redeem and Get Deal. The data comes from Qanvast's brand API through /api/qanvast/* — those routes are not in the 1.0 repo, so this copy loads nothing.",
+      "who": "studio",
+      "where_in_1": "/marketplace, /marketplace/[id] — rail › Marketplace, phone › More",
+      "v1_code": "src/app/(main)/marketplace/* (page, [id], _components, _api.ts, _hooks.ts)",
+      "size": { "pages": 2, "components": 7, "api_routes": 0, "tables": 0, "loc": 2069 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "Rail › Marketplace and the phone's More › Marketplace say coming soon.",
+      "pending": [
+        "Brands directory: categories, search, filters, sort, load more",
+        "Deals view and the deal dialog (terms, how to redeem, Get Deal)",
+        "Brand page: gallery, services, links, socials, FAQs, its deals, WhatsApp the brand",
+        "Banners at the top (fixed pictures)"
+      ],
+      "depends_on": "Qanvast's brands and deals API (not in either repo); her mocks",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "Its content is Qanvast's, not the studio's; without the brand feed it is an empty page. Decide whether OpenMaison carries it before drawing it.",
+      "effort": "M",
+      "questions": [
+        "Keep the Marketplace for every studio, only for Qanvast-listed ones, or drop the rail item?",
+        "Should a brand link to Finance › Vendors or the Price book?"
+      ]
+    },
+    {
+      "key": "market-insights",
+      "name": "Market Insights (articles)",
+      "what": "A reading room of articles that OpenMaison staff publish from Platform admin: Trends, Reports, Case Studies, Industry News. A featured article, category chips and search; an article page with its text and charts. It is empty until staff publish.",
+      "who": "studio",
+      "where_in_1": "Tools › Market Insights (/tools/market-insights, /tools/market-insights/[id])",
+      "v1_code": "src/app/(main)/tools/market-insights/*; src/components/market-insights/article-chart.tsx; src/app/api/market-insights/*; src/lib/queries/market-insights.ts",
+      "size": { "pages": 2, "components": 1, "api_routes": 2, "tables": 1, "loc": 965 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Tools › Market Insights tile says Soon.",
+      "pending": [
+        "Article list: a featured article, category chips, search",
+        "Article page with its text and charts",
+        "Writing and publishing the articles (Platform admin, not the studio)"
+      ],
+      "depends_on": "someone at OpenMaison writing articles; her mocks",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "A small reader, but only worth having if someone writes for it; the Dashboard's News widget does a similar job from RSS feeds.",
+      "effort": "S",
+      "questions": [
+        "Who writes the articles — and should this merge with the Dashboard's News?"
+      ]
+    },
+    {
+      "key": "team-chats",
+      "name": "Chats: team and group conversations",
+      "what": "The Chats inbox: conversations between the studio's members, one-to-one or in named groups, optionally tied to a lead or a project, with outside phone numbers kept as participants (nothing is actually sent to them). Pinned chats, unread counts, attachments, emoji, a side panel with the linked project, and keyword-based reply suggestions (labelled AI, but a fixed list).",
+      "who": "studio",
+      "where_in_1": "/inbox — rail › Chats, phone dock › Chats",
+      "v1_code": "src/app/(main)/inbox/page.tsx; src/components/inbox/*; src/app/api/chats/records/*; src/app/api/chat/upload",
+      "size": { "pages": 1, "components": 10, "api_routes": 6, "tables": 4, "loc": 3372 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Messages (/chat, rail › Messages): one conversation per project between the team and the client's household, also on the portal; read marks and photos.",
+      "pending": [
+        "One-to-one chats between members",
+        "Group chats with a name",
+        "A chat about a lead before it has a project, or about nothing in particular",
+        "Pinned chats; attachments other than photos",
+        "Reply suggestions"
+      ],
+      "depends_on": "her decision",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "2.0 already has the conversation that matters to the client. Team chat competes with the WhatsApp groups studios already use, so ask before building it.",
+      "effort": "M",
+      "questions": [
+        "Do studios need team chat inside OpenMaison, or is WhatsApp enough?"
+      ]
+    },
+    {
+      "key": "floorplan-isometric-ai",
+      "name": "Floor-plan photo to a 3D picture",
+      "what": "Upload a floor-plan photo taken at any angle; it is straightened and cleaned in the browser, an AI lists the rooms (which can be edited), the member picks Dollhouse (an angled cutaway) or Top-down, and an image model draws a furnished 3D picture to download. Marked Beta; it charges no AI credits.",
+      "who": "studio",
+      "where_in_1": "Tools › Floorplan to 3D Isometric (Beta) (/tools/floorplan-3d-isometric)",
+      "v1_code": "src/app/(main)/tools/floorplan-3d-isometric/page.tsx; src/lib/render/floorplan-pipeline.ts, floorplan-inventory.ts, floorplan-deskew.ts; src/app/api/render/floorplan-3d-sandbox",
+      "size": { "pages": 1, "components": 0, "api_routes": 1, "tables": 0, "loc": 1540 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Tools › Floorplan to 3D Isometric opens the 3-D Space Planner in its isometric view (REG-1656, TD-098): a layout that is drawn or traced, not a picture made from an upload.",
+      "pending": [
+        "Upload a floor-plan photo and get a furnished 3D picture",
+        "The room list read from the plan, editable before drawing",
+        "Two looks, Dollhouse and Top-down, and a download"
+      ],
+      "depends_on": "an image model; an AI credits price",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "The planner's isometric view already shows a plan in 3D with rooms you can change. The AI picture is a quicker wow for a first meeting, but it needs a real model.",
+      "effort": "M",
+      "questions": [
+        "Is the planner's isometric view enough, or should a photo also make an AI picture, priced in credits?"
+      ]
+    },
+    {
+      "key": "personal-settings",
+      "name": "Personal settings and the app's look",
+      "what": "Each member's own Settings page, from the profile menu: Your Profile (photo, name, email, phone — the only place they change), Lead Preferences and Open to New Leads (also a switch in the top bar), Studio Region (read-only), My Signature, Home Screen (chat or classic), Appearance (light or dark), Theme Skins (ten festive and superhero skins with mascots), Notifications, Email Lead Sources and Guided Tours (restart the welcome window and nine page tips). The Ads & Promotions and ID Buddy AI switches save a value nothing reads.",
+      "who": "studio",
+      "where_in_1": "Profile menu › Settings (/settings); top bar › Open / Closed; a first visit's welcome window and page tips",
+      "v1_code": "src/app/(main)/settings/page.tsx; src/components/ui/welcome-modal.tsx, page-coach-marks.tsx, skin-mascot.tsx; src/hooks/use-coach-mark.ts; src/lib/theme-skins.ts; src/context/skin-context.tsx; src/app/api/identity/profile",
+      "size": { "pages": 1, "components": 4, "api_routes": 1, "tables": 0, "loc": 2116 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Signature: Signature Settings in the quote editor. Open to new leads and preferences: Company › Members (a member may change their own row). Gmail lead source: Company › Integrations. Notifications: Settings › Notifications (studio-wide). No personal page.",
+      "pending": [
+        "A member changes their own name, email, phone and photo",
+        "Dark mode (the design system already has dark colours)",
+        "A welcome window and page tips, with Restart tours",
+        "Home Screen choice (comes with the Dashboard)",
+        "Theme skins and mascots",
+        "Open / Closed to new leads in the top bar"
+      ],
+      "depends_on": "real sign-in for the profile (developers' lane); her decision",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "Editing one's own profile becomes necessary once real sign-in lands; dark mode and tours are design calls; skins are novelty and can stay behind.",
+      "effort": "M",
+      "questions": [
+        "Dark mode in 2.0?",
+        "Guided tours, or are the first-run empty states and keyboard tips enough?",
+        "Leave theme skins behind?"
+      ]
+    },
+    {
+      "key": "studio-health",
+      "name": "Studio Health (app usage)",
+      "what": "An Owner-only page of how the team uses the app over 7, 30 or 90 days: active members, sessions, AI runs, page views; leads, projects, quotes and invoices; tasks done, escalations resolved, updates, hangouts; client portal logins and issues; a trend chart, top pages, feature funnels and a table per member. Built from page-view tracking, usage events and a nightly rollup.",
+      "who": "studio",
+      "where_in_1": "Accounts › Studio › Studio Health (/accounts/usage)",
+      "v1_code": "src/app/(main)/accounts/usage; src/components/settings/usage-dashboard.tsx; src/components/analytics/studio-health-view.tsx; src/lib/usage/*; src/app/api/usage/*; src/app/api/cron/usage-rollup",
+      "size": { "pages": 1, "components": 3, "api_routes": 5, "tables": 2, "loc": 1401 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Company › Reports (Leads · Projects · Finance) has the business numbers; nothing measures use of the app.",
+      "pending": [
+        "Engagement tiles: active members, sessions, AI runs, page views",
+        "Team and client-portal activity tiles",
+        "Top pages, feature funnels, a table per member",
+        "Page-view and event tracking with a nightly rollup"
+      ],
+      "depends_on": "product telemetry (developers' lane)",
+      "held_by": "Accounts Setup Q-16",
+      "recommendation": "skip",
+      "why": "She answered No to Q-16: it is the platform's telemetry, and the business numbers already sit in Reports.",
+      "effort": "M",
+      "questions": []
+    },
+    {
+      "key": "roles-permissions-editor",
+      "name": "Roles & Permissions editor",
+      "what": "Accounts › Roles & Permissions: custom roles beside the four system ones (name, colour, assignable or not), per role page access, a data scope (all · team · assigned only) and action switches, plus overrides per member. /accounts/roles only redirects there. In 1.0 the page switches never reach the route guard, so much of the editor changes nothing.",
+      "who": "studio",
+      "where_in_1": "Accounts › Studio › Roles & Permissions (/accounts?tab=roles; /accounts/roles redirects)",
+      "v1_code": "src/components/accounts/role-editor.tsx, member-override-panel.tsx; src/app/(main)/accounts/roles/page.tsx; src/app/api/studio-config/roles, role-permissions, member-overrides",
+      "size": { "pages": 1, "components": 2, "api_routes": 4, "tables": 1, "loc": 1073 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "partial",
+      "in_2": "Settings › Studio › Who may do what (read-only, the rules 2.0 enforces); four fixed roles on Company › Members.",
+      "pending": [
+        "Custom roles",
+        "Page access, data scope and action switches per role",
+        "Overrides for one member"
+      ],
+      "depends_on": "her decision",
+      "held_by": "Q-40",
+      "recommendation": "needs her mocks / decision",
+      "why": "Four fixed roles serve the studios so far, and 1.0's editor was largely inert; it pays off only when studios ask for roles of their own.",
+      "effort": "M",
+      "questions": [
+        "Does Q-40 still hold now that the Accounting role is live?"
+      ]
+    },
+    {
+      "key": "studio-navigation",
+      "name": "Studio navigation (rail, bar, dock)",
+      "what": "1.0's frame: a rail (Dashboard · Leads · Chats · Projects · Tasks · Escalations · Marketplace; Finance ▸ Operations · Pipeline · Commissions · Reports · Vendors; Tools ▸ nine tools; Qanvast Ops ▸ seven items for Qanvast-listed studios), a top bar (logo → Dashboard, search, the bell, Open / Closed to new leads, a Tools & Apps grid, a profile menu with Accounts · Settings · Log out), a phone dock (Home · Leads · Chats · Projects · More), the mAIson button and a shortcuts help.",
+      "who": "studio",
+      "where_in_1": "every studio page",
+      "v1_code": "src/components/layout/app-sidebar.tsx, topbar.tsx, bottom-nav.tsx; src/app/(main)/layout.tsx; src/lib/access-control.ts",
+      "size": { "pages": 0, "components": 5, "api_routes": 0, "tables": 0, "loc": 1650 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Rail: Search · Dashboard (Soon) · Tasks · Projects · Leads · Marketplace (Soon) · Company · Qanvast Ops · Tools · Messages · the bell · Settings · AI credits · Demo Studio › View as. Finance and Reports are Company sections, Escalations are Projects › Tickets, Quote Digitizer is Tools › Quotes, Homeowner Portal is Company › Client portal.",
+      "pending": [
+        "Rail › Dashboard and Marketplace, Tools › Market Insights and Meeting Copilot still answer coming soon (each has its own card)",
+        "No Log out and no personal Settings in a profile menu (sign-in is the developers')",
+        "Qanvast Ops' Credits · Raise Complaint · Promote · Portfolio · Reviews & Rankings · Hangouts: 1.0's menu links to pages missing from the 1.0 repo; 2.0 has Leads · Studios"
+      ],
+      "depends_on": "her decision; sign-in (developers' lane)",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "Every working 1.0 destination already has a home in 2.0; what is left is four dead-end items, each decided on its own card.",
+      "effort": "S",
+      "questions": [
+        "Hide the Soon items until they are built, or keep them as signposts?"
+      ]
+    },
+    {
+      "key": "verify-listing",
+      "name": "Verify for Qanvast listing",
+      "what": "A form to apply for a Qanvast listing: studio name, registration ID, description, what makes the studio different, projects delivered, proof uploads; Submit shows \"Application Submitted for Review\". It saves nothing (no server call, a sample studio name), no menu links to it, and the staff review queue at /admin/verification is hard-coded samples too.",
+      "who": "studio",
+      "where_in_1": "/verify (not linked anywhere)",
+      "v1_code": "src/app/(main)/verify/page.tsx; src/app/admin/verification/page.tsx",
+      "size": { "pages": 1, "components": 0, "api_routes": 0, "tables": 1, "loc": 200 },
+      "real_or_sandbox": "sandbox / dev tool",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "Apply to be listed on Qanvast, with documents",
+        "A staff queue to verify or reject an application with a note"
+      ],
+      "depends_on": "Qanvast's listing process",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "A mock in 1.0 with nothing behind it; listing is Qanvast's business, and Company › Profile already keeps the studio's registrations.",
+      "effort": "S",
+      "questions": []
+    },
+    {
+      "key": "ai-sandboxes",
+      "name": "AI model sandboxes (7 pages)",
+      "what": "Seven internal pages for trying AI models, linked from no menu, each calling itself throwaway: Auto-furnish, Detect, Floorplan-3D (the calibration bench), Quote Template (an editor and PDF test, Owner-only), Relight, Style Transfer and Visualizer v2 (with Outpaint, Reangle, Orbit video and Depth experiments).",
+      "who": "system",
+      "where_in_1": "/tools/auto-furnish-sandbox, detect-sandbox, floorplan-3d-sandbox, quote-template-sandbox, relight-sandbox, style-transfer-sandbox, visualizer-sandbox",
+      "v1_code": "src/app/(main)/tools/*-sandbox/page.tsx; src/app/api/render/detect-sandbox",
+      "size": { "pages": 7, "components": 0, "api_routes": 1, "tables": 0, "loc": 4729 },
+      "real_or_sandbox": "sandbox / dev tool",
+      "status_in_2": "none",
+      "in_2": "What they tested lives in 2.0's AI Visualizer (Auto furnish, Relight, Style transfer, Empty the room) and the quote templates; the AI Visualizer audit marked the sandboxes dead (VO-07, VO-08).",
+      "pending": [
+        "Outpaint, Reangle, Orbit video and Depth — experiments that only ever lived here"
+      ],
+      "depends_on": "",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "Developer test benches, not features a studio uses.",
+      "effort": "S",
+      "questions": []
+    }
+  ],
+  "already_in_2": [
+    "Upgrade (/upgrade now only redirects to /settings) → Plans open inside the app, and Company › Plan & AI credits (AI credits audit Q-10, Q-22)",
+    "Quote Digitizer (Tools) → Tools › Quotes, the quote editor and Create Quote › Upload a quote",
+    "Quote X-Ray → Tools › Quote X-Ray (1.0's four retired objectives left behind, X-Ray Q-01)",
+    "AI Visualizer → Tools › AI Visualizer, with Company › Materials",
+    "3-D Space Planner → Tools › 3-D Space Planner, with the 2026-10-10 extras (levels, templates, versions, elevations, Present)",
+    "Compliance Navigator (Owner-only) → Tools › Compliance Navigator",
+    "Homeowner Portal (Tools, Owner-only) → Company › Client portal (clients, sections, address) and the Client access panel",
+    "Escalations → Projects › Tickets and each project's Tickets tab",
+    "Finance ▸ Operations · Pipeline · Commissions · Reports · Vendors → Company › Finance (To do · Money out · Vendors · Commission · Xero) and Company › Reports",
+    "Leads, Projects, Tasks → the rail's Leads, Projects, Tasks",
+    "Top bar search, the bell, shortcuts help → ⌘K search, the bell's feed, the ? panel",
+    "Accounts (profile menu) → Settings' modules and Company's sections (Accounts Setup audit)",
+    "Open / Closed to new leads → Company › Members (a member may change their own)"
+  ],
+  "notes": "Dead code skipped: the Quick Action menu (nothing ever opens it), the offline write queue (nothing feeds it; only the offline banner shows), the Ads & Promotions and ID Buddy AI switches (nothing reads them) and an unused marketplace vendor card. Qanvast Ops' seven pages and the Marketplace's /api/qanvast routes are missing from the 1.0 repo (removed on 2026-06-01 by the 'qanvast filter'), so I could not read what they do. The Dashboard and Meeting Co-Pilot also appear in the 'held' group's file under the same keys, and the roles editor overlaps that file's settings-holds card. Sizes are line counts of the main files; table counts come from the migrations and may miss tables made in scripts/migrations."
+}

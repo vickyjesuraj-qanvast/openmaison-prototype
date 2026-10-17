@@ -10,7 +10,7 @@
 }
 .panel {
   position: relative;
-  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
+  width: var(--om-modal-xl); height: var(--om-modal-xl-height); max-height: calc(100vh - 96px);   /* (pending modules S17) the tall xl height */
 }
 .step { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }

@@ -3,10 +3,14 @@ import { db } from '@/lib/db'
 import { imports } from '@/lib/db/schema'
 import { fetchSkippedRows } from '@/lib/leads/queries'
 import { toCsv } from '@/lib/csv'
+import { refusesWorkspace } from '@/lib/leads/visibility'
+import { signedOutResponse } from '@/lib/auth/session'   // (pending modules S30) the studio's — behind sign-in
 
 /** "Download Skipped Records" — CSV of the rows an import could not accept. */
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const out = await signedOutResponse(); if (out) return out
   const { id } = await ctx.params
+  if (await refusesWorkspace()) return new Response('Not found', { status: 404 })   // (parity map, PR-022) an import's rows are leads
   const [batch] = await db.select().from(imports).where(eq(imports.id, id)).limit(1)
   if (!batch) return new Response('Not found', { status: 404 })
   const skipped = await fetchSkippedRows(id)

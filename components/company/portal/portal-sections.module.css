@@ -1,0 +1,21 @@
+/* (Projects round 9) Company › Client portal › Set-up's two cards on the house pieces: "What clients can see" is the card table every settings
+   list of switches uses (components/om/card-table.module.css, REG-727 — Notifications' event table), each row a section's name over board 9's
+   line with its switch under the column's name; the welcome line is the house TextField with its Save. The cards' bodies line up with the
+   card head's 20. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; padding: 0 var(--om-spacing-5) var(--om-spacing-5); }   /* on the card head's 20 */
+.help { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.table { composes: table from '../../om/card-table.module.css'; }
+.head { composes: head from '../../om/card-table.module.css'; }
+.row { composes: row from '../../om/card-table.module.css'; }
+.col { composes: col from '../../om/card-table.module.css'; }
+.head, .row { grid-template-columns: minmax(0, 1fr) 88px; }
+.name { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.row:not([data-on]) .name > span:first-child { color: var(--om-color-on-surface-secondary); }
+.welcome { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.actions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }
+@media (max-width: 767px) {
+  .head, .row { grid-template-columns: minmax(0, 1fr) 56px; }
+}
+/* (pending modules S13) the Privacy and terms card's landing — Getting it live's row and ⌘K bring it into view */
+.anchor { min-width: 0; scroll-margin-top: var(--om-spacing-6); }

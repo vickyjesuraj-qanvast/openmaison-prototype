@@ -9,8 +9,17 @@ const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toStr
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 async function snack(page, text, timeout = 8000) { await page.getByText(text, { exact: false }).first().waitFor({ timeout }) }
+/* (pending modules S14, a deliberate change of this rule) the demo studio has CaseTrust on record (repair R116, as its brand kit and About page
+   show): its signing pages carry the deposit-protection disclosure, ticked once the agreement is read — before the code. */
+const caseTrust = async (pg) => {
+  const box = pg.getByRole('checkbox', { name: 'I have read the CaseTrust deposit-protection disclosure' })
+  if (!(await box.count()) || await box.first().isChecked().catch(() => false)) return
+  await pg.getByTestId('gate-casetrust-tick').first().scrollIntoViewIfNeeded().catch(() => {})
+  await pg.getByTestId('gate-casetrust-tick').first().click(); await pg.waitForTimeout(300)
+}
 const byLead = (name) => sql(`select c.id || '|' || l.id from contracts c join leads l on l.id = c.lead_id where l.name = '${name}' order by c.created_at limit 1`).split('|')
 const [RYAN, RYAN_LEAD] = byLead('Ryan D’Souza'), [OLIVIA, OLIVIA_LEAD] = byLead('Olivia Martinez'), [AISHA] = byLead('Aisha Rahman'), [BEN, BEN_LEAD] = byLead('Benjamin Han')
+const RYAN_TITLE = sql(`select title from contracts where id='${RYAN}'`)   // read up front: a CLI read during a server write locks it out (SQLITE_BUSY)
 const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id}`); await page.getByTestId('contract-editor').waitFor(); await ready(page) }
 const pill = (page) => page.getByTestId('contract-editor').getByRole('button', { name: /^(Draft|Sent to Client|Signed)$/ }).first()
 
@@ -66,7 +75,8 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await pill(page).click(); await page.getByRole('menuitemradio', { name: /^Signed/ }).click()
     const dlg = page.getByRole('dialog', { name: 'Mark as signed' })
     await dlg.getByRole('button', { name: 'Mark as signed' }).click()
-    await snack(page, 'Contract marked Signed'); await page.waitForTimeout(1200)
+    // (REG-779, UX audit C1) the snackbar names the contract — "{title} marked Signed" (+ Move to Won while the lead isn't Won; Ryan's is)
+    await snack(page, `${RYAN_TITLE} marked Signed`); await page.waitForTimeout(1200)
     ok('Signed with its kept copy', sql(`select status || '|' || (document_hash is not null) || '|' || (signed_body is not null) from contracts where id='${RYAN}'`) === 'Signed|1|1')
     await ready(page)
     ok('and the editor shows it', await page.getByTestId('contract-signed-copy').isVisible())
@@ -102,27 +112,38 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await sp.screenshot({ path: `${S}/shots-ct1/04-not-ready.png` }); await sp.close()
   })
   await step('copying a Draft’s link sends it', async () => {
+    sql(`update members set is_you = case id when 'germaine' then 1 else 0 end`)   // (S44Q — row 334, a deliberate change of this rule) an approver's send approves the Draft quote it names now; the hold is a non-approver's — Germaine, a Designer
     await openEditor(page, OLIVIA)
-    await page.getByRole('button', { name: 'Copy signing link' }).click()
+    // (REG-786, UX audit C8) on a Draft the copy icon says it sends: "Copy link — marks it Sent"
+    const copyBtn = page.getByRole('button', { name: 'Copy link — marks it Sent' })
+    // (REG-780, UX audit C2) the agreement names OM-10001, a Draft under required approval: copying (= sending) is refused and nothing moves
+    await copyBtn.click()
+    await snack(page, 'OM-10001 is still a Draft — approve and send it first'); await page.waitForTimeout(800)
+    ok('a Draft quote holds the link back — still a Draft', sql(`select status || '|' || (sent_at is null) from contracts where id='${OLIVIA}'`) === 'Draft|1')
+    sql(`update members set is_you = case id when 'dane' then 1 else 0 end`)
+    sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${OLIVIA}')`)   // the studio stands behind its quote now
+    await openEditor(page, OLIVIA)
+    await copyBtn.click()
     await snack(page, 'the contract is Sent to Client now'); await page.waitForTimeout(1000)
     ok('Sent to Client, with a sent date', sql(`select status || '|' || (sent_at is not null) from contracts where id='${OLIVIA}'`) === 'Sent to Client|1')
     ok('the banner says it is out for signature', /for signature/.test(await page.getByTestId('contract-banner').innerText()))
   })
   await step('Preview and the signing page print the same studio signature — the creator’s', async () => {
-    sql(`update members set signature_kind='type', signature_name='Sarah Tan' where id='sarah'`); sql(`update contracts set created_by='sarah' where id='${OLIVIA}'`)
+    /* (pending modules S03, a deliberate change of this rule) a member's signature prints only once they said yes to it on their documents */
+    sql(`update members set signature_kind='type', signature_name='Sarah Tan', signature_consent='yes', signature_consent_at=strftime('%s','now') where id='sarah'`); sql(`update contracts set created_by='sarah' where id='${OLIVIA}'`)
     await page.goto(`${BASE}/contracts/${OLIVIA}/preview`); await page.getByTestId('contract-preview').waitFor(); await ready(page)
     const pv = await page.locator('[data-sign="studio-signature"]').first().innerText()
     const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/${OLIVIA}`); await ready(sp)
     const sg = await sp.locator('[data-sign="studio-signature"]').first().innerText()
     ok('both print Sarah Tan', /Sarah Tan/.test(pv) && /Sarah Tan/.test(sg), `${pv.slice(0, 40)} / ${sg.slice(0, 40)}`)
     await sp.close()
-    sql(`update contracts set created_by='dane' where id='${OLIVIA}'`); sql(`update members set signature_kind=NULL, signature_name=NULL where id='sarah'`)
+    sql(`update contracts set created_by='dane' where id='${OLIVIA}'`); sql(`update members set signature_kind=NULL, signature_name=NULL, signature_consent=NULL, signature_consent_at=NULL where id='sarah'`)
   })
   await step('a document changed while the client reads is not signed', async () => {
     const posts = []
     const sp = await ctx.newPage(); sp.on('request', (r) => { if (r.method() === 'POST') posts.push(r.postData() ?? '') })
     await sp.goto(`${BASE}/sign/${OLIVIA}`); await ready(sp)
-    await sp.getByRole('button', { name: 'Send code' }).click()
+    await caseTrust(sp); await sp.getByRole('button', { name: 'Send code' }).click()
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     await sp.getByLabel('Your full name').fill('Olivia Martinez'); await sp.getByLabel('NRIC / FIN (optional)').fill('S1234567A')
     sql(`update contracts set body = body || '<p>Added while you read.</p>' where id='${OLIVIA}'`)
@@ -132,7 +153,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await ready(sp)
     ok('the page now shows the new text', (await sp.getByTestId('contract-paper').innerText()).includes('Added while you read.'))
     await sp.screenshot({ path: `${S}/shots-ct1/05-changed-while-reading.png` })
-    await sp.getByRole('button', { name: 'Send code' }).click()
+    await caseTrust(sp); await sp.getByRole('button', { name: 'Send code' }).click()
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     await sp.getByLabel('Your full name').fill('Olivia Martinez'); await sp.getByLabel('NRIC / FIN (optional)').fill('S1234567A')
     await sp.getByRole('button', { name: 'Sign agreement' }).click()
@@ -156,7 +177,8 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
   })
   await step('the page prints only the editor’s own markup', async () => {
     const id = 'probe-ct1-markup'
-    sql(`insert into contracts (id, lead_id, title, status, created_at, sent_at, body, recipient_name, recipient_phone, source, created_by) values ('${id}', '${OLIVIA_LEAD}', 'Markup probe', 'Sent to Client', strftime('%s','now'), strftime('%s','now'), '<p>Hello</p><iframe src=\\"https://example.com\\"></iframe><img src=x onerror=\\"window.__x=1\\"><p onclick=\\"window.__y=1\\">Tap</p>', 'Olivia Martinez', '91234567', 'composed', 'dane')`)
+    /* (pending modules S03, a deliberate change of this rule) a contract row carries its link's token — the page is found by it, never by the id */
+    sql(`insert into contracts (id, lead_id, title, status, created_at, sent_at, body, recipient_name, recipient_phone, source, created_by, sign_token) values ('${id}', '${OLIVIA_LEAD}', 'Markup probe', 'Sent to Client', strftime('%s','now'), strftime('%s','now'), '<p>Hello</p><iframe src=\\"https://example.com\\"></iframe><img src=x onerror=\\"window.__x=1\\"><p onclick=\\"window.__y=1\\">Tap</p>', 'Olivia Martinez', '91234567', 'composed', 'dane', '${id}')`)
     const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/${id}`); await ready(sp)
     const paper = sp.getByTestId('contract-paper')
     ok('no iframe, no handler', (await paper.locator('iframe').count()) === 0 && (await paper.locator('[onerror], [onclick]').count()) === 0 && (await sp.evaluate(() => window.__x === undefined)))
@@ -171,7 +193,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/bundle/${b}`); await ready(sp)
     ok('open', (await sp.getByTestId('bundle-signing-page').getAttribute('data-state')) === 'open')
     // (REG-633) the bundle is walked document by document before the code
-    const walk = async () => { for (let i = 0; i < 4 && !(await sp.getByLabel('One-time code').count()); i++) { await sp.getByRole('button', { name: /^Continue/ }).click(); await sp.waitForTimeout(300) } }
+    const walk = async () => { for (let i = 0; i < 4 && !(await sp.getByLabel('One-time code').count()); i++) { await caseTrust(sp); await sp.getByRole('button', { name: /^Continue/ }).click(); await sp.waitForTimeout(300) } }   // (pending modules S14) the disclosure rides on the last document
     await walk(); await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     await sp.getByLabel('Your full name').fill('Olivia Martinez')
     sql(`update contracts set title = 'Bundle doc two (edited)' where id='${c2}'`)

@@ -157,6 +157,7 @@ list_alt
 local_shipping
 lock
 lock_open
+logout
 mail
 menu
 menu_book

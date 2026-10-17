@@ -64,8 +64,10 @@ export const sheetRise = {
 export const bottomSheet = {
   initial: { y: '100%' },
   /* opacity and scale too: a Dialog open on its first paint (a `?open=` deep link) hydrates on `modalPanel` (the phone query reads false
-     on the server) and switches to these variants mid-animation — without them its panel stayed at modalPanel's opacity 0 · scale 0.96 */
-  animate: { y: 0, opacity: 1, scale: 1, transition: { duration: duration.sheet, ease: ease.decelerate } },
+     on the server) and switches to these variants mid-animation — without them its panel stayed at modalPanel's opacity 0 · scale 0.96.
+     (S45B) `x: 0` the same way for a Drawer open on its first paint (`?open=<milestone>`, `?crew=1`): it hydrated on the desk's slide (x =
+     its width) and stayed off the phone's screen beside its scrim. */
+  animate: { y: 0, x: 0, opacity: 1, scale: 1, transition: { duration: duration.sheet, ease: ease.decelerate } },
   exit: { y: '100%', transition: { duration: duration.sheetExit, ease: ease.standard } },
 }
 

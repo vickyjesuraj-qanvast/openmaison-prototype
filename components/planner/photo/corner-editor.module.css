@@ -1,0 +1,11 @@
+/* (S42 D·1) The corner editor — moved here from the developers' bench (S41's Plan corners), one piece for Make a 3D picture and the bench:
+   the photo at its own shape, the tinted quad between the corners, four 44px handles (a finger's size) with a dot each. */
+.frame { position: relative; width: 100%; aspect-ratio: var(--ratio, 4 / 3); background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); overflow: hidden; touch-action: none; user-select: none; }
+.frame > img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.quad { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.quad polygon { fill: var(--om-color-primary-variant); fill-opacity: 0.35; stroke: var(--om-color-primary-default); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.handle { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: transparent; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.handle::after { content: ''; width: 18px; height: 18px; border-radius: var(--om-radius-full); background: var(--om-color-surface-default); border: var(--om-border-2) solid var(--om-color-primary-default); box-shadow: var(--om-elevation-level-2); }
+.handle:focus-visible { outline: none; }
+.handle:focus-visible::after { box-shadow: 0 0 0 3px var(--om-color-primary-variant), var(--om-elevation-level-2); }
+.handle:active { cursor: grabbing; }

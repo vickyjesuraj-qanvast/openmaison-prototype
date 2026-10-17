@@ -1,0 +1,32 @@
+const { chromium } = require('playwright')
+const B = 'http://localhost:3011', O = '/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/e5dd05f7-6d12-4054-b5ca-a720d5c0629b/scratchpad/onehome/shots', RYAN = '5e8b9c29-54ef-4b56-96a4-2027804c4cd7'
+;(async () => {
+  const br = await chromium.launch()
+  const d = await (await br.newContext({ viewport: { width: 1440, height: 1024 } })).newPage()
+  const errs = []; d.on('pageerror', (e) => errs.push(String(e).slice(0, 140)))
+  const shot = async (url, name, full = false) => { await d.goto(B + url, { waitUntil: 'networkidle' }); await d.waitForTimeout(1300); await d.screenshot({ path: O + '/' + name + '.png', fullPage: full }); console.log(name, d.url().replace(B, '')) }
+  await shot('/company/finance', '01-finance-overview')
+  await shot('/company/integrations#xero', '02-integrations-xero', true)
+  await shot('/settings?section=leads', '03-settings-leads', true)
+  await shot('/settings?section=studio', '04-settings-studio', true)
+  await shot('/settings?section=projects', '05-settings-projects', true)
+  await shot('/company/profile', '06-profile', true)
+  await shot('/company/members', '07-members')
+  await shot('/qanvast-ops', '08-qanvast-ops')
+  await shot('/company/templates/payments', '09-templates-payment-schedules')
+  await shot('/leads/' + RYAN, '10-won-lead-overview')
+  const tabs = await d.locator('[data-kb-tabs] a, [role="tablist"] a').allInnerTexts(); console.log('won lead tabs:', tabs.map((t) => t.trim()).join(' · '))
+  await shot('/leads/' + RYAN + '/tasks', '11-won-lead-tasks-redirect')
+  await shot('/chat', '12-messages')
+  const rail = await d.locator('nav a[aria-label], nav button[aria-label]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
+  console.log('rail:', rail.join(' | '))
+  await shot('/compliance', '13-compliance-navigator')
+  console.log('errors:', errs.length, errs.join(' | '))
+  const m = await (await br.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })).newPage()
+  for (const [u, n] of [['/company/finance', 'p1-finance'], ['/leads/' + RYAN, 'p2-won-lead'], ['/company/profile', 'p3-profile'], ['/company/integrations#xero', 'p4-integrations']]) {
+    await m.goto(B + u, { waitUntil: 'networkidle' }); await m.waitForTimeout(1300)
+    console.log(n, 'scrollWidth', await m.evaluate(() => document.documentElement.scrollWidth))
+    await m.screenshot({ path: O + '/' + n + '.png' })
+  }
+  await br.close()
+})()

@@ -10,7 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { DateTimeField } from '@/components/om/date-field'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
@@ -18,9 +18,11 @@ import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { duration, ease, modalPanel, overlayFade } from '@/lib/motion'
 import { MSG, type FieldErrors } from '@/lib/forms'
 import { displayDate, parseInputDateTime } from '@/lib/format'
-import type { ReturnInput } from '@/app/leads/return-actions'
-import { REASON_LABELS, REFUSED_SUB_REASONS, RETURN_RULES, RETURN_RULES_TEXT, WRONG_FIELDS, asks, reasonByLabel, returnWindow } from '@/lib/leads/return-model'
-import { uploadFile } from '@/app/leads/files-actions'
+import type { AppealDraft, ReturnInput } from '@/app/leads/return-actions'
+import { ReturnPolicyDialog } from './return-policy-dialog'
+import { REASON_LABELS, REFUSED_SUB_REASONS, RETURN_RULES, RETURN_RULES_TEXT, WRONG_FIELDS, appealUntil, appealWindowPassed, asks, reasonByLabel, returnWindow } from '@/lib/leads/return-model'
+import { uploadPicked } from '@/components/leads/files/upload-picture'   // (gaps build E, item 1) the picked file, kept
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { renderLinksLine, useLiveRenderLinks } from '@/components/leads/use-render-links'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './return-lead-wizard.module.css'
@@ -45,7 +47,19 @@ const TIPS = [
   'Showcase past portfolios via social media or company website',
   'Be open to request for a Zoom meeting or phone call first for brief taking',
 ]
-const TERMS = 'Qanvast reserves the right of final decision on the return of leads and return of credits. By clicking “Confirm”, you agree to our lead return terms.'
+/* (pending modules S05 — card held:leads, "Tips › View all — Coming soon") View all shows the rest of 1.0's conversion tips (CONVERSION_TIPS, the
+   ones the four above don't already say), and 1.0's "Need help?" line. */
+const MORE_TIPS = [
+  'Personalise your first message — mention their property type and preferred style.',
+  'Offer a free consultation or site visit to build trust early.',
+  'Follow up at least 3 times before considering a lead unresponsive.',
+  'Use WhatsApp or SMS instead of email for faster response rates in Singapore.',
+  'Send a personalised quote within 48 hours of the first meeting.',
+  'Ask about their timeline and key collection date to show genuine interest.',
+]
+const TIPS_HELP = 'Need help? Contact your BD representative for personalised lead conversion tips and training.'
+/* (S42 B-09) the terms name the button they sit over — Confirm, or Send appeal on an appeal */
+const TERMS = (button: string) => `Qanvast reserves the right of final decision on the return of leads and return of credits. By clicking “${button}”, you agree to our lead return terms.`
 const COMMENTS_MAX = 500
 
 type Step = 'reason' | 'terms'
@@ -62,9 +76,12 @@ const stepSlide = {
 const kindIcon = (f: LeadFile) => (f.kind === 'pdf' || f.mime === 'application/pdf' ? 'picture_as_pdf' : 'image')
 
 export function ReturnLeadWizard({
-  open, lead, files, now, onClose, onConfirm, returnsCount = 0,
+  open, lead, files, now, onClose, onConfirm, returnsCount = 0, appeal = null,
 }: {
   open: boolean
+  /** (pending modules S05) An appeal of the return Qanvast rejected: the wizard opens on that return as it was sent — its reason, its fields,
+      its files — with Qanvast's reply above it; more documents or information go on top, and Confirm sends the appeal. */
+  appeal?: AppealDraft | null
   lead: { id: string; name: string; createdAt: Date }
   /** (REG-609, parity Q-44) Returns already filed on the lead — Qanvast's two-return cap reads it. */
   returnsCount?: number
@@ -77,7 +94,6 @@ export function ReturnLeadWizard({
   onConfirm: (input: ReturnInput) => Promise<void>
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
-  const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const [step, setStep] = useState<Step>('reason')
   const [dir, setDir] = useState(1)   // +1 forward (Next), −1 back — drives the step slide
@@ -96,10 +112,15 @@ export function ReturnLeadWizard({
   const [pressed, setPressed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [wasOpen, setWasOpen] = useState(false)
+  const [allTips, setAllTips] = useState(false)   /* (pending modules S05) Tips › View all */
+  const [policyOpen, setPolicyOpen] = useState(false)   /* (pending modules S05) the info control's policy */
   /** Day-granular "today" for the picker's ring, derived from the host clock (never Date.now() in render). */
   const today = useMemo(() => new Date(now), [now])
   /** The last file picked in the attach modal, so a simulated upload's tile can carry its name (read in handlers only). */
   const lastPicked = useRef<string | null>(null)
+  /** (gaps build E, item 1) The picked file itself, by its tile's local id — Confirm uploads it with its bytes (upload-picture.ts `uploadPicked`). */
+  const lastFile = useRef<File | null>(null)
+  const pickedFiles = useRef(new Map<string, File>())
   /* (REG-287) `aria-modal` promises the page behind is inert, so the panel owes the WAI-ARIA dialog contract:
      focus moves in on open, Tab stays inside it, and focus returns to the opener on close. Esc rides the shared
      layer policy — the reason select's menu, the date-time picker, a tile's Dropdown and the stacked Attach files
@@ -116,7 +137,14 @@ export function ReturnLeadWizard({
     if (open) {
       setStep('reason'); setReason(''); setOutreach(''); setAttempts(null); setComments(''); setTiles([])
       setSubReasons([]); setSearch(''); setProject(''); setWrongField('')
-      setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false)
+      setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false); setAllTips(false); setPolicyOpen(false)
+      if (appeal) {   // (pending modules S05) the rejected return as it was sent — the appeal adds to it
+        /* a return made before the seven reasons (REG-193's "No response from lead") reads as the one that asks what it held */
+        const was = reasonByLabel(appeal.reason) ?? (appeal.firstOutreach || appeal.attempts != null ? reasonByLabel('Lead not contactable') : null)
+        setReason(was?.label ?? ''); setSubReasons(appeal.subReasons); setOutreach(appeal.firstOutreach); setAttempts(appeal.attempts); setComments(appeal.comments)
+        setTiles(appeal.files)
+        if (asks(was, 'search')) setSearch(appeal.detail ?? ''); else if (asks(was, 'project')) setProject(appeal.detail ?? ''); else if (asks(was, 'wrongField')) setWrongField(appeal.detail ?? '')
+      }
     }
   }
 
@@ -149,13 +177,20 @@ export function ReturnLeadWizard({
     try {
       // A tile the attach modal "uploaded" (REG-149, `local-*` id) has no lead_files row yet: it joins the lead's library here
       // (files-actions uploadFile — the plan's upload path) so return_attachments only ever links real files. Cancel leaves no orphan.
-      const fileIds = await Promise.all(tiles.map((f) => (f.id.startsWith('local-') ? uploadFile(lead.id, { name: f.name }) : f.id)))
-      await onConfirm({ reason, subReasons, detail: asks(r, 'search') ? search : asks(r, 'project') ? project : asks(r, 'wrongField') ? wrongField : '', firstOutreach: asks(r, 'outreach') ? outreach : '', attempts: asks(r, 'attempts') ? attempts : null, comments, fileIds })
+      /* (gaps build E, item 1) …with its bytes: the picked file goes up as the Files tab uploads one, and a refusal stops the return with its rule */
+      const fileIds = await Promise.all(tiles.map(async (f) => {
+        if (!f.id.startsWith('local-')) return f.id
+        const file = pickedFiles.current.get(f.id)
+        const up = file ? await uploadPicked(lead.id, file) : { error: 'This file didn’t read — pick it again' }
+        if (!up || 'error' in up) throw new Error(up?.error ?? 'The upload didn’t land')
+        return up.id
+      }))
+      await onConfirm({ reason, subReasons, detail: asks(r, 'search') ? search : asks(r, 'project') ? project : asks(r, 'wrongField') ? wrongField : '', firstOutreach: asks(r, 'outreach') ? outreach : '', attempts: asks(r, 'attempts') ? attempts : null, comments, fileIds, appealOf: appeal?.id ?? null })
       onClose()
-    } catch {
+    } catch (e) {
       // `returnLead` refused (lib/leads/stage-policy.ts canReturnLead) or failed — the listing's "Couldn’t … — please try again"
-      // snackbar pattern (app/leads/workspace.tsx); no mock covers this state.
-      snackbar({ message: 'Couldn’t return the lead — please try again' })
+      // snackbar pattern (app/leads/workspace.tsx); no mock covers this state. (gaps build E) An upload's refusal says its rule (F129).
+      snackbar({ message: couldnt(appeal ? 'send the appeal' : 'return the lead', refusalOf(e)) })
     } finally {
       setBusy(false)
     }
@@ -172,13 +207,14 @@ export function ReturnLeadWizard({
       .filter((id) => !tiles.some((t) => t.id === id))
       .map((id) => {
         const name = lastPicked.current ?? 'filename.jpg'
+        if (lastFile.current) pickedFiles.current.set(id, lastFile.current)   // (gaps build E, item 1)
         // The stand-in's kind follows the picked name — the dropzone also takes PDFs ("Supports: JPEG, PNG, PDF"), and a PDF
         // has no thumbnail, so it takes the .tileBox + picture_as_pdf branch below instead of wearing the mock's photograph.
         const pdf = /\.pdf$/i.test(name)
         return files.find((f) => f.id === id) ?? {
           id, leadId: lead.id, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png',
           createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064,
-          mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null,
+          mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null, shownToClientAt: null,
         } satisfies LeadFile
       })
     if (picked.length) setTiles((t) => [...t, ...picked])
@@ -193,14 +229,15 @@ export function ReturnLeadWizard({
             {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
                 `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
             <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
-                        role="dialog" aria-modal aria-label="Return Lead" tabIndex={-1}
+                        role="dialog" aria-modal aria-label={appeal ? 'Appeal the return' : 'Return Lead'} tabIndex={-1}
                         data-testid="return-wizard" data-step={step}>
               {/* (REG-725) the house head and foot. Heading 84: "Return Lead" 20/Bold · "<name> · Received on <date>" 12 secondary ·
                   info 24 (coming soon) · close 24 */}
-              <SurfaceHead title="Return Lead" subtitle={`${lead.name} · Received on ${displayDate(lead.createdAt)}`} className={styles.head} onClose={onClose}
+              <SurfaceHead title={appeal ? 'Appeal the return' : 'Return Lead'} subtitle={appeal ? `${lead.name} · Rejected${appeal.repliedAt ? ` on ${displayDate(appeal.repliedAt)}` : ''}` : `${lead.name} · Received on ${displayDate(lead.createdAt)}`} className={styles.head} onClose={onClose}
                            actions={
-                             <Tooltip label="Information">
-                               <IconButton icon="info" label="Information" size={24} variant="bare" iconSize={24} className={styles.info} onClick={comingSoon} />
+                             /* (pending modules S05) the control opens Qanvast's return policy */
+                             <Tooltip label="Qanvast’s return policy">
+                               <IconButton icon="info" label="Qanvast’s return policy" size={24} variant="bare" iconSize={24} className={styles.info} onClick={() => setPolicyOpen(true)} />
                              </Tooltip>
                            } />
 
@@ -211,10 +248,21 @@ export function ReturnLeadWizard({
                   <div className={styles.columns}>
                     <div className={styles.form}>
                       {/* (REG-609, parity Q-44) Qanvast's return rules, display only: this lead's standing and its returns so far. */}
-                      <div className={styles.rules} data-testid="return-window" data-state={win.state}>
+                      {appeal ? (
+                        /* (pending modules S05) what Qanvast said, above what the appeal adds */
+                        <div className={styles.rejected} data-testid="appeal-reply">
+                          <span className={styles.rejectedTitle}>Qanvast rejected the return</span>
+                          {appeal.reply ? <span>“{appeal.reply}”</span> : null}
+                          <span className={styles.rejectedHelp}>Add more documents or information below, then send the appeal.</span>
+                        </div>
+                      ) : null}
+                      <div className={styles.rules} data-testid="return-window" data-state={appeal ? 'open' : win.state}>
                         <Icon name="info" size={20} className={styles.rulesIcon} />
-                        <span>{win.text}{win.state === 'capped' ? '' : ` · ${win.used} of ${RETURN_RULES.maxReturns} returns used`}</span>
-                        <Tooltip label={RETURN_RULES_TEXT}><Link variant="primary">Rules</Link></Tooltip>   {/* (REG-614) the DS Link, not a hand-rolled one */}
+                        {/* (pending modules S05) an appeal answers to Qanvast's reply, not to the lead's return window — and it is one of the lead's returns */}
+                        <span>{appeal
+                          ? `${appeal.appealDays ? (appealWindowPassed(appeal, now) ? `Qanvast’s ${appeal.appealDays} days ran to ${displayDate(appealUntil(appeal)!)} — it may still look at an appeal` : `Qanvast gives ${appeal.appealDays} days from its reply to appeal`) : 'The appeal goes back to Qanvast’s Business Team'}${win.used < RETURN_RULES.maxReturns ? ` · it is return ${win.used + 1} of ${RETURN_RULES.maxReturns}` : ''}`   /* (S42 B-10) past the window: its day */
+                          : `${win.text}${win.state === 'capped' ? '' : ` · ${win.used} of ${RETURN_RULES.maxReturns} returns used`}`}</span>
+                        <Tooltip label={RETURN_RULES_TEXT}><Link variant="primary" onPress={() => setPolicyOpen(true)}>Rules</Link></Tooltip>   {/* (REG-614) the DS Link, not a hand-rolled one · (pending modules S05) it opens the policy */}
                       </div>
                       {/* Text Field 48 select "Select a reason" (expand_more) — 1.0's seven reasons (REG-609) */}
                       <TextField label="Select a reason" required mode="select" options={REASON_LABELS} value={reason} onChange={(v) => { setReason(v); setSubReasons([]); setWrongField('') }} error={shown.reason} />
@@ -326,10 +374,11 @@ export function ReturnLeadWizard({
                     {/* tips-section 260: "Tips to improve conversion" · four tips · Link "View all" (coming soon) */}
                     <aside className={styles.tips} aria-label="Tips to improve conversion">
                       <span className={styles.tipsTitle}>Tips to improve conversion</span>
-                      <ul className={styles.tipsList}>
-                        {TIPS.map((t) => <li key={t}>{t}</li>)}
+                      <ul className={styles.tipsList} data-testid="return-tips">
+                        {(allTips ? [...TIPS, ...MORE_TIPS] : TIPS).map((t) => <li key={t}>{t}</li>)}
                       </ul>
-                      <Link variant="primary" className={styles.tipsLink} onPress={comingSoon}>View all</Link>
+                      {allTips ? <span className={styles.tipsHelp}>{TIPS_HELP}</span> : null}
+                      <Link variant="primary" className={styles.tipsLink} onPress={() => setAllTips((v) => !v)}>{allTips ? 'Show fewer' : 'View all'}</Link>
                     </aside>
                   </div>
                 </motion.div>
@@ -339,7 +388,7 @@ export function ReturnLeadWizard({
                   <div className={styles.terms}>
                     <div className={styles.termsInner}>
                       <span className={styles.termsTitle}>Term of service</span>
-                      <p className={styles.termsText}>{TERMS}</p>
+                      <p className={styles.termsText}>{TERMS(appeal ? 'Send appeal' : 'Confirm')}</p>
                       {renderLine ? <p className={styles.termsNote} role="alert" data-testid="live-render-links">{renderLine}</p> : null}
                     </div>
                   </div>
@@ -359,7 +408,7 @@ export function ReturnLeadWizard({
                 ) : (
                   <>
                     <Button variant="secondary" appearance="outlined" onPress={() => goTo('reason')} isDisabled={busy}>Back</Button>
-                    <Button className={styles.wide} onPress={() => { void confirm() }} isDisabled={busy}>Confirm</Button>
+                    <Button className={styles.wide} onPress={() => { void confirm() }} isDisabled={busy}>{appeal ? 'Send appeal' : 'Confirm'}</Button>
                   </>
                 )}
               </SurfaceFoot>
@@ -375,8 +424,9 @@ export function ReturnLeadWizard({
         attached={tiles.map((f) => f.id)}
         onClose={() => setAttachOpen(false)}
         onAttach={attach}
-        onUploadPicked={(file) => { lastPicked.current = file?.name ?? null /* REG-149: the picked file becomes the mock's file — the modal shows the upload toast and lists it in "Your files" */ }}
+        onUploadPicked={(file) => { lastPicked.current = file?.name ?? null; lastFile.current = file ?? null /* REG-149: the picked file becomes the mock's file — the modal shows the upload toast and lists it in "Your files"; (gaps build E) Confirm keeps its bytes */ }}
       />
+      <ReturnPolicyDialog open={policyOpen} onClose={() => setPolicyOpen(false)} />
     </>
   )
 }

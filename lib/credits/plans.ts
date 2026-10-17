@@ -59,6 +59,16 @@ export function priceFor(plan: PlanRow, seats: number, cycle: BillingCycle): num
   const extra = Math.max(0, seatsFor(plan, seats) - plan.minSeats) * (plan.extraSeatPriceCents ?? 0)
   return cycle === 'yearly' ? plan.yearlyPrice + extra * 11 : plan.monthlyPrice + extra
 }
+/** (pending modules S19 — 1.0's seat change, `prorated_immediately`) What is left of a period's price for a change today: by whole days left
+    against the period's days, to the cent — the dialog says the same amount the server bills (one function for both). */
+export function proratedByDays(amount: number, start: number, end: number, at: number): number {
+  const DAY = 86_400_000
+  const whole = Math.max(1, Math.round((end - start) / DAY))
+  const left = Math.max(0, Math.min(whole, Math.ceil((end - at) / DAY)))
+  return Math.max(0, Math.round((amount * left) / whole))
+}
+export const daysLeftIn = (end: number, at: number): number => Math.max(0, Math.ceil((end - at) / 86_400_000))
+
 /** Annual, said the way owners budget (enhancement E-19, Q-17): the monthly figure and what the free month saves. */
 export const perMonthOnYearly = (plan: PlanRow, seats: number): number => Math.round(priceFor(plan, seats, 'yearly') / 12)
 export const yearlySaving = (plan: PlanRow, seats: number): number => priceFor(plan, seats, 'monthly') * 12 - priceFor(plan, seats, 'yearly')
@@ -78,6 +88,26 @@ export function planBlock(plan: PlanRow, activeMembers: number): string | null {
   return null
 }
 
-/** The top-up: 1.0's one product, 1,000 AI credits for S$20 (integration B-05 — packs come when 1.0 sells quantities). */
+/**
+ * The top-up — (pending modules S19 — card held:ai-credits "Packs of 2,000 / 5,000 … keep 1.0") 1.0 sells quantities now (its owner's
+ * decision of 2026-09-28, `src/lib/billing/topup.ts`): any amount from 100 to 5,000 AI credits in steps of 50, at S$2 per 100 — the old
+ * pack's rate, so 1,000 is still S$20 and is where the picker starts (the owner's screenshots drew this picker: "S$ 2.00 per 100 credits").
+ */
+export const TOPUP_MIN = 100
+export const TOPUP_MAX = 5000
+export const TOPUP_STEP = 50
+/** The amount a buy starts on — 1.0's old fixed pack. */
 export const TOPUP_CREDITS = 1000
-export const TOPUP_PRICE = 2000
+/** 1.0's `TOPUP_UNIT_PRICE_MINOR`: S$0.02 an AI credit. */
+export const TOPUP_CENTS_PER_CREDIT = 2
+export const topupPrice = (credits: number): number => Math.max(0, Math.round(credits)) * TOPUP_CENTS_PER_CREDIT
+/** The default amount's price (S$20). */
+export const TOPUP_PRICE = topupPrice(TOPUP_CREDITS)
+/** A whole number of AI credits on the picker's grid — the server refuses anything else (1.0 rejects an off-grid amount, never snaps it). */
+export const isTopupAmount = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= TOPUP_MIN && n <= TOPUP_MAX && n % TOPUP_STEP === 0
+/** The nearest amount on the grid — for a picker's own steps only. */
+export const snapTopup = (n: number): number => (Number.isFinite(n) ? Math.min(TOPUP_MAX, Math.max(TOPUP_MIN, Math.round(n / TOPUP_STEP) * TOPUP_STEP)) : TOPUP_CREDITS)
+/** The amount that covers `needed` (a refused piece of work) — at least the default, so one buy is never too small to carry on. */
+export const topupFor = (needed: number): number => snapTopup(Math.max(TOPUP_CREDITS, Math.ceil(Math.max(0, needed) / TOPUP_STEP) * TOPUP_STEP))
+/** The picker's quick amounts. */
+export const TOPUP_PICKS = [500, 1000, 2000, 5000] as const

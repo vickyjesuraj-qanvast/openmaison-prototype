@@ -12,7 +12,7 @@ import { useMediaQuery } from '@/lib/breakpoint'
 import { displayDate, isSgPhone, phoneDigits, phoneLocal, phoneTyped } from '@/lib/format'
 import type { Pin, PublicShare } from '@/lib/visualizer/queries'
 import { DraftPin, PinThread } from '@/components/visualizer/editor/pin-card'
-import { askCallBack, clientPin, clientReply, leaveNote, pickFavourite, stampShareView } from '@/app/renders/actions'
+import { askCallBack, clientPin, clientPinStatus, clientRemovePin, clientReply, clientRestorePin, leaveNote, pickFavourite, stampShareView } from '@/app/renders/actions'
 import { clientRoomNames } from '@/lib/visualizer/outputs'
 import styles from './render-share-page.module.css'
 
@@ -219,7 +219,7 @@ const asTheClient = (p: Pin): Pin => ({
   comments: p.comments.map((c) => (c.authorRole === 'client' ? { ...c, authorName: 'You' } : c)),
 })
 
-function VersionCard({ v, token, favourite, onLike, pins, notes, now, sender, tap, refused }: { v: V; token: string; favourite: boolean; onLike: () => void; pins: Pin[]; notes: PublicShare['notes']; now: number; sender: string; tap: 'Tap' | 'Click'; refused: Refused }) {
+function VersionCard({ v, token, favourite, onLike, pins: pins0, notes, now, sender, tap, refused }: { v: V; token: string; favourite: boolean; onLike: () => void; pins: Pin[]; notes: PublicShare['notes']; now: number; sender: string; tap: 'Tap' | 'Click'; refused: Refused }) {
   const snack = useSnackbar()
   const sheet = useSheetLayout()
   const [compare, setCompare] = useState(false)
@@ -254,6 +254,29 @@ function VersionCard({ v, token, favourite, onLike, pins, notes, now, sender, ta
     setNote(''); setWriting(false)
     snack({ message: `Sent — ${sender} will see it` })
   }
+  /* (parity map, CP-072) the client's own pins: Mark resolved / Reopen and Remove (with Undo), shown at once and put back when refused — the
+     next payload from the server (the action's revalidation) carries the truth, and the page's own marks step aside for it */
+  const [mine, setMine] = useState<Record<string, { status?: 'open' | 'resolved'; gone?: boolean }>>({})
+  const pinsSig = pins0.map((p) => `${p.id}:${p.status}`).join('|')   // the server's word changed — a parent's own render is not news
+  const [wasPins, setWasPins] = useState(pinsSig)
+  if (wasPins !== pinsSig) { setWasPins(pinsSig); setMine({}) }
+  const pins = pins0.filter((p) => !mine[p.id]?.gone).map((p) => (mine[p.id]?.status ? { ...p, status: mine[p.id]!.status! } : p))
+  const mark = (id: string, m: { status?: 'open' | 'resolved'; gone?: boolean } | null) => setMine((x) => { const n = { ...x }; if (m) n[id] = { ...n[id], ...m }; else delete n[id]; return n })
+  const setStatus = async (pin: Pin, status: 'open' | 'resolved') => {
+    mark(pin.id, { status })
+    const r: { ok: true } | Refusal = await clientPinStatus(token, pin.id, status).catch(() => ({ error: status === 'resolved' ? 'Couldn’t mark it resolved — please try again' : 'Couldn’t reopen it — please try again' }))
+    if ('error' in r) { mark(pin.id, null); refused(r); return }
+    snack({ message: status === 'resolved' ? 'Marked resolved' : 'Reopened' })
+  }
+  const remove = async (pin: Pin) => {
+    mark(pin.id, { gone: true }); setActive(null)
+    const r: { ok: true } | Refusal = await clientRemovePin(token, pin.id).catch(() => ({ error: 'Couldn’t remove the pin — please try again' }))
+    if ('error' in r) { mark(pin.id, null); refused(r); return }
+    snack({
+      message: 'Pin removed', actionLabel: 'Undo',
+      onAction: () => { void clientRestorePin(token, pin.id).then((u) => { if ('error' in u) refused(u); else mark(pin.id, null) }, () => snack({ message: 'Couldn’t bring the pin back — please try again' })) },
+    })
+  }
   const activePin = active ? pins.find((p) => p.id === active) ?? null : null
   useSnackAboveSheet(sheet && !compare && (!!draft || !!activePin))
   const writeBox = useRef<HTMLDivElement>(null)
@@ -279,7 +302,8 @@ function VersionCard({ v, token, favourite, onLike, pins, notes, now, sender, ta
                   style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} aria-label={`Pin ${i + 1}: ${p.body}`} onClick={(e) => { e.stopPropagation(); setDraft(null); setActive((a) => (a === p.id ? null : p.id)) }}>{i + 1}</button>
         )) : null}
         {/* (round 1) on a phone the sheet covers the photo, so it shows the spot on a small copy of the picture — the editor's sheet does the same */}
-        {!compare && activePin ? <PinThread pin={activePin} index={pins.indexOf(activePin)} now={now} image={v.imageUrl} onDelete={null} onClose={() => setActive(null)}
+        {!compare && activePin ? <PinThread pin={activePin} index={pins.indexOf(activePin)} now={now} image={v.imageUrl} own onClose={() => setActive(null)}
+                                            onStatus={(st) => { void setStatus(activePin, st) }} onDelete={() => { void remove(activePin) }}
                                             onReply={async (b) => { const r: { ok: true } | Refusal = await clientReply(token, activePin.id, b).catch(() => ({ error: 'Couldn’t send the reply — please try again' })); if ('error' in r) { refused(r); return false } return true }} /> : null}
         {!compare && draft ? <DraftPin x={draft.x} y={draft.y} image={v.imageUrl} onSave={savePin} onCancel={() => setDraft(null)} label="What would you change here?" hint={`${sender} sees it straight away`} /> : null}
         {pinning && !draft ? <span className={styles.pinHint} role="status"><Icon name="push_pin" size={16} weight={300} />{tap} the picture where you’d like a change</span> : null}

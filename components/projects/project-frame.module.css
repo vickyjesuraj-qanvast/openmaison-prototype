@@ -1,0 +1,36 @@
+/*
+ * (REG-931) A project's page — the lead page's frame (app/leads/[id]/overview.module.css, 858:24772): the white body, the 72 L2 header with
+ * the tab strip sticky under it, the row below. (parity P-01 · P-03, 2026-10-08) The row is the lead's: the info column on the Overview's left
+ * (components/leads/detail/info-column), the centre, the Create strip on every tab's right (components/leads/detail/quick-links) — round 1's
+ * "centre alone" is gone. Composed, never copied.
+ */
+.body { composes: body from '../../app/leads/[id]/overview.module.css'; }
+.stickyTabs { composes: stickyTabs from '../../app/leads/[id]/overview.module.css'; }
+.row { composes: row from '../../app/leads/[id]/overview.module.css'; }
+.centre { composes: centre from '../../app/leads/[id]/overview.module.css'; }
+.anchor { composes: anchor from '../../app/leads/[id]/overview.module.css'; }
+/* (parity P-08) fix-A A-25's stage chip in the ≤1024 action row is gone: the lead's Stage button stands there at every width
+   (components/projects/stage-menu.module.css). (parity P-03) The row's right carries the lead's Create strip (quick-links.module.css). */
+/* (REG-359) On a phone the header's action row is one line: "Stage: X" hugs its text and the stage's one filled action fills the rest
+   (the lead's `.convertAction`), the kebab keeps the title's line. */
+@media (max-width: 767px) {
+  .primary { flex: 1 1 auto; min-width: 0; }
+  .primary button { width: 100%; }
+  /* A long next step ("Review the ask for more time") ends in an ellipsis instead of being cut at both ends by the centred label. */
+  .primaryLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* (simplify Q-04 · P2 §6.4, the owner's "build everything" 2026-10-09) The phone's site bar while the work runs — Photos · Done · Note · Message —
+   on the house dock frame (components/shell/mobile-nav.module.css `.dockFrame`, the studio dock's and the portal's phone bar's), its four columns
+   the dock's own items, composed. Drawn ≤767 only. While it is up the page's bottom-anchored chrome (Maison AI, the snackbar, the Schedule's
+   Add milestone dock) rises above it — the dock height it reads is set here, as the portal's bar sets it (REG-1050) — and the page keeps room
+   for it under its last card. */
+.siteBar { composes: dockFrame from '../shell/mobile-nav.module.css'; display: none; }
+.siteItem { composes: dockItem from '../shell/mobile-nav.module.css'; max-width: none; }
+.siteIcon { composes: dockIcon from '../shell/mobile-nav.module.css'; }
+.siteLabel { composes: dockLabel from '../shell/mobile-nav.module.css'; }
+@media (max-width: 767px) {
+  .siteBar { display: flex; justify-content: space-around; }
+  :global(html) :global(body):has(.siteBar) { --app-mobile-dock-height: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  .body:has(.siteBar) .centre { padding-bottom: calc(var(--fab-clearance, 96px) + var(--app-mobile-dock-height)); }
+}

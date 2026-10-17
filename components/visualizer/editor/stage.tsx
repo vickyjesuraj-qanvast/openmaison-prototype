@@ -539,7 +539,7 @@ export function Stage({ image, alt, compare, preview, highlight, wash = null, ma
                   </li>
                 ))}
               </ol>
-              {running.saving ? null : <Button variant="secondary" appearance="outlined" onPress={onCancelRun}>Cancel</Button>}
+              {running.saving ? null : <Button variant="secondary" appearance="outlined" onPress={onCancelRun}>Stop</Button>}   {/* (S42 D-16) one word for one press — the result says "Stopped" */}
             </div>
           </motion.div>
         ) : null}

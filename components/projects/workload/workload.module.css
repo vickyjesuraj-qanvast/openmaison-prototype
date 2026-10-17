@@ -1,0 +1,61 @@
+/*
+ * (gaps build I, I-Q1…I-Q5) The Projects listing's Workload view — on the house pieces, composed, never copied: the detail card's white box
+ * (components/leads/detail/card.module.css) holding one row per person (the card table's 1px rules between rows, components/om/card-table),
+ * the person as Insights' By team member draws them (a 36 avatar over the name and the role), the state in a MetaChip. The bar is the
+ * person's capacity as slots: a project fills one (the primary variant, its name), a free slot is the dashed well of the Files tab's drop
+ * area, a project past the capacity takes the red of an overdue follow-up. ≤767 each person is a card of their own.
+ */
+.view { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.caption { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.captionActions { margin-left: auto; display: inline-flex; gap: var(--om-spacing-2); }
+
+.card { composes: card from '../../leads/detail/card.module.css'; overflow: hidden; }
+.row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 176px; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-5); min-height: 72px; }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+.who { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.whoText { display: flex; flex-direction: column; min-width: 0; }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.role { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nobody { width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+
+.bar { display: grid; grid-template-columns: repeat(var(--slots, 4), minmax(0, 1fr)); gap: var(--om-spacing-1); min-width: 0; }
+.slot, .block { height: 36px; border-radius: var(--om-radius-1); min-width: 0; }
+.slot { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); background-image: repeating-linear-gradient(135deg, transparent 0 6px, var(--om-color-surface-bg) 6px 12px); }
+.block {
+  display: flex; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-2); border: 0; cursor: pointer; text-align: left;
+  background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-subheading-s);
+  transition: box-shadow var(--motion-hover);
+}
+.block:hover { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); }
+.block:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.block[data-over] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-surface-default); }
+.block[data-hold] { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); }
+.blockName { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-tertiary-red-default); }
+
+.state { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.count { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+.empty { padding: var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* Settings › Projects › Workload: its one select, at a field's width */
+.settingField { max-width: 360px; }
+
+/* Set capacity: one line per person — the person, then their number */
+.capList { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.capRow { display: grid; grid-template-columns: minmax(0, 1fr) 200px; align-items: center; gap: var(--om-spacing-4); }
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.link { composes: link from '../../om/text-link.module.css'; }
+
+@media (max-width: 1024px) {
+  .row { grid-template-columns: 180px minmax(0, 1fr) 140px; }
+}
+@media (max-width: 767px) {
+  .card { box-shadow: none; background: transparent; overflow: visible; gap: var(--om-spacing-3); }
+  .row { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--om-spacing-3); padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
+  .row + .row { border-top: 0; }
+  .bar { grid-column: 1 / -1; grid-row: 2; }
+  .slot, .block { height: 44px; }
+  .capRow { grid-template-columns: minmax(0, 1fr) 120px; }
+}

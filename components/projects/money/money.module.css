@@ -1,0 +1,118 @@
+/*
+ * (Projects round 5) A project's Money tab — built on the house pieces, composed, never copied: the tab toolbar (components/om/tab-toolbar),
+ * the number tile (StatTile, REG-614), the tables of Company › Plan & AI credits (CreditsTable on the listing's model, its section heads —
+ * components/company/plan/plan.module.css), the quote's approval banner (components/quotes/editor/template-bar.module.css) for an invoice
+ * waiting for approval or sent back, and the house first-run state (EmptyState).
+ * (simplify S-07) The four regions: the head, Needs you (the banner rows), the tiles (StatTiles), the two lists (Billing · Costs).
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+@media (max-width: 767px) { .bar { flex-wrap: nowrap; } }
+
+/* (simplify S-07) Needs you: a heading and the house banner rows, three shown and "Show n more" (the AI brief's toggle, composed) */
+.needs { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.needsHead { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.needsTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.needsCount { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.needsRest { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.needTitle { display: block; }
+.needMeta { display: block; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.needMeta[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
+.toggleRow { composes: toggleRow from '../../leads/detail/ai-brief.module.css'; }
+.toggle { composes: toggle from '../../leads/detail/ai-brief.module.css'; }
+
+/* (simplify S-07 · S-09) the tiles: To collect (its bar, collected of the contract — the portal's Paid so far bar), To pay, Profit */
+.tileValue { outline-offset: 2px; }
+.tileHelp { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-2); }
+.collectBar { composes: bar from '../../portal/money/money.module.css'; display: block; margin: var(--om-spacing-1) 0; }
+.collectFill { composes: barFill from '../../portal/money/money.module.css'; display: block; }
+.collectBar .collectFill { background: var(--om-color-primary-default); }
+/* (simplify round 2, R2-A — P3 §6.3) at 390 the house row (two per row, an odd last tile taking the row) reads To collect first, whole: its
+   value, bar and next line take the row; To pay · Profit sit side by side under it (Owners and Admins); a Designer's second tile — Contract
+   value — takes its own row. Below 360 the house rule's one column stands. */
+@media (max-width: 767px) {
+  .tab .moneyTiles > :first-child { grid-column: 1 / -1; }
+  .tab .moneyTiles[data-odd] > :last-child:not(:first-child) { grid-column: auto; }
+  .tab .moneyTiles:not([data-odd]) > :last-child { grid-column: 1 / -1; }
+}
+
+/* (simplify round 2, R2-A — P3 §6.8) a bill's PDF dropped anywhere on the tab: the Files tab's drop look (lead-files.module.css), composed — its
+   line held in view on a tab taller than the window */
+.tab[data-dropping] { position: relative; }
+.drop { composes: drop from '../../leads/files/lead-files.module.css'; align-items: flex-start; }
+.dropLine { composes: dropLine from '../../leads/files/lead-files.module.css'; position: sticky; top: 40vh; }
+
+/* (simplify S-07 · Q-06) the two lists: both at a desk; one at a time behind two chips on a phone, remembered */
+.lists { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; scroll-margin-top: var(--om-spacing-6); }
+.listSwitch { display: none; }
+@media (max-width: 767px) {
+  .listSwitch { display: flex; }
+  .lists[data-show='billing'] > [data-list='costs'], .lists[data-show='costs'] > [data-list='billing'] { display: none; }
+}
+
+/* (simplify S-07) Billing — a row opens its invoice's panel; a voided invoice is a faint sub-row; "Outside the stages" heads its group */
+.billing { display: contents; }
+.billing [data-open-invoice] { cursor: pointer; }
+.billing [data-kind='void'] [role='cell'] { color: var(--om-color-on-surface-secondary); }
+.billing [data-kind='group'] [role='cell'] { background: var(--om-color-surface-bg); }
+.groupLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.dots > * + *::before { content: ' · '; }
+
+/* (REG-735) an empty list: its line and its ways in */
+.emptyLine { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-3); }
+.emptyActions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+
+/* (simplify Q-10) Order from the quote: a vendor's head carries its tick and, when it can't take a PO, why */
+.orderHead { gap: var(--om-spacing-3); text-transform: none; }
+.orderBlock { margin-left: auto; font: var(--om-type-body-s); text-transform: none; color: var(--om-color-on-surface-secondary); }
+.orderNote { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); }
+
+/* The banners: an invoice waiting for approval or sent back, the Drafts out of step, money to credit */
+.banners { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; border-radius: var(--om-radius-2); box-shadow: none; padding: var(--om-spacing-2) var(--om-spacing-4); }
+.banner[data-tone='changes'], .banner[data-tone='note'] { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); }
+.banner[data-tone='alert'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
+.bannerIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
+.bannerText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
+.bannerActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
+.bannerWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
+@media (max-width: 767px) {
+  .banner { flex-wrap: wrap; }
+  /* (fix-D, D-29) the actions start at the left on a phone — the Maison AI button rests at the bottom right and covered Confirm */
+  .bannerActions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }   /* (pending modules S07, a bug fix) three steps (proof · Not received · Confirm) wrap instead of cutting Confirm off */
+}
+
+/* cells */
+.stack { display: flex; flex-direction: column; min-width: 0; }
+.tagStack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.tagStack > *, .tagStack .sub { max-width: 100%; }   /* (fix-D, D-21) a long reason ellipsises in its column (its hover says it whole) instead of running under Open */
+.amountLine { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }   /* (fix-D, D-34) the amount and its Differs chip */
+.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nameLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-heading-h5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.neg { color: var(--om-color-tertiary-red-default); }
+.none { color: var(--om-color-on-surface-secondary); }
+.rowActions { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-1); width: 100%; min-width: 0; }
+.nowrap { white-space: nowrap; }   /* (fix-D, D-38) an invoice number never breaks */
+.void { text-decoration: line-through; color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .rowActions { justify-content: flex-start; } }
+
+/* the dialogs */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.fieldLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-2); display: block; }
+.differs { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); font: var(--om-type-body-m); }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--om-spacing-2) var(--om-spacing-4); margin: 0; font: var(--om-type-body-m); }
+.facts dt { color: var(--om-color-on-surface-secondary); }
+.facts dd { margin: 0; color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+
+/* (Projects round 6) payments — the record dialog's two fields side by side (one column on a phone), the payment's links in its cells */
+.pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+@media (max-width: 767px) { .pairs { grid-template-columns: minmax(0, 1fr); } }
+.inlineLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-body-s); white-space: nowrap; }
+.bannerText .inlineLink { font: inherit; }

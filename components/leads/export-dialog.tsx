@@ -5,7 +5,7 @@ import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
-import { EXPORT_FORMATS, LISTING_EXPORT, downloadLeads, type ExportFormat } from '@/lib/leads/export'
+import { EXPORT_FORMATS, LEAD_STATEMENT, downloadLeads, downloadStatement, listingKeys, type ExportFormat, type StatementSpec } from '@/lib/leads/export'
 import { parseDMY } from '@/lib/leads/filters'
 import { startOfDay } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -19,6 +19,11 @@ import styles from './export-dialog.module.css'
  * few fields: which leads (all · what the list shows), the created period (the Filters modal's presets, or a From / To), the
  * columns (everything · as the list shows) and the format — with the count it will write. 1.0 exported the filtered set with
  * 23 columns; the full set lives in lib/leads/export.ts.
+ *
+ * (parity P-25, B-15 · B-16) The statement is any listing's: `statement` names the rows' noun, the date the period reads ("Created" for
+ * leads, "Start date" for projects), every column and how the listing's visible columns map onto them (lib/leads/export.ts
+ * `StatementSpec`; leads by default). `selected` — a bulk bar's selection — adds "Selected leads (n)" / "Selected projects (n)" to the
+ * sets and opens on it.
  */
 type Period = 'all' | 'today' | '7d' | '30d' | 'month' | 'custom'
 const PERIODS: { key: Period; label: string }[] = [
@@ -27,10 +32,14 @@ const PERIODS: { key: Period; label: string }[] = [
 ]
 const COLUMN_SETS = ['Everything', 'As the list shows'] as const
 
-export function ExportDialog({ open, rows = [], all, shown, listingColumns, now, onClose, onDone, title = 'Export Leads', download, scope: counts, option }: {
+export function ExportDialog<R = LeadRow>({ open, rows = [], all, shown, selected, listingColumns, statement: statementSpec, now, onClose, onDone, title = 'Export Leads', download, scope: counts, option }: {
   open: boolean; rows?: LeadRow[]; onClose: () => void; onDone: (fileName: string, format: ExportFormat, count?: number) => void
-  /** The statement's two sets — every lead, and what the list shows — plus the listing's visible column keys, in order. */
-  all?: LeadRow[]; shown?: LeadRow[]; listingColumns?: string[]
+  /** The statement's two sets — every row, and what the list shows — plus the listing's visible column keys, in order. */
+  all?: R[]; shown?: R[]; listingColumns?: string[]
+  /** (parity P-25) A third set, the bulk bar's selection — "Selected leads (n)"; the dialog opens on it. */
+  selected?: R[]
+  /** (parity P-25) The listing's statement (lib/leads/export.ts); the leads' when absent. */
+  statement?: StatementSpec<R>
   /** The leads export's date stamp; a caller with its own `download` (Tasks, the quote editor's Items) needs none. */
   now?: number
   title?: string
@@ -41,8 +50,9 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
   /** (Dane UAT 3.11) One tick under the sets, the caller's to read in its `download` (My Items: "Include proposed items"). */
   option?: { label: string; checked: boolean; onChange: (on: boolean) => void }
 }) {
+  const spec = (statementSpec ?? LEAD_STATEMENT) as StatementSpec<R>   // a caller with no statement of its own lists leads
   const [format, setFormat] = useState<ExportFormat>('CSV')
-  const [scope, setScope] = useState<'all' | 'shown'>('all')
+  const [scope, setScope] = useState<'all' | 'shown' | 'selected'>('all')
   const [period, setPeriod] = useState<Period>('all')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -51,16 +61,16 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
   const [wasOpen, setWasOpen] = useState(false)
   if (open !== wasOpen) {   // every opening starts from the statement's defaults
     setWasOpen(open)
-    if (open) { setScope('all'); setPeriod('all'); setFrom(''); setTo(''); setColumnSet(COLUMN_SETS[0]) }
+    if (open) { setScope(selected ? 'selected' : 'all'); setPeriod('all'); setFrom(''); setTo(''); setColumnSet(COLUMN_SETS[0]) }
   }
   const statement = !!all && !!shown
   const clock = now ?? mountedAt
   const today = useMemo(() => new Date(clock), [clock])
   const fromDate = parseDMY(from), toDate = parseDMY(to)
   const rangeBad = period === 'custom' && !!fromDate && !!toDate && fromDate.getTime() > toDate.getTime()
-  const picked = useMemo(() => {
+  const picked = useMemo((): (R | LeadRow)[] => {
     if (!statement) return rows
-    let out = scope === 'all' ? all! : shown!
+    let out = scope === 'selected' && selected ? selected : scope === 'shown' ? shown! : all!
     if (period !== 'all') {
       const day = 86_400_000, t0 = startOfDay(new Date(clock))
       let lo: number | null = null, hi: number | null = null
@@ -69,14 +79,16 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
       else if (period === '30d') { lo = t0 - 29 * day; hi = t0 + day }
       else if (period === 'month') { const d = new Date(clock); lo = new Date(d.getFullYear(), d.getMonth(), 1).getTime(); hi = t0 + day }
       else { const a = parseDMY(from), b = parseDMY(to); lo = a ? a.getTime() : null; hi = b ? b.getTime() + day : null }
-      out = out.filter((r) => { const t = r.createdAt.getTime(); return (lo === null || t >= lo) && (hi === null || t < hi) })
+      /* (parity P-25) the statement's own date — a lead's Created, a project's Start date; a row without one is in no period */
+      out = out.filter((r) => { const d = spec.dateOf(r); if (!d) return false; const t = d.getTime(); return (lo === null || t >= lo) && (hi === null || t < hi) })
     }
     return out
-  }, [statement, rows, scope, all, shown, period, from, to, clock])
-  const keys = columnSet === 'As the list shows' && listingColumns ? listingColumns.flatMap((k) => LISTING_EXPORT[k] ?? []) : null
+  }, [statement, rows, scope, all, shown, selected, period, from, to, clock, spec])
+  const keys = columnSet === 'As the list shows' && listingColumns ? listingKeys(spec, listingColumns) : null
   const exportNow = () => {
     if (rangeBad || (statement && picked.length === 0) || (counts && (scope === 'all' ? counts.all : counts.shown) === 0)) return
-    const name = download ? download(format, scope) : downloadLeads(picked, format, new Date(clock), keys)
+    const name = download ? download(format, scope === 'selected' ? 'shown' : scope)
+      : statement ? downloadStatement(spec, picked as R[], format, new Date(clock), keys) : downloadLeads(picked as LeadRow[], format, new Date(clock), keys)
     onDone(name, format, counts ? (scope === 'all' ? counts.all : counts.shown) : picked.length)
     onClose()
   }
@@ -87,13 +99,14 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
       {statement ? (
         <>
           <div className={styles.group} data-testid="export-scope">
-            <span className={styles.label}>Which leads</span>
-            <RadioGroup aria-label="Which leads" value={scope} onChange={(v) => setScope(v as 'all' | 'shown')}>
-              <div className={styles.row}><Radio value="all">All leads ({all!.length})</Radio></div>
+            <span className={styles.label}>Which {spec.many}</span>
+            <RadioGroup aria-label={`Which ${spec.many}`} value={scope} onChange={(v) => setScope(v as 'all' | 'shown' | 'selected')}>
+              <div className={styles.row}><Radio value="all">All {spec.many} ({all!.length})</Radio></div>
               <div className={styles.row}><Radio value="shown">What the list shows ({shown!.length})</Radio></div>
+              {selected ? <div className={styles.row}><Radio value="selected">Selected {spec.many} ({selected.length})</Radio></div> : null}
             </RadioGroup>
           </div>
-          <TextField label="Created" mode="select" value={PERIODS.find((p) => p.key === period)!.label} options={PERIODS.map((p) => p.label)}
+          <TextField label={spec.dateLabel} mode="select" value={PERIODS.find((p) => p.key === period)!.label} options={PERIODS.map((p) => p.label)}
                      onChange={(v) => setPeriod(PERIODS.find((p) => p.label === v)?.key ?? 'all')} />
           {period === 'custom' ? (
             <div className={styles.dates}>
@@ -117,7 +130,7 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
       <TextField label="Choose file format" value={format} mode="select" options={EXPORT_FORMATS} onChange={(v) => setFormat(v as ExportFormat)} />
       {statement ? (
         <span className={styles.helper} data-testid="export-summary">
-          {picked.length === 0 ? 'No leads in this range.' : `${picked.length} lead${picked.length === 1 ? '' : 's'} · ${keys ? `${keys.length} columns, as the list shows` : 'every column'} · ${format}`}
+          {picked.length === 0 ? `No ${spec.many} in this range.` : `${picked.length} ${picked.length === 1 ? spec.one : spec.many} · ${keys ? `${keys.length} columns, as the list shows` : 'every column'} · ${format}`}
         </span>
       ) : null}
     </Dialog>

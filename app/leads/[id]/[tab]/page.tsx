@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
-import { readFrom } from '@/lib/nav'
-import { notFound } from 'next/navigation'
-import { fetchLeadDetail } from '@/lib/leads/detail'
+import { readFrom, withQuery } from '@/lib/nav'
+import { notFound, redirect } from 'next/navigation'
+import { directProjectOf } from '@/lib/projects/queries'
+import { carriesLeadTab, projectTabHref } from '@/lib/projects/tabs'
+import { fetchLeadDetail, liveProjectOf } from '@/lib/leads/detail'
 import { DETAIL_TABS, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import { LeadOverview } from '../overview'
 import { fetchLeadTasks } from '@/lib/leads/tasks'
@@ -19,6 +21,10 @@ import { fetchLeadQuestions } from '@/lib/leads/questions'
 import { LeadQuestionnaire } from '@/components/leads/questionnaire/lead-questionnaire'
 import { fetchLeadActivity } from '@/lib/leads/activity'
 import { LeadActivity } from '@/components/leads/activity/lead-activity'
+import { fetchLeadMeetings } from '@/lib/meetings/queries'   // (pending modules S23)
+import { LeadMeetings } from '@/components/meetings/lead-meetings'
+import { refusesPath } from '@/lib/leads/visibility'   // (parity map, PR-022) the Leads pipeline is never Accounting's
+import { AccessGate } from '@/components/shell/access-gate'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,8 +52,9 @@ async function loadFrame<T>(id: string, load: (leadId: string) => Promise<T>) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string; tab: string }> }): Promise<Metadata> {
   const { id, tab } = await params
-  const detail = await fetchLeadDetail(id)
   const label = DETAIL_TABS.find((t) => t.slug === tab)?.label ?? 'Lead'
+  if (await refusesPath(`/leads/${id}/${tab}`)) return { title: label }   // (parity map, PR-022)
+  const detail = await fetchLeadDetail(id)
   return { title: detail ? `${detail.lead.name} · ${label}` : label }
 }
 
@@ -58,6 +65,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function LeadTabPage({ params, searchParams }: { params: Promise<{ id: string; tab: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ id, tab }, sp] = await Promise.all([params, searchParams])
   if (!isTab(tab)) notFound()
+  /* (REG-911, Projects Q-04) A direct project's client is no lead: the tab the project carries on opens there, any other its Overview. */
+  const [direct, live] = await Promise.all([directProjectOf(id), liveProjectOf(id)])
+  if (direct) redirect(withQuery(projectTabHref(direct, tab) ?? `/projects/${direct}`, sp))   // (fix-A, A-08) `open`, `from`, `folder` ride along
+  /* (one-home N-10, the owner 2026-10-08) A Won lead with a live project keeps its sales record here (Quotes · Contracts); the tabs the project
+     carries on are the project's alone — Tasks · Files · Notes & Logs · Questionnaire · Activity open there, the query kept (`open`, `new`,
+     `folder`, `from`). A lead whose project was deleted keeps them. */
+  const onProject = live && carriesLeadTab(tab) ? projectTabHref(live, tab) : null
+  if (onProject) redirect(withQuery(onProject, sp))
+  if (await refusesPath(`/leads/${id}/${tab}`)) return <AccessGate section="Leads" />   // (S44O — C6) and a lead's Quotes, Contracts and Meetings are never Marketing's   // (parity map, PR-022) the project's own tabs (above) keep their Money and Files
   const origin = readFrom(sp.from)   // (REG-465) where the lead was opened from, kept across the tabs
   if (tab === 'tasks') {
     // Tasks (902-36216): the lead frame without the info column; the tab owns its table, panels and dialogs.
@@ -84,6 +100,11 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
     const { detail, data } = await loadFrame(id, fetchLeadNotes)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadNotes leadId={id} data={data} stage={detail.lead.stage} />} />   /* (UX audit 2026-09-30, L2) the stage decides the saved log's next step */
   }
+  if (tab === 'meetings') {
+    // (pending modules S23) Meetings (858:24784 drew the tab): the same wide frame; the tab owns its list, its dialogs and the way into the co-pilot.
+    const { detail, data } = await loadFrame(id, fetchLeadMeetings)
+    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadMeetings leadId={id} lead={data.lead} rows={data.meetings} team={data.team} viewer={data.viewer} mayChange={data.mayChange} now={data.now} studioName={data.studioName} />} />
+  }
   if (tab === 'questionnaire') {
     // Questionnaire (931-46769): the same wide frame; the tab owns its toolbar, cards, summary and the Ask the client dialog.
     const { detail, data } = await loadFrame(id, fetchLeadQuestions)
@@ -94,7 +115,7 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
     const { detail, data } = await loadFrame(id, fetchLeadActivity)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadActivity data={data} />} />
   }
-  // Meetings (and any future tab): the wide frame too — the info column is the Overview's alone (REG-247, user 2026-09-01).
+  // Any future tab: the wide frame too — the info column is the Overview's alone (REG-247, user 2026-09-01).
   const detail = await fetchLeadDetail(id)
   if (!detail) notFound()
   return <LeadOverview detail={detail} tab={tab} origin={origin} wide />

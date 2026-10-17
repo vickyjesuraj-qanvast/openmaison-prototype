@@ -3,8 +3,9 @@
  * company details every template prints. Company › Templates › Brand kit edits the kit and Company › Profile the details (REG-554); a template carries overrides (`design.brand`) with
  * "Reset to brand". Client-safe; the row is read by lib/templates/queries.ts and seeded by scripts/repair-demo-data.ts R31.
  */
-import { COLOR_KEYS, DEFAULT_BRAND, EMPTY_ENTITY, FONT_ROLES, SOCIAL_KEYS, type BrandKit, type ColorKey, type FontRole, type FontSpec, type IssuingEntity, type SocialLinks, type StudioDetails } from './model'
+import { COLOR_KEYS, DEFAULT_BRAND, EMPTY_ENTITY, FONT_ROLES, SOCIAL_KEYS, parseEntityExtras, type BrandKit, type ColorKey, type FontRole, type FontSpec, type IssuingEntity, type SocialLinks, type StudioDetails } from './model'
 import { DEMO_STUDIO } from './data'
+import { keptReviewLink } from '@/lib/company/review-link'   // (pending modules S14)
 
 export const BRAND_KEY = 'brand'
 export type BrandSetting = { kit: BrandKit; details: StudioDetails }
@@ -38,7 +39,8 @@ export function parseBrandSetting(v: unknown): BrandSetting {
   const ent = (v: unknown, fallbackName: string, i: number): IssuingEntity => { const e = (v ?? {}) as Partial<Record<keyof IssuingEntity, unknown>>; const nm = str(e.name, fallbackName) || fallbackName; return {
     id: i === 0 ? 'studio' : str(e.id, '').slice(0, 64) || `entity-${slug(nm)}`, ...(i > 0 && e.retired === true ? { retired: true } : {}),   // (REG-647, settings parity Q-10)
     name: nm, bankName: str(e.bankName, ''), accountName: str(e.accountName, ''), accountNo: str(e.accountNo, ''), payNow: str(e.payNow, ''), payNowQr: strOrNull(e.payNowQr, null), gstRegistered: e.gstRegistered !== false,
-    swift: str(e.swift, ''), logo: strOrNull(e.logo, null), address: str(e.address, ''), uen: str(e.uen, ''), gstReg: str(e.gstReg, '') } }   // (REG-618) SWIFT and the entity's own letterhead
+    swift: str(e.swift, ''), logo: strOrNull(e.logo, null), address: str(e.address, ''), uen: str(e.uen, ''), gstReg: str(e.gstReg, ''),   // (REG-618) SWIFT and the entity's own letterhead
+    ...parseEntityExtras(e as Record<string, unknown>) } }   // (parity map, FB-103) More details: contacts, tagline, accent, footer, branch code
   const rawSocials = (d.socials ?? {}) as Record<string, unknown>
   const socials: SocialLinks = {}
   for (const k of SOCIAL_KEYS) { const v = rawSocials[k]; if (typeof v === 'string' && v.trim()) socials[k] = v.trim() }
@@ -55,6 +57,7 @@ export function parseBrandSetting(v: unknown): BrandSetting {
       name, address: str(d.address, DEMO_STUDIO.address), phone: str(d.phone, DEMO_STUDIO.phone), fax: str(d.fax, DEMO_STUDIO.fax),
       email: str(d.email, DEMO_STUDIO.email), website: str(d.website, DEMO_STUDIO.website), uen: str(d.uen, DEMO_STUDIO.uen), gstReg: str(d.gstReg, DEMO_STUDIO.gstReg), licence: str(d.licence, DEMO_STUDIO.licence),
       tagline: str(d.tagline, ''), social: str(d.social, ''), socials, entities,
+      ...(keptReviewLink(d.reviewLink) ? { reviewLink: keptReviewLink(d.reviewLink) } : {}),   // (pending modules S14) a web address, or none
     },
   }
 }

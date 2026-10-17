@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -30,8 +30,9 @@ export type FilesToolbarProps = {
   onFolderMenu: (action: 'move' | 'rename' | 'delete') => void
   query: string
   onQuery: (q: string) => void
-  /** New File menu (931:40128): From Local Files · From Company Files · From Google Drive. */
-  onNew: (kind: 'local' | 'company' | 'drive') => void
+  /** New File menu (931:40128): From Local Files · From Google Drive. (pending modules S05 — the card's "'Company Files' names a home that
+      does not exist") From Company Files is gone: no studio-wide files library exists to pick from. Drive stays the developers' (OAuth). */
+  onNew: (kind: 'local' | 'drive') => void
   /** filter_list (931:40164) — (UX audit 2026-09-30, T9) opens Files › Filters (Type · Owner · Updated); no mock, the Tasks panes. */
   onFilter: () => void
   /** Active filter groups — the badge on the filter button (the tab toolbars' pattern). */
@@ -42,6 +43,11 @@ export type FilesToolbarProps = {
   onView: (view: FilesView) => void
   /** Header kebab (931:40139, 200×46): Deleted Files. */
   onMenu: (action: 'deleted') => void
+  /** (simplify S-03 · Q-02) On a project: the Files & notes group's view switch in the "All Files" title's place — inside a folder the crumbs
+      stand there as before (they lead back to All Files). */
+  views?: ReactNode
+  /** (pending modules S06) the viewer reads only (Accounting): search, Filters, the columns and the view — nothing that adds or changes a file */
+  readOnly?: boolean
 }
 
 /**
@@ -54,7 +60,7 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, filterCount = 0, onColumns, view, onView, onMenu, bare = false }: FilesToolbarProps) {
+export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, filterCount = 0, onColumns, view, onView, onMenu, bare = false, views, readOnly = false }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
   const folder = trail[trail.length - 1] ?? null
   const folderAnchor = useRef<HTMLElement | null>(null)
@@ -70,20 +76,20 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
         <>
           <div className={styles.crumbRow}>
             <FolderCrumbs root="All Files" trail={trail} onGo={onGo} menuOpen={menu === 'folder'}
-                          onMenu={(el) => { folderAnchor.current = el; setMenu((m) => (m === 'folder' ? null : 'folder')) }} />
+                          onMenu={readOnly ? undefined : (el) => { folderAnchor.current = el; setMenu((m) => (m === 'folder' ? null : 'folder')) }} />
           </div>
           <PortalMenu open={menu === 'folder'} anchor={folderAnchor} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder.name}>
             {/* Folder menu 200×118 (frame 91 @339,176) — verbatim order. */}
-            <DropdownItem onSelect={pick(() => onFolderMenu('move'))}>Move</DropdownItem>
-            <DropdownItem onSelect={pick(() => onFolderMenu('rename'))}>Rename</DropdownItem>
-            <DropdownItem tone="danger" onSelect={pick(() => onFolderMenu('delete'))}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
+            {/* (fix-A, A-19) a project's own folder keeps its name and place — the rows say why */}
+            <DropdownItem onSelect={pick(() => onFolderMenu('move'))} disabled={!!folder.system} title={folder.system ?? undefined}>Move</DropdownItem>
+            <DropdownItem onSelect={pick(() => onFolderMenu('rename'))} disabled={!!folder.system} title={folder.system ?? undefined}>Rename</DropdownItem>
+            <DropdownItem tone="danger" onSelect={pick(() => onFolderMenu('delete'))} disabled={!!folder.system} title={folder.system ?? undefined}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
           </PortalMenu>
         </>
-      ) : (
-        <h2 className={styles.title}>All Files</h2>
-      )}
+      ) : (views ?? <h2 className={styles.title}>All Files</h2>)}
       <div className={styles.actions}>
         {bare ? null : (<>
+        {readOnly ? null : <>
         <Tooltip label="New Folder">
           <IconButton icon="create_new_folder" label="New Folder" className={styles.touchBtn} onClick={onNewFolder} />
         </Tooltip>
@@ -107,12 +113,12 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             </Button>
           )}
           <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New File">
-            {/* New File menu 931:40128 (200×118) — verbatim order. */}
+            {/* New File menu 931:40128 (200×118) — verbatim order, less From Company Files (pending modules S05: no such library exists). */}
             <DropdownItem onSelect={pick(() => onNew('local'))}>From Local Files</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('company'))}>From Company Files</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('drive'))}>From Google Drive</DropdownItem>
           </Dropdown>
         </span>
+        </>}
         {/* (REG-275) The box matches the file name, its owner, its type label and what it is attached to
             (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain name. */}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />
@@ -140,7 +146,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
           />
         </span>
         </>)}
-        <span className={styles.menuWrap}>
+        {readOnly ? null : <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton
               icon="more_vert" label="More options" className={styles.touchBtn}
@@ -152,7 +158,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             {/* Header kebab 931:40139 (200×46): the single item. */}
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Files</DropdownItem>
           </Dropdown>
-        </span>
+        </span>}
       </div>
     </div>
   )

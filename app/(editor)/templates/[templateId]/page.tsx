@@ -1,14 +1,19 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { fetchTemplateEditor, fetchQuoteDocData, fetchEditorOrigin } from '@/lib/templates/queries'
+import { fetchTemplateEditor, fetchQuoteDocDataForViewer, fetchEditorOrigin } from '@/lib/templates/queries'
 import { readFrom } from '@/lib/nav'
 import type { EditorOrigin } from '@/lib/templates/origin'
 import { TemplateEditor } from '@/components/templates/editor/template-editor'
+import { TemplateLocked } from '@/components/templates/editor/template-locked'
+import { planAllowsNow } from '@/lib/credits/plan-gate'
+import { AccessGate } from '@/components/shell/access-gate'
+import { refusesPath } from '@/lib/leads/visibility'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ templateId: string }> }): Promise<Metadata> {
   const { templateId } = await params
+  if (await refusesPath(`/templates/${templateId}`)) return { title: 'Template' }   // (S44Z) no record's name in a tab that is not theirs
   const data = await fetchTemplateEditor(templateId)
   return { title: data ? `${data.template.name} · Template` : 'Template' }
 }
@@ -16,14 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ templateI
 /** The quote template editor (REG-486): a full-page surface without the rail, like the quote editor beside it. */
 export default async function TemplateEditorPage({ params, searchParams }: { params: Promise<{ templateId: string }>; searchParams: Promise<{ preview?: string; from?: string; quote?: string; lead?: string; tab?: string }> }) {
   const { templateId } = await params
+  if (await refusesPath(`/templates/${templateId}`)) return <AccessGate section="Templates" />   // (S44Z — S44O's note) the role's own list, before a record is read: Marketing's leads, Accounting's books
   const sp = await searchParams
-  const data = await fetchTemplateEditor(templateId)
+  const [data, open] = await Promise.all([fetchTemplateEditor(templateId), planAllowsNow('template_editor')])
   if (!data) notFound()
+  /* (pending modules S19) the template editor is Pro: on Free the template is kept and shown locked, never opened to edit */
+  if (!open) return <TemplateLocked name={data.template.name} from={readFrom(sp.from)} />
   /* (REG-495) Opened from a quote or a lead: the origin rides along so Back, Preview with and Publish know it. */
   let origin: EditorOrigin | null = null
   const from = readFrom(sp.from)
   if (typeof sp.quote === 'string') {
-    const [q, docData] = await Promise.all([fetchEditorOrigin({ quoteId: sp.quote }), fetchQuoteDocData(sp.quote)])
+    const [q, docData] = await Promise.all([fetchEditorOrigin({ quoteId: sp.quote }), fetchQuoteDocDataForViewer(sp.quote)])   // (pending modules S41b-1) Who sees leads, and the lines as this member may see them
     if (q.quote && docData) origin = { from, quote: { ...q.quote, data: docData } }
   } else if (typeof sp.lead === 'string') {
     const l = await fetchEditorOrigin({ leadId: sp.lead })

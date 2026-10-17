@@ -1,0 +1,22 @@
+/* (pending modules S05) Settings › Lead management › Lead stages — the card table (components/om/card-table.module.css via settings.module.css
+   .eventTable) with its own tracks: the stage · what it keeps on the lead (and the step's switch) · how many leads sit in it now. */
+.table .row { grid-template-columns: minmax(120px, 0.6fr) minmax(240px, 2fr) 104px; }
+.stage { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* the stage menu's own group marks (components/leads/menus.module.css .labelDot): green for the journey, yellow for a parked lead */
+.dot { width: 8px; height: 8px; border-radius: var(--om-radius-full); flex-shrink: 0; background: var(--om-color-tertiary-green-default); }
+.dot[data-tone='parked'] { background: var(--om-color-tertiary-yellow-default); }
+.keeps { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-block: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; }
+/* the switch sits on the sentence's first line when it wraps (two classes: the event table's .switchRow centres) */
+.keeps .ask { align-items: flex-start; }
+.ask > span { min-width: 0; }
+.countHead { text-align: right; }
+.count { display: flex; justify-content: flex-end; }
+.countLink { composes: link from '../../components/om/text-link.module.css'; white-space: nowrap; }   /* the house text link (REG-729) */
+.none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.movement { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+
+@media (max-width: 767px) {
+  /* the event table's phone stack (settings.module.css hides the head): one column, the count under what the stage keeps */
+  .table .row { grid-template-columns: minmax(0, 1fr); }
+  .count { justify-content: flex-start; }
+}

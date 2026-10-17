@@ -1,0 +1,2 @@
+/* (gaps build J) The portal's layout page: the way back to Designs above the viewer. */
+.back { display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 36px; margin-bottom: var(--om-spacing-2); }

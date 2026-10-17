@@ -20,7 +20,7 @@
 .hCell { composes: hCell from '../../om/table-core.module.css'; }   /* "Header" H g4 p16/24/16/16; relative for the column-resize handle (REG-427) */
 .hCell.colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }   /* "Header / Selection" H g8 p16/0/16/16 */
 .hLabel { composes: hLabel from '../../om/table-core.module.css'; }   /* "TITLE" 12/Medium #666666 — caps as the mock (931:40167) and every other listing head (REG-430) */
-/* Sort is inert (coming soon) — the head keeps the listing's sort-button look. */
+/* (pending modules S05) The heads that keep a glyph sort — the listing's sort-button look. */
 .hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
@@ -32,6 +32,8 @@
 .colType { grid-column: 5; }
 .colSize { grid-column: 6; }
 .colAttached { grid-column: 7; }
+/* (Projects r4a) Client: "Shown" with the eye when the client's portal lists the file */
+.shown { display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-primary-default); }
 
 /* ---- Rows 1244×60 (931:40181 / 931:40194) ---- */
 .row {
@@ -50,6 +52,7 @@
    icon — the mock drew 48×36 r2 with a 24/Regular folder; the owner keeps every table's thumbnail square. */
 .thumb { composes: thumb from '../../om/thumb.module.css'; }
 .thumbImg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.thumbImg[data-page] { object-position: top; }   /* (gaps build E, item 1) a PDF's first page from its top, as the grid's tile */
 .thumbIcon { color: var(--om-color-on-surface-secondary); }
 /* Name "Living room" 14/Medium #1a1a1a (subtitle-m) — a bare button that opens the folder / file. */
 .name {

@@ -1,19 +1,22 @@
 'use client'
 
+import { titleCaseName } from '@/lib/format'
 import { useRememberShape } from '@/lib/ghost-shape'
 import { leadTabShape } from '@/components/leads/detail/tab-ghost-for'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { readFrom, withFrom } from '@/lib/nav'
 import { openLeadDesign } from '@/app/visualizer/actions'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
-import { useRun } from '@/components/leads/tasks/use-run'
+import { couldnt, useRun } from '@/components/leads/tasks/use-run'
+import { setFilesShown } from '@/app/portal/studio-actions'
+import { shownLine } from '@/lib/portal/model'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { EMPTY_FILE_FILTERS, activeFileFilterCount, applyFileFilters, childrenOf, descendantIds, fileTypesIn, folderPath, groupByDay, isFolder, searchFiles, type FileFilters, type FileRow } from '@/lib/leads/file-model'
+import { EMPTY_FILE_FILTERS, activeFileFilterCount, applyFileFilters, childrenOf, descendantIds, downloadName, fileTypesIn, folderPath, nextFileHeadSort, paperRule, sortFilesByHead, type FileHeadSort, groupByDay, isFolder, searchFiles, type FileFilters, type FileRow } from '@/lib/leads/file-model'
+import { usePdfPictures } from './use-pdf-pictures'
 import type { LeadFilesData } from '@/lib/leads/files'
 import { downloadBlob } from '@/lib/leads/export'
-import { uploadPicked } from './upload-picture'
 import {
   createFolder, deleteFilesForever, duplicateFiles, emptyFileTrash, moveFiles, renameFile, restoreFiles, trashFiles,
 } from '@/app/leads/files-actions'
@@ -31,8 +34,10 @@ import { FolderEmpty } from '@/components/om/folders/folder-empty'
 import { Button } from '@/components/ds'
 import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
-import { UploadToast, type UploadRow } from './upload-toast'
+import { useFileUpload } from './use-file-upload'   // (pending modules S05) the lead's one upload
 import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
+import { PhotoDialog } from '@/components/planner/photo/photo-dialog'   // (pending modules S28)
+import { looksLikeFloorPlan } from '@/lib/planner/photo'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -42,7 +47,7 @@ import styles from './lead-files.module.css'
 /** Folder card kebab (931:40130): Open · Move · Rename · Delete. */
 type FolderMenuAction = 'open' | 'move' | 'rename' | 'delete'
 /** File tile kebab (931:40131): Open · Move · Duplicate · Download · Rename · Delete. */
-type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize' | 'copyLink' | 'whatsapp'
+type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize' | 'copyLink' | 'whatsapp' | 'shown' | 'picture3d'   // (pending modules S28) a floor plan's Make a 3D picture
 
 type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
 /**
@@ -51,12 +56,6 @@ type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
  * (the quotes twin guards the same beat with `count={deleting?.length ?? 1}`).
  */
 type Shown<T> = { payload: T; open: boolean }
-/** (T2) A toast row with the file behind it, so Retry sends the same file to the same folder. */
-type Upload = UploadRow & { file: File; parentId: string | null }
-
-/** (T2) The least a row reads "Uploading…" — a local upload lands in a blink, and a row that flashes past reads as nothing happening. */
-const UPLOAD_MS = 400
-
 /**
  * Lead Details › Files (section 931-39056: 87 empty 931:40314 · 90 list 931:40141 · 85 grid 931:39057 · 89 menus 931:40007 ·
  * 91 folder open 931:39703 · 96/97 multi-select + bulk bar 931:39447 / 931:39576 · 98/99/103/105 dialogs · 100–107 Move ·
@@ -67,9 +66,12 @@ const UPLOAD_MS = 400
  * attach-files modal's toast timer. Actions run through the tabs' shared `useRun` (files-actions revalidates this route).
  * Plan: design-source/context/lead-files/00-build-plan.md · specs 01–04.
  */
-export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesData }) {
+/** `base` (REG-913): whose page the tab sits on — `/projects/<id>` when a project carries the lead's files on; the lead's own page by default. */
+export function LeadFiles({ leadId, data, base, views }: { leadId: string; data: LeadFilesData; base?: string; /** (simplify S-03) on a project: the Files & notes view switch in the title's place */ views?: ReactNode }) {
   const { files, trashed, renders, team, lead, now } = data
+  const readOnly = data.readOnly   // (pending modules S06) Accounting reads a project's files — open and download; nothing to add or change
   useRememberShape(leadTabShape(leadId, 'files'), files.length === 0)   // (UX audit build) the shape this list opened on — its loading ghost draws the same one next time
+  usePdfPictures(files)   // (gaps build E, item 1) a PDF kept before its first page was drawn gets it now, once
   /* (UX audit 2026-09-30, T9) the client's read-only link: Copy link · Send on WhatsApp, signed by whoever sends it */
   const share = useFileShare({ lead, sender: (team.find((m) => m.isYou) ?? team[0])?.name ?? '' })
   const router = useRouter()
@@ -83,7 +85,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   // An id that no longer resolves (trashed, deleted, not a folder) falls back to the root — no mock for a dead link.
   const folder = useMemo(() => (folderId ? files.find((f) => f.id === folderId && isFolder(f)) ?? null : null), [files, folderId])
   const currentId = folder?.id ?? null
-  const rootHref = `/leads/${leadId}/files`
+  const rootHref = `${base ?? `/leads/${leadId}`}/files`
   /* (REG-465) The tab's own origin (`?from=`, a Qanvast-opened lead) rides on every hop inside it, and a file opens with this
      very URL as its `from`, so the viewer's Back lands in the same folder with the same crumb. */
   const from = readFrom(params.get('from'))
@@ -92,13 +94,19 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const openFolder = (f: FileRow) => { setQuery(''); router.push(withFrom(`${rootHref}?folder=${f.id}`, from)) }
   /* (REG-664) A crumb or Back: Back goes up ONE level (it jumped to All Files), and every folder on the way is a link. */
   const goTo = (id: string | null) => { setQuery(''); router.push(withFrom(id ? `${rootHref}?folder=${id}` : rootHref, from)) }
-  const openFile = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}`, here))
+  /* (S42 audit C-03) a money paper's entry opens its paper — the page that IS the document (the viewer would show a glyph with nothing behind it) */
+  const openFile = (f: FileRow) => router.push(withFrom(f.paper ?? `${rootHref}/${f.id}`, here))
   /* The comment chip (grid tile + list row) opens the viewer with its comments panel already open —
      the Tasks title-cell chip's interaction (REG-253, user 2026-09-01). */
   const openComments = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}?panel=comments`, here))
   /* (REG-675, AI Visualizer Q-31) A photo of the room opens in the lead's design as a room of its own (the editor adds it once).
      (F095) A render filed from the Visualizer opens its own version instead — never a new room made of the render. */
-  const labelFor = (f: FileRow) => visualizeLabel(f, renders)
+  const labelFor = (f: FileRow) => (data.tools ? visualizeLabel(f, renders) : null)   // (S45C) the studio's tools only for whoever opens them
+  /* (pending modules S28 — card studio:floorplan-isometric-ai) a floor plan — a picture or a PDF named so, or kept in a Floor plans folder —
+     offers Make a 3D picture: the 3D Space Planner's photo dialog for this lead (its project's, once won) with the file as it is in Files */
+  const floorPlanOf = (f: FileRow) => data.tools && !isFolder(f) && (f.kind === 'image' || f.kind === 'pdf') && looksLikeFloorPlan(f.name, folderPath(files, f.parentId ?? null).map((p) => p.name))
+  const [picture3d, setPicture3d] = useState<FileRow | null>(null)
+  const projectId = base?.startsWith('/projects/') ? base.slice('/projects/'.length).split('/')[0] ?? null : null
   const openInVisualizer = async (f: FileRow) => {
     const o = liveOrigin(renders[f.id])   // a render whose design was deleted forever opens as a plain picture
     if (o) { router.push(withFrom(renderHref(o), here)); return }
@@ -109,6 +117,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
 
   /* ── list state ── */
   const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [headSort, setHeadSort] = useState<FileHeadSort>(null)   /* (pending modules S05) the list's heads sort */
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   /* (UX audit 2026-09-30, T9) Files › Filters — Type · Owner · Updated, live (REG-464). Like a search they look past the open folder: in it
@@ -155,75 +164,49 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
 
   /* ── upload: the picked file's own name persists (REG-149: only the bytes behind it stay the mock's JPEG) ──
      (UX audit 2026-09-30, T2) a pick or a drop takes several files: one toast row each, uploaded one after another into the open folder,
-     one snackbar once they have all landed. */
+     one snackbar once they have all landed. (pending modules S05) The run is the lead's one upload (use-file-upload.tsx), shared with the
+     Overview's FILES card. */
   const picker = useRef<HTMLInputElement | null>(null)
-  const [toast, setToast] = useState<Upload[] | null>(null)
-  const [toastCollapsed, setToastCollapsed] = useState(false)
-  /* (F113) The toast shows each picked picture itself (object URLs, released when the toast goes). */
-  const thumbUrls = useRef<string[]>([])
-  const releaseThumbs = () => { for (const u of thumbUrls.current) URL.revokeObjectURL(u); thumbUrls.current = [] }
-  useEffect(() => () => { for (const u of thumbUrls.current) URL.revokeObjectURL(u) }, [])
+  const { upload, toast: uploadToast } = useFileUpload(leadId)
 
   const nameOf = (id: string) => files.find((f) => f.id === id)?.name ?? trashed.find((f) => f.id === id)?.name ?? ''
   const rowsOf = (ids: string[]) => ids.map((id) => files.find((f) => f.id === id)).filter((f): f is FileRow => !!f)
 
   const pickFiles = () => picker.current?.click()
-  const setRow = (key: string, state: Upload['state']) => setToast((t) => (t ? t.map((r) => (r.key === key ? { ...r, state } : r)) : t))
-  /** One file to the server — the shared upload (upload-picture.ts `uploadPicked`); true when it landed. */
-  const send = async (row: Upload): Promise<boolean> => {
-    setRow(row.key, 'uploading')
-    const [r] = await Promise.all([uploadPicked(leadId, row.file, row.parentId).catch(() => null), new Promise((ok) => setTimeout(ok, UPLOAD_MS))])
-    const ok = !!r && !('error' in r)
-    setRow(row.key, ok ? 'done' : 'failed')
-    return ok
-  }
-  const onPicked = (list: File[]) => {
-    if (!list.length) return
-    const at = Date.now()
-    const rows: Upload[] = list.map((file, i) => {
-      let thumb: string | null = null
-      if (file.type.startsWith('image/')) { try { thumb = URL.createObjectURL(file); thumbUrls.current.push(thumb) } catch { thumb = null } }
-      return { key: `${at}-${i}`, name: file.name, state: 'uploading', thumb, file, parentId: currentId }
-    })
-    setToast((t) => [...rows, ...(t ?? []).filter((r) => r.state === 'uploading')])
-    setToastCollapsed(false)
-    void (async () => {
-      let landed = 0
-      for (const row of rows) if (await send(row)) landed++
-      const failed = rows.length - landed
-      /* one line for the whole pick — the rows say which; a failure names what failed */
-      if (!failed) snackbar({ message: landed === 1 ? 'File uploaded' : `${landed} files uploaded` })
-      else fail(rows.length === 1 ? `upload ${rows[0]!.name}` : `upload ${failed} of ${rows.length} files`)
-    })()
-  }
-  const retryUpload = (key: string) => {
-    const row = toast?.find((r) => r.key === key)
-    if (row) void send(row).then((ok) => { if (ok) snackbar({ message: 'File uploaded' }); else fail(`upload ${row.name}`) })
-  }
+  const onPicked = (list: File[]) => { if (!readOnly) upload(list, currentId) }
   /* (T2) Files dragged onto the tab: the grid / list shows where they will land and a drop uploads them all. Only a drag that carries files
      counts — a tile or a column head being dragged inside the page does not. */
   const [dropping, setDropping] = useState(false)
   const carriesFiles = (e: React.DragEvent) => [...e.dataTransfer.types].includes('Files')
   const dropHandlers = {
-    onDragOver: (e: React.DragEvent) => { if (!carriesFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!dropping) setDropping(true) },
+    onDragOver: (e: React.DragEvent) => { if (readOnly || !carriesFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!dropping) setDropping(true) },
     onDragLeave: (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropping(false) },
-    onDrop: (e: React.DragEvent) => { if (!carriesFiles(e)) return; e.preventDefault(); setDropping(false); onPicked([...e.dataTransfer.files]) },
+    onDrop: (e: React.DragEvent) => { if (readOnly || !carriesFiles(e)) return; e.preventDefault(); setDropping(false); onPicked([...e.dataTransfer.files]) },
   }
   // Parity with the other tabs' window events (om:tasks:add / om:quotes:new): a future quick link raises `om:files:upload` here.
-  useCreateIntent({ event: CREATE_EVENTS.files, onIntent: pickFiles })
+  useCreateIntent({ event: CREATE_EVENTS.files, onIntent: () => { if (!readOnly) pickFiles() } })
 
   /* ── actions ── */
+  /* (S42 audit C-03, call C·4) a money paper among the picked: the rule says why at the press, before a dialog opens (the server holds it too) */
+  const unlessPaper = (what: string, ids: string[], go: () => void) => {
+    const p = rowsOf(ids).find((f) => f.paper)
+    if (p?.paper) { snackbar({ message: couldnt(what, paperRule(p.name, p.paper)) }); return }
+    go()
+  }
   const duplicate = (ids: string[]) => {
     const rows = rowsOf(ids)
     const done = rows.length === 1 ? (rows[0] && isFolder(rows[0]) ? 'Folder duplicated' : 'File duplicated') : `${rows.length} items duplicated`
     clearSelection()
     void run('duplicate', () => duplicateFiles(ids), done)
   }
+  /* (gaps build E, item 1) Download gives the file as it was uploaded, under its own name — any kind (/files/raw/<id>); a demo stand-in picture
+     gives the picture it shows. (pending modules S07 — was Coming soon, REG-1229) A money paper's entry — an invoice, a receipt, a credit note, a
+     selection receipt — is its page: Download opens it printing (the house's Download PDF, `?print=1`) and Back returns here. */
   const download = (f: FileRow) => {
-    // Image files download their thumbnail (the mock's JPEG stands in for the bytes, REG-149); PDFs / folders have no file behind them.
-    if (f.kind !== 'image' || !f.thumb) { comingSoon(); return }
-    const name = /\.jpe?g$/i.test(f.name) ? f.name : `${f.name}.jpg`
-    void fetch(f.thumb).then((r) => r.blob()).then((blob) => downloadBlob(blob, name)).catch(() => fail('download the file'))
+    if (f.paper) { router.push(withFrom(`${f.paper}?print=1`, here)); return }
+    if (isFolder(f) || (!f.bytes && !(f.kind === 'image' && f.thumb))) { comingSoon(); return }
+    void fetch(`/files/raw/${f.id}?download=1`).then((r) => { if (!r.ok) throw new Error(); return r.blob() })
+      .then((blob) => downloadBlob(blob, downloadName(f.name, blob.type || f.mime))).catch(() => fail('download the file'))
   }
   const confirmTrash = () => {
     const ids = trash?.open ? trash.payload : null; closeTrash(); if (!ids?.length) return
@@ -245,11 +228,26 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
     else if (action === 'visualize') void openInVisualizer(f)
     else if (action === 'copyLink') share.copyLink(f)   // (T9)
     else if (action === 'whatsapp') share.sendWhatsApp(f)
+    else if (action === 'shown') toggleShown(f)
+    else if (action === 'picture3d') setPicture3d(f)   // (pending modules S28)
     else download(f)
+  }
+  /* (Projects r4a) Show to client / Stop showing: the portal's Files lists only files marked so — Undo puts it back */
+  const toggleShown = (f: FileRow) => {
+    const on = !f.shownToClientAt
+    /* (pending modules S02) a render lands on the client's Designs too — the sentence says so once the server has answered */
+    const box: { designs: number } = { designs: 0 }
+    void run(on ? 'show the file to the client' : 'stop showing the file', async () => { const r = await setFilesShown(leadId, [f.id], on); if ('error' in r) return r; box.designs = r.designs })
+      .then((ok) => { if (ok) snackbar({ message: shownLine(f.name, on, box.designs), actionLabel: 'Undo', onAction: () => { void run('undo that', () => setFilesShown(leadId, [f.id], !on)) } }) })
   }
 
   const moveRows = move ? rowsOf(move.payload) : []
   const trashNames = trash ? trash.payload.map(nameOf).filter(Boolean) : []
+  /* (fix-C, C-25) a file on a published update: the client sees it there — the question says so before it goes */
+  const onUpd = trash ? trash.payload.filter((id) => data.onUpdates?.[id]) : []
+  const clientFirst = titleCaseName(lead.name).split(/\s+/)[0] || 'The client'
+  const trashSeen = !onUpd.length ? null : onUpd.length === 1 && trash?.payload.length === 1 ? `It is on the update “${data.onUpdates[onUpd[0]!]}” — ${clientFirst} sees it there, and it leaves that update too.`
+    : `${onUpd.length} of them are on published updates — ${clientFirst} sees them there, and they leave those updates too.`
   // Where the moved items sit: their own parent, not the browsed folder — a search hit can come from any folder (REG-183).
   // A selection spanning several folders (search only) has no single location → the root, so Move is enabled anywhere else.
   const moveParentId = moveRows[0] && moveRows.every((r) => (r.parentId ?? null) === (moveRows[0]?.parentId ?? null)) ? moveRows[0].parentId ?? null : null
@@ -258,39 +256,40 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   return (
     <div className={styles.tab} {...dropHandlers}>
       {dropping ? <div className={styles.drop} aria-hidden><span className={styles.dropLine}>{`Drop to upload to ${folder?.name ?? 'All Files'}`}</span></div> : null}
-      <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)} bare={files.length === 0}   /* (REG-735) the empty card carries Upload and Create Folder */
+      <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)} bare={files.length === 0} views={views}   /* (REG-735) the empty card carries Upload and Create Folder */
         trail={trail} onGo={goTo} onNewFolder={() => openName({ mode: 'create' })}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
         query={query} onQuery={setQuery}
-        onNew={(kind) => (kind === 'local' ? pickFiles() : comingSoon())}   // From Company Files · From Google Drive — no mock beyond the menu item
+        onNew={(kind) => (kind === 'local' ? pickFiles() : comingSoon())}   // From Google Drive — the developers' (OAuth); no mock beyond the menu item
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}   /* (T9) Type · Owner · Updated */
         view={view} onView={setView}
-        onMenu={() => setDeletedOpen(true)}
+        onMenu={() => setDeletedOpen(true)} readOnly={readOnly}
       />
       {files.length === 0 ? (
-        <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} />
+        <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} readOnly={readOnly} />
       ) : searching && visible.length === 0 ? (
         /* (T9) a search or a filter that finds nothing — the tabs' shared No-results card, with the way back */
         <TabSearchEmpty noun="files" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_FILE_FILTERS) }} />
       ) : folder && !searching && visible.length === 0 ? (
         /* (REG-664) An empty folder says so (it showed nothing at all). */
+        readOnly ? <FolderEmpty help="The project’s team adds its files here." /> : (
         <FolderEmpty help="Upload files here with New File, or move files in from their ⋯ menu.">
           <Button variant="primary" appearance="outlined" onPress={pickFiles}>Upload Files</Button>
-        </FolderEmpty>
+        </FolderEmpty>)
       ) : view === 'grid' ? (
         // An open folder with nothing inside shows the grid with no groups (no empty-folder mock).
         <FilesGrid
           folders={folders} groups={groups}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor}
+          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf}
         />
       ) : (
         <FilesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
-          rows={visible}
+          rows={sortFilesByHead(visible, headSort)} sort={headSort} onSort={(k) => setHeadSort((h) => nextFileHeadSort(h, k))}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onRowMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor}
+          onRowMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf}
         />
       )}
       {/* Hidden picker behind New File › From Local Files and the empty state's Upload Files (REG-149: any file works). */}
@@ -301,12 +300,14 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
       <DetailBulkBar
         count={selected.size}
         actions={[
-          { label: 'Move to Folder', onClick: () => openMove(selectedIds) },
-          { label: 'Duplicate', onClick: () => duplicate(selectedIds) },
-          { label: 'Delete', tone: 'danger', onClick: () => openTrash(selectedIds) },
+          { label: 'Move to Folder', onClick: () => unlessPaper('move them', selectedIds, () => openMove(selectedIds)) },
+          { label: 'Duplicate', onClick: () => unlessPaper('duplicate them', selectedIds, () => duplicate(selectedIds)) },
+          { label: 'Delete', tone: 'danger', onClick: () => unlessPaper('move them to the Trash Folder', selectedIds, () => openTrash(selectedIds)) },
         ]}
         onClear={clearSelection}
       />
+      <PhotoDialog open={!!picture3d} onClose={() => setPicture3d(null)} target={projectId ? { kind: 'project', id: projectId } : { kind: 'lead', id: leadId }}
+                   from={picture3d ? { kind: 'file', fileId: picture3d.id, name: picture3d.name } : { kind: 'upload' }} back={here} />   {/* (pending modules S28) */}
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <NameDialog
         open={!!nameDialog?.open}
@@ -326,7 +327,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         onClose={closeName}
       />
       <TrashDialog
-        open={!!trash?.open} names={trashNames}
+        open={!!trash?.open} names={trashNames} seen={trashSeen}
         onNo={closeTrash}
         onYes={confirmTrash}
       />
@@ -342,6 +343,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         }}
         onCreateFolder={async (name: string, parentId: string | null) => {
           const id = await createFolder(leadId, name, parentId)
+          if (typeof id !== 'string') throw new Error(id.error)   // (gaps build E, item 2) the dialog says the rule
           snackbar({ message: 'Folder created' })
           return id
         }}
@@ -355,12 +357,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         onDeleteForever={(ids: string[]) => run('delete', () => deleteFilesForever(ids), 'Deleted forever')}
         onEmptyTrash={() => run('empty the trash', () => emptyFileTrash(leadId), 'Trash emptied')}
       />
-      <UploadToast
-        rows={toast} collapsed={toastCollapsed}
-        onToggle={() => setToastCollapsed((c) => !c)}
-        onClose={() => { setToast(null); releaseThumbs() }}
-        onRetry={retryUpload}
-      />
+      {uploadToast}
       <FilesFiltersModal open={filtersOpen} team={team} types={fileTypesIn(files)} value={filters} now={now}
         onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
         onClose={() => setFiltersOpen(false)} />

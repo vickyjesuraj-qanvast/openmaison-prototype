@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useSyncExternalStore, type R
 import { AnimatePresence, motion } from 'motion/react'
 import { duration, ease } from '@/lib/motion'
 import { Keys } from './keys'
+import { useSnackbar } from './snackbar'
 import { keysOf } from '@/lib/keys/registry'
 import { ariaKeys } from '@/lib/keys/spec'
 import styles from './tooltip.module.css'
@@ -39,6 +40,15 @@ function commit(next: TipState) {
   if (state && !next) lastHiddenAt = Date.now()
   state = next
   listeners.forEach((l) => l())
+}
+/** (S43E W1-01) The wrapped control is refused — natively disabled or `aria-disabled` — so its tooltip is the reason it can't be pressed. */
+export const REFUSED_KEY = 'refused-reason'
+const refused = (wrapper: HTMLElement, label: string): boolean => {
+  const el = wrapper.querySelector<HTMLElement>('[aria-disabled="true"], button:disabled, input:disabled, select:disabled, textarea:disabled, [data-disabled="true"]')
+  if (!el) return false
+  /* a tooltip that only names the control ("Undo" on a greyed Undo) is no reason — only a sentence the control doesn't already say is spoken */
+  const name = (el.getAttribute('aria-label') ?? el.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase(), said = label.replace(/\s+/g, ' ').trim().toLowerCase()
+  return !!said && said !== name && !name.startsWith(said)
 }
 const SHIFT: Record<TooltipSide, { x?: number; y?: number }> = { right: { x: -4 }, left: { x: 4 }, bottom: { y: -4 }, top: { y: 4 } }
 
@@ -104,6 +114,10 @@ export function Tooltip({
     else timer.current = setTimeout(() => commit(next), SHOW_DELAY_MS)
   }
 
+  /* (pending modules S43E, F3-01 W1-01 — DESIGN-PRINCIPLES #5 · #8, REG-273's second channel) A refused control — greyed, its reason in this
+     tooltip — has no hover on a phone or a touch tablet, so a tap says the reason in the house snackbar, as the stage menu's and the Move stage
+     rail's locked rows always did; one keyed snackbar, so a host that says it too never stacks a second. */
+  const say = useSnackbar()
   useEffect(() => {
     if (disabled) hide()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hide is stable per owner
@@ -114,7 +128,7 @@ export function Tooltip({
     <span ref={anchor} className={styles.anchor}
           onPointerEnter={(e) => { if (e.pointerType !== 'touch') show(e.currentTarget) }}   // no hover on touch — a tap must not leave a bubble behind
           onPointerLeave={hide}
-          onPointerDown={hide}                                                            // a press cancels a pending show, so nothing pops over what the press opened
+          onPointerDown={(e) => { hide(); if (e.pointerType === 'touch' && label && !disabled && refused(e.currentTarget, label)) say({ message: label, key: REFUSED_KEY }) }}   // a press cancels a pending show, so nothing pops over what the press opened — (S43E W1-01) and a finger on a refused control hears its reason
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') hide() }}
           onFocus={(e) => { if ((e.target as HTMLElement).matches?.(':focus-visible')) show(e.currentTarget) }}
           onBlur={hide}>

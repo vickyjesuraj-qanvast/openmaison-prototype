@@ -1,0 +1,297 @@
+{
+  "group": "Getting a studio in — sign-up, sign-in, onboarding, studio set-up, regions and languages",
+  "modules": [
+    {
+      "key": "studio-sign-in",
+      "name": "Studio sign-in and staying signed in",
+      "what": "A member signs in with their mobile number and a 6-digit SMS code (country picker, resend after 30 s, paste the code), can tick 'Keep me signed in for 30 days' (otherwise 24 hours, renewed on every visit) and lands on their role's home; Sign out ends it. On 20 of the 22 live 1.0 deployments the code and the account come from Qanvast instead: a Qanvast company user signing in for the first time gets their studio and membership made automatically (company Admin → Owner, anyone else → designer), and a company not on the list reads 'your company has not been registered for this beta test'.",
+      "who": "studio",
+      "where_in_1": "/login; profile menu › Sign out; every page sends you to /login without a session",
+      "v1_code": "src/app/login/page.tsx; src/app/api/auth/{login,verify,me,logout,refresh,signup-status}; src/lib/{session,twilio,bypass-otp,rate-limit,qanvast-fetch,qanvast-cookies}.ts; src/context/session-context.tsx; src/proxy.ts; the Qanvast line's auth routes on origin/integ/security-qanvast",
+      "size": { "pages": 1, "components": 2, "api_routes": 6, "tables": 4, "loc": 2300 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "No sign-in. Demo Studio › View as picks who is signed in (members.is_you, REG-667); the front door sends Accounting to Company › Finance and everyone else to Leads. The client portal has a stand-in sign-in (phone + any six digits).",
+      "pending": [
+        "Sign-in screen: mobile number with its country code, then a 6-digit code by SMS; resend after 30 s; paste the code",
+        "Keep me signed in for 30 days (else 24 hours), renewed on each visit; Sign out",
+        "Already signed in → straight to your home; signed out → every page goes to sign-in",
+        "Unknown number: 'No account found' with Sign Up — or 'Contact support for account setup' while sign-ups are paused; a pending invitation says so",
+        "Repeated attempts slowed down; staff can set a temporary test code for demos",
+        "Sign in with a Qanvast account: studio and member created on first sign-in, the role taken from Qanvast; 'Your Qanvast session expired' when that link times out"
+      ],
+      "depends_on": "An SMS code provider (1.0 uses Twilio Verify) or Qanvast's sign-in API; a real session store; her sign-in screen",
+      "held_by": "AGENTS.md — authentication is the developers' lane",
+      "recommendation": "developers' lane",
+      "why": "Nothing is real without it, but it is plumbing; only the one screen (number → code) needs her design, and the client portal's sign-in is the pattern to reuse. View as can stay for demos.",
+      "effort": "M",
+      "questions": [
+        "Do 2.0 studios sign in through their Qanvast account (as 20 of 22 1.0 studios do), with their own number, or both?",
+        "Does View as stay in the live product for demos, or only in demo builds?",
+        "Should the studio's sign-in reuse the client portal's phone + code screen?"
+      ]
+    },
+    {
+      "key": "studio-sign-up",
+      "name": "Sign-up: a new studio joins",
+      "what": "1.0 has no working self sign-up. 'Sign Up' on the sign-in page opens a 4-step tour (Get started · Your unified workspace · Choose your role: Studio Owner / In-Studio ID / Freelancer · phone and a 'Demo mode — enter any 6 digits' code) that saves nothing and drops you on the Dashboard, which sends you back to sign-in. Real studios are made by OpenMaison staff in Platform admin › Studios › Add Studio (studio name, owner's name, email, phone, password, plan, country) after a 45–60 minute onboarding interview, or automatically on a first Qanvast sign-in; each new studio gets starter lead sources, project types and issue categories.",
+      "who": "public",
+      "where_in_1": "/login › Sign Up → /onboarding; Platform admin › Studios › Add Studio; docs/features/studio-customization/onboarding-questionnaire.md (the interview)",
+      "v1_code": "src/app/onboarding/page.tsx; src/components/onboarding/{RoleCard,OTPInput,PhoneInput}.tsx; src/app/api/admin/studios/route.ts (POST); src/lib/studio-default-taxonomies.ts; platform_config.signup_paused",
+      "size": { "pages": 1, "components": 3, "api_routes": 2, "tables": 5, "loc": 900 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "Create a new studio and its owner in one go (staff do it in 1.0; nobody can in 2.0, which is one demo studio)",
+        "A new studio starts with starter lists: 11 lead sources, 6 project types, 8 issue categories, the roles and the standard pipeline",
+        "Pause sign-ups for the whole platform ('Contact support for account setup')",
+        "The public sign-up tour with a role choice (Owner / in-studio designer / freelancer) — a sandbox in 1.0 that saves nothing"
+      ],
+      "depends_on": "Sign-in; her call on self-serve vs staff-made studios; plans and payment if self-serve (Plans already exist in 2.0)",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "1.0 never let a studio sign itself up — it sells through a demo call and staff set the studio up — so the real question is whether 2.0 becomes self-serve. With neither path, 2.0 cannot start a second, empty studio.",
+      "effort": "L",
+      "questions": [
+        "Self-serve sign-up (start a trial from the website) or staff-made studios only, as in 1.0?",
+        "Is 'Freelancer' a kind of studio 2.0 should support? 1.0 asks for it and never uses it."
+      ]
+    },
+    {
+      "key": "studio-setup-wizard",
+      "name": "First-time studio set-up",
+      "what": "An owner whose studio isn't set up is sent to a 7-step wizard before anything else: Studio Profile (name, country), Branding & Identity (logo, colour, address, UEN, phone, email), Bank Details, Document Numbering (INV / PO / T prefixes), Lead Funnel (Standard / Simple / Custom), Workflow Rules (four approval switches) and 'Your studio is live' with next steps (create your first lead, invite your team, set up branding if skipped, upload sample quotes, connect Gmail). Every step can be skipped and says the default it falls back to, 'Skip entire setup' finishes at once, and it resumes where you left off.",
+      "who": "studio",
+      "where_in_1": "/studio-setup (forced on owners until finished)",
+      "v1_code": "src/app/studio-setup/page.tsx; src/app/api/studio-setup/route.ts; src/app/(main)/layout.tsx (the redirect); src/components/accounts/funnel-editor.tsx; /api/studio-config/{roles,funnel,branding,workflow}",
+      "size": { "pages": 1, "components": 1, "api_routes": 6, "tables": 3, "loc": 950 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "Every answer has a home: Company › Profile (name, address, UEN, contacts, bank, PayNow), Company › Templates › Brand kit (logo, colour), Settings › Finance › Document numbers, Settings › Quotes & pricing (approvals), Company › Members, Company › Integrations (Gmail), Create Quote › Upload a quote. Each empty list carries its way in (REG-735…737). There is no guided first run.",
+      "pending": [
+        "A guided first run for the owner through what documents need: details, logo, bank, numbering",
+        "Skip a step, with the default it falls back to on the button ('Skip, defaults INV / PO / T used')",
+        "Resume where you left off ('Welcome back! Picking up where you left off.')",
+        "'Your studio is live' with next steps, adding 'Set up your branding' only when it was skipped",
+        "Country chosen on the first step (held by DEF-30)"
+      ],
+      "depends_on": "Sign-in (to know it is the owner's first visit); a home for it — the Dashboard is held",
+      "held_by": "",
+      "recommendation": "build",
+      "why": "A new studio's first quote prints with an empty letterhead and no bank details unless someone finds three separate pages. A short checklist pointing at those pages (the project's Getting started pattern) fixes it without 1.0's seven forced steps, two of which (funnel, workflow switches) 2.0 doesn't have.",
+      "effort": "M",
+      "questions": [
+        "A forced step-by-step wizard (1.0) or a 'Set up your studio' checklist the owner can dismiss?",
+        "Where does it live while the Dashboard is held?",
+        "Which items must be done before the first quote or invoice can be sent?"
+      ]
+    },
+    {
+      "key": "welcome-and-tips",
+      "name": "Welcome and first-visit tips",
+      "what": "On first sign-in a welcome window greets the person by first name: an owner reads 'Let's get your studio set up' (Invite your team · Configure your lead pipeline · Connect email for auto-import) with Start Setup; an invited designer reads 'You've been invited to {studio}' (assigned leads · tasks and messages · the AI assistant) with See My Leads. Twelve pages then show a one-time tip on their first visit, filtered by role; Settings › Guided Tours › Reset all tips brings them all back. Stored per browser.",
+      "who": "studio",
+      "where_in_1": "Over the app after sign-in; Settings › Guided Tours",
+      "v1_code": "src/components/ui/welcome-modal.tsx; src/components/ui/page-coach-marks.tsx; src/hooks/use-coach-mark.ts (its getting-started checklist hook has no screen)",
+      "size": { "pages": 0, "components": 2, "api_routes": 0, "tables": 0, "loc": 610 },
+      "real_or_sandbox": "real",
+      "status_in_2": "partial",
+      "in_2": "First-run empty states with their buttons (REG-735…737), the AI Visualizer's welcome (REG-736), the template editor's first-visit hint, keyboard tips and the bell's one-time note about shortcuts (REG-711…717).",
+      "pending": [
+        "A welcome on first sign-in, one for an owner and one for an invited member",
+        "One-time tips on the first visit to a page (12 pages in 1.0), by role",
+        "Reset all tips"
+      ],
+      "depends_on": "Sign-in (a first sign-in to detect); her design",
+      "held_by": "",
+      "recommendation": "needs her mocks / decision",
+      "why": "2.0's empty states already say what to do on an empty page, so page tips add little. The moment 2.0 has nothing for is an invited designer's first sign-in: 'you've joined X — here are your leads'.",
+      "effort": "S",
+      "questions": [
+        "A welcome for invited members only, or for owners too?",
+        "Any per-page tips, or do the empty states and keyboard tips cover it?"
+      ]
+    },
+    {
+      "key": "team-invitations",
+      "name": "Inviting your team",
+      "what": "Today Accounts › Team Members › Invite Member (name, phone, email, roles) invites nobody: it records a request and emails four OpenMaison staff, who add the person by hand (the live sites have no email key, so it is only recorded); the studio sees it under 'Pending requests', cleared when that number becomes a member. An older self-serve flow still runs for its leftover invitations: an SMS and email with the sign-in link, 30-day expiry, Resend, Cancel, an 'Invited' badge, and the invitation accepted when that number first signs in (hangout invites also pre-register the designer).",
+      "who": "studio",
+      "where_in_1": "Accounts Setup › Team Members › Invite Member · Pending requests · Pending invitations",
+      "v1_code": "src/components/settings/team-settings.tsx; src/lib/queries/invitations.ts; src/app/api/invitations/{send,accept,records,hangout,[token]}; src/app/api/studio/members/request-add; src/app/api/studio/member-requests; auth/verify (auto-accept)",
+      "size": { "pages": 0, "components": 1, "api_routes": 7, "tables": 3, "loc": 2000 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "partial",
+      "in_2": "Company › Members › Add member makes the member at once (name, phone, email, role, manager), with deactivate + Undo and reactivate (REG-646); a task given to someone outside the studio asks the Owners to add them (bell 'invite_requested', Add member opens filled in).",
+      "pending": [
+        "An invitation message to the new member (SMS, WhatsApp or email) with the sign-in link",
+        "'Invited — hasn't signed in yet' on the member until their first sign-in; Resend; Cancel; expires after 30 days",
+        "First sign-in with that number joins the studio"
+      ],
+      "depends_on": "Sign-in; a message provider (2.0's Sent messages outbox is the stand-in)",
+      "held_by": "",
+      "recommendation": "build with a stand-in",
+      "why": "In 2.0 an added member just appears — no message tells them, and nothing shows whether they have ever come in. An Invited state and a message through the existing outbox close that loop now and wire to real SMS later.",
+      "effort": "M",
+      "questions": [
+        "Keep 2.0's direct Add member, or make it an invitation the person accepts?",
+        "Invite by WhatsApp, SMS or email?"
+      ]
+    },
+    {
+      "key": "my-profile",
+      "name": "Your own profile",
+      "what": "Settings › Your Profile lets each person change their own name, email and phone — the number they sign in with — each checked unique across the team (no code is sent to a new number). The photo can be picked but is never saved ('Preview only — not saved'); the studio name shows read-only.",
+      "who": "studio",
+      "where_in_1": "Profile menu › Settings › Your Profile",
+      "v1_code": "src/app/(main)/settings/page.tsx (the profile card); src/app/api/identity/profile/route.ts",
+      "size": { "pages": 0, "components": 1, "api_routes": 1, "tables": 1, "loc": 250 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "Only the signature is personal (Signature Settings in the quote editor). Nobody can change a member's name, email or phone after Add member.",
+      "pending": [
+        "Change your own name, email and phone",
+        "The same phone or email can't belong to two members (2.0 checks only the email, only at Add member)"
+      ],
+      "depends_on": "Sign-in, to change the sign-in number safely (a code to the new number)",
+      "held_by": "",
+      "recommendation": "build",
+      "why": "A typo in a name or a member's new phone number has no fix anywhere in 2.0 today, and names print on quotes and client messages. It is one small card.",
+      "effort": "S",
+      "questions": [
+        "On the person's own page, or may an Owner or Admin fix it in Company › Members?"
+      ]
+    },
+    {
+      "key": "regions-beyond-singapore",
+      "name": "Countries beyond Singapore",
+      "what": "A studio's country (Singapore, Malaysia, UAE, India; Egypt for phone sign-in only) sets its currency (S$, RM, AED, ₹), tax (GST 9%, SST 6%, VAT 5%, India's GST slabs 5/12/18/28%), time zone, date format, phone rules and option lists. A studio can serve several countries, each lead keeping its own country, and staff can re-tag leads. Two Malaysian studios run on it, but 1.0 still has S$ written into about 430 places in its code, so in practice the difference is mostly sign-in and phone numbers.",
+      "who": "studio",
+      "where_in_1": "Studio Setup › Country / Region; Platform admin › Studios (country, supported countries); every phone box, money figure and option list",
+      "v1_code": "src/lib/region-config.ts (825 lines, imported by 287 files); src/data/compliance/{my,ae,in,eg}/*; src/data/floor-plan-templates/{my,ae,in}-templates.ts; studios.country_code · currency_code · timezone · locale · supported_countries; src/app/api/admin/studios/[id]/retag-leads; docs/rules/regions.md; docs/superpowers/specs/2026-09-08-multi-region-branch-unification-design.md",
+      "size": { "pages": 0, "components": 0, "api_routes": 1, "tables": 1, "loc": 8600 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "Singapore only: S$, the studio's GST rate in Settings, 8-digit +65 phones, Singapore property types and districts, the Singapore compliance checklist and CaseTrust.",
+      "pending": [
+        "Pick the studio's country; currency, tax name and rate, time zone and date format follow",
+        "Phone rules per country at sign-in and in every phone box (+60 9–10 digits, +971 9, +91 10, +20)",
+        "One studio serving several countries; each lead's own country; re-tag leads between countries",
+        "Each country's lists: property types, areas, budget ranges, property status, key collection, design styles; its registration label (UEN · SSM · Trade licence · GSTIN)",
+        "Compliance checklists for Malaysia, UAE, India and Egypt; floor-plan templates for Malaysia, UAE and India",
+        "Each country's lead-email senders for lead capture, news sources for market insights and a sample client for template previews"
+      ],
+      "depends_on": "Her decision (DEF-30); local rules checked by someone in each market",
+      "held_by": "DEF-30",
+      "recommendation": "needs her mocks / decision",
+      "why": "Held. 1.0's own regional support is thin outside sign-in, so porting it would copy a half-done job; if a market comes next, do that one country end to end.",
+      "effort": "XL",
+      "questions": [
+        "Which market, if any, comes after Singapore?"
+      ]
+    },
+    {
+      "key": "languages",
+      "name": "Languages (Arabic)",
+      "what": "1.0 is wired for English and Arabic (the page turns right-to-left in Arabic), but only the website's 'Book a demo' form is translated — 23 phrases — and nothing lets anyone choose Arabic: no picker sets the language. Every studio and client screen is English only.",
+      "who": "public",
+      "where_in_1": "The website's 'Book a demo' form; messages/en.json, messages/ar.json",
+      "v1_code": "messages/{en,ar}.json; src/i18n/{config,request}.ts; src/app/layout.tsx (lang / dir); src/components/landing/beta-signup-modal.tsx",
+      "size": { "pages": 0, "components": 1, "api_routes": 0, "tables": 0, "loc": 120 },
+      "real_or_sandbox": "dead code",
+      "status_in_2": "none",
+      "in_2": "English only.",
+      "pending": [
+        "Nothing working to port: an Arabic 'Book a demo' form nobody can switch to"
+      ],
+      "depends_on": "A market that needs it (UAE, DEF-30); translators",
+      "held_by": "DEF-30",
+      "recommendation": "skip",
+      "why": "There is no translated product in 1.0 to bring over; translating 2.0 would be a programme of its own (the XL here), worth starting only with a non-English market.",
+      "effort": "XL",
+      "questions": []
+    },
+    {
+      "key": "book-a-demo",
+      "name": "Book a demo and the UAE landing page",
+      "what": "The website's only way in is 'Book a demo': name, studio, email and phone are saved as a beta sign-up and Calendly opens to book a 30-minute call; staff see the list in Platform admin › Beta sign-ups. /uae-get-started is a hidden (not indexed) campaign page for Dubai studios — AED, VAT and Emirates compliance pitch, an FAQ, the same form and Calendly.",
+      "who": "public",
+      "where_in_1": "Website header and phone bar › Book a demo; /uae-get-started; Platform admin › Beta sign-ups",
+      "v1_code": "src/components/landing/beta-signup-{modal,context}.tsx; src/app/api/beta-signup/route.ts; src/app/uae-get-started/*; src/app/admin/beta-signups",
+      "size": { "pages": 2, "components": 2, "api_routes": 2, "tables": 1, "loc": 1550 },
+      "real_or_sandbox": "real",
+      "status_in_2": "none",
+      "in_2": "",
+      "pending": [
+        "Book a demo form → beta sign-up list + Calendly",
+        "The UAE campaign landing page"
+      ],
+      "depends_on": "The public website; Calendly",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "It belongs to the public website, not the studio app 2.0 is; take it along if the website is rebuilt.",
+      "effort": "S",
+      "questions": []
+    },
+    {
+      "key": "try-visualizer-public",
+      "name": "Try the AI Visualizer without an account",
+      "what": "Website visitors can upload one room photo and restyle it (style, materials, furniture, remove furniture, lighting, sketch) without signing up: one free render per browser, a fast model, a watermark and a per-IP limit; when it is used up it sends them to sign up or book a demo. It is off in production unless a switch is set.",
+      "who": "public",
+      "where_in_1": "/try-visualizer (+ style, materials, furniture, defurnish, lighting, sketch); the website's visualizer demo",
+      "v1_code": "src/app/try-visualizer/*; src/app/api/demo/*; src/components/trial-visualizer/*; src/components/landing/visualizer-demo.tsx; src/lib/render/trial-*.ts",
+      "size": { "pages": 7, "components": 10, "api_routes": 7, "tables": 0, "loc": 2960 },
+      "real_or_sandbox": "partly built in 1.0",
+      "status_in_2": "none",
+      "in_2": "The AI Visualizer is for the studio only (Tools › AI Visualizer, the curated engine, no model).",
+      "pending": [
+        "A public, no-account try of the visualizer with a one-render limit and a watermark"
+      ],
+      "depends_on": "An image model; the public website; abuse protection (1.0's own spec waits for Turnstile and a durable rate-limit store)",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "A marketing hook for the website that needs a real model and abuse protection; 2.0's studio visualizer already shows the result in demos.",
+      "effort": "M",
+      "questions": []
+    },
+    {
+      "key": "qanvast-listing-verification",
+      "name": "Verify for Qanvast listing",
+      "what": "An owner-only page, reached only by typing /verify, asks for studio name, registration ID, description, USP, projects delivered and proof photos to get listed on Qanvast. Submitting only changes the page's own banner — nothing is saved or sent — and the staff side (Platform admin › Verification) shows hard-coded submissions.",
+      "who": "studio",
+      "where_in_1": "/verify (no menu link); Platform admin › Verification",
+      "v1_code": "src/app/(main)/verify/page.tsx; src/app/admin/verification/page.tsx; studios.verification_status",
+      "size": { "pages": 2, "components": 0, "api_routes": 0, "tables": 1, "loc": 410 },
+      "real_or_sandbox": "sandbox / dev tool",
+      "status_in_2": "none",
+      "in_2": "Company › Profile records the studio's registrations (CaseTrust and others) once.",
+      "pending": [
+        "A studio's application to be listed on Qanvast, reviewed by staff"
+      ],
+      "depends_on": "Qanvast's marketplace; the Marketplace module's call",
+      "held_by": "",
+      "recommendation": "skip",
+      "why": "A mock in 1.0 with no data behind it; it belongs with the Marketplace if that is ever built.",
+      "effort": "S",
+      "questions": []
+    }
+  ],
+  "already_in_2": [
+    "Landing on your role's home after sign-in (getDefaultRoute) → 2.0's front door: Leads, Accounting → Company › Finance",
+    "Seeing the app as a given member (1.0's dev user / test phone) → Demo Studio › View as (REG-667)",
+    "Wizard's studio details (name, address, UEN, phone, email) → Company › Profile; logo + brand colour → Company › Templates › Brand kit; bank + SWIFT → Profile's issuing entities (+ PayNow)",
+    "Wizard's document numbering (INV / PO / T) → Settings › Finance › Document numbers",
+    "Wizard's workflow switches and funnel choice → settled in the Accounts Setup audit (REG-643…648): Owners, Admins and one backup approve; 2.0's fixed stages with Linear / Flexible movement; funnel editor and roles editor held (Q-40)",
+    "Seeded system roles → 2.0's fixed roles Owner · Admin · Manager · Designer · Accounting",
+    "Starter lead sources → Settings › Lead management › Lead sources",
+    "Adding a team member → Company › Members › Add member, deactivate, reactivate (REG-646); ask-to-add from a task → bell 'invite_requested'",
+    "Wizard's next steps (first lead, invite team, upload sample quotes, connect Gmail) → Add Lead, Company › Members, Create Quote › Upload a quote, Company › Integrations",
+    "First-run guidance on empty pages → first-run empty states (REG-735…737), the Visualizer welcome (REG-736), keyboard tips (REG-711…717)",
+    "Client sign-in by phone + code (/my/[slug]/login) → the client portal's stand-in sign-in and Company › Client portal",
+    "Studio config routes (branding, numbering, features, taxonomies, roles, workflow, funnel, journey, member overrides, price book, document templates) → audited in the Accounts Setup and Price book audits (REG-643…655); Journey excluded, member overrides dead",
+    "Per-studio currency symbol on quotes ($ instead of S$) → the quote template's currency: S$ · $ · figures only",
+    "The studio's GST → the rate in Settings, the GST switch + Reg. No. on Company › Profile"
+  ],
+  "notes": "A studio's first hour in 1.0: Book a demo on the website → a sales call → staff interview the studio and make it in Platform admin (or it is made on a first Qanvast sign-in) → the owner signs in with phone + SMS code → is forced through the 7-step set-up → the Dashboard's welcome window and page tips → Invite Member sends a request to staff, who add each designer → designers sign in and see 'You've been invited to {studio}'. 2.0 has none of the doors (sign-in, sign-up, an invitation, a welcome) but every page those steps fill. I read the standalone checkout (integ/security-non-qanvast, 2026-10-01) and only the auth routes of the Qanvast line (origin/integ/security-qanvast, read with git show); which deployment runs which line comes from 1.0's own 2026-09-08 region spec. Left to other groups: Platform admin's Add Studio, Beta sign-ups list, sign-ups-paused switch, test-code setting and page visibility; 1.0's personal preferences (appearance, theme skins, home layout, Ads / ID Buddy switches) and hangout invitations. Not counted as features: /api/auth/refresh and qanvast-fetch (used only on the Qanvast line), the unused getting-started checklist hook, the onboarding role that is never saved."
+}

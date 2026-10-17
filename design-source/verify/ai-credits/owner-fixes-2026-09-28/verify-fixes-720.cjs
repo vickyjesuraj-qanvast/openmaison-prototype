@@ -89,7 +89,8 @@ async function footCheck(page, conf, label) {
   const crumbText = (await page.locator('header nav[aria-label="Breadcrumb"]').first().innerText()).replace(/\s+/g, ' ').trim()
   ok(crumbText === 'Plan & AI credits / Company /', `the crumb reads "${crumbText}"`)
   ok((await page.locator('header h1').first().innerText()).trim() === 'Profile', 'the title is Profile')
-  ok((await page.locator('[data-kb="back"]').first().getAttribute('aria-label')) === 'Back to Plan & AI credits / Company', 'Back names where it goes')
+  /* (REG-1361, a deliberate change of this rule) Back names the place it returns to, not the two crumbs joined */
+  ok((await page.locator('[data-kb="back"]').first().getAttribute('aria-label')) === 'Back to Plan & AI credits', 'Back names where it goes')
   const hb = await page.locator('header:has([data-kb="back"])').first().boundingBox()
   await page.screenshot({ path: `${OUT}/f3-profile-crumb.png`, clip: { x: hb.x, y: hb.y, width: Math.min(700, hb.width), height: hb.height } })
   await page.getByRole('link', { name: 'Plan & AI credits' }).first().click()

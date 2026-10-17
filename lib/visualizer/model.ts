@@ -1,11 +1,13 @@
 import type { Box, Pt } from './engine/pixels'
 import type { FallbackReading } from './engine/fallback'
 import type { Sheen } from './engine/recolor'
-import { FINISH_HEX, KEEP, finishRowFor, pieceKind, type FurniturePick, type PartKey, type PieceParts } from './furniture'
+import { COLOUR_HEX, FINISH_HEX, FURNITURE_COLOURS, KEEP, finishRowFor, pieceKind, type FurniturePick, type PartKey, type PieceParts } from './furniture'
+import { hexToRgb, rgbToLab } from './engine/pixels'
 import { RELIGHT_NEUTRAL, lightingSet, presetById, type RelightKnobs } from './lighting'
-import { headOfLabel, nounOf, readNote } from './note'
+import { colourIn, headOfLabel, nounOf, readNote } from './note'
 import { sampleByKey, type SampleRoom } from './samples'
 import type { Pattern } from './patterns'
+import type { DriftRepair } from './drift'
 import { EMPTY_SCOPES, DEFAULT_ASPECTS, type EmptyScope, type FurnishDensity, type GeometryLock, type ReferenceRole, type StyleAspect, type StyleStrength } from './tools'
 import { labelInText, normFurnitureKey, surfaceGroupFor, titleCaseLabel } from './surfaces'
 
@@ -107,7 +109,7 @@ export function fallbackDetection(dots?: { walls: Pt; floor: Pt; ceiling: Pt | n
 /** (F064) Why this piece can't be taken out of this photo — the room's empty plate still shows it (the living room's sheer curtains): the
     Furniture panel's Remove waits with this line; the engine says the same if asked. */
 export function pieceRemoveBlock(f: Pick<FurnitureDef, 'inPlate'>): string | null {
-  return f.inPlate ? 'This photo can’t take it out — Replace or Customize it instead' : null
+  return f.inPlate ? 'This photo can’t take it out — Customize it instead' : null   // (pending modules S20) Replace renders nothing in the prototype
 }
 /** (F023) A surface added by name and a tap: grown only near the tap and with tight colour limits (the engine also keeps it off the
     regions the photo already knows) — a tapped window frame never floods the walls. Draw it for anything larger. */
@@ -200,7 +202,10 @@ export type Applied = { kind: PassKind; surfaces: { id: string; label: string; m
   part?: PartKey | null }[]; style: string | null; lighting: string | null; note: string | null; palette: string[] | null; scope: string | null
   /** (audit 2026-09-26) What the pass could not do, in plain words — "Whole-room look — earlier changes replaced", "Kept: the curtains —
       this photo can't take them out". The version says so instead of claiming it. */
-  caveat?: string | null }
+  caveat?: string | null
+  /** (pending modules S20) The drift guard lined this version up with its photo — the words and what the repair cost (the ledger's own
+      charge, set by the server when the version is kept: lib/visualizer/drift.ts). */
+  repair?: DriftRepair | null }
 export type Variant = { id: number; n: number; imageUrl: string; materials: { label: string; material: string }[]; parentKey: string; applied: Applied; finishes: Finishes; deletedAt?: number | null }
 
 /** The Changes list (1.0's `{surface} → {material}`, C-63) — now with the furniture, the light and the look. */
@@ -279,6 +284,41 @@ export function pickNeeds(f: FurniturePick, target: { label: string; category: s
 /** A finish with no colour of its own (Velvet, Chenille) keeps the piece's colour and changes its sheen. */
 export const finishHasColour = (finish: string | null | undefined) => !!finish && !!FINISH_HEX[finish]
 
+/* ── (pending modules S20 — card held:ai-visualizer, "Replace a piece with a new one — the build changed her answer from 'say it can't' to
+   recolour (Q-21) and never put it back to her") Replace as she answered (audit 16, VF-02 / Q-21 as recommended on 2026-09-25: "Same picker;
+   the engine answers Replace honestly"). The picker stays — 1.0's Quick picks, the words, a photo of the new piece: the record an image model
+   reads — and the prototype says it can't draw a new piece into the photo, never a recolour passed off as a swap ("Swapped for …", the
+   build's change). The recolour the build had made silent is one press, named for what it is: *Recolour it to match* turns the pick into a
+   Customize (`recolourPick`), with Undo. ── */
+/** The first half of the honest line — the Generate bar's reason runs on with its link ("— recolour it to match"). */
+export const replaceHeldLead = (label: string) => `This is the prototype, so a new ${pieceKind(label).toLowerCase()} can’t be drawn into the photo`
+/** The whole line: why a Replace waits, and the way on. */
+export const replaceHeld = (label: string) => `${replaceHeldLead(label)} — recolour it to match, or take it off the list.`
+/** The Customize colour chip nearest a colour (CIE76 in Lab) — a photo's colour or a style's, as one of the twelve chips the panel shows. */
+export function nearestColourChip(hex: string): string {
+  const [r, g, b] = hexToRgb(hex), [l, a, bb] = rgbToLab(r, g, b)
+  let best = FURNITURE_COLOURS[0]!, gap = Infinity
+  for (const c of FURNITURE_COLOURS) { const [r2, g2, b2] = hexToRgb(COLOUR_HEX[c] ?? '#808080'), [l2, a2, b3] = rgbToLab(r2, g2, b2); const d = Math.hypot(l - l2, a - a2, bb - b3); if (d < gap) { gap = d; best = c } }
+  return best
+}
+const escapeRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/**
+ * A Replace's pick as the Customize the curated engine renders: the piece keeps its shape and takes the pick's colour and finish.
+ *  · a finish the words name that the piece's own finish row offers (a table's "Walnut", a sofa's "Velvet") — never a part's row (the pot,
+ *    the frame), which would paint only that part;
+ *  · the colour the words name, kept as the words (Customize reads it, exact) — else the photo's colour, else the style's, as the nearest
+ *    colour chip. A finish with a colour of its own (Walnut) is the colour.
+ */
+export function recolourPick(p: FurniturePick, o: { piece: { label: string; category: string; parts?: PieceParts }; photoHex: string | null; styleHex: string | null }): FurniturePick {
+  const words = p.replacementDesc?.trim() ?? ''
+  const row = finishRowFor(o.piece)
+  const finish = row && !row.part ? row.options.find((x) => new RegExp(`\\b${escapeRe(x)}\\b`, 'i').test(words)) ?? null : null
+  const said = words ? colourIn(words.split(/\s+with\s+|,/)[0] ?? '') ?? colourIn(words) : null
+  if (finish && finishHasColour(finish)) return { ...KEEP, action: 'customize', customizeMaterial: finish }
+  if (said && readNote(`${words} sofa`)?.paints.length) return { ...KEEP, action: 'customize', customizeMaterial: finish, replacementDesc: words }
+  return { ...KEEP, action: 'customize', customizeMaterial: finish, customizeColor: nearestColourChip(said?.hex ?? o.photoHex ?? o.styleHex ?? '#8B7355') }
+}
+
 /* ── what can run on the version on screen (F053) ── */
 export type ToolAvailability = { canRemove: boolean; removeWhy: string | null; canEmpty: boolean; emptyWhy: string | null; canFurnish: boolean; furnishWhy: string | null
   /** The room has panelling or fitted joinery — Keep built-ins and Strip to shell differ. */
@@ -338,8 +378,10 @@ export function changeList(p: Pending, o: { reading: Detection | null; resolve: 
     for (const [fid, f] of Object.entries(p.furniture)) {
       const d = reading.furniture.find((x) => x.id === fid); if (!d || f.action === 'keep') continue
       const k = `${normFurnitureKey(d.label)}|${f.action}`, hit = byPiece.get(k)
-      if (hit) { hit.ids.push(fid); hit.needs ??= pickNeeds(f, d) }
-      else byPiece.set(k, { label: `${titleCaseLabel(normFurnitureKey(d.label))} · ${f.action === 'remove' ? 'Remove' : f.action === 'replace' ? 'Replace' : 'Customize'}`, ids: [fid], needs: pickNeeds(f, d) })
+      /* (pending modules S20) a Replace with its pick waits too — the prototype can't draw a new piece in (Q-21 as she answered) */
+      const needs = pickNeeds(f, d) ?? (f.action === 'replace' ? replaceHeld(d.label) : null)
+      if (hit) { hit.ids.push(fid); hit.needs ??= needs }
+      else byPiece.set(k, { label: `${titleCaseLabel(normFurnitureKey(d.label))} · ${f.action === 'remove' ? 'Remove' : f.action === 'replace' ? 'Replace' : 'Customize'}`, ids: [fid], needs })
     }
     for (const [k, c] of byPiece) out.push({ id: `f:${k}`, slot: 'furniture', label: c.label, ids: c.ids, needs: c.needs })
   }

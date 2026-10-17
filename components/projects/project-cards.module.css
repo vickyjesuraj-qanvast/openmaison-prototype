@@ -1,0 +1,15 @@
+/* (REG-924) The Projects listing's phone cards — the Leads listing's card (lead-cards.module.css, 1082:25585), composed, never copied. */
+.list { composes: list from '../leads/lead-cards.module.css'; }
+.card { composes: card from '../leads/lead-cards.module.css'; }
+.identity { composes: identity from '../leads/lead-cards.module.css'; }
+.head { composes: head from '../leads/lead-cards.module.css'; }
+.name { composes: name from '../leads/lead-cards.module.css'; }
+.meta { composes: meta from '../leads/lead-cards.module.css'; }
+.info { composes: info from '../leads/lead-cards.module.css'; }
+.dot { composes: dot from '../leads/lead-cards.module.css'; }
+.rule { composes: rule from '../leads/lead-cards.module.css'; }
+.foot { composes: foot from '../leads/lead-cards.module.css'; }
+.members { composes: members from '../leads/lead-cards.module.css'; }
+.menuWrap { position: relative; display: inline-flex; margin-right: calc(-1 * var(--om-spacing-2)); }
+/* (REG-914) the reasons it needs attention: the red of an overdue task, the info line's type */
+.why { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }

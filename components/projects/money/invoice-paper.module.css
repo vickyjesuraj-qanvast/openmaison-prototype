@@ -1,0 +1,67 @@
+/* (Projects round 5, F-12 · F-15) The invoice as a page — the contract's paper (components/contracts/render/contract-paper.module.css: A4 at
+   96dpi, the letterhead from the brand kit, the foot), composed; this sheet keeps the invoice's own parts: the title block, who it is for,
+   the line, the totals and how to pay. Printed as is (Download PDF). */
+.paper { composes: paper from '../../contracts/render/contract-paper.module.css'; }
+.head { composes: head from '../../contracts/render/contract-paper.module.css'; }
+.logo { composes: logo from '../../contracts/render/contract-paper.module.css'; }
+.studio { composes: studio from '../../contracts/render/contract-paper.module.css'; }
+.studioName { composes: studioName from '../../contracts/render/contract-paper.module.css'; }
+.studioLine { composes: studioLine from '../../contracts/render/contract-paper.module.css'; }
+.foot { composes: foot from '../../contracts/render/contract-paper.module.css'; }
+
+.body { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-8); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-6); flex-wrap: wrap; }
+.docTitle { margin: 0; font: var(--om-type-heading-h1); }
+.stamp { display: inline-block; margin-top: var(--om-spacing-2); padding: 2px var(--om-spacing-2); border: var(--om-border-1) solid currentColor; border-radius: var(--om-radius-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.stamp[data-tone='void'] { color: var(--om-color-tertiary-red-default); }
+.stamp[data-tone='paid'] { color: var(--om-color-tertiary-green-default); }   /* (fix-D, D-03) paid in full */
+.nowrap { white-space: nowrap; }   /* (fix-D, D-38) an invoice number never breaks */
+.facts { display: grid; grid-template-columns: max-content max-content; gap: var(--om-spacing-1) var(--om-spacing-4); margin: 0; font: var(--om-type-body-m); }
+.facts dt { color: var(--om-color-on-surface-secondary); }
+.facts dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.parties { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
+.party { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.party strong { font: var(--om-type-subheading-m); }
+.party span { color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.lines { width: 100%; border-collapse: collapse; font: var(--om-type-body-m); }
+.lines th { text-align: left; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); padding: 0 0 var(--om-spacing-2); border-bottom: var(--om-border-1) solid var(--om-color-on-surface-default); }
+.lines td { padding: var(--om-spacing-3) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); vertical-align: top; }
+.lines .amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: var(--om-spacing-4); }
+.lineSub { display: block; margin-top: 2px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (fix-D, D-38 · F-45) the figures end on the Amount column's edge: the labels take what the block leaves, the values sit at its right */
+.totals { align-self: flex-end; display: grid; grid-template-columns: minmax(0, 1fr) max-content; gap: var(--om-spacing-2) var(--om-spacing-8); margin: 0; min-width: 280px; }
+.totals dt { color: var(--om-color-on-surface-secondary); }
+.totals dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.totals .grand { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-on-surface-default); }
+.pay { display: flex; gap: var(--om-spacing-6); align-items: flex-start; padding: var(--om-spacing-4) var(--om-spacing-5); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); flex-wrap: wrap; }
+.payText { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.payTitle { font: var(--om-type-subheading-m); }
+.payFacts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--om-spacing-1) var(--om-spacing-4); margin: 0; }
+.payFacts dt { color: var(--om-color-on-surface-secondary); }
+.payFacts dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.payNote { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.qr { width: 120px; height: 120px; object-fit: contain; background: var(--om-color-surface-default); border-radius: var(--om-radius-1); padding: var(--om-spacing-2); flex: 0 0 auto; }
+/* (gaps build B, items 2 · 3 · 14) a one-off's heading row over its lines; the studio's notes, the client's note and the terms block */
+.lines .lineHead { font: var(--om-type-subheading-m); padding-bottom: var(--om-spacing-1); }
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-line; overflow-wrap: anywhere; }
+.noteBlock { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+@media (max-width: 767px) {
+  .parties { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); }
+  .totals { align-self: stretch; min-width: 0; }
+}
+@media print { .pay { background: none; border: var(--om-border-1) solid var(--om-color-surface-variant); } }
+
+/* region P-D — (parity map, MI-065 · FB-101 · FB-103) the paper's accent, the entity's tagline and footer line, the acceptance block.
+   The accent comes from the paper (Settings › Finance › Invoice paper), else the entity (Company › Profile), else the brand kit — set on the
+   root as --paper-accent with data-accent; without one the paper prints in the ink, as before. */
+.paper[data-accent] .head { border-bottom: var(--om-border-2) solid color-mix(in srgb, var(--paper-accent) 40%, transparent); }   /* 1.0's tinted rule under the letterhead */
+.paper[data-accent] .docTitle { color: var(--paper-accent); }
+.paper[data-accent] .totals .grand { color: var(--paper-accent); border-top-color: var(--paper-accent); }
+.paper[data-accent] .lines th { border-bottom-color: var(--paper-accent); }
+.studioTagline { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.accept { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); break-inside: avoid; }
+.acceptLines { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-6); margin-top: var(--om-spacing-6); }
+.acceptLine { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-on-surface-default); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .acceptLines { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); } }
+/* end P-D */

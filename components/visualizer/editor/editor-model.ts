@@ -86,8 +86,9 @@ export function lastTouched(rooms: { updatedAt: number }[], jobs: { createdAt: n
 export const versionRange = (ns: number[]) => (ns.length > 1 ? `V${ns[0]}–V${ns[ns.length - 1]}` : `V${ns[0] ?? ''}`)
 
 /**
- * (critic 19) A room photo, a reference or a swatch picked from the device: JPG, PNG and WebP everywhere; HEIC where the browser can open
- * it (Safari) — it is redrawn as a JPEG before it is sent, so a large phone photo goes up at a web size.
+ * (critic 19) A room photo, a reference or a swatch picked from the device: JPG, PNG, WebP and HEIC — redrawn as a JPEG before it is sent,
+ * so a large phone photo goes up at a web size. (pending modules S20) HEIC on every browser: Safari draws it, elsewhere 1.0's converter
+ * turns it into a JPEG first (`normalizePicture`, lib/heic.ts). A file the device gave no type is let through to be read — its own bytes
+ * say whether it is a HEIC; anything else that isn't a picture is refused there.
  */
-export const UPLOAD_MAX_BYTES = 40 * 1024 * 1024
-export const isHeic = (f: File) => /^image\/hei[cf]$/i.test(f.type) || /\.hei[cf]$/i.test(f.name)
+export { UPLOAD_MAX_BYTES, isHeic, untyped } from './picture-reader'   // (pending modules S36) in a light module of their own

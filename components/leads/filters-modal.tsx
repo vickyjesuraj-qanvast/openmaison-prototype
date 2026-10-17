@@ -32,6 +32,34 @@ const PRESETS: { key: DatePreset; label: string }[] = [
   { key: 'today', label: 'Today' }, { key: '7d', label: 'Last 7 days' }, { key: '30d', label: 'Last 30 days' }, { key: 'month', label: 'This month' }, { key: 'custom', label: 'Custom' },   /* (REG-610, parity L-27) */
 ]
 
+/**
+ * (parity P-17, B-14) The Members pane — the people a list narrows to: each one's 40 avatar, name and role ("Owner (you)" on your own row),
+ * a tick at the end, the whole row the press. One pane for every Filters modal that filters by people (this one, Projects › Filters), so the
+ * two can't drift: it is this modal's own markup and classes, lifted out unchanged (REG-290).
+ */
+export function MembersPane({ team, value, onToggle }: { team: readonly Pick<Member, 'id' | 'name' | 'color' | 'role' | 'isYou'>[]; value: readonly string[]; onToggle: (id: string) => void }) {
+  return (
+    <>
+      <span className={styles.sectionTitle}>Members</span>
+      <div className={styles.list}>
+        {team.map((m) => (
+          <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => onToggle(m.id)}
+               onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onToggle(m.id) } }}>
+            <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
+            <span className={styles.rowText}>
+              <span className={styles.rowName}>{m.name}</span>
+              <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
+            </span>
+            <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <Checkbox isSelected={value.includes(m.id)} onChange={() => onToggle(m.id)} aria-label={m.name} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
 export function FiltersModal({
   open, value, team, onClose, onApply, now, sources = SOURCES,}: {
   /** (REG-599) The sources to offer: the studio's live list plus any retired source still on a lead (the caller computes it). */
@@ -181,24 +209,7 @@ export function FiltersModal({
                     </div>
                   </>
                 ) : tab === 'assignees' ? (
-                  <>
-                    <span className={styles.sectionTitle}>Members</span>
-                    <div className={styles.list}>
-                      {team.map((m) => (
-                        <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('assignees', m.id)}
-                             onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('assignees', m.id) } }}>
-                          <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
-                          <span className={styles.rowText}>
-                            <span className={styles.rowName}>{m.name}</span>
-                            <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
-                          </span>
-                          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                            <Checkbox isSelected={draft.assignees.includes(m.id)} onChange={() => toggle('assignees', m.id)} aria-label={m.name} />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  <MembersPane team={team} value={draft.assignees} onToggle={(id) => toggle('assignees', id)} />
                 ) : (
                   <>
                     <span className={styles.sectionTitle}>Dates</span>

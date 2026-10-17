@@ -37,6 +37,8 @@
 }
 .toastRow:last-child { border-bottom: 0; }
 .toastThumb { width: 40px; height: 40px; object-fit: cover; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); flex-shrink: 0; }
+/* (gaps build E, item 1) a file that is not a picture: the house square thumbnail with its kind's glyph (components/om/thumb.module.css, REG-820) */
+.toastGlyph { composes: thumb from '../../om/thumb.module.css'; width: 40px; height: 40px; }
 .toastFile { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toastStatus { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* "Uploading..." while in flight — the import wizard's row */
 .toastIcon { color: var(--om-color-tertiary-green-default); display: inline-flex; }

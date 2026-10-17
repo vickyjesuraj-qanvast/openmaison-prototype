@@ -6,6 +6,7 @@ import { fieldValues } from '@/lib/templates/fields'
 import { clientViewFromDesign, type ClientView } from '@/lib/templates/client-view'
 import { docLetterhead, docTotals, type DocData } from '@/lib/templates/data'
 import { CanvasView, type Interactive, type RenderCtx } from './canvas'
+import { StudioFontFaces } from './studio-font-faces'
 import { buildSlices, type PageCtx, type Slice, type TableExtras } from './slices'
 import styles from './document.module.css'
 
@@ -30,6 +31,7 @@ export type DocumentProps = {
 
 type PagePlan = { cover: boolean; slices: number[]; fillers: number; fillTable: string | null; pageTotalMinor: number; pageTotalTable: string | null; headFor: string | null }
 
+const NO_SPLIT: ReadonlySet<string> = new Set()
 const hash = (s: string) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) }
 
 /** Which body pages a header / footer canvas draws on. `first` / `not-first` count body pages (the cover is its own canvas). */
@@ -75,8 +77,15 @@ function plan(slices: Slice[], heights: Record<string, number>, tables: Record<s
  */
 export function TemplateDocument({ design, brand: studioBrand, data, view, zoom = 1, interactive, onPaginated, firstPageOnly, watermark, print, underlay, className }: DocumentProps) {
   // (REG-618, parity Q-26) A quote raised under another issuing entity prints that entity's logo wherever the template places the brand logo.
-  const entityLogo = useMemo(() => docLetterhead(data).logo, [data])
-  const brand = useMemo(() => { const b = mergeBrand(studioBrand, design.brand); return entityLogo ? { ...b, logo: entityLogo } : b }, [studioBrand, design.brand, entityLogo])
+  // (pending modules S11 — card held:quote-templates) …and its accent colour wherever the template uses the kit's Accent — a template that
+  // sets its own Accent keeps it, as 1.0's explicit theme colours did; the studio's own quotes keep the kit's.
+  const head = useMemo(() => docLetterhead(data), [data])
+  const entityLogo = head.logo, entityAccent = head.accent
+  const brand = useMemo(() => {
+    const base = entityAccent ? { ...studioBrand, colors: { ...studioBrand.colors, accent: entityAccent } } : studioBrand
+    const b = mergeBrand(base, design.brand)
+    return entityLogo ? { ...b, logo: entityLogo } : b
+  }, [studioBrand, design.brand, entityLogo, entityAccent])
   const paper = PAPER_MM[design.page.paper]
   const m = design.page.margins
   const pageW = mm(paper.w), pageH = mm(paper.h)
@@ -85,27 +94,45 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
   const baseValues = useMemo(() => fieldValues(data, totals, undefined, design.page.dateFormat), [data, totals, design.page.dateFormat])   // (REG-592) dates as the page says
   const cv = useMemo(() => view ?? clientViewFromDesign(design), [view, design])
   const ctx: RenderCtx = useMemo(() => ({ brand, data, values: baseValues, interactive }), [brand, data, baseValues, interactive])
-  const built = useMemo(() => buildSlices(design, ctx, cv, totals), [design, ctx, cv, totals])
+  /* (S44T — UAT row 293) The lines measured taller than a page: each prints its description across slices, so a page breaks inside it and no
+     word is cut off by the page's edge. It only grows — a line once split stays split while the document is open. */
+  const [measured, setMeasured] = useState<{ sig: string; heights: Record<string, number>; split: ReadonlySet<string> } | null>(null)
+  const split = measured?.split ?? NO_SPLIT
+  const built = useMemo(() => buildSlices(design, ctx, cv, totals, split), [design, ctx, cv, totals, split])
   const header = design.blocks.find((b): b is CanvasBlock => b.kind === 'header' && !b.hidden)
   const footer = design.blocks.find((b): b is CanvasBlock => b.kind === 'footer' && !b.hidden)
   const cover = design.blocks.find((b): b is CanvasBlock => b.kind === 'cover' && !b.hidden)
 
   // Measure once per signature: the slices, the table extras, at the body width, in the document's own fonts.
-  const [fontsReady, setFontsReady] = useState(false)
-  useEffect(() => { let on = true; void document.fonts?.ready.then(() => { if (on) setFontsReady(true) }); return () => { on = false } }, [])
+  /* (pending modules S11) The document fonts are self-hosted and load the first time a page sets text in them — after the first measure. Each
+     finished load (a face the page asked for, an upload) measures again, so the pages are packed in the face that prints. */
+  const [fontsTick, setFontsTick] = useState(0)
+  useEffect(() => {
+    const fs = typeof document !== 'undefined' ? document.fonts : undefined
+    if (!fs) return
+    let on = true
+    const bump = () => { if (on) setFontsTick((t) => t + 1) }
+    void fs.ready.then(bump)
+    fs.addEventListener?.('loadingdone', bump)
+    return () => { on = false; fs.removeEventListener?.('loadingdone', bump) }
+  }, [])
+  const fontsReady = fontsTick > 0
   // The signature covers what a slice's height depends on — the flow blocks, the brand, the page, the view, the data — so a
   // header element dragged across its canvas never re-measures, and the pages keep the last measurement while a new one lands.
   const flow = useMemo(() => design.blocks.filter((b) => !isCanvas(b)), [design.blocks])
-  const sig = useMemo(() => hash(JSON.stringify({ b: flow, br: [design.brand, studioBrand], p: design.page, v: cv, n: data.items.length, q: data.quote.number, t: totals.totalMinor, w: bodyW, f: fontsReady, k: built.slices.map((s) => s.key) })), [flow, design.brand, design.page, cv, data.items.length, data.quote.number, totals.totalMinor, bodyW, fontsReady, built.slices])
-  const [measured, setMeasured] = useState<{ sig: string; heights: Record<string, number> } | null>(null)
+  const sig = useMemo(() => hash(JSON.stringify({ b: flow, br: [design.brand, studioBrand], p: design.page, v: cv, n: data.items.length, q: data.quote.number, t: totals.totalMinor, w: bodyW, f: fontsTick, k: built.slices.map((s) => s.key) })), [flow, design.brand, studioBrand, design.page, cv, data.items.length, data.quote.number, totals.totalMinor, bodyW, fontsTick, built.slices])
   const measureRef = useRef<HTMLDivElement>(null)
   const measuring = measured?.sig !== sig
+  /* The least room a page body gives (with the header and the footer it draws) — a slice taller than this can never print whole. */
+  const hdrMin = header ? mm(header.height) : 0, ftrMin = footer ? mm(footer.height) : 0
+  const roomMin = pageH - mm(m.top) - mm(m.bottom) - hdrMin - ftrMin
   useLayoutEffect(() => {
     if (!measuring || !measureRef.current) return
     const heights: Record<string, number> = {}
     for (const el of measureRef.current.querySelectorAll<HTMLElement>('[data-k]')) heights[el.dataset.k!] = el.getBoundingClientRect().height
-    setMeasured({ sig, heights })
-  }, [measuring, sig])
+    const tall = built.slices.filter((s) => s.splitLine && (heights[s.key] ?? 0) + (s.tableId ? heights[`head:${s.tableId}`] ?? 0 : 0) > roomMin).map((s) => s.splitLine!)
+    setMeasured({ sig, heights, split: tall.some((id) => !split.has(id)) ? new Set([...split, ...tall]) : split })
+  }, [measuring, sig, built.slices, roomMin, split])
   const heights = measured?.heights ?? {}
   /* (REG-569) A header or footer whose content outgrows its set height takes the room it needs; the body starts under the header's real
      bottom and stops above the footer's real top, so nothing on a canvas ever prints over the letter. */
@@ -113,7 +140,7 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
   const onCanvasMeasure = useCallback((id: string, px: number) => setCanvasH((c) => (Math.abs((c[id] ?? 0) - px) < 0.5 ? c : { ...c, [id]: px })), [])
   const hdrH = header ? Math.max(mm(header.height), canvasH[header.id] ?? 0) : 0
   const ftrH = footer ? Math.max(mm(footer.height), canvasH[footer.id] ?? 0) : 0
-  const measureKey = `${fontsReady ? 'f' : ''}${zoom}`
+  const measureKey = `${fontsReady ? `f${fontsTick}` : ''}${zoom}`
 
   const bodyH = (bodyIndex: number) => pageH - mm(m.top) - mm(m.bottom) - (header && shows(header, bodyIndex) ? hdrH : 0) - (footer && shows(footer, bodyIndex) ? ftrH : 0)
   const pages = useMemo(() => (measured ? plan(built.slices, heights, built.tables, { bodyH, hasCover: !!cover }) : []), [measured, built, heights, cover, header, footer, pageH, m.top, m.bottom, hdrH, ftrH])   // eslint-disable-line react-hooks/exhaustive-deps
@@ -161,6 +188,7 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
 
   return (
     <div className={`${styles.doc}${className ? ` ${className}` : ''}`} data-print={print || undefined} style={{ ['--body-w' as string]: `${bodyW}px` }}>
+      <StudioFontFaces faces={studioBrand.faces} />
       {measuring ? (
         <div ref={measureRef} className={styles.measure} style={{ width: bodyW }} aria-hidden>
           {built.slices.map((s) => <div key={s.key} data-k={s.key} className={styles.slice} style={{ paddingTop: s.padTop, paddingBottom: s.padBottom }}>{renderNode(s, dummyCtx)}</div>)}
@@ -173,7 +201,9 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
           ))}
         </div>
       ) : null}
-      <div className={styles.pages} style={{ zoom }} onPointerDown={interactive ? () => interactive.onSelect(null) : undefined}>
+      <div className={styles.pages} style={{ zoom }} onPointerDown={interactive ? () => interactive.onSelect(null) : undefined}
+           /* (S44G — NB-08) on the editor's page a link in the words only selects its block — it never opens while the template is being made */
+           onClickCapture={interactive ? (e) => { if ((e.target as Element).closest?.('a[href]')) e.preventDefault() } : undefined}>
         {shown.map((p, i) => {
           const bodyIndex = bodyIndexOf[i] ?? 0
           const pc: PageCtx = { page: i + 1, pages: pages.length, pageTotalMinor: p.pageTotalMinor, pageTotals }

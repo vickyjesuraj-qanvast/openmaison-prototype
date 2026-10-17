@@ -5,6 +5,10 @@ import { useSnackbar } from '@/components/om/snackbar'
 import type { CreditsChrome } from '@/lib/credits/chrome'
 import { CreditBlockDialog, ManageBillingDialog, TalkToUsDialog, TopUpDialog } from './credit-dialogs'
 import { PlansDialog } from './plans-dialog'
+import { SeatsDialog } from './seats-dialog'
+import { PlanLockDialog } from './plan-lock-dialog'
+import type { ProFeature } from '@/lib/credits/features'
+import { topupFor } from '@/lib/credits/plans'
 import { CREDITS_EVENT, TIP_EVENT, useCredits, useSeedCredits, type CreditsOpen } from './credits-client'
 
 type Block = Extract<CreditsOpen, { kind: 'block' }>
@@ -24,7 +28,9 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
   const [plans, setPlans] = useState(false)
   const [talk, setTalk] = useState(false)
   const [billing, setBilling] = useState(false)
-  const [topUp, setTopUp] = useState<{ then: (() => void) | null; nested: boolean } | null>(null)
+  const [seats, setSeats] = useState<{ nested: boolean } | null>(null)
+  const [lock, setLock] = useState<{ feature: ProFeature; nested: boolean } | null>(null)
+  const [topUp, setTopUp] = useState<{ then: (() => void) | null; nested: boolean; credits?: number } | null>(null)
   const [block, setBlock] = useState<Block | null>(null)
 
   useEffect(() => {
@@ -32,8 +38,10 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
       const d = (e as CustomEvent<CreditsOpen>).detail
       if (!d) return
       if (d.kind === 'plans') setPlans(true)
-      else if (d.kind === 'topup') setTopUp({ then: null, nested: false })
+      else if (d.kind === 'topup') setTopUp({ then: null, nested: false, credits: d.credits })
       else if (d.kind === 'billing') setBilling(true)
+      else if (d.kind === 'seats') setSeats({ nested: !!d.nested })
+      else if (d.kind === 'lock') setLock({ feature: d.feature, nested: !!d.nested })
       else if (d.kind === 'block') setBlock(d)
     }
     window.addEventListener(CREDITS_EVENT, on)
@@ -60,10 +68,12 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
       <PlansDialog open={plans} onClose={() => setPlans(false)} chrome={chrome} summary={live} onTalk={() => setTalk(true)} />
       <TalkToUsDialog open={talk} onClose={() => setTalk(false)} summary={live} nested={plans} />
       <ManageBillingDialog open={billing} onClose={() => setBilling(false)} summary={live} />
+      <SeatsDialog open={!!seats} nested={seats?.nested ?? false} onClose={() => setSeats(null)} summary={live} />
+      <PlanLockDialog open={!!lock} feature={lock?.feature ?? null} nested={lock?.nested ?? false} summary={live} onClose={() => setLock(null)} />
       <CreditBlockDialog open={!!block} onClose={() => setBlock(null)} summary={live} refusal={block?.refusal ?? null} what={block?.what ?? 'render'} needed={block?.needed ?? 0}
                          smaller={block?.smaller ?? null}
-                         onBuy={() => { const retry = block?.retry ?? null; setTopUp({ nested: true, then: () => { setBlock(null); retry?.() } }) }} />
-      <TopUpDialog open={!!topUp} onClose={() => setTopUp(null)} chrome={chrome} then={topUp?.then ?? null} nested={topUp?.nested ?? false} />
+                         onBuy={() => { const retry = block?.retry ?? null; setTopUp({ nested: true, credits: topupFor(block?.refusal && 'needed' in block.refusal ? block.refusal.needed : 0), then: () => { setBlock(null); retry?.() } }) }} />
+      <TopUpDialog open={!!topUp} onClose={() => setTopUp(null)} chrome={chrome} then={topUp?.then ?? null} nested={topUp?.nested ?? false} credits={topUp?.credits} />
     </>
   )
 }

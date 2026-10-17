@@ -11,13 +11,16 @@ import { presetLabel } from '@/lib/quotes/payments'
 import { startsWith, type PickerTemplate } from '@/lib/templates/picker'
 import type { QuoteTemplateState } from '@/lib/templates/queries'
 import styles from './template-bar.module.css'
+import { ProTag } from '@/components/credits/pro-tag'
 
 /**
  * (REG-489 → REG-496) The quote's template, inside General Info, as a card: the template's first page, its name and pinned
  * version, what it started the quote with, and three actions — Change (the picker), Edit template (the template editor in
  * this tab, with this quote as its origin) and Save as new template. No template = the studio default prints.
  */
-export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs }: { state: QuoteTemplateState; busy: boolean; onChange: () => void; onEdit: () => void; onSaveAs: () => void }) {
+export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs, locked = false }: { state: QuoteTemplateState; busy: boolean; onChange: () => void; onEdit: () => void; onSaveAs: () => void
+  /** (pending modules S19) the template editor is Pro: on Free the card wears the Pro tag and its presses open the lock card */
+  locked?: boolean }) {
   const cur = state.current
   const pick: PickerTemplate | null = cur ? state.picker.templates.find((t) => t.id === cur.id) ?? null : null
   const words = cur ? startsWith({ id: cur.id, name: cur.name, version: cur.pinned, isDefault: pick?.isDefault ?? false, paper: pick?.paper ?? 'A4', lastUsedAt: null, design: cur.design, defaults: cur.defaults, folderId: pick?.folderId ?? null }, (k) => presetLabel(k ?? 'default')) : null
@@ -27,7 +30,7 @@ export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs }: { stat
         {cur ? <TemplateThumb design={cur.design} brand={state.picker.brand} data={state.picker.sample} width={72} /> : <span className={styles.cardNone}><Icon name="style" size={24} weight={300} /></span>}
       </span>
       <div className={styles.cardText}>
-        <span className={styles.cardEyebrow}>Template</span>
+        <span className={styles.cardEyebrow}>Template{locked ? <> <ProTag /></> : null}</span>
         <span className={styles.cardName}>{cur ? cur.name : 'Studio default'}{cur ? <MetaChip>{cur.deleted ? `Deleted · v${cur.pinned} still prints` : `v${cur.pinned}${cur.latest > cur.pinned ? ` · v${cur.latest} published` : ''}`}</MetaChip> : null}{pick?.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
         <span className={styles.cardMeta}>{words ? `${words.grouping} · ${words.payments} · ${words.validity}` : 'Prints through the studio’s default template and started with its settings. Pick one to start from its sections.'}</span>   {/* (REG-580) */}
         {words && words.sections !== 'No starter sections' ? <span className={styles.cardMeta}>Starts with {words.sections}</span> : null}

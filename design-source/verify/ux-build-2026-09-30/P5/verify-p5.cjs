@@ -11,6 +11,14 @@ const ok = (name, pass, note = '') => { results.push({ name, pass }); console.lo
 const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toString().trim()
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
+/* (pending modules S14, a deliberate change of this rule) the demo studio has CaseTrust on record (repair R116, as its brand kit and About page
+   show): its signing pages carry the deposit-protection disclosure, ticked once the agreement is read — before the code. */
+const caseTrust = async (pg) => {
+  const box = pg.getByRole('checkbox', { name: 'I have read the CaseTrust deposit-protection disclosure' })
+  if (!(await box.count()) || await box.first().isChecked().catch(() => false)) return
+  await pg.getByTestId('gate-casetrust-tick').first().scrollIntoViewIfNeeded().catch(() => {})
+  await pg.getByTestId('gate-casetrust-tick').first().click(); await pg.waitForTimeout(300)
+}
 const snackText = (page) => page.locator('[role="status"][aria-live="polite"]').innerText().catch(() => '')
 async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (Date.now() - t0 < timeout) { const t = await snackText(page); if (re.test(t)) return t; await page.waitForTimeout(150) } return snackText(page) }
 const lead = (name) => sql(`select id from leads where name = '${name}'`)
@@ -74,7 +82,8 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     ok('C8 the copy-link icon on a Draft says it marks it Sent', (await page.locator('[role="tooltip"]').innerText().catch(() => '')) === 'Copy link — marks it Sent')
     await shot(page, 'c8-copy-link-tooltip', { x: 700, y: 0, width: 740, height: 140 })
     /* a failed copy leaves it a Draft */
-    await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')) })
+    // REG-897 (Dane UAT 12.10): a refused Clipboard API still gets the browser's own Copy — a copy fails only when both refuse
+    await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')); document.execCommand = () => false })
     await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click()
     const t1 = await snack(page, /stays a Draft/)
     await page.waitForTimeout(800)
@@ -116,7 +125,8 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     const dlg = page.getByRole('dialog', { name: 'Send a reminder' })
     await dlg.waitFor(); await page.waitForTimeout(400)
     const msg = await dlg.getByLabel('Message to the client').inputValue()
-    ok('C5 Send a reminder reuses the Send dialog with a nudge and the same link', /gentle reminder/.test(msg) && msg.includes(`/sign/${A}`) && (await dlg.getByLabel('Client name').inputValue()) === 'Harpreet Kaur')
+    /* (pending modules S03, a deliberate change of this rule) the same link is the contract's token, never its id */
+    ok('C5 Send a reminder reuses the Send dialog with a nudge and the same link', /gentle reminder/.test(msg) && msg.includes(`/sign/${sql(`select sign_token from contracts where id = '${A}'`)}`) && (await dlg.getByLabel('Client name').inputValue()) === 'Harpreet Kaur')
     await shot(page, 'c5-send-a-reminder')
     await dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()
     const t = await snack(page, /Reminder sent to/)
@@ -176,6 +186,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     const readDoc = async () => {
       await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(600)
       if (await p.getByTestId('gate-accept').count()) { await p.getByTestId('gate-accept').evaluate((e) => e.scrollIntoView()); await p.getByTestId('gate-accept').click(); await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(500) }
+      if (await p.getByTestId('gate-casetrust').count()) { await caseTrust(p); await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(500) }
     }
     await readDoc()
     ok('C3 "Document 1 of 2 read · Next document"', /Document 1 of 2 read/.test(await bar.innerText()) && (await bar.getByRole('button', { name: 'Next document' }).isVisible()), await bar.innerText())
@@ -230,6 +241,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
 
   /* ── C2: a contract naming a Draft quote doesn't go out ── */
   await step('C2 Draft quote', async () => {
+    sql(`update members set is_you = case id when 'germaine' then 1 else 0 end`)   // (S44Q — row 334, a deliberate change of this rule) an approver's send approves the Draft quote it names now; the hold is a non-approver's — Germaine, a Designer
     await page.goto(`${BASE}/contracts/${OLIVIA_C}`); await page.getByTestId('contract-editor').waitFor(); await ready(page)
     ok('C2 the meta row says the quote is a Draft', /Draft/i.test(await page.getByTestId('contract-quote-status').innerText()))
     await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -242,6 +254,7 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await page.getByRole('menuitem', { name: 'Sent to Client' }).click()
     const t2 = await snack(page, /still a Draft/)
     ok('C2 the list’s status menu holds it too', /OM-10001 is still a Draft — approve and send it first/.test(t2) && sql(`select status from contracts where id = '${OLIVIA_C}'`) === 'Draft', t2)
+    sql(`update members set is_you = case id when 'dane' then 1 else 0 end`)
   })
 
   /* ── C4: the template editor warns; Send together names the document that holds it back ── */

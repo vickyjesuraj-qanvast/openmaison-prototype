@@ -28,7 +28,8 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
     const dlg = page.getByTestId('item-dialog')
     await dlg.getByLabel('Item name').fill('Skirting, PVC')
     await dlg.getByLabel('Cost (S$)').fill('2.80'); await dlg.getByLabel('Markup (S$)').fill('0.70')
-    ok('the unit price reads S$3.50', /Unit price S\$\s?3\.50/.test(await dlg.innerText()))
+    // (S44P, M8 — pending modules, a deliberate change of this rule: the unit price is its own box beside Cost and Markup, no longer the markup's helper line)
+    ok('the unit price reads S$3.50', (await dlg.getByLabel('Unit price (S$)').inputValue()) === '3.50')
     await dlg.getByRole('combobox', { name: 'Category' }).click(); await page.waitForTimeout(250)
     const cats = await page.getByRole('option').allInnerTexts()
     ok('the category is one of the trades — Tiling from the book among them', cats.includes('Carpentry') && cats.includes('Tiling') && cats.includes('No category'), cats.join(', '))
@@ -98,7 +99,9 @@ async function snack(page, text) { await page.getByText(text, { exact: false }).
   await step('the demo’s book tells the truth', async () => {
     await page.goto(`${BASE}/company/price-book`); await ready(page)
     const body = await page.locator('body').innerText()
-    ok('the tiles cost S$11.00 a square foot', /S\$\s?11\.00 \/ sqft/.test(body) && !/1,100\.00/.test(body))
+    // REG-797 (UX audit S8): My Items opens as the list — the unit and the unit price sit in their own columns of the tiles' rows
+    const tiles = await page.getByRole('row').filter({ hasText: 'Homogeneous tiles' }).allInnerTexts()
+    ok('the tiles cost S$11.00 a square foot', tiles.length > 0 && tiles.every((t) => /\bsqft\b/.test(t) && /S\$\s?11\.00/.test(t)) && !/1,100\.00/.test(body), tiles.map((t) => t.replace(/\s+/g, ' ')).join(' | '))
     ok('Cement screeding is not "edited" on 23 Sep', sql(`select updated_at < 1790000000 from price_book_items where name like 'Cement screeding%'`) === '1')
     ok('OM-10001 has no blank "Item" lines or empty sections', sql(`select count(*) from quote_items i join quotes q on q.id=i.quote_id where q.number='OM-10001' and i.name in ('Item','New section')`) === '0')
     await shot('04-book')

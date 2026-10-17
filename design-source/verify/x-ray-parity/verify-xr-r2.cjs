@@ -12,7 +12,8 @@ const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toStr
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } finally { sql(`update members set is_you = case id when 'dane' then 1 else 0 end`) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 const FILES = `${S}/xr-files`; fs.mkdirSync(FILES, { recursive: true })
-const file = (name, body = '%PDF-1.4 probe') => { const p = `${FILES}/${name}`; fs.writeFileSync(p, body); return p }
+const referenceBytes = require(require('path').resolve(__dirname, '../../..', 'design-source/verify/x-ray-parity/fixtures/reference-file.cjs'))   // (S42 E-05) a reference quote is read by its words, never its name
+const file = (name, body = '%PDF-1.4 probe') => { const p = `${FILES}/${name}`; fs.writeFileSync(p, body === '%PDF-1.4 probe' ? referenceBytes(name) ?? body : body); return p }
 const VIV = sql(`select id from leads where name='Vivien Lee'`), OLIVIA = sql(`select id from leads where name='Olivia Martinez'`), ARJUN = sql(`select id from leads where name='Arjun Mehta'`)
 const Q8 = sql(`select id from quotes where number='OM-10008'`), Q1 = sql(`select id from quotes where number='OM-10001'`)
 const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinets,30,ft run,220,Carpentry,Kitchen\nQuartz countertop,12,ft run,190,Carpentry,Kitchen\nVinyl flooring supply and lay,900,sqft,6.5,Flooring,Living Room\nPainting to the entire unit,1,Lot,1800,Painting,Whole unit\nLighting points,20,point,60,Electrical,Whole unit\n'
@@ -50,7 +51,9 @@ const CSV = 'Item,Qty,Unit,Unit price,Trade,Room\nKitchen top and bottom cabinet
     await setup().getByRole('textbox', { name: /Their studio’s name/ }).fill('Acme Interiors')
     await setup().getByRole('combobox', { name: 'Lead' }).click()
     await page.keyboard.type('viv'); await page.waitForTimeout(200)
-    ok('the lead list finds as you type', /Vivien Lee/.test(await page.evaluate(() => document.activeElement?.textContent || '')))
+    // REG-858 (Dane UAT 6.41): a long select is searchable — the typed letters go in its search box and narrow the list
+    const opts = (await page.getByRole('option').allInnerTexts()).map((o) => o.trim()).filter(Boolean)
+    ok('the lead list finds as you type', opts.some((o) => /Vivien Lee/.test(o)) && opts.every((o) => /viv/i.test(o)), opts.join(' | '))
     await page.keyboard.press('Enter'); await page.waitForTimeout(400)
     ok('a lead with one quote has it chosen', (await setup().getByRole('radio', { name: /OM-10008/ }).getAttribute('aria-checked')) === 'true')
     await setup().getByRole('button', { name: 'Compare' }).click()

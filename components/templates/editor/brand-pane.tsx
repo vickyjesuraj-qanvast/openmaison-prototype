@@ -9,7 +9,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLE_LABEL, FONT_ROLES, mergeBrand, type BrandKit, type BrandOverrides, type FontSpec, type TemplateDesign } from '@/lib/templates/model'
+import { COLOR_KEYS, COLOR_LABEL, fontOptions, FONT_ROLE_LABEL, FONT_ROLES, mergeBrand, type BrandKit, type BrandOverrides, type FontSpec, type TemplateDesign } from '@/lib/templates/model'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import styles from './brand-pane.module.css'
 import controls from './inspector.module.css'
@@ -87,7 +87,7 @@ export function BrandPane({ design, brand, onDesign }: Props) {
                     {fontOverride(role) ? <Button appearance="text" onPress={() => resetFont(role)}>Reset to brand</Button> : <span className={styles.fromKit}>From the kit</span>}
                   </div>
                   <div className={controls.grid}>
-                    <div className={controls.field} data-wide><TextField label="Font" value={f.family} mode="select" options={[...FONT_FAMILIES]} onChange={(v) => setFont(role, { family: v })} /></div>
+                    <div className={controls.field} data-wide><TextField label="Font" value={f.family} mode="select" options={fontOptions(brand, f.family)} onChange={(v) => setFont(role, { family: v })} /></div>
                     <div className={controls.field}><TextField label="Size (pt)" value={String(f.size)} numeric="amount" maxLength={4} onChange={(v) => { const n = Number(v); if (n > 0) setFont(role, { size: n }) }} /></div>
                     <div className={controls.field}><TextField label="Weight" value={WEIGHTS.find((w) => w.value === f.weight)?.label ?? 'Regular'} mode="select" options={WEIGHTS.map((w) => w.label)} onChange={(v) => setFont(role, { weight: WEIGHTS.find((w) => w.label === v)?.value ?? 400 })} /></div>
                   </div>

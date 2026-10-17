@@ -1,24 +1,24 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every paper's Download PDF, one call
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox, TextArea } from '@/components/ds'
-import { Dialog } from '@/components/om/dialog'
+import { DangerButton, Dialog } from '@/components/om/dialog'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { readingSections } from '@/components/templates/render/slices'
-import { ReadingCards } from './reading-cards'
+import { QuoteStage } from './quote-stage'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { displayDateLong } from '@/lib/format'
-import { mm, PAPER_MM } from '@/lib/templates/model'
 import { docTotals } from '@/lib/templates/data'
 import { money2 } from '@/lib/quotes/math'
-import { fallbackDesignClient } from '@/lib/templates/presets'
-import type { QuotePreviewData } from '@/lib/templates/queries'
-import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
+import type { ClientQuote } from '@/lib/quotes/client-quote'
 import { askQuoteChange, confirmQuoteOnline } from '@/app/quotes/actions'
+import { stampQuoteSeen } from '@/app/quotes/seen-actions'
+import { declineVariationOnline } from '@/app/quotes/decline-actions'
+import { DECLINE_NOTE_MAX } from '@/lib/projects/decline'
 import type { ConfirmExtras } from '@/lib/quotes/confirm-data'
 import shell from '@/components/contracts/sign/signing-page.module.css'
 import styles from './confirm-page.module.css'
@@ -30,30 +30,39 @@ import styles from './confirm-page.module.css'
  * marks the quote Confirmed with the name typed; the agreement and the signature follow on the contract the studio raises from it.
  * Already confirmed (or signed), the card says so.
  */
-export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG-626) whether the link is open yet, the optional works to pick, the files shared */ extras: ConfirmExtras }) {
-  const { quote, template, brand } = data
+export function ConfirmPage({ token, data, extras }: { /** (pending modules S04) the link's own token — every answer goes through it */ token: string
+  /** (S04) the quote as the print reads it — no cost, mark-up, rebate, vendor or record ids */ data: ClientQuote
+  /** (REG-626) whether the link is open yet, the optional works to pick, the files shared */ extras: ConfirmExtras }) {
+  const { quote, design, brand } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const design = useMemo(() => template?.design ?? fallbackDesignClient(), [template])
   const totals = useMemo(() => docTotals(data.data), [data.data])
   const studioName = data.data.studio.name
   const clientName = data.data.client.name
   const signed = quote.status === 'Signed'
+  /* (Projects round 5, F-07) a variation order: approved on this page, it moves the contract — the card says so in its own words */
+  const vo = extras.variation ?? null
+  const noun = vo ? 'variation order' : 'quote'
   const [confirmed, setConfirmed] = useState<{ by: string; at: Date } | null>(quote.confirmedAt ? { by: quote.confirmedBy ?? clientName, at: new Date(quote.confirmedAt) } : null)
   const [name, setName] = useState(clientName)
   const [busy, setBusy] = useState(false)
-  /* (REG-626, parity Q-32) The optional works the client may add — shown only while the quote's client view prints them. */
+  /* (REG-626, parity Q-32) The optional works the client may add — shown only while the quote's client view prints them.
+     (S44Q — row 357) Settings decides whether the client ticks them here (`extras.picks`, on as always) or reads them and asks to add one. */
   const optional = data.view.optionalWorks ? extras.optional : []
+  const picking = extras.picks
   const [picks, setPicks] = useState<Set<string>>(() => new Set(extras.optional.filter((o) => o.choice === 'want').map((o) => o.id)))
-  const pickedMinor = optional.filter((o) => picks.has(o.id)).reduce((s, o) => s + o.minor, 0)
+  const pickedMinor = picking ? optional.filter((o) => picks.has(o.id)).reduce((s, o) => s + o.minor, 0) : 0
   const toggle = (id: string, on: boolean) => setPicks((p) => { const n = new Set(p); if (on) n.add(id); else n.delete(id); return n })
   const wanted = extras.optional.filter((o) => o.choice === 'want')
 
-  /* (UX audit Q6) On a phone the lines read as cards; "View as printed" shows the A4. The cards are drawn from the print's own sections. */
+  /* (pending modules S04 — card: "'Viewed' on the quote link … the follow-up cue") The page's first ask from a browser that ran it says the client
+     opened the quote — a chat app drawing the link's card runs no script, so it never counts. Only while the quote shows (never "Not ready yet"). */
+  const shows = extras.open || !!quote.confirmedAt || quote.status === 'Signed'
+  useEffect(() => { if (shows) void stampQuoteSeen({ token, via: 'confirm' }).catch(() => {}) }, [token, shows])
+  /* (UX audit Q6) On a phone the lines read as cards; "View as printed" shows the A4 (the stage, shared with the view-only link — S02). */
   const phone = useMediaQuery(MOBILE)
   const [printed, setPrinted] = useState(false)
-  const reading = useMemo(() => readingSections(design, data.data, data.view), [design, data.data, data.view])
-  const lineCount = reading ? reading.sections.reduce((n, s) => n + s.lines.length, 0) : 0
+  const [pages, setPages] = useState(0)
   /* (UX audit Q6) Ask for a change: the client's words to the designer on WhatsApp (opened on the press — a popup blocker eats one opened
      after the round trip, REG-534) and to the studio's bell (`askQuoteChange`). */
   const [askOpen, setAskOpen] = useState(false)
@@ -64,35 +73,41 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
     const note = askNote.trim()
     const digits = extras.designer.phone.replace(/\D/g, '')
     const to = digits.length === 8 ? `65${digits}` : digits
-    const text = `Hi ${extras.designer.name.split(' ')[0]}, it’s ${who} about quote ${quote.number}. ${note || 'I’d like to ask for a change before I confirm.'}`
+    const text = `Hi ${extras.designer.name.split(' ')[0]}, it’s ${who} about ${noun} ${quote.number}. ${note || `I’d like to ask for a change before I ${vo ? 'approve' : 'confirm'}.`}`   // (REG-1055) a variation order is named as one
     setAskOpen(false)
     if (to) window.open(`https://wa.me/${to}?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
-    void askQuoteChange(quote.id, { name: who, note }).then((r) => {
+    void askQuoteChange(token, { name: who, note }).then((r) => {
       if ('error' in r) { snackbar({ message: `Couldn’t send your request — ${r.error.replace(/^./, (c) => c.toLowerCase())}` }); return }
       setAsked(true); snackbar({ message: `${studioName} has your request — finish your message in WhatsApp` })
     }, () => snackbar({ message: 'Couldn’t send your request — please try again' }))
   }
 
-  /* Fit the page to the stage, never above 1:1 (the preview's rule). */
-  const areaRef = useRef<HTMLDivElement>(null)
-  const [areaW, setAreaW] = useState(0)
-  useEffect(() => {
-    const el = areaRef.current
-    if (!el) return
-    const ro = new ResizeObserver((es) => { for (const e of es) setAreaW(e.contentRect.width) })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  const pageW = mm(PAPER_MM[design.page.paper].w)
-  const zoom = areaW ? Math.min(1, Math.max(0.3, areaW / pageW)) : 0.9
-  const [pages, setPages] = useState(0)
-  const onPaginated = useCallback((p: Paginated) => setPages(p.pages), [])
+  /* (gaps build D, item 2 — M-07; 1.0's Reject, I-293) A variation order can be declined on the record, with a reason: the order goes back
+     to the studio (Money says so, the team is told) and this card says it was declined. The dialog closes only once the answer lands. */
+  const [declined, setDeclined] = useState<{ at: number; note: string | null; by: string | null } | null>(vo?.declined ?? null)
+  const [declineOpen, setDeclineOpen] = useState(false)
+  const [declineNote, setDeclineNote] = useState('')
+  const [declineTried, setDeclineTried] = useState(false)
+  const [declining, setDeclining] = useState(false)
+  const decline = async () => {
+    const note = declineNote.trim()
+    if (!note) { setDeclineTried(true); return }
+    if (declining) return
+    setDeclining(true)
+    try {
+      const r = await declineVariationOnline(token, { name: name.trim() || clientName, note })
+      if ('error' in r) { snackbar({ message: `Couldn’t send your answer — ${r.error.replace(/^./, (c) => c.toLowerCase())}` }); return }
+      setDeclined({ at: r.declinedAt, note, by: r.by }); setDeclineOpen(false)
+      snackbar({ message: `${studioName} has your answer — ${extras.designer.name.split(' ')[0]} will be in touch` })
+      router.refresh()
+    } catch { snackbar({ message: 'Couldn’t send your answer — please try again' }) } finally { setDeclining(false) }
+  }
 
   const confirm = async () => {
     if (!name.trim() || busy) return
     setBusy(true)
     try {
-      const r = await confirmQuoteOnline(quote.id, name.trim(), [...picks])
+      const r = await confirmQuoteOnline(token, name.trim(), picking ? [...picks] : [])
       setConfirmed({ by: r.by, at: new Date(r.confirmedAt) })
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t confirm — please try again' }) } finally { setBusy(false) }
@@ -108,26 +123,10 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
         <MetaChip color="green" icon="lock">Private link</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
       </header>
       <div className={shell.body}>
-        <div className={`${shell.stage} ${styles.stage}`} ref={areaRef}>
-          {/* (sweep S1) a link opened before the studio sent the quote shows nothing of it — no draft, no prices — only the card's "Not ready yet" */}
-          {extras.open || confirmed || signed ? (
-            <>
-              {/* (UX audit Q6) ≤767: the reading cards, or — "View as printed" — the A4. Above 767 the print as before. The CSS shows the cards on
-                  a phone from the first paint (the media query answers only after hydration); the print mounts on a phone only when asked for. */}
-              {reading ? (
-                <div className={styles.phoneRead} data-printed={printed || undefined}>
-                  <div className={styles.readHead}>
-                    <span className={styles.readCount}>{printed ? `As printed${pages ? ` · ${pages} ${pages === 1 ? 'page' : 'pages'}` : ''}` : `${lineCount} ${lineCount === 1 ? 'line' : 'lines'}`}</span>
-                    <Button appearance="text" iconStart={<Icon name={printed ? 'view_list' : 'description'} size={20} />} onPress={() => setPrinted((p) => !p)} data-testid="view-as-printed">{printed ? 'View as a list' : 'View as printed'}</Button>
-                  </div>
-                  {printed ? null : <ReadingCards sections={reading.sections} optional={reading.optional} amounts={reading.amounts} totalMinor={totals.totalMinor} />}
-                </div>
-              ) : null}
-              {!phone || printed || !reading ? <div className={styles.print} data-cards={reading ? '' : undefined} data-printed={printed || undefined}><TemplateDocument design={design} brand={brand} data={data.data} view={data.view} zoom={zoom} onPaginated={onPaginated} /></div> : null}
-            </>
-          ) : null}
-        </div>
-        <aside className={shell.card} aria-label="Confirm this quote" data-state={signed ? 'signed' : confirmed ? 'confirmed' : 'open'}>
+        {/* (sweep S1) a link opened before the studio sent the quote shows nothing of it — no draft, no prices — only the card's "Not ready yet" */}
+        <QuoteStage design={design} brand={brand} data={data.data} view={data.view} totalMinor={totals.totalMinor} show={shows || !!confirmed}
+                    printed={printed} onPrinted={setPrinted} onPages={setPages} />
+        <aside className={shell.card} aria-label={vo ? 'Approve this variation order' : 'Confirm this quote'} data-state={signed ? 'signed' : confirmed ? 'confirmed' : 'open'}>
           {signed ? (
             <>
               <span className={shell.done}><Icon name="check_circle" size={40} /></span>
@@ -137,25 +136,56 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
           ) : confirmed ? (
             <>
               <span className={shell.done}><Icon name="check_circle" size={40} /></span>
-              <h2 className={shell.cardTitle}>Confirmed</h2>
-              <p className={shell.cardText}>Confirmed by <strong>{confirmed.by}</strong> on {displayDateLong(confirmed.at)}. {studioName} will send the agreement for your signature next.</p>
+              <h2 className={shell.cardTitle}>{vo ? 'Approved' : 'Confirmed'}</h2>
+              {vo ? <p className={shell.cardText} data-testid="vo-approved">Approved by <strong>{confirmed.by}</strong> on {displayDateLong(confirmed.at)}. Your contract with {studioName} is now {money2(vo.after)}.</p>
+                : <p className={shell.cardText}>Confirmed by <strong>{confirmed.by}</strong> on {displayDateLong(confirmed.at)}. {studioName} will send the agreement for your signature next.</p>}
               {wanted.length ? <p className={shell.cardText} data-testid="confirm-wanted">You asked for {wanted.map((o) => o.name).join(', ')} as well — {studioName} will add {wanted.length === 1 ? 'it' : 'them'} to the quote.</p> : null}
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (phone && !printed) { setPrinted(true); window.setTimeout(() => window.print(), 600) } else window.print() }}>Download a copy</Button>   {/* (UX audit Q6) a phone reading the cards prints the A4 */}
+              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (phone && !printed) { setPrinted(true); window.setTimeout(() => printPaper(), 600) } else printPaper() }}>Download a copy</Button>   {/* (UX audit Q6) a phone reading the cards prints the A4 */}
+            </>
+          ) : vo && declined ? (
+            /* (gaps build D, item 2) declined on this page: the answer stays; the studio revises it or sends it again */
+            <>
+              <span className={styles.declinedMark}><Icon name="cancel" size={40} /></span>
+              <h2 className={shell.cardTitle} data-testid="vo-declined-title">Declined</h2>
+              <p className={shell.cardText} data-testid="vo-declined">{`${declined.by ?? clientName} declined this variation order on ${displayDateLong(new Date(declined.at))}. Your contract with ${studioName} stays at ${money2(vo.before)}.`}</p>
+              {declined.note ? <p className={styles.declinedNote}>{`“${declined.note}”`}</p> : null}
+              <p className={shell.fine}>{`${extras.designer.name} will be in touch — a changed order comes to you as a new link.`}</p>
             </>
           ) : !extras.open ? (
             /* (REG-626, parity §8.2 · E-110) A link opened before the studio sent the quote: nothing to confirm yet. */
             <>
               <span className={shell.eyebrow}>{quote.number}</span>
               <h2 className={shell.cardTitle} data-testid="confirm-not-ready">Not ready yet</h2>
-              <p className={shell.cardText}>{studioName} is still preparing this quote. They will send it to you when it is ready to confirm.</p>
+              {/* (S42 B-24) a client who had version 1 reads that it is being updated, in the view-only link's words — never "still preparing" */}
+              <p className={shell.cardText} data-testid="confirm-not-ready-why">{quote.version > 1 ? `${studioName} is updating this ${noun}. It’ll be back here once it’s ready.` : `${studioName} is still preparing this ${noun}. They will send it to you when it is ready to ${vo ? 'approve' : 'confirm'}.`}</p>
             </>
           ) : (
             <>
               <span className={shell.eyebrow}>{quote.number}{pages > 1 ? ` · ${pages} pages` : ''}</span>
-              <h2 className={shell.cardTitle}>Confirm this quote</h2>
-              <p className={shell.cardText}>Hi {clientName.split(' ')[0]}, please read the quote. When you’re happy to go ahead, type your name and confirm — the agreement and the signature come after.</p>
-              <div className={styles.total}><span>Total</span><strong>{money2(totals.totalMinor)}</strong></div>
-              {optional.length ? (
+              <h2 className={shell.cardTitle}>{vo ? 'Approve this variation order' : 'Confirm this quote'}</h2>
+              {vo ? <p className={shell.cardText} data-testid="vo-confirm">Hi {clientName.split(' ')[0]}, please read the changes. When you’re happy with them, type your name and approve — your contract with {studioName} goes from {money2(vo.before)} to {money2(vo.after)}.</p>
+                : <p className={shell.cardText}>Hi {clientName.split(' ')[0]}, please read the quote. When you’re happy to go ahead, type your name and confirm — the agreement and the signature come after.</p>}
+              <div className={styles.total}><span>{vo ? 'Change to the contract' : 'Total'}</span><strong>{vo && totals.totalMinor > 0 ? '+' : ''}{money2(totals.totalMinor)}</strong></div>
+              {optional.length && !picking ? (
+                /* (S44Q — row 357, her UAT ask 2026-10-15) the studio keeps the picking: the works and their prices, read-only, and a press that asks the
+                   designer to add one (the Ask for a change dialog, the work named). *(invented copy)* */
+                <div className={styles.optional} data-testid="confirm-optional" data-readonly="">
+                  <span className={shell.eyebrow}>Optional works</span>
+                  <p className={shell.fine}>Not in the total. To add one, ask {extras.designer.name.split(' ')[0]} — they’ll update the quote.</p>
+                  <ul className={styles.optionalList}>
+                    {optional.map((o) => (
+                      <li key={o.id} className={styles.optionalAsk} data-testid="confirm-optional-row">
+                        <span className={styles.optionalName}>{o.name}</span>
+                        <span className={styles.optionalPrice}>{money2(o.minor)}</span>
+                        <span className={styles.optionalAskPress}>
+                          <Button appearance="text" onPress={() => { setAskNote(`Please add “${o.name}” to my quote.`); setAskOpen(true) }} data-testid="confirm-optional-ask">{`Ask ${extras.designer.name.split(' ')[0]} to add it`}</Button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {optional.length && picking ? (
                 <div className={styles.optional} data-testid="confirm-optional">
                   <span className={shell.eyebrow}>Optional works</span>
                   <p className={shell.fine}>Tick the ones you’d like added. {studioName} will update the quote with them.</p>
@@ -174,11 +204,13 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
                 </div>
               ) : null}
               <TextField label="Your full name" required value={name} onChange={setName} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void confirm() } }} />
-              <p className={shell.fine}>Confirming tells {studioName} you accept this quote as shown. It is not a signature.</p>
-              <Button isDisabled={!name.trim() || busy} onPress={() => { void confirm() }}>{busy ? 'Confirming…' : 'Confirm quote'}</Button>
+              <p className={shell.fine}>{vo ? `Approving tells ${studioName} you accept these changes to your contract. It is not a signature.` : `Confirming tells ${studioName} you accept this quote as shown. It is not a signature.`}</p>
+              <Button isDisabled={!name.trim() || busy} onPress={() => { void confirm() }}>{busy ? (vo ? 'Approving…' : 'Confirming…') : vo ? 'Approve the changes' : 'Confirm quote'}</Button>
               {/* (UX audit Q6) Not ready to confirm? Ask for a change — the designer on WhatsApp, the studio told. */}
               <Button variant="secondary" appearance="outlined" iconStart={<Icon name="chat" size={20} />} onPress={() => { setAskNote(''); setAskOpen(true) }} data-testid="ask-change">Ask for a change</Button>
               {asked ? <p className={shell.fine} data-testid="ask-sent">You asked for a change — {extras.designer.name} will get back to you.</p> : null}
+              {/* (gaps build D, item 2) a no on the record — the order goes back to the studio with the reason */}
+              {vo ? <Button appearance="text" onPress={() => { setDeclineNote(''); setDeclineTried(false); setDeclineOpen(true) }} data-testid="vo-decline">Decline the changes</Button> : null}
             </>
           )}
           {/* (REG-626, parity §8.2 · E-91) The files the studio shares with the quote — its Files section's "Show in client view". */}
@@ -201,6 +233,12 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
               subtitle={`Tell ${extras.designer.name} what you’d like changed on ${quote.number}. WhatsApp opens with your message.`}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setAskOpen(false)}>Cancel</Button><Button iconStart={<Icon name="chat" size={20} />} onPress={ask} data-testid="ask-send">Send on WhatsApp</Button></>}>
         <TextArea label="What would you like changed? (optional)" value={askNote} onChange={(v: string) => setAskNote(v)} maxLength={500} />
+      </Dialog>
+      <Dialog open={declineOpen} onClose={() => { if (!declining) setDeclineOpen(false) }} title="Decline this variation order" size="form" width={400} closeOnScrim={false}
+              subtitle={`Tell ${studioName} why. Your contract stays at ${vo ? money2(vo.before) : 'what it is'} — nothing changes until a new order comes to you.`}
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => setDeclineOpen(false)} isDisabled={declining}>Cancel</Button><DangerButton onClick={() => { void decline() }} disabled={declining}>{declining ? 'Declining…' : 'Decline'}</DangerButton></>}>
+        <TextArea label="Why are you declining?" value={declineNote} onChange={(v: string) => setDeclineNote(v)} maxLength={DECLINE_NOTE_MAX} autoFocus
+                  isInvalid={declineTried && !declineNote.trim()} errorMessage={declineTried && !declineNote.trim() ? 'Say why, so your designer knows what to change' : undefined} data-testid="vo-decline-note" />
       </Dialog>
     </div>
   )

@@ -13,7 +13,7 @@
   "area": "Definitions",
   "feature": "Reading the other studio’s file",
   "now": "Built in parity round 2",
-  "why": "Sheets read for real; PDFs and photos only by known name"
+  "why": "Sheets and text PDFs read by their own words; photos and scans refused (S42)"
  },
  {
   "key": "XRAY",
@@ -300,8 +300,8 @@
   "id": "XR-01",
   "area": "Reading the files",
   "feature": "Reading a PDF or a photo",
-  "now": "Platform",
-  "why": "Known sample names only; the platform reads the rest"
+  "now": "Built",
+  "why": "Text PDFs read by their own words; a photo or a scan is refused (S21, S42)"
  },
  {
   "key": "XRAY",
@@ -317,7 +317,7 @@
   "area": "Reading the files",
   "feature": "File names misread by part of a word",
   "now": "Built in parity round 2",
-  "why": "2.0 bug fixed: whole words only"
+  "why": "File names are no longer read — a quote is known by its words (S42)"
  },
  {
   "key": "XRAY",
@@ -340,8 +340,8 @@
   "id": "XR-06",
   "area": "Reading the files",
   "feature": "Other currencies",
-  "now": "Platform",
-  "why": "S$ only (Q-23)"
+  "now": "Built",
+  "why": "A quote in another currency is refused at once, as in 1.0 (S21)"
  },
  {
   "key": "XRAY",
@@ -468,8 +468,8 @@
   "id": "XP-05",
   "area": "Say this",
   "feature": "Their arithmetic errors",
-  "now": "Platform",
-  "why": "Needs a document’s stated totals"
+  "now": "Built",
+  "why": "“Their numbers don’t add up” when a line’s rate × quantity differs (S21)"
  },
  {
   "key": "XRAY",
@@ -845,7 +845,7 @@
   "area": "The platform’s",
   "feature": "Running without an AI key",
   "now": "Platform",
-  "why": "The curated readings are the product"
+  "why": "Sheets and text PDFs read by rule; no model needed (S21)"
  },
  {
   "key": "XRAY",
@@ -860,32 +860,32 @@
   "id": "XZ-02",
   "area": "Touchpoints",
   "feature": "Meeting Copilot’s competitor-quote analyser",
-  "now": "Later",
-  "why": "Meetings (held)"
+  "now": "Built",
+  "why": "The meeting room’s “Their quote” opens X-Ray on the lead (S23)"
  },
  {
   "key": "XRAY",
   "id": "XZ-03",
   "area": "Touchpoints",
   "feature": "Maison AI quote benchmarker",
-  "now": "Later",
-  "why": "Maison AI"
+  "now": "Built",
+  "why": "Maison AI’s “Compare to past quotes”; its file answer opens X-Ray (S10)"
  },
  {
   "key": "XRAY",
   "id": "XZ-04",
   "area": "Touchpoints",
   "feature": "Purchase order quote compare",
-  "now": "Later",
-  "why": "Finance"
+  "now": "Not built — by design",
+  "why": "Kept out (S06); Order from the quote raises each vendor’s PO"
  },
  {
   "key": "XRAY",
   "id": "XZ-05",
   "area": "Touchpoints",
   "feature": "The homeowner portal",
-  "now": "Later",
-  "why": "The portal"
+  "now": "Not built — by design",
+  "why": "The client portal is built; neither version shows X-Ray there"
  },
  {
   "key": "XRAY",

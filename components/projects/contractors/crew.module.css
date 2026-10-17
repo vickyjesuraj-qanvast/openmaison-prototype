@@ -1,0 +1,55 @@
+/*
+ * (S45B · H-UHD-2) Contractors on a project — composed from the house pieces, never copied: the milestone panel's section grammar
+ * (components/projects/schedule/schedule.module.css), a crew row on the Workload view's person row (36 avatar · name over a line · the
+ * state chip), the card table's 1px rules between rows, the Assign dialog's choices as the house ChoiceCard. Tokens only.
+ */
+.list { display: flex; flex-direction: column; min-width: 0; }
+.row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto auto; align-items: start; gap: var(--om-spacing-3); padding: var(--om-spacing-3) 0; min-width: 0; }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.mark {
+  width: 36px; height: 36px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant);
+}
+.row[data-state='done'] .mark { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+.text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.name { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.nameText { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.line[data-tone='warn'] { color: var(--om-color-on-surface-default); }
+.checked { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.checkIcon { color: var(--om-color-primary-default); }
+.quote { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.chip { padding-top: var(--om-spacing-1); }
+
+/* a trade's heading inside the project's Contractors panel */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.group + .group { margin-top: var(--om-spacing-4); }
+.groupTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.panel { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.lede { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* a gap: a milestone of a trade some contractor does, with nobody on it — neutral (not ours-and-late), the house surface band */
+.gaps { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.gap { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); min-width: 0; }
+.gapIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.gapText { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.links { display: inline-flex; flex-wrap: wrap; gap: var(--om-spacing-4); }
+
+/* the Assign dialog */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.fieldLabel { display: block; margin-bottom: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.choices { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.error { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.fixed { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
+.fixedName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+@media (max-width: 767px) {
+  .pairs { grid-template-columns: minmax(0, 1fr); }
+  .row { grid-template-columns: 36px minmax(0, 1fr) auto; }
+  .chip { grid-column: 2; grid-row: 2; padding-top: 0; justify-self: start; }
+}
+/* (REG-273) under a finger the ⋮'s hit area reaches 4px past its button — the row keeps that room inside the panel */
+@media (hover: none) {
+  .row { padding-inline-end: var(--om-spacing-1); }
+}

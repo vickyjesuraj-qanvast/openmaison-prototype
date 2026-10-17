@@ -1,0 +1,16 @@
+/* (pending modules S36) The website's AI Visualizer trial: the studio editor's own frame (editor.module.css, topbar.module.css) over the site's
+   page — above the site's bar and its phone bar (z 50), under the house dialogs (110), sheets (115) and the snackbar (135). Only what the
+   trial adds is here: the bar's spacer and the gate where Generate was. */
+.frame { z-index: 60; }
+.frame:focus { outline: none; }   /* focused as it opens (the keyboard starts in it) — never ringed for that */
+.fill { flex: 1; min-width: 0; }
+/* 1.0's sign-up gate, at the rail's foot (and the phone's go line): what happened, then the two ways on — Start your studio is the one filled */
+.gate { flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-4) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-primary-variant); }
+.gate[data-compact] { flex-direction: row; flex-wrap: wrap; align-items: center; padding: var(--om-spacing-2) var(--om-spacing-3); gap: var(--om-spacing-2); }
+.gateText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; flex: 1; }
+.gateTitle { margin: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.gateTitle > :first-child { color: var(--om-color-primary-default); flex-shrink: 0; }
+.gateBody { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.gateButtons { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.gate:not([data-compact]) .gateButtons > * { flex: 1 1 auto; }
+@media (max-width: 767px) { .gate[data-compact] .gateTitle { font: var(--om-type-subtitle-s); } }

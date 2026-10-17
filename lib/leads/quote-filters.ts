@@ -174,3 +174,47 @@ export function searchQuotes<T extends QuoteListRow>(quotes: T[], query: string)
     ],
   }))
 }
+
+/* ── (pending modules S04 — card held:quotes, "Sort on the Quotes table heads (Valid until sorts) — Coming soon · her call (REG-468) · revisit")
+   a column's own order — the Contracts heads' model (S03, the projects table's): a head cycles A→Z → Z→A → off, and ONE sort holds at a time —
+   a head's sort sets Filters' Sort back to Newest first, an order picked in Filters takes the head's off. Title and Creator stay unsorted
+   (REG-468: names); Client too, as Contracts' Lead. Status reads the journey's order; an empty cell (no date) always last. ── */
+export const QUOTE_SORT_KEYS = ['status', 'total', 'due', 'created', 'sent', 'valid', 'updated', 'approval'] as const
+export type QuoteSortKey = (typeof QUOTE_SORT_KEYS)[number]
+export type QuoteHeadSort = { key: QuoteSortKey; dir: 'asc' | 'desc' } | null
+export const isQuoteSortKey = (k: string): k is QuoteSortKey => (QUOTE_SORT_KEYS as readonly string[]).includes(k)
+const statusRank = (s: string) => { const i = (QUOTE_STATUSES as readonly string[]).indexOf(s); return i < 0 ? QUOTE_STATUSES.length : i }
+function headValue(q: QuoteListRow, key: QuoteSortKey): number | null {
+  if (key === 'status') return statusRank(q.status)
+  if (key === 'total') return q.amountMinor
+  if (key === 'due') return q.dueAt?.getTime() ?? null
+  if (key === 'created') return q.createdAt.getTime()
+  if (key === 'sent') return sentToClientOf(q)?.getTime() ?? null
+  if (key === 'valid') return q.validUntil?.getTime() ?? null
+  if (key === 'updated') return (q.updatedAt ?? q.createdAt).getTime()
+  return q.approvedAt?.getTime() ?? null
+}
+/** Rows in the head's order; ties keep the order they came in. */
+export function sortQuotesByHead<T extends QuoteListRow>(rows: T[], sort: QuoteHeadSort): T[] {
+  if (!sort) return rows
+  const sign = sort.dir === 'asc' ? 1 : -1
+  return rows.map((r, i) => ({ r, i, v: headValue(r, sort.key) }))
+    .sort((a, b) => (a.v === null && b.v === null ? a.i - b.i : a.v === null ? 1 : b.v === null ? -1 : (a.v - b.v) * sign || a.i - b.i))
+    .map((x) => x.r)
+}
+export const nextQuoteHeadSort = (s: QuoteHeadSort, key: QuoteSortKey): QuoteHeadSort => (s?.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : null)
+/** How a head says its order — "soonest first" for the days ahead, "lowest first" for the total, the journey for the status. */
+export function headOrderWords(key: QuoteSortKey, dir: 'asc' | 'desc'): string {
+  if (key === 'total') return dir === 'asc' ? 'lowest first' : 'highest first'
+  if (key === 'status') return dir === 'asc' ? 'Draft first' : 'Signed first'
+  if (key === 'due' || key === 'valid') return dir === 'asc' ? 'soonest first' : 'latest first'
+  return dir === 'asc' ? 'oldest first' : 'newest first'
+}
+
+/** (pending modules S04 — 1.0's view count) When the client last opened the quote on one of its links, since it went to them — the lists'
+    "Viewed {date}" and the editor's "opened …". An open before the latest send (a revision sent again) doesn't count; null = not since. */
+export function viewedSince(q: Pick<QuoteListRow, 'status' | 'sentAt' | 'clientSentAt' | 'clientLastViewedAt'> & { sentToClientAt?: Date | null }): Date | null {
+  if (!q.clientLastViewedAt) return null
+  const sent = sentToClientOf(q)
+  return !sent || q.clientLastViewedAt.getTime() >= sent.getTime() ? q.clientLastViewedAt : null
+}

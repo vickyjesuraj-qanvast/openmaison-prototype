@@ -108,4 +108,14 @@
 .row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
 /* The white plate + level-1 shadow sit on a wrapper, so the DS button and the icon button keep their own hover states. */
 .float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+
+/* ---- (parity P-22, B-10) Touch: the Leads listing's 44px targets (REG-273 · REG-307), once for every core table. Only where a finger drives
+   a table at a tablet's width (`hover: none`), so a mouse never meets it. The head keeps its 56 — its padding gives a sort button its 44
+   (16/16 → 6/6) — and a row grows past its 64 instead of slicing a control that stands up for a finger. A table whose own sheet sets a row
+   height or its own touch rules keeps them (this layer sits under every table's rule). ---- */
+@media (hover: none) and (max-width: 1024px) {
+  .head > .hCell { padding-top: 6px; padding-bottom: 6px; }   /* the core's 56 head only: a sheet with its own head row keeps its own touch rule */
+  .head > .hCell > .hSort { min-height: 44px; }
+  .row { height: auto; min-height: 64px; }
+}
 }

@@ -1,0 +1,67 @@
+/*
+ * (Projects round 8) The portal's Choices — the portal's own pieces (components/portal/portal.module.css: the white card on the page ground,
+ * the headings, the line, the link) and the house ones (the thumbnail's well and edge, components/om/thumb.module.css; the DS button and
+ * text field). The studio's colour is the page's primary (the portal's root sets it), so a pick's ring and tick wear it; in the studio's
+ * "As the client sees it" the same card wears the house purple. No board draws this tab: the home's "Choose your paint colours" row is the
+ * canvas's, the rest is built in its voice — options large on a phone, tap to choose, a note, Confirm.
+ */
+.choice { composes: card from '../portal.module.css'; overflow: hidden; scroll-margin-block: 96px; position: relative; }
+.choice[data-fresh]::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .choice[data-fresh]::after { animation-duration: .01ms; } }
+.head { composes: cardPad from '../portal.module.css'; gap: var(--om-spacing-2); }
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.h3 { composes: h3 from '../portal.module.css'; }
+.line { composes: line from '../portal.module.css'; }
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-line; overflow-wrap: anywhere; }
+
+/* The options: a grid of pickable cards at a desk; one under the other, the picture full width, on a phone */
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: var(--om-spacing-3); padding: 0 var(--om-spacing-6) var(--om-spacing-6); }
+.opt {
+  position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; margin: 0; text-align: left; color: inherit;
+  border: 0; border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; overflow: hidden;
+  transition: opacity var(--motion-hover);
+}
+/* the card's edge is drawn over its picture, so a pick's ring runs all the way round */
+.opt::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); transition: box-shadow var(--motion-hover); }
+.opt:hover:not(:disabled)::after { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); }
+.opt:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.opt[data-picked]::after { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.opt:disabled { cursor: default; }
+.opt[data-dim] { opacity: .56; }
+.pic { composes: thumb from '../../om/thumb.module.css'; width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 0; }
+.pic[data-hex] { background: var(--swatch); }
+.tick { position: absolute; top: var(--om-spacing-3); right: var(--om-spacing-3); z-index: 2; width: 28px; height: 28px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); box-shadow: var(--om-elevation-level-1); }
+.optText { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); min-width: 0; }
+.optName { font: var(--om-type-subtitle-l); overflow-wrap: anywhere; }
+.optDesc { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.optPrice { margin-top: var(--om-spacing-1); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.optPrice[data-none] { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Under the options: the price's note, the client's note, Confirm — or what was chosen */
+.foot { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-6) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (fix-F, F-25) brought into view above the phone's bar, not under it */
+.foot { scroll-margin-bottom: calc(var(--app-mobile-dock-height, 0px) + var(--om-spacing-4)); }
+.notice { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-m); }
+.confirm { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.chosenLine { margin: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subtitle-l); }
+.chosenGlyph { display: inline-flex; color: var(--om-color-primary-default); }
+.link { composes: link from '../portal.module.css'; }
+
+/* The page: what waits first, then what was chosen */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-4); max-width: 880px; }
+.sectionHead { margin: 0; font: var(--om-type-subheading-l); }
+
+@media (max-width: 767px) {
+  .opts { grid-template-columns: minmax(0, 1fr); padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+  .foot { padding: var(--om-spacing-4); }
+  .confirm > * { flex: 1 1 100%; }
+}
+
+/* (gaps build D, item 2 — M-07) None of these work: a text press in the line under Confirm (the portal's link look), its form's fields */
+.textLink { composes: link from '../portal.module.css'; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
+.textLink:disabled { cursor: default; }
+.noFields { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* (gaps build D) an option's picture fills its card's width at 4:3 — a colour-only option too: the house square (36) must not win the cascade
+   when the stylesheets land in another order (the page moved into its route group) */
+.opt .pic { width: 100%; height: auto; }

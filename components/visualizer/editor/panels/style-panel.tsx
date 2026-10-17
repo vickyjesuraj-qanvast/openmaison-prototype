@@ -27,10 +27,12 @@ const ANY_LOOK: Record<string, string> = Object.fromEntries(SAMPLE_ROOMS.slice()
  */
 export function StylePanel({ pending, onStyle, leadName, leadStyle, onAddRef, onPatchTransfer, looks = null, baseEdited = false }: {
   /** (REG-681) The room's own finished looks (a sample room; a look it lacks borrows another sample's) — the card shows the style, not
-      only its colours. (F060) Null for a studio's own photo: another room's picture would promise a render this photo can't make, so
-      its cards are the palette and the materials. */
+      only its colours. (pending modules S43C) A sample's look is the engine's own restyle of its photo, the picture Generate makes. (F060)
+      Null for a studio's own photo: another room's picture would promise a render this photo can't make, so its cards are the palette and
+      the materials. */
   looks?: Record<string, string> | null
-  /** (F192) The version on screen carries finishes or furniture changes — a style repaints the whole room from the photo. */
+  /** (F192) The version on screen carries finishes or furniture changes — a style repaints every surface of it; (pending modules S43C) its
+      pieces' changes stay (the engine's restyle paints the version's own picture). */
   baseEdited?: boolean
   pending: Pending
   onStyle: (name: string) => void
@@ -58,7 +60,7 @@ export function StylePanel({ pending, onStyle, leadName, leadStyle, onAddRef, on
       {suggested && leadName ? (
         <div className={styles.lead}><Icon name="person" size={20} weight={300} /><span><b>{leadName.split(' ')[0]}’s style: {leadStyle}</b> — {suggested.name === leadStyle ? 'first below' : `${suggested.name} is the nearest, first below`}.</span></div>
       ) : null}
-      {picked && baseEdited ? <span className={styles.hint} data-testid="viz-style-edited">A style restyles the whole room from the photo — this version’s finishes and furniture changes don’t carry over.</span> : null}
+      {picked && baseEdited ? <span className={styles.hint} data-testid="viz-style-edited">A style repaints every surface of this version in its own finishes — the furniture changes stay.</span> : null}
       {/* (F169) one Tab stop — the arrows move along the cards and pick the one reached */}
       <div className={styles.cards} data-aligned="" role="radiogroup" aria-label="Design style" onKeyDown={(e) => { rovingKey(e, ':scope > [role=radio]') }}>
         <button type="button" role="radio" aria-checked={!pending.style} tabIndex={!picked ? 0 : -1} className={styles.card} data-on={!pending.style || undefined} onClick={() => onStyle('')}>

@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Icon } from './icon'
 import { Tooltip } from './tooltip'
 import { snackbarRise } from '@/lib/motion'
@@ -46,9 +46,9 @@ export function useComingSoon() {
    The editors and the shell each mount their own host, so the words ride in sessionStorage with the path they are for; the host shows
    them once when that path is the one it is on, and a stale or unread one is dropped. */
 const CARRY = 'om.snack.carry'
-type Carried = { path: string; message: string; at: number }
-export function carrySnackbar(to: string, message: string) {
-  try { sessionStorage.setItem(CARRY, JSON.stringify({ path: to.split(/[?#]/)[0] ?? to, message, at: Date.now() } satisfies Carried)) } catch { /* a private window: the page opens without it */ }
+type Carried = { path: string; message: string; at: number; /** (S42E, E-14) one way on from the page it lands on — "Open Leads" */ action?: { label: string; href: string } }
+export function carrySnackbar(to: string, message: string, action?: { label: string; href: string }) {
+  try { sessionStorage.setItem(CARRY, JSON.stringify({ path: to.split(/[?#]/)[0] ?? to, message, at: Date.now(), ...(action ? { action } : {}) } satisfies Carried)) } catch { /* a private window: the page opens without it */ }
 }
 const readCarried = (): Carried | null => { try { const v = JSON.parse(sessionStorage.getItem(CARRY) ?? 'null') as Partial<Carried> | null; return v && typeof v.path === 'string' && typeof v.message === 'string' && typeof v.at === 'number' ? (v as Carried) : null } catch { return null } }
 
@@ -94,6 +94,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
 
   /* (Dane UAT 3.23) the carried snackbar, once, on the page it was meant for — after the paint, so the page's own first snackbars are not lost */
   const pathname = usePathname()
+  const router = useRouter()
   useEffect(() => {
     const c = readCarried()
     if (!c || c.path !== pathname) return
@@ -101,10 +102,11 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
       const now = readCarried()
       if (!now || now.at !== c.at) return
       try { sessionStorage.removeItem(CARRY) } catch { /* private window */ }
-      if (Date.now() - now.at < 15_000) show({ message: now.message })
+      const go = now.action && typeof now.action.label === 'string' && typeof now.action.href === 'string' ? now.action : null
+      if (Date.now() - now.at < 15_000) show({ message: now.message, ...(go ? { actionLabel: go.label, onAction: () => router.push(go.href) } : {}) })
     }, 0)
     return () => clearTimeout(t)
-  }, [pathname, show])
+  }, [pathname, show, router])
 
   /* (REG-712) ⌘Z answers the Undo on screen — the newest one — exactly as its button does */
   const onScreen = useRef<Snack[]>([])
@@ -119,7 +121,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
   return (
     <SnackbarContext.Provider value={show}>
       <DismissContext.Provider value={dismissKey}><UndoContext.Provider value={runUndo}>{children}</UndoContext.Provider></DismissContext.Provider>
-      <div className={styles.host} role="status" aria-live="polite">
+      <div className={styles.host} role="status" aria-live="polite" data-om-snackbar="">{/* (simplify round 2) an open menu or panel (the bell) treats a press here as its own: Undo keeps it open */}
         <AnimatePresence>
           {snacks.map((s) => <SnackBar key={s.id} s={s} onDismiss={dismiss} />)}
         </AnimatePresence>

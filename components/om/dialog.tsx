@@ -43,8 +43,9 @@ export function Dialog({
   leading?: ReactNode
   /** (REG-725) Controls in the head before the close (Empty Trash, a step count, a status chip). */
   actions?: ReactNode
-  /** A fixed panel height (the templates modal's 600); the body scrolls inside it. Viewport-capped like every dialog. */
-  height?: number
+  /** A fixed panel height (the templates modal's 600); the body scrolls inside it. Viewport-capped like every dialog. (pending modules S17)
+   *  `'xl'` = the tall xl dialog's one height, `--om-modal-xl-height` (928, the viewport less 96 on a shorter window). */
+  height?: number | 'xl'
   /** (REG-725) A floor for a panel whose content comes and goes (the Deleted sheets' 480). */
   minHeight?: number
   /** Render through a portal on <body> (REG-444): a dialog opened from inside a sideways scroller with sticky cells is otherwise
@@ -74,7 +75,7 @@ export function Dialog({
       {open ? (
         <motion.div className={styles.overlay} data-nested={nested || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (closeOnScrim && e.target === e.currentTarget) onClose() }}>
-          <motion.div ref={panel} className={`${styles.panel} ${styles.dialog}`} style={fluid ? undefined : { width, height, minHeight }} variants={asSheet ? bottomSheet : modalPanel} data-size={size} data-fluid={fluid || undefined}
+          <motion.div ref={panel} className={`${styles.panel} ${styles.dialog}`} style={fluid ? undefined : { width, height: height === 'xl' ? undefined : height, minHeight }} variants={asSheet ? bottomSheet : modalPanel} data-size={size} data-fluid={fluid || undefined} data-height={height === 'xl' ? 'xl' : undefined}
                       initial="initial" animate="animate" exit="exit"
                       data-alert={alert || undefined} data-phone-full={phoneFull || undefined}
                       role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>

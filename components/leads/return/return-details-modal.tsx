@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef } from 'react'
-import { parseSubReasons } from '@/lib/leads/return-model'
+import { useRef, useState } from 'react'
+import { appealUntil, appealWindowPassed, parseSubReasons } from '@/lib/leads/return-model'
 import { AnimatePresence, motion } from 'motion/react'
 import { Link } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
@@ -9,13 +9,16 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
-import { useComingSoon } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
+import { removeReturnAttachment, restoreReturnAttachment } from '@/app/leads/return-actions'
+import { ReturnPolicyDialog } from './return-policy-dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { useSheetLayout } from '@/components/om/sheet'
-import { displayDateTimeTight } from '@/lib/format'
+import { displayDate, displayDateTimeTight } from '@/lib/format'
 import { returnTags } from '@/lib/leads/return-tags'
 import type { ReturnDetail } from '@/lib/leads/returns'
 import type { LeadFile } from '@/lib/db/schema'
@@ -40,15 +43,36 @@ import styles from './return-details-modal.module.css'
  *     specified — audit 2026-08-30, RD-01).
  * Rows are H g16: label 200 wide 14 secondary · value 14 ink. Dates use displayDateTimeTight ("28 Aug ’26, 4:30PM").
  */
-export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }: {
+export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile, onAppeal, onChanged, now }: {
+  /** (S42 B-10) the page's clock — past Qanvast's window the banner says the day it ran to */
+  now: number
   open: boolean
   leadName: string
   ret: ReturnDetail
   onClose: () => void
   onOpenFile: (file: LeadFile) => void
+  /** (pending modules S05) The banner's "here": the appeal — the Return Lead wizard on this rejected return. */
+  onAppeal?: () => void
+  /** (pending modules S05) A file taken off (or put back on) the return — the host reads the return again. */
+  onChanged?: () => void
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
-  const comingSoon = useComingSoon()
+  const snackbar = useSnackbar()
+  const [policyOpen, setPolicyOpen] = useState(false)
+  /* (pending modules S05 — RD-01's "until removing evidence from a submitted return is specified") While the return is still with Qanvast a
+     file picked by mistake comes off it — it stays in the lead's Files — with Undo; once Qanvast has answered, the files it read stay. */
+  const [gone, setGone] = useState<string[]>([])
+  const removable = ret.status === 'processing'
+  const removeFile = async (f: LeadFile) => {
+    setGone((g) => [...g, f.id])
+    const r = await removeReturnAttachment(ret.id, f.id).catch(() => ({ error: '' }))
+    if ('error' in r) { setGone((g) => g.filter((x) => x !== f.id)); snackbar({ message: couldnt('take the file off the return', refusalOf(r.error)) }); return }
+    onChanged?.()
+    snackbar({ message: `${f.name} is off the return — it stays in the lead’s Files`, actionLabel: 'Undo', onAction: () => {
+      void restoreReturnAttachment(r.undo).then((x) => { if ('error' in x) snackbar({ message: couldnt('put the file back', refusalOf(x.error)) }); else { setGone((g) => g.filter((y) => y !== f.id)); onChanged?.() } })
+    } })
+  }
+  const attachments = ret.attachments.filter((f) => !gone.includes(f.id))
   /* (REG-287) The panel claims `aria-modal`, so it owes the WAI-ARIA dialog contract: focus moves in on open,
      Tab cycles inside instead of walking into the page the modal has declared inert, and focus returns to the
      opener on close. Esc goes through the same layer policy as every other surface — a menu / picker / nested
@@ -62,7 +86,7 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
 
   const showAppeal = ret.status === 'rejected' && !!ret.appealDays
   const me = ret.returnedBy
-  const hasOtherInfo = !!ret.comments || ret.attachments.length > 0
+  const hasOtherInfo = !!ret.comments || attachments.length > 0
 
   // Rows print only what the record holds — the spec lists the mock's filled values, not an empty state.
   const replyRows: [string, string | null][] = [
@@ -73,6 +97,7 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
   ]
   const returnRows: [string, string | null][] = [
     ['Returned on', displayDateTimeTight(ret.returnedAt)],
+    ['Appeal of', ret.appealOf ? 'The return Qanvast rejected' : null],   // (pending modules S05)
     ['Reason', ret.reason],
     /* (REG-609, parity D-39) The seven reasons' own fields. */
     ['Specific reasons', parseSubReasons(ret.subReasons).join(' · ') || null],
@@ -92,6 +117,7 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
   )
 
   return (
+    <>
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
@@ -106,8 +132,8 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
                          chips={returnTags(ret).map((t) => <MetaChip key={t.label} color={t.color}>{t.label}</MetaChip>)}
                          actions={
                            /* Tooltip label = the file viewer's info control (file-viewer.tsx) — the mock has no tooltip text. */
-                           <Tooltip label="Information">
-                             <IconButton icon="info" label="Information" size={24} variant="bare" iconSize={24} className={styles.info} onClick={comingSoon} />
+                           <Tooltip label="Qanvast’s return policy">
+                             <IconButton icon="info" label="Qanvast’s return policy" size={24} variant="bare" iconSize={24} className={styles.info} onClick={() => setPolicyOpen(true)} />
                            </Tooltip>
                          } />
 
@@ -115,8 +141,8 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
               {showAppeal ? (
                 <div className={styles.banner} data-testid="appeal-banner">
                   <span className={styles.bannerText}>
-                    Submit an appeal within {ret.appealDays} days with more supporting documents/information{' '}
-                    <Link className={styles.here} onPress={comingSoon}>here</Link>.
+                    {appealWindowPassed(ret, now) ? `Qanvast’s ${ret.appealDays} days ran to ${displayDate(appealUntil(ret)!)} — it may still look at an appeal with more supporting documents/information` : `Submit an appeal within ${ret.appealDays} days with more supporting documents/information`}{' '}
+                    {onAppeal ? <Link className={styles.here} onPress={onAppeal} data-testid="appeal-here">here</Link> : 'here'}.
                   </span>
                 </div>
               ) : null}
@@ -156,11 +182,11 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
                         <span className={styles.blockText}>{ret.comments}</span>
                       </div>
                     ) : null}
-                    {ret.attachments.length ? (
+                    {attachments.length ? (
                       <div className={styles.block}>
                         <span className={styles.blockLabel}>Attachments</span>
                         <div className={styles.tiles}>
-                          {ret.attachments.map((f) => (
+                          {attachments.map((f) => (
                             <div key={f.id} className={styles.tile} data-testid="return-attachment">
                               <button type="button" className={styles.tileMain} aria-label={`Open ${f.name}`} onClick={() => onOpenFile(f)}>
                                 {f.thumb ? (
@@ -175,14 +201,17 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
                                   <span className={styles.tileName}>{f.name}</span>
                                 </span>
                               </button>
-                              {/* Trash 24 at the caption's right (931:49048) — the Notes tile's control slot; coming soon (RD-01). */}
-                              <span className={styles.tileMenuWrap}>
-                                <Tooltip label="Delete attachment">
-                                  <button type="button" className={styles.tileDelete} aria-label={`Delete ${f.name}`} onClick={comingSoon}>
-                                    <Icon name="delete" size={24} weight={300} />
-                                  </button>
-                                </Tooltip>
-                              </span>
+                              {/* Trash 24 at the caption's right (931:49048) — the Notes tile's control slot. (pending modules S05) Shown while the return
+                                  is with Qanvast: it takes the file off the return (never out of Files), with Undo. */}
+                              {removable ? (
+                                <span className={styles.tileMenuWrap}>
+                                  <Tooltip label="Take off the return">
+                                    <button type="button" className={styles.tileDelete} aria-label={`Take ${f.name} off the return`} onClick={() => { void removeFile(f) }}>
+                                      <Icon name="delete" size={24} weight={300} />
+                                    </button>
+                                  </Tooltip>
+                                </span>
+                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -196,6 +225,8 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
         </motion.div>
       ) : null}
     </AnimatePresence>
+    <ReturnPolicyDialog open={open && policyOpen} onClose={() => setPolicyOpen(false)} />
+    </>
   )
 }
 

@@ -50,6 +50,8 @@
 .day > * { position: relative; }
 .day:hover::before { background: var(--om-color-hover-04p); }
 .day[data-muted] { color: var(--om-color-on-surface-disabled); }
+.day:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }   /* (fix-D, D-32) a day that can't be picked */
+.day:disabled:hover::before { background: none; }
 .day[data-today]::before { border: var(--om-border-1) solid var(--om-color-on-surface-default); }
 .day[data-selected] { color: var(--om-color-on-primary-default); }
 .day[data-selected]::before { background: var(--om-color-primary-default); border: 0; }

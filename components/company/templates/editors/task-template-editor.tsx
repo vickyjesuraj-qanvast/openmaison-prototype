@@ -12,11 +12,12 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { SelectTrigger } from '@/components/om/select-trigger'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { LibraryEditorGhost } from './library-editor-ghost'
 import { MaisonFab } from '@/components/shell/maison-fab'
-import { AiSheet } from '@/components/leads/ai-sheet'
+import { MaisonAiSheet } from '@/components/shell/maison-ai'
+import type { MaisonSuggestion } from '@/lib/maison-ai'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { TagPicker } from '@/components/leads/tasks/tag-picker'
 import { ManageTagsDialog } from '@/components/leads/tasks/manage-tags-dialog'
@@ -54,7 +55,6 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
   const { template, team, tags, leads, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
   const [name, setName] = useState(template.name)
   const [keepMembers, setKeepMembers] = useState(template.keepMembers)
   const [keepDescription, setKeepDescription] = useState(template.keepDescription)
@@ -79,7 +79,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
     if (!dirty.current) return
     dirty.current = false
     const l = latest.current
-    try { setUpdatedAt(await saveTaskTemplate(template.id, { name: l.name, keepMembers: l.keepMembers, keepDescription: l.keepDescription, steps: l.steps.map((s) => ({ id: s.id || undefined, title: s.title, description: s.description, kind: s.kind, memberIds: s.memberIds, tagIds: s.tagIds, dueDays: s.dueDays })) })) }
+    try { const r = await saveTaskTemplate(template.id, { name: l.name, keepMembers: l.keepMembers, keepDescription: l.keepDescription, steps: l.steps.map((s) => ({ id: s.id || undefined, title: s.title, description: s.description, kind: s.kind, memberIds: s.memberIds, tagIds: s.tagIds, dueDays: s.dueDays })) }); if (isRefusal(r)) snackbar({ message: r.error }); else setUpdatedAt(r) }   /* (fix-G) the library's rule refuses a member who may not change it */
     catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
   }, [template.id, snackbar])
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
@@ -95,6 +95,30 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
   const backHref = from ?? '/company/templates/tasks'
   const close = () => { void flushRef.current(); router.push(backHref) }
   const usedBy = template.usedBy
+
+  /* (pending modules S10 — card held:maison-ai, "eight editors open an empty Maison AI sheet") The checklist's Maison AI, by rule from the page:
+     what it adds to a lead (the steps in order, with the day each falls due and who has it), what is missing (a step with no title, no due day,
+     no one on it while members are kept), and Add to a lead — the kebab's own dialog. *(invented copy: the answers' titles and lines)* */
+  const aiFabRef = useRef<HTMLSpanElement>(null)
+  const who = (ids: string[]) => (keepMembers && ids.length ? ids.map((id) => team.find((m) => m.id === id)?.name.split(' ')[0] ?? 'A member').join(', ') : keepMembers ? 'No one yet' : 'The lead’s members')
+  const dueWords = (d: number | null) => (d == null ? 'No due day' : d === 0 ? 'Due the day it is added' : `Due ${d === 1 ? '1 day' : `${d} days`} after it is added`)
+  const missing = steps.flatMap((st, i) => {
+    if (!st.title.trim()) return [{ id: st.key, label: `Step ${i + 1} has no title`, meta: 'It would add as an empty task' }]
+    const gaps = [...(st.dueDays == null ? ['no due day'] : []), ...(keepMembers && !st.memberIds.length ? ['no one on it — the lead’s members get it'] : [])]
+    return gaps.length ? [{ id: st.key, label: st.title, meta: `${gaps.join(' · ').replace(/^./, (c) => c.toUpperCase())}` }] : []
+  })
+  const maison: MaisonSuggestion[] = [
+    { label: 'What will it add to a lead?', answer: () => Promise.resolve(steps.length
+      ? { title: `${steps.length === 1 ? '1 task' : `${steps.length} tasks`}, in this order`, text: `${keepMembers ? 'Each goes to the members named on it.' : 'Each goes to the lead’s members.'} ${keepDescription ? 'Descriptions go with them.' : 'Descriptions stay behind.'}`,
+          rows: steps.map((st, i) => ({ id: st.key, label: st.title.trim() || `Step ${i + 1}`, meta: `${dueWords(st.dueDays)} · ${who(st.memberIds)}` })) }
+      : { title: 'No steps yet', text: 'Add a step — each becomes a task on the lead it is added to.' }) },
+    { label: 'Is anything missing?', answer: () => Promise.resolve(missing.length
+      ? { title: `${missing.length === 1 ? '1 step' : `${missing.length} steps`} to look at`, text: 'Each adds as it is — fill them in here first.', rows: missing }
+      : { title: 'Nothing is missing', text: steps.length ? 'Every step has a title and a due day.' : 'Add a step to begin.' }) },
+    steps.length
+      ? { label: 'Add it to a lead', run: () => setAddOpen(true) }
+      : { label: 'Add it to a lead', answer: { title: 'Add a step first', text: 'A checklist with no steps adds nothing to a lead.' } },
+  ]
 
   return (
     <PageReveal skeleton={<LibraryEditorGhost kind="tasks" />}>
@@ -143,8 +167,8 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
         <ConfirmDialog open={!!deletingTag} title="Delete Tag" confirmLabel="Yes" cancelLabel="No" nested
                        message="Are you sure you want to delete this tag? It will be removed from every task. This action cannot be undone."
                        onCancel={() => setDeletingTag(null)} onConfirm={() => { const id = deletingTag; setDeletingTag(null); if (id) void dropTag(id) }} />
-        <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-        <MaisonFab onPress={() => setAiOpen((o) => !o)} />
+        <MaisonAiSheet open={aiOpen} suggestions={maison} onClose={() => setAiOpen(false)} anchorRef={aiFabRef} />   {/* (pending modules S10) the shell's one sheet; the FAB's own press toggles it (REG-153) */}
+        <span ref={aiFabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
       </div>
     </PageReveal>
   )

@@ -11,7 +11,10 @@ export type ChipOption = string | { value: string; label: string; disabled?: boo
 const norm = (o: ChipOption) => (typeof o === 'string' ? { value: o, label: o } : o)
 
 type Single = {
-  multiple?: false; value: string | null; onChange: (value: string) => void
+  multiple?: false
+  /** The picked chip's value. `null` and `''` both read as no pick — so give an *All* chip a real value (e.g. `'all'`), never `''`
+   *  (S25's Marketplace met it; S43D, F2-02 — the rule stays, every group reads it). */
+  value: string | null; onChange: (value: string) => void
   /** (REG-719) An action that belongs to one chip, drawn inside it after its words — the AI Visualizer's rooms: each room's ⋯ in its own
    *  chip. The chip becomes a box holding its radio and this; `on` says whether the chip is the picked one. */
   trail?: (value: string, on: boolean) => ReactNode

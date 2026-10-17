@@ -13,20 +13,52 @@ import { chromium } from 'playwright'
 
 const BASE = process.env.BASE || 'http://localhost:3011'
 const LEAD = process.env.ANATOMY_LEAD || '1f12cbd1-b09b-47f4-89e4-454a1a5e333b'   // a baseline lead with every tab filled (the ghost probes' LEAD)
+/* (REG-1065, the Projects consistency walk) Benjamin Han's project — every tab filled — its Deposit invoice and that invoice's receipt (R68 · R72 · R75's fixed ids) */
+const PROJECT = process.env.ANATOMY_PROJECT || 'a3f655a3-c603-42b0-af12-2767a0500138'
+const INVOICE = process.env.ANATOMY_INVOICE || '471d130d-f65c-4b7f-aa53-70ee0f16eafa'
+const PAYMENT = process.env.ANATOMY_PAYMENT || '901c42fb-3cb5-4664-adf1-79a32baf495d'
 const ROUTES = [
-  '/leads', '/leads?view=kanban', '/leads/insights', '/leads/imports',
+  '/leads', '/leads?view=kanban', '/leads/imports',
   `/leads/${LEAD}`, `/leads/${LEAD}/tasks`, `/leads/${LEAD}/quotes`, `/leads/${LEAD}/contracts`, `/leads/${LEAD}/files`,
   `/leads/${LEAD}/notes`, `/leads/${LEAD}/questionnaire`, `/leads/${LEAD}/activity`,
-  '/tasks', '/quotes', '/contracts', '/quote-x-ray', '/visualizer',
+  '/tasks', '/projects', '/quotes', '/contracts', '/quote-x-ray', '/visualizer',   // (REG-924) Projects' listing
+  `/projects/${PROJECT}`, ...['schedule', 'updates', 'money', 'choices', 'tasks', 'files', 'activity'].map((t) => `/projects/${PROJECT}/${t}`),   // (REG-1065)
+  `/projects/${PROJECT}/invoices/${INVOICE}`, `/projects/${PROJECT}/receipts/${PAYMENT}`, '/company/templates/schedules',
   '/company/profile', '/company/members', '/company/questionnaire', '/company/integrations', '/company/materials',
   '/company/templates/brand', '/company/templates/quotes', '/company/templates/contracts', '/company/templates/tasks',
   '/company/templates/terms', '/company/templates/payments', '/company/price-book', '/company/price-book/sections',
   '/company/plan', '/company/plan/billing',
-  '/settings', '/settings?section=leads', '/settings?section=quotes', '/settings?section=notifications',
+  '/company/portal', '/company/portal/clients',   // (Projects r4a) Company › Client portal
+  '/settings', '/settings?section=leads', '/settings?section=projects', '/settings?section=quotes', '/settings?section=notifications',
 ]
+/* (gaps build H) tickets and the conversations: the project's two tabs, Projects › Tickets (C opens nothing there), the rail's Chat */
+ROUTES.push(`/projects/${PROJECT}/messages`, `/projects/${PROJECT}/tickets`, '/projects/tickets', '/chat')
+/* (gaps build J) Tools › 3-D Space Planner — its gallery (C opens New layout) */
+ROUTES.push('/planner')
+/* (REG-1360) Company › Finance — every tab, now that it is a Company section (C opens nothing there) */
+/* (simplify S-10 · S-11) Finance's five tabs — To do, Money out by its four kinds, Vendors, Commission, Xero (the old tab addresses redirect here) */
+ROUTES.push(...['todo', 'money-out', 'money-out?kind=bills', 'money-out?kind=expenses', 'money-out?kind=paid', 'vendors', 'commissions', 'accounting'].map((t) => `/company/finance/${t}`))
+/* (simplify S-03) the views the tab groups added or made visible: Tasks › Compliance, Client › Questionnaire, Design › Floor plan · Designs, Files & notes › Notes & Logs; Settings › Finance (S-15) */
+/* (simplify round 2) Compliance is measured too: each group's card table now wears its head (the item · Mark done · ⋮), as every card table does */
+ROUTES.push(...['compliance', 'questionnaire', 'floor-plan', 'designs', 'notes'].map((t) => `/projects/${PROJECT}/${t}`), '/settings?section=finance')
+/* (REG-1361) Company › Reports — Leads (was /leads/insights) · Projects · Finance */
+ROUTES.push('/company/reports/leads', '/company/reports/projects', '/company/reports/finance')
+ROUTES.push('/compliance')   // (simplify round 2) the Compliance Navigator's rule lists — card tables with their head, as the project's view
+ROUTES.push('/meetings', '/settings?section=meetings', '/company/reports/meetings')   // (pending modules S23) Tools › Meeting Copilot, Settings › Meetings, Reports › Meetings
+ROUTES.push('/company/reports/health')   // (pending modules S39) Reports › Studio health
+ROUTES.push('/company/reports/leads?report=sales')   // (pending modules S45A) Reports › Leads › Sales — its seven tables
+ROUTES.push('/marketplace', '/marketplace?view=deals', '/marketplace/mkb-4101')   // (pending modules S24) the Marketplace, its Deals, a brand's page
+ROUTES.push('/market-insights', '/market-insights/mi-demo-budget-benchmark')   // (pending modules S25) Market Insights, an article
+ROUTES.push('/dashboard')   // (pending modules S22) the Dashboard
+ROUTES.push('/qanvast-ops/hangouts', ...['plan', 'meetings'].map((v) => `/qanvast-ops/hangouts/hge-qh-2026-marina?view=${v}`), '/qanvast-ops/hangouts/hge-qh-2026-suntec?view=results', '/company/members/germaine/profile')   // (pending modules S27) Qanvast Ops › Hangouts — the list, a Hangout's Plan · Chats · How it went — and a member's Public profile
 /* Tables drawn to a different mock on purpose, until the owner rules on them (design-source/context/consistency/). */
 /* The card table (REG-727) is the second table type: a short list inside a Settings / Company card — measured by its own anatomy. */
-const TABLE_EXCEPTIONS = [{ where: '[data-card-table]', why: 'the card table — measured by checkCardTables' }]
+const TABLE_EXCEPTIONS = [
+  { where: '[data-card-table]', why: 'the card table — measured by checkCardTables' },
+  /* (REG-1167) the Schedule's date axis — months over weeks, a scale drawn on purpose (subheading months, caption weeks), not a column's
+     label; its Milestone head beside it is a house head and is measured */
+  { where: '[data-scale]', why: 'the Schedule timeline’s date axis — a scale, not a column label' },
+]
 
 let pass = 0, fail = 0
 const failures = []
@@ -42,7 +74,8 @@ async function checkTables(page, route) {
       const cs = getComputedStyle(h)
       const label = h.querySelector('[class*="__hLabel"]') || h
       const ls = getComputedStyle(label)
-      const row = h.parentElement.getBoundingClientRect()
+      /* (REG-1065) a grid whose rows are `display: contents` (the Schedule's list that is also the timeline) has no row box — the cell's own is the row's */
+      const row = (getComputedStyle(h.parentElement).display === 'contents' ? h : h.parentElement).getBoundingClientRect()
       const first = h === h.parentElement.firstElementChild
       /* (REG-820) the column straight after a selection-box column starts at 12, so its words land at 52 as the listing's do */
       const prev = h.previousElementSibling

@@ -156,15 +156,17 @@ function FloatCard({ anchor, label, testId, onEscape, onLeave, fallback, childre
  * Resolve / Reopen; Remove for the studio's own pins (with Undo). The client's pins wear blue — they came from the shared link.
  * Beside its pin above the photo on a desk or a tablet; the house bottom sheet on a phone (REG-353), the pin staying lit on the photo.
  */
-export function PinThread({ pin, index, now, onReply, onStatus, onDelete, onClose, image }: {
+export function PinThread({ pin, index, now, onReply, onStatus, onDelete, onClose, image, own = false }: {
   pin: Pin; index: number; now: number
   /** (verify round 1) The picture the pin is on — a phone's sheet covers the photo, so its head shows the spot on a small copy. */
   image?: string | null
   onReply: (body: string) => Promise<boolean>
-  /** The studio resolves and reopens; the client's page has no such control. */
+  /** The studio resolves and reopens — (parity map, CP-072) and the client, on their own pins (`own`). */
   onStatus?: (s: 'open' | 'resolved') => void
   onDelete: (() => void) | null
   onClose: () => void
+  /** (parity map, CP-072) The client's page: the pin is the reader's own — their reply is theirs (never "the client sees it"), Remove says so. */
+  own?: boolean
 }) {
   const client = useClient()
   const sheet = usePinSheet()
@@ -183,11 +185,11 @@ export function PinThread({ pin, index, now, onReply, onStatus, onDelete, onClos
   const spot = image ? <PinSpot image={image} x={pin.x} y={pin.y} n={index + 1} role={pin.authorRole} /> : null
   /* (D1) the client's link shows the threads the client started, with the studio's replies in them — so in the studio's view (it resolves,
      the client's page doesn't) a reply on a client's pin says it goes to the client; the team's own pins never leave the studio */
-  const toClient = !!onStatus && pin.authorRole === 'client'
+  const toClient = !!onStatus && !own && pin.authorRole === 'client'
   const actions = (
     <>
-      {onStatus ? <Tooltip label={resolved ? 'Reopen' : 'Resolve'}><IconButton icon={resolved ? 'undo' : 'check_circle'} label={resolved ? 'Reopen the pin' : 'Resolve the pin'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => onStatus(resolved ? 'open' : 'resolved')} /></Tooltip> : null}
-      {onDelete ? <Tooltip label="Remove the pin"><IconButton icon="delete" label="Remove the pin" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onDelete} /></Tooltip> : null}
+      {onStatus ? <Tooltip label={resolved ? 'Reopen' : own ? 'Mark resolved' : 'Resolve'}><IconButton icon={resolved ? 'undo' : 'check_circle'} label={resolved ? 'Reopen the pin' : own ? 'Mark the pin resolved' : 'Resolve the pin'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => onStatus(resolved ? 'open' : 'resolved')} data-testid={own ? 'pin-own-status' : undefined} /></Tooltip> : null}
+      {onDelete ? <Tooltip label={own ? 'Remove your pin' : 'Remove the pin'}><IconButton icon="delete" label={own ? 'Remove your pin' : 'Remove the pin'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onDelete} data-testid={own ? 'pin-own-remove' : undefined} /></Tooltip> : null}
     </>
   )
   const thread = (

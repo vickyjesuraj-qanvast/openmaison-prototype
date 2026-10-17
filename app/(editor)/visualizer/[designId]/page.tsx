@@ -4,11 +4,14 @@ import { fetchVisualizerEditor, renderOrigin, visualizerTitle } from '@/lib/visu
 import { readFrom } from '@/lib/nav'
 import { ORIGINAL } from '@/lib/visualizer/model'
 import { VisualizerEditor } from '@/components/visualizer/editor/visualizer-editor'
+import { AccessGate } from '@/components/shell/access-gate'
+import { refusesPath } from '@/lib/leads/visibility'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ designId: string }> }): Promise<Metadata> {
   const { designId } = await params
+  if (await refusesPath(`/visualizer/${designId}`)) return { title: 'AI Visualizer' }   // (S44Z) no record's name in a tab that is not theirs
   const title = await visualizerTitle(designId)
   return { title: title ? `${title} · AI Visualizer` : 'AI Visualizer' }
 }
@@ -28,6 +31,7 @@ const one = (v: unknown) => (typeof v === 'string' && v ? v : null)
  */
 export default async function VisualizerDesignPage({ params, searchParams }: { params: Promise<{ designId: string }>; searchParams: Promise<Search> }) {
   const { designId } = await params
+  if (await refusesPath(`/visualizer/${designId}`)) return <AccessGate section="AI Visualizer" />   // (S44Z — S44O's note) the role's own list, before a record is read: Marketing's leads, Accounting's books
   const sp = await searchParams
   const data = await fetchVisualizerEditor(designId)
   if (!data) notFound()

@@ -4,10 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { settings } from '@/lib/db/schema'
 import { LEAD_CAPTURE_KEY, fetchLeadCapture, fetchStudio } from '@/lib/settings/queries'
-import { parseLeadCapture, platformSource, type LeadCapture, type Webhook, type WebhookPlatform, WEBHOOK_PLATFORMS } from '@/lib/settings/types'
+import { parseLeadCapture, type LeadCapture, type Webhook, type WebhookPlatform, WEBHOOK_PLATFORMS } from '@/lib/settings/types'
 import { randomBytes, randomUUID } from 'node:crypto'
-import { importLeads } from '@/app/leads/actions'
-import { revalidateLeadListings } from '@/lib/leads/queries'
+import { captureLead, recordWebhookArrival, type Arrival } from '@/lib/leads/capture'   // (pending modules S34) shared with the real webhook route (app/api/webhooks/leads/[token])
 
 /* (REG-602) Lead capture: the website form's email intake and Meta Lead Ads. The platform receives the email or the form
    submission; the prototype records the arrival the way the platform would — as a one-row import that lands in the listing
@@ -38,24 +37,6 @@ async function writeLeadCapture(patch: Partial<LeadCapture>): Promise<LeadCaptur
   return next
 }
 
-export type Arrival = { name: string; phone: string; email?: string; propertyType?: string; address?: string; budget?: string; message?: string }
-
-/** An incoming lead from the website form (`email`), a Meta form (`meta`), a webhook POST (`webhook`, REG-612) or an ingested
- *  platform email (`gmail`, REG-612): recorded as an import and added to the listing. `via` = the webhook's label or the sender domain. */
-async function captureLead(channel: 'email' | 'meta' | 'webhook' | 'gmail', arrival: Arrival, formName?: string, via?: string): Promise<{ importId: string; approved: number; flagged: number }> {
-  const capture = await fetchLeadCapture()
-  if (channel === 'meta' && !capture.meta.connected) throw new Error('Meta is not connected')
-  if (channel === 'gmail' && !capture.email.connected) throw new Error('Gmail is not connected')
-  const studio = await fetchStudio()
-  const headers = ['Lead Name', 'Lead Phone Number', 'Lead Email', 'Lead Source', 'Property Type', 'Property Address', 'Estimated Budget (S$)', 'Remarks']
-  const source = channel === 'meta' ? 'Meta Ads' : channel === 'webhook' ? (via ?? 'Webhook') : channel === 'gmail' ? platformSource(via ?? '') : 'Website'
-  const row = [arrival.name, arrival.phone, arrival.email ?? '', source, arrival.propertyType ?? '', arrival.address ?? '', arrival.budget ?? '', arrival.message ?? '']
-  const fileName = channel === 'meta' ? `Meta Lead Ads · ${formName ?? capture.meta.forms.find((f) => f.on)?.name ?? 'form'}` : channel === 'webhook' ? `Webhook · ${via ?? 'Webhook'}` : channel === 'gmail' ? `Email · ${via ?? 'platform'}` : `Website form · ${studio.name}`
-  const r = await importLeads({ fileName, headers, mapping: headers, rows: [row], destination: 'listing' })
-  revalidateLeadListings()
-  return { importId: r.importId, approved: r.approved, flagged: r.flagged }
-}
-
 /** The demo's "Simulate an incoming lead": a plausible enquiry, different each press (invented demo data, marked so on the card). */
 const SAMPLE_ARRIVALS: Arrival[] = [
   { name: 'Nadia Rahim', phone: '91180234', email: 'nadia.rahim@example.com', propertyType: 'HDB 4-Room', address: 'Blk 512 Bedok North Ave 2', budget: '48000', message: 'Resale flat, keys in November — full renovation, kitchen and two bathrooms.' },
@@ -73,7 +54,8 @@ export async function simulateArrival(channel: 'email' | 'meta', formName?: stri
 /* ── (REG-612, parity Q-36 · I-07) Webhook endpoints — 1.0's Lead Webhooks tab as a stand-in: a URL (and a signing key for Google, shown
    once) per endpoint, counters, a log; "Simulate a POST" plays an arrival through captureLead so the listing shows what a real POST would. */
 const hex = (n: number) => randomBytes(n).toString('hex')
-const guard = async () => { const { fetchViewer } = await import('@/lib/leads/visibility'); const { runsStudio } = await import('@/lib/leads/assign-policy'); const v = await fetchViewer(); if (!runsStudio(v.role)) throw new Error('owners and admins only') }
+/* (S44O — call C6) lead capture is the lead set-up — Owners, Admins and Marketing (`runsLeadSetup`; the page reads the same rule) */
+const guard = async () => { const { fetchViewer } = await import('@/lib/leads/visibility'); const { runsLeadSetup } = await import('@/lib/settings/roles'); const v = await fetchViewer(); if (!runsLeadSetup(v.role)) throw new Error('owners, admins and marketing only') }
 
 export async function createWebhook(input: { platform: WebhookPlatform; label?: string; notes?: string }): Promise<{ webhook: Webhook; key: string | null }> {
   await guard()
@@ -107,11 +89,7 @@ export async function simulateWebhook(id: string): Promise<{ name: string; outco
   const pick = SAMPLE_ARRIVALS[Math.floor(Math.random() * SAMPLE_ARRIVALS.length)]!
   const r = await captureLead('webhook', pick, undefined, w.label)
   const outcome: 'created' | 'duplicate' = r.flagged > 0 ? 'duplicate' : 'created'
-  const now = Date.now()
-  await writeLeadCapture({
-    webhooks: cur.webhooks.map((x) => (x.id === id ? { ...x, received: x.received + 1, created: x.created + (outcome === 'created' ? 1 : 0), duplicates: x.duplicates + (outcome === 'duplicate' ? 1 : 0), lastAt: now } : x)),
-    webhookLog: [{ at: now, webhookId: id, outcome, name: pick.name }, ...cur.webhookLog].slice(0, 50),
-  })
+  await recordWebhookArrival(id, outcome, pick.name)   // (pending modules S34) the real route's own record
   return { name: pick.name, outcome }
 }
 

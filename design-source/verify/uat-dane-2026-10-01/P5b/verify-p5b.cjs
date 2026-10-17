@@ -237,7 +237,9 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
   await step('g-weekday listing', async () => {
     await page.goto(`${BASE}/leads?view=table`); await ready(page)
     const arjun = (await page.locator('[data-kb-row]', { hasText: 'Arjun Mehta' }).first().innerText()).replace(/\s+/g, ' ')
-    ok('g-weekday the listing’s On hold till wears its day', /On hold till: (Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} \w{3} ’\d\d/.test(arjun), arjun.slice(0, 80))
+    /* (pending modules, a deliberate change of this rule) S05 settled REG-891's open call: the day sits on its own line under the phone,
+       "Till Sat, 24 Oct ’26" ("On hold" said to a screen reader, the Stage cell beside it says it) — so it reads whole at the column's floor */
+    ok('g-weekday the listing’s On hold till wears its day', /On hold Till (Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} \w{3} ’\d\d/.test(arjun), arjun.slice(0, 80))
     /* NOT a check — reported for Vicky: the Lead Name column's 240 floor never held an On Hold lead's phone line ("9800 4172 · On hold till:
        24 Oct ’26" + the copy glyph ran ~12 px + the glyph past the cell before this round); the day adds ~26 px. Fitting it is her call. */
     const over = await page.locator('[data-kb-row]', { hasText: 'Arjun Mehta' }).first().locator('span[class*="__phone"]').first().evaluate((s) => Math.round(s.getBoundingClientRect().right - s.closest('[role="cell"]').getBoundingClientRect().right))
@@ -364,13 +366,19 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     sql(`update lead_tasks set due_at = due_at + 60*86400 where done = 0 and due_at is not null and due_at < ${now + 3600}`)
     sql(`update leads set created_at = ${now} where stage = 'New'`)
     sql(`update stage_logs set payload = json_set(payload, '$.followUpAt', '2027-01-01T00:00:00.000Z') where to_stage = 'On Hold'`)
+    /* (REG-943, REG-1040 — the Projects programme) the bell's Due also derives a running project's unfinished milestone past its last day
+       and a sent invoice a day past due: those move on too, so "nothing late" stays nothing late */
+    sql(`update project_milestones set start_date = start_date + 60*86400, end_date = end_date + 60*86400 where status != 'done' and deleted_at is null and end_date < ${now + 86400}`)
+    sql(`update project_invoices set due_at = due_at + 120*86400 where status = 'sent' and due_at is not null and due_at < ${now + 86400}`)
+    /* (the gaps build's money out, F1) an unpaid supplier bill a day past due is a late Due row too — it moves on with the rest */
+    sql(`update supplier_bills set due_on = due_on + 120*86400 where due_on is not null and due_on < ${now + 86400}`)
     sql(`insert into lead_tasks (id, lead_id, title, kind, due_at, done, created_at, creator_id, seen_at, updated_at) values ('probe-soon', null, 'Probe — due in a quarter of an hour', 'General', ${now + 15 * 60}, 0, ${now}, null, ${now}, ${now})`)
     await page.goto(`${BASE}/leads`); await ready(page)
     await page.locator('[data-notifications-tile]').first().click()
     await page.getByTestId('notifications-panel').waitFor(); await page.waitForTimeout(1200)
     const groups = await page.locator('[data-testid="notifications-panel"] section').evaluateAll((ss) => ss.map((s) => s.getAttribute('data-testid')))
     const lateRows = await page.locator('[data-testid="notifications-due"] [data-late]').count()
-    ok('g-bell with nothing late, Updates come first', lateRows === 0 && groups[0] === 'notifications-notices' && groups.includes('notifications-due'), `${groups.join(' · ')} (late ${lateRows})`)
+    ok('g-bell with nothing late, the Notices come first', lateRows === 0 && groups[0] === 'notifications-notices' && groups.includes('notifications-due'), `${groups.join(' · ')} (late ${lateRows})`)
     await shot(page, 'g-bell-updates-first')
   })
 

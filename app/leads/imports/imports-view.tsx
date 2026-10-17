@@ -6,13 +6,11 @@ import { Button, SearchBar } from '@/components/ds'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { ImportsSkeleton } from '@/components/shell/skeleton'
-import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
 import { SlashSlot } from '@/components/om/slash-slot'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
-import { IconButton } from '@/components/om/icon-button'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { ImportWizard, TEMPLATE_HREF, type ImportPayload, type ImportResult } from '@/components/leads/import-wizard'
 import { displayDate } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
@@ -47,7 +45,6 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
   const searchRef = useRef<HTMLInputElement>(null)
   useSearchTarget(searchRef)
   const router = useRouter()
-  const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const [wizardOpen, setWizardOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -130,7 +127,8 @@ function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (
                       className={styles.search}
                     /></SlashSlot>
                   </span>
-                  <Tooltip label="Filters"><IconButton icon="filter_list" label="Filter imports" onClick={comingSoon} /></Tooltip>
+                  {/* (pending modules S05 — the card's "Imports › Filters (1.0 had none) · revisit: build or hide") Hidden: the search reads every
+                      column the row shows and the Date head sorts, so a Filters press that answered "Coming soon" had nothing left to do. */}
                 </div>
               </div>
 

@@ -2,9 +2,10 @@
 
 import { randomBytes, randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadEvents, leadFileImages, libraryFolders, leadFileRenders, leadFiles, leads, members, priceBookItems, projectRooms, quoteItems, quotes, renderAnnotations, renderConsultationRequests, renderImages, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom } from '@/lib/db/schema'
+import { keepBytes, keepBytesOnce } from '@/lib/leads/file-store'   // (pending modules S34)
+import { creditLedger, leadEvents, libraryFolders, leadFileRenders, leadFiles, leads, members, priceBookItems, projectRooms, quoteItems, quotes, renderAnnotations, renderConsultationRequests, renderImages, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom } from '@/lib/db/schema'
 import { actingMember } from '@/lib/contracts/automation'
 import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { logLeadEvent, type LeadEventDetail, type LeadEventKind } from '@/lib/leads/events'
@@ -12,14 +13,18 @@ import { sampleByKey } from '@/lib/visualizer/samples'
 import { displayDayShortMonth } from '@/lib/format'
 import { descriptor, ORIGINAL, readPending, sampleDetection, versionKey, type Applied, type Detection, type Finishes, type Pending, type PassKind, type Variant } from '@/lib/visualizer/model'
 import { DESIGN_PURGE_RULE, designChangeBlock, designPurgeRule, designRestoreRule, DESIGNS_DELETE_RULE, DESIGNS_RESTORE_RULE, LEAD_CLOSED_SHARE, leadDeletedNote, PIN_CHARS, PIN_LIMIT, roomChangeBlock, roomDeleteBlock, SHARE_DAYS, SHARE_MAX_VERSIONS } from '@/lib/visualizer/policy'
-import { gateLead, leadClosed, parseComments, parseDetection, parseJson, parseOwnStored, parseVariants, roomImage, versionsOf, type ShareSnapshot, type StoredSwatch } from '@/lib/visualizer/queries'
+import { gateLead, leadClosed, parseComments, parseDetection, parseJson, parseOwnStored, parseVariants, roomImage, type StoredSwatch } from '@/lib/visualizer/queries'
 import { assetAddress, assetIdOf, dataUrlBytes, isAddress, isDataImage, liftPictures, parseAssets, publicFileSize, renderAddress, renderPicture } from '@/lib/visualizer/images'
-import { clientLines, clientRoomNames, clientVersionLabel, freeFileName, noQuoteReason, quoteGroupName, quoteLines, renderFileName, studioMaterialOf } from '@/lib/visualizer/outputs'
+import { freeFileName, noQuoteReason, quoteGroupName, quoteLines, renderFileName, studioMaterialOf } from '@/lib/visualizer/outputs'
 import { roomNameFromFile } from '@/lib/visualizer/room-name'
+import { REPAIRED_WORDS, repairRef } from '@/lib/visualizer/drift'
+import { buildShareVersions } from '@/lib/visualizer/share-build'
 import { isRateUnit } from '@/lib/settings/types'
 import type { OwnSwatch } from '@/lib/visualizer/materials'
 import { createQuote } from '@/app/leads/quotes-actions'
 import { createQuoteItem, createQuoteItems, type BulkLine } from '@/app/quotes/items-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) the editors' answers, a refusal thrown on
+import { workspaceRefusal, offWorkspace } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
  * AI Visualizer (REG-673 · 674 · 675) — the studio's writes. Every write names who made it (`actingMember`, REG-634's stamp); a lead's
@@ -99,6 +104,7 @@ async function untrail(leadId: string | null, deleted: LeadEventKind, restored: 
     locale), in the folder open in the gallery when that is a live AI Visualizer folder (F128). (F214) A start from a sample room is the
     design and its first room in one step — both land, or neither does. */
 export async function createDesign(input: { name?: string; folderId?: string | null; sample?: { key: string; asSketch: boolean } } = {}): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const me = await actingMember()
   const id = randomUUID(), at = now()
   const sample = input.sample ? sampleByKey(input.sample.key) : null
@@ -126,6 +132,7 @@ async function dayName(at: Date): Promise<string> {
 }
 
 export async function openLeadDesign(leadId: string): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const viewer = await fetchViewer()
   const [lead] = await db.select({ id: leads.id, name: leads.name }).from(leads).where(and(eq(leads.id, leadId), isNull(leads.deletedAt)))
   if (!lead || !(await canOpenLead(viewer, leadId))) return { error: 'That lead is gone or not yours to open.' }
@@ -153,6 +160,7 @@ export async function openLeadDesign(leadId: string): Promise<{ id: string } | E
     (its own, or one waiting in Deleted Designs), and a lead returned or deleted takes no more. Newest leads first. */
 export type LinkableLead = { id: string; name: string; stage: string; propertyType: string | null; blocked: string | null }
 export async function leadsToLink(): Promise<LinkableLead[]> {
+  if (await offWorkspace()) return []   // (S45C) the workspace's role rule: Marketing reads nothing here
   const viewer = await fetchViewer()
   const [rows, designs, visible] = await Promise.all([
     db.select({ id: leads.id, name: leads.name, stage: leads.stage, propertyType: leads.propertyType, createdAt: leads.createdAt }).from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
@@ -176,6 +184,7 @@ export type Unlink = { name: string; folderId: string | null; at: number }
  * the lead's members. The design's own rule (its maker, an Owner or an Admin) and Who sees leads; one design per lead.
  */
 export async function linkDesignToLead(designId: string, leadId: string): Promise<{ ok: true; leadId: string; leadName: string; undo: Unlink } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   if (got.d.kind === 'lead') return { error: 'This design is already a lead’s.' }
   const block = designChangeBlock(got.viewer, got.d.createdBy, await makerName(got.d.createdBy)); if (block) return { error: block }
@@ -200,6 +209,7 @@ export async function linkDesignToLead(designId: string, leadId: string): Promis
 /** (UX audit V2) Link to a lead's Undo — right after, and only while nothing has happened since that belongs to the lead (a version filed in
     its Files, a new link sent from it). The design goes back to personal, with its name and its folder. */
 export async function unlinkDesign(designId: string, undo: Unlink): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   if (got.d.kind !== 'lead' || !got.d.leadId) return { ok: true }
   const block = designChangeBlock(got.viewer, got.d.createdBy, await makerName(got.d.createdBy)); if (block) return { error: block }
@@ -224,6 +234,7 @@ export async function unlinkDesign(designId: string, undo: Unlink): Promise<{ ok
 }
 
 export async function renameDesign(designId: string, name: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   if (got.d.kind === 'lead') return { error: 'A lead’s design is named after the lead.' }
   const block = designChangeBlock(got.viewer, got.d.createdBy, await makerName(got.d.createdBy)); if (block) return { error: block }
@@ -238,6 +249,7 @@ export async function renameDesign(designId: string, name: string): Promise<{ ok
     and the rooms' picks; never the links, the client's answers or the pins, which belong to what was sent. (F115) A copy of a lead's design
     keeps that lead as its source, so it follows Who sees leads as the original does. */
 export async function duplicateDesign(designId: string): Promise<{ id: string; rooms: number; renders: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId, false); if (!got) return { error: 'That design is gone.' }
   const me = await actingMember(), at = now(), id = randomUUID()
   const lead = got.d.leadId ? (await db.select({ name: leads.name }).from(leads).where(eq(leads.id, got.d.leadId)))[0] : null
@@ -271,6 +283,7 @@ export async function duplicateDesign(designId: string): Promise<{ id: string; r
 /** Delete — soft, with Undo and the Deleted sheet (REG-502's rule; 1.0 deleted for good, A B-21). (verify round 1) Several at once: the
     ones the rule keeps are counted, with why; when it keeps every one, that is the answer. */
 export async function deleteDesigns(ids: string[]): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const me = await actingMember(), all = [...new Set(ids)]
   let n = 0, kept = 0, one: string | null = null
   for (const id of all) {
@@ -287,6 +300,7 @@ export async function deleteDesigns(ids: string[]): Promise<{ deleted: number } 
 /** Restore (the snackbar's Undo, the Deleted sheet) — (F129 · F204) the delete's own rule, in its own words (verify round 1), and (F125)
     the design back where it was: its `updatedAt` untouched, so it keeps its place and its "edited" line. */
 export async function restoreDesigns(ids: string[]): Promise<{ restored: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const all = [...new Set(ids)]
   let n = 0, kept = 0, one: string | null = null
   for (const id of all) {
@@ -314,7 +328,7 @@ async function adoptFiledRenders(designIds: string[]): Promise<void> {
     const pic = await renderPicture(jobId, Number(vid))
     if (!pic) continue
     if (isDataImage(pic)) {
-      await db.insert(leadFileImages).values({ fileId: f.id, data: pic }).onConflictDoNothing()
+      await keepBytesOnce(db, f.id, pic)   // (pending modules S34) through the one file store
       await db.update(leadFiles).set({ thumb: `/files/img/${f.id}` }).where(eq(leadFiles.id, f.id))
     } else await db.update(leadFiles).set({ thumb: pic }).where(eq(leadFiles.id, f.id))
   }
@@ -323,6 +337,7 @@ async function adoptFiledRenders(designIds: string[]): Promise<void> {
     refusal of every one is the answer rather than "deleted 0". The files filed from it keep their record (`renderOrigins` says the design
     is gone, so Files shows where the picture came from as plain text). */
 export async function deleteDesignsForever(ids: string[]): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const viewer = await fetchViewer()
   const rows = ids.length ? await db.select().from(visualizerDesigns).where(inArray(visualizerDesigns.id, [...new Set(ids)])) : []
   const ok: typeof rows = []
@@ -345,6 +360,7 @@ export async function deleteDesignsForever(ids: string[]): Promise<{ deleted: nu
 /** Empty Trash — every deleted design this member may see; (verify round 1, F129) the ones the rule keeps are counted, with why, and
     when it keeps all of them nothing is claimed. */
 export async function emptyDesignTrash(): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const viewer = await fetchViewer()
   const rows = await db.select({ id: visualizerDesigns.id, leadId: visualizerDesigns.leadId, sourceLeadId: visualizerDesigns.sourceLeadId }).from(visualizerDesigns).where(isNotNull(visualizerDesigns.deletedAt))
   const seen: string[] = []
@@ -359,6 +375,7 @@ export async function emptyDesignTrash(): Promise<{ deleted: number } & Kept | E
 export type NewRoom = { name?: string; imageUrl: string; sampleKey?: string | null; sourceFileId?: string | null; detection?: Detection | null; asSketch?: boolean }
 /** A photo becomes a room (1.0's *Upload new room*, B-26): an upload, a sample room, or one of the lead's files (Q-31). */
 export async function addRoom(designId: string, input: NewRoom): Promise<{ roomId: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   const rooms = await db.select({ name: projectRooms.name, position: projectRooms.position }).from(projectRooms).where(and(eq(projectRooms.designId, designId), isNull(projectRooms.deletedAt)))
   const at = now()
@@ -394,6 +411,7 @@ function roomRow(designId: string, leadId: string | null, input: NewRoom, rooms:
 /** Rename — (F083) a name another room of the design has is refused (Add room numbers its defaults, a typed name is the studio's own), and
     a name past 60 characters is refused rather than cut. */
 export async function renameRoom(roomId: string, name: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const block = roomChangeBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }   // (wave E, E12) the Delete-room rule
   const n = spaced(name); if (!n) return { error: 'Give the room a name.' }
@@ -408,6 +426,7 @@ export async function renameRoom(roomId: string, name: string): Promise<{ ok: tr
 /** Delete a room — soft, the snackbar's Undo brings it back with its renders (1.0 used a native confirm and deleted for good, C-134);
     (F076 · F202) by its maker, the design's maker, an Owner or an Admin. */
 export async function deleteRoom(roomId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const block = roomDeleteBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }
   await db.update(projectRooms).set({ deletedAt: now() }).where(eq(projectRooms.id, roomId))
@@ -415,6 +434,7 @@ export async function deleteRoom(roomId: string): Promise<{ ok: true } | Err> {
   touch(got.d.id, got.d.leadId); return { ok: true }
 }
 export async function restoreRoom(roomId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await roomFor(roomId, { deleted: true }); if (!got) return { error: 'That room is gone.' }
   if (!got.r.deletedAt) return { ok: true }
   const block = roomDeleteBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }
@@ -429,6 +449,7 @@ type PriorPhoto = Pick<ProjectRoom, 'originalImageUrl' | 'sampleKey' | 'sourceFi
 /* (audit 2026-09-26, F205) a long string travels inside an object: React's action decoder counts a bare string argument against a
    1,000,000 limit whenever the action takes more than one argument, so a ~730 KB photo failed with a 500 */
 export async function setRoomPhoto(roomId: string, o: { imageUrl: string; detection: Detection }): Promise<{ ok: true; stateRev: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const { imageUrl, detection } = o
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const block = roomChangeBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }   // (wave E, E12) the Delete-room rule
@@ -442,6 +463,7 @@ export async function setRoomPhoto(roomId: string, o: { imageUrl: string; detect
 }
 /** (F090) Undo a Change photo: the room as it was — its photo, its reading and the picks it had. */
 export async function undoRoomPhoto(roomId: string): Promise<{ ok: true; imageUrl: string | null; detection: Detection; pending: Pending; stateRev: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const block = roomChangeBlock(got.viewer, got.r.createdBy, got.d.createdBy); if (block) return { error: block }   // (wave E, E12) the Undo goes through the change's door
   const prior = parseJson<PriorPhoto | null>(got.r.priorPhotoJson, null)
@@ -472,6 +494,7 @@ function canon(json: string | null | undefined): string {
 export type RoomStateInput = { pending?: Pending; detection?: Detection; baseRev?: number }
 export type RoomStateSaved = { savedAt: number; stateRev: number; addresses?: { refs: Record<string, string>; pieces: Record<string, string> } }
 export async function saveRoomState(roomId: string, s: RoomStateInput): Promise<RoomStateSaved | { conflict: true; stateRev: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const at = now()
   const patch: Partial<typeof projectRooms.$inferInsert> = { updatedAt: at }
@@ -498,6 +521,7 @@ export async function saveRoomState(roomId: string, s: RoomStateInput): Promise<
 /** (F200) A reference or piece photo, kept in the room's store: the picks carry the address this returns, never the picture. */
 /* (F205) the picture inside an object — see setRoomPhoto */
 export async function saveRoomAsset(roomId: string, o: { dataUrl: string }): Promise<{ id: string; url: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const { dataUrl } = o
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   if (!isDataImage(dataUrl) || dataUrl.length > 3_000_000) return { error: 'We can read JPG, PNG and WebP photos up to 10 MB.' }
@@ -515,6 +539,7 @@ export type NewRender = { kind: PassKind; model: 'fast' | 'high'; parentKey: str
 /** Keep a Generate: one job, its variants V-numbered after every version the room ever had (1.0 wrote the row only after the image
     existed, C-34 — so does this). (F213) Each picture is stored beside the job; the job keeps its address. */
 export async function saveRender(roomId: string, input: NewRender): Promise<{ jobId: string; keys: string[]; ns: number[] } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   return oneAtATime(`render:${roomId}`, () => keepRender(roomId, input))
 }
 async function keepRender(roomId: string, input: NewRender): Promise<{ jobId: string; keys: string[]; ns: number[] } | Err> {
@@ -525,7 +550,11 @@ async function keepRender(roomId: string, input: NewRender): Promise<{ jobId: st
   const pics = images.flatMap((img, i) => (isDataImage(img) ? [{ jobId: id, variantId: i + 1, data: img }] : []))
   const jobs = await db.select({ variantsJson: renderJobs.variantsJson }).from(renderJobs).where(eq(renderJobs.roomId, roomId))
   let n = jobs.reduce((m, j) => Math.max(m, ...parseVariants(j.variantsJson).map((v) => v.n)), 0)
-  const variants: Variant[] = input.variants.slice(0, 3).map((v, i) => ({ id: i + 1, n: ++n, imageUrl: isDataImage(images[i]) ? renderAddress(id, i + 1) : images[i]!, materials: v.materials.slice(0, 60), parentKey: String(input.parentKey || ORIGINAL), applied: v.applied, finishes: v.finishes, deletedAt: null }))
+  /* (pending modules S20 — the drift guard) a version that says it was lined up says it in the house's words and with the repair's real cost —
+     what the ledger charged under its own ref (`repair:<job>:<n>`), never what the browser claims */
+  const repaid = new Map((await db.select({ ref: creditLedger.refId, credits: creditLedger.credits }).from(creditLedger).where(and(like(creditLedger.refId, `repair:${id}:%`), eq(creditLedger.reason, 'spend')))).map((r) => [r.ref, -r.credits]))
+  const appliedOf = (a: Applied, i: number): Applied => (a.repair ? { ...a, repair: { words: REPAIRED_WORDS, credits: repaid.get(repairRef(id, i + 1)) ?? 0 } } : a)
+  const variants: Variant[] = input.variants.slice(0, 3).map((v, i) => ({ id: i + 1, n: ++n, imageUrl: isDataImage(images[i]) ? renderAddress(id, i + 1) : images[i]!, materials: v.materials.slice(0, 60), parentKey: String(input.parentKey || ORIGINAL), applied: appliedOf(v.applied, i), finishes: v.finishes, deletedAt: null }))
   await db.transaction(async (tx) => {   // the version and its pictures land together, or not at all
     await tx.insert(renderJobs).values({ id, roomId, leadId: got.d.leadId, projectId: null, model: input.model === 'high' ? 'high' : 'fast', status: 'completed', kind: input.kind, style: descriptor(variants[0]!.applied), variantsJson: JSON.stringify(variants), createdBy: me, createdAt: at, completedAt: at })
     if (pics.length) await tx.insert(renderImages).values(pics)
@@ -550,9 +579,13 @@ async function setVariantDeleted(jobId: string, variantId: number, deleted: bool
   return got
 }
 /** Delete a version — with Undo (1.0 had no confirm and no undo, C-48). Its number stays taken, so V4 is still V4. */
-export async function deleteVersion(jobId: string, variantId: number): Promise<{ ok: true } | Err> { return (await setVariantDeleted(jobId, variantId, true)) ? { ok: true } : { error: 'That version is gone.' } }
+export async function deleteVersion(jobId: string, variantId: number): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   return (await setVariantDeleted(jobId, variantId, true)) ? { ok: true } : { error: 'That version is gone.' } }
 /** (F077) Bring a deleted version back — the snackbar's Undo, or Deleted versions later. */
-export async function restoreVersion(jobId: string, variantId: number): Promise<{ ok: true } | Err> { return (await setVariantDeleted(jobId, variantId, false)) ? { ok: true } : { error: 'That version is gone.' } }
+export async function restoreVersion(jobId: string, variantId: number): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   return (await setVariantDeleted(jobId, variantId, false)) ? { ok: true } : { error: 'That version is gone.' } }
 
 /* ── the design's own swatches (1.0's session customs) ── */
 const SWATCH_UNDO_MS = 86_400_000
@@ -565,6 +598,7 @@ function trimOwn(own: StoredSwatch[]): StoredSwatch[] {
   return kept.filter((x) => !drop.has(x.id))
 }
 export async function saveOwnSwatch(designId: string, s: OwnSwatch): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   const own = parseOwnStored(got.d.customJson)
   /* (F198) the Undo of a remove hands the swatch back as the page had it: it returns as it was — its own picture, its place */
@@ -584,6 +618,7 @@ export async function saveOwnSwatch(designId: string, s: OwnSwatch): Promise<{ i
 }
 /** (F198) Remove — soft: the swatch is kept, marked, for a day, so its Undo brings back the picture it had. */
 export async function removeOwnSwatch(designId: string, swatchId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   const own = parseOwnStored(got.d.customJson)
   if (!own.some((x) => x.id === swatchId && !x.removedAt)) return { error: 'That swatch is gone.' }
@@ -591,6 +626,7 @@ export async function removeOwnSwatch(designId: string, swatchId: string): Promi
   touch(designId); return { ok: true }
 }
 export async function restoreOwnSwatch(designId: string, swatchId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   const own = parseOwnStored(got.d.customJson)
   const s = own.find((x) => x.id === swatchId); if (!s) return { error: 'That swatch is gone for good.' }
@@ -638,7 +674,7 @@ async function fileVersion(leadId: string, designId: string, room: { id: string;
     .where(and(eq(leadFiles.leadId, leadId), isNull(leadFiles.deletedAt), isNull(leadFileRenders.fileId), same))
   if (legacy) {
     await db.transaction(async (tx) => {
-      if (own && legacy.thumb !== `/files/img/${legacy.id}`) { await tx.insert(leadFileImages).values({ fileId: legacy.id, data: pic }).onConflictDoNothing(); await tx.update(leadFiles).set({ thumb: `/files/img/${legacy.id}` }).where(eq(leadFiles.id, legacy.id)) }
+      if (own && legacy.thumb !== `/files/img/${legacy.id}`) { await keepBytesOnce(tx, legacy.id, pic); await tx.update(leadFiles).set({ thumb: `/files/img/${legacy.id}` }).where(eq(leadFiles.id, legacy.id)) }
       await tx.insert(leadFileRenders).values({ fileId: legacy.id, renderKey: key, designId, roomId: room.id, n: v.n }).onConflictDoNothing()
     })
     return { fileId: legacy.id, existed: true }
@@ -652,12 +688,13 @@ async function fileVersion(leadId: string, designId: string, room: { id: string;
   const filed = freeFileName(name, taken)
   await db.transaction(async (tx) => {
     await tx.insert(leadFiles).values({ id, leadId, kind: 'image', name: filed, thumb: own ? `/files/img/${id}` : pic, createdAt: at, parentId: folder, ownerId: me, sizeBytes: size, mime: own ? pic.slice(5, pic.indexOf(';')) : 'image/jpeg', updatedAt: at })
-    if (own) await tx.insert(leadFileImages).values({ fileId: id, data: pic })
+    if (own) await keepBytes(tx, id, pic)   // (pending modules S34) through the one file store
     await tx.insert(leadFileRenders).values({ fileId: id, renderKey: key, designId, roomId: room.id, n: v.n })
   })
   return { fileId: id, existed: false }
 }
 export async function saveVersionToFiles(jobId: string, variantId: number): Promise<{ fileId: string; existed: boolean; leadId: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await versionOf(jobId, variantId); if (!got) return { error: 'That version is gone.' }
   if (!got.d.leadId) return { error: 'A personal design has no lead to file it on.' }
   const gone = await deletedLead(got.d.leadId); if (gone) return { error: gone }   // (wave E, files-9)
@@ -679,6 +716,7 @@ export async function saveVersionToFiles(jobId: string, variantId: number): Prom
  *   "1 sqft" put a made-up amount on the quote; the studio types the measured quantity. `quantityless` counts them for the snackbar.
  */
 export async function addVersionToQuote(jobId: string, variantId: number, quoteId: string | 'new', again = false): Promise<{ quoteId: string; lines: number; priced: number; quantityless: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await versionOf(jobId, variantId); if (!got) return { error: 'That version is gone.' }
   if (!got.d.leadId) return { error: 'A personal design has no lead to quote.' }
   const gone = await deletedLead(got.d.leadId); if (gone) return { error: gone }   // (wave E, files-9)
@@ -700,8 +738,8 @@ export async function addVersionToQuote(jobId: string, variantId: number, quoteI
     db.select({ id: priceBookItems.id, name: priceBookItems.name, description: priceBookItems.description, unit: priceBookItems.unit, costMinor: priceBookItems.costMinor, markupMinor: priceBookItems.markupMinor, category: priceBookItems.category }).from(priceBookItems).where(and(isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live'))),
     smIds.length ? db.select({ id: studioMaterials.id, priceBookItemId: studioMaterials.priceBookItemId }).from(studioMaterials).where(and(inArray(studioMaterials.id, smIds), isNull(studioMaterials.deletedAt))) : Promise.resolve([]),
   ])
-  if (qid === 'new') qid = await createQuote(got.d.leadId)
-  const group = await createQuoteItem(qid, { kind: 'group', name: groupName })
+  if (qid === 'new') qid = await orThrow(createQuote(got.d.leadId))
+  const group = await orThrow(createQuoteItem(qid, { kind: 'group', name: groupName }))
   let priced = 0, quantityless = 0
   const bulk: BulkLine[] = lines.map((l) => {
     const sm = studioMaterialOf(l.materialId)
@@ -712,7 +750,7 @@ export async function addVersionToQuote(jobId: string, variantId: number, quoteI
     if (measured) quantityless++
     return { name: `${l.what} — ${l.to}`, description: b?.description ?? null, qty: measured ? 0 : 1, unit: b?.unit ?? 'Lot', costMinor: b?.costMinor ?? 0, markupMinor: b?.markupMinor ?? 0, room: got.r.name, category: b?.category ?? null }
   })
-  await createQuoteItems(qid, bulk, { parentId: group.id })
+  await orThrow(createQuoteItems(qid, bulk, { parentId: group.id }))
   touch(got.d.id, got.d.leadId)
   revalidatePath(`/quotes/${qid}`)
   return { quoteId: qid, lines: bulk.length, priced, quantityless }
@@ -722,32 +760,16 @@ export async function addVersionToQuote(jobId: string, variantId: number, quoteI
     Files › Renders, so the lead keeps what the client saw (Q-13). (F102) In the design's order — room by room, V1 before V2 — whatever
     order they were ticked in; (F103) each with the client's own words beside the studio's. */
 export async function createShareLink(designId: string, input: { keys: string[]; message?: string }): Promise<{ token: string; id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
   const gone = got.d.leadId ? await deletedLead(got.d.leadId) : null; if (gone) return { error: gone }   // (wave E, files-9) the editor's own words
   if (got.d.leadId && await leadClosed(got.d.leadId)) return { error: `${LEAD_CLOSED_SHARE}.` }   // (critic §4) a link that would open as ended
   const keys = [...new Set(input.keys)].slice(0, SHARE_MAX_VERSIONS)
   if (!keys.length) return { error: 'Pick at least one version to share.' }
-  const rooms = await db.select().from(projectRooms).where(and(eq(projectRooms.designId, designId), isNull(projectRooms.deletedAt))).orderBy(asc(projectRooms.position), asc(projectRooms.createdAt))
-  const jobs = rooms.length ? await db.select().from(renderJobs).where(inArray(renderJobs.roomId, rooms.map((r) => r.id))) : []
   const me = await actingMember()
-  const picked: { key: string; room: typeof rooms[number]; place: number; idx: number; entry: Omit<ShareSnapshot['versions'][number], 'clientLabel' | 'clientRoom'>; applied: Applied; jobId: string; raw: Variant }[] = []
-  for (const key of keys) {
-    const [jobId, vid] = key.split(':')
-    const j = jobs.find((x) => x.id === jobId); if (!j) continue
-    const place = rooms.findIndex((r) => r.id === j.roomId), room = rooms[place]; if (!room) continue
-    const all = versionsOf(jobs.filter((x) => x.roomId === room.id))
-    const idx = all.findIndex((x) => x.key === key && !x.deleted), v = all[idx]; if (!v) continue
-    const raw = parseVariants(j.variantsJson).find((x) => x.id === Number(vid)); if (!raw) continue
-    /* (verify round 1) the client compares every design with their own room — never the version it was built on, which may be another
-       design on the same page — and reads everything the picture shows, not its last step nor the studio's note to the engine */
-    picked.push({ key, room, place, idx, applied: v.applied, jobId: j.id, raw, entry: { key, roomId: room.id, roomName: room.name, label: v.label, imageUrl: v.imageUrl, beforeUrl: roomImage(room), materials: clientLines(raw, parseDetection(room.detectionJson, room)) } })
-  }
+  /* (pending modules S02) the frozen versions through the one builder Files' Show to client reads too (lib/visualizer/share-build.ts) */
+  const { versions, picked } = await buildShareVersions(designId, keys)
   if (!picked.length) return { error: 'Those versions are gone.' }
-  picked.sort((a, b) => a.place - b.place || a.idx - b.idx)
-  /* (verify round 1) V2 is "Design 2" on every link, so a client's "Design 2" finds V2; a room's editor-added number goes when it is the
-     only room of that name on the link */
-  const names = clientRoomNames(picked.map((p) => p.room.name), rooms.map((r) => r.name))
-  const versions: ShareSnapshot['versions'] = picked.map((p) => ({ ...p.entry, clientLabel: clientVersionLabel(p.raw.n, p.applied), clientRoom: names.get(p.room.name) ?? p.room.name }))
   if (got.d.leadId) for (const p of picked) await fileVersion(got.d.leadId, got.d.id, p.room, p.jobId, p.raw, me)
   const id = randomUUID(), at = now(), token = randomBytes(9).toString('base64url')
   await db.insert(renderShareLinks).values({ id, token, designId, leadId: got.d.leadId, snapshot: JSON.stringify({ versions }), message: String(input.message ?? '').slice(0, 1200) || null, expiresAt: new Date(at.getTime() + SHARE_DAYS * 86_400_000), viewCount: 0, lastViewedAt: null, sentVia: null, createdBy: me, createdAt: at, revokedAt: null })
@@ -763,6 +785,7 @@ async function linkFor(id: string) {
 }
 const touchLink = (s: { token: string; designId: string; leadId: string | null }) => { touch(s.designId, s.leadId); revalidatePath(`/renders/${s.token}`) }
 export async function recordShareSent(id: string, via: 'whatsapp' | 'copy'): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await linkFor(id); if (!got) return { error: 'That link is gone.' }
   if (via !== 'whatsapp' && got.s.sentVia === 'whatsapp') return { ok: true }   // (F107) a copy never hides that it went on WhatsApp
   await db.update(renderShareLinks).set({ sentVia: via === 'whatsapp' ? 'whatsapp' : 'copy' }).where(eq(renderShareLinks.id, got.s.id))
@@ -770,6 +793,7 @@ export async function recordShareSent(id: string, via: 'whatsapp' | 'copy'): Pro
 }
 /** Renew — another 7 days from today (1.0 could never revoke, A E-01). */
 export async function renewShareLink(id: string): Promise<{ ok: true; expiresAt: number } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await linkFor(id); if (!got) return { error: 'That link’s design is gone.' }
   const expiresAt = new Date(Date.now() + SHARE_DAYS * 86_400_000)
   await db.update(renderShareLinks).set({ expiresAt, revokedAt: null }).where(eq(renderShareLinks.id, got.s.id))
@@ -778,6 +802,7 @@ export async function renewShareLink(id: string): Promise<{ ok: true; expiresAt:
 }
 /** Stop sharing — the link says so to whoever opens it. */
 export async function stopShareLink(id: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await linkFor(id); if (!got) return { error: 'That link’s design is gone.' }
   if (got.s.revokedAt) return { ok: true }
   await db.update(renderShareLinks).set({ revokedAt: now() }).where(eq(renderShareLinks.id, got.s.id))
@@ -787,6 +812,7 @@ export async function stopShareLink(id: string): Promise<{ ok: true } | Err> {
 /** (F108 · F208) Stop sharing's Undo: the link as it was — open again until the date the client was given, not a fresh 7 days (past that
     date it simply shows as expired, and Renew is there). */
 export async function unstopShareLink(id: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await linkFor(id); if (!got) return { error: 'That link’s design is gone.' }
   if (!got.s.revokedAt) return { ok: true }
   await db.update(renderShareLinks).set({ revokedAt: null }).where(eq(renderShareLinks.id, got.s.id))
@@ -797,6 +823,7 @@ export async function unstopShareLink(id: string): Promise<{ ok: true } | Err> {
 /* ── pins (Q-15) ── */
 const memberName = async (id: string) => (await db.select({ name: members.name }).from(members).where(eq(members.id, id)))[0]?.name ?? 'Studio'
 export async function addPin(jobId: string, variantId: number, x: number, y: number, body: string): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await versionOf(jobId, variantId); if (!got) return { error: 'That version is gone.' }
   const text = String(body ?? '').trim()
   if (!text) return { error: 'Write a note for the pin.' }
@@ -813,6 +840,7 @@ async function pinFor(pinId: string) {
   const got = await versionOf(p.jobId, p.variantId); return got ? { p, ...got } : null
 }
 export async function replyPin(pinId: string, body: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await pinFor(pinId); if (!got || got.p.deletedAt) return { error: 'That pin is gone.' }
   const text = String(body ?? '').trim(); if (!text) return { error: 'Write a reply first.' }
   if (text.length > PIN_CHARS) return { error: 'That reply is too long.' }
@@ -823,6 +851,7 @@ export async function replyPin(pinId: string, body: string): Promise<{ ok: true 
   touch(got.d.id, got.d.leadId); return { ok: true }
 }
 export async function setPinStatus(pinId: string, status: 'open' | 'resolved'): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await pinFor(pinId); if (!got || got.p.deletedAt) return { error: 'That pin is gone.' }
   await db.update(renderAnnotations).set({ status: status === 'resolved' ? 'resolved' : 'open', updatedAt: now() }).where(eq(renderAnnotations.id, pinId))
   touch(got.d.id, got.d.leadId); return { ok: true }
@@ -832,6 +861,7 @@ export async function setPinStatus(pinId: string, status: 'open' | 'resolved'): 
  * reply on a client's pin is). A `reply` row on the link's answers: `task_id` names the note it answers, `client_name` who wrote it.
  */
 export async function replyToNote(noteId: string, input: { body: string }): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const [n] = await db.select().from(renderConsultationRequests).where(and(eq(renderConsultationRequests.id, String(noteId)), eq(renderConsultationRequests.kind, 'note')))
   if (!n) return { error: 'That note is gone.' }
   const got = await linkFor(n.shareLinkId); if (!got) return { error: 'That link’s design is gone.' }
@@ -845,6 +875,7 @@ export async function replyToNote(noteId: string, input: { body: string }): Prom
 
 /** Remove a pin — the studio's own only (1.0's rule, A D-11); with Undo. */
 export async function deletePin(pinId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await pinFor(pinId); if (!got) return { error: 'That pin is gone.' }
   if (got.p.authorRole !== 'studio') return { error: 'You can only remove the studio’s own pins.' }
   await db.update(renderAnnotations).set({ deletedAt: now() }).where(eq(renderAnnotations.id, pinId))
@@ -852,6 +883,7 @@ export async function deletePin(pinId: string): Promise<{ ok: true } | Err> {
 }
 /** (F204) The Undo goes through the delete's door: a pin on a version still there, the studio's own. */
 export async function restorePin(pinId: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await pinFor(pinId); if (!got) return { error: 'That pin is gone.' }
   if (got.p.authorRole !== 'studio') return { error: 'You can only bring back the studio’s own pins.' }
   if (!got.p.deletedAt) return { ok: true }

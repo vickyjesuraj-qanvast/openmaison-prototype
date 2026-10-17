@@ -13,14 +13,25 @@ const as = (id) => sql(`update members set is_you = case id when '${id}' then 1 
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } finally { as('dane') } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 const snack = (page) => page.locator('[role="status"][aria-live="polite"]').innerText().catch(() => '')
+/* (pending modules S14, a deliberate change of this rule) the demo studio has CaseTrust on record (repair R116, as its brand kit and About page
+   show): its signing pages carry the deposit-protection disclosure, ticked once the agreement is read — before the code. */
+const caseTrust = async (pg) => {
+  const box = pg.getByRole('checkbox', { name: 'I have read the CaseTrust deposit-protection disclosure' })
+  if (!(await box.count()) || await box.first().isChecked().catch(() => false)) return
+  await pg.getByTestId('gate-casetrust-tick').first().scrollIntoViewIfNeeded().catch(() => {})
+  await pg.getByTestId('gate-casetrust-tick').first().click(); await pg.waitForTimeout(300)
+}
 const OLIVIA = sql(`select id from leads where name='Olivia Martinez'`)
 const DRAFT = sql(`select id from contracts where lead_id='${OLIVIA}' and status='Draft' limit 1`)
 const SIGNED = sql(`select id from contracts where status='Signed' limit 1`)
 const TPL = sql(`select id from contract_templates where deleted_at is null limit 1`)
 // an empty Draft and an uploaded PDF on Olivia's lead, for the checks
-const EMPTY = 'sw2-empty-draft', PDF = 'sw2-uploaded'
+const EMPTY = 'sw2-empty-draft', PDF = 'sw2-uploaded', PDF2 = 'sw2-uploaded-2'
 sql(`insert or replace into contracts (id, lead_id, title, status, created_at, updated_at, body, source, reminders, thank_you, requires_scroll, requires_accept, created_by) values ('${EMPTY}', '${OLIVIA}', 'Empty draft', 'Draft', strftime('%s','now'), strftime('%s','now'), '', 'composed', 0, 0, 0, 0, 'dane')`)
 sql(`insert or replace into contracts (id, lead_id, title, status, created_at, updated_at, body, source, file_name, reminders, thank_you, requires_scroll, requires_accept, created_by) values ('${PDF}', '${OLIVIA}', 'Signed PDF', 'Draft', strftime('%s','now'), strftime('%s','now'), null, 'uploaded', 'agreement.pdf', 0, 0, 0, 0, 'dane')`)
+// REG-780 (UX audit C2): the agreement names OM-10001, a Draft under required approval, so it can't go out — a second PDF keeps two
+// documents ready for Send together
+sql(`insert or replace into contracts (id, lead_id, title, status, created_at, updated_at, body, source, file_name, reminders, thank_you, requires_scroll, requires_accept, created_by) values ('${PDF2}', '${OLIVIA}', 'Second PDF', 'Draft', strftime('%s','now'), strftime('%s','now'), null, 'uploaded', 'agreement.pdf', 0, 0, 0, 0, 'dane')`)
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -60,13 +71,17 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     ok('Deleted Contracts has its selection column', await page.getByTestId('deleted-contracts').getByRole('checkbox', { name: 'Select all deleted contracts' }).count() === 1)
     await page.keyboard.press('Escape')
     // #7 the bundle dialog
+    as('germaine'); await page.reload(); await ready(page)   // (S44Q — row 334, a deliberate change of this rule) an approver's send approves the Draft quote it names now; the hold is a non-approver's — Germaine, a Designer
     await page.getByRole('button', { name: 'More options', exact: true }).last().click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: /Send together for signature/ }).click(); await page.waitForTimeout(500)
     const bd = page.getByRole('dialog', { name: 'Send together for signature' })
     const emptyRow = bd.locator('label').filter({ hasText: 'Empty draft' })
     ok('the bundle leaves out what can’t go, saying why', await emptyRow.getByRole('checkbox').isDisabled() && /Add some content before it goes out/.test(await emptyRow.innerText()) && /2 of 2 documents/i.test(await bd.innerText()))
+    const quoteRow = bd.locator('label').filter({ hasText: 'Interior Design Service Agreement' })
+    ok('…and the agreement whose quote is a Draft stays out, naming it (REG-780)', await quoteRow.getByRole('checkbox').isDisabled() && /OM-10001 is still a Draft/.test(await quoteRow.innerText()), (await quoteRow.innerText()).replace(/\n/g, ' · '))
     await shot(page, '07-bundle')
     await bd.getByRole('button', { name: 'Close' }).click().catch(() => page.keyboard.press('Escape'))
+    as('dane')
     await ctx.close()
   })
 
@@ -114,13 +129,18 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     await page.goto(`${BASE}/contracts`); await ready(page)
     const txt = await page.getByRole('row').first().innerText().catch(() => '')
     ok('390: a Tools card names its lead', /Aisha|Benjamin|Olivia|Ryan/.test(txt), txt.replace(/\n/g, ' · ').slice(0, 80))
+    /* (S42 B-01, a deliberate change of this rule) a contract out for signature names a quote the client has — its Draft quote would hold the link: approved for this step, put back after */
+    const qWas = sql(`select status from quotes where id = (select from_quote_id from contracts where id='${DRAFT}')`)
+    sql(`update quotes set status='Approved' where id = (select from_quote_id from contracts where id='${DRAFT}') and status in ('Draft','Sent for Approval')`)
     sql(`update contracts set status='Sent to Client', sent_at=strftime('%s','now'), requires_scroll=1 where id='${DRAFT}'`)
     await page.goto(`${BASE}/sign/${DRAFT}`); await ready(page)
     ok('390: the bar at the foot says what is next', /Read to the end of the agreement/.test(await page.getByTestId('sign-next').innerText()))
     await page.getByTestId('paper-end').scrollIntoViewIfNeeded(); await page.waitForTimeout(600)
+    await caseTrust(page); await page.getByTestId('paper-end').scrollIntoViewIfNeeded(); await page.waitForTimeout(400)
     ok('read to the end, the bar carries Send code', await page.getByTestId('sign-next').getByRole('button', { name: 'Send code' }).isVisible())
     await shot(page, '06-sign-390')
     sql(`update contracts set status='Draft', sent_at=null, requires_scroll=0, viewed_at=null where id='${DRAFT}'`)
+    if (qWas) sql(`update quotes set status='${qWas}' where id = (select from_quote_id from contracts where id='${DRAFT}')`)
     await page.goto(`${BASE}/sign/0f0e0d0c-0000-4000-8000-000000000000`); await ready(page)
     ok('a link to a contract deleted for good says so', /This link is no longer active/.test(await page.locator('body').innerText()))
     await page.goto(`${BASE}/sign/${SIGNED}`); await ready(page)

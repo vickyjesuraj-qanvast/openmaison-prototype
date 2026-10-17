@@ -1,6 +1,8 @@
 // REG-701 · 703 · 704 — AI credits R3: the price before the press and the moments. The Visualizer's balance chip and Generate's cost,
 // a charge keyed by the job, the refund on Cancel, the warning before the press, out of credits → buy → the render carries on;
 // Create Quote › Upload a quote (5, charged at the read; an unreadable file gives it back). :3011 on the scratch test.db.
+/* (pending modules S43C, a deliberate change of this rule) the AI Visualizer's living room is the owner's photo (1.0's 4a51f3522): its walls are
+   'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const fs = require('fs')
@@ -47,7 +49,7 @@ const setBalance = (n) => {
   await page.screenshot({ path: `${OUT}/cr3-01-viz-chip-card.png` })
   await page.keyboard.press('Escape')
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(600)
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1200)
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1200)
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(400)
   const go = page.getByTestId('viz-generate')
   ok((await go.getByTestId('viz-cost').innerText()).trim() === '10', 'Generate carries its cost: 10')
@@ -79,12 +81,12 @@ const setBalance = (n) => {
 
   console.log('Cancel before it is kept: the credits come back')
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(600)
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1000)
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1000)
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
   const b1 = balance()
   await go.click()
   await page.getByTestId('viz-running').waitFor({ timeout: 5000 })
-  await page.getByTestId('viz-running').getByRole('button', { name: 'Cancel' }).click()
+  await page.getByTestId('viz-running').getByRole('button', { name: /^(Cancel|Stop)$/ }).click()   // (S42 D-16, a deliberate change of this rule) the press is "Stop", as its result says
   await page.getByText('Stopped — nothing was kept or charged').waitFor({ timeout: 5000 })
   ok(true, 'snackbar: Stopped — nothing was kept or charged')
   await page.waitForTimeout(800)
@@ -96,7 +98,7 @@ const setBalance = (n) => {
   setBalance(15)
   await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(1200)
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(500)
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1000)
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1000)
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
   await page.getByTestId('viz-options-toggle').click()
   await page.getByRole('radio', { name: '2', exact: true }).click(); await page.waitForTimeout(300)
@@ -127,10 +129,13 @@ const setBalance = (n) => {
   console.log('Create Quote › Upload a quote: 5 at the read')
   const lead = q(`SELECT id FROM leads WHERE name = 'Farah Ahmad'`)
   await page.goto(`${BASE}/leads/${lead}/quotes`, { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: 'Create Quote' }).first().click()
+  // REG-737: Farah has no quote yet, so the toolbar's Create Quote steps back and the empty card's From Template opens Create Quote
+  await page.getByRole('button', { name: 'Create Quote', exact: true }).or(page.getByTestId('quotes-empty').getByRole('button', { name: 'From Template' })).first().click()
   const cq = page.getByTestId('create-quote')
   await cq.waitFor()
-  ok((await cq.getByTestId('upload-quote-row').innerText()).toLowerCase().includes('pdf · xls · jpg · 5 ai credits'), 'the tile says 5 AI credits')
+  /* (pending modules S04, a deliberate change of this rule) the chip names what truly reads; the price stays. (S42 B·4 · E-05) a PDF is read
+     from its own words now, so the chip reads "XLSX · CSV · PDF · 5 AI credits" */
+  ok((await cq.getByTestId('upload-quote-row').innerText()).toLowerCase().includes('xlsx · csv · pdf · 5 ai credits'), 'the tile says 5 AI credits')
   const b2 = balance()
   await cq.getByTestId('upload-quote-file').setInputFiles(`${REPO}/public/uat-files/gerald-tan-old-quote.xlsx`)
   await cq.getByText(/lines? read from/).waitFor({ timeout: 10000 })
@@ -158,7 +163,7 @@ const setBalance = (n) => {
   await page.goto(`${BASE}/visualizer/${DESIGN}`, { waitUntil: 'networkidle' }); await page.waitForTimeout(1200)
   if (await page.getByTestId('viz-hint').isVisible().catch(() => false)) await page.getByRole('button', { name: 'Got it' }).click()
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(500)
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1000)
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1000)
   await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
   await page.getByTestId('viz-options-toggle').click()
   await page.getByRole('radio', { name: '1', exact: true }).click(); await page.waitForTimeout(300)

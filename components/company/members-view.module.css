@@ -35,6 +35,13 @@
 .switchLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; flex-shrink: 0; }
 .prefSummary { flex: 1; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 767px) { .prefRow { flex-wrap: wrap; } .prefSummary { flex-basis: 100%; white-space: normal; } }
+/* (one-home N-17) The member's project capacity — a small select after the switch. Where the line can't hold it with the buttons (below a wide
+   screen, or with the rail pinned) the line wraps rather than running past the card; at 1440 it is one line as before. */
+.capacity { width: 180px; flex-shrink: 0; }
+@media (min-width: 768px) { .prefRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); } }
+/* (S43E, F3-01 W1-03) On a tablet the summary takes its own line and wraps, as on a phone — beside the switch and Projects at once it shrank
+   to "No …", and a finger can't hover a cut line. Desktop keeps REG-614's one line. */
+@media (min-width: 768px) and (max-width: 1024px) { .prefSummary { flex-basis: 100%; white-space: normal; } }
 
 /* (REG-646, settings parity Q-06) A deactivated member's row — name, role and since when, their leads, Reactivate — and the Add member form. */
 .inactiveRow { grid-template-columns: 40px minmax(200px, 1fr) 90px auto; }
@@ -53,3 +60,20 @@
 @keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 .sigState { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; border-radius: var(--om-radius-1); }
 .sigState:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (pending modules S01) Edit details — the photo row over Add member's fields (member-details-fields.tsx), the dialog's column */
+.editForm { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.pencil { margin-block: calc(-0.5 * var(--om-spacing-1)); }   /* the 24 pencil sits in the name's 20 line without growing the row (the ghost's rows stay true) */
+
+/* (pending modules S09) A member still to come in: the invitation's line — who invited them and when, how it went, how long the link stays open —
+   and its text buttons, over the preferences line; it wraps under the words on a phone. The Add member dialog's notes (what it sends, the
+   plan's seats) span its two columns; the card's seats note sits under its help. */
+.inviteRow { grid-column: 2 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-4); min-height: 32px; }
+.inviteIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.inviteText { flex: 1 1 320px; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.inviteRow[data-state='expired'] .inviteText, .inviteRow[data-state='unsent'] .inviteText { color: var(--om-color-on-surface-default); }
+.seats { margin: var(--om-spacing-1) 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.seatsIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.addNotes { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.addNote { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .inviteText { flex-basis: calc(100% - 18px - var(--om-spacing-4)); } }   /* the words beside their icon, the buttons under them */

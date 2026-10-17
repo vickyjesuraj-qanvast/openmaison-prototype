@@ -1,13 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Button, SearchBar } from '@/components/ds'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Button } from '@/components/ds'
 import { IconButton } from '@/components/om/icon-button'
 import { ScopePill } from '@/components/om/scope-pill'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { Tooltip } from '@/components/om/tooltip'
-import { useSearchTarget } from '@/components/shell/search-focus'
-import { SlashSlot } from '@/components/om/slash-slot'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
 import styles from './toolbar.module.css'
 
 export function LeadsToolbar({
@@ -39,21 +38,13 @@ export function LeadsToolbar({
   onViewChange: (v: 'table' | 'kanban') => void
   /** Anchored menu rendered under the stage pill. */
   chipMenu?: ReactNode
-  /** (Dane's UAT 1.05) While the pill holds a scope (a stage, Mine or Needs attention): "View all" beside it returns to All Leads in one
+  /** (Dane's UAT 1.05) While the pill holds a scope (a stage, Mine or a to-do): "View all" beside it returns to All Leads in one
       press — the scope only; search and Filters stay. Hidden at All Leads. */
   onViewAll?: () => void
   /** (REG-735) The studio has no lead yet: the row says "All Leads" and nothing else — the empty card carries Create and Import, and the
       stage pill, search, Filters, the columns and the views have nothing to act on. The first lead brings them back. */
   bare?: boolean
 }) {
-  const searchRef = useRef<HTMLInputElement>(null)
-  /* (REG-298) ≤767 the mock's toolbar is the pill and the filter glyph (1082:25269); search lives in the top bar.
-     The box is hidden there until the bar's search (or "/") asks for it, and it goes back when it is left empty.
-     ≥768 the CSS ignores the flag and the box is always in the row. */
-  const [searchOpen, setSearchOpen] = useState(false)
-  const reveal = useCallback(() => setSearchOpen(true), [])
-  useSearchTarget(searchRef, reveal)
-  useEffect(() => { if (searchOpen) searchRef.current?.focus() }, [searchOpen])
   const filterLabel = filterCount ? `Filters (${filterCount} active)` : 'Filters'   // one accessible name for the control and its tooltip (page-checklist › Tooltips)
   /* (Dane's UAT 1.05 · REG-354) The row stays one row on a phone: where the pill's words leave no room for View all beside it ("Overdue
      follow-ups (12)" at 390), it folds away — the pill's sheet opens on All Leads, its first row. Measured, never guessed: the pill's and the
@@ -88,23 +79,15 @@ export function LeadsToolbar({
       </div>
       {bare ? null : (
       <div className={styles.right}>
-        {/* (REG-276) The DS SearchBar, as every other list in the app now uses (owner 2026-09-01: "make it like
-            its in the DS SearchBar"). It replaces a hand-rolled label+input that drew the same 280x36 field but
-            painted its focus ring as a real border, so focusing re-cut the padding and nudged the text by a
-            pixel; the DS draws that ring INSIDE the box (REG-241's lesson) and owns its own clear affordance.
-            The wrapper span resolves the DS component's inner <input> for the rail search tile and the "/" key.
-            The placeholder names what the box matches (REG-274/275); the aria-label stays the plain name. */}
-        <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}
-              data-open={searchOpen || query !== '' || undefined}
-              onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setSearchOpen(false) }}>
-          <SlashSlot empty={query === ''}><SearchBar
-            appearance="outlined" size="md"
-            placeholder="Search name, phone, email…"
-            aria-label="Search leads"
-            value={query}
-            onChange={onQueryChange}
-            className={styles.search}
-          /></SlashSlot>
+        {/* (REG-276) The DS SearchBar, as every other list in the app uses (owner 2026-09-01: "make it like its in the DS SearchBar"), drawing
+            its focus ring INSIDE the box (REG-241's lesson) and owning its clear. The placeholder names what the box matches (REG-274/275); the
+            aria-label stays the plain name.
+            (parity P-19, B-08 — a deliberate change of REG-298's phone rule) Through the house ToolbarSearch now, as Projects and the tab
+            toolbars: on a phone the search glyph sits in the row between the pill and Filters and opens the box in that row — since ⌘K took
+            the top bar's glyph (REG-709) nothing reached the listing's own box by touch. The rail's search tile and "/" still find it (the
+            house piece is the page's search target). (Q-08) From 768 up the 280 box stays in the row, Leads' way. */}
+        <span className={styles.searchSlot}>
+          <ToolbarSearch query={query} onQuery={onQueryChange} placeholder="Search name, phone, email…" label="Search leads" />
         </span>
         <span className={styles.filterWrap}>
           <Tooltip label={filterLabel} shortcut="filters">

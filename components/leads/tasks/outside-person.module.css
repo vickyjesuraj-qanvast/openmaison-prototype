@@ -1,0 +1,27 @@
+/* (gaps build, package C — M-03) Someone outside the studio on a task: the badge beside the members' avatars (the avatar's size and corner,
+   outlined on the page ground — not a member's colour), the form, the task panel's section. The links and the remove compose the house's. */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box;
+  border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary);
+}
+.badge[data-size='24'] { width: 24px; height: 24px; }
+.badge[data-size='36'] { width: 36px; height: 36px; }
+
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.lede { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.recent { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.caption { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+/* (parity map, TD-019) the ask under the fields: the house checkbox, its help line indented under its label */
+.ask { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.askHelp { padding-left: 28px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+.section { composes: section from './task-panel.module.css'; }
+.title { composes: sectionTitle from './task-panel.module.css'; }
+.person { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.text { display: flex; flex-direction: column; min-width: 0; }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.links { display: inline-flex; gap: var(--om-spacing-4); }
+.link { composes: link from './task-panel.module.css'; }

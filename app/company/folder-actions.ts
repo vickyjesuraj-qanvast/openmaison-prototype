@@ -4,13 +4,14 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractTemplates, libraryFolders, members, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates, quoteTextTemplates, studioMaterials, taskTemplates, visualizerDesigns } from '@/lib/db/schema'
+import { contractTemplates, libraryFolders, members, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates, quoteTextTemplates, studioMaterials, taskTemplates, visualizerDesigns, scheduleTemplates } from '@/lib/db/schema'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { folderNameProblem, foldersIn, foldersUnder } from '@/lib/folders'
 import { folderBlockFor, folderChangeBlockFor, isFolderLibrary, LIBRARY_PATH, type FolderLibrary, type FolderUndo } from '@/lib/company/folder-libraries'
 import { designChangeBlock } from '@/lib/visualizer/policy'
 import { refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { itemChangeBlock, runsBook, SECTION_RULE } from '@/lib/company/price-book-rules'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
  * (REG-664) Folders in the studio's libraries — the five template tabs and the Price book's two. Owners and Admins make, rename, move
@@ -32,6 +33,7 @@ async function entriesOf(library: FolderLibrary, ids?: string[]): Promise<Entry[
     case 'book-sections': return pick(await db.select({ id: priceBookSections.id, folderId: priceBookSections.folderId, createdBy: priceBookSections.createdBy }).from(priceBookSections)).map((r) => ({ ...r, status: 'live' }))
     case 'visualizer': return pick(await db.select({ id: visualizerDesigns.id, folderId: visualizerDesigns.folderId, createdBy: visualizerDesigns.createdBy }).from(visualizerDesigns).where(eq(visualizerDesigns.kind, 'personal'))).map((r) => ({ ...r, status: 'live' }))
     case 'materials': return pick(await db.select({ id: studioMaterials.id, folderId: studioMaterials.folderId, createdBy: studioMaterials.uploadedBy }).from(studioMaterials)).map((r) => ({ ...r, status: 'live' }))
+    case 'schedules': return pick(await db.select({ id: scheduleTemplates.id, folderId: scheduleTemplates.folderId, createdBy: scheduleTemplates.createdBy }).from(scheduleTemplates)).map((r) => ({ ...r, status: 'live' }))   // (Projects round 2)
   }
 }
 
@@ -47,6 +49,7 @@ async function setEntryFolder(library: FolderLibrary, ids: string[], folderId: s
     case 'book-sections': await db.update(priceBookSections).set({ folderId }).where(inArray(priceBookSections.id, ids)); return
     case 'visualizer': await db.update(visualizerDesigns).set({ folderId }).where(inArray(visualizerDesigns.id, ids)); return
     case 'materials': await db.update(studioMaterials).set({ folderId }).where(inArray(studioMaterials.id, ids)); return
+    case 'schedules': await db.update(scheduleTemplates).set({ folderId }).where(inArray(scheduleTemplates.id, ids)); return
   }
 }
 
@@ -80,6 +83,7 @@ const touch = (library: FolderLibrary) => {
 
 /** New Folder — at the top or inside `parentId`. Returns its id. */
 export async function createLibraryFolder(library: FolderLibrary, name: string, parentId: string | null): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!isFolderLibrary(library)) return refuse(UNKNOWN)
   const viewer = await fetchViewer()
   const block = folderBlockFor(library, viewer); if (block) return refuse(block)
@@ -93,6 +97,7 @@ export async function createLibraryFolder(library: FolderLibrary, name: string, 
 
 /** Rename Folder. */
 export async function renameLibraryFolder(id: string, name: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const [f] = await db.select().from(libraryFolders).where(and(eq(libraryFolders.id, id), isNull(libraryFolders.deletedAt)))
   if (!f || !isFolderLibrary(f.library)) return refuse(GONE)
   const block = await changeRefusal({ library: f.library, createdBy: f.createdBy }); if (block) return refuse(block)
@@ -107,6 +112,7 @@ export async function renameLibraryFolder(id: string, name: string): Promise<voi
  * the viewer may not rename stays where it is. Returns how many moved and how many stayed, so the snackbar can say so.
  */
 export async function moveToLibraryFolder(library: FolderLibrary, pick: { entries: string[]; folders: string[] }, target: string | null): Promise<{ moved: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!isFolderLibrary(library)) return refuse(UNKNOWN)
   const viewer = await fetchViewer()
   const all = await liveFolders(library)
@@ -129,6 +135,7 @@ export async function moveToLibraryFolder(library: FolderLibrary, pick: { entrie
 
 /** Delete a folder: it goes; its entries (deleted ones too, so a restore lands somewhere real) and its sub-folders move up a level. */
 export async function deleteLibraryFolder(id: string): Promise<FolderUndo | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const [f] = await db.select().from(libraryFolders).where(and(eq(libraryFolders.id, id), isNull(libraryFolders.deletedAt)))
   if (!f || !isFolderLibrary(f.library)) return refuse(GONE)
   const block = await changeRefusal({ library: f.library, createdBy: f.createdBy }); if (block) return refuse(block)
@@ -149,6 +156,7 @@ export async function deleteLibraryFolder(id: string): Promise<FolderUndo | Refu
 
 /** Undo a folder's delete: the folder is back, and whatever it held that still sits where the delete left it goes back inside. */
 export async function undoDeleteLibraryFolder(undo: FolderUndo): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!isFolderLibrary(undo.library)) return refuse(UNKNOWN)
   const [f] = await db.select().from(libraryFolders).where(eq(libraryFolders.id, undo.id))
   if (!f || f.library !== undo.library) return refuse(GONE)

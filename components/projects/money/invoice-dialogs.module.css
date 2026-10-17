@@ -1,0 +1,31 @@
+/* (gaps build B) The money dialogs' own parts — a one-off's line grid, a split's stage rows, the totals under them; the fields are the house
+   TextField (size s, the Items table's 36px field), the rest is the money stylesheet's (money.module.css). Tokens only. */
+.under { margin-top: var(--om-spacing-3); max-width: 280px; }
+.lines { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.line { display: grid; grid-template-columns: minmax(0, 1fr) 88px 140px 112px 40px; gap: var(--om-spacing-2); align-items: center; }
+.splitRow { display: grid; grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr) 40px; gap: var(--om-spacing-2); align-items: center; }
+.lineDesc, .lineQty, .lineUnit, .lineMs { min-width: 0; }
+.lineAmt { font: var(--om-type-body-m); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; color: var(--om-color-on-surface-default); }
+/* (parity map, MI-035) the lines' label with the quiet "Fill from a PDF" at its end; (MI-031) a stage invoice's grid under its switch */
+.linesHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.linesHead > :first-child { margin-bottom: var(--om-spacing-2); }
+.itemise { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin-top: var(--om-spacing-3); }
+.linesFoot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; margin-top: var(--om-spacing-2); }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+/* (simplify round 2, R2-A) a switch at rest — the studio's rule is off: no pointer, the words in the secondary colour */
+.switchRow[data-off] { cursor: default; color: var(--om-color-on-surface-secondary); }
+.totals { display: grid; grid-template-columns: minmax(0, 1fr) max-content; gap: var(--om-spacing-1) var(--om-spacing-8); margin: var(--om-spacing-3) 0 0 auto; max-width: 320px; font: var(--om-type-body-m); }
+.totals dt { color: var(--om-color-on-surface-secondary); }
+.totals dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.totals .grand { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); padding-top: var(--om-spacing-1); border-top: var(--om-border-1) solid var(--om-color-on-surface-default); }
+.total { font: var(--om-type-body-m); font-variant-numeric: tabular-nums; color: var(--om-color-on-surface-secondary); }
+.total[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
+@media (max-width: 767px) {
+  /* a line stacks: what it is on its own row, then qty · price · amount · remove */
+  .line { grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr) 40px; }
+  .line .lineDesc { grid-column: 1 / -1; }
+  .splitRow { grid-template-columns: minmax(0, 1fr) 112px 40px; }
+  .splitRow .lineMs { grid-column: 1 / -1; grid-row: 2; }
+  .under { max-width: none; }
+  .totals { max-width: none; }
+}

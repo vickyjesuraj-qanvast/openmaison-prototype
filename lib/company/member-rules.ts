@@ -46,6 +46,31 @@ export function addBlock(actor: Actor, role: Role): string | null {
   return null
 }
 
+/** (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile) Why `actor` may not change `target`'s name, email,
+    phone and photo, else null: everyone changes their own (Your profile); Owners and Admins change anyone's on Company › Members — but an Owner's
+    only an Owner (the Owner rules above; a phone is how a member will sign in). */
+export function detailsBlock(actor: Actor, target: { id: string; role: string }): string | null {
+  if (actor.id === target.id) return null
+  if (!runs(actor.role)) return 'Only Owners and Admins change another member’s details'
+  if (target.role === 'Owner' && actor.role !== 'Owner') return 'Only an Owner changes an Owner’s details'
+  return null
+}
+
+/** (simplify round 2 · F1 §6.9.3) Why `actor` may not set `targetId`'s PayNow, else null: everyone sets their own (Your profile, their row on
+    Members), Owners and Admins anyone's. (pending modules S14) One rule for the action and Who may do what's row. */
+export function payNowBlock(actor: Actor, targetId: string): string | null {
+  return actor.id === targetId || runs(actor.role) ? null : 'Only Owners and Admins change another member’s PayNow'
+}
+
+/** (pending modules S01) Why these details can't be a member's — 1.0's checks: another member already has the name, the email or the phone
+    (2.0 checked only the email, only at Add member). `team` is everyone else, deactivated members too: a number or an address stays theirs. */
+export function detailsClash(d: { name: string; email: string; phone: string }, team: { name: string; email: string | null; phone: string | null }[]): string | null {
+  if (d.name && team.some((m) => m.name.toLowerCase() === d.name.toLowerCase())) return `${d.name} is already a member`
+  if (d.email && team.some((m) => (m.email ?? '').toLowerCase() === d.email.toLowerCase())) return 'Another member has that email'
+  if (d.phone && team.some((m) => (m.phone ?? '') === d.phone)) return 'Another member has that phone number'
+  return null
+}
+
 /** The avatar tints a new member takes, in order, skipping those in use (the seeded team's palette, REG-329). */
 export const MEMBER_TINTS = ['#5B7FD7', '#3E9B63', '#E8A33D', '#B07B2E', '#2F3B8F', '#C2549A', '#2B8A8A', '#8A5CD1', '#D0663A', '#4C6B2E'] as const
-export const nextTint = (used: string[]) => MEMBER_TINTS.find((t) => !used.includes(t)) ?? MEMBER_TINTS[used.length % MEMBER_TINTS.length]!
+export const nextTint = (used: string[]) => MEMBER_TINTS.find((t) => !used.includes(t)) ?? MEMBER_TINTS[used.length % MEMBER_TINTS.length]!   // `used`: the looks under any photos (lookUnder)

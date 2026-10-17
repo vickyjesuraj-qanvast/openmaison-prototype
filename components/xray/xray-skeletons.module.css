@@ -1,6 +1,5 @@
 /* Quote X-Ray's ghosts (REG-639): the setup's and the record's own frames — the same paddings, widths and gaps as the pages. */
 .content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); }
-.intro { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); }
 .columns { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
 .card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
@@ -16,7 +15,7 @@
 .point { display: flex; gap: var(--om-spacing-3); }
 .pointBody { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 @media (max-width: 1024px) {
-  .columns { flex-direction: column; }
+  .columns { flex-direction: column; align-items: stretch; }   /* (pending modules S19) as the page (sweep S3 · T-04): the setup card fills the column */
   .recents { width: 100%; }
 }
 @media (max-width: 767px) {

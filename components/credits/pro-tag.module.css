@@ -1,0 +1,2 @@
+/* (pending modules S19) the Pro tag — the house tag (the Company panel's "Soon", REG-729), a lock before the word */
+.tag { composes: soon from '../company/company-popover.module.css'; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; vertical-align: middle; }

@@ -1,0 +1,14 @@
+/* (parity map, TD-087) The Versions panel — the save row, then each version as a row: its top view, what it is, Bring back. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.save { display: flex; flex-direction: column; gap: var(--om-spacing-2); align-items: stretch; }
+.save > :last-child { align-self: flex-start; }
+.line { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row:last-child { border-bottom: 0; }
+.thumb { width: 64px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 2px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
+.thumb svg { width: 100%; height: 100%; }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.sub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.now { flex-shrink: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

@@ -14,7 +14,7 @@ const TAGS: Record<string, readonly string[]> = {
   b: [], strong: [], i: [], em: [], u: [], s: [], strike: [], mark: ['style'], blockquote: ['style'],
   ul: ['style'], ol: ['style'], li: ['style'],
   a: ['href', 'target', 'rel'], img: ['src', 'alt', 'width', 'height', 'style'],
-  span: ['class', 'data-token', 'data-sign', 'contenteditable', 'style'],
+  span: ['class', 'data-token', 'data-sign', 'contenteditable', 'style', 'data-kit'],   // (S44T — call C2) `data-kit`: a run in a brand-kit colour (lib/templates/kit-html.ts)
 }
 /** Blocks whose content goes with them — never text a client should read. */
 const DROP_WHOLE = /<(script|style|iframe|object|embed|template|noscript|svg|math|textarea|select|form|frameset|applet|title|head)\b[\s\S]*?<\/\1\s*>/gi
@@ -43,6 +43,7 @@ function cleanAttr(tag: string, name: string, raw: string): string | null {
     case 'data-token': return /^[a-zA-Z.]{1,40}$/.test(v) ? v : null
     case 'data-sign': return /^[a-z-]{1,40}$/.test(v) ? v : null
     case 'contenteditable': return v === 'false' ? v : null
+    case 'data-kit': return /^(ink|grey|accent|light|band|red)$/.test(v) ? v : null   // (S44T) a kit colour's key only — never a free value
     case 'width': case 'height': return /^\d{1,4}(px|%)?$/.test(v) ? v : null
     case 'style': { const s = cleanStyle(v); return s || null }
     case 'alt': return v.slice(0, 200)

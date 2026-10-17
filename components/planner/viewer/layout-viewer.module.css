@@ -1,0 +1,27 @@
+/* (gaps build J) The client's viewer — the stage takes the height a phone or a laptop gives it. */
+.viewer { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.titles { min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.title { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.message { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.stage { position: relative; height: min(70dvh, 680px); min-height: 360px; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 1px var(--om-color-surface-variant); }
+.top { position: absolute; inset: 0; padding: var(--om-spacing-4); background: var(--om-color-surface-default); }
+.float { position: absolute; z-index: 2; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-1); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); }
+.rooms { left: var(--om-spacing-3); right: var(--om-spacing-3); top: var(--om-spacing-3); width: fit-content; max-width: calc(100% - 24px); overflow-x: auto; }
+.rooms > * { flex-wrap: nowrap; }
+.fit { right: var(--om-spacing-3); bottom: var(--om-spacing-3); }
+.pad { left: 50%; bottom: var(--om-spacing-3); transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); gap: var(--om-spacing-1); }
+.pad > :nth-child(1) { grid-column: 2; grid-row: 1; }
+.pad > :nth-child(2) { grid-column: 1; grid-row: 2; }
+.pad > :nth-child(3) { grid-column: 2; grid-row: 2; }
+.pad > :nth-child(4) { grid-column: 3; grid-row: 2; }
+.padKey { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.padKey:active { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.padKey:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+.hint { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .stage { height: 62dvh; min-height: 320px; } }
+/* (parity map, TD-075) the levels as chips, at the stage's top; the rooms' chips step under them */
+.levels { left: var(--om-spacing-3); top: var(--om-spacing-3); width: fit-content; max-width: calc(100% - 24px); overflow-x: auto; }
+.levels > * { flex-wrap: nowrap; }
+.rooms[data-below] { top: calc(var(--om-spacing-3) + 52px); }

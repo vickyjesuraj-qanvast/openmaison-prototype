@@ -12,13 +12,13 @@ import { useOverflowX } from '@/components/om/use-overflow-x'
 import { useRef } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
-import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import type { Contract } from '@/lib/db/schema'
 import { displayDate, displayDateTime } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
 import { CLIENT_SIGNED_RULE, UNSIGN_ROLE_RULE } from '@/lib/contracts/policy'
 import { awaitingLine } from '@/lib/contracts/model'
+import { isContractSortKey, type ContractHeadSort, type ContractSortKey } from '@/lib/leads/contract-filters'
 import styles from './contracts-table.module.css'
 
 /** (Dane UAT 8.23) A date cell: the mock's date, its time in the house tooltip on hover (a finger never leaves one behind). */
@@ -29,7 +29,7 @@ function DateTip({ at }: { at: Date }) {
 /** Row kebab — not mocked for Contracts; copied from the Quotes row kebab (910:36723, REG-177…179):
  *  Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. (UX audit C5 · C9) After Copy Link: Send a reminder (out for
  *  signature) and Mark as signed… (not signed yet). */
-export type ContractRowAction = 'share' | 'copy' | 'remind' | 'signed' | 'pdf' | 'print' | 'archive' | 'delete'
+export type ContractRowAction = 'share' | 'copy' | 'remind' | 'signed' | 'pdf' | 'print' | 'archive' | 'delete' | /** (pending modules S03) */ 'stop' | 'signedCopy'
 
 export type ContractsTableProps = {
   contracts: Contract[]
@@ -47,6 +47,9 @@ export type ContractsTableProps = {
   deleteBlock?: (contract: Contract) => string | null
   /** (UX audit C5) The host's clock (never Date.now() in render) — "Sent 3d ago · not opened" under a status out for signature. */
   now?: number
+  /** (pending modules S03 — REG-178's inert heads) the head's own order, and its press (the projects table's model) */
+  sort?: ContractHeadSort
+  onSort?: (key: ContractSortKey) => void
 }
 
 /* Column order + head copy — exactly as the mock types it (931:38691, spec 01-listing-empty.txt). Every head carries unfold_more 16. */
@@ -76,8 +79,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * No selection column, no bottom bar. Structure copied from components/leads/quotes/quotes-table.tsx (the Quotes twin):
  * every icon-only control carries a Tooltip (REG-75); sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder, statusBlock, deleteBlock, now }: ContractsTableProps) {
-  const comingSoon = useComingSoon()
+export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder, statusBlock, deleteBlock, now, sort = null, onSort }: ContractsTableProps) {
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [statusRow, setStatusRow] = useState<string | null>(null)
   const colWidths = useColumnWidths('lead-contracts')
@@ -94,20 +96,25 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
       <div ref={headRow} className={styles.head} role="row">
-        {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
-            {SORTABLE[c.key] === false ? (
+        {columns.map((c) => {
+          const sorted = sort?.key === c.key
+          return (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}
+               aria-sort={sorted ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+            {SORTABLE[c.key] === false || !isContractSortKey(c.key) || !onSort ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (
-              /* Sort is inert in this prototype — the head answers coming soon. */
-              <button type="button" className={styles.hSort} onClick={comingSoon}>
+              /* (pending modules S03) the head sorts its column — A→Z, Z→A, off (the projects table's model) */
+              <button type="button" className={styles.hSort} data-sorted={sorted || undefined} onClick={() => onSort(c.key as ContractSortKey)}
+                      aria-label={sorted ? `${c.label} — sorted ${sort.dir === 'asc' ? 'oldest first' : 'newest first'}; press to ${sort.dir === 'asc' ? 'reverse' : 'stop sorting'}` : `Sort by ${c.label}`}>
                 <span className={styles.hLabel}>{c.label}</span>
-                <Icon name="unfold_more" size={16} />
+                <Icon name={sorted ? (sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'} size={16} />
               </button>
             )}
             <ColumnResizer table="lead-contracts" column={c.key} label={c.label} min={c.key === 'title' ? 120 : 72} />
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {contracts.map((contract) => (
@@ -205,8 +212,8 @@ function ContractRowView({
           </PortalMenu>
         </span>
         {waiting ? <>
-          <span className={styles.waiting} data-form="short" data-testid="contract-waiting">{waiting.short}</span>
-          <span className={styles.waiting} data-form="full" data-testid="contract-waiting-full">{waiting.full}</span>
+          <span className={styles.waiting} data-form="short" data-testid="contract-waiting" data-expired={waiting.expired || undefined}>{waiting.short}</span>
+          <span className={styles.waiting} data-form="full" data-testid="contract-waiting-full" data-expired={waiting.expired || undefined}>{waiting.full}</span>
         </> : null}
         </span>
       </div>
@@ -215,7 +222,10 @@ function ContractRowView({
           dates and widths stay; hovering one says its date and time in the house tooltip ("17 Jul ’26, 3:05 PM"). */}
       <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}><DateTip at={contract.createdAt} /></div>
       <div className={`${styles.cell} ${styles.colSignedCopy} ${L.pinned('signedCopy') ? styles.pin : ''}`} role="cell" data-col="signedCopy" data-pin-edge={L.edge('signedCopy') || undefined} style={L.style('signedCopy')}>
-        <span className={styles.oneLine}>{contract.signedCopy ?? '-'}</span>
+        {/* (pending modules S03) a signed contract's copy opens — the kept file, else the copy kept at signing */}
+        {contract.status === 'Signed' && contract.signedCopy
+          ? <button type="button" className={`${styles.oneLine} ${styles.copyLink}`} onClick={() => onRowMenu(contract, 'signedCopy')} title={contract.signedCopy} data-testid="contract-signed-copy-cell">{contract.signedCopy}</button>
+          : <span className={styles.oneLine}>{contract.signedCopy ?? '-'}</span>}
       </div>
       <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>
         {contract.sentAt ? (
@@ -249,7 +259,9 @@ function ContractRowView({
             {/* (UX audit C8) on a Draft the copy sends it — said in the row before the press */}
             <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy Link</DropdownItem>
             {/* (UX audit C5) a nudge on WhatsApp with the same link, through the Send dialog */}
-            {contract.status === 'Sent to Client' ? <DropdownItem onSelect={pick('remind')}>Send a reminder</DropdownItem> : null}
+            {contract.status === 'Sent to Client' && !contract.toRead ? <DropdownItem onSelect={pick('remind')} help={waiting?.expired ? 'Opens the link again' : undefined}>{waiting?.expired ? 'Send the link again' : 'Send a reminder'}</DropdownItem> : null}
+            {/* (pending modules S03 — 1.0's cancel) back to Draft, the client's address dead; Undo puts it back */}
+            {contract.status === 'Sent to Client' ? <DropdownItem onSelect={pick('stop')} help={contract.bundleId ? 'Every document on its link goes back to Draft' : 'Back to Draft — the link stops opening'}>Stop the signing link</DropdownItem> : null}
             {/* (UX audit C9) a paper signature, or one made elsewhere — the status pill was the only way in */}
             {contract.status !== 'Signed' ? <DropdownItem onSelect={pick('signed')}>Mark as signed…</DropdownItem> : null}
             <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>

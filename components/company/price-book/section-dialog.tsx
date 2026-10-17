@@ -20,6 +20,7 @@ import type { PriceBookSectionRow } from '@/lib/company/price-book'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'
 import { cleanSectionTags } from '@/lib/quotes/items-model'
 import styles from './price-book.module.css'
+import { sanitizeRichHtml } from '@/lib/rich-html'   // (S44Q, triage §12.1) the saved words drawn through the house allowlist
 
 /* (Dane UAT 3.38) A line keeps a key while the dialog edits it, so a drag can follow it (`_k`; typing makes a new line object, the key rides
    along; the server reads only a line's own fields). Lines that open with the dialog are keyed by their place, new ones by a count. */
@@ -38,7 +39,7 @@ const lineTotal = (l: SavedLine) => Math.round(l.qty * (l.costMinor + l.markupMi
  * (REG-653, price book parity Q-10) The note is edited as it prints (the house rich editor), sub-sections can be added, each line shows
  * its unit; a new section is written only on Save; a line's hidden, optional, one-line and rebate marks ride along untouched.
  */
-export function SectionDialog({ open, section, onClose, onSave, readOnly = null }: { open: boolean; section: PriceBookSectionRow | null; onClose: () => void; onSave: (input: { name: string; description: string | null; descriptionHtml: string | null; body: SavedSection; propertyType: string | null; tags: string[] }) => void | Promise<void>; /** (REG-652) why the viewer may only read it */ readOnly?: string | null }) {
+export function SectionDialog({ open, section, onClose, onSave, readOnly = null, units = UNITS }: { /** (S44I — M9) the studio's units */ units?: readonly string[]; open: boolean; section: PriceBookSectionRow | null; onClose: () => void; onSave: (input: { name: string; description: string | null; descriptionHtml: string | null; body: SavedSection; propertyType: string | null; tags: string[] }) => void | Promise<void>; /** (REG-652) why the viewer may only read it */ readOnly?: string | null }) {
   const empty: SavedSection = { name: '', description: null, descriptionHtml: null, lines: [], subs: [] }
   const [body, setBody] = useState<SavedSection>(() => keyed(section?.body ?? empty))
   const seq = useRef(0)
@@ -80,7 +81,7 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
           <TextField label="Item" size="s" value={l.name} onChange={(v) => patchLine(subIndex, i, { name: v })} maxLength={200} error={touched && nameless(l) ? 'Name the item or remove it' : undefined} />
           <TextField label="Qty" size="s" numeric="decimal" value={shown(`${subIndex}:${i}:q`, String(l.qty))} onBlur={() => setTyping(null)}
                      onChange={(v) => { setTyping({ key: `${subIndex}:${i}:q`, text: v }); patchLine(subIndex, i, { qty: Number(v) || 0 }) }} />
-          <TextField label="Unit" size="s" mode="select" options={l.unit && !(UNITS as readonly string[]).includes(l.unit) ? [l.unit, ...UNITS] : [...UNITS]} value={l.unit ?? 'Pieces'} onChange={(v) => patchLine(subIndex, i, { unit: v })} />   {/* (REG-653, Q-10 · E-71) */}
+          <TextField label="Unit" size="s" mode="select" options={l.unit && !units.some((u) => u.toLowerCase() === l.unit!.toLowerCase()) ? [l.unit, ...units] : [...units]} value={l.unit ?? 'Pieces'} onChange={(v) => patchLine(subIndex, i, { unit: v })} />   {/* (REG-653, Q-10 · E-71) */}
           <TextField label="Unit price" size="s" numeric="money" value={shown(`${subIndex}:${i}:p`, price(l).toFixed(2))} onBlur={() => setTyping(null)}
                      onChange={(v) => { setTyping({ key: `${subIndex}:${i}:p`, text: v }); setPrice(subIndex, i, v) }} />
           {readOnly ? null : <span className={styles.lineTools}>
@@ -113,7 +114,7 @@ export function SectionDialog({ open, section, onClose, onSave, readOnly = null 
         <ReadOnlyScope readOnly={!!readOnly}>
         <TextField label="Section name" required value={body.name} onChange={(v) => setBody((b) => ({ ...b, name: v }))} maxLength={120} autoFocus={!readOnly && !section} error={touched && !nameOk ? MSG.required : undefined} />   {/* (sweep S5 #18 · #24) */}
         {/* (sweep S5 #20) read-only, the note keeps its shape */}
-        {readOnly ? <div className={styles.richBox}><span className={styles.eyebrow}>Section note</span>{isBlankHtml(note) ? <span className={styles.muted}>No note</span> : <div className={styles.richRead} dangerouslySetInnerHTML={{ __html: note }} />}</div>
+        {readOnly ? <div className={styles.richBox}><span className={styles.eyebrow}>Section note</span>{isBlankHtml(note) ? <span className={styles.muted}>No note</span> : <div className={styles.richRead} dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(note) }} />}</div>
           : <div className={styles.richBox}><span className={styles.eyebrow}>Section note</span><RichEditor value={note} onChange={setNote} placeholder="A note printed under the section band — bullets and bold print as you see them" label="Section note" framed minHeight={80} /></div>}
         <div className={styles.pair}>
           <TextField label="Property type" mode="select" value={propertyType ?? 'Any property'} options={['Any property', ...PROPERTY_TYPES]} onChange={(v) => setPropertyType(v === 'Any property' ? null : v)}

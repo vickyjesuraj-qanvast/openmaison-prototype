@@ -1,0 +1,41 @@
+/* (pending modules S01) Your profile — Company › Profile's cards (profile-view.module.css); only what is its own lives here. */
+.role { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* the signature's face as a quote's Signature section draws it (signature-section.module.css .box), at a signature's width */
+.signature { max-width: 480px; }
+/* (pending modules S03) the consent switch's row — the contract Automation's switch row (label, its line, the sm switch at the end) */
+.consentRow { composes: autoRow from '../contracts/editor/contract-editor.module.css'; padding: var(--om-spacing-3) 0 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); cursor: pointer; max-width: 640px; }
+.consentText { composes: autoText from '../contracts/editor/contract-editor.module.css'; }
+.consentLabel { composes: autoLabel from '../contracts/editor/contract-editor.module.css'; }
+/* (pending modules S14) Your PayNow — the value, then its text button, on one line (the Members row's PayNow words) */
+.paynow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-3); min-height: 36px; }
+.paynowValue { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.paynowValue[data-empty] { color: var(--om-color-on-surface-secondary); }
+/* (pending modules S14) the ghost's signature face is a block, as the face is — an inline bone sat on a text line 5px taller */
+/* (pending modules S41b-4) doubled: the kit's `.bone { display: inline-block }` can load after this sheet in a production bundle and win at one
+   class — the face then sat 5px taller and every card under it dropped (the S18 probe's ghost check) */
+.faceBone.faceBone { display: block; }
+/* (pending modules S18) Your notifications — two blocks under the card's head, each with a rule above it (the consent row's), its name, then
+   its control: the house chips with their line, the last summary's line with its text buttons; the muted sentence with its one text button */
+.noticeBlock { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-2); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.noticeHead { margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.summaryLine { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-3); }
+.summaryText { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 72ch; }
+/* the text buttons' own inline padding starts them where the line starts (Your signature's Change · Remove do the same) */
+.summaryActions { display: inline-flex; flex-wrap: wrap; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-3)); }
+.mutedLine { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); max-width: 72ch; }
+.chooseWrap { margin-left: calc(-1 * var(--om-spacing-3)); }   /* the text button starts where the sentence above starts */
+/* What reaches you — the areas, each headed by the house menu group title (the bell's own heads), its notices as the contract Automation's
+   switch rows (label, its line, the sm switch at the end) */
+.muteList { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.muteArea { display: flex; flex-direction: column; }
+.muteAreaHead { composes: label from '../leads/menus.module.css'; }
+.muteAreaHead.muteAreaHead { margin: 0; padding-inline: 0; }
+.muteRow { composes: autoRow from '../contracts/editor/contract-editor.module.css'; padding-left: 0; padding-right: 0; cursor: pointer; }
+.muteRow[data-off] { cursor: default; }
+.muteIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); align-self: flex-start; margin-top: 2px; }
+.muteText { composes: autoText from '../contracts/editor/contract-editor.module.css'; }
+.muteLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.muteRow[data-off] .muteLabel { color: var(--om-color-on-surface-secondary); }
+/* (pending modules S30) Confirm your new number — the dialog's body: where the code went, the boxes, the resend line, the stand-in's words */
+.confirmBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.confirmFine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

@@ -14,7 +14,7 @@ import { Avatar } from '@/components/om/avatar'
 import { displayDate, displayDateLong, displayDateTimeDot, displayDue, dueDistance, isOverdue, money, phoneLocal } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { BLANK, daysInStage, stageAge, stageSinceText } from '@/lib/leads/row-text'
-import { canReturnLead } from '@/lib/leads/stage-policy'
+import { canReturnLead, projectHoldsDelete } from '@/lib/leads/stage-policy'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './table.module.css'
 
@@ -51,6 +51,10 @@ const SORTABLE: Record<ColumnKey, boolean> = {
 }
 
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null
+/** (parity P-18) The head sort, held by the listing so its address can keep it (lib/leads/listing-url.ts). */
+export type LeadSort = Sort
+/** (parity P-18) Does this head sort? — what the address's `col` is read against. */
+export const isSortableColumn = (k: string): k is ColumnKey => Object.prototype.hasOwnProperty.call(SORTABLE, k) && SORTABLE[k as ColumnKey]
 const EMPTY_SELECTION = new Set<string>()
 
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata — unless the
@@ -66,9 +70,11 @@ const nextDue = (row: LeadRow) => row.tasks.find((t) => t.dueAt) ?? null
 /** (REG-728) The row kebab opens through the body portal, as every row menu does (components/leads/quotes/quotes-table.tsx): the
  *  table's sideways scroller can no longer clip it, and PortalMenu flips on the viewport itself — the menu-side.ts measure retired
  *  here. Each row owns its anchor, so the menu hangs from its own kebab. Items, tones and the phone sheet are the inline menu's. */
-function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn }: {
+function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn, onOpenProject }: {
   row: LeadRow; open: boolean; canDelete: boolean
   onToggle: () => void; onClose: () => void; onDelete: (row: LeadRow) => void; onReturn: (row: LeadRow) => void
+  /** (fix-E, A-09) A lead with a live project: Open project, and Delete refused in the row (Q-27). */
+  onOpenProject?: (row: LeadRow) => void
 }) {
   const anchor = useRef<HTMLSpanElement>(null)
   return (
@@ -80,10 +86,11 @@ function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn }
         </Tooltip>
       </span>
       <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={row.name}>
-        {canDelete ? <DropdownItem tone="danger" onSelect={() => { onClose(); onDelete(row) }}>Delete</DropdownItem> : null}
+        {row.project && onOpenProject ? <DropdownItem onSelect={() => { onClose(); onOpenProject(row) }} help={row.project.number}>Open project</DropdownItem> : null}
+        {canDelete ? <DropdownItem tone="danger" disabled={!!row.project} title={row.project ? projectHoldsDelete(row.project.number) : undefined} onSelect={() => { onClose(); onDelete(row) }}>Delete</DropdownItem> : null}
         {canReturnLead(row) ? (
           /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
-          <DropdownItem onSelect={() => { onClose(); onReturn(row) }}>Return Lead</DropdownItem>
+          <DropdownItem onSelect={() => { onClose(); onReturn(row) }}>{row.returnStatus === 'rejected' ? 'Appeal the return' : 'Return Lead'}</DropdownItem>   /* (pending modules S05) a rejected return is appealed */
         ) : null}
       </PortalMenu>
     </span>
@@ -124,10 +131,13 @@ export function LeadsTable({
   onEditRow,
   onDeleteRow,
   onReturnRow,
+  onOpenProject,
   onCopyPhone,
   now,
   query = '',
   filterSort = 'newest',
+  sort: heldSort,
+  onSortChange,
   canDelete = true,
 }: {
   /** Row whose stage menu is open — its stage cell shows the 2px primary outline (780:86452). */
@@ -151,6 +161,8 @@ export function LeadsTable({
   onEditRow: (row: LeadRow) => void
   onDeleteRow: (row: LeadRow) => void
   onReturnRow: (row: LeadRow) => void
+  /** (fix-E, A-09) The row menu's Open project, for a lead with a live project. */
+  onOpenProject?: (row: LeadRow) => void
   onCopyPhone: (row: LeadRow) => void
   /** (REG-607, parity Q-41) Only Owners and Admins delete: the row menu drops the item for everyone else. */
   canDelete?: boolean
@@ -160,15 +172,22 @@ export function LeadsTable({
   query?: string
   /** Filters modal sort — resets/sets the column sort so the two never fight. */
   filterSort?: 'newest' | 'oldest'
+  /** (parity P-18, B-01) The head sort held by the caller — the listing keeps it in its address; the caller then owns the Filters sort's
+      reset too. Left out, the table holds its own. */
+  sort?: LeadSort
+  onSortChange?: (s: LeadSort) => void
 }) {
-  const [sort, setSort] = useState<Sort>(null)
+  const [ownSort, setOwnSort] = useState<Sort>(null)
+  const held = onSortChange !== undefined
+  const sort = held ? heldSort ?? null : ownSort
+  const setSort = (next: Sort) => { if (held) onSortChange(next); else setOwnSort(next) }
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const closeMenu = useCallback(() => setMenuRow(null), [])   // (REG-728) stable, so the open PortalMenu keeps its listeners across renders
   // Render-phase adjust: a Filters-modal sort change owns the column sort.
   const [seenFilterSort, setSeenFilterSort] = useState(filterSort)
   if (seenFilterSort !== filterSort) {
     setSeenFilterSort(filterSort)
-    setSort(filterSort === 'oldest' ? { key: 'created', dir: 'asc' } : null)
+    if (!held) setOwnSort(filterSort === 'oldest' ? { key: 'created', dir: 'asc' } : null)
   }
 
   const visible = columns.filter((c) => c.visible)
@@ -230,7 +249,7 @@ export function LeadsTable({
   }, [rows, sort])
 
   const cycle = (key: ColumnKey) => {
-    setSort((s) => (s?.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : null))
+    setSort(sort?.key !== key ? { key, dir: 'asc' } : sort.dir === 'asc' ? { key, dir: 'desc' } : null)
   }
   const sortIcon = (key: ColumnKey) =>
     sort?.key === key ? (sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'
@@ -277,10 +296,6 @@ export function LeadsTable({
             <span className={styles.phoneRow}>
               <span className={styles.phone}>
                 {hitPhone(phoneLocal(row.phone))}
-                {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) — (Dane UAT 5.13) with its day */}
-                {row.stage === 'On Hold' && row.onHoldFollowUp
-                  ? <>{' · On hold till: '}{hit(displayDateLong(new Date(row.onHoldFollowUp)))}</>
-                  : null}
               </span>
               <Tooltip label="Copy phone number">
                 <button type="button" className={styles.copyBtn} aria-label={`Copy ${row.name}'s phone number`}
@@ -289,6 +304,12 @@ export function LeadsTable({
                 </button>
               </Tooltip>
             </span>
+            {/* On Hold leads say till when (user 2026-08-29) — (Dane UAT 5.13) with its day. (pending modules S05 — REG-891's open call: the phone
+                line's "· On hold till: Sat, 24 Oct ’26" never fitted the column's 240 floor and read "On hold till…") Its own line under the
+                phone — the Stage cell beside it says On Hold — so the day reads whole and the column keeps its floor. */}
+            {row.stage === 'On Hold' && row.onHoldFollowUp ? (
+              <span className={styles.holdLine} data-testid="hold-line"><span className="visually-hidden">On hold </span>Till {hit(displayDateLong(new Date(row.onHoldFollowUp)))}</span>
+            ) : null}
           </div>
         )
       case 'stage':
@@ -464,7 +485,7 @@ export function LeadsTable({
                   </span>
                   <RowMenu row={row} open={menuRow === row.id} canDelete={canDelete}
                            onToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))} onClose={closeMenu}
-                           onDelete={onDeleteRow} onReturn={onReturnRow} />
+                           onDelete={onDeleteRow} onReturn={onReturnRow} onOpenProject={onOpenProject} />
                 </span>
               </span>
             </div>

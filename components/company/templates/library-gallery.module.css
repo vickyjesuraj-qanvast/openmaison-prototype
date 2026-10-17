@@ -168,7 +168,7 @@
   .delEmpty { order: 2; flex-basis: 100%; }
 }
 /* (verify round 1, F166) The gallery's ghost (library-gallery.skeleton.tsx): bones in the controls' own boxes, per width — the scope pill
-   114 × 36 at a desk and 72 wide ≤1024 ("All ▾"), 44 tall with a finger (the pill's REG-273 box); New 86, a 36 glyph on a phone; the search
+   114 × 36 at a desk and 72 wide ≤1024 ("All ▾"), 36 tall with a finger too (pending modules S17); New 86, a 36 glyph on a phone; the search
    field 280, a glyph ≤1024; the view toggle 72, gone on a phone. Text bones sit on the line's middle; the thumb band is the bone. */
 .gBox { display: inline-flex; flex-shrink: 0; width: 36px; height: 36px; }
 .gIcon { width: 36px; }
@@ -181,7 +181,8 @@
 .gFolder.gFolder { background: var(--om-color-surface-bg); }
 .gFolderText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 @media (max-width: 1024px) { .gPill { width: 72px; } .gSearch { width: 36px; } }
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .gPill { height: 44px; } }
+/* (pending modules S17) the scope pill draws 36 with a finger too — its 44 is an invisible overlay (REG-344 · REG-729, scope-pill.module.css); the
+   ghost's 44 put every gallery's folders and cards 8px low on a phone */
 @media (max-width: 767px) {
   .gNew { width: 36px; }
   .gView { display: none; }

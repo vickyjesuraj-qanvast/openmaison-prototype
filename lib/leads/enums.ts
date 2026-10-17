@@ -29,6 +29,13 @@ export const PROPERTY_TYPE_GROUPS: ReadonlyArray<readonly string[]> = [
 ]
 export const PROPERTY_TYPES = PROPERTY_TYPE_GROUPS.flat()
 export type PropertyType = string
+/** (pending modules S05 — testers' L-3) A commercial client's property (an office, a shop): the lead form asks for the company and its UEN, not
+    an NRIC — the lead's name is the contact person. The quote numbers' commercial sequence reads the same family (REG-586, `propertyFamily`). */
+export const isCommercialType = (propertyType: string | null | undefined) => (propertyType ?? '').trim().toLowerCase().startsWith('commercial')
+/** (S42 B-05) The company and UEN as a paper prints them: the record keeps them when the property type goes back to a home (nothing is lost),
+    and they print — on quotes, contracts and the export — only while the lead is commercial, as the lead's own page shows them. */
+export const commercialOf = (l: { propertyType?: string | null; companyName?: string | null; companyUen?: string | null }): { company: string; uen: string } =>
+  isCommercialType(l.propertyType) ? { company: l.companyName ?? '', uen: l.companyUen ?? '' } : { company: '', uen: '' }
 
 /** Canonical team — "Filter - all assignees" after the designer's dedupe. */
 export const TEAM = [
@@ -109,7 +116,9 @@ export const STYLES_SEEN = ['Contemporary'] as const
 export const CONDITIONS_SEEN = ['New'] as const
 export const KEY_COLLECTION_SEEN = ['Collected'] as const
 
-/** (REG-601) Member roles — Company › Members. Owners and Admins run the studio; a Manager runs a team of Designers. */
-export const ROLES = ['Owner', 'Admin', 'Manager', 'Designer'] as const
+/** (REG-601) Member roles — Company › Members. Owners and Admins run the studio; a Manager runs a team of Designers. (parity map, FB-114)
+    Accounting keeps the studio's books — Finance and each project's money, never a lead (lib/settings/roles.ts). (S44O — call C6) Marketing
+    looks after the leads — the pipeline, who works each one, the lead report and the lead set-up; never a quote's money, a project or Finance. */
+export const ROLES = ['Owner', 'Admin', 'Manager', 'Designer', 'Marketing', 'Accounting'] as const
 export type Role = (typeof ROLES)[number]
 export const isRole = (s: string | null | undefined): s is Role => !!s && (ROLES as readonly string[]).includes(s)

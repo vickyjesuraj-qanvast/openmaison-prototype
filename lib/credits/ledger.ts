@@ -2,11 +2,14 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { creditLedger, creditRequests, invoices, members, settings, studioCreditBalances, studioMemberCreditCaps, subscriptions, type Subscription } from '@/lib/db/schema'
+import { billingCheckoutSessions, creditLedger, creditRequests, invoices, members, settings, studioCreditBalances, studioMemberCreditCaps, subscriptions, type Subscription } from '@/lib/db/schema'
 import { notify } from '@/lib/notifications/emit'
-import { allowanceFor, planRow, priceFor, TOPUP_CREDITS, TOPUP_PRICE, type BillingCycle, type PlanId } from './plans'
+import { allowanceFor, planRow, priceFor, proratedByDays, sgd, sgd2, TOPUP_CREDITS, topupPrice, type BillingCycle, type PlanId } from './plans'
 import { costOf, type ActionKey } from './schedule'
-import { fmtCredits, type Refusal } from './model'
+import { dayMonth, fmtCredits, type Refusal } from './model'
+import { AUTO_TOPUP_KEY, autoDue, autoSessionId, parseAutoTopUp } from './auto-topup'
+import { paymentProvider, paymentsAreStandIn } from './payments'   // (pending modules S34)
+import { withdrawStaleOffers } from './nudges'   // (pending modules S41b-4) an upgrade or a top-up takes the upgrade offers it answers out of the bell
 
 /**
  * (REG-699…) The AI credits ledger — 1.0's rules as they are, with the five fixes where 1.0 breaks its own promise (integration §B):
@@ -108,15 +111,24 @@ export async function ensurePeriod(now = Date.now()): Promise<void> {
       continue
     }
     if (periodEnd > now) return
+    /* (pending modules S19 — 1.0's POST /api/billing/seats) fewer seats take effect on the billing date: the renewal that is due now carries
+       them — its bill and, from this month on, its AI credits (claimed once, like every other step) */
+    let seats = sub.seats
+    if (sub.scheduledSeats != null && sub.status === 'active' && sub.currentPeriodEnd.getTime() <= periodEnd) {
+      const claim = await db.update(subscriptions).set({ seats: sub.scheduledSeats, scheduledSeats: null, updatedAt: sec(sub.currentPeriodEnd.getTime()) })
+        .where(and(eq(subscriptions.id, sub.id), eq(subscriptions.scheduledSeats, sub.scheduledSeats)))
+      if (!claim.rowsAffected) continue
+      seats = sub.scheduledSeats
+    }
     /* the month ended → refresh; a monthly bill ends with it (a yearly one every twelve) */
     /* no payment, no new month: a studio past due keeps its top-ups while its grace runs (1.0: renewal credits come with the payment) */
-    const moved = await refreshTo({ at: periodEnd, planId: sub.planId as PlanId, seats: sub.seats, expectEnd: periodEnd, grant: sub.status !== 'past_due' })
+    const moved = await refreshTo({ at: periodEnd, planId: sub.planId as PlanId, seats, expectEnd: periodEnd, grant: sub.status !== 'past_due' })
     if (!moved) continue
     if (sub.status === 'active' && sub.planId !== 'free' && sub.currentPeriodEnd.getTime() <= periodEnd) {
       const start = sub.currentPeriodEnd.getTime(), months = sub.billingCycle === 'yearly' ? 12 : 1
       const claim = await db.update(subscriptions).set({ currentPeriodStart: sec(start), currentPeriodEnd: sec(addMonths(start, months)), updatedAt: sec(start) })
         .where(and(eq(subscriptions.id, sub.id), eq(subscriptions.currentPeriodEnd, sub.currentPeriodEnd)))
-      if (claim.rowsAffected) await issueInvoice({ subscriptionId: sub.id, forWhat: planLabel(sub), amount: priceFor(planRow(sub.planId), sub.seats, sub.billingCycle as BillingCycle), start, end: addMonths(start, months), at: start })
+      if (claim.rowsAffected) await issueInvoice({ subscriptionId: sub.id, forWhat: planLabel({ planId: sub.planId, seats }), amount: priceFor(planRow(sub.planId), seats, sub.billingCycle as BillingCycle), start, end: addMonths(start, months), at: start })
     }
     if (sub.status === 'active' || sub.status === 'trialing') await notifyRenewed(sub).catch(() => {})
   }
@@ -177,22 +189,106 @@ export async function changePlan(o: { planId: PlanId; seats: number; cycle: Bill
   })
   if (o.invoice && !trialEnds && plan.id !== 'free') await issueInvoice({ subscriptionId: id, forWhat: planLabel({ planId: plan.id, seats }), amount: priceFor(plan, seats, o.cycle), start: o.at, end: addMonths(o.at, months), at: o.at })
   if (!o.quiet && plan.id !== 'free') await answerPoolAsks(o.by, 'a new plan')
+  if (plan.id !== 'free') await withdrawStaleOffers().catch(() => 0)   // (pending modules S41b-4 — 1.0's R1) off Free, every offer stops
   return row as Subscription
 }
 
-/** A top-up lands (1.0's webhook: +1,000 in the top-up bucket, A-13). */
-export async function addTopUp(o: { by: string; at: number; quantity?: number }): Promise<number> {
-  const credits = TOPUP_CREDITS * Math.max(1, o.quantity ?? 1)
+/** A top-up lands (1.0's webhook: the amount bought into the top-up bucket, A-13) — bought by hand (`by`, any amount on the grid since
+    1.0's per-amount top-ups) or by the studio's auto top-up (`auto`, nobody's press — pending modules S19). */
+export async function addTopUp(o: { by: string | null; at: number; credits?: number; auto?: boolean }): Promise<number> {
+  const credits = Math.max(1, Math.round(o.credits ?? TOPUP_CREDITS))
+  const key = o.auto ? 'auto_topup' : 'topup'
   const bal = await db.transaction(async (tx) => {
     const [b] = await tx.select().from(studioCreditBalances).where(eq(studioCreditBalances.id, BALANCE_ID))
     if (!b) return null
     await tx.update(studioCreditBalances).set({ topupCredits: b.topupCredits + credits, updatedAt: sec(o.at) }).where(eq(studioCreditBalances.id, BALANCE_ID))
-    return writeRows(tx, b.planCredits + b.topupCredits, [{ memberId: o.by, actionKey: 'topup', credits, reason: 'topup', refId: `topup:${randomUUID()}`, at: o.at }])
+    return writeRows(tx, b.planCredits + b.topupCredits, [{ memberId: o.by, actionKey: key, credits, reason: 'topup', refId: `topup:${randomUUID()}`, at: o.at }])
   })
   if (bal == null) return 0
-  await issueInvoice({ subscriptionId: null, forWhat: `${fmtCredits(credits)} AI credits`, amount: TOPUP_PRICE * Math.max(1, o.quantity ?? 1), start: o.at, end: o.at, at: o.at })
-  await answerPoolAsks(o.by, 'a top-up')
+  await issueInvoice({ subscriptionId: null, forWhat: `${fmtCredits(credits)} AI credits${o.auto ? ' · auto top-up' : ''}`, amount: topupPrice(credits), start: o.at, end: o.at, at: o.at })
+  await answerPoolAsks(o.by, o.auto ? 'an auto top-up' : 'a top-up')
+  await withdrawStaleOffers().catch(() => 0)   // (pending modules S41b-4) "Only n left" ends with the top-up; welcome credits give way to bought ones
   return bal
+}
+
+/**
+ * (pending modules S19 — card held:ai-credits, Q-36 as recommended) The studio's auto top-up (lib/credits/auto-topup.ts): when its AI credits
+ * fall under the Owner's line, one top-up of the chosen amount is bought — the checkout record a top-up leaves (kind `auto_topup`, with its
+ * tax invoice and a receipt in the Owner's bell) — at most the month's ceiling, and a crossing raises one, never two: each is claimed by the
+ * month and its count (`auto-<month>-<n>`, the record's own key). Nothing is charged: the prototype's checkout is the demo stand-in for
+ * Dodo charging the saved card (integration B-29). Answers the AI credits it added (0 for none).
+ */
+export async function autoTopUp(at = Date.now()): Promise<number> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, AUTO_TOPUP_KEY))
+  const auto = parseAutoTopUp(row?.value ?? null)
+  if (!auto.on) return 0
+  const sub = await currentSubscription()
+  if (sub?.status === 'past_due') return 0   // the card that failed is the one it would charge
+  const [bal] = await db.select().from(studioCreditBalances).where(eq(studioCreditBalances.id, BALANCE_ID))
+  if (!bal || !bal.enforcementEnabled) return 0
+  const month = await db.select({ id: billingCheckoutSessions.id, status: billingCheckoutSessions.status, credits: billingCheckoutSessions.creditsGranted })
+    .from(billingCheckoutSessions).where(and(eq(billingCheckoutSessions.kind, 'auto_topup'), gte(billingCheckoutSessions.createdAt, bal.periodStart)))
+  const spent = month.filter((m) => m.status === 'completed').reduce((n, m) => n + topupPrice(m.credits ?? 0), 0)
+  const due = autoDue(auto, { balance: bal.planCredits + bal.topupCredits, spentThisMonth: spent })
+  if (due === 'ceiling') { await autoCeilingNotice(bal.periodStart.getTime(), bal.periodEnd.getTime(), auto.ceiling).catch(() => {}); return 0 }
+  if (due !== 'due') return 0
+  const id = autoSessionId(Math.floor(bal.periodStart.getTime() / 1000), month.length + 1)
+  const claim = await db.insert(billingCheckoutSessions).values({ id, memberId: null, kind: 'auto_topup', planId: null, seats: 1, period: 'monthly', status: 'pending', creditsRequested: auto.credits, createdAt: sec(at) }).onConflictDoNothing()
+  if (!claim.rowsAffected) return 0   // another charge claimed this one
+  /* (pending modules S34) a real payment provider charges the card on file first; a refusal leaves the session failed and adds nothing (the
+     next crossing tries again under its own count) — the demo charges nothing */
+  if (!paymentsAreStandIn()) {
+    const paid = await paymentProvider().charge({ ref: id, amountCents: topupPrice(auto.credits), forWhat: `${fmtCredits(auto.credits)} AI credits · auto top-up` }).catch((e: unknown) => ({ error: e instanceof Error ? e.message : String(e) }))
+    if ('error' in paid) { await db.update(billingCheckoutSessions).set({ status: 'failed' }).where(eq(billingCheckoutSessions.id, id)); console.error('[credits] the auto top-up’s charge was refused:', paid.error); return 0 }
+  }
+  const added = await addTopUp({ by: null, at, credits: auto.credits, auto: true })
+  if (!added) return 0
+  await db.update(billingCheckoutSessions).set({ status: 'completed', completedAt: sec(at), creditsGranted: auto.credits }).where(eq(billingCheckoutSessions.id, id))
+  const owners = await db.select({ id: members.id }).from(members).where(and(eq(members.role, 'Owner'), eq(members.isActive, true)))
+  await notify('credit_receipt', owners.map((m) => m.id), { title: `Auto top-up · ${sgd2(topupPrice(auto.credits))}`, body: `${fmtCredits(auto.credits)} AI credits added — the studio fell under ${fmtCredits(auto.below)}. Top-ups never expire.`, href: '/company/plan/billing', actorId: null }).catch(() => {})
+  return auto.credits
+}
+
+/** Once a month: the auto top-up has spent what it may, so the Owner hears it stops until the refresh (kept in `credit_alerts`). */
+async function autoCeilingNotice(periodStart: number, periodEnd: number, ceiling: number) {
+  const period = String(Math.floor(periodStart / 1000))
+  const [row] = await db.select().from(settings).where(eq(settings.key, 'credit_alerts'))
+  const prev = row ? (JSON.parse(row.value) as { period?: string; sent?: string[] }) : {}
+  const sent = prev.period === period ? new Set(prev.sent ?? []) : new Set<string>()
+  if (sent.has('auto-cap')) return
+  sent.add('auto-cap')
+  const value = JSON.stringify({ period, sent: [...sent] })
+  await db.insert(settings).values({ key: 'credit_alerts', value, updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } })
+  const owners = await db.select({ id: members.id }).from(members).where(and(eq(members.role, 'Owner'), eq(members.isActive, true)))
+  await notify('credits_low', owners.map((m) => m.id), { title: `Auto top-up has spent this month’s ${sgd(ceiling)}`, body: `It starts again on ${dayMonth(periodEnd)}. Buy more by hand, or let it spend more in Plan & billing.`, href: '/company/plan/billing', actorId: null })
+}
+
+/**
+ * (pending modules S19 — 1.0's POST /api/billing/seats, 2026-10-01) Change Pro — Studio's seats: more seats start today, billed for what
+ * is left of the period (1.0: `prorated_immediately`), a tax invoice and a receipt; fewer seats wait for the billing date (1.0:
+ * `next_billing_date`, nothing billed now), kept on the plan as `scheduled_seats` and carried by the renewal (`ensurePeriod`). The month's
+ * AI credits stay as they are — a month's credits are granted once, at its start (1.0 mints no second allowance mid-cycle); the next month's
+ * follow the seats. The caller checks who may and how few (app/credits/actions.ts `changeSeats`).
+ */
+export async function setSeats(o: { sub: Subscription; seats: number; by: string; at: number; /** (pending modules S34) a real provider's charge on the card on file — its refusal's words, or null when it went */ charge?: (amountCents: number) => Promise<string | null> }): Promise<{ effective: 'now' | 'renewal' | 'none'; charged: number; on: number; refused?: string }> {
+  const { sub, seats, at } = o
+  const plan = planRow(sub.planId)
+  const end = sub.currentPeriodEnd.getTime()
+  if (seats === sub.seats) {
+    if (sub.scheduledSeats != null) await db.update(subscriptions).set({ scheduledSeats: null, updatedAt: sec(at) }).where(eq(subscriptions.id, sub.id))   // a change waiting is called off
+    return { effective: 'none', charged: 0, on: at }
+  }
+  if (seats < sub.seats) {
+    await db.update(subscriptions).set({ scheduledSeats: seats, updatedAt: sec(at) }).where(eq(subscriptions.id, sub.id))
+    return { effective: 'renewal', charged: 0, on: end }
+  }
+  const cycle = sub.billingCycle as BillingCycle
+  const charged = proratedByDays(priceFor(plan, seats, cycle) - priceFor(plan, sub.seats, cycle), sub.currentPeriodStart.getTime(), end, at)
+  if (charged > 0 && o.charge) { const refused = await o.charge(charged); if (refused) return { effective: 'none', charged: 0, on: at, refused } }
+  await db.update(subscriptions).set({ seats, scheduledSeats: null, updatedAt: sec(at) }).where(eq(subscriptions.id, sub.id))
+  const more = seats - sub.seats
+  if (charged > 0) await issueInvoice({ subscriptionId: sub.id, forWhat: `${more} more ${more === 1 ? 'seat' : 'seats'} · ${plan.name} · ${seats} seats`, amount: charged, start: at, end, at })
+  return { effective: 'now', charged, on: at }
 }
 
 /** (integration B-19) Everyone waiting because the studio was out hears that credits are in — they press Generate again (B-14). */
@@ -215,7 +311,18 @@ export async function spendCredits(o: { memberId: string; action: ActionKey; cou
   await ensurePeriod(at)
   const cost = costOf(o.action, o.count)
   if (cost <= 0) return { ok: true, charged: 0, counting: true }
-  const out = await db.transaction(async (tx): Promise<SpendOk | Refusal> => {
+  let out = await chargeOnce(o, cost, at)
+  /* (pending modules S19) the studio's auto top-up comes first when a charge would be refused for the studio's credits — the work carries on */
+  if ('error' in out && out.error === 'insufficient_credits' && (await autoTopUp(at).catch(() => 0)) > 0) out = await chargeOnce(o, cost, at)
+  if ('ok' in out && out.charged > 0) {
+    await autoTopUp(at).catch(() => 0)   // under the line after this charge: topped up before anyone is told they're low
+    await raiseAlerts(at).catch(() => {})
+  }
+  return out
+}
+
+async function chargeOnce(o: { memberId: string; action: ActionKey; ref: string; trusted: boolean }, cost: number, at: number): Promise<SpendOk | Refusal> {
+  return db.transaction(async (tx): Promise<SpendOk | Refusal> => {
     const [bal] = await tx.select().from(studioCreditBalances).where(eq(studioCreditBalances.id, BALANCE_ID))
     if (!bal) return { ok: true, charged: 0, counting: false }
     const [dup] = await tx.select({ id: creditLedger.id }).from(creditLedger).where(and(eq(creditLedger.actionKey, o.action), eq(creditLedger.refId, o.ref), inArray(creditLedger.reason, ['spend', 'shadow_spend'])))
@@ -238,8 +345,6 @@ export async function spendCredits(o: { memberId: string; action: ActionKey; cou
     await writeRows(tx, total, [{ memberId: o.memberId, actionKey: o.action, credits: -cost, reason: 'spend', refId: o.ref, at }])
     return { ok: true, charged: cost, counting: true }
   })
-  if ('ok' in out && out.charged > 0) await raiseAlerts(at).catch(() => {})
-  return out
 }
 
 /** Give a charge back (a render that failed, or was stopped before it was kept; a quote that couldn't be read) — into the top-up
@@ -268,7 +373,9 @@ async function raiseAlerts(at: number) {
   const sub = await currentSubscription()
   if (!bal || !sub) return
   const allowance = allowanceFor(planRow(sub.planId), sub.seats)
-  const used = allowance - bal.planCredits
+  /* (S42 D-10) used = the month's spends net of their refunds (the ledger's own count) — never the allowance less what is left, which read a
+     demo's Almost out, a plan change mid-month or credits carried as use */
+  const used = await usedSince(bal.periodStart.getTime())
   const total = bal.planCredits + bal.topupCredits
   const period = String(Math.floor(bal.periodStart.getTime() / 1000))
   const [row] = await db.select().from(settings).where(eq(settings.key, 'credit_alerts'))

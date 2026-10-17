@@ -3,7 +3,8 @@ import { parseInputDate, parseInputDateTime, titleCaseName } from '@/lib/format'
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs, leadNotes, quoteComparisons } from '@/lib/db/schema'
+import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, meetings, members, stageLogs, leadNotes, quoteComparisons, projects, quotes } from '@/lib/db/schema'
+import { withYou } from '@/lib/db/session'   // (pending modules S43A) "you" = this request's member
 import type { ImportBatch, ImportRow, Lead, LeadTask, Member, StageLog } from '@/lib/db/schema'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { DETAIL_TABS, detailHref } from '@/lib/leads/stage-policy'
@@ -20,7 +21,7 @@ export type LeadRow = Lead & {
   resumeStage: Stage | null
   /** Qanvast lead return (931:48236): the latest return's status, so the listing menus gate "Return Lead" like the overview does. */
   returnStatus: 'processing' | 'rejected' | 'approved' | null
-  /** (REG-600) The latest contact — a Notes-tab contact log or a Contacted-stage log entry — for the listing's column and the Overview. */
+  /** (REG-600) The latest contact — a Notes-tab contact log, a Contacted-stage log entry or (pending modules S27) a meeting held — for the listing's column and the Overview. */
   lastContact: LastContact | null
   /** (REG-607) How many contacts are logged — the Contacted stage's entries and the Notes tab's logs — for the Lost dialog's "n of 3 contacts logged" hint. */
   contactCount: number
@@ -29,8 +30,16 @@ export type LeadRow = Lead & {
   /** (UX audit L3) Since when the lead has sat in its stage: the latest move into it, else its creation (a lead still in New) — the cards'
    *  "5d in Met" and the In stage column. */
   stageSince: Date
+  /** (fix-E, A-01 · A-09) The lead's live project (not in Deleted Projects): it holds the lead at Won — On Hold and Lost are refused — and
+   *  keeps it from being deleted (Q-27), so every menu says so before the press. */
+  project: { id: string; number: string; /** (pending modules S05) the project's type — the export's Project type */ type?: string | null } | null
+  /** (pending modules S05 — the export's Quote status, dropped by a package as "no lead-side value") the lead's latest live quote: its number and status. */
+  latestQuote?: { number: string; status: string } | null
 }
-export type LastContact = { at: Date; channel: string | null; outcome: string | null }
+export type LastContact = { at: Date; channel: string | null; outcome: string | null; /** (S42E, E-11) the held meeting it is, when it is one — the lead's brief offers to log it */ meetingId?: string }
+/** (fix-E, E-01 · E-09) A lead in Deleted Leads and the project that keeps it from being deleted forever: a live one (delete the project
+ *  first) or one in Deleted Projects (delete it forever there first) — the sheet names them before the press. */
+export type DeletedLead = Lead & { heldBy: { projectId: string; number: string; deleted: boolean } | null }
 
 /**
  * REVALIDATION (REG-286) — the one eviction for a lead, used by every server action that writes about it.
@@ -46,6 +55,7 @@ export type LastContact = { at: Date; channel: string | null; outcome: string | 
 export function revalidateLead(leadId: string): void {
   for (const tab of DETAIL_TABS) revalidatePath(detailHref(leadId, tab.slug))
   revalidateLeadListings()
+  revalidatePath('/projects', 'layout')   // (REG-913) a project carries its lead's records on — its pages and the listing read them
 }
 
 /** The screens that list leads rather than show one: the listing (table + kanban) and Qanvast Ops › Leads. */
@@ -60,6 +70,7 @@ export function revalidateLeadListings(): void {
  */
 export function revalidateEveryLead(): void {
   revalidatePath('/leads', 'layout')
+  revalidatePath('/projects', 'layout')   // (REG-913)
   revalidatePath('/qanvast-ops')
 }
 
@@ -77,16 +88,48 @@ type RowParts = {
   contacts: { leadId: string; contactedAt: Date | null; createdAt: Date; channel: string | null; outcome: string | null }[]
   /** (REG-640) The leads' comparisons, newest first — the latest names the competitor. */
   xrays: { leadId: string | null; otherStudio: string; createdAt: Date }[]
+  /** (fix-E, A-01) The leads' live projects. */
+  projs: { id: string; number: string; leadId: string; type?: string | null }[]
+  /** (pending modules S05) The leads' live quotes, newest first — the latest names the Quote status. */
+  quoteRows?: { leadId: string; number: string; status: string }[]
+  /** (pending modules S27) The leads' meetings held — a Hangout chat at the studio's table, S23's meeting: contact too (`heldMeetings`). */
+  held?: HeldMeeting[]
 }
+type HeldMeeting = { leadId: string; startsAt: Date; endsAt: Date | null; whereKind: string; id?: string }
+/** (pending modules S27) The meetings held with the leads (`ids` given: those leads only) — the rows `lastContactOf` reads beside the logs. */
+const heldMeetings = (ids?: string[]) => db.select({ leadId: meetings.leadId, startsAt: meetings.startsAt, endsAt: meetings.endsAt, whereKind: meetings.whereKind, id: meetings.id }).from(meetings)
+  .where(and(eq(meetings.status, 'held'), isNull(meetings.deletedAt), ...(ids ? [inArray(meetings.leadId, ids.length ? ids : ['-'])] : [])))
 
-/** (REG-600) The latest contact of a lead: the Notes tab's logs and the Contacted stage's entries (their typed "when", else the move's time). */
-function lastContactOf(leadId: string, contacts: RowParts['contacts'], logs: StageLog[], stageData: Partial<WizardData>): LastContact | null {
+/** (REG-600) The latest contact of a lead: the Notes tab's logs and the Contacted stage's entries (their typed "when", else the move's time) —
+    and (pending modules S27) a meeting held with them (a Hangout chat at the studio's table, S23's meeting: "{where} · Meeting held"). THE one
+    rule for "has had contact": the listing's Last contact, the Lead stages card, Maison AI's untouched lists and the bell's untouched notice
+    (`fetchContactedLeadIds`) all read it, so they never disagree. */
+function lastContactOf(leadId: string, contacts: RowParts['contacts'], logs: StageLog[], stageData: Partial<WizardData>, held: HeldMeeting[] = []): LastContact | null {
   let best: LastContact | null = null
-  const consider = (at: Date | null, channel: string | null, outcome: string | null) => { if (at && !Number.isNaN(at.getTime()) && (!best || at > best.at)) best = { at, channel, outcome } }
+  const consider = (at: Date | null, channel: string | null, outcome: string | null, meetingId?: string) => { if (at && !Number.isNaN(at.getTime()) && (!best || at > best.at)) best = { at, channel, outcome, ...(meetingId ? { meetingId } : {}) } }
   for (const c of contacts) if (c.leadId === leadId) consider(c.contactedAt ?? c.createdAt, c.channel, c.outcome)
   const movedAt = logs.filter((g) => g.toStage === 'Contacted').at(-1)?.createdAt ?? null
   for (const l of stageData.logs ?? []) consider(parseInputDateTime(l.when) ?? parseInputDate(l.when) ?? movedAt, l.channel, l.outcome || null)
+  for (const m of held) if (m.leadId === leadId) consider(m.endsAt ?? m.startsAt, m.whereKind, HELD_OUTCOME, m.id)
   return best
+}
+/** (pending modules S27) A held meeting's word in Last contact ("In person · Meeting held"). */
+const HELD_OUTCOME = 'Meeting held'
+
+/** (pending modules S27) The leads among `ids` that have had contact — by `lastContactOf`, the listing's own rule (the bell's untouched notice). */
+export async function fetchContactedLeadIds(ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set()
+  const [contacts, logs, held] = await Promise.all([
+    db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(and(inArray(leadNotes.leadId, ids), eq(leadNotes.kind, 'contact'))),
+    db.select().from(stageLogs).where(inArray(stageLogs.leadId, ids)).orderBy(asc(stageLogs.createdAt)),
+    heldMeetings(ids),
+  ])
+  const out = new Set<string>()
+  for (const id of ids) {
+    const own = logs.filter((g) => g.leadId === id)
+    if (lastContactOf(id, contacts, own, mergeStageData(own), held)) out.add(id)
+  }
+  return out
 }
 
 /**
@@ -94,7 +137,7 @@ function lastContactOf(leadId: string, contacts: RowParts['contacts'], logs: Sta
  * lead can never render differently in the table than on its own page — the second assembler this replaced would
  * have drifted the first time one of them learnt a new field.
  */
-function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts, xrays }: RowParts): LeadRow[] {
+function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows = [], held = [] }: RowParts): LeadRow[] {
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
   const logsByLead = new Map<string, typeof logs>()
@@ -128,27 +171,32 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts,
       stageData,
       resumeStage: resumeStageOf(l),
       returnStatus: latestReturn.get(l.id) ?? null,
-      lastContact: lastContactOf(l.id, contacts, logsByLead.get(l.id) ?? [], stageData),
+      lastContact: lastContactOf(l.id, contacts, logsByLead.get(l.id) ?? [], stageData, held),
       contactCount: contacts.filter((c) => c.leadId === l.id).length + (stageData.logs?.filter((x) => !x.noteId).length ?? 0),   // (REG-607; UX audit 2026-09-30, L2: a Notes log carried into Contacted counts once)
       lastComparison: ((x) => (x ? { studio: x.otherStudio, at: x.createdAt.getTime() } : null))(xrays.find((x) => x.leadId === l.id)),   // (REG-640)
       stageSince: logsByLead.get(l.id)?.filter((g) => g.toStage === l.stage).at(-1)?.createdAt ?? l.createdAt,   // (UX audit L3) logs are oldest first
+      project: ((p) => (p ? { id: p.id, number: p.number, type: p.type ?? null } : null))(projs.find((p) => p.leadId === l.id)),   // (fix-E, A-01 · A-09)
+      latestQuote: ((q) => (q ? { number: q.number, status: q.status } : null))(quoteRows.find((q) => q.leadId === l.id)),   // (pending modules S05)
     }
   })
 }
 
 /** Full listing payload — 18 rows; joins resolved in memory. */
 export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
-  const [allLeads, tasks, links, team, logs, rets, contacts, xrays] = await Promise.all([
-    db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
+  const [allLeads, tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows, held] = await Promise.all([
+    db.select().from(leads).where(and(isNull(leads.deletedAt), eq(leads.direct, false))).orderBy(desc(leads.createdAt)),   // (REG-911) a direct project's client is no lead in the pipeline
     db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees),
-    db.select().from(members),
+    db.select().from(members).then(withYou),
     db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(eq(leadNotes.kind, 'contact')),   // (REG-600)
     db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(isNotNull(quoteComparisons.leadId)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
+    db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, type: projects.projectType }).from(projects).where(isNull(projects.deletedAt)),   // (fix-E, A-01)
+    db.select({ leadId: quotes.leadId, number: quotes.number, status: quotes.status }).from(quotes).where(and(eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)),   // (pending modules S05)
+    heldMeetings(),   // (pending modules S27)
   ])
-  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets, contacts, xrays }), team, now: Date.now() }
+  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows, held }), team, now: Date.now() }
 }
 
 /**
@@ -160,22 +208,33 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
  * `logs` rides along because the caller needs the lead's stage logs too, and this already loaded them.
  */
 export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; team: Member[]; logs: StageLog[]; now: number }> {
-  const [rows, tasks, links, team, logs, rets, contacts, xrays] = await Promise.all([
+  const [rows, tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows, held] = await Promise.all([
     db.select().from(leads).where(and(eq(leads.id, id), isNull(leads.deletedAt))).limit(1),   // a trashed lead has no detail page, exactly as the listing path excluded it
     db.select().from(leadTasks).where(eq(leadTasks.leadId, id)).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, id)),
-    db.select().from(members),
+    db.select().from(members).then(withYou),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, id)).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(and(eq(leadNotes.leadId, id), eq(leadNotes.kind, 'contact'))),
     db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(eq(quoteComparisons.leadId, id)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
+    db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, type: projects.projectType }).from(projects).where(and(eq(projects.leadId, id), isNull(projects.deletedAt))),   // (fix-E, A-01)
+    db.select({ leadId: quotes.leadId, number: quotes.number, status: quotes.status }).from(quotes).where(and(eq(quotes.leadId, id), eq(quotes.kind, 'quote'), isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.createdAt)),   // (pending modules S05)
+    heldMeetings([id]),   // (pending modules S27)
   ])
-  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets, contacts, xrays })[0] ?? null, team, logs, now: Date.now() }
+  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows, held })[0] ?? null, team, logs, now: Date.now() }
 }
 
-/** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. */
-export async function fetchDeletedLeads(): Promise<Lead[]> {
-  return db.select().from(leads).where(isNotNull(leads.deletedAt)).orderBy(desc(leads.deletedAt))
+/** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. (fix-E, E-01 · E-09) Each with the project that keeps
+ *  it from being deleted forever — live, or in Deleted Projects — so Delete Forever and Empty Trash count what they will really remove. */
+export async function fetchDeletedLeads(): Promise<DeletedLead[]> {
+  const [rows, projs] = await Promise.all([
+    db.select().from(leads).where(and(isNotNull(leads.deletedAt), eq(leads.direct, false))).orderBy(desc(leads.deletedAt)),   // (REG-911)
+    db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, deletedAt: projects.deletedAt }).from(projects),
+  ])
+  return rows.map((l) => {
+    const p = projs.find((x) => x.leadId === l.id)
+    return { ...l, heldBy: p ? { projectId: p.id, number: p.number, deleted: !!p.deletedAt } : null }
+  })
 }
 
 /** Lead Import History (779:20147) — newest first. */

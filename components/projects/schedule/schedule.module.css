@@ -1,0 +1,346 @@
+/*
+ * (Projects round 2 — the Schedule) The Project Schedule Proposal drawn on 2.0's tokens: one list that is also the timeline (Main.dc.html),
+ * what moved with a move (Moved.dc.html), the phone's rows (Phone.dc.html), starting a schedule (Start.dc.html). The cards are the lead
+ * Overview's (components/leads/detail/card.module.css: white, 1px surface-variant, r8); the list's frame and its frozen columns are the
+ * table core's (components/om/table-core.module.css, REG-727), composed, never copied. Status colours: done = tertiary green, running =
+ * primary, waiting = tertiary yellow, late = tertiary red, moved since the last share = tertiary blue — each a token pair.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+
+/* ── Where the job stands ── */
+.summary { composes: card from '../../leads/detail/card.module.css'; }
+.summaryInner { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-6); padding: var(--om-spacing-5) var(--om-spacing-6); }
+.summaryText { display: flex; flex-direction: column; gap: var(--om-spacing-1); flex: 1 1 380px; min-width: 0; }
+.headline { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.headline[data-alert] { color: var(--om-color-tertiary-red-default); }
+.subline { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.stats { display: flex; flex-wrap: wrap; gap: var(--om-spacing-8); margin: 0; }
+.stat { display: flex; flex-direction: column; gap: var(--om-spacing-0-5); }
+.stat dt { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.stat dd { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.stat dd[data-alert] { color: var(--om-color-tertiary-red-default); }   /* (B-20) a stage still to collect whose day has passed */
+
+/* ── The toolbar: scale · Today | who sees it · Add milestone ── */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.toolStart, .toolEnd { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
+.toolEnd { gap: var(--om-spacing-4); }
+.toolActs { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex: none; }   /* (B-43) Add milestone and ⋮ wrap as one */
+/* (B-41) the phone's who-sees line under the summary, its ⋮ beside it */
+.phoneBar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-width: 0; }
+.sees { display: inline-flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); border: 0; background: none; border-radius: var(--om-radius-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); cursor: pointer; text-align: left; }
+.sees:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.sees[aria-pressed='true'] { color: var(--om-color-primary-default); }
+.seesCount { color: var(--om-color-on-tertiary-blue-variant); }
+
+/* ── The list that is also the timeline ── */
+.body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); align-items: start; }
+.body[data-pane] { grid-template-columns: minmax(0, 1fr) 360px; }
+/* (B-31) `clip`, not `hidden`: the corners stay clipped but the frame is no scroll container, so the house sideways bar (REG-570) sticks to the
+   viewport's foot while the list runs on below it */
+.frame { composes: frame from '../../om/table-core.module.css'; overflow: clip; }
+.scroller { overflow-x: auto; overscroll-behavior-x: contain; }
+.grid { display: grid; grid-template-columns: var(--name-w, 360px) minmax(var(--tl-min, 600px), 1fr) 140px; min-width: calc(var(--name-w, 360px) + 140px + var(--tl-min, 600px)); }   /* (gaps build, package C — 13) the name column takes its dragged width */
+.headRow { display: contents; }
+/* (B-13) each milestone's row is a real box across the grid (a subgrid on the grid's three columns), so the list cursor (J / K / ↵) finds it
+   and draws across the whole row — `display: contents` left it no box to find */
+.row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+
+/* the frozen columns: the name at the left, the actions at the right — they keep the row's fill and draw the core's 1px edge */
+.nameCell, .actCell, .nameHead, .actHead { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
+.nameCell, .nameHead { left: 0; box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }
+.actCell, .actHead { right: 0; box-shadow: inset var(--om-border-1) 0 0 var(--om-color-surface-variant); }
+.nameHead { composes: hCell from '../../om/table-core.module.css'; padding-left: 52px; align-self: stretch; }   /* (REG-1065) 52, where the names start (16 + the 24 glyph + 12) — the listing's first column after its box */
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }
+.actHead { align-self: stretch; }
+
+.scale { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 56px; padding-top: var(--om-spacing-2); }
+.months, .weeks { position: relative; height: 16px; }
+.month { position: absolute; top: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); white-space: nowrap; padding-left: var(--om-spacing-1); }
+.weeks { height: 20px; margin-top: var(--om-spacing-0-5); }
+.week { position: absolute; top: 2px; font: var(--om-type-caption-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; padding-left: var(--om-spacing-1); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+.nameCell, .track, .actCell { min-height: 64px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row[data-moved] > .nameCell, .row[data-moved] > .track, .row[data-moved] > .actCell { background-color: var(--om-color-tertiary-blue-variant2); }
+.row[data-fresh] > * { animation: pulse 1.4s var(--om-ease-standard, ease) 1; }
+@keyframes pulse { 0%, 100% { background-color: var(--om-color-surface-default); } 30% { background-color: var(--om-color-primary-variant); } }
+.nameCell { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); min-width: 0; }
+.glyph { flex: none; color: var(--om-color-on-surface-disabled); display: inline-flex; }
+.glyph[data-s='done'] { color: var(--om-color-tertiary-green-default); }
+.glyph[data-s='in_progress'] { color: var(--om-color-primary-default); }
+.glyph[data-s='blocked'] { color: var(--om-color-tertiary-yellow-default); }
+.glyph[data-late] { color: var(--om-color-tertiary-red-default); }
+.nameBtn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
+.name { max-width: 100%; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nameBtn:hover .name { color: var(--om-color-primary-default); }
+.line { max-width: 100%; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.line[data-alert] { color: var(--om-color-tertiary-red-default); }
+.line[data-warn] { color: var(--om-color-on-tertiary-yellow-variant); }   /* (B-06) should have started — amber, not late's red */
+
+/* the track: weekends shaded, the today line, the bar, the payment's diamond. (B-03) `isolation` keeps its marks' layers (bar 2, cap and
+   diamond 3, the drag's tip 4) inside it, so they slide under the frozen name and action columns (z 2) instead of over them */
+.track {
+  position: relative; min-width: 0; overflow: hidden; isolation: isolate;
+  background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% * 5 / 7), var(--om-color-hover-04p) calc(100% * 5 / 7), var(--om-color-hover-04p) 100%);
+  background-size: var(--week, 7.69%) 100%; background-position: var(--week-at, 0) 0;
+}
+.track[data-zoom='months'] { background-image: none; }
+.today { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--om-color-on-surface-default); opacity: 0.45; pointer-events: none; z-index: 1; }
+.scale .today { top: auto; height: 20px; bottom: 0; }
+.ghostBar { position: absolute; top: 22px; height: 20px; border: var(--om-border-1) dashed var(--om-color-on-surface-disabled); border-radius: var(--om-radius-1); box-sizing: border-box; pointer-events: none; }
+.bar {
+  position: absolute; top: 22px; height: 20px; padding: 0; border-radius: var(--om-radius-1); box-sizing: border-box; overflow: hidden;
+  border: var(--om-border-1) solid var(--om-color-on-surface-disabled); background: var(--om-color-surface-default);
+  cursor: grab; touch-action: none; z-index: 2;
+}
+.bar:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.bar[data-s='done'] { border-color: var(--om-color-tertiary-green-default); background: var(--om-color-tertiary-green-variant1); }
+.bar[data-s='in_progress'], .bar[data-s='blocked'] { border-color: transparent; background: var(--om-color-primary-variant); }
+.bar[data-s='blocked'] { border-color: var(--om-color-tertiary-yellow-default); }   /* (REG-1060) Blocked is yellow everywhere — the glyph's; red stays Late's */
+.bar[data-waiting] { border-color: var(--om-color-tertiary-yellow-default); background-image: repeating-linear-gradient(135deg, var(--om-color-tertiary-yellow-variant2) 0 6px, var(--om-color-tertiary-yellow-variant1) 6px 12px); }
+.bar[data-late] { border-color: var(--om-color-tertiary-red-default); }
+.bar[data-moved][data-s='not_started'] { border-color: var(--om-color-tertiary-blue-default); }
+.bar[data-dragging] { cursor: grabbing; box-shadow: var(--om-elevation-level-3); z-index: 3; }
+.bar[data-following] { box-shadow: 0 0 0 2px var(--om-color-surface-default), 0 0 0 4px var(--om-color-primary-default); }
+.fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--om-color-primary-default); transform-origin: left center; animation: grow 0.6s var(--om-ease-standard, ease) 1; pointer-events: none; }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.edge { position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
+.edge[data-edge='start'] { left: 0; }
+.edge[data-edge='end'] { right: 0; }
+.cap { position: absolute; top: 18px; height: 28px; width: 4px; margin-left: -2px; border-radius: var(--om-radius-0-5); background: var(--om-color-on-surface-default); z-index: 3; pointer-events: none; }
+.diamond { position: absolute; top: 47px; width: 9px; height: 9px; margin-left: -5px; background: var(--om-color-tertiary-yellow-default); transform: rotate(45deg); z-index: 3; }
+.diamond::after { content: ''; position: absolute; inset: -6px; }   /* (REG-1057) its Tooltip takes a press a finger can make */
+.dragTip { position: absolute; top: 0; transform: translate(-50%, -2px); z-index: 4; padding: 2px var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-inverse-surface-default); color: var(--om-color-on-inverse-surface-default); font: var(--om-type-caption-s); white-space: nowrap; pointer-events: none; }
+/* (B-32) at either end of the track the tip turns inward, so its dates are never cut */
+.dragTip[data-edge='start'] { transform: translate(0, -2px); }
+.dragTip[data-edge='end'] { transform: translate(-100%, -2px); }
+/* (B-50) a finger lifts a bar with a long press — till then the timeline pans under it */
+.bar[data-lifted] { box-shadow: var(--om-elevation-level-3); }
+@media (hover: none) { .bar { touch-action: pan-x pan-y; } }
+/* (B-56) a week label that today's line crosses starts just after the line */
+.week[data-after-today] { border-left: 0; }
+
+.actCell { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-3); }
+.legend { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* ── What the client sees, beside the list (the quote's Client view pane, REG-497) ── */
+.pane { composes: card from '../../leads/detail/card.module.css'; position: sticky; top: var(--project-sticky, 132px); display: flex; flex-direction: column; overflow: hidden; }
+.paneHead { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.paneText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.paneTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.paneSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.paneBody { padding: var(--om-spacing-4); background: var(--om-color-surface-bg); }
+.paneFoot { display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+
+/* ── The client's schedule (the share's preview, the pane, the portal's drawing) ── */
+.client { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.clientStudio { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.clientTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.clientNews { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-blue-variant2); }
+.clientNewsHead { font: var(--om-type-subheading-s); color: var(--om-color-on-tertiary-blue-variant); }
+.clientNewsBody { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); white-space: pre-wrap; }
+/* (REG-1051) the rows are the portal's (project.module.css .stages); the studio's pane gives them the house primary where the portal sets the brand */
+.clientList { --brand: var(--om-color-primary-default); }
+.clientEmpty { padding: var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
+
+/* ── Share changes ── */
+.share { display: flex; flex-wrap: wrap; gap: var(--om-spacing-6); }
+.shareCol { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.shareColR { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.caption { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.changes { list-style: none; margin: 0; padding: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.change { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-3) var(--om-spacing-4); }
+.change + .change { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.changeName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.changeWords { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.changeWords s { margin-right: var(--om-spacing-1); }
+.previewWell { padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+
+/* ── The milestone panel ── */
+.panel { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.sectionHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
+.sectionTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.sectionMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-3); }
+.push { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.note[data-tone='decides'] { color: var(--om-color-on-surface-default); }
+.tasks { display: flex; flex-direction: column; }
+.task { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.task[data-done] > span:last-child { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.switches { display: flex; flex-direction: column; }
+.switchRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); min-height: 44px; padding: var(--om-spacing-2) 0; }
+.switchRow + .switchRow, .switchMore + .switchRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.switchText { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.switchRow > :last-child:not(.switchText) { flex: none; }   /* (B-42) the switch keeps its size; the words wrap instead of pushing it out */
+.panel > *, .switches > * { min-width: 0; }
+/* (B-42) on touch the house 44px target (globals.css, REG-273) gives a switch's label `margin: -10px`, which at a row's end hung it 10px
+   past the panel's edge — the panel scrolled sideways. At the end of a row it keeps its target and gives nothing back on the right. */
+@media (hover: none) { .switchRow > label:last-child { margin-inline-end: 0; } }
+/* (B-42) the panel's status control: its four items share the width and shrink before they overflow */
+.statusSeg { min-width: 0; }
+.statusSeg > * { display: flex; width: 100%; max-width: 100%; box-sizing: border-box; }
+.statusSeg button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.switchLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.switchHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.switchMore { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-1) 0 var(--om-spacing-3); }
+/* (B-57) Delete milestone is the house danger text button — the Client access panel's Withdraw (composed, never copied) */
+.danger { composes: link from '../../om/text-link.module.css'; color: var(--om-color-tertiary-red-default); }   /* (gaps build, package C) the Withdraw it composed had left the access panel's sheet — the house text link, in the danger ink */
+.danger:hover { color: var(--om-color-tertiary-red-default); }
+/* (Projects round 4b, layer 6) the client's answer under "Ask {client} to confirm it": green when confirmed, red when something is not right,
+   their words as a quote on the page ground */
+.answer { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-tertiary-green-variant); }
+.answer[data-tone='changes'] { color: var(--om-color-tertiary-red-default); }
+.answerNote { margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ── Starting a schedule ── */
+.start { composes: card from '../../leads/detail/card.module.css'; overflow: hidden; max-width: 1080px; margin: 0 auto; }
+.startInner { display: flex; flex-direction: row; flex-wrap: wrap; }
+.startForm { flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-8); box-sizing: border-box; }
+.startTitle { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.startHelp { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.startDate { max-width: 280px; }
+.sources { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.legendLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.startAside { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-8); box-sizing: border-box; background: var(--om-color-surface-bg); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.getList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.getRow { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.getHead { display: flex; justify-content: space-between; gap: var(--om-spacing-3); font: var(--om-type-body-s); }
+.getHead > :first-child { color: var(--om-color-on-surface-default); font: var(--om-type-subtitle-s); }
+.getHead > :last-child { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.getTrack { position: relative; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); }
+.getBar { position: absolute; top: 0; bottom: 0; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant-hover); }
+.getTotal { margin-top: var(--om-spacing-1); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.getBlank { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── The phone (Phone.dc.html): the summary's two lines, then the rows with their thin bars; Add milestone docked at the foot ── */
+.phoneList { composes: card from '../../leads/detail/card.module.css'; display: flex; flex-direction: column; overflow: hidden; }
+.phoneRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 68px; padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); border: 0; background: none; text-align: left; color: inherit; cursor: pointer; width: 100%; box-sizing: border-box; }
+.phoneRow + .phoneRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (simplify S-25 (4)) a phone row and its Done — the row still opens the milestone; Done opens the Mark done sheet */
+.phoneItem { display: flex; align-items: center; min-width: 0; }
+.phoneItem + .phoneItem { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.phoneItem > .phoneRow { flex: 1 1 auto; min-width: 0; }
+.phoneItem[data-moved] { background: var(--om-color-tertiary-blue-variant2); }
+.phoneDone { flex: none; padding-right: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.phoneRow[data-moved] { background: var(--om-color-tertiary-blue-variant2); }
+.phoneText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mini { position: relative; display: block; height: 4px; margin-top: var(--om-spacing-1); border-radius: var(--om-radius-full); background: var(--om-color-surface-bg); }
+.miniBar { position: absolute; top: 0; bottom: 0; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-disabled); }
+.miniBar[data-s='done'] { background: var(--om-color-tertiary-green-default); }
+.miniBar[data-s='in_progress'], .miniBar[data-s='blocked'] { background: var(--om-color-primary-default); }
+.miniBar[data-s='blocked'] { background: var(--om-color-tertiary-yellow-default); }   /* (REG-1060) the phone's bar says Blocked as the glyph and the timeline do */
+.miniToday { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--om-color-on-surface-default); opacity: 0.45; }
+.chev { color: var(--om-color-on-surface-secondary); flex: none; }
+/* (B-44) docked at the screen's foot, above the app's dock (and following it off the edge), with the page padded so the last row clears it */
+.dock { position: fixed; left: 0; right: 0; bottom: var(--app-mobile-dock-height, 0px); z-index: 4; display: flex; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); transition: bottom var(--motion-toggle); }
+.tab[data-docked] { padding-bottom: 72px; }
+.dock > * { flex: 1; }
+.dock button { width: 100%; }
+
+/* ── Progress (the Overview's card, the listing's column): a bar that eases to its value once on arrival ── */
+.progress { position: relative; height: 8px; margin: 0 var(--om-spacing-2) var(--om-spacing-2); border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; }
+.progressFill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); transform-origin: left center; animation: grow 0.6s var(--om-ease-standard, ease) 1; }
+.cellProgress { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; width: 100%; }
+.cellProgress .progress { flex: 1; margin: 0; height: 6px; min-width: 48px; }
+.cellProgressText { flex: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.cellNext { display: flex; flex-direction: column; min-width: 0; }
+.cellNextName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cellNextDays { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.cellNextDays[data-late] { color: var(--om-color-tertiary-red-default); }
+
+@media (max-width: 1199px) {
+  .body[data-pane] { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .summaryInner { padding: var(--om-spacing-4); gap: var(--om-spacing-1); flex-direction: column; align-items: flex-start; }
+  .headline { font: var(--om-type-subheading-l); }
+  .summaryText { flex: none; }
+  .startForm, .startAside { padding: var(--om-spacing-5); flex-basis: 100%; }
+  .startAside { border-left: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .pair { grid-template-columns: 1fr; }
+  .statusSeg button { padding-inline: var(--om-spacing-1); }   /* (B-42) "Not started" whole in a quarter of 358 */
+}
+@media (prefers-reduced-motion: reduce) {
+  .fill, .progressFill, .row[data-fresh] > * { animation: none; }
+}
+
+/* ── (gaps build, package C — the owner's "build everything", 2026-10-07) ─────────────────────────────────────────────────────────── */
+/* The panel's asks and their answers: the quote editor's banner tint (template-bar.module.css), on the panel's own width with a card's corner */
+.askBand { composes: banner from '../../quotes/editor/template-bar.module.css'; flex-wrap: wrap; border-radius: var(--om-radius-2); padding: var(--om-spacing-3) var(--om-spacing-4); box-shadow: none; }
+.askText { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.askActions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); }
+.also { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.textLink { composes: link from '../../om/text-link.module.css'; }
+/* the tasks inside, each opening in place (11) */
+.taskBox + .taskBox { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.taskBtn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: var(--om-spacing-1) 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
+.taskTitle { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.task[data-done] .taskTitle { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.taskBtn:hover .taskTitle { color: var(--om-color-primary-default); }
+.taskEdit { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-2) 0 var(--om-spacing-4) var(--om-spacing-8); }
+.taskOutside { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
+/* its invoices (14): rows on the card table's rhythm, each opening on Money */
+.invoices { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.invoice { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-4); color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+.invoice + .invoice { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.invoice:hover { background: var(--om-color-hover-04p); }
+.invoice:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: -2px; }
+.invoiceText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.invoiceName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* its last shares (12) */
+.history { list-style: none; margin: 0 0 var(--om-spacing-2); padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.historyRow { display: flex; gap: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.historyDay { flex: none; min-width: 48px; color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+
+/* The timeline's comforts (13): the grip that drags a row, the drop line, full screen */
+.grip { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 32px; margin-left: calc(-1 * var(--om-spacing-3)); margin-right: calc(-1 * var(--om-spacing-2)); padding: 0; border: 0; background: none; color: var(--om-color-on-surface-secondary); cursor: grab; touch-action: none; opacity: 0; transition: opacity var(--motion-hover); border-radius: var(--om-radius-1); }
+.row:hover .grip, .grip:focus-visible, .row[data-lifting] .grip { opacity: 1; }
+.grip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); }
+@media (hover: none) { .grip { opacity: 1; } }
+.row[data-lifting] { position: relative; z-index: 5; box-shadow: var(--om-elevation-level-3); transform: translateY(var(--lift-dy, 0px)); cursor: grabbing; }
+.row[data-drop='before'] > .nameCell, .row[data-drop='before'] > .track, .row[data-drop='before'] > .actCell { box-shadow: inset 0 2px 0 var(--om-color-primary-default); }
+.row[data-drop='after'] > .nameCell, .row[data-drop='after'] > .track, .row[data-drop='after'] > .actCell { box-shadow: inset 0 -2px 0 var(--om-color-primary-default); }
+/* the bar's own colour (12): its fill a tint of it, its edge the colour; Late keeps its red edge, waiting its stripes */
+.bar[data-color] { border-color: var(--bar-c); background: color-mix(in srgb, var(--bar-c) 22%, var(--om-color-surface-default)); }
+.bar[data-color][data-s='done'] { background: color-mix(in srgb, var(--bar-c) 45%, var(--om-color-surface-default)); }
+.bar[data-color] .fill { background: var(--bar-c); }
+.bar[data-color][data-late] { border-color: var(--om-color-tertiary-red-default); }
+.miniBar[data-color] { background: var(--bar-c); }
+/* the links between milestones (6): drawn over the tracks, under the frozen columns; red and dashed when broken, primary while a move carries them */
+.links { grid-column: 2; position: relative; z-index: 1; pointer-events: none; min-width: 0; }
+.links svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.linkPath { fill: none; stroke: var(--om-color-on-surface-disabled); stroke-width: 1.5; }
+.linkPath[data-broken] { stroke: var(--om-color-tertiary-red-default); stroke-dasharray: 4 3; }
+.linkPath[data-lit] { stroke: var(--om-color-primary-default); }
+.linkHead { fill: var(--om-color-on-surface-disabled); }
+.linkHead[data-broken] { fill: var(--om-color-tertiary-red-default); }
+.linkHead[data-lit] { fill: var(--om-color-primary-default); }
+/* full screen (13): the schedule takes the window — its own bar, the list to the edges; menus, the panel and dialogs stay above it (z 95) */
+.full { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); background: var(--om-color-surface-bg); overflow: auto; }
+.fullBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.fullTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+/* the start's and the end's prompt, and the asks that wait (5 · 8 · 10) */
+.nudge { composes: banner from '../../quotes/editor/template-bar.module.css'; flex-wrap: wrap; border-radius: var(--om-radius-2); padding: var(--om-spacing-3) var(--om-spacing-4); box-shadow: none; }
+.nudgeText { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+/* the rebuild's plan (2): kept · new · taken off */
+.plan { list-style: none; margin: 0; padding: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); max-height: 360px; overflow: auto; }
+.planRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 44px; padding: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.planRow + .planRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.planRow[data-gone] .planName { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.planName { min-width: 0; overflow-wrap: anywhere; }
+/* Share changes' ticks (7) */
+.change[data-tick] { flex-direction: row; align-items: flex-start; gap: var(--om-spacing-3); }
+.changeText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+@media (max-width: 767px) {
+  .taskEdit { padding-left: 0; }
+  .full { padding: var(--om-spacing-3) var(--om-spacing-4); }
+}
+.task[data-done] > .chev { text-decoration: none; }
+/* (gaps build, package C — 4) the uploaded quote's file row in the source cards */
+.uploadRow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.uploadErr { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.history + .switchRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (gaps build, package C — 12) the rule after the last shares, as between switches */
+
+/* (parity map, SC-056 · TD-023) the panel's task links — Add a task · Suggest tasks, side by side */
+.taskLinks { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); }

@@ -1,6 +1,7 @@
 import type { LeadNote } from '@/lib/db/schema'
 import { MSG } from '@/lib/forms'
 import { formatInputDateTime, parseInputDateTime } from '@/lib/format'
+import { sanitizeRichHtml } from '@/lib/rich-html'
 
 /* Lead Details › Notes (931-44865) — pure model shared by the list, the editors and the actions. */
 
@@ -68,7 +69,8 @@ export function listSecondary(n: Pick<LeadNote, 'kind' | 'body' | 'outcome'>): s
 export const isHtmlBody = (body: string) => body.includes('<')
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 /** The rich editor's content: HTML as saved; legacy plain text escaped, its newlines as <br>. */
-export const bodyHtml = (body: string) => (isHtmlBody(body) ? body : escapeHtml(body).replace(/\n/g, '<br>'))
+/* (S44Q, triage §12.1 — the same fault in a sibling) a note's own markup through the house allowlist: the editor draws it into the page */
+export const bodyHtml = (body: string) => (isHtmlBody(body) ? sanitizeRichHtml(body) : escapeHtml(body).replace(/\n/g, '<br>'))
 /** The body as plain lines, for the list's secondary text and anything else that prints a body. */
 export function bodyText(body: string): string {
   if (!isHtmlBody(body)) return body

@@ -8,14 +8,15 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { carrySnackbar, useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { useFlagPref } from '@/lib/prefs'
 import { BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type Block, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
 import { docTotals, EMPTY_DATA, lineCount, withNewQuoteDefaults, type DocData, type NewQuoteLibrary } from '@/lib/templates/data'
 import { fieldValues } from '@/lib/templates/fields'
 import { presetByKey } from '@/lib/templates/presets'
-import { parseSourceFile, type SourceFile } from '@/lib/templates/recreate'
+import { COVER_LOOKS, coverLook, type CoverLookKey } from '@/lib/templates/covers'
+import { applyReading, parseSourceFile, type Reading, type SourceFile } from '@/lib/templates/recreate'
 import { ago } from '@/lib/templates/ago'
 import type { TemplateEditorData } from '@/lib/templates/queries'
 import { discardTemplateDraft, duplicateTemplate, loadQuoteDocData, publishTemplate, requestTemplateChanges, restoreTemplate, rollbackTemplate, saveTemplateDraft, setTemplateSource, setQuoteTemplate, updateQuoteTemplateVersion, submitTemplate } from '@/app/company/templates-actions'
@@ -38,8 +39,10 @@ import { PublishDialog } from './publish-dialog'
 import { HistoryDrawer } from './history-drawer'
 import { ReferencePane } from './reference-pane'
 import { MaisonFab } from '@/components/shell/maison-fab'
-import { AiSheet } from '@/components/leads/ai-sheet'
+import { MaisonAiSheet } from '@/components/shell/maison-ai'
+import type { MaisonSuggestion } from '@/lib/maison-ai'
 import styles from './template-editor.module.css'
+import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
 
 type LeftTab = 'structure' | 'brand' | 'defaults'
 const LEFT_TABS: LeftTab[] = ['structure', 'brand', 'defaults']
@@ -60,7 +63,6 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   const { template, brand, studio, sample, quotes, textTemplates, paymentPresets } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
   const compact = useMediaQuery(NARROW)
   const phone = useMediaQuery(MOBILE)
   const initial = useMemo<EditorDoc>(() => ({ design: template.draft?.design ?? template.design, defaults: template.draft?.defaults ?? template.defaults }), [template])
@@ -93,12 +95,12 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
     if (!dirty) return
     const t = setTimeout(async () => {
       setSave((s) => ({ ...s, saving: true }))
-      try { const r = await saveTemplateDraft(template.id, { design, defaults, name, paper: design.page.paper }); setSavedJson(json); setSave({ at: r.savedAt, saving: false, error: false }) }
+      try { const r = await orThrow(saveTemplateDraft(template.id, { design, defaults, name, paper: design.page.paper })); setSavedJson(json); setSave({ at: r.savedAt, saving: false, error: false }) }
       catch { setSave((s) => ({ ...s, saving: false, error: true })) }
     }, 900)
     return () => clearTimeout(t)
   }, [dirty, json, design, defaults, name, template.id])
-  const flush = async () => { if (json !== savedJson) { const r = await saveTemplateDraft(template.id, { design, defaults, name, paper: design.page.paper }); setSavedJson(json); setSave({ at: r.savedAt, saving: false, error: false }) } }
+  const flush = async () => { if (json !== savedJson) { const r = await orThrow(saveTemplateDraft(template.id, { design, defaults, name, paper: design.page.paper })); setSavedJson(json); setSave({ at: r.savedAt, saving: false, error: false }) } }
   const hasChanges = publishedJson === null || JSON.stringify({ design, defaults }) !== publishedJson
 
   /* ── the canvas ── */
@@ -156,6 +158,15 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
     const b = docRef.current.design.blocks.find((x) => x.id === id); if (!b) return
     onDesign((d) => patchBlock(d, id, (x) => ({ ...defaultBlock(x.kind), id: x.id }) as Block))
     snackbar({ message: `${BLOCK_LABEL[b.kind]} reset`, actionLabel: 'Undo', onAction: () => undo() })
+  }, [onDesign, snackbar, undo])
+  /* (pending modules S11 — card held:quote-templates, 1.0's five cover presets) A look laid over the cover: its elements and background replace
+     the cover's in one undo step, and the snackbar's Undo puts the cover back as it was. */
+  const applyCoverLook = useCallback((id: string, key: CoverLookKey) => {
+    const b = docRef.current.design.blocks.find((x) => x.id === id); if (!b || b.kind !== 'cover') return
+    const look = coverLook(key, docRef.current.design.page.paper)
+    onDesign((d) => patchBlock(d, id, (x) => (isCanvas(x) ? { ...x, elements: look.elements, background: look.background } : x)))
+    setSelection({ blockId: id })
+    snackbar({ key: 'cover-look', message: `Cover changed to ${COVER_LOOKS.find((l) => l.key === key)?.name ?? 'the look'}`, actionLabel: 'Undo', onAction: () => undo() })   // a second look replaces the line, so its Undo is the newest step
   }, [onDesign, snackbar, undo])
   const dragStart = useRef<EditorDoc | null>(null)
   const interactive = useMemo<Interactive>(() => ({
@@ -290,20 +301,22 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
   }
   const discard = async () => {
     setDiscardOpen(false); setBusy(true)
-    try { const r = await discardTemplateDraft(template.id); if (r.removed) { router.push('/company/templates/quotes'); return } window.location.reload() }
+    try { const r = await orThrow(discardTemplateDraft(template.id)); if (r.removed) { router.push('/company/templates/quotes'); return } window.location.reload() }
     catch { snackbar({ message: 'Couldn’t discard — please try again' }); setBusy(false) }
   }
-  const applyMatch = async (key: 'letter' | 'scope' | 'form' | 'presentation', file: string) => {
+  const applyMatch = async (key: 'letter' | 'scope' | 'form' | 'presentation', file: string, reading?: Reading) => {
     setMatchOpen(false)
     const p = presetByKey(key)
-    onDesign(() => p.design())
+    /* (pending modules S11) what reading the uploaded quote found — paper, columns, grouping, grand total, validity — lies on the design, and
+       the whole change is one undo step the snackbar offers back */
+    set((d) => { const r = applyReading(p.design(), d.defaults, reading); return { design: r.design, defaults: r.defaults } })
     setSelection(null)
     const parsed = parseSourceFile(file)
     setSourceFile(parsed); setRightTab('reference'); if (compact) setRightOpen(true)
-    try { await setTemplateSource(template.id, file) } catch { snackbar({ message: 'The reference couldn’t be kept — the design still applied' }) }
-    snackbar({ message: `Matched to the ${p.name} design` })
+    try { await setTemplateSource(template.id, { sourceFile: file }) } catch { snackbar({ message: 'The reference couldn’t be kept — the design still applied' }) }
+    snackbar({ message: reading ? `Matched to the ${p.name} design` : `${p.name} design applied`, actionLabel: 'Undo', onAction: () => undo() })   // (S43B · F1-02) a picture is never "matched"
   }
-  const detachReference = async () => { setSourceFile(null); setUnderlay(false); setRightTab('inspector'); try { await setTemplateSource(template.id, null) } catch { /* the next save carries on */ } }
+  const detachReference = async () => { setSourceFile(null); setUnderlay(false); setRightTab('inspector'); try { await setTemplateSource(template.id, { sourceFile: null }) } catch { /* the next save carries on */ } }
   const onAddBlock = (kind: BlockKind) => { const r = addBlock(design, kind, selection?.blockId ?? null); onDesign(() => r.design); setSelection({ blockId: r.id }) }   /* built outside the updater: StrictMode runs updaters twice and the ids drifted */
 
   const savedLabel = save.error ? 'Not saved — retrying' : dirty ? 'Unsaved changes' : `Saved ${ago(save.at, now)}`
@@ -350,10 +363,42 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
       ) : null}
       <div className={styles.paneBody}>
         {rightTab === 'reference' && sourceFile ? <ReferencePane file={sourceFile} underlay={underlay} onUnderlay={setUnderlay} opacity={underlayOpacity} onOpacity={setUnderlayOpacity} onDetach={() => { void detachReference() }} />
-          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} onResetBlock={resetBlock} values={fieldPreview} trades={data.trades} />}
+          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} onResetBlock={resetBlock} values={fieldPreview} trades={data.trades} sample={docData} onCoverLook={applyCoverLook} />}
       </div>
     </div>
   )
+
+  /* (pending modules S10 — card held:maison-ai, "eight editors open an empty Maison AI sheet") The template's Maison AI, by rule from the page:
+     whether new quotes can start from it (its status and what waits to be published, with Publish — or Submit — one press away), the quotes
+     printing with it, and what a new quote starts with (the New quotes tab, a press away). *(invented copy: the answers' titles and lines)* */
+  const aiFabRef = useRef<HTMLSpanElement>(null)
+  const openDefaults = () => { setLeftTab('defaults'); if (compact) setLeftOpen(true) }
+  const publishRow = (words: string) => ({ id: 'publish', label: gated ? `Submit ${words} for approval` : `Publish ${words}`, meta: gated ? 'An Owner or an Admin publishes it' : `As version ${meta.status === 'draft' ? 1 : meta.version + 1}`, run: onPublishPress })
+  const maison: MaisonSuggestion[] = [
+    { label: 'Can new quotes start from it?', answer: () => Promise.resolve(deleted
+      ? { title: 'Not while it is deleted', text: 'Restore it first — the quotes already on it keep printing as they were.' }
+      : meta.status === 'draft'
+        ? { title: 'Not yet — it isn’t published', text: gated ? 'A new quote can start from it once an Owner or an Admin publishes it.' : 'A new quote can start from it once it is published.', rows: [publishRow('it')] }
+        : hasChanges
+          ? { title: `Yes — version ${meta.version}`, text: 'Your changes since aren’t on any quote yet. Quotes keep printing the published version until you publish again.', rows: [publishRow('the changes')] }
+          : { title: `Yes — version ${meta.version}`, text: `New quotes start from it${meta.isDefault ? ' — it is the studio’s default' : ''}. Nothing waits to be published.` }) },
+    { label: 'Which quotes print with it?', answer: { title: meta.usedBy ? `${meta.usedBy === 1 ? '1 quote prints' : `${meta.usedBy} quotes print`} with it` : 'No quote prints with it yet',
+      text: 'A sent quote keeps the version it went out with; an open draft shows a banner when a new version is published, and its studio picks whether to update.' } },
+    { label: 'What does a new quote start with?', answer: () => {
+      const split = paymentPresets.find((x) => x.key === defaults.paymentPreset)?.label ?? 'The studio default'
+      const text = (id: string | null) => (id ? textTemplates.find((t) => t.id === id)?.title ?? 'A template no longer there' : 'None')
+      return Promise.resolve({ title: 'A new quote from it starts with', text: 'What the New quotes tab sets — once it is published.', rows: [
+        { id: 'valid', label: `Valid for ${defaults.validityDays} days` },
+        { id: 'split', label: `Payment schedule · ${split}` },
+        { id: 'terms', label: `Terms · ${text(defaults.termsTemplateId)}` },
+        { id: 'notes', label: `Notes · ${text(defaults.notesTemplateId)}` },
+        { id: 'gst', label: defaults.gstEnabled ? 'GST on' : 'GST off' },
+        { id: 'sign', label: defaults.signatureRequired ? 'The client signs online' : 'No client signature' },
+        ...(defaults.starterGroups.length ? [{ id: 'groups', label: `Sections · ${defaults.starterGroups.join(', ')}` }] : []),
+        { id: 'open', label: 'Change them on New quotes', run: openDefaults },
+      ] })
+    } },
+  ]
 
   return (
     <div className={styles.editor} data-preview={preview || undefined} data-readonly={readOnly || undefined}>
@@ -396,8 +441,8 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
         {!preview && !compact ? <aside className={styles.right}>{right}</aside> : null}
       </div>
       {compact ? <>
-        <Drawer open={leftOpen} onClose={() => setLeftOpen(false)} title="This template" label="Template panes" width={360}>{left}</Drawer>
-        <Drawer open={rightOpen} onClose={() => setRightOpen(false)} title={rightTab === 'reference' ? 'Reference' : 'Edit'} label="Edit the selection" width={360}>{right}</Drawer>
+        <Drawer open={leftOpen} onClose={() => setLeftOpen(false)} title="This template" label="Template panes" width="narrow">{left}</Drawer>
+        <Drawer open={rightOpen} onClose={() => setRightOpen(false)} title={rightTab === 'reference' ? 'Reference' : 'Edit'} label="Edit the selection" width="narrow">{right}</Drawer>
       </> : null}
       <PublishDialog open={publishOpen} onClose={() => setPublishOpen(false)} name={name} nextVersion={nextVersion} isDefault={meta.isDefault} usedBy={meta.usedBy} busy={busy} onPublish={(o) => { void publish(o) }}
                      origin={origin?.quote && origin.quote.status !== 'Draft' ? null : origin?.quote ? { kind: 'quote', label: `${origin.quote.number} · ${origin.quote.leadName}` } : origin?.lead ? { kind: 'lead', label: origin.lead.name } : null}
@@ -405,12 +450,12 @@ export function TemplateEditor({ data, initialPreview = false, origin = null, in
       <NoteDialog open={submitOpen} title="Submit for approval" label="What changed" help="An Owner or Admin sees this with the template, then approves and publishes it or asks for changes." action="Submit" busy={busy} onClose={() => setSubmitOpen(false)} onSubmit={(n) => { void submit(n) }} />
       <NoteDialog open={changesOpen} title="Request changes" label="What to change" help={`Goes back to ${meta.submitted?.by?.name ?? 'the designer'} at the top of their editor. The template stays as it is until they submit again.`} action="Send request" busy={busy} onClose={() => setChangesOpen(false)} onSubmit={(n) => { void requestChanges(n) }} />
       <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} versions={meta.versions} current={meta.version} now={now} busy={busy} canRollback={!gated && !deleted} onRollback={(v) => { setHistoryOpen(false); void rollback(v) }} />
-      <RecreateDialog open={matchOpen} brand={brand} sample={sample} onClose={() => setMatchOpen(false)} onCreate={(k, _n, f) => { void applyMatch(k, f) }} applyLabel="Apply to this template" title="Upload your existing quote" />
+      <RecreateDialog open={matchOpen} brand={brand} sample={sample} onClose={() => setMatchOpen(false)} onCreate={(k, _n, f, r) => { void applyMatch(k, f, r) }} applyLabel="Apply to this template" title="Upload your existing quote" />
       <ConfirmDialog open={discardOpen} title={meta.status === 'draft' ? 'Delete this draft?' : `Discard the edits since v${meta.version}?`} confirmLabel={meta.status === 'draft' ? 'Delete' : 'Discard'}
                      message={meta.status === 'draft' ? 'The template was never published; deleting it can’t be undone.' : `The template goes back to v${meta.version} as published. The edits since are lost.`}
                      onCancel={() => setDiscardOpen(false)} onConfirm={() => { void discard() }} />
-      <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-      <MaisonFab onPress={() => setAiOpen((o) => !o)} />
+      <MaisonAiSheet open={aiOpen} suggestions={maison} onClose={() => setAiOpen(false)} anchorRef={aiFabRef} />   {/* (pending modules S10) the shell's one sheet; the FAB's own press toggles it (REG-153) */}
+      <span ref={aiFabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
     </div>
   )
 }

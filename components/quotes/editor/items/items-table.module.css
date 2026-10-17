@@ -27,12 +27,10 @@
    from the checkbox to TOTAL wears the bar's own blue family, its sums bold, so the block reads as a tinted header over plain,
    indented lines. Selection still wins (the rules below); the hover wash is an overlay, so it works on the band too. */
 /* Group colour (owner 2026-09-16, REG-457 as revised the same day): one blue. The group row keeps the DS tertiary-blue band
-   (variant2) and its 4px bar; its CHILDREN sit on a lighter blue — the band tint at half strength over the surface —
-   so a child block reads as the group's and the next group's band stands out (a four-tone rotation was tried first and dropped:
-   "the new colors are not going very well visually"). Selection and hover still win (the rules below / the REG-449 wash). */
-.row { --group-child-tint: color-mix(in srgb, var(--om-color-tertiary-blue-variant2) 50%, var(--om-color-surface-default)); }
+   (variant2) and its 4px bar. (S44I, B11 — call C1 as recommended, her ask 2026-10-15; REVERSES REG-457 / REG-440's child half) Its CHILDREN
+   sit on white now: the tree's guide lines (`.guides` below) say whose they are, and the next section's band stands out more. Selection and
+   hover still win (the rules below / the REG-449 wash). */
 .row[data-group] { background: var(--om-color-tertiary-blue-variant2); }
-.row[data-child] { background: var(--group-child-tint); }
 .row[data-selected] { background: var(--om-color-primary-variant); }
 /* (REG-571) The pointer drag (row-drag.ts): the lifted block rides `--row-dy` on the wrap, elevated over the rows it crosses; the
    rows it passes slide by its height (160 ms, an inline transform); on release the block settles into its gap. The lifted row's
@@ -70,7 +68,7 @@
 .colMarkup { width: 150px; flex-wrap: wrap; row-gap: 0; }   /* the "(x%)" drops under the amount when the two do not share the line (REG-417) */
 .colUnitPrice { width: 125px; }
 .colDiscount { width: 101px; }
-.colGst { width: 79px; }
+.colGst { width: 79px; flex-wrap: wrap; row-gap: 0; }   /* (S44I — NB-07 (b)) "Own rate" drops under the figure */
 .colRoom, .colCategory { width: 120px; }
 .colType { width: 100px; }
 .colMargin { width: 90px; }
@@ -89,7 +87,6 @@
 }
 .row .colTotal { background: var(--om-color-surface-default); }
 .row[data-group] .colTotal { background: var(--om-color-tertiary-blue-variant2); }
-.row[data-child] .colTotal { background: var(--group-child-tint); }
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
@@ -158,8 +155,8 @@
 .groupCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }   /* "3 items" after the Group tag (REG-463) */
 .fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); margin-left: auto; }   /* flush with the text column, 16 from the cell edge (1260:31357) */
 .fold:hover { background: var(--om-color-hover-08p); }
-/* A child row (1260:31402): tinted cell, 32 inset, the eye that opens the visibility menu. */
-.row[data-child] .colItem { padding-left: var(--om-spacing-8); }   /* a child keeps its indent, the bar and the lighter blue (REG-440 / REG-457) */
+/* A child row (1260:31402): 32 inset, the eye that opens the visibility menu. (S44I, B11) No tint and no bar — the guides draw the tree. */
+.row[data-child] .colItem { padding-left: var(--om-spacing-8); }
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
 
@@ -278,7 +275,6 @@
 .colItem { left: calc(var(--sel-w) + var(--num-w)); }
 .head .colSel, .head .colNum, .head .colItem, .row .colSel, .row .colNum, .row .colItem { background: var(--om-color-surface-default); }
 .row[data-group] .colSel, .row[data-group] .colNum, .row[data-group] .colItem { background: var(--om-color-tertiary-blue-variant2); }
-.row[data-child] .colSel, .row[data-child] .colNum, .row[data-child] .colItem { background: var(--group-child-tint); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
 .wrap[data-scrolled] .colItem { box-shadow: var(--om-shadow-frozen-column); }
@@ -330,6 +326,11 @@
 .fillHandle { display: none; position: absolute; right: 4px; bottom: 14px; width: 8px; height: 8px; box-sizing: border-box; background: var(--om-color-primary-default); border: 1px solid var(--om-color-surface-default); border-radius: 1px; cursor: crosshair; z-index: 1; touch-action: none; }
 .row[data-active] .cell:focus-within .fillHandle { display: block; }
 .cell[data-fill] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+/* (S45C — NB-07 (c)) A run of cells down a column (Shift+click · Shift+↓ ↑): the selected tint and a hairline; its corner square sits on its
+   last cell — the focused box's own square steps back while it is inside the run. */
+.row .cell[data-run] { background: var(--om-color-primary-variant); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.row .cell[data-run-end] .fillHandle { display: block; }
+.row[data-active] .cell[data-run]:not([data-run-end]):focus-within .fillHandle { display: none; }
 /* The sum row: every number column's total over the lines that price, before the Add Item row (a spreadsheet's SUM line). */
 .sumRow { display: flex; align-items: stretch; min-height: 56px; border-top: 2px solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); }
 .sumRow .cell, .sumRow .colSel, .sumRow .colNum, .sumRow .colItem, .sumRow .colTotal { background: var(--om-color-surface-bg); }
@@ -387,20 +388,6 @@
 /* (REG-557) A formatted description keeps its bullets in the resting text; the button wraps like the clamp. */
 .descBtn[data-rich] { white-space: pre-line; text-align: left; }
 
-/* ── (REG-570) The sideways scrollbar under the viewport ── A 24px bar that sticks to the bottom of the window (or the Expand's
-   scroller) while the table runs on below it — the sheet-app pattern — so panning the number columns never means reaching the
-   table's foot: a pager at each end, a track whose thumb is the visible share and follows the body; drag the thumb, press the
-   track, or press a pager. It rests at the table's foot once the end is on screen and is not drawn while the table fits. */
-.hbar { display: none; position: sticky; bottom: 0; z-index: 10; align-items: center; gap: var(--om-spacing-1); height: 24px; padding: 0 var(--om-spacing-2); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.hbar[data-on] { display: flex; }
-.pager { width: 20px; height: 20px; flex-shrink: 0; border: 0; background: none; padding: 0; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; position: relative; }
-.pager:hover { background: var(--om-color-hover-08p); }
-.pager::after { content: ''; position: absolute; inset: -4px; }
-.track { flex: 1; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); position: relative; cursor: pointer; touch-action: none; }
-.barThumb { position: absolute; top: 0; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); cursor: grab; transition: background-color var(--motion-hover); }
-.barThumb:hover, .barThumb[data-dragging] { background: var(--om-color-on-surface-secondary); }
-.barThumb[data-dragging] { cursor: grabbing; }
-@media (hover: none) { .pager { display: none; } }
 
 /* (REG-597) The phone's card list + the Add Item row under it: the field takes its line, the two links the next — nothing runs past the screen. */
 .cardsWrap { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
@@ -469,3 +456,66 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .bucketAdd::after { inset: -12px -6px; }
 }
+
+/* ── (S44I — the team's sections prototype, 2026-10-15) ───────────────────────────────────────────────────────────────────────────────── */
+/* B11 · Branches: the tree in the ITEM cell — a 1px line per level (x 20 under a section's name, 40 under a sub-section's), a tee or the last
+   child's elbow (rounded) running into the row's content, an open section's stem from under its name down to its first row. A ticked row's own
+   branch takes the primary ink. Hidden on the lifted block (its indent cue already says where it lands, REG-571). */
+.guides { position: absolute; left: 0; top: 0; bottom: 0; width: 64px; pointer-events: none; z-index: 1; }
+.gPass, .gBranch, .gStem { position: absolute; border: 0 solid var(--om-color-on-surface-border); }
+.gPass { top: 0; bottom: 0; border-left-width: var(--om-border-1); }
+.gBranch { top: 0; height: 50%; border-left-width: var(--om-border-1); border-bottom-width: var(--om-border-1); border-bottom-left-radius: var(--om-radius-1); }
+.gStem { bottom: 0; height: var(--om-spacing-3); border-left-width: var(--om-border-1); }   /* the row's bottom padding only — clear of the section's name and note */
+.gPass[data-level='1'], .gBranch[data-level='1'], .gStem[data-level='1'] { left: 20px; }
+.gPass[data-level='2'], .gBranch[data-level='2'], .gStem[data-level='2'] { left: 40px; }
+.gBranch[data-level='1'] { width: 8px; }   /* into the content at 32 (4 short of it) */
+.gBranch[data-level='2'] { width: 12px; }  /* into the content at 56 */
+.row[data-selected] .gBranch, .row[data-selected] .gPass[data-own] { border-color: var(--om-color-primary-default); }
+.row[data-dragging] .guides { display: none; }
+
+/* B3 · A section's foot: its adds at the children's indent, 44 tall, the house text links with a + glyph; a drop on it lands last (B4). */
+.footRow { display: flex; align-items: stretch; min-height: 44px; background: var(--om-color-surface-default); position: relative; }
+.footRow .colSel, .footRow .colNum, .footRow .colItem { background: var(--om-color-surface-default); }
+.footRow .colTotal { background: var(--om-color-surface-default); }
+/* the adds read on one line: past the ITEM cell they run over the row's empty cells (no rules drawn in a foot), under the frozen Total */
+.footRow .colItem { padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-1) var(--om-spacing-8); overflow: visible; }
+.footRow .cell:not(.colItem):not(.colTotal) { border-right-color: transparent; }
+.footRow .colItem { border-right-color: transparent; }
+.footRow[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
+.footBody { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--om-spacing-4); white-space: nowrap; }
+.footEmpty { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.footLink { composes: link from '../../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; min-height: 36px; position: relative; }
+.wrap[data-row-drag] .footRow { transition: transform 160ms ease; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .footLink { min-height: 44px; } }
+
+/* C1 (S44T's call, the grid's side) · The divider over the sections priced after the contract, at the table's end. */
+.dividerRow { display: flex; align-items: stretch; min-height: 52px; border-top: var(--om-border-2) solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); }
+.dividerRow .cell { background: var(--om-color-surface-bg); }
+.dividerRow .colItem { padding: var(--om-spacing-2) var(--om-spacing-4); }
+.dividerText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dividerName { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-default); }
+.dividerHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
+
+/* B4 · A drag of the ticked lines: the others going along rest dimmed in place; the lifted row counts them; a folded section a drop goes into
+   wears a ring (nothing slides). */
+.row[data-carried] .cell { color: var(--om-color-on-surface-disabled); }
+.row[data-carried] .thumb, .row[data-carried] .input { opacity: .5; }
+.row[data-drop-into] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+.liftCount { position: absolute; right: var(--om-spacing-2); top: var(--om-spacing-2); z-index: 3; }
+
+/* B10 · The line an add press just made: the keys' hint where its description would be. */
+.chainHint { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* C2 · A formatted name: as it prints (emphasis, breaks, kit colours), a press opens Words on this line. */
+.nameRich { border: 0; background: none; padding: 0; margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); text-align: left; cursor: pointer; white-space: normal; overflow-wrap: anywhere; border-radius: var(--om-radius-0-5); }
+.nameRich:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 2px; }
+.nameRich:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Row 290 · A section's name offering the studio's trades as it is typed in: the menu's option rows (the Add Item box's listbox pattern). */
+.suggestWrap { display: inline-flex; min-width: 0; max-width: 100%; }
+.suggestRow { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 40px; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; background: none; text-align: left; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
+.suggestRow:hover, .suggestRow[data-active] { background: var(--om-color-primary-variant); }
+.suggestHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.ownRate { flex-basis: 100%; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; outline: none; }
+.ownRate:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.row[data-active] .ownRate { display: none; }   /* the box stands alone while the row is active, as the markup's "(x%)" does */

@@ -21,7 +21,7 @@ const DAY = 86_400_000
 /** (critic 18) A link about to close says when, in hours — "closes in 5 h" — so Renew is pressed before the client meets a dead link. */
 const closesIn = (ms: number) => { const h = Math.ceil(ms / 3_600_000); return h <= 1 ? 'closes within the hour' : `closes in ${h} h` }
 /** (F107) How the link left the studio — never "sent" for a link nobody sent. */
-const madeWords = (s: ShareRow, now: number) => (s.sentVia === 'whatsapp' ? `sent ${ago(s.createdAt, now)} on WhatsApp` : s.sentVia === 'copy' ? `copied ${ago(s.createdAt, now)}` : `made ${ago(s.createdAt, now)} · not sent yet`)
+const madeWords = (s: ShareRow, now: number) => (s.sentVia === 'whatsapp' ? `sent ${ago(s.createdAt, now)} on WhatsApp` : s.sentVia === 'copy' ? `copied ${ago(s.createdAt, now)}` : s.fromFiles ? `shown from Files ${ago(s.createdAt, now)} · on the client’s Designs` : `made ${ago(s.createdAt, now)} · not sent yet`)   // (pending modules S02)
 /** How long a copy button reads "… copied" before it goes back to its label. */
 const COPIED_MS = 2000
 

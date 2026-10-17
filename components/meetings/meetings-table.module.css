@@ -1,0 +1,90 @@
+/*
+ * (pending modules S23) The meetings list — the table core (components/om/table-core.module.css, REG-727) with this table's own tracks, its
+ * two-line cells and its phone cards. The Contracts tab's twin (components/leads/contracts/contracts-table.module.css): one grid, the head and
+ * rows its subgrids (REG-180); rows 68 for the two-line cells.
+ */
+.card {
+  composes: frame card from '../om/table-core.module.css';
+  grid-template-columns: var(--tracks, minmax(300px, 1fr) 220px 180px 120px 168px 128px);
+}
+.pin { composes: pin from '../om/table-core.module.css'; }
+.head { composes: head from '../om/table-core.module.css'; }
+.hCell { composes: hCell from '../om/table-core.module.css'; }
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }
+.row { composes: row from '../om/table-core.module.css'; height: 68px; }
+.cell { composes: cell from '../om/table-core.module.css'; }
+.actions { composes: actions from '../om/table-core.module.css'; }
+.actionsInner { composes: actionsInner from '../om/table-core.module.css'; }
+.float { composes: float from '../om/table-core.module.css'; }
+.menuWrap { position: relative; display: inline-flex; }
+/* the last row's fill follows the frame's corners (REG-431) */
+.card > .row:last-child, .card > .row:last-child .colTitle { border-bottom-left-radius: var(--om-radius-2); }
+.card > .row:last-child { border-bottom-right-radius: var(--om-radius-2); }
+
+.colTitle, .colLead, .colWhen, .colWhere, .colPeople, .colStatus, .colScore { }   /* placed by the layout hook's inline style */
+
+/* The meeting is the row's open affordance — the listing's name (REG-450): bold, primary + underline on row hover. */
+.titleStack { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; }
+.title { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; border: 0; background: none; padding: 0; cursor: pointer; text-align: left; border-radius: var(--om-radius-1); text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover); }
+.row:hover .title, .title:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.title:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.muted { color: var(--om-color-on-surface-secondary); }
+.waits { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.waits[data-late] { color: var(--om-color-on-surface-secondary); }   /* the client's lateness is never red — red is ours to fix (REG-1445) */
+.people { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.plus { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.leadLink { font: var(--om-type-body-m); color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }
+.leadLink:hover { color: var(--om-color-on-primary-variant); text-decoration: underline; }
+.leadLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+@media (max-width: 1024px) {
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (hover: none) {
+  .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }
+  .float button { position: relative; }
+  .float button::after { content: ''; position: absolute; inset: -4px; }
+}
+@media (hover: none) and (max-width: 1024px) {
+  .card { grid-template-columns: var(--tracks, minmax(300px, 1fr) 220px 180px 120px 168px 128px) 150px; }   /* the band the parked actions land on (REG-310) */
+}
+
+/* ≤767: each meeting is a card (REG-377) — the meeting and the kebab on line 1, when under it, the status and the score on line 3. */
+@media (max-width: 767px) {
+  .head { display: none; }
+  .card { display: flex; flex-direction: column; gap: var(--om-spacing-3); grid-template-columns: 1fr; overflow-x: visible; background: none; border: 0; box-shadow: none; border-radius: 0; }
+  .card::after { content: none; }
+  .row::after { content: none; }
+  .row {
+    display: grid; grid-column: 1 / -1; height: auto; grid-auto-rows: auto;
+    grid-template-columns: 1fr auto; grid-template-rows: auto auto auto;
+    padding: var(--om-spacing-4); row-gap: var(--om-spacing-2); column-gap: var(--om-spacing-3);
+    align-content: start; align-items: center;
+    background: var(--om-color-surface-default);
+    border: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-radius: var(--om-radius-2);
+  }
+  .row:hover { background: var(--om-color-surface-default); }
+  .cell { padding: 0; border-top: 0; border-right: 0; min-width: 0; }
+  .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
+  .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
+  .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
+  .cell.colTitle { grid-column: 1 / -1 !important; grid-row: 1 !important; padding: 0 40px 0 0; }
+  .cell.colWhen { grid-column: 1 / -1 !important; grid-row: 2 !important; color: var(--om-color-on-surface-secondary); }
+  .cell.colStatus { grid-column: 1 !important; grid-row: 3 !important; }
+  .cell.colScore { grid-column: 2 !important; grid-row: 3 !important; justify-content: flex-end; }
+  .colWhere, .colPeople { display: none; }
+  .card[data-lead] .row { grid-template-rows: auto auto auto auto; }
+  .card[data-lead] .cell.colLead { display: flex; grid-column: 1 / -1 !important; grid-row: 2 !important; }
+  .card[data-lead] .cell.colWhen { grid-row: 3 !important; }
+  .card[data-lead] .cell.colStatus, .card[data-lead] .cell.colScore { grid-row: 4 !important; }
+  .title { white-space: normal; }
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .cell.colStatus[data-sub] { padding-block: 0; }
+}

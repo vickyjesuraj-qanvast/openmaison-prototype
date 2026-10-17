@@ -1,0 +1,5 @@
+/* (gaps build J) The 3D view fills its box; the canvas takes the pointer (orbit, walk, drag) and none of the page's gestures. */
+.host { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--om-color-surface-bg); touch-action: none; }
+.host canvas { display: block; width: 100%; height: 100%; outline: none; }
+.host[data-mode='walk'] canvas { cursor: grab; }
+.host[data-mode='walk'] canvas:active { cursor: grabbing; }

@@ -14,11 +14,11 @@ const QUOTE = '1f598389-4008-4079-a956-5dff071fb708', CONTRACT = '81463786-769d-
 const QTPL = '7ab7bfe7-3d8b-4e3c-a6ec-0285274c1de6', CTPL = '9d229e29-f161-4066-adae-57c6b90c25f5', TTPL = '53a859ef-9545-4228-8cc3-11f2183ddff9', TXTPL = '02a297a5-b5e6-4935-a665-d54e86f672fa'
 const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'
 const ROUTES = [
-  ['leads', '/leads'], ['insights', '/leads/insights'], ['imports', '/leads/imports'],
+  ['leads', '/leads'], ['insights', '/company/reports/leads'], ['imports', '/leads/imports'],
   ['lead-overview', `/leads/${LEAD}`], ['lead-tasks', `/leads/${LEAD}/tasks`], ['lead-quotes', `/leads/${LEAD}/quotes`], ['lead-contracts', `/leads/${LEAD}/contracts`],
   ['lead-files', `/leads/${LEAD}/files`], ['lead-notes', `/leads/${LEAD}/notes`], ['lead-questionnaire', `/leads/${LEAD}/questionnaire`], ['lead-activity', `/leads/${LEAD}/activity`],
   ['file-viewer', `/leads/${FLEAD}/files/${FILE}`],
-  ['tasks', '/tasks'], ['quotes', '/quotes'], ['contracts', '/contracts'], ['xray', '/quote-x-ray'], ['xray-record', `/quote-x-ray/${XRAY}`], ['visualizer', '/visualizer'], ['qanvast', '/qanvast-ops'],
+  ['tasks', '/tasks'], ['quotes', '/quotes'], ['contracts', '/contracts'], ['xray', '/quote-x-ray'], ['xray-record', `/quote-x-ray/${XRAY}`], ['visualizer', '/visualizer'], ['qanvast', '/qanvast-ops'], ['qanvast-studios', '/qanvast-ops/studios'],   /* (parity map, CP-148 · CP-149) Qanvast Ops › Studios */
   ['settings-studio', '/settings'], ['settings-leads', '/settings?section=leads'], ['settings-quotes', '/settings?section=quotes'], ['settings-notifications', '/settings?section=notifications'],
   ['co-profile', '/company/profile'], ['co-members', '/company/members'], ['co-questionnaire', '/company/questionnaire'], ['co-integrations', '/company/integrations'], ['co-materials', '/company/materials'],
   ['co-plan', '/company/plan'], ['co-plan-billing', '/company/plan/billing'], ['co-pricebook', '/company/price-book'], ['co-pricebook-sections', '/company/price-book/sections'],
@@ -28,6 +28,9 @@ const ROUTES = [
   ['ed-tpl-quote', `/templates/${QTPL}`], ['ed-tpl-contract', `/templates/contracts/${CTPL}`], ['ed-tpl-tasks', `/templates/tasks/${TTPL}`], ['ed-tpl-terms', `/templates/terms/${TXTPL}`],
   ['ed-tpl-payments', '/templates/payments/20-40-40'], ['ed-visualizer', `/visualizer/${DESIGN}`],
   ['renders', '/renders/17fe84ab2eca47'], ['sign', `/sign/${CONTRACT}`],
+  /* (pending modules S41b-5) Qanvast Ops › Lead credits (Overview · Transactions · Contracts) and Reviews (Reviews · Ranking · Feedback) */
+  ['qo-credits', '/qanvast-ops/credits'], ['qo-credits-tx', '/qanvast-ops/credits/transactions'], ['qo-credits-contracts', '/qanvast-ops/credits/contracts'],
+  ['qo-reviews', '/qanvast-ops/reviews'], ['qo-reviews-ranking', '/qanvast-ops/reviews/ranking'], ['qo-reviews-feedback', '/qanvast-ops/reviews/feedback'],
 ].filter(([k]) => !filter || filter.split(',').some((f) => k.startsWith(f)))
 
 ;(async () => {

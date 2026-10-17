@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type RefObject } from 'react'
-import { Tag as TagChip } from '@/components/ds'
+import { Button, Tag as TagChip } from '@/components/ds'
 import type { Member } from '@/lib/db/schema'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
@@ -21,10 +21,18 @@ import { pickable } from '@/lib/leads/assign-policy'
  * Multi-select, because `lead_assignees` is many-to-many and every other assignment surface is: a single-select would
  * silently drop the second assignee of any lead opened and saved here.
  */
-export function AssigneeField({ team, value, onChange, error, inputRef, locked }: {
+/** (pending modules S26) What the field lists — a member row, or a member as Messages knows them (New group's people): the picker reads these alone. */
+export type AssigneeOption = Pick<Member, 'id' | 'name' | 'role' | 'color'> & { isYou?: boolean | null; isActive?: boolean | null }
+export function AssigneeField<M extends AssigneeOption = Member>({ team, value, onChange, error, inputRef, locked, rowMeta, suggestion, label = 'Assign member' }: {
+  /** (pending modules S23) the field's words where it picks someone other than a lead's members — a meeting's "Who’s going" */
+  label?: string
+  /** (gaps build, package A — 9) New project's picker: each member's specialty and load beside their role ("Condo specialist · 2 projects"). */
+  rowMeta?: (m: M) => string | null
+  /** (gaps build, package A — 9) The lead's Assign popover's suggestion (REG-612), above the rows while nobody is picked. */
+  suggestion?: { id: string; name: string; reason: string } | null
   /** (REG-609, parity C-07) A Designer's new lead is theirs: the field shows them and the note, and takes no pick. */
   locked?: string
-  team: Member[]
+  team: M[]
   /** Member ids, in pick order. */
   value: string[]
   onChange: (ids: string[]) => void
@@ -48,7 +56,7 @@ export function AssigneeField({ team, value, onChange, error, inputRef, locked }
     const names = team.filter((m) => value.includes(m.id)).map((m) => m.name).join(', ')
     return (
       <div className={styles.wrap} data-field="assignees" data-locked="">
-        <TextField label="Assign member" value={names} onChange={() => {}} disabled trailingIcon={null} helper={locked} />
+        <TextField label={label} value={names} onChange={() => {}} disabled trailingIcon={null} helper={locked} />
       </div>
     )
   }
@@ -75,7 +83,7 @@ export function AssigneeField({ team, value, onChange, error, inputRef, locked }
       }}
     >
       <TextField
-        label="Assign member"
+        label={label}
         value={query}
         onChange={setQuery}
         placeholder="Search members"
@@ -97,6 +105,15 @@ export function AssigneeField({ team, value, onChange, error, inputRef, locked }
 
       {/* Anchored to the WRAPPER, so the list opens below the chips rather than through them. */}
       <PortalMenu open={open} anchor={wrap} onClose={() => setOpen(false)}>
+        {/* (gaps build, package A — 9) the Assign popover's suggestion card (REG-612), while nobody is picked and nothing is typed */}
+        {suggestion && value.length === 0 && !q && listed.some((m) => m.id === suggestion.id) ? (
+          <div className={styles.suggest} data-testid="assignee-suggestion">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <span className={styles.suggestHead}><img src="/figma-assets/brief-sparkle.svg" alt="" width={17} height={17} />Suggested · {suggestion.name}</span>
+            <span className={styles.suggestReason}>{suggestion.reason}</span>
+            <Button appearance="text" onPress={() => { onChange([suggestion.id]); input.current?.focus() }}>Assign to {suggestion.name}</Button>
+          </div>
+        ) : null}
         {matches.length === 0 ? (
           <p className={styles.noMatch}>No members match “{query.trim()}”.</p>
         ) : matches.map((m) => {
@@ -107,7 +124,7 @@ export function AssigneeField({ team, value, onChange, error, inputRef, locked }
               <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
               <span className={styles.rowText}>
                 <span className={styles.rowName}>{m.name}</span>
-                <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
+                <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}{((x) => (x ? ` · ${x}` : ''))(rowMeta?.(m))}</span>
               </span>
               {/* A glyph, not a DS Checkbox: an option must not nest a second control (the tag picker's rule). */}
               <Icon name={on ? 'check_box' : 'check_box_outline_blank'} size={20} fill={on}

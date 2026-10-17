@@ -15,3 +15,10 @@
 
 /* (REG-625) Open · Bring back on a kept version, side by side at the row's end. */
 .actions { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
+
+/* (S44F — NB-02 (b)) What changed under a version: its own line across the row's full width (in from the dot, as the row's words) — the
+   count and the total, the words on demand, Copy and Compare. The row's first line (dot · words · actions) sits as it always did. */
+.row[data-changes] { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+.changes { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-left: calc(11px + var(--om-spacing-3)); }
+.changeList { margin: var(--om-spacing-1) 0 0; padding: 0 0 0 var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); list-style: disc; overflow-wrap: anywhere; }
+.changeActions { display: inline-flex; align-items: center; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-3)); flex-wrap: wrap; }

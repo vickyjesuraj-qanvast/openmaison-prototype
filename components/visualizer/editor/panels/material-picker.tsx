@@ -58,7 +58,7 @@ export function Swatch({ m, on, now, some = false, edited = null, onPick, onRemo
  * None — the surface is left alone); *Suggested for {surface} · {style}* (1.0's `suggestMaterials`); Recent; the studio's materials
  * and this design's own swatches with Upload; the categories this surface takes first; the Gush brand books folded to twelve.
  */
-export function MaterialPicker({ scope, categories, style, pick, mixed = false, partial = [], now, kept = null, nowEdited = null, onPick, library, own, recent, onUpload, onRemoveOwn }: {
+export function MaterialPicker({ scope, categories, style, pick, mixed = false, partial = [], now, kept = null, nowEdited = null, onPick, library, own, recent, onUpload, onRemoveOwn, keepWords = null, styleHint }: {
   scope: string
   categories: CatalogueCategory[]
   style: string
@@ -76,8 +76,13 @@ export function MaterialPicker({ scope, categories, style, pick, mixed = false, 
   library: LibraryMaterial[]
   own: OwnSwatch[]
   recent: string[]
-  onUpload: (category: string | null) => void
+  /** (gaps build J) absent — the 3D Space Planner's finishes: no upload line or tile (a studio's own sample goes in through Company › Materials) */
+  onUpload?: (category: string | null) => void
   onRemoveOwn: (id: string) => void
+  /** (gaps build J) the keep row's words where there is no photo — the planner's "Template colour" */
+  keepWords?: { name: string; caption: string } | null
+  /** (gaps build J) the line where no style is picked; null says nothing */
+  styleHint?: string | null
 }) {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<string>('All')
@@ -102,10 +107,10 @@ export function MaterialPicker({ scope, categories, style, pick, mixed = false, 
     <>
       <span className={styles.search}><SearchBar appearance="outlined" size="md" placeholder={`Search ${CATALOGUE.length + library.length} materials`} aria-label="Search materials" value={q} onChange={setQ} /></span>
       {/* (REG-682; the testers' sheet row 200) the studio's own sample, one press away — not only a tile further down */}
-      <button type="button" className={styles.uploadLine} onClick={() => onUpload(categories[0] ?? null)} data-testid="viz-upload-line"><Icon name="add_photo_alternate" size={20} weight={300} /><span><b>Have a sample?</b> Upload a photo of it — it renders in its own colour</span></button>
+      {onUpload ? <button type="button" className={styles.uploadLine} onClick={() => onUpload(categories[0] ?? null)} data-testid="viz-upload-line"><Icon name="add_photo_alternate" size={20} weight={300} /><span><b>Have a sample?</b> Upload a photo of it — it renders in its own colour</span></button> : null}
       <button type="button" className={styles.keep} data-on={keepOn || undefined} aria-pressed={keepOn} onClick={() => onPick(null)} data-testid="viz-keep">
         <span className={styles.dotSwatch} data-none={kept?.css ? undefined : ''} style={kept?.css ? { ['--sw' as string]: kept.css } as CSSProperties : undefined} />
-        <span className={styles.texts}><span className={styles.name}>As in the photo</span><span className={styles.caption}>{mixed ? 'Leave all of them as they are' : kept?.name ? `${kept.name} — leave this surface as it is` : 'Leave this surface as it is'}</span></span>
+        <span className={styles.texts}><span className={styles.name}>{keepWords?.name ?? 'As in the photo'}</span><span className={styles.caption}>{keepWords ? keepWords.caption : mixed ? 'Leave all of them as they are' : kept?.name ? `${kept.name} — leave this surface as it is` : 'Leave this surface as it is'}</span></span>
         {keepOn ? <Icon name="check_circle" size={20} fill /> : null}
       </button>
       {query ? (
@@ -115,16 +120,16 @@ export function MaterialPicker({ scope, categories, style, pick, mixed = false, 
         </>
       ) : (
         <>
-          {style ? section(`Suggested · ${style}`, suggested) : <span className={styles.hint}>Pick a style (the Style tab) and the materials that suit it lead here.</span>}
+          {style ? section(`Suggested · ${style}`, suggested) : styleHint === null ? null : <span className={styles.hint}>{styleHint ?? 'Pick a style (the Style tab) and the materials that suit it lead here.'}</span>}
           {section('Recent', recentRefs)}
           <div className={styles.section}>
             <span className={styles.head}><span>Your studio</span></span>
             <div className={styles.grid}>
-              <Tooltip label="Upload a photo of a swatch">
+              {onUpload ? <Tooltip label="Upload a photo of a swatch">
                 <button type="button" className={`${styles.swatch} ${styles.upload}`} onClick={() => onUpload(categories[0] ?? null)} data-testid="viz-upload-swatch">
                   <span className={styles.chip}><Icon name="upload" size={22} weight={300} /></span><span className={styles.swName}>Upload a swatch</span>
                 </button>
-              </Tooltip>
+              </Tooltip> : null}
               {studio.map((m) => tile(m, m.source === 'design' ? 'this design' : `${m.category} · studio`, m.source === 'design' ? () => onRemoveOwn(m.id.slice(4)) : undefined))}
             </div>
           </div>

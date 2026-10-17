@@ -137,9 +137,12 @@ async function kebab(page, number) { const r = rowOf(page, number); await r.scro
     as('sarah')
     /* Under a loading boundary Next streams: the answer is the not-found page, not the status line. */
     await page.goto(`${BASE}/quotes/${OM1}`); await ready(page)
-    ok('another’s quote is not found', /could not be found/.test(await page.locator('body').innerText()) && (await page.getByTestId('quote-editor').count()) === 0)
+    /* (pending modules, a deliberate change of this rule — S41b-2) the not-found page is the house's app-wide one now ("This page isn’t here",
+       app/not-found.tsx), no longer Next's bare "This page could not be found" */
+    const notFoundHere = async () => /could not be found|This page isn’t here/.test(await page.locator('body').innerText())
+    ok('another’s quote is not found', (await notFoundHere()) && (await page.getByTestId('quote-editor').count()) === 0)
     await page.goto(`${BASE}/quotes/${OM1}/preview`); await ready(page)
-    ok('nor its preview', /could not be found/.test(await page.locator('body').innerText()))
+    ok('nor its preview', await notFoundHere())
     const c = await page.goto(`${BASE}/confirm/${OM1}`)
     ok('the client’s link still opens', c.status() === 200, String(c.status()))
     await page.goto(`${BASE}/quotes`); await ready(page)

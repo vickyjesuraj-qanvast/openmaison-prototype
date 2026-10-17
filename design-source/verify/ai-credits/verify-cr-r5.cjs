@@ -1,5 +1,7 @@
 // REG-701 · 702 · 704 — AI credits R5: the phone and the tablet. More's first row (paid: the credits card; Free: Upgrade), the card as a
 // sheet, Plans as a full-screen sheet, the Visualizer's go bar with its price, the tablet's collapsed rail, and the 320 overflow gate.
+/* (pending modules S43C, a deliberate change of this rule) the AI Visualizer's living room is the owner's photo (1.0's 4a51f3522): its walls are
+   'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const S = process.env.S || '/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/24a43f16-101f-4145-ad44-d6551add8f54/scratchpad/verify'
@@ -24,7 +26,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
   const p = await phone.newPage()
   p.on('pageerror', (e) => { fail++; console.log('  FAIL page error:', e.message) })
   await p.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
-  await p.getByRole('button', { name: 'More', exact: true }).click()
+  await p.getByRole('button', { name: /^More( \(|$)/ }).click()   // REG-805 (UX audit V3): the dock's More names its counts, "More (Tasks …)"
   const more = p.getByTestId('more-credits')
   await more.waitFor({ timeout: 5000 })
   ok((await more.innerText()).includes(`${fmt(balance())} AI credits`), `More's first row: ${fmt(balance())} AI credits`)
@@ -55,7 +57,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
   if (await p.getByTestId('viz-hint').isVisible().catch(() => false)) await p.getByRole('button', { name: 'Got it' }).click()
   ok(await p.getByTestId('credits-chip').isVisible(), 'the balance chip rides the phone’s top bar')
   await p.getByTestId('viz-version').first().click(); await p.waitForTimeout(600)
-  await p.getByRole('button', { name: 'White Painted Back Wall' }).click(); await p.waitForTimeout(1200)
+  await p.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await p.waitForTimeout(1200)
   await p.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await p.waitForTimeout(400)
   const panelClose = p.getByRole('button', { name: 'Close the panel' })
   if (await panelClose.isVisible().catch(() => false)) { await panelClose.click(); await p.waitForTimeout(500) }
@@ -66,13 +68,13 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
   console.log('Phone 390 · Free')
   q(`UPDATE members SET is_you = (id = 'dane')`)
   await p.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
-  await p.getByRole('button', { name: 'More', exact: true }).click()
+  await p.getByRole('button', { name: /^More( \(|$)/ }).click()
   await p.getByRole('button', { name: /^View as/ }).click()
   const va = p.getByRole('dialog', { name: 'View as' }).or(p.getByRole('menu', { name: 'View as' })).first()
   await va.waitFor()
   await va.getByRole('menuitemradio', { name: /^Free/ }).click()
   await p.getByText('Studio plan: Free (demo)').waitFor({ timeout: 10000 })
-  await p.getByRole('button', { name: 'More', exact: true }).click()
+  await p.getByRole('button', { name: /^More( \(|$)/ }).click()
   const upg = p.getByTestId('more-upgrade')
   await upg.waitFor({ timeout: 5000 })
   ok((await upg.innerText()).includes('Upgrade') && (await upg.innerText()).includes('AI credits'), 'Free: More’s first row is Upgrade, with the balance')

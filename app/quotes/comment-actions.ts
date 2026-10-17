@@ -5,13 +5,17 @@ import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { members, quoteItemComments, quoteItems, quotes, type QuoteItemComment } from '@/lib/db/schema'
+import { sessionMemberId } from '@/lib/db/session'   // (pending modules S43A) this browser's member, never the standing flag
 import { revalidateLead } from '@/lib/leads/queries'
+import { deskRefusal, keepOffDesk } from '@/lib/quotes/desk'   // (S44Z) the editors' role rule on the server
+import type { Refusal } from '@/lib/company/template-rules'
 
 /* (REG-627, quote editor parity Q-30) Comments on a quote's lines — the task comments' rules: anyone on the team comments, the author
    edits their own, anyone deletes (the Tasks panel's kebab). Every write revalidates the lead (its Activity reads the threads). */
 
 async function me(): Promise<string> {
-  const [m] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true))
+  await keepOffDesk()   // (S44Z) the role first
+  const [m] = await db.select({ id: members.id }).from(members).where(eq(members.id, await sessionMemberId()))
   if (!m) throw new Error('no signed-in member')
   return m.id
 }
@@ -22,7 +26,8 @@ const touch = async (quoteId: string) => {
   revalidatePath(`/quotes/${quoteId}`)
 }
 
-export async function addLineComment(quoteId: string, itemId: string, body: string): Promise<QuoteItemComment> {
+export async function addLineComment(quoteId: string, itemId: string, body: string): Promise<QuoteItemComment | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a comment is read
   const text = clean(body)
   if (!text) throw new Error('empty comment')
   const [line] = await db.select({ id: quoteItems.id }).from(quoteItems).where(and(eq(quoteItems.id, itemId), eq(quoteItems.quoteId, quoteId)))
@@ -33,7 +38,8 @@ export async function addLineComment(quoteId: string, itemId: string, body: stri
   await touch(quoteId)
   return row
 }
-export async function editLineComment(id: string, body: string): Promise<void> {
+export async function editLineComment(id: string, body: string): Promise<void | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a comment is read
   const text = clean(body)
   if (!text) throw new Error('empty comment')
   const [c] = await db.select().from(quoteItemComments).where(eq(quoteItemComments.id, id))
@@ -42,7 +48,8 @@ export async function editLineComment(id: string, body: string): Promise<void> {
   await db.update(quoteItemComments).set({ body: text, updatedAt: new Date() }).where(eq(quoteItemComments.id, id))
   await touch(c.quoteId)
 }
-export async function deleteLineComment(id: string): Promise<void> {
+export async function deleteLineComment(id: string): Promise<void | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a comment is read
   const [c] = await db.select().from(quoteItemComments).where(eq(quoteItemComments.id, id))
   if (!c) return
   await db.delete(quoteItemComments).where(eq(quoteItemComments.id, id))

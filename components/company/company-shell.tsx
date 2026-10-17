@@ -18,17 +18,22 @@ import styles from './company-shell.module.css'
  * Ops frame), then the section's own **tab strip** where it has peers (Templates: Quotes · Contracts · Tasks · T&Cs & Notes · Payments — every kind live, REG-538), then the panel at
  * full width. Profile has no peers and no strip. The rail's Company panel is the way between sections.
  */
-export function CompanyShell({ title, tabs, actions, from, activeHref, crumb = 'Company', skeleton, onSoon, children }: {
+export function CompanyShell({ title, tabs, actions, from, activeHref, crumb = 'Company', origin: originName, backLabel, skeleton, onSoon, children }: {
   title: string
   /** The section's peers as routed tabs; omit for a section with none (Profile). A tab marked `soon` is inert (`onSoon`). */
-  tabs?: { label: string; href: string; soon?: boolean }[]
+  tabs?: { label: string; href: string; soon?: boolean; /** (simplify S-10) what waits on you there — Finance's To do — the house Tabs' count */ count?: number }[]
   actions?: ReactNode
   /** (REG-538) Where the page was opened from — an editor's Manage Templates: the L2 header with Back, and the tabs keep it. */
   from?: string
   /** (REG-645) The selected tab when it is not the path alone — Settings' modules live in `?section=`. */
   activeHref?: string
-  /** (REG-645) What the L2 crumb calls this frame — Company, or Settings on Settings' own pages. */
+  /** (REG-645) What the L2 crumb calls this frame — Company, or Settings on Settings' own pages. (pending modules S01) '' for a page of no
+      frame — Your profile: the crumb is then the place it was opened from alone ("Members / Your profile", as a lead's "Leads / Farah Ahmad"). */
   crumb?: string
+  /** (REG-1361) What the L2 crumb calls the page it was opened from when its section's word is not enough — a lead's name. */
+  origin?: string
+  /** (REG-1361) What Back says. Default "Back to {origin}" — the place Back goes, never the two crumbs joined ("Back to Leads / Company"). */
+  backLabel?: string
   /** (REG-708) The page's own ghost — the one its route's loading.tsx draws (components/company/company-ghosts.tsx), so the hand-over is invisible. */
   skeleton: ReactNode
   onSoon?: () => void
@@ -36,13 +41,14 @@ export function CompanyShell({ title, tabs, actions, from, activeHref, crumb = '
 }) {
   const pathname = usePathname()
   const items = from && tabs ? tabs.map((t) => (t.soon ? t : { ...t, href: withFrom(t.href, from) })) : tabs
-  const active = activeHref ? (from ? withFrom(activeHref, from) : activeHref) : pathname
-  const origin = from ? originOf(from, crumb) : null
+  /* (REG-1361, bug fix) the tabs carry `from`, so the page's own tab is matched with it too — opened from somewhere, a tab was never marked */
+  const active = from ? withFrom(activeHref ?? pathname, from) : activeHref ?? pathname
+  const origin = from ? originName ?? originOf(from, crumb) : null
   return (
     <PageReveal skeleton={skeleton}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         {from ? (
-          <PageHeaderL2 backHref={from} crumbs={[{ label: origin!, href: from }, { label: crumb }]} title={title} actions={actions} scrollShadow={!tabs} />
+          <PageHeaderL2 backHref={from} backLabel={backLabel ?? `Back to ${origin}`} crumbs={crumb ? [{ label: origin!, href: from }, { label: crumb }] : [{ label: origin!, href: from }]} title={title} actions={actions} scrollShadow={!tabs} />
         ) : (
           <PageHeader title={title} actions={actions} scrollShadow={!tabs} />
         )}

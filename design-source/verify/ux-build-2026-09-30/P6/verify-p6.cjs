@@ -87,8 +87,9 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await page.goto(`${BASE}/company/members`); await page.getByTestId('members').waitFor(); await ready(page)
     const link = page.getByTestId('members-visibility-link')
     const href = await link.getAttribute('href')
-    ok('S3 Members links to Who sees leads, with the way back', !!href && href.startsWith('/settings?section=leads&from=%2Fcompany%2Fmembers') && href.endsWith('#lead-visibility'), href)
-    await link.click(); await page.waitForURL(/section=leads/); await page.getByTestId('lead-visibility').waitFor(); await ready(page)
+    // (pending modules S14, a deliberate change of this rule) Who sees leads' one home is Settings › Roles & access (?section=studio)
+    ok('S3 Members links to Who sees leads, with the way back', !!href && href.startsWith('/settings?section=studio&from=%2Fcompany%2Fmembers') && href.endsWith('#lead-visibility'), href)
+    await link.click(); await page.waitForURL(/section=studio/); await page.getByTestId('lead-visibility').waitFor(); await ready(page)
     ok('S3 …landing on the card', await inView(page.getByTestId('lead-visibility').locator('span').first()))
     ok('S3 …with Back to Members', ((await page.locator('a[aria-label^="Back to"]').first().getAttribute('href')) ?? '').startsWith('/company/members'))
     await shot('s3-01-who-sees-leads-from-members')
@@ -153,7 +154,8 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await page.goto(`${BASE}/company/members`); await page.getByTestId('members').waitFor(); await ready(page)
     await page.getByRole('button', { name: 'Add member' }).click()
     const dlg = page.getByRole('dialog', { name: 'Add member' })
-    ok('S6 the email helper in plain words', /printed as their email on the quotes they prepare/.test(await dlg.innerText()) && !/prepared_by_email/.test(await dlg.innerText()))
+    /* (REG-846, Dane UAT 2.07) the helper is Email's whole line now, a sentence: "Printed as their email on the quotes they prepare" */
+    ok('S6 the email helper in plain words', /Printed as their email on the quotes they prepare/.test(await dlg.innerText()) && !/prepared_by_email/.test(await dlg.innerText()))
     ok('S6 a Designer is added with Reports to', await dlg.getByRole('combobox', { name: 'Reports to' }).count() === 1)
     await pick(page, dlg.getByRole('combobox', { name: 'Role' }), 'Manager')
     ok('S6 …a Manager without it', await dlg.getByRole('combobox', { name: 'Reports to' }).count() === 0)
@@ -239,12 +241,14 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
   await step('S10', async () => {
     await page.goto(`${BASE}/company/templates/payments`); await ready(page)
     const card = page.getByTestId('library-card').filter({ hasText: 'STUDIO DEFAULT' }).first()
-    const name = card.locator('span[title]').first()
+    /* (REG-820) a card's name lost its native title for the house Tooltip whenCut: find the name by its class */
+    const NAME = '[class*="__cardName"]:not([class*="__cardNameRow"])'
+    const name = card.locator(NAME).first()
     const m = await name.evaluate((el) => ({ text: el.textContent, ws: getComputedStyle(el).whiteSpace, cut: el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 }))
     ok('S10 a split named by its percentages reads whole beside its chip at 1440', m.ws === 'normal' && !m.cut, JSON.stringify(m))
     await card.scrollIntoViewIfNeeded(); await shot('s10-01-payments-names-wrap')
     await page.goto(`${BASE}/company/templates/quotes`); await ready(page)
-    const q = page.getByTestId('library-card').filter({ hasText: 'DEFAULT' }).first().locator('span[title]').first()
+    const q = page.getByTestId('library-card').filter({ hasText: 'DEFAULT' }).first().locator(NAME).first()
     ok('S10 "Default Quote PDF" reads whole', !(await q.evaluate((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)))
     ok('S12 New ▾ stays outlined with its menu in a full library (REG-541)', (await page.getByTestId('new-template').getAttribute('aria-haspopup')) === 'menu')
     ok('S12 the to-do chip stays', await page.getByRole('button', { name: /awaiting approval/ }).count() >= 1)

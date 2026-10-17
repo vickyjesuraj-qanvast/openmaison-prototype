@@ -22,7 +22,7 @@ export const CREDIT_SCHEDULE: Record<ActionKey, ScheduleEntry> = {
   render_fast: { credits: 10, label: 'Render · Fast', label1: 'Render' },
   render_photorealistic: { credits: 15, label: 'Photorealistic render', label1: 'Photorealistic render' },
   render_pro: { credits: 20, label: 'Pro render · High', label1: 'Pro render' },
-  render_repair: { credits: 2, label: 'Drift repair', label1: 'Drift repair' },               // no drift repair in 2.0 (Q-28)
+  render_repair: { credits: 2, label: 'Render repair', label1: 'Drift repair' },              // (pending modules S20) the drift guard's repair, one per version lined up
   copilot_block: { credits: 25, label: 'Meeting Co-Pilot · 10 min', label1: 'Co-Pilot (10 min)' },   // later (Q-45)
 }
 
@@ -37,6 +37,9 @@ export function renderAction(kind: string, quality: RenderQuality): ActionKey {
   return quality === 'high' ? 'render_pro' : 'render_fast'
 }
 export const costOf = (action: ActionKey, count = 1): number => CREDIT_SCHEDULE[action].credits * Math.max(1, Math.floor(count))
+/** (pending modules S20) A charge that made renders — a repair of one already made never counts as another (1.0: `render_repair` is never a
+    new success). */
+export const makesRenders = (k: string): boolean => k.startsWith('render_') && k !== 'render_repair'
 
 /** A Fast render, the unit studios think in: "about 680 renders" (Q-03, E-01). */
 export const RENDER_CREDITS = CREDIT_SCHEDULE.render_fast.credits

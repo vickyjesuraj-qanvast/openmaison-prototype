@@ -1,0 +1,84 @@
+/*
+ * (pending modules S25 — 1.0's article page) An article on the house pieces: the L2 header, then one reading column (72 characters or so —
+ * 720 wide) on the page's surface: its category, its title at the reading size, its first lines, the byline, the sample note (the house
+ * tinted line, read-only-note.module.css), the cover, the body, its tags (the house chips, as links) — and, under it, more articles on the
+ * listing's cards. Body type is the house's: sections in the heading tokens, paragraphs in body-l, quotes as the house tint.
+ */
+.content { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-10); padding: var(--om-spacing-8) var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+.article { width: 100%; max-width: 720px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.head { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.headline { margin: 0; font: var(--om-type-heading-h1); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.standfirst { margin: 0; font: var(--om-type-body-xl); color: var(--om-color-on-surface-secondary); }
+.byline { display: flex; align-items: center; gap: var(--om-spacing-3); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.bylineText { display: flex; flex-direction: column; min-width: 0; }
+.author { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.when { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.note { composes: note from '../company/read-only-note.module.css'; }
+.hero { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+/* the cover's well: the picture, or — when it won't load — the category's glyph in the same 16:9 */
+.heroWell { display: flex; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); }
+.heroWell > img { aspect-ratio: auto; height: 100%; border-radius: 0; }
+
+/* ── the body ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.body { display: block; min-width: 0; color: var(--om-color-on-surface-default); }   /* prose: the blocks' margins fold into each other */
+/* a section lands under the sticky header when it is scrolled to */
+.h2, .h3, .h4 { scroll-margin-top: 96px; margin: var(--om-spacing-8) 0 var(--om-spacing-3); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.h2 { font: var(--om-type-heading-h3); }
+.h3 { font: var(--om-type-heading-h4); margin-top: var(--om-spacing-6); }
+.h4 { font: var(--om-type-heading-h5); margin-top: var(--om-spacing-5); }
+.body > :first-child { margin-top: 0; }
+.p { margin: 0 0 var(--om-spacing-4); font: var(--om-type-body-l); overflow-wrap: anywhere; }
+.inlineCode { padding: 0 var(--om-spacing-1); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); }
+.link { composes: link from '../om/text-link.module.css'; font: inherit; }
+.out { display: inline-flex; vertical-align: -1px; margin-left: 2px; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.list { margin: 0 0 var(--om-spacing-4); padding-left: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-2); list-style: disc; }
+ol.list { list-style: decimal; }
+.li::marker { color: var(--om-color-on-surface-secondary); }
+.li { font: var(--om-type-body-l); padding-left: var(--om-spacing-1); }
+.quote { margin: var(--om-spacing-4) 0 var(--om-spacing-6); padding: var(--om-spacing-4) var(--om-spacing-5); border-left: var(--om-spacing-1) solid var(--om-color-primary-default); border-top-right-radius: var(--om-radius-2); border-bottom-right-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.quoteP { margin: 0; font: var(--om-type-body-l); }
+.quoteP + .quoteP { margin-top: var(--om-spacing-3); }
+.rule { width: 100%; margin: var(--om-spacing-8) 0; border: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tableWrap { margin: var(--om-spacing-4) 0 var(--om-spacing-6); overflow-x: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.table { width: 100%; border-collapse: collapse; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.table th, .table td { padding: var(--om-spacing-3) var(--om-spacing-4); vertical-align: top; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.table thead th { border-top: 0; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.table tbody th { font: var(--om-type-subtitle-m); }
+.figure { margin: var(--om-spacing-6) 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.figure > img { display: block; width: 100%; height: auto; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
+.chartNote { composes: note from '../company/read-only-note.module.css'; margin: var(--om-spacing-4) 0; }
+.code { margin: var(--om-spacing-4) 0; padding: var(--om-spacing-4); overflow-x: auto; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-s); }
+
+/* ── its tags, and more to read ───────────────────────────────────────────────────────────────────────────────────────────────── */
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); padding-top: var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tagsLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-right: var(--om-spacing-1); }
+.tag { composes: chip from '../om/chips.module.css'; text-decoration: none; }
+.more { width: 100%; max-width: 1104px; display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.moreTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.moreGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+
+/* the ghost's fallback lines: each the page's own line height at every width */
+.ghostHead { height: 36px; }
+.ghostStand { height: 24px; }
+.ghostBody { height: 24px; }
+
+@media (max-width: 1024px) {
+  .moreGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-5) var(--om-spacing-4); padding-bottom: var(--fab-clearance); gap: var(--om-spacing-8); }
+  .article { gap: var(--om-spacing-5); }
+  .headline { font: var(--om-type-heading-h2); }
+  .ghostHead { height: 32px; }
+  .ghostBody { height: 20px; }
+  .standfirst { font: var(--om-type-body-l); }
+  .h2 { font: var(--om-type-heading-h4); }
+  .p, .li, .quoteP { font: var(--om-type-body-m); }
+  .table { font: var(--om-type-body-s); }
+  .table tbody th { font: var(--om-type-subtitle-s); }
+  .table th, .table td { padding: var(--om-spacing-2) var(--om-spacing-3); }
+  .moreGrid { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-3); }
+}

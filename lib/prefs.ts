@@ -57,4 +57,28 @@ export function setFlagPref(key: string, next: boolean) {
 }
 
 /** Clears every remembered flag — used by Maison AI › "Reset prototype to base", which clears all `om.*` keys. */
-export function clearFlagPrefs() { cache.clear(); written.clear() }
+export function clearFlagPrefs() { cache.clear(); written.clear(); counts.clear() }
+
+/* (pending modules S45A) A remembered COUNT — the flag's twin for a ghost that draws as many rows as its page drew last (REG-817's rule: the
+   loader and the reveal draw the page's own shape). The server snapshot is the caller's fallback, as for a flag. */
+const counts = new Map<string, number>()
+export function useCountPref(key: string, fallback: number): number {
+  const read = (): number => {
+    const hit = counts.get(key)
+    if (hit !== undefined) return hit
+    try {
+      const raw = localStorage.getItem(key)
+      const v = raw === null ? fallback : Number(raw)
+      const value = Number.isFinite(v) ? v : fallback
+      counts.set(key, value)
+      return value
+    } catch { return fallback }
+  }
+  return useSyncExternalStore(subscribe, read, () => fallback)
+}
+export function setCountPref(key: string, next: number) {
+  if (counts.get(key) === next) return
+  counts.set(key, next)
+  try { localStorage.setItem(key, String(next)) } catch {}
+  listeners.forEach((l) => l())
+}

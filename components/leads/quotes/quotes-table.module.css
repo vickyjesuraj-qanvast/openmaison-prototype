@@ -192,6 +192,7 @@
   .head { display: none; }
   .frame { background: none; border: 0; border-radius: 0; overflow: visible; }
   .frame::after { content: none; }
+  .row::after { content: none; }   /* (pending modules S03) the core's trailing row rule (REG-733) has no place on a card — it drew a line through each card's title (the deleted sheet's E-26, Plan's G-46) */
   .card, .card[data-no-approval] {
     display: flex; flex-direction: column; gap: var(--om-spacing-3);
     grid-template-columns: 1fr; overflow-x: visible;
@@ -252,3 +253,8 @@
 /* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
    own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
 @media (min-width: 768px) { .cell.colSel + .cell, .head .colSel + .hCell { padding-left: var(--om-spacing-3); } }
+/* (pending modules S04) the client's open under the Sent to client day — the Contracts list's Sent cell (REG-633); on a phone, in the title's line */
+.sentCell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.viewed { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.subViewed { display: none; }
+@media (max-width: 767px) { .subViewed { display: inline; } }

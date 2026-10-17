@@ -14,6 +14,7 @@
 .tool:hover { background: var(--om-color-hover-08p); }
 .tool[data-active] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }   /* the pressed state mirrors the selection (REG-260) */
 .tool:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tool:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: none; }   /* (S42 B-19) a locked copy's tools rest greyed, the banner says why */
 .right { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .body { padding: var(--om-spacing-6); font: var(--om-type-body-l); color: var(--om-color-on-surface-default); outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }
 .body[data-empty]::before { content: attr(data-placeholder); color: var(--om-color-on-surface-disabled); pointer-events: none; }
@@ -32,6 +33,7 @@
   .toolbar { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); }
   .tools { flex-basis: 100%; flex-wrap: wrap; gap: var(--om-spacing-2); overflow: visible; }   /* the tools wrap at 8 apart (a 324 line holds nine; the link follows on the next) instead of scrolling off the edge (REG-437) */
   .group { gap: var(--om-spacing-2); }
+  .rule { display: none; }   /* (fix-C, C-29) a wrapped line never starts after a stray rule — the 8 between groups parts them (REG-437 keeps the wrap) */
   .right { flex-basis: 100%; }
   .right > * { flex: 1; }
   .body { padding: var(--om-spacing-4); }
@@ -39,4 +41,29 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .tool { position: relative; }
   .tool::after { content: ''; position: absolute; inset: -10px; }
+}
+
+/* (S44I — call C2) The text colour tool: the kit's swatches in its menu, and the one-line note when nothing is picked to colour. */
+.swatch { width: 16px; height: 16px; border-radius: var(--om-radius-0-5); flex-shrink: 0; margin-right: var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); display: inline-block; }   /* the Highlight menu's swatch (items-section.module.css) */
+.swatch:not([data-none]) { background: var(--sw); }
+.swatch[data-none] { background: linear-gradient(135deg, transparent 45%, var(--om-color-on-surface-border) 45%, var(--om-color-on-surface-border) 55%, transparent 55%); }
+.toolHint { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.body img { max-width: 100%; height: auto; }   /* (S44I — NB-07 (a)) a section note's picture */
+
+/* (S44G — NB-08) Dense: the template editor's 320 inspector writes a Text block here. The tools are the inspector's 36 boxes, touching, in one
+   row without the mock's 68-tall bar; the right slot (Insert a field · Write with AI) takes the line under them, its buttons at their own width;
+   the body's paragraphs and lists sit as close together as the print sets them (4 apart). A narrower pane wraps the last tool, never hides it. */
+.editor[data-dense] .toolbar { flex-wrap: wrap; min-height: 0; gap: 0; padding: var(--om-spacing-1); }
+.editor[data-dense] .tools { flex-basis: 100%; flex-wrap: wrap; gap: 0; overflow: visible; }
+.editor[data-dense] .group { gap: 0; }
+.editor[data-dense] .rule { display: block; height: 20px; margin: 0 var(--om-spacing-0-5); }
+.editor[data-dense] .tool { width: 36px; height: 36px; }
+.editor[data-dense] .right { flex-basis: 100%; justify-content: flex-start; gap: var(--om-spacing-1); padding-top: var(--om-spacing-1); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.editor[data-dense] .right > * { flex: 0 0 auto; }
+.editor[data-dense] .body { padding: var(--om-spacing-3); }
+.editor[data-dense] .body p { margin-bottom: var(--om-spacing-1); }
+.editor[data-dense] .body ul, .editor[data-dense] .body ol { margin-bottom: var(--om-spacing-1); padding-left: var(--om-spacing-5); }
+.editor[data-dense] .body p:last-child, .editor[data-dense] .body ul:last-child, .editor[data-dense] .body ol:last-child { margin-bottom: 0; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .editor[data-dense] .tool::after { inset: -4px; }   /* touching 36 boxes: a 44 reach each, never a neighbour's whole box */
 }

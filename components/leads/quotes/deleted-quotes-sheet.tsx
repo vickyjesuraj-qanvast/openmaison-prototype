@@ -20,8 +20,10 @@ import styles from '@/components/contracts/deleted-contracts-sheet.module.css'
  * (REG-727) The Deleted trio's shape (REG-513): Empty Trash in the head, no Close foot, height to content with a 480 floor; the table on
  * the table core (the listing's head, rows and cells).
  */
-export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRestore, onDeleteForever, onEmptyTrash }: {
+export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRestore, onDeleteForever, onEmptyTrash, variation = false }: {
   open: boolean; onClose: () => void
+  /** (fix-G, G-11) the project's deleted variation orders (its Money tab) — never in a quote list (REG-1000) */
+  variation?: boolean
   load: () => Promise<DeletedQuoteRow[]>
   crumb: string
   showLead?: boolean
@@ -58,16 +60,17 @@ export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRes
   const purgeable = live.filter((r) => r.mine && !r.heldBy).map((r) => r.id)
   const pickable = (rows ?? []).filter((r) => r.mine)
   const allOn = pickable.length > 0 && pickable.every((r) => selected.has(r.id))
+  const N = variation ? { one: 'variation order', many: 'variation orders', title: 'Deleted variation orders', home: 'its project’s Money tab' } : { one: 'quote', many: 'quotes', title: 'Deleted Quotes', home: 'its lead' }
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
     <>
       {/* (REG-727) The trio's head: the crumb as the eyebrow, Empty Trash the one action before the close; no foot. */}
-      <Dialog open={open} onClose={onClose} title="Deleted Quotes" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
+      <Dialog open={open} onClose={onClose} title={N.title} eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
               actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Empty Trash</Button>}>
-        <span className={styles.note}>Deleted quotes stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a quote.</span>
-        <div className={styles.table} role="table" aria-label="Deleted quotes" data-testid="deleted-quotes" data-lead={showLead || undefined} data-select="">
+        <span className={styles.note}>{`Deleted ${N.many} stay here until they are deleted forever. Restore puts one back on ${N.home}. Only its creator, an Owner or an Admin restores or deletes a ${N.one}.`}</span>
+        <div className={styles.table} role="table" aria-label={`Deleted ${N.many}`} data-testid="deleted-quotes" data-lead={showLead || undefined} data-select="">
           <div className={styles.head} role="row">
-            <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label="Select all deleted quotes" /></span>
+            <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label={`Select all deleted ${N.many}`} /></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Quote</span></span>
             {showLead ? <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Lead</span></span> : null}
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Status</span></span>
@@ -75,9 +78,9 @@ export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRes
             <span role="columnheader" className={`${styles.hCell} ${styles.actions}`}><span className={styles.hLabel}>Actions</span></span>
           </div>
           {rows === null ? <div className={styles.empty}>Loading…</div>
-            : failed ? <div className={styles.empty} role="status">Couldn’t load the deleted quotes — <button type="button" className={styles.retry} onClick={() => { setRows(null); setTick((t) => t + 1) }}>try again</button></div>
-            : rows.length === 0 ? <div className={styles.empty} role="status">No deleted quotes.</div> : rows.map((q) => {
-            const why = !q.mine ? 'Only its creator, an Owner or an Admin' : q.heldBy ? `The contract “${q.heldBy}” reads this quote` : null
+            : failed ? <div className={styles.empty} role="status">{`Couldn’t load the deleted ${N.many} — `}<button type="button" className={styles.retry} onClick={() => { setRows(null); setTick((t) => t + 1) }}>try again</button></div>
+            : rows.length === 0 ? <div className={styles.empty} role="status">{`No deleted ${N.many}.`}</div> : rows.map((q) => {
+            const why = !q.mine ? 'Only its creator, an Owner or an Admin' : q.heldBy ? `The contract “${q.heldBy}” reads this ${N.one}` : null
             return (
               <div key={q.id} className={styles.row} role="row" data-testid="deleted-quote" data-selected={selected.has(q.id) || undefined}>
                 <span role="cell" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={selected.has(q.id)} isDisabled={!q.mine} onChange={() => toggle(q.id)} aria-label={`Select ${q.number}`} /></span>
@@ -87,9 +90,9 @@ export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRes
                 <span role="cell" className={styles.cell}>{displayDate(new Date(q.deletedAt))}</span>
                 <span role="cell" className={`${styles.cell} ${styles.actions}`}>
                   <Tooltip label={q.mine ? `Put ${q.number} back on ${q.leadName}` : 'Only its creator, an Owner or an Admin'}>
-                    <span><Button variant="secondary" appearance="outlined" isDisabled={busy || !q.mine} onPress={() => { void run('restore the quote', () => onRestore([q.id])) }}>Restore</Button></span>
+                    <span><Button variant="secondary" appearance="outlined" isDisabled={busy || !q.mine} onPress={() => { void run(`restore the ${N.one}`, () => onRestore([q.id])) }}>Restore</Button></span>
                   </Tooltip>
-                  <Tooltip label={why ?? 'Deletes the quote and its lines for good'}>
+                  <Tooltip label={why ?? `Deletes the ${N.one} and its lines for good`}>
                     <span><DangerButton disabled={busy || !!why} onClick={() => setConfirm({ kind: 'forever', ids: [q.id] })}>Delete Forever</DangerButton></span>
                   </Tooltip>
                 </span>
@@ -99,14 +102,14 @@ export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRes
         </div>
         <DetailBulkBar inset count={live.length}
                        actions={[
-                         { label: `Restore${restorable.length !== live.length ? ` ${restorable.length}` : ''}`, onClick: () => { const ids = restorable; setSelected(new Set()); if (ids.length) void run('restore the quotes', () => onRestore(ids)) } },
+                         { label: `Restore${restorable.length !== live.length ? ` ${restorable.length}` : ''}`, onClick: () => { const ids = restorable; setSelected(new Set()); if (ids.length) void run(`restore the ${N.many}`, () => onRestore(ids)) } },
                          ...(purgeable.length ? [{ label: `Delete Forever${purgeable.length !== live.length ? ` ${purgeable.length}` : ''}`, tone: 'danger' as const, onClick: () => setConfirm({ kind: 'forever', ids: purgeable }) }] : []),
                        ]}
                        onClear={() => setSelected(new Set())} />
       </Dialog>
-      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" message={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `These ${confirm.ids.length} quotes, their lines, payment schedules and kept versions will be deleted permanently. This action cannot be undone.` : 'This quote, its lines, its payment schedule and its kept versions will be deleted permanently. This action cannot be undone.'} confirmLabel="Delete Forever"
-                     onCancel={() => setConfirm(null)} onConfirm={() => { const c = confirm; setConfirm(null); if (c?.kind === 'forever') { setSelected(new Set()); void run(c.ids.length > 1 ? 'delete the quotes forever' : 'delete the quote forever', () => onDeleteForever(c.ids)) } }} />
-      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Empty the trash?" message={`${emptiable} deleted ${emptiable === 1 ? 'quote' : 'quotes'} will be deleted permanently. Quotes someone else created, or that a contract reads, stay. This action cannot be undone.`} confirmLabel="Empty Trash"
+      <ConfirmDialog nested open={confirm?.kind === 'forever'} title="Delete forever?" message={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `These ${confirm.ids.length} ${N.many}, their lines, payment schedules and kept versions will be deleted permanently. This action cannot be undone.` : `This ${N.one}, its lines, its payment schedule and its kept versions will be deleted permanently. This action cannot be undone.`} confirmLabel="Delete Forever"
+                     onCancel={() => setConfirm(null)} onConfirm={() => { const c = confirm; setConfirm(null); if (c?.kind === 'forever') { setSelected(new Set()); void run(c.ids.length > 1 ? `delete the ${N.many} forever` : `delete the ${N.one} forever`, () => onDeleteForever(c.ids)) } }} />
+      <ConfirmDialog nested open={confirm?.kind === 'empty'} title="Empty the trash?" message={`${emptiable} deleted ${emptiable === 1 ? N.one : N.many} will be deleted permanently. ${variation ? 'Variation orders' : 'Quotes'} someone else created, or that a contract reads, stay. This action cannot be undone.`} confirmLabel="Empty Trash"
                      onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); setSelected(new Set()); void run('empty the trash', onEmptyTrash) }} />
     </>
   )

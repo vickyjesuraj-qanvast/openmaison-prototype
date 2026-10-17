@@ -95,8 +95,8 @@
     "scene": "The price before the press",
     "module": "AI Visualizer",
     "try": "Render, then stop one halfway",
-    "how": "1. Press Generate and watch the balance chip\n2. Pick another finish, press Generate, then \"Cancel\" on the progress card",
-    "expect": "The chip drops by the price as the render starts; a one-time tip explains AI credits (\"A render that fails costs nothing\"); Cancel says \"Stopped — nothing was kept or charged\" and the chip goes back.",
+    "how": "1. Press Generate and watch the balance chip\n2. Pick another finish, press Generate, then \"Stop\" on the progress card",
+    "expect": "The chip drops by the price as the render starts; a one-time tip explains AI credits (\"A render that fails costs nothing\"); Stop says \"Stopped — nothing was kept or charged\" and the chip goes back.",
     "in10": "Different from 1.0: a stopped or failed render says its credits are back",
     "as": "Dane",
     "covers": [
@@ -128,7 +128,7 @@
     "module": "Quotes",
     "try": "Read an old quote from a spreadsheet",
     "how": "1. Open Gerald Tan's lead › \"Quotes\" › \"Create Quote\"\n2. Read the \"Upload a quote\" tile, click it and choose uat-files/gerald-tan-old-quote.xlsx\n3. Watch the side navigation's balance, then press \"Cancel\"",
-    "expect": "The tile reads \"PDF · XLS · JPG · 5 AI credits\"; \"6 lines read … · S$14,880.00\"; the balance is 5 lower (reading a quote is 5).",
+    "expect": "The tile reads \"XLSX · CSV · PDF · 5 AI credits\"; \"6 lines read … · S$14,880.00\"; the balance is 5 lower (reading a quote is 5).",
     "in10": "Same as 1.0 (Digitize quote, 5), now shown on the tile",
     "as": "Dane",
     "covers": [
@@ -144,7 +144,7 @@
     "scene": "Where the credits went",
     "module": "Company",
     "try": "Read the studio's usage",
-    "how": "1. Rail › Company › \"Plan & AI credits\"\n2. Read the three tiles\n3. Change \"Period: This month\" to \"Last month\", then back\n4. In Activity search \"render\"; click one row's \"For\" link, come back; press \"Export\" and export a CSV",
+    "how": "1. Side navigation \"Company\" › \"Plan & AI credits\"\n2. Read the three tiles\n3. Change \"Period: This month\" to \"Last month\", then back\n4. In Activity search \"render\"; click one row's \"For\" link, come back; press \"Export\" and export a CSV",
     "expect": "\"AI credits left\", \"Used · this month\" (with its S$ at the top-up price), \"At this pace\"; By member lists every active member; By tool (no US$ cost); By lead with \"Won … of the … leads with renders\"; each render links its design; the CSV downloads.",
     "in10": "Different from 1.0: Company › Plan & AI credits replaces Settings › Usage & credits; no provider cost",
     "as": "Dane",
@@ -243,8 +243,8 @@
     "scene": "Rules and the phone",
     "module": "Settings",
     "try": "Check who may do what, and the new notices",
-    "how": "1. Settings › Studio › \"Who may do what\": read the AI rows\n2. Settings › Notifications: find the AI credits events\n3. Plans › Max › \"Talk to us\": type a phone number and press Send",
-    "expect": "Rows \"Buy AI credits\" and \"Change the plan, seats and billing\" (the Owner only), \"Set members’ monthly AI credits\", \"See the studio’s AI usage\" (Owner and Admins; everyone else their own); eight AI credits events; \"Sent — our team will call you within a working day\".",
+    "how": "1. Settings › \"Roles & access\" › \"Who may do what\": read the AI rows\n2. Settings › Notifications: find the AI credits events\n3. Plans › Max › \"Talk to us\": type a phone number and press Send",
+    "expect": "Rows \"Buy AI credits or turn on auto top-up\" and \"Change the plan, seats and billing\" (the Owner only), \"Set members’ monthly AI credits\", \"See the studio’s AI usage\" (Owner and Admins; everyone else their own); eight AI credits events; \"Sent — our team will call you within a working day\".",
     "in10": "Same rules as 1.0: only the Owner buys and changes the plan",
     "as": "Dane",
     "covers": [
@@ -261,7 +261,7 @@
     "module": "Phone",
     "try": "The credits on a phone, then back to the base plan",
     "how": "1. On a phone (or a 390-wide window) open More: read the first row and tap it\n2. Press \"Change plan\" and scroll Plans; close it\n3. Demo Studio › View as › \"Pro — Studio\"",
-    "expect": "More's first row is the AI credits card (\"… AI credits · Refreshes …\"); the card opens as a sheet; Plans rises as the tallest sheet; \"Studio plan: Pro — Studio (demo)\" and a full month's credits again.",
+    "expect": "More’s first row is the AI credits card (\"… AI credits · Refreshes …\"); the card opens as a sheet; Plans rises as the tallest sheet; \"Studio plan: Pro — Studio (demo)\" — the studio’s own plan as it was before you picked Free: 7 seats, the same month, no new invoice in Plan & billing; what Almost out held back is back, and only real renders and reads stay spent.",
     "in10": "Different from 1.0: 1.0 shows no credits below 1024",
     "as": "Dane",
     "covers": [

@@ -62,7 +62,7 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
   const usedHere = here.filter((r) => used.has(r.id)).length
 
   return (
-    <Drawer open={open} title="Keyboard shortcuts" label="Keyboard shortcuts" onClose={closeShortcuts} width={360} kbPanel
+    <Drawer open={open} title="Keyboard shortcuts" label="Keyboard shortcuts" onClose={closeShortcuts} width="narrow" kbPanel
             actions={<Keys spec="?" className={styles.headKeys} />}
             footer={
               <div className={styles.switches}>

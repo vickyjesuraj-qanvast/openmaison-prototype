@@ -10,7 +10,7 @@
  *
  * Pure data: no clock, no randomness — the list order is stable across renders and reloads.
  */
-import { moneyCompact } from '@/lib/format'
+import { displayDate, moneyCompact } from '@/lib/format'
 
 export type Brief = {
   /** The filled yellow tag in the card head ("Fresh lead · respond fast"). */
@@ -30,7 +30,18 @@ export type BriefLead = {
   questionnaire?: { answered: number; total: number } | null
   /** (UX audit 2026-09-30, L2) A contact is already logged (the Notes tab's or the stage's) — the New brief stops claiming "No contact yet". */
   contacted?: boolean
+  /** (fix-A, A-26) A Won lead's project, once it exists — the Won brief points at it instead of the handover. */
+  project?: { number: string; stage?: string } | null
+  /** (S42E, E-11) A meeting held with a lead still in New (a Hangout chat, S23's write-up) — its last contact — and the stage the studio's rule
+      takes it to next (`heldMeetingStep`): the New brief stops urging a first call. */
+  met?: { at: Date; where: string | null; step: 'Contacted' | 'Met' | null } | null
 }
+
+/** (fix-A, A-26) The Won brief once the project exists: where the work is now, and the way there. Invented copy, in the briefs' voice. */
+export const OPEN_PROJECT = 'Open project'
+/** (S42E, E-11) The met-already brief's press: the lead's next stage, the meeting as its log (`?move=…&meeting=`). Invented copy. */
+export const LOG_MEETING = 'Log the meeting'
+const PROJECT_STAGE_WORDS: Record<string, string> = { setting_up: 'is being set up', in_progress: 'is in progress', completed: 'is completed' }
 
 /** "S$70.5K" — `moneyCompact` says "S$ 70.5K"; the brief writes it without the inner space (mock). */
 export const briefBudget = (minor: number) => moneyCompact(minor).replace(/\s+/g, '')
@@ -46,8 +57,22 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
   const { source, propertyType } = lead
   const keep = (...bs: (Brief | null)[]): Brief[] => bs.filter((b): b is Brief => b !== null)
 
+  /* (S42E, E-11) A lead the studio has already met (a Hangout chat held, a meeting written up) is no fresh lead to call within 24h — its first
+     brief says it was met and offers to log the meeting as its next stage, by the studio's rule. Invented copy, the briefs' voice. (S42G) The
+     same brief for a lead in Contacted whose meeting no Met log holds yet — not "book the meet" for a meeting already held. */
+  const metAlready = (met: NonNullable<BriefLead['met']>): Brief => ({
+    tag: 'Met already · log the meeting',
+    text: [
+      { t: `Met ${met.where === 'Video call' ? 'on a video call' : 'in person'} on ${displayDate(met.at)} — ${propertyType}, ${known ? `${budget} budget` : 'budget not stated'}, ${keys}. ` },
+      { t: met.step ? `Move the lead to ${met.step}:` : 'Log what was said:', bold: true },
+      { t: met.step === 'Contacted' ? ' the meeting becomes its first contact, and Met follows.' : ' the meeting becomes its Met log, and the stage card catches up.' },
+    ],
+    actions: met.step ? [LOG_MEETING, 'Draft meeting recap'] : ['Draft meeting recap', 'Set a follow-up reminder'],
+  })
+
   switch (stage) {
     case 'New':
+      if (lead.met) return keep(metAlready(lead.met))
       return keep(
         {
           // Mock verbatim (858:24867).
@@ -79,6 +104,7 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
         },
       )
     case 'Contacted': {
+      if (lead.met) return keep(metAlready(lead.met))   // (S42G)
       const briefs: Brief[] = [
         {
           tag: 'Keep momentum · book the meet',
@@ -176,7 +202,15 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
       )
     case 'Won':
       return [
-        {
+        lead.project ? {
+          tag: 'The project',
+          text: [
+            { t: `Project ${lead.project.number} ${PROJECT_STAGE_WORDS[lead.project.stage ?? ''] ?? 'carries the work on'}. ` },
+            { t: 'Its schedule, money, tasks, files and notes live on the project:', bold: true },   // (one-home N-10) the lead's carried tabs are the project's now
+            { t: ' this lead keeps its quotes and contracts.' },
+          ],
+          actions: [OPEN_PROJECT, 'Summarise the project'],
+        } : {
           tag: 'Project kickoff',
           text: [
             { t: 'Signed and won. ' },
@@ -234,7 +268,7 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
             { t: 'Send a short thank-you note:', bold: true },
             { t: ' lost leads who part on good terms return or refer 1 time in 6.' },
           ],
-          actions: ['Send a thank-you note', 'Add to newsletter list'],
+          actions: ['Send a thank-you note', 'Remind me in a year'],   // (pending modules S10 — card held:maison-ai: 2.0 keeps no newsletter list, so the button that answered Coming soon became the reminder the card's line asks for) *(invented copy)*
         },
       ]
     default:

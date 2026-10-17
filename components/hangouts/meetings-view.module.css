@@ -1,0 +1,18 @@
+/* (pending modules S27) A Hangout's chats — each chat a card (the lead Overview's Card) in one column, a designer's phone at the table being
+   where they are read; the break switch beside the walk-in button (the house sm switch and its label); the dialogs' fields 16 apart. */
+.list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); min-width: 0; }
+.breakRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
+.name { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.textLink { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-m); padding: var(--om-spacing-2) var(--om-spacing-1); }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.error { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+@media (max-width: 1024px) {
+  .list { grid-template-columns: minmax(0, 1fr); }
+}
+/* (S42E, E-19) the homeowner's initials in the card's square — the client portal panel's own (components/portal/client-access-panel.module.css) */
+.client { composes: initials from '../portal/client-access-panel.module.css'; flex-shrink: 0; }
+/* the avatar's own white ink can land after the panel's in this page's bundle — doubled, so the order the stylesheets load in never decides it (REG-422's rule) */
+.client.client { color: var(--om-color-on-primary-variant); }
+/* (S42E, call E·3) End's ticked next step and its line — the house tick-and-help pair (outside-person.module.css) */
+.follow { composes: ask from '../leads/tasks/outside-person.module.css'; }
+.followHelp { composes: askHelp from '../leads/tasks/outside-person.module.css'; }

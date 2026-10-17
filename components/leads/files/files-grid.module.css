@@ -51,6 +51,8 @@
 }
 .tileMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .tileImg { display: block; width: 100%; height: 200px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 291×200 r2 at the mocked track — the width follows the tile, object-fit crops */
+/* (gaps build E, item 1) a PDF's first page (or a video's first frame) crops from its top — the page's heading is what tells one drawing from the next */
+.tileImg[data-page] { object-position: top; }
 .tileBox {
   width: 100%; height: 200px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -66,6 +68,8 @@
 }
 .nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }   /* H g8, 199 wide */
 .kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* image / picture_as_pdf 20/Regular #db382a */
+/* (Projects r4a) Shown to client: an eye after the name, in the primary ink — the portal shows this file */
+.shownMark { flex-shrink: 0; display: inline-flex; color: var(--om-color-primary-default); }
 .tileName { min-width: 0; display: flex; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 14/Semi Bold */
 .nameStart { min-width: 0; overflow: hidden; text-overflow: ellipsis; }   /* (round 3) the name gives way in the middle */
 .nameSep, .nameEnd { flex-shrink: 0; white-space: pre; }   /* the spaces round " - " keep their width inside the flex row */

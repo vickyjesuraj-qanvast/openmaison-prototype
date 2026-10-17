@@ -1,0 +1,19 @@
+/* (parity map, MO-087 · FB-031) Where costs go — one stacked bar over its legend, on the house card (radius 8, the border token). Tokens only. */
+.card { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-5); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); min-width: 0; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); min-width: 0; }
+.title { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* the bar: segments sized by their share, a 2px surface gap between them, 4px rounded ends */
+.bar { display: flex; gap: 2px; height: 12px; border-radius: var(--om-radius-1); overflow: hidden; }
+.seg { flex-basis: 0; min-width: 4px; height: 100%; }
+/* (pending modules S06) the hues are the house categorical palette's (components/om/category-palette.module.css), given in order — never set here */
+.legend { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); column-gap: var(--om-spacing-6); row-gap: var(--om-spacing-2); }
+.item { display: grid; grid-template-columns: 10px minmax(0, 1fr) max-content max-content; align-items: center; gap: var(--om-spacing-2); min-height: 24px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.swatch { width: 10px; height: 10px; border-radius: var(--om-radius-1); }
+.name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share { color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.amount { font-variant-numeric: tabular-nums; text-align: right; min-width: 96px; }
+@media (max-width: 767px) {
+  .card { padding: var(--om-spacing-4); }
+  .legend { grid-template-columns: minmax(0, 1fr); }
+}

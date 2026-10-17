@@ -4,15 +4,17 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { landingFolder } from '@/lib/company/folder-landing'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
 import { quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
-import { sessionMemberSql } from '@/lib/db/session'
-import { isBlankHtml, isTextKind, type TextKind } from '@/lib/quotes/text'
+import { sessionMemberId } from '@/lib/db/session'
+import { isTextKind, type TextKind } from '@/lib/quotes/text'
+import { cleanRichHtml } from '@/lib/rich-html'
 import { stampQuote } from '@/lib/quotes/stamp'
 import { textTemplateUsage } from '@/lib/company/text-templates'
+import { deskRefusal, offDesk } from '@/lib/quotes/desk'   // (S44Z) the editors' role rule on the server — the quote's texts and their library
 
 /* Terms and Conditions · Additional Notes (1238:33502 · 1238:33503, REG-420): the quote's two rich-text bodies, their
    client-view switches and the studio-wide template library behind "My Templates" — which is also Company › Templates ›
@@ -20,19 +22,16 @@ import { textTemplateUsage } from '@/lib/company/text-templates'
    Defaults can be restored but never removed for good. */
 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '')
-/** The body is HTML the in-house editor wrote: scripts, handlers and foreign tags are stripped before it is stored (a public endpoint). */
-function cleanHtml(v: unknown): string {
-  let s = str(v, 60_000)
-  s = s.replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '').replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*\/?>/gi, '')
-  s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '$1="#"')
-  return isBlankHtml(s) ? '' : s
-}
+/** The body is HTML the in-house editor wrote: (S44Q, triage §12.1) it passes the house allowlist before it is stored (a public endpoint) —
+    the old strip-list let an unquoted `javascript:` link and any tag it didn't name through to the client's pages. */
+const cleanHtml = (v: unknown): string => cleanRichHtml(str(v, 60_000), 60_000) ?? ''
 const kindOf = (k: string): TextKind => { if (!isTextKind(k)) throw new Error(`Unknown text kind: ${k}`); return k }
 const touch = (id?: string) => { revalidatePath('/company/templates/terms'); revalidatePath('/company', 'layout'); if (id) revalidatePath(`/templates/terms/${id}`) }
 
 /* (audit 2026-09-26, F205) a long string travels inside an object: React's action decoder counts a bare string argument against a
    1,000,000 limit whenever the action takes more than one argument, so a ~730 KB photo failed with a 500 */
-export async function saveQuoteText(quoteId: string, kind: TextKind, o: { html: string }): Promise<{ updatedAt: number }> {
+export async function saveQuoteText(quoteId: string, kind: TextKind, o: { html: string }): Promise<{ updatedAt: number } | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const { html } = o
   const k = kindOf(kind)
   await db.update(quotes).set(k === 'terms' ? { termsHtml: cleanHtml(html) } : { notesHtml: cleanHtml(html) }).where(eq(quotes.id, quoteId))
@@ -40,7 +39,8 @@ export async function saveQuoteText(quoteId: string, kind: TextKind, o: { html: 
 }
 
 /** (REG-538) "Show in client view" — the one switch Preview and the client view read too (lib/templates/queries.ts folds it into the view). */
-export async function setQuoteTextVisible(quoteId: string, kind: TextKind, visible: boolean): Promise<{ updatedAt: number }> {
+export async function setQuoteTextVisible(quoteId: string, kind: TextKind, visible: boolean): Promise<{ updatedAt: number } | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const k = kindOf(kind)
   await db.update(quotes).set(k === 'terms' ? { termsVisible: !!visible } : { notesVisible: !!visible }).where(eq(quotes.id, quoteId))
   return stampQuote(quoteId)
@@ -48,12 +48,15 @@ export async function setQuoteTextVisible(quoteId: string, kind: TextKind, visib
 
 /** The live library of one kind, oldest first. */
 export async function listTextTemplates(kind: TextKind): Promise<QuoteTextTemplate[]> {
+  if (await offDesk()) return []   // (S44Z) the editors' role rule: a read answers nothing
   return db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.kind, kindOf(kind)), isNull(quoteTextTemplates.deletedAt))).orderBy(asc(quoteTextTemplates.createdAt))
 }
 
 /** New Template › Save / Save and Add (1238:33173) — and the library page's New template. */
 /* (F205) the text inside an object — pasted pictures make it long */
-export async function createTextTemplate(kind: TextKind, o: { title: string; body: string }, folderId: string | null = null): Promise<QuoteTextTemplate> {
+export async function createTextTemplate(kind: TextKind, o: { title: string; body: string }, folderId: string | null = null): Promise<QuoteTextTemplate | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const { title, body } = o
   const k = kindOf(kind)
   const id = randomUUID(); const now = new Date()
@@ -61,14 +64,15 @@ export async function createTextTemplate(kind: TextKind, o: { title: string; bod
      still one of T&Cs & Notes' and its maker may file it (its author may). */
   const viewer = await fetchViewer()
   const landed = await landingFolder('texts', folderId, templateChangeBlock(viewer, viewer.id))
-  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: sessionMemberSql, folderId: landed.folderId })
+  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: stampBy, folderId: landed.folderId })
   const [row] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
   touch(id)
   return row!
 }
 
 /** Card kebab › Edit Template, and the library editor's autosave. */
-export async function updateTextTemplate(id: string, o: { title: string; body: string }): Promise<QuoteTextTemplate> {
+export async function updateTextTemplate(id: string, o: { title: string; body: string }): Promise<QuoteTextTemplate | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const { title, body } = o
   await db.update(quoteTextTemplates).set({ title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), updatedAt: new Date() }).where(eq(quoteTextTemplates.id, id))
   const [row] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
@@ -77,19 +81,22 @@ export async function updateTextTemplate(id: string, o: { title: string; body: s
   return row
 }
 /** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the template gone from under a stale page — else null. */
-const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
+const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: quoteTextTemplates.createdBy, deletedAt: quoteTextTemplates.deletedAt }).from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id)); return r ? (r.deletedAt ? TEMPLATE_DELETED_LINE : changeBlock(r.createdBy)) : TEMPLATE_GONE_LINE }   // (fix-G) a deleted template is restored before it changes
 export async function renameTextTemplate(id: string, title: string): Promise<void | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const block = await refusalFor(id); if (block) return refuse(block)   // (REG-646) · (wave E, E7) the rule answered, never thrown
   await db.update(quoteTextTemplates).set({ title: str(title, 120).trim() || 'Untitled template', updatedAt: new Date() }).where(eq(quoteTextTemplates.id, id)); touch(id)
 }
-export async function duplicateTextTemplate(id: string): Promise<string> {
+export async function duplicateTextTemplate(id: string): Promise<string | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const [t] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
   if (!t) throw new Error('template not found')
   const row = await createTextTemplate(kindOf(t.kind), { title: `${t.title} (copy)`, body: t.body })
-  return row.id
+  return 'error' in row ? row : row.id
 }
 /** Delete is soft (REG-538): the template leaves the modal and the Defaults selects and waits in Deleted Templates. */
 export async function deleteTextTemplate(id: string): Promise<void | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const block = await refusalFor(id); if (block) return refuse(block)
   await db.update(quoteTextTemplates).set({ deletedAt: new Date() }).where(eq(quoteTextTemplates.id, id))
   await clearTextFromTemplateDefaults(id)   // (REG-581) no quote template keeps naming it — what the delete dialog promises
@@ -109,6 +116,7 @@ async function clearTextFromTemplateDefaults(id: string): Promise<void> {
 }
 /** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
 export async function restoreTextTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   if (!ids.length) return { restored: 0, kept: 0 }
   const rows = await db.select({ id: quoteTextTemplates.id, createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(inArray(quoteTextTemplates.id, ids))
   const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
@@ -118,6 +126,7 @@ export async function restoreTextTemplates(ids: string[]): Promise<{ restored: n
 }
 /** Delete forever: skipped while a quote template's Defaults still name it (the sheet says so). */
 export async function deleteTextTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const usage = await textTemplateUsage()
   let removed = 0, kept = 0
   const rows = ids.length ? await db.select({ id: quoteTextTemplates.id, createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(inArray(quoteTextTemplates.id, ids)) : []
@@ -132,6 +141,7 @@ export async function deleteTextTemplatesForever(ids: string[]): Promise<{ remov
   return { removed, kept }
 }
 export async function emptyTextTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
+  const no = await deskRefusal(); if (no) return no   // (S44Z) the editors' role rule — before a text is read or written
   const rows = await db.select({ id: quoteTextTemplates.id }).from(quoteTextTemplates).where(sql`${quoteTextTemplates.deletedAt} is not null`)
   return deleteTextTemplatesForever(rows.map((r) => r.id))
 }

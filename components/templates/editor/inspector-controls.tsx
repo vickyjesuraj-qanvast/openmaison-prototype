@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, SegmentedButton, SegmentedButtonItem, Switch, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -9,8 +9,12 @@ import { Tooltip } from '@/components/om/tooltip'
 import { DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { resolveFields } from '@/lib/templates/fields'
-import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLE_LABEL, FONT_ROLES, isColorKey, type Align, type BrandKit, type TextStyle } from '@/lib/templates/model'
+import { COLOR_KEYS, COLOR_LABEL, fontOptions, FONT_ROLE_LABEL, FONT_ROLES, isColorKey, type Align, type BrandKit, type TextStyle } from '@/lib/templates/model'
 import { FIELD_GROUPS } from '@/lib/templates/fields'
+import { WritingHelp } from '@/components/writing/writing-help'
+import { htmlToText, plainOf, textToHtml } from '@/lib/writing/html'
+import { RichEditor, type RichEditorHandle } from '@/components/quotes/editor/text/rich-editor'
+import { kitHtml, kitTextColors } from '@/lib/templates/kit-html'
 import styles from './inspector.module.css'
 
 /* The inspector's controls (REG-486): every one is a house primitive — TextField (text · select · numeric), the DS
@@ -73,8 +77,11 @@ export function Sw({ label, value, onChange, hint }: { label: string; value: boo
  * the words in braces read as code to a studio owner, the line under them says what they mean.
  * (Dane UAT, Figma 1517:57) `reset` = the words a new block starts with here: once the text differs from them, a Reset under the box puts
  * them back — `onReset` makes that one undo step of its own (a cleared box had no way back but ⌘Z).
+ * (pending modules S29 — 1.0's quote document sections, Introduction and Scope, carried the ✨ menu) `help` = a paragraph of prose (the cover
+ * letter's introduction, a text block): Write with AI under Insert a field — Improve · Shorten · Plain English, a proposal first; its {fields}
+ * are never touched, and the change is one step of the editor's own undo.
  */
-export function Txt({ label, value, onChange, multiline, fields = true, wide = true, values, reset, onReset }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean; values?: Record<string, string>; reset?: string; onReset?: () => void }) {
+export function Txt({ label, value, onChange, multiline, fields = true, wide = true, values, reset, onReset, help = false }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean; values?: Record<string, string>; reset?: string; onReset?: () => void; help?: boolean }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const preview = values && /\{[a-z_]+\}/.test(value) ? resolveFields(value, values).replace(/\s+/g, ' ').trim() : null
@@ -93,22 +100,67 @@ export function Txt({ label, value, onChange, multiline, fields = true, wide = t
           <span className={styles.txtGrow}><TextField label={label} value={value} onChange={onChange} helper={helper} />{resetBtn}</span>
         )}
         {fields ? (
+          <span className={help ? styles.txtTools : styles.txtToolsBare}>
           <span ref={anchor} className={styles.fieldsAnchor}>
             <Tooltip label="Insert a field — the client’s name, the date, the quote number…" disabled={open}>
               <IconButton icon="data_object" label="Insert a field" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
             </Tooltip>
             {/* (REG-728) An insert-field list: 240; each group under the house group title. */}
             <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle="Insert a field">
-              {FIELD_GROUPS.map((g) => (
-                <div key={g.label}>
-                  <DropdownLabel>{g.label}</DropdownLabel>
-                  {g.fields.map((f) => <DropdownItem key={f.key} onSelect={() => { setOpen(false); onChange(value ? `${value}${value.endsWith(' ') || value.endsWith('\n') ? '' : ' '}{${f.key}}` : `{${f.key}}`) }}>{f.label}</DropdownItem>)}
-                </div>
-              ))}
+              <FieldItems onPick={(key) => { setOpen(false); onChange(value ? `${value}${value.endsWith(' ') || value.endsWith('\n') ? '' : ' '}{${key}}` : `{${key}}`) }} />
             </PortalMenu>
+          </span>
+            {help ? <WritingHelp label={label} kind="template-text" trigger="icon" testId="txt-writing" sources={{}} read={() => ({ html: textToHtml(value) })} apply={(h) => onChange(htmlToText(h))} /> : null}
           </span>
         ) : null}
       </div>
+    </Field>
+  )
+}
+
+/** (REG-728) The Insert a field list: each group under the house group title — one list for the plain boxes and the Text block. */
+function FieldItems({ onPick }: { onPick: (key: string) => void }) {
+  return (
+    <>
+      {FIELD_GROUPS.map((g) => (
+        <div key={g.label}>
+          <DropdownLabel>{g.label}</DropdownLabel>
+          {g.fields.map((f) => <DropdownItem key={f.key} onSelect={() => onPick(f.key)}>{f.label}</DropdownItem>)}
+        </div>
+      ))}
+    </>
+  )
+}
+
+/**
+ * (S44G — NB-08, F2-05; her ask 2026-10-15, as recommended) A Text block's words, formatted: the house rich editor (the quote's Terms and a line's
+ * description use it) in its dense form for the 320 pane — Bold · Italic · Underline | Bulleted list · Numbered list | Text colour (the kit's
+ * four, never a free colour: C2) | Link. Insert a field puts the field where the caret was; Write with AI works on the formatted words; "Prints as"
+ * reads the fields under the box, as every plain box does (REG-569). The stored words are the editor's HTML: the allowlist cleans them on save
+ * (`parseDesign`) and at print; a block written before this opens as its same words and stays as it was on the page until it is edited. Each
+ * change is a step of the editor's own undo (typing folds into one step as in a plain box; Write with AI's words are a step of their own).
+ */
+export function RichTxt({ label, value, onChange, brand, values, help = false, placeholder }: { label: string; value: string; onChange: (html: string, step?: boolean) => void; brand: BrandKit; values?: Record<string, string>; help?: boolean; placeholder: string }) {
+  const editor = useRef<RichEditorHandle>(null)
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const colors = useMemo(() => kitTextColors(brand.colors), [brand.colors])
+  const shown = useMemo(() => kitHtml(value, brand), [value, brand])   // the editor paints a coloured run in the kit's colour as the kit has it today
+  const words = plainOf(value)
+  const preview = values && /\{[a-z_]+\}/.test(words) ? resolveFields(words, values).replace(/\s+/g, ' ').trim() : null
+  return (
+    <Field label={label} wide>
+      <RichEditor ref={editor} dense framed tools="block" colors={colors} value={shown} onChange={(h) => onChange(h)} label={label} placeholder={placeholder} minHeight={96}
+                  right={<>
+                    <span ref={anchor} className={styles.fieldsAnchorText}>
+                      <Button variant="secondary" appearance="text" iconStart={<Icon name="data_object" size={20} weight={300} />} onPress={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} data-testid="text-insert-field">Insert a field</Button>
+                      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Insert a field">
+                        <FieldItems onPick={(key) => { setOpen(false); editor.current?.insertField(`{${key}}`) }} />
+                      </PortalMenu>
+                    </span>
+                    {help ? <WritingHelp label={label} kind="template-text" trigger="text" menuAlign="left" testId="text-writing" sources={{}} read={() => ({ html: value })} apply={(h) => onChange(h, true)} /> : null}
+                  </>} />
+      {preview !== null ? <span className={styles.helper}>{preview ? `Prints as: ${preview}` : 'Prints as: nothing on this quote'}</span> : null}
     </Field>
   )
 }
@@ -157,7 +209,7 @@ export function StyleEditor({ label, value, onChange, brand, align = true, more 
       {open ? (
         <div className={styles.grid}>
           <Sel label="Text style" value={role} options={FONT_ROLES.map((r) => ({ value: r, label: `${FONT_ROLE_LABEL[r]} · ${brand.fonts[r].family} ${brand.fonts[r].size}pt` }))} onChange={(r) => set({ role: r })} wide />
-          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Same as the text style' }, ...FONT_FAMILIES.map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} wide />   {/* (REG-569) a half column cut "Same as the text style" to "Same as th…" */}
+          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Same as the text style' }, ...fontOptions(brand, value.font).map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} wide />   {/* (REG-569) a half column cut "Same as the text style" to "Same as th…" */}
           <Num label="Size" unit="pt" value={value.size ?? brand.fonts[role].size} min={4} max={72} step={0.5} onChange={(n) => set({ size: n })} />
           <Sel label="Weight" value={value.weight ? (String(value.weight) as '400' | '600' | '700') : 'inherit'} options={WEIGHTS} onChange={(w) => set({ weight: w === 'inherit' ? undefined : (Number(w) as 400 | 600 | 700) })} wide={false} />
           <Field label="Emphasis">

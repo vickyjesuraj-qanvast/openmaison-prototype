@@ -1,0 +1,24 @@
+/*
+ * (gaps build I, I-Q14) Maison AI's draft, reviewed before it lands — the Start card's "What you will get" (schedule.module.css .getList …),
+ * composed, with a tick before each milestone and its why under it; *Worth knowing* in the warning tone of the Compliance tab's penalty
+ * line (components/projects/compliance/compliance.module.css) for a risk, plain for a tip.
+ */
+.review { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.read { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.spark { flex-shrink: 0; display: inline-flex; margin-top: 1px; }
+.list { composes: getList from './schedule.module.css'; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--om-spacing-2); align-items: start; }
+.row[data-off] .head > :first-child, .row[data-off] .why { color: var(--om-color-on-surface-secondary); }
+.body { composes: getRow from './schedule.module.css'; min-width: 0; }
+.head { composes: getHead from './schedule.module.css'; align-items: center; }
+.headEnd { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.why { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.track { composes: getTrack from './schedule.module.css'; }
+.bar { composes: getBar from './schedule.module.css'; }
+.total { composes: getTotal from './schedule.module.css'; }
+.notes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.notesLabel { composes: legendLabel from './schedule.module.css'; }
+.note { display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.note[data-tone='risk'] { background: var(--om-color-tertiary-red-variant2); }
+.note[data-tone='risk'] .msr { color: var(--om-color-tertiary-red-default); }
+.note .msr { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }

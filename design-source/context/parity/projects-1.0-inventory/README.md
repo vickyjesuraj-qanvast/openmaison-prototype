@@ -1,0 +1,19 @@
+# Projects — the 1.0 inventories (read 2026-10-05)
+
+The sources behind `../22-projects-1.0-to-2.0-audit-2026-10-05.md` and the report doc it points to. Thirteen readers (twelve at first; M joined the same day, when the owner asked whether the portal's set-up side had been read) read `qanvast-id-tool` (working tree, `integ/security-non-qanvast` @ `620190192`) and, for L, `openmaison-prototype` `main` @ `8df73fd`. 1.0 was read from code and docs; it was not run. The files are banked as the readers wrote them and are cited by row id (A-121, E-243 …). Unlike the earlier audits' inventories, these also record layout, UI, interactions, states and motion — the owner asked for them. Rows worked out rather than read are marked **[inferred]**; each file ends with "Uncertain / not verified".
+
+| File | What it holds | Rows |
+|---|---|---|
+| `A-listing.md` | The Projects listing: header, tiles and their formulas, chips, the table, the workload view, the archived list, the shell around it | A-01…223 |
+| `B-how-a-project-starts.md` | Every way a project is made: from a lead, the create drawer, Draft and its five checks, the first timeline and templates, clone, the AI tool, vocabulary and numbering | B-01…345 |
+| `C-detail-shell-overview.md` | The detail page's frame, header, actions, banners, tabs, and Overview card by card (Financial Summary and its twelve issue kinds, Project Info, Team, Customer, Property, Key Files, Notes), the phone's floating buttons | C-01…358 |
+| `D-updates-meetings-activity-closure.md` | Progress updates and their review, Meeting Summary, the Activity card and tab, close · archive · delete | D-01…357 |
+| `E-milestones-gantt.md` | Management › Milestones: the Gantt's anatomy, drags, the drawer and its ten actions, the status machine, completing and finalizing, publishing, payments on milestones, generators and templates, the phone list | E-01…342 |
+| `F-tasks-materials-floorplan-compliance.md` | Management › Tasks, Materials (selections), Floor Plan; "Plan the Space (3D)"; compliance (with the 61 Singapore items) | F-001…311 |
+| `G-finance-tab.md` | The project's Finance tab: seven sub-tabs, the money model (contract value, schedule, allocation, rebalance, variance), invoices, VOs, POs, expenses, bills, receipts, finance issues | G-01…520 |
+| `H-files-docs-renders.md` | Files & Docs, Key Files and the lightbox, Selection Receipts, feedback on shared renders, Photo Renders from a project | H-01…273 |
+| `I-homeowner-side.md` | Invite to Portal, Preview as Homeowner, login, the portal's project page tab by tab, the lead-stage page, portal settings | I-01…427 |
+| `J-data-api-roles-touchpoints.md` | The effective schema (two migration sets), every project route and its checks, roles, notifications and crons, touchpoints with every other module, port notes for 2.0 | J-01…330 |
+| `K-ui-system-and-motion.md` | 1.0's shell, tokens, primitives, the motion catalogue and where Projects uses it, loading and feedback patterns, responsive, keyboard and accessibility, a drift count over the Projects components | K-01…358 |
+| `L-2.0-today.md` | 2.0 as a Projects module would find it: the inert rail item, the Won step, schema hooks, the 48 promises earlier audits deferred, house pieces, design rules, motion tokens, roles, demo seeds, what does not exist | L-01…304 |
+| `M-portal-setup-admin-side.md` | The portal's set-up and administration, which I had opened only in part: the flow from studio zero to a client signing in, every setting traced to its effect on the client (about 80), the hub's eight sections, the live preview, Project Links, the APIs, the portal-shaping parts of Accounts Setup, first-time setup and defaults, the platform admin, docs against code, and verdicts on I's rows (I-378 and I-419 partly wrong, I-393 replaced) | M-001…310 |

@@ -32,7 +32,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     await openQuote(page, OM1)
     const sendBtn = page.getByRole('button', { name: 'Send', exact: true })
     ok('a designer’s Send is one button (for approval)', (await sendBtn.getAttribute('aria-haspopup')) === null)
-    await sendBtn.click(); await snack(page, 'Quote marked Sent for Approval')
+    await sendBtn.click(); await snack(page, /^Quote OM-\d+ sent for approval/)   // REG-769 (UX audit Q3): the snackbar names the quote and the approvers told
     await page.waitForTimeout(600)
     ok('stored with who sent it', sql(`select status || '|' || submitted_by from quotes where id='${OM1}'`) === 'Sent for Approval|sarah')
     ok('the approvers are told', sql(`select count(*) from notifications where quote_id='${OM1}' and kind='quote_approval' and member_id='dane' and actor_id='sarah'`) === '1')
@@ -84,7 +84,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     ok('Changes requested by Dane — the note', /Changes requested by Dane/.test(t) && /Split the carpentry into living and bedrooms/.test(t), t.replace(/\n/g, ' '))
     await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(400)
     await shot('05-changes-bar')
-    await page.getByRole('button', { name: 'Send', exact: true }).click(); await snack(page, 'Quote marked Sent for Approval')
+    await page.getByRole('button', { name: 'Send', exact: true }).click(); await snack(page, /^Quote OM-\d+ sent for approval/)   // REG-769 (UX audit Q3): the snackbar names the quote and the approvers told
     await page.waitForTimeout(500)
     ok('sent again: the bar now waits', /sent this quote for approval/.test(await page.getByTestId('approval-bar').innerText()))
     ok('the note stays on the record', sql(`select review_note from quotes where id='${OM1}'`) === 'Split the carpentry into living and bedrooms')
@@ -125,7 +125,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     const phone = dlg.getByLabel(/Client phone/); if (!(await phone.inputValue())) await phone.fill('91234567')
     const [pop] = await Promise.all([ctx.waitForEvent('page').catch(() => null), dlg.getByRole('button', { name: 'Send via WhatsApp' }).click()])
     if (pop) await pop.close()
-    await snack(page, 'Sent for confirmation')
+    await snack(page, /^Quote sent to .+ for confirmation/)   // REG-776 (UX audit Q11): it names the client and the follow-up
     await page.waitForTimeout(600)
     const r = sql(`select status || '|' || ifnull(approved_by,'') || '|' || (client_sent_at is not null) || '|' || ifnull(submitted_by,'') from quotes where id='${copy}'`)
     ok('Sent to Client, approved by Dane, no approval step', r === 'Sent to Client|dane|1|', r)
@@ -136,7 +136,8 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   })
   await step('client confirms; the banner follows', async () => {
     const cp = await ctx.newPage()
-    await cp.goto(`${BASE}/confirm/${copy}`); await ready(cp)
+    /* (pending modules S04, a deliberate change of this rule) the confirmation link carries the quote's own token — a copy's is never its id */
+    await cp.goto(`${BASE}/confirm/${sql(`select confirm_token from quotes where id='${copy}'`)}`); await ready(cp)
     await cp.getByLabel('Your full name').fill('Olivia Martinez'); await cp.getByRole('button', { name: 'Confirm quote' }).click()
     await cp.waitForTimeout(1200); await cp.close()
     await openQuote(page, copy)
@@ -176,7 +177,8 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   await step('phone: the sent banner wraps under the header', async () => {
     await pp.goto(`${BASE}/quotes/${OM4}`); await pp.getByTestId('quote-editor').waitFor(); await ready(pp)
     const b = await pp.getByTestId('sent-banner').boundingBox()
-    ok('the banner fits the width', b.x >= 15 && b.x + b.width <= 390 - 15, `${Math.round(b.x)} … ${Math.round(b.x + b.width)}`)
+    // REG-870 (Dane UAT 8.11): the editors' banners run full width — a band under the tabs, not an inset card
+    ok('the banner runs the full width', Math.round(b.x) === 0 && Math.round(b.x + b.width) === 390, `${Math.round(b.x)} … ${Math.round(b.x + b.width)}`)
     await pp.screenshot({ path: `${S}/shots-qe2/10-phone-banner.png` })
     const w = await pp.evaluate(() => document.documentElement.scrollWidth)
     ok('no sideways scroll at 390', w <= 390, String(w))

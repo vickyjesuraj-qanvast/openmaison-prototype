@@ -1,5 +1,7 @@
-/* (REG-587) The confirmation page: the signing page's shell (signing-page.module.css) plus the quote's fitted document. */
-.stage { display: block; }
+/* (REG-587) The confirmation page: the signing page's shell (signing-page.module.css) plus the quote's fitted document. (pending modules S02 —
+   shared with the view-only link) The stage stacks its two children — the phone's reading cards and the print — and centres the print: the
+   shell's own .stage is a row, which on a phone set "View as printed" beside the cards and pushed the A4 72px past the screen's edge. */
+.stage { display: flex; flex-direction: column; align-items: center; }
 .total { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .total strong { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 /* (REG-626, parity Q-32) The optional works the client may add: a checkbox row each — the name, then its price with GST on the right. */
@@ -8,6 +10,9 @@
 .optionalRow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--om-spacing-2); min-height: 40px; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .optionalName { min-width: 0; }
 .optionalPrice { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--om-color-on-surface-secondary); }
+/* (S44Q — row 357) Read-only optional works: the name and its price on one line, the ask under the name. */
+.optionalAsk { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.optionalAskPress { grid-column: 1 / -1; justify-self: start; margin-left: calc(-1 * var(--om-spacing-2)); }   /* the text button’s words line up with the name */
 /* (REG-626, parity §8.2 · E-91) The files shared with the quote, under the card's own words. */
 .files { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .fileList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
@@ -26,7 +31,10 @@
   .print[data-cards]:not([data-printed]) { display: none; }
 }
 @media print { .phoneRead { display: none !important; } .print { display: block !important; } }
-/* (UX audit Q6) The ghost (confirm-skeleton.tsx): the paper above 767, the reading cards on a phone — as the page itself. */
+/* (UX audit Q6) The ghost (confirm-skeleton.tsx): the paper above 767, the reading cards on a phone — as the page itself. (pending modules S02)
+   Its body keeps the page's 1280 measure (signing-page.module.css .body), so the card sits where the page's does at 1440 — it ran 80px right. */
+.ghostBody { width: 100%; max-width: 1280px; margin: 0 auto; }
+.ghostPaper .ghostA4 { width: min(100%, 794px); }   /* (S02) the quote's A4 at 1:1 — the contract ghost's paper is 816 */
 .ghostPaper { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .ghostCards { display: none; }
 .ghostCardText { display: flex; flex-direction: column; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
@@ -35,3 +43,6 @@
   .ghostPaper { display: none; }
   .ghostCards { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 }
+/* (gaps build D, item 2 — M-07) a variation order the client declined: the card's mark in the error tone, their reason quoted under it */
+.declinedMark { display: inline-flex; color: var(--om-color-tertiary-red-default); }
+.declinedNote { margin: 0; font: var(--om-type-body-m); font-style: italic; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }

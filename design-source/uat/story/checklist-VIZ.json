@@ -212,8 +212,8 @@
   "id": "VE-04",
   "area": "Ways in, the page and the way back",
   "feature": "The project's Photo Renders + entry dialog, the Renders tab",
-  "now": "Later",
-  "why": "Projects module."
+  "now": "Built",
+  "why": "Project quick link AI Visualizer; Design › Designs lists what the client sees"
  },
  {
   "key": "VIZ",
@@ -229,7 +229,7 @@
   "area": "Ways in, the page and the way back",
   "feature": "Page flag + access matrix",
   "now": "Platform",
-  "why": "Every member; Who sees leads decides which lead designs a member sees (Q-24)."
+  "why": "Every role but Accounting; Who sees leads decides which lead designs (Q-24)"
  },
  {
   "key": "VIZ",
@@ -253,7 +253,7 @@
   "area": "The landing (designs)",
   "feature": "Header AI Visualizer + New design",
   "now": "Built",
-  "why": "L1 header; New design ▾ — Blank design · From a lead · From a sample room."
+  "why": "L1 header; New ▾ — Blank design · For a lead… · From a sample room…"
  },
  {
   "key": "VIZ",
@@ -261,7 +261,7 @@
   "area": "The landing (designs)",
   "feature": "First-run hero",
   "now": "Built",
-  "why": "The gallery's empty state with the three steps and the same two actions."
+  "why": "One welcome: a before / after, Upload a room photo, Use a lead’s photos, the samples (REG-735)"
  },
  {
   "key": "VIZ",
@@ -269,7 +269,7 @@
   "area": "The landing (designs)",
   "feature": "Start strip",
   "now": "Built",
-  "why": "New design ▾ carries them (projects Later); the sample rooms are a third way in (Q-05)."
+  "why": "New ▾ carries them; a project’s design is its lead’s; sample rooms are a third way in (Q-05)"
  },
  {
   "key": "VIZ",
@@ -373,7 +373,7 @@
   "area": "Rooms and upload",
   "feature": "Accepted files, 10 MB, HEIC",
   "now": "Built",
-  "why": "JPG · PNG · WebP up to 10 MB, the house words; HEIC is Platform (the browser cannot read it without the converter) — the error says so."
+  "why": "JPG · PNG · WebP · HEIC up to 40 MB, resized; HEIC converted in every browser (S20)"
  },
  {
   "key": "VIZ",
@@ -652,8 +652,8 @@
   "id": "VO-06",
   "area": "Tools",
   "feature": "Drift guard",
-  "now": "Platform",
-  "why": "Not needed — the engine never moves geometry."
+  "now": "Built",
+  "why": "Framing checked after each pass; a repair costs 2 AI credits, said first (S20)"
  },
  {
   "key": "VIZ",
@@ -661,7 +661,7 @@
   "area": "Tools",
   "feature": "Outpaint · Reangle · Orbit video · Depth",
   "now": "Dead",
-  "why": "Sandbox-only in 1.0 (audit: Dead) — not built."
+  "why": "Sandbox-only in 1.0; built by rule on the developers’ bench only (S41)"
  },
  {
   "key": "VIZ",
@@ -669,7 +669,7 @@
   "area": "Tools",
   "feature": "The sandboxes",
   "now": "Dead",
-  "why": "Internal sandboxes in 1.0 (audit: Dead) — not built."
+  "why": "Each mapped to its 2.0 job; four experiments on a developers’ bench (S41)"
  },
  {
   "key": "VIZ",
@@ -693,7 +693,7 @@
   "area": "Generate, versions and compare",
   "feature": "Loading per slot, Cancel, wake lock, tab-hidden abort",
   "now": "Built",
-  "why": "Placeholder tiles in the strip + the progress card on the canvas (1.0's trial copy), Cancel."
+  "why": "Placeholder tiles in the strip, the progress card on the canvas, Stop (S42)."
  },
  {
   "key": "VIZ",
@@ -780,8 +780,8 @@
   "id": "VX-04",
   "area": "Out to the client and into the lead",
   "feature": "Portal likes / comments / pins",
-  "now": "Partly built",
-  "why": "The share page carries the client's side: pick a favourite, leave a note, drop a pin and reply (Q-15)."
+  "now": "Built",
+  "why": "Favourite, note and pins on the share page; the portal’s Designs shows them (Q-15)"
  },
  {
   "key": "VIZ",
@@ -796,16 +796,16 @@
   "id": "VX-06",
   "area": "Out to the client and into the lead",
   "feature": "Send to Chat",
-  "now": "Not in 2.0",
-  "why": "2.0 has no chat; WhatsApp is the channel (Q-14)."
+  "now": "Built",
+  "why": "“Send to Messages” on a project’s design: Client or Team (parity map)"
  },
  {
   "key": "VIZ",
   "id": "VX-07",
   "area": "Out to the client and into the lead",
   "feature": "Share to Portal",
-  "now": "Later",
-  "why": "Projects / portal."
+  "now": "Built",
+  "why": "Shared designs show on the client portal’s Designs, kept for good"
  },
  {
   "key": "VIZ",
@@ -836,8 +836,8 @@
   "id": "VX-11",
   "area": "Out to the client and into the lead",
   "feature": "mAIson tools + page context (A F-01…F-11, A-16)",
-  "now": "Later",
-  "why": "The editor registers its Maison AI suggestions (the house rule: they answer coming soon)."
+  "now": "Built",
+  "why": "The editor’s Maison AI suggestions answer from the design and act (S10, S20)"
  },
  {
   "key": "VIZ",
@@ -869,7 +869,7 @@
   "area": "Materials library, phone, who may",
   "feature": "Who may",
   "now": "Built",
-  "why": "Every member; Who sees leads on lead designs; delete by maker, Owner or Admin (Q-24)."
+  "why": "Every role but Accounting; Who sees leads on lead designs; delete by maker, Owner or Admin"
  },
  {
   "key": "VIZ",
@@ -884,7 +884,7 @@
   "id": "VW-03",
   "area": "Materials library, phone, who may",
   "feature": "Trial + demo (A G-01…G-14)",
-  "now": "Not in 2.0",
-  "why": "Not built."
+  "now": "Built",
+  "why": "The website’s trial at /site/try: three renders a browser, marked (S36)"
  }
 ]

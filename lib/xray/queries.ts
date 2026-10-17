@@ -1,5 +1,6 @@
 import 'server-only'
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { nameDirectClients } from '@/lib/projects/direct-clients'   // (fix-A, A-02)
 import { db } from '@/lib/db'
 import { leads, members, quoteComparisons, quoteItems, quotes } from '@/lib/db/schema'
 import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
@@ -42,12 +43,12 @@ export async function fetchXrayData(): Promise<XrayData> {
     db.select({ id: leads.id, name: leads.name, propertyType: leads.propertyType }).from(leads).where(isNull(leads.deletedAt)).orderBy(leads.name),
     db.select({ id: quotes.id, leadId: quotes.leadId, number: quotes.number, title: quotes.title, amountMinor: quotes.amountMinor, status: quotes.status, updatedAt: quotes.updatedAt, createdAt: quotes.createdAt,
       lineCount: sql<number>`(SELECT count(*) FROM quote_items i WHERE i.quote_id = "quotes"."id" AND i.kind = 'item' AND i.status <> 'Declined' AND i.optional = 0 AND NOT (trim(coalesce(i.name, '')) IN ('', 'Item') AND i.cost_minor + i.markup_minor = 0 AND i.print_as IS NULL))` })
-      .from(quotes).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt))).orderBy(desc(quotes.updatedAt)),
+      .from(quotes).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt), eq(quotes.kind, 'quote'))).orderBy(desc(quotes.updatedAt)),
     fetchRecents(),
   ])
   const live = new Set(ls.map((l) => l.id))
   return {
-    leads: ls.filter((l) => sees(l.id)),
+    leads: await nameDirectClients(ls.filter((l) => sees(l.id))),   // (fix-A, A-02) a direct project's client named with its number
     quotes: qs.filter((q) => live.has(q.leadId) && sees(q.leadId)).map(({ createdAt, ...q }) => ({ ...q, lineCount: Number(q.lineCount), updatedAt: (q.updatedAt ?? createdAt).getTime() })),
     recents: recents.filter((r) => sees(r.leadId)).map(({ createdBy, ...r }) => ({ ...r, canDelete: canDeleteComparison(viewer, createdBy) })),
   }

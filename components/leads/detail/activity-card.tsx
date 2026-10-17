@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import type { ActivityItem } from '@/lib/leads/detail'
 import { displayDateLong, startOfDay } from '@/lib/format'
 import { Card } from './card'
@@ -13,15 +14,17 @@ const MAX_ROWS = 4
  * No empty copy exists in the mocks, so an empty list renders only the body's 12px bottom padding.
  * Spec: design-source/context/lead-overview/04-cards-stages-files-activity.txt.
  */
-export function ActivityCard({ items, now, onOpenTab }: {
+export function ActivityCard({ items, now, onOpenTab, headExtra }: {
   items: ActivityItem[]
   /** Server time, so "Today" never reads Date.now() in render. */
   now: number
   onOpenTab: () => void
+  /** (simplify round 3) A control in the head before the arrow — the project Overview's phone fold (Show / Hide); the lead's card has none. */
+  headExtra?: ReactNode
 }) {
   const today = startOfDay(new Date(now))
   return (
-    <Card title="Recent activity" headGap={8} onOpen={onOpenTab} openLabel="Open recent activity" testId="recent-activity">
+    <Card title="Recent activity" headGap={8} metaRight={headExtra} onOpen={onOpenTab} openLabel="Open recent activity" testId="recent-activity">
       <div className={styles.body}>
         {items.slice(0, MAX_ROWS).map((item, i) => (
           <div key={`${item.at.getTime()}-${i}`} className={styles.row}>

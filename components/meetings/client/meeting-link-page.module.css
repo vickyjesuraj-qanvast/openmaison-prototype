@@ -1,0 +1,65 @@
+/* (pending modules S23) The client's meeting link (`/meeting/<token>`) — the client links' letterhead bar, cards and notice
+   (components/contracts/sign/signing-page.module.css), one 560 column in the house side gutter: the invitation before the meeting, the notes
+   after it. The mood boards are the AI Visualizer's style cards (panels.module.css), drawn to read, not to pick. Every value is a token. */
+/* the page fills its frame — inside the reveal's row it would otherwise shrink to its column (a 592 strip at a desk, wider than a phone) */
+.root { flex: 1; min-width: 0; width: 100%; }
+.body { flex: 1; display: flex; flex-direction: column; padding: 0 var(--om-spacing-4) var(--om-spacing-8); }
+.column { width: 100%; max-width: 560px; margin: var(--om-spacing-10) auto 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.card { composes: card from '../../contracts/sign/signing-page.module.css'; }
+.column > .card { width: auto; position: static; top: auto; min-width: 0; }   /* the signing card is a 360 sticky rail beside a paper; here it is the column */
+
+/* the details: when · where, each a glyph and its words */
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.fact { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.factIcon { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.factText { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.factSub { color: var(--om-color-on-surface-secondary); }
+.placeLink { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: flex-start; align-self: flex-start; gap: var(--om-spacing-1); min-width: 0; max-width: 100%; }
+.placeWords { min-width: 0; overflow-wrap: anywhere; }
+.placeGlyph { display: inline-flex; flex-shrink: 0; padding-top: 1px; }
+
+/* "Add to calendar ▾" — the trigger keeps its own width; the menu's rows say where each goes */
+.trigger { display: inline-flex; align-self: flex-start; }
+.chev { composes: chev onFill from '../../quotes/editor/editor-header.module.css'; }   /* the house chevron (REG-732), in the label's ink */
+
+.rule { height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }
+.ask { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.askTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.said { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.saidIcon { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.said[data-answer='yes'] .saidIcon { color: var(--om-color-tertiary-green-default); }
+.saidWords { min-width: 0; }
+.change { composes: link from '../../om/text-link.module.css'; }
+.note { composes: declinedNote from '../../quotes/confirm/confirm-page.module.css'; }
+.contact { display: inline-flex; align-self: flex-start; }
+
+/* the notes: the summary, what's next, a rough guide, the mood boards */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.sectionTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.text { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-line; overflow-wrap: anywhere; }
+.steps { margin: 0; padding-left: var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.range { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.works { margin: 0; padding-left: var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.boards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.board { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: 0 0 var(--om-spacing-3); min-width: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: hidden; }
+.boardHead { composes: cardHead from '../../visualizer/editor/panels/panels.module.css'; }
+.palette { composes: palette from '../../visualizer/editor/panels/panels.module.css'; }
+.swatch { background: var(--swatch); }
+.boardName { composes: cardName from '../../visualizer/editor/panels/panels.module.css'; }
+.boardLine { composes: cardHelp from '../../visualizer/editor/panels/panels.module.css'; }
+.materials { composes: board from '../../visualizer/editor/panels/panels.module.css'; list-style: none; margin-bottom: 0; }
+.material { composes: boardItem from '../../visualizer/editor/panels/panels.module.css'; }
+.chip { composes: boardChip from '../../visualizer/editor/panels/panels.module.css'; background: var(--chip); }
+.materialName { composes: boardName from '../../visualizer/editor/panels/panels.module.css'; }
+
+/* the ghost's title: one line at a desk, two in a phone's column */
+.ghostTitle { display: flex; flex-direction: column; }
+
+@media (max-width: 767px) {
+  .column { margin-top: var(--om-spacing-6); }
+  .actions { flex-direction: column; align-items: stretch; }
+  .trigger { align-self: stretch; }
+  .trigger > * { flex: 1; }
+  .boards { grid-template-columns: minmax(0, 1fr); }
+}

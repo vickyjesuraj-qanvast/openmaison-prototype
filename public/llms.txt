@@ -1,0 +1,53 @@
+# OpenMaison
+
+> The AI operating system for interior design studios.
+
+OpenMaison brings an interior design studio's leads, quotes, projects and finances into one place, with AI that understands renovation work and protects margins. It is built for studios in Singapore.
+
+Built by the team behind Qanvast, Asia's largest interior design platform. Operated by Qanvast Pte. Ltd., Singapore. Founded 2025. Currently pre-launch (early access).
+
+## How the product is organised
+
+The platform is grouped into three pillars, each with dedicated modules:
+
+### Pillar 1 — Clients & Projects
+- **Leads** (/site/platform/leads) — Leads from Qanvast, Homereno, Houzz and email arrive automatically, in a pipeline you can read stage by stage, with e-signature.
+- **Projects** (/site/platform/projects) — Project plans generated from the approved quote, a Gantt timeline, tasks and approvals, client-portal progress updates, and early warnings when a timeline slips.
+- **Meeting Copilot** (/site/platform/meeting-copilot) — A meeting assistant visible only to the designer: it reads the notes you type, with coaching cards, six-dimension deal scoring and a running shadow quote.
+- **Maison AI** (/site/platform/maison-ai) — An assistant that reads across leads, projects and finance, takes actions once you confirm, and draws the chart.
+
+### Pillar 2 — Finance
+- **Upload a quote** (/site/platform/upload-a-quote) — Turns a quote — a spreadsheet or a PDF — into structured line items in seconds, flags lines that sell below cost or on a thin margin, compares any quote with Quote X-Ray, and routes for approval.
+- **Finance & Margins** (/site/platform/finance) — Real-time P&L, per-project margins, commissions, variation-order modelling, milestone invoicing, purchase orders with the vendor's own link, and ten reports (P&L, GST, AR/AP aging, profitability).
+
+### Pillar 3 — Design Meetings
+- **AI Visualizer** (/site/platform/visualizer) — Upload a room photo, swap materials and finishes, and generate a life-like render in seconds. Surfaces are detected automatically; renders can be shared to the client portal.
+- **3D Space Planner** (/site/platform/space-planner) — Real HDB and condo templates, drag-and-drop furniture with collision detection, and three camera modes for presenting.
+
+## What makes it different
+
+Most interior design software is presentation-first and stops at mood boards and renders. OpenMaison also runs the business: real margins and P&L, AI that takes actions rather than only rendering images, the whole workflow from lead to finance, and a local fit for HDB, condo and Singapore's lead sources.
+
+## Target market
+
+- Interior design studios in Singapore (HDB, condo, landed property)
+- Currency and tax: SGD and GST
+
+## Key pages
+
+- Home: https://openmaison.ai/site
+- Platform overview: https://openmaison.ai/site/platform
+- Story (about + Qanvast lineage): https://openmaison.ai/site/story
+- Trust & Security: https://openmaison.ai/site/trust
+- Blog: https://openmaison.ai/site/blog
+- What's New: https://openmaison.ai/site/changelog
+- Careers: https://openmaison.ai/site/careers
+- Contact: https://openmaison.ai/site/contact
+
+## Trust & security
+
+Data is encrypted in transit and at rest. Studios own their data and can export it at any time. Access is role-based per team member. Pricing is not public yet (pre-launch); access is by early-access request.
+
+## Contact
+
+- Email: hello@openmaison.ai

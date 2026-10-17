@@ -12,8 +12,11 @@ import { money2, pct, sharePct, type CategoryShare, type NamedDiscount, type Quo
 import type { Studio } from '@/lib/settings/types'
 import { decimalTyped } from '@/lib/format'
 import styles from './items-section.module.css'
+import { useVariation } from './variation-context'
+import { signedMoney } from '@/lib/projects/money'
 
-export type Pricing = { additionalDiscountMode: 'pct' | 'amount'; additionalDiscountValue: number; gstEnabled: boolean; issuingEntity: string | null; /** (REG-559) the named discounts after the additional one */ discounts: NamedDiscount[] }
+export type Pricing = { additionalDiscountMode: 'pct' | 'amount'; additionalDiscountValue: number; gstEnabled: boolean; issuingEntity: string | null; /** (REG-559) the named discounts after the additional one */ discounts: NamedDiscount[]
+  /** (S44O — call C3) the GST rounding stamped on the quote at its first send ('line' · 'rate'); null = today's rule for a quote not yet sent */ gstRule?: string | null }
 
 /** The most an additional discount can be in its mode: 100 % or the whole subtotal (REG-417 — the card shows the applied value). */
 export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalMinor: number) => (mode === 'pct' ? 100 : Math.max(0, subtotalMinor) / 100)
@@ -23,7 +26,9 @@ export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalM
  * Subtotal · n items, Discount, Additional Discount (% | S$ + amount), GST 9% switch, Total + Round Prices, and — for the
  * studio's owner only — the margin strip. Every figure is derived from the lines (lib/quotes/math.ts).
  */
-export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabel = 'GST 9%', shares, onPickCategory, onPricing, onRound }: {
+export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabel = 'GST 9%', shares, onPickCategory, onPricing, onRound, billsProject = null }: {
+  /** (S44I — NB-06) the project this quote is the base of: the entity stays, and the line under the select says why */
+  billsProject?: { number: string; from: string } | null
   totals: QuoteTotals
   /** (REG-562 · REG-593) The studio's issuing entities (Company › Profile) with their GST registration; the first is the studio itself. */
   entities: { name: string; gstRegistered: boolean; retired?: boolean }[]
@@ -37,6 +42,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
   onPricing: (patch: Partial<Pricing>) => void
   onRound: () => void
 }) {
+  const variation = useVariation()   // (Projects round 5) a variation order's total is its change to the contract
   const [modeOpen, setModeOpen] = useState(false)
   const modeRef = useRef<HTMLButtonElement>(null)
   const [draft, setDraft] = useState<string | null>(null)
@@ -64,9 +70,9 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
   return (
     <div className={styles.below}>
       <div className={styles.entity}>
-        <TextField label="Issuing Entity" value={entity} mode="select" size="s" options={entityOptions}
+        <TextField label="Issuing Entity" value={entity} mode="select" size="s" options={entityOptions} disabled={!!billsProject}
                    onChange={(v) => { const e = entities.find((x) => x.name === v); const reg = v === studio.name ? studio.gstRegistered : (e?.gstRegistered ?? true); onPricing({ issuingEntity: v === studio.name ? null : v, gstEnabled: reg }) }} />   {/* (REG-593) the entity brings its GST with it */}
-        <span className={styles.entityHelper}>{registered ? 'GST-Registered' : 'Not GST-registered — no GST on this quote'}</span>
+        <span className={styles.entityHelper} data-testid="entity-helper">{billsProject ? `It bills ${billsProject.number}’s invoices — they are issued from ${billsProject.from}` : registered ? 'GST-Registered' : 'Not GST-registered — no GST on this quote'}</span>
       </div>
       {shares.length ? <ItemsBreakdown shares={shares} onPick={onPickCategory} owner={owner} /> : null}
       <div className={styles.totals} data-testid="quote-totals">
@@ -106,7 +112,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
         </div>
         <div className={styles.rule} />
         <div className={styles.trow}>
-          <span className={`${styles.tlabel} ${styles.totalLabel}`}><span className={styles.total}>Total</span><button type="button" className={styles.roundLink} onClick={onRound}>Round Prices</button></span>
+          <span className={`${styles.tlabel} ${styles.totalLabel}`}><span className={styles.total}>{variation ? 'Change to the contract' : 'Total'}</span>{variation ? null : <button type="button" className={styles.roundLink} onClick={onRound}>Round Prices</button>}</span>
           <span className={`${styles.tvalue} ${styles.total}`}>{money2(totals.totalMinor)}</span>
         </div>
         {owner ? (
@@ -168,6 +174,7 @@ function ItemsBreakdown({ shares, onPick, owner }: { shares: CategoryShare[]; on
      10 red). The share stays the default for everyone. */
   const [mode, setMode] = useState<'share' | 'margin'>('share')
   const margin = owner && mode === 'margin'
+  const variation = useVariation()   // (fix-D, D-07)
   const band = (p: number) => (p >= 20 ? 'good' : p >= 10 ? 'fair' : 'low')
   return (
     <section className={styles.bycat} aria-label="By category" data-testid="items-by-category">
@@ -189,7 +196,9 @@ function ItemsBreakdown({ shares, onPick, owner }: { shares: CategoryShare[]; on
                 ? (c.marginPct === null
                     ? <span className={styles.shareVal} data-none="">{c.count} <span className={styles.dot}>·</span> no price</span>
                     : <span className={styles.shareVal} data-neg={c.marginPct < 0 || undefined} data-testid="items-share-margin">{c.marginPct < 0 ? '−' : ''}{sharePct(Math.abs(c.marginPct))}</span>)
-                : c.totalMinor > 0
+                : variation && c.totalMinor !== 0
+                  ? <span className={styles.shareVal} data-neg={c.totalMinor < 0 || undefined} data-testid="items-share-change">{signedMoney(c.totalMinor)}</span>   /* (fix-D, D-07) a variation order's category reads its change */
+                  : c.totalMinor > 0
                   ? <span className={styles.shareVal}>{sharePct(c.pct)}</span>
                   : <span className={styles.shareVal} data-none="">{c.count} <span className={styles.dot}>·</span> no cost</span>}
             </button>

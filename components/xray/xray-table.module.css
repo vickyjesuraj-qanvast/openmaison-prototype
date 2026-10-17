@@ -39,6 +39,8 @@
 .num[data-sign='less'] { color: var(--om-color-tertiary-green-default); }
 .figure { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
 .qty { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* (pending modules S21) their sum that doesn't add up — the figure their own rate makes, in the point's yellow word, never red (not ours to fix) */
+.qty[data-tone='slip'] { color: var(--om-color-on-tertiary-yellow-variant); white-space: normal; text-align: right; overflow-wrap: anywhere; }
 .muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 /* (REG-640 → sweep S3) The row's kebab is parked at the VISIBLE right edge, the listing's way (quotes-table.module.css .actions,
    REG-430): a zero-width sticky item laid over the row's tracks, its float hanging to the left — shown on hover or focus, always

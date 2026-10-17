@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Tag as TagChip, TextArea } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { DateTimeField } from '@/components/om/date-field'
+import { TextField } from '@/components/om/text-field'
 import { Drawer, DrawerAction, DrawerRule } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
 import NextLink from 'next/link'
@@ -17,7 +18,13 @@ import { displayDate, displayDue, formatInputDateTime, parseInputDateTime } from
 import type { Member, Tag } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
 import { TagPicker } from './tag-picker'
+import { OutsideBadge, OutsideSection } from './outside-person'   // (gaps build, package C — M-03)
+import { outsideOf } from '@/lib/leads/outside'
+import { taskLinkOf } from '@/lib/leads/task-links'   // (parity map, TD-019)
 import styles from './task-panel.module.css'
+
+/** (fix-A, A-17) The panel's Milestone select's first row — the table's cell says the same. */
+const NO_MILESTONE = 'In no milestone'
 
 export type TaskPatch = { title?: string; description?: string; dueAt?: Date | null }
 export type TaskPanelMenuAction = 'template' | 'delete'
@@ -31,7 +38,7 @@ export type TaskPanelMenuAction = 'template' | 'delete'
 export function TaskPanel({
   task, tags, onClose, onComments, onAttach, onMenu, onChange, onAssign, onTags, onManageTags, onToggleDone, onDetach,
   open = true, now, onCreateTag, lead, focusName = 0,
-  onOpenInTasks,
+  onOpenInTasks, milestones, outside,
 }: {
   task: TaskRow
   /** The studio's members (the assign popover is the host's; the panel shows task.assignees). */
@@ -59,6 +66,10 @@ export function TaskPanel({
   focusName?: number
   /** (Dane's UAT 5.05) Opened over the lead's Overview: the head's arrow goes to the full Tasks tab with this task open. */
   onOpenInTasks?: () => void
+  /** (fix-A, A-17) A project's task: the milestone it sits in, picked here as in the table's cell (the only way on a phone). */
+  milestones?: { options: { id: string; title: string }[]; onPick: (milestoneId: string | null) => void }
+  /** (gaps build, package C — M-03) Someone outside the studio on it: add, edit, take off, send on WhatsApp — the host's dialog and actions. */
+  outside?: { onAdd: () => void; onEdit: () => void; onSend: () => void; onRemove: () => void }
 }) {
   // Day-granular "today" for the Material picker: the host's `now`, else one lazy read at mount (no Date.now() in render).
   const [mountedAt] = useState(() => new Date())
@@ -148,7 +159,7 @@ export function TaskPanel({
         {lead !== undefined ? (
           <>
             <dt className={styles.key}>Lead</dt>
-            <dd className={styles.value}>{lead ? <NextLink href={withFrom(`/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.name}</NextLink> : 'Studio'}</dd>
+            <dd className={styles.value}>{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.project ? `${lead.name} · ${lead.project.number}` : lead.name}</NextLink> : 'Studio'}</dd>   {/* (fix-A, A-20) */}
           </>
         ) : null}
         <dt className={styles.key}>Creator</dt>
@@ -171,7 +182,17 @@ export function TaskPanel({
       <div className={styles.fields}>
         <div ref={nameBox}><TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} /></div>
         <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} helper={dueShown ? displayDue(dueShown) : undefined} />
+        {milestones ? (
+          /* (fix-A, A-17) the house select: "In no milestone" first, then the project's milestones in their order */
+          <div data-testid="panel-milestone">
+            <TextField label="Milestone" mode="select" value={milestones.options.find((m) => m.id === task.milestoneId)?.title ?? NO_MILESTONE}
+                       options={[NO_MILESTONE, ...milestones.options.map((m) => m.title)]}
+                       onChange={(v) => { const id = milestones.options.find((m) => m.title === v)?.id ?? null; if (id !== (task.milestoneId ?? null)) milestones.onPick(id) }} />
+          </div>
+        ) : null}
         <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />
+        {/* (parity map, TD-019) a task that leads somewhere — the ask to add someone opens Members' Add member, filled */}
+        {(() => { const to = taskLinkOf({ title: task.title, leadId: task.leadId ?? null, description: task.description ?? null }); return to ? <NextLink href={to.href} className={styles.leadLink} data-testid="task-link">{to.label}</NextLink> : null })()}
       </div>
 
       <DrawerRule />
@@ -184,6 +205,8 @@ export function TaskPanel({
             /* (REG-287) om/avatar ships 36 — the mock's "Generic 36" is the component's own size, not a resized 40. */
             <Avatar key={m.id} name={m.name} color={m.color} size={36} />
           ))}
+          {/* (gaps build, package C — M-03) the outside person stands with the members, their section below says who */}
+          {outsideOf(task) ? <OutsideBadge o={outsideOf(task)!} size={36} /> : null}
           {/* touchTarget: the 36px button takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
           <Tooltip label="Assign members">
             <IconButton icon="person_add" label="Assign members" size={36} variant="primary" aria-haspopup="dialog"
@@ -191,6 +214,13 @@ export function TaskPanel({
           </Tooltip>
         </div>
       </section>
+
+      {outside ? (
+        <>
+          <DrawerRule />
+          <OutsideSection o={outsideOf(task)} onAdd={outside.onAdd} onEdit={outside.onEdit} onSend={outside.onSend} onRemove={outside.onRemove} />
+        </>
+      ) : null}
 
       <DrawerRule />
 

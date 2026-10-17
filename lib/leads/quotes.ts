@@ -3,6 +3,7 @@ import { asc, and, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { count } from 'drizzle-orm'
 import { leads, priceBookItems, quoteTemplates, quotes, type Quote, type QuoteTemplate, members } from '@/lib/db/schema'
+import { withYou } from '@/lib/db/session'   // (pending modules S43A) "you" = this request's member
 import { sentToClientDates } from '@/lib/quotes/sent-to-client'
 import type { Member } from '@/lib/db/schema'
 import { fetchBrand, pickerExtras } from '@/lib/templates/queries'
@@ -33,16 +34,16 @@ export type LeadQuotesData = {
 export async function fetchLeadQuotes(leadId: string): Promise<LeadQuotesData> {
   const [rows, templates, book, team, brand, extras, leadRow] = await Promise.all([
     db.select().from(quotes)
-      .where(and(eq(quotes.leadId, leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt)))
+      .where(and(eq(quotes.leadId, leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt), eq(quotes.kind, 'quote')))   // (Projects round 5) variation orders live on the project's Money tab
       .orderBy(asc(quotes.createdAt)),
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.lastUsedAt), asc(quoteTemplates.createdAt)),
     db.select({ n: count() }).from(priceBookItems).where(and(isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live'))),   // (REG-653, price book parity Q-11) the live book — not the trash, not proposals
-    db.select().from(members),
+    db.select().from(members).then(withYou),
     fetchBrand(),
     pickerExtras(),
     db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, leadId)),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const sent = await sentToClientDates(rows)
-  return { leadStage: leadRow[0]?.stage ?? 'New', quotes: rows.map((q) => ({ ...q, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
+  return { leadStage: leadRow[0]?.stage ?? 'New', quotes: rows.map((q) => ({ ...q, preparedJson: null /* (pending modules S04) the kept preparer (a signature picture) stays out of the list */, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
 }

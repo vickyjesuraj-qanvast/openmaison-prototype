@@ -12,7 +12,7 @@ import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { displayDate, fileSize } from '@/lib/format'
-import { fileTypeLabel, isFolder, type FileRow } from '@/lib/leads/file-model'
+import { fileGlyph, fileTypeLabel, isFolder, type FileRow } from '@/lib/leads/file-model'
 import styles from './deleted-files-sheet.module.css'
 
 /**
@@ -155,7 +155,7 @@ export function DeletedFilesSheet({
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={f.thumb} alt="" className={styles.thumbImg} width={36} height={36} />
                           ) : (
-                            <Icon name={isFolder(f) ? 'folder' : 'picture_as_pdf'} size={20} weight={300} />
+                            <Icon name={fileGlyph(f)} size={20} weight={300} />   /* (gaps build E, item 1) every kind its own glyph */
                           )}
                         </span>
                         <span className={styles.name}>{f.name}</span>

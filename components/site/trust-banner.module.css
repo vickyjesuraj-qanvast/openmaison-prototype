@@ -1,0 +1,27 @@
+/* (pending modules S35 — 1.0's trust-banner.tsx) The lineage band: the heading with Qanvast's mark, the three figures ruled apart, the logo wall. */
+.band { position: relative; overflow: hidden; }
+.noWrap { white-space: nowrap; }
+@media (max-width: 767px) { .noWrap { white-space: normal; } }
+.qanvast { display: flex; justify-content: center; margin-top: var(--om-spacing-5); }
+.qanvastLogo { height: 1.25em; width: auto; }
+.lede { margin-top: var(--om-spacing-6); }
+.figures { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; row-gap: var(--om-spacing-8); margin-top: 80px; }
+@media (max-width: 767px) { .figures { margin-top: 56px; } }
+.figure { display: flex; flex-direction: column; align-items: center; min-width: 136px; padding: 0 48px; text-align: center; }
+.figure + .figure { border-left: var(--om-border-1) solid var(--site-hairline); }
+@media (max-width: 767px) { .figure { padding: 0 var(--om-spacing-6); } .figure + .figure { border-left: 0; } }
+.value { margin-bottom: var(--om-spacing-3); font: var(--site-type-figure); color: var(--site-ink); }
+.wall { margin-top: 96px; }
+@media (max-width: 767px) { .wall { margin-top: 64px; } }
+.marquee { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); }
+.track { display: flex; width: max-content; animation: siteLogos 40s linear infinite; }
+.marquee:hover .track, .marquee:focus-within .track { animation-play-state: paused; }
+.group { display: flex; flex-shrink: 0; align-items: center; gap: 56px; padding-right: 56px; }
+.logo { width: auto; flex-shrink: 0; object-fit: contain; }
+@keyframes siteLogos { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee { -webkit-mask-image: none; mask-image: none; }
+  .track { animation: none; width: auto; }
+  .group { flex-wrap: wrap; justify-content: center; gap: 28px 48px; padding: 0; }
+  .group + .group { display: none; }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { ChoiceChips, Divider, LinkButton, NotesArea, SectionRow } from '@/components/leads/move-stage/fields'
+import { AutoFillNote, ChoiceChips, Divider, LinkButton, NotesArea, SectionRow } from '@/components/leads/move-stage/fields'
 import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
@@ -27,8 +27,10 @@ import styles from './contact-editor.module.css'
  * and the editor footer, frame 165, both moved there — the host renders them beside the formatting).
  */
 export function ContactEditor({
-  draft, onChange, onAttach, errors, editing, autoFocus = true, today, meeting = false,
+  draft, onChange, onAttach, errors, editing, autoFocus = true, today, meeting = false, fillNote = null,
 }: {
+  /** (S43B · F1-01) what Auto Fill read for this log — said at the top while it is being edited */
+  fillNote?: string | null
   /** (UX audit 2026-09-30, T3) A Met-stage meeting log, view only: Where · Date & Time · Remarks (no outcome, no schedule). */
   meeting?: boolean
   draft: NoteDraft
@@ -50,6 +52,7 @@ export function ContactEditor({
       <div className={styles.fields}>
         {editing ? (
           <>
+            {fillNote ? <AutoFillNote text={fillNote} /> : null}
             <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={draft.channel}
                          onChange={(v) => onChange({ channel: v })} error={errors.channel} />
             <div className={styles.fieldPair}>

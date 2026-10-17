@@ -111,14 +111,16 @@ const viewAs = async (page, who) => {
     const t1 = await snack(p, /Link copied|Couldn’t copy/)
     const c1 = await p.evaluate(() => window.__copies.slice(-1)[0] || '')
     ok('b-copy the lead’s Copy Link copies through the fallback', /Link copied/.test(t1) && c1.endsWith(`/leads/${GAVIN}`), `${t1.trim()} · copied “${c1}”`)
-    /* Invite to Portal › Copy (useCopy): the button reads Copied */
+    /* Invite to Portal › Copy. (REG-966, Projects round 4a) Invite to Portal now opens the Client access panel in place of the bare Invite
+       dialog; its "Their page" Copy goes through copyText (the same fallback) and says "Address copied". */
     await p.getByRole('button', { name: 'More options' }).first().click()
     await p.getByRole('menuitem', { name: 'Invite to Portal' }).click()
-    const dlg = p.getByRole('dialog').filter({ hasText: 'Invite to Portal' }).last()
+    const dlg = p.getByRole('dialog', { name: 'Invite to Portal' }).last()   // (one-home N-15, a deliberate change of this rule) the panel's title is "Invite to Portal" now
+    await dlg.getByTestId('access-address').waitFor()
     await dlg.getByRole('button', { name: 'Copy', exact: true }).click()
-    await p.waitForTimeout(300)
+    const t2 = await snack(p, /Address copied|Couldn’t copy/)
     const c2 = await p.evaluate(() => window.__copies.slice(-1)[0] || '')
-    ok('b-copy Invite to Portal’s Copy copies and reads “Copied”', (await dlg.getByRole('button', { name: 'Copied' }).count()) === 1 && /^https?:\/\//.test(c2), c2)
+    ok('b-copy Invite to Portal’s Copy copies the portal’s address through the fallback', /Address copied/.test(t2) && /^https?:\/\/[^/]+\/my\/[^/]+$/.test(c2), `${t2.trim()} · copied “${c2}”`)
     await shot(p, 'b-copy-invite-copied')
     await p.keyboard.press('Escape'); await p.waitForTimeout(400)
     /* the quote editor's Copy confirmation link — `navigator.clipboard?.…` used to do nothing here */
@@ -148,8 +150,12 @@ const viewAs = async (page, who) => {
 
   /* ── g-snackbar: 4 s plain · 8 s with an action or wrapped words · held while hovered, pressed or focused · the action on one line ── */
   await step('g-snackbar', async () => {
-    await page.goto(`${BASE}/leads`); await ready(page); await page.mouse.move(1430, 100)
-    const soon = page.getByRole('button', { name: /^Dashboard · coming soon/ }).first()
+    /* (pending modules S22, a deliberate change of this rule) the rail's Dashboard is live — the plain "Coming soon" now comes from Qanvast Ops'
+       Lead credits tab (Qanvast's own product, a signpost)
+       (pending modules S41b-5, a deliberate change of this rule) Lead credits is live now (1.0's Qanvast line's Credits) — the plain
+       "Coming soon" comes from the same page's Request Leads, still a signpost (REG-193) */
+    await page.goto(`${BASE}/qanvast-ops`); await ready(page); await page.mouse.move(1430, 100)
+    const soon = page.getByRole('button', { name: 'Request Leads' }).first()
     await soon.click(); await page.mouse.move(1430, 100)
     const plain = await lifetime(page, /Coming soon in OpenMaison 2\.0/)
     ok('g-snackbar a plain one-line message stays 4 s', plain > 3700 && plain < 4800, `${plain} ms`)
@@ -340,7 +346,10 @@ const viewAs = async (page, who) => {
 
     /* g-snackbar on a phone: a finger held on it holds it */
     const cdp = await phone.newCDPSession(p)
-    await p.locator('nav[aria-label="Primary"] button[aria-label^="Dashboard"]').tap()
+    // (pending modules S22, a deliberate change of this rule) the dock's Dashboard is live — Qanvast Ops' Lead credits tab says Coming soon
+    // (pending modules S41b-5, a deliberate change of this rule) Lead credits is live — Request Leads says Coming soon
+    await p.goto(`${BASE}/qanvast-ops`); await p.waitForTimeout(1500)
+    await p.getByRole('button', { name: 'Request Leads' }).first().tap()
     let pressHeld = false
     const touched = await lifetime(p, /Coming soon in OpenMaison 2\.0/, { max: 20000, during: async () => {
       await p.waitForTimeout(1000)

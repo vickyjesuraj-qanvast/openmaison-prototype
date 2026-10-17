@@ -12,6 +12,7 @@ import { relativeTime } from '@/lib/format'
 import { CommentComposer } from './comment-composer'
 import type { Member } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
+import { avatarSrc } from '@/lib/company/member-photo'
 import styles from './comments-panel.module.css'
 
 /**
@@ -123,11 +124,12 @@ export function CommentsPanel({
  */
 export function CommentAvatar({ member }: { member: Member | null }) {
   const name = member?.name ?? ''
-  if (member?.color === 'photo') {
+  const src = avatarSrc(member?.color)   // (pending modules S01) the member's own photo, or the demo's portrait
+  if (src) {
     return (
       <span className={styles.avatar} aria-hidden title={name}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.avatarPhoto} src="/figma-assets/avatar-user.png" alt="" />
+        <img className={styles.avatarPhoto} src={src} alt="" />
       </span>
     )
   }

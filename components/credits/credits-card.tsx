@@ -12,12 +12,13 @@ import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import { useSnackbar } from '@/components/om/snackbar'
 import { askForCredits, keepPlan } from '@/app/credits/actions'
 import { aboutRenders, dayMonth, fmtCredits, levelOf, refreshLine, runOutAt, toneOf, type CreditSummary } from '@/lib/credits/model'
-import { sgd, TOPUP_CREDITS, TOPUP_PRICE } from '@/lib/credits/plans'
+import { sgd, TOPUP_CREDITS, TOPUP_MAX, TOPUP_PRICE, topupPrice } from '@/lib/credits/plans'
 import { openManageBilling, openPlans, openTopUp, planHref, refreshCredits } from './credits-client'
 import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './credits-card.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
+import { leaveThen } from '@/components/company/leave-guard'   // (pending modules S16) unsaved Company / Settings edits ask before the move (REG-791)
 
 /**
  * (REG-701, AI credits §5.2 · Q-07 · Q-20) The credits card: the whole story behind the balance, opened by a press on the rail's row or
@@ -65,7 +66,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
   const [asked, setAsked] = useState(false)
   const tone = toneOf(s), level = levelOf(s)
   const trusted = s.viewer.trusted && s.balance != null
-  const go = (href: string) => { onClose(); router.push(href) }
+  const go = (href: string) => { onClose(); leaveThen(() => router.push(href)) }
   const ask = (kind: 'pool' | 'monthly') => start(async () => {
     const r = await askForCredits({ kind, needed: 0 })
     if ('error' in r) { snackbar({ message: r.error }); return }
@@ -124,7 +125,9 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
         {s.viewer.canBuy ? (
           <>
             <Button onPress={() => { onClose(); openTopUp() }} className={styles.full}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button>
-            <p className={styles.tax}>Top-ups never expire · {gstLine}</p>
+            <p className={styles.tax}>{sgd(topupPrice(100))} per 100 · any amount to {fmtCredits(TOPUP_MAX)} · top-ups never expire · {gstLine}</p>
+            {/* (pending modules S19) the studio's auto top-up, said where the balance is — never a surprise */}
+            {s.autoTopUp ? <p className={styles.tax} data-testid="credits-card-auto">Auto top-up is on — under {fmtCredits(s.autoTopUp.below)} it adds {fmtCredits(s.autoTopUp.credits)}</p> : null}
           </>
         ) : (
           <>

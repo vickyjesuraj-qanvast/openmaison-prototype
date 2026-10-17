@@ -1,0 +1,52 @@
+/*
+ * (pending modules S27 — api:designer-portfolio-profiles) A member's Public profile — Company › Profile's cards (profile-view.module.css,
+ * composed in the component): their card's fields two across, their work as a grid of tiles (the gallery's picture well and a ⋮), the preview
+ * of the card as clients read it beside the form at a desk and under it on a phone. The work editor's pictures as a row of thumbs.
+ */
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); min-width: 0; }
+.wide { grid-column: 1 / -1; min-width: 0; }
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.muted { color: var(--om-color-on-surface-secondary); }
+.link { composes: link from '../om/text-link.module.css'; }
+.switchRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); cursor: pointer; }
+.switchText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.switchLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+
+.works { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--om-spacing-4); min-width: 0; }
+.work { position: relative; display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.workPic { aspect-ratio: 3 / 2; width: 100%; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-bg); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.workPic > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.workTop { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-2); min-width: 0; }
+.workText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.workName { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.workFacts { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.preview { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.where { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+
+/* the work editor */
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.pics { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); min-width: 0; }
+.pic { position: relative; width: 120px; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.picBox { width: 120px; height: 80px; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+.picBox > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.picTools { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-1); }
+.cover { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.pick { position: relative; width: 120px; height: 80px; padding: 0; border: var(--om-border-2) solid transparent; border-radius: var(--om-radius-1); overflow: hidden; cursor: pointer; background: var(--om-color-surface-bg); }
+.pick[aria-pressed='true'] { border-color: var(--om-color-primary-default); }
+.pick > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pickMark { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); display: inline-flex; color: var(--om-color-on-primary-default); background: var(--om-color-primary-default); border-radius: var(--om-radius-full); }
+.pick:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.fileInput { display: none; }
+.problem { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.adds { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+@media (max-width: 767px) {
+  .fields { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* the ghost's two lines box (the DS TextArea at its rest height) and its count under it */
+.ghostArea { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.ghostCount { font: var(--om-type-body-s); }
+
+/* (REG-708) a ghost's block of lines in one of the page's own paragraphs — the lines stacked with no gap, as the paragraph wraps */
+.ghostLines { display: flex; flex-direction: column; }

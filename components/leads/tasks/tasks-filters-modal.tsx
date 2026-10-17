@@ -23,7 +23,7 @@ import styles from './tasks-filters-modal.module.css'
 
 /* Lead Details › Tasks › Filters (902:28963, panes 184–189) — the listing FiltersModal shell with the tasks' six groups. */
 
-type Group = 'sort' | 'assignees' | 'creators' | 'status' | 'tags' | 'date' | 'leads' | 'stages'
+type Group = 'sort' | 'assignees' | 'creators' | 'status' | 'tags' | 'date' | 'leads' | 'stages' | 'milestones' | 'projects'
 const TABS: { key: Group; label: string }[] = [
   { key: 'sort', label: 'Sort' },
   { key: 'assignees', label: 'Members' },   /* REG-290 */
@@ -43,8 +43,17 @@ const STATUSES: { key: TaskStatus; label: string }[] = [
 ]
 
 export function TasksFiltersModal({
-  open, team, tags, value, onApply, onClose, now, leads,
+  open, team, tags, value, onApply, onClose, now, leads, milestones, projects, outside = [], headSort = null, onClearHead,
 }: {
+  /** (pending modules S05) a column head's own order, while one is on — the Contracts / Quotes Filters' words; choosing an order here takes it off */
+  headSort?: string | null
+  onClearHead?: () => void
+  /** (gaps build, package C — M-03) The outside people on the tasks — the Members pane lists them after the studio's members. */
+  outside?: { key: string; name: string; line: string }[]
+  /** (fix-A, A-20) The rail's Tasks page hands the projects its tasks belong to: one more pane, Project (number · name). */
+  projects?: { id: string; number: string; name: string }[]
+  /** (Projects round 2) A project's lead hands its milestones: one more pane, Milestone. */
+  milestones?: { id: string; title: string }[]
   /** The rail's Tasks page (REG-466) hands the live leads: two more panes, Lead and Stage. */
   leads?: TaskLead[]
   open: boolean
@@ -58,7 +67,7 @@ export function TasksFiltersModal({
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const [tab, setTab] = useState<Group>('sort')
-  const tabs = leads ? [...TABS, { key: 'leads' as Group, label: 'Lead' }, { key: 'stages' as Group, label: 'Stage' }] : TABS
+  const tabs = [...(leads ? [...TABS, { key: 'leads' as Group, label: 'Lead' }, { key: 'stages' as Group, label: 'Stage' }] : TABS), ...(projects?.length ? [{ key: 'projects' as Group, label: 'Project' }] : []), ...(milestones?.length ? [{ key: 'milestones' as Group, label: 'Milestone' }] : [])]
   const [draft, setDraft] = useState<TaskFilters>(value)
   /* (Dane UAT 11.03) The Lead pane's search — the listing's Property types / Sources panes (components/leads/filters-modal.tsx): the house
      filled box at the pane's top, a "No leads match" line; it empties on a new pane and on every opening. */
@@ -83,7 +92,7 @@ export function TasksFiltersModal({
     if (open) { setDraft(value); setTab('sort'); setQ('') }
   }
 
-  const dots = activeTaskGroups(draft)
+  const dots = { ...activeTaskGroups(draft), sort: activeTaskGroups(draft).sort || !!headSort }
   const toggle = (key: 'assignees' | 'creators' | 'tags' | 'leads', v: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
@@ -110,6 +119,24 @@ export function TasksFiltersModal({
           </span>
         </div>
       ))}
+      {/* (gaps build, package C — M-03) the subcontractors and suppliers on the tasks, after the members — the badge, their name and kind */}
+      {key === 'assignees' && outside.length ? (
+        <>
+          <span className={styles.sectionTitle}>Outside the studio</span>
+          {outside.map((o) => (
+            <div key={o.key} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('assignees', o.key)} data-testid="filter-outside"
+                 onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('assignees', o.key) } }}>
+              <span className={styles.rowText}>
+                <span className={styles.rowName}>{o.name}</span>
+                <span className={styles.rowRole}>{o.line.split(' · ').slice(1).join(' · ')}</span>
+              </span>
+              <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                <Checkbox isSelected={draft.assignees.includes(o.key)} onChange={() => toggle('assignees', o.key)} aria-label={o.name} />
+              </span>
+            </div>
+          ))}
+        </>
+      ) : null}
     </div>
   )
 
@@ -139,7 +166,8 @@ export function TasksFiltersModal({
                 {tab === 'sort' ? (
                   <>
                     <span className={styles.sectionTitle}>Sort by</span>
-                    <RadioGroup aria-label="Sort by" value={draft.sort} onChange={(v) => setDraft((d) => ({ ...d, sort: v as TaskSort }))}>
+                    {headSort ? <span className={styles.rowRole} data-testid="filters-head-sort">Sorted by the {headSort} column. Choose an order below to sort by it instead.</span> : null}
+                    <RadioGroup aria-label="Sort by" value={headSort ? '' : draft.sort} onChange={(v) => { onClearHead?.(); setDraft((d) => ({ ...d, sort: v as TaskSort })) }}>
                       {SORTS.map((s) => (
                         <div key={s.key} className={styles.sortRow}><Radio value={s.key}>{s.label}</Radio></div>
                       ))}
@@ -181,6 +209,18 @@ export function TasksFiltersModal({
                     <span className={styles.sectionTitle}>Stage</span>
                     {/* (REG-729) the house chip group (REG-614), several at once */}
                     <Chips multiple label="Stage" options={STAGES} value={draft.stages} onChange={(v) => setDraft((d) => ({ ...d, stages: v }))} />
+                  </>
+                ) : tab === 'projects' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Project</span>
+                    {/* (fix-A, A-20) the house chip group, several at once — a direct project's tasks have no lead to filter by */}
+                    <Chips multiple label="Project" options={(projects ?? []).map((p) => ({ value: p.id, label: `${p.number} · ${p.name}` }))} value={draft.projects ?? []} onChange={(v) => setDraft((d) => ({ ...d, projects: v }))} />
+                  </>
+                ) : tab === 'milestones' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Milestone</span>
+                    {/* (Projects round 2) the house chip group, several at once — and the tasks that sit in none */}
+                    <Chips multiple label="Milestone" options={[...(milestones ?? []).map((m) => ({ value: m.id, label: m.title })), { value: 'none', label: 'In no milestone' }]} value={draft.milestones ?? []} onChange={(v) => setDraft((d) => ({ ...d, milestones: v }))} />
                   </>
                 ) : tab === 'status' ? (
                   <>

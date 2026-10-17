@@ -1,0 +1,4 @@
+/* (pending modules S41b-2) The app-wide "page not found" inside the shell: the record-not-found page's page and body (REG-1166's width — the
+   root fills the shell's row), composed, as a failed page's are (route-error.module.css). */
+.page { composes: page from './record-not-found.module.css'; }
+.body { composes: body from './record-not-found.module.css'; }

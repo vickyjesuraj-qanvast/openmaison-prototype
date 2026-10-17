@@ -1,0 +1,37 @@
+/* (Projects round 9, Q-41) The client's bell — the studio's bell's rows, dot, empty state and surface (components/shell/notifications-panel.module.css),
+   composed, never copied; the button is the phone bar's bell (mobile-nav.module.css .barIcon) with the rail's count (app-rail.module.css .badge),
+   in the portal's colour. At a desk the panel hangs under the bell, right-aligned to it; on a phone the house Drawer's bottom sheet holds it. */
+.bellWrap { display: inline-flex; flex: none; }
+.bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--om-radius-1); background: transparent; color: var(--om-color-on-surface-secondary); cursor: pointer; transition: background-color var(--motion-hover), color var(--motion-hover); }
+.bell[aria-expanded='true'] { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); }
+@media (hover: hover) { .bell:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
+.bell:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.badge { composes: badge from '../shell/app-rail.module.css'; top: 6px; right: 6px; }
+
+.panel { composes: panel from '../shell/notifications-panel.module.css'; }
+.scroll { composes: scroll from '../shell/notifications-panel.module.css'; }
+.body { composes: body from '../shell/notifications-panel.module.css'; }
+.list { composes: list from '../shell/notifications-panel.module.css'; }
+.row { composes: row from '../shell/notifications-panel.module.css'; }
+.rowBtn { composes: rowBtn from '../shell/notifications-panel.module.css'; }
+.glyph { composes: glyph from '../shell/notifications-panel.module.css'; }
+.text { composes: text from '../shell/notifications-panel.module.css'; }
+.title { composes: title from '../shell/notifications-panel.module.css'; }
+.sub { composes: sub from '../shell/notifications-panel.module.css'; }
+.meta { composes: meta from '../shell/notifications-panel.module.css'; }
+.dot { composes: dot from '../shell/notifications-panel.module.css'; }
+.empty { composes: empty from '../shell/notifications-panel.module.css'; }
+.emptyState { composes: emptyState from '../shell/notifications-panel.module.css'; }
+.emptyGlyph { composes: emptyGlyph from '../shell/notifications-panel.module.css'; }
+.emptyTitle { composes: emptyTitle from '../shell/notifications-panel.module.css'; }
+.emptyHelp { composes: emptyHelp from '../shell/notifications-panel.module.css'; }
+.retry { composes: retry from '../shell/notifications-panel.module.css'; }
+
+/* the rows' glyphs in the studio's colour — what to do (a stage, a choice) primary; money due yellow, late red; good news green */
+.glyph[data-kind='stage_to_confirm'], .glyph[data-kind='choice_to_make'], .glyph[data-kind='schedule_shared'], .glyph[data-kind='update_published'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.glyph[data-kind='invoice_sent'], .glyph[data-kind='invoice_due'] { background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-tertiary-yellow-default); }
+.glyph[data-kind='invoice_overdue'], .glyph[data-kind='payment_not_received'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-tertiary-red-default); }
+.glyph[data-kind='payment_confirmed'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
+
+/* the panel's own place: under the bell, not beside a rail */
+.panel { position: fixed; width: 400px; max-width: calc(100vw - 32px); }

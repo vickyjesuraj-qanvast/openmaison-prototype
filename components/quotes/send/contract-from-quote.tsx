@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { createContractDoc } from '@/app/contracts/actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into the caller's own failure line
 import { fetchContractTemplateOptionsAction } from '@/app/contracts/read-actions'
 import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -24,7 +25,7 @@ export function useContractFromQuote(from: string) {
     if (!q || busy) return
     setBusy(true)
     void run('create the contract', async () => {
-      const id = await createContractDoc({ leadId: q.leadId, fromQuoteId: q.id, ...(templateId ? { templateId } : {}) })
+      const id = await orThrow(createContractDoc({ leadId: q.leadId, fromQuoteId: q.id, ...(templateId ? { templateId } : {}) }))
       router.push(withFrom(`/contracts/${id}`, from))
     }, `Contract created from ${q.number}`).then((ok) => { if (!ok) setBusy(false) })
   }

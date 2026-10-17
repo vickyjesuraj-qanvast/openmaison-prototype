@@ -35,7 +35,17 @@ export type DocEditorHandle = {
   getHtml: () => string
   /** The Outline pane: scroll the n-th heading into view. */
   scrollToHeading: (index: number) => void
+  /** (pending modules S29) The paper's top-level blocks (each paragraph, heading, list) and where the member last was in it — the blocks a
+      selection touches, or the block holding the caret — for the writing help's "the clause you're in". */
+  partAt: () => { blocks: string[]; selection: [number, number] | null; caret: number | null }
+  /** (pending modules S29) The blocks from…to replaced by new HTML (a proposal taken for one clause), saved like any edit. */
+  replaceBlocks: (from: number, to: number, html: string) => void
+  /** (pending modules S29) The whole paper replaced (a proposal for the whole contract, or its Undo), saved like any edit. */
+  replaceAll: (html: string) => void
 }
+
+/** The paper's top-level pieces: every element, and text left loose at the top level (whitespace between blocks isn't one). */
+const topNodes = (el: HTMLElement): ChildNode[] => Array.from(el.childNodes).filter((n) => n.nodeType === 1 || (n.nodeType === 3 && (n.textContent ?? '').trim() !== ''))
 
 export const DocEditor = forwardRef<DocEditorHandle, {
   value: string
@@ -152,6 +162,34 @@ export const DocEditor = forwardRef<DocEditorHandle, {
     },
     focus: () => body.current?.focus(),
     getHtml: () => body.current?.innerHTML ?? '',
+    partAt: () => {
+      const el = body.current
+      if (!el) return { blocks: [], selection: null, caret: null }
+      const nodes = topNodes(el)
+      const blocks = nodes.map((n) => (n.nodeType === 1 ? (n as Element).outerHTML : (n.textContent ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')))
+      const r = lastRange.current
+      if (!r || !el.contains(r.startContainer) || !el.contains(r.endContainer)) return { blocks, selection: null, caret: null }
+      const topOf = (node: Node, offset: number) => {
+        let n: Node | null = node === el ? el.childNodes[Math.min(offset, el.childNodes.length - 1)] ?? null : node
+        while (n && n.parentNode !== el) n = n.parentNode
+        return n ? nodes.indexOf(n as ChildNode) : -1
+      }
+      const a = topOf(r.startContainer, r.startOffset), b = topOf(r.endContainer, r.endOffset)
+      if (a < 0) return { blocks, selection: null, caret: null }
+      return { blocks, selection: r.collapsed || b < 0 ? null : [Math.min(a, b), Math.max(a, b)], caret: a }
+    },
+    replaceBlocks: (from, to, html) => {
+      const el = body.current; if (!el || readOnly) return
+      const nodes = topNodes(el)
+      const first = nodes[from]
+      if (!first) { el.insertAdjacentHTML('beforeend', html); emit(); return }
+      const tpl = document.createElement('template')
+      tpl.innerHTML = html
+      el.insertBefore(tpl.content, first)
+      for (let i = from; i <= to && i < nodes.length; i++) nodes[i]!.remove()
+      emit()
+    },
+    replaceAll: (html) => { const el = body.current; if (!el || readOnly) return; el.innerHTML = html; emit() },
     scrollToHeading: (index) => {
       const el = body.current; if (!el) return
       const h = el.querySelectorAll('h1, h2, h3')[index] as HTMLElement | undefined

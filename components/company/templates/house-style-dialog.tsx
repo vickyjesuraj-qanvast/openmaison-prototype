@@ -14,8 +14,7 @@ import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import styles from './house-style-dialog.module.css'
 
-/** The one panel both states share — the xl 1200, 960 tall (viewport-capped), so Preview and Back never move an edge. */
-const HEIGHT = 960
+/** The one panel both states share — the xl 1200 at the tall xl height (`height="xl"`, 928 viewport-capped — pending modules S17: was 960), so Preview and Back never move an edge. */
 
 /**
  * New template › Use a ready-made design (REG-487 → REG-510 → REG-512): the four house styles as radio cards drawn with the
@@ -41,7 +40,7 @@ export function HouseStyleDialog({ open, brand, sample, onClose, onCreate }: { o
   const preview = (k: PresetKey) => { pick(k); setPreviewKey(k) }
   const count = previewed ? pages[previewed.key] : undefined
   return (
-    <Dialog open={open} onClose={onClose} size="modal" width={1200} height={HEIGHT}
+    <Dialog open={open} onClose={onClose} size="modal" width={1200} height="xl"
             title={previewed ? `${previewed.name} design` : 'Choose a ready-made design'}
             eyebrow={previewed ? 'Choose a ready-made design /' : undefined}
             leading={previewed ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to designs" size={24} variant="bare" iconSize={24} onClick={() => setPreviewKey(null)} /></Tooltip> : undefined}

@@ -1,0 +1,17 @@
+/*
+ * (simplify S-03, the owner's "build everything" 2026-10-09) A grouped tab's view switch — it stands where the body's title stood ("All Updates",
+ * "Messages with Benjamin Han"), so no row is added: the house Chips (single) on the house ChipRail, filling the title's place in the tab toolbar
+ * (om/tab-toolbar.module.css `.title`: flex 1, min-width 0). The rail hugs its chips and scrolls when the row is short (a phone); a view's grey
+ * note (Compliance's "n to do this phase") follows the chips.
+ */
+.views { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }
+.rail.rail { flex: 0 1 auto; }   /* doubled: wins over ChipRail's own `.wrap { flex: 1 }` whichever sheet loads last */
+.note { flex: 0 1 auto; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 767px) {
+  .note { display: none; }   /* a phone's row keeps the chips and the tools; the view says it in its own lead line */
+}
+/* (REG-375 · REG-384) As a toolbar's title does, the switch steps aside while the folded search is open at ≤1024 — the open box takes the row;
+   closing it brings the chips back. (The bar is each body's own class; the switch is its direct child.) */
+@media (max-width: 1024px) {
+  :global(*):has([data-om-search-open]) > .views { display: none; }
+}

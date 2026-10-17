@@ -11,6 +11,7 @@ import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, WATERMARK_OPACIT
 import type { Selection } from '@/components/templates/render/canvas'
 import { flowBlocks, patchBlock, reorderFlow } from './editor-state'
 import { Group, Num, Seg, Sub, Txt, Sel } from './inspector-controls'
+import { plainOf } from '@/lib/writing/html'
 import styles from './structure-pane.module.css'
 
 type Props = {
@@ -27,7 +28,7 @@ const sub = (b: Block): string => {
     case 'payments': return `${b.layout.charAt(0).toUpperCase()}${b.layout.slice(1)} layout`
     case 'bank': return b.qr ? 'With the PayNow QR' : 'Bank and account'
     case 'signature': return `${b.columns.length} columns`
-    case 'text': return b.html.replace(/<[^>]+>/g, '').slice(0, 40)
+    case 'text': return plainOf(b.html).slice(0, 40)   // (S44G — NB-08) a formatted block's words as read: paragraphs and list lines apart, & as &
     case 'title': return b.title || b.subject || ''
     case 'spacer': return `${b.height} mm`
     default: return ''

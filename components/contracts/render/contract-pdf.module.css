@@ -1,0 +1,29 @@
+/* (pending modules S03) A contract's kept PDF in the paper's place — one card for the editor, Preview, the signing pages and a PDF template:
+   the file's row (glyph · name · its actions), then the PDF itself in the browser's own viewer at the paper's 816 width; on a phone the
+   first page's picture and Open the PDF (a phone's browser shows an embedded PDF's first page only). No file kept: the glyph and the name. */
+.card { width: 816px; max-width: 100%; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); box-shadow: var(--om-elevation-level-1); overflow: hidden; }
+.head { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.glyph { display: inline-flex; color: var(--om-color-tertiary-red-default); flex-shrink: 0; }
+.name { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.open { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); }   /* the house text link */
+.frame { display: block; width: 100%; height: 1056px; max-height: calc(100dvh - 160px); min-height: 480px; border: 0; background: var(--om-color-surface-bg); }
+.picture { display: none; }
+.fallback { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: var(--om-spacing-3); height: 100%; padding: var(--om-spacing-6) var(--om-spacing-4); text-decoration: none; }
+.fallback img { width: 100%; max-width: 560px; height: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+.pictureCta { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-8) var(--om-spacing-6); text-align: center; }
+.emptyGlyph { width: 64px; height: 64px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); display: inline-flex; align-items: center; justify-content: center; }
+.emptyName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.help { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.empty .help { padding: 0; border-top: 0; max-width: 480px; }
+@media (max-width: 767px) {
+  /* the name keeps its own line; the row's presses wrap under it */
+  .head { flex-wrap: wrap; }
+  .name { flex: 1 1 calc(100% - 40px); white-space: normal; overflow-wrap: anywhere; }
+  .actions { flex: 1 1 100%; flex-wrap: wrap; }
+  .frame { display: none; }
+  .picture { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-4); background: var(--om-color-surface-bg); text-decoration: none; }
+  .picture img { width: 100%; max-width: 360px; height: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+}
+@media print { .frame, .picture, .actions { display: none; } .card { box-shadow: none; } }

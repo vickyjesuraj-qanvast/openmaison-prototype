@@ -1,0 +1,95 @@
+/*
+ * (pending modules S27 — Hangouts) Qanvast Ops › Hangouts and a Hangout's page — on the house pieces: the page body and its headers
+ * (app/leads/leads.module.css · PageHeader · PageHeaderL2), the tab toolbar's row (components/om/tab-toolbar.module.css), the lead Overview's
+ * Card (components/leads/detail/card.tsx), the house chips, the card table (components/om/card-table.module.css), the number tiles. What is
+ * its own: an event's facts as a row of label-over-value pairs, the plan's rows (a person and their shifts as chips) and the lines under them.
+ * Every value is a token.
+ */
+
+/* the page under the header: 24 in, 24 between its parts (the Marketplace's page, components/marketplace/marketplace.module.css .content) */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+.bar { composes: bar from '../om/tab-toolbar.module.css'; }
+.views { flex: 1; min-width: 0; display: flex; align-items: center; }
+.rail { min-width: 0; max-width: 100%; }
+.tools { composes: actions from '../om/tab-toolbar.module.css'; }
+.menuWrap { composes: menuWrap from '../om/tab-toolbar.module.css'; }
+.chev { composes: chev from '../om/tab-toolbar.module.css'; }
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.source { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* ── an event's card: its words, its facts, what waits, its one press ── */
+.cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: 0 var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); min-width: 0; }
+.name { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.nameLink { color: inherit; text-decoration: none; border-radius: var(--om-radius-1); }
+.nameLink:hover { color: var(--om-color-primary-default); text-decoration: underline; text-underline-offset: 2px; }
+.nameLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.nameRow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); min-width: 0; }
+.about { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.press { display: inline-flex; flex-shrink: 0; gap: var(--om-spacing-3); align-items: center; }
+
+/* the facts: when · hours · where · what it costs — a label over its value, four across at a desk, two on a phone */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-3) var(--om-spacing-4); margin: 0; min-width: 0; }
+.facts[data-three] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.factLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.factValue { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.factLink { composes: link from '../om/text-link.module.css'; display: inline-flex; align-items: flex-start; gap: var(--om-spacing-1); }
+.factGlyph { display: inline-flex; flex-shrink: 0; padding-top: 1px; }
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.muted { color: var(--om-color-on-surface-secondary); }
+
+/* ── the event's page ── */
+.stack { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; max-width: 1080px; }
+.tabs { position: sticky; top: calc(var(--om-spacing-2) + 72px); z-index: 19; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.headLine { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; min-width: 0; }
+.headText { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.headTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.help { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+
+/* the plan's rows: a person, then the shifts they are on as chips */
+.people { display: flex; flex-direction: column; min-width: 0; }
+.person { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: var(--om-spacing-3) var(--om-spacing-4); align-items: center; padding: var(--om-spacing-3) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); min-width: 0; }
+.person:first-child { border-top: 0; }
+.who { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.whoText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.whoName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whoLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.whoLink { composes: link from '../om/text-link.module.css'; font: var(--om-type-body-s); }
+.shiftChips { min-width: 0; }
+
+/* shares and weights: a name, its percent */
+.shares { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--om-spacing-3) var(--om-spacing-4); min-width: 0; }
+.total { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.total[data-off] { color: var(--om-color-on-surface-default); }
+.dims { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.dim { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.dimLabel { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.foot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.cardRule { height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }
+
+/* the results: the number tiles, then the designers' rows (the card table) */
+.byTable { composes: table from '../om/card-table.module.css'; }
+.byHead { composes: head from '../om/card-table.module.css'; }
+.byRow { composes: row from '../om/card-table.module.css'; }
+.byHead, .byRow { grid-template-columns: minmax(0, 1fr) repeat(4, 96px); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1024px) {
+  .facts, .facts[data-three] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .views { flex-basis: 100%; }
+  .content { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  .cardTop { flex-direction: column; align-items: stretch; }
+  .press { align-self: flex-start; flex-wrap: wrap; }
+  .person { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4) 0; }
+  .tabs { top: calc(var(--app-mobile-bar-height) + 72px); }
+  .byHead, .byRow { grid-template-columns: minmax(0, 1fr) repeat(4, 44px); }
+  .facts, .facts[data-three] { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* (REG-708) a ghost's block of lines in one of the page's own paragraphs — the lines stacked with no gap, as the paragraph wraps */
+.ghostLines { display: flex; flex-direction: column; }

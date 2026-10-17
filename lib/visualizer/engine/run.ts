@@ -1,11 +1,11 @@
 'use client'
 
 import { suggestMaterials } from '../catalogue'
-import { COLOUR_HEX, FINISH_HEX, PART_WORD, composeCustomizeDesc, customizePart, finishSheen, replacementName, type PartKey } from '../furniture'
+import { COLOUR_HEX, FINISH_HEX, PART_WORD, composeCustomizeDesc, customizePart, finishSheen, type PartKey } from '../furniture'
 import { RELIGHT_PRESETS, SAMPLE_LIGHT, fixtureOfPiece, lightingSet, presetById, type LightFixture, type RelightKnobs } from '../lighting'
-import { alternatesFor, fromCatalogue, LAID_CATEGORIES, materialFamily, shade, surfaceFamily } from '../materials'
-import { NOTE_UNREAD, ORIGINAL, paintTargets, pickNeeds, readingFor, sampleDetection, toolAvailability, WHOLE_ROOM_UNMARKED, type Applied, type Detection, type Finishes, type FurnitureDef, type MaterialRef, type PassKind, type Pending, type Slot, type SurfaceDef } from '../model'
-import { colourIn, keepMatch, keepTargets, readNote, type NoteReading } from '../note'
+import { alternatesFor, fromCatalogue, LAID_CATEGORIES, materialFamily, restylePicks, shade, surfaceFamily } from '../materials'
+import { NOTE_UNREAD, ORIGINAL, paintTargets, pickNeeds, readingFor, replaceHeld, sampleDetection, toolAvailability, WHOLE_ROOM_UNMARKED, type Applied, type Detection, type Finishes, type FurnitureDef, type MaterialRef, type PassKind, type Pending, type Slot, type SurfaceDef } from '../model'
+import { keepMatch, keepTargets, readNote, type NoteReading } from '../note'
 import { plainFinishName } from '../outputs'
 import { patternSize, patternTile } from '../patterns'
 import { sampleByKey, type SampleRoom } from '../samples'
@@ -13,12 +13,14 @@ import { styleByName } from '../styles'
 import { labelInText, normFurnitureKey, surfaceGroupFor, titleCaseLabel } from '../surfaces'
 import { EMPTY_SCOPES, namedPieces } from '../tools'
 import { grade, styleLight, type LightScene } from './grade'
-import { dominantColour, pickRoles, referencePalette } from './palette'
-import { cloneImg, resample, rgbToHex, type Img, type Pt } from './pixels'
+import { pickRoles, referencePalette } from './palette'
+import { cloneImg, resample, rgbToHex, rgbToLab, type Img, type Pt } from './pixels'
 import { alongFill, castShadow, composite, featherMask, mendFrom, mirrorFill, paintAcc, paste, recolor, shadeIn, shadeTarget, spreadMask, textureFill, type PaintAcc } from './recolor'
 import { clipToOutlines, edgeMatte, growRegion, insideOf, keepNear, maskCoverage, offHue, outlineRegion, polygonMask, tapSeeds } from './segment'
 import { CEILING_M, frameFor, makeTexture, planeMap, quadMap, screenMap, type Frame, type TexMap, type Texture } from './texture'
 import { rebuild, weaveFill, type Plane, type RebuildStep } from './mend'
+import { framingReport, readFraming, reframe } from './drift'
+import { driftScore, hasBlockingDrift, type DriftReport } from '../drift'
 
 /* AI Visualizer engine (REG-673, audit §5) — one Generate, in the browser: the photo on screen in, one to three variants out, each with
    what it applied and what the room now shows. The pixel work is the pure engine beside this file; this one loads pictures through a
@@ -28,15 +30,15 @@ import { rebuild, weaveFill, type Plane, type RebuildStep } from './mend'
    · Remove lays the room's empty plate re-finished WHOLE (its surfaces grown without the photo's furniture holes, F179), keeps every
      piece in front of the one taken out and the visible part of those behind it (F181), reads the plate's light only off the room's own
      surfaces (F028), and every other change in the same Generate is worked out on the untouched photo first (F028).
-   · Customize and Replace paint the piece only: its outline, never a neighbour standing in front of it, never the wall or floor the grow
+   · Customize paints the piece only (pending modules S20: Replace is never rendered — the prototype says it can't draw a new piece in): its outline, never a neighbour standing in front of it, never the wall or floor the grow
      leaked into (F024). A surface or a piece tapped on the photo grows only near the tap (F023); a drawn one keeps off what stands in
      front of it (F033).
    · Floors, tiles and stone keep the photo's texture where the photo shows that kind of material, and lay their own grain, boards,
      joints or veins in the surface's perspective where it doesn't (F047 · F187 · F191).
    · The light and the note ride along with a restyle, a transfer, a sketch and a relight; what a pass could not use is reported
      (`consumed`) and waits for the next Generate (F052). A transfer maps a reference's colours by role (F189), keeps what "Keep
-     unchanged" names (F056); Furnish follows the style and Leave out (F055); Empty says what it could not take out (F064); a restyle of an
-     edited version says the look starts from the photo (F192). A Generate that would change nothing says so instead of saving a copy
+     unchanged" names (F056); Furnish follows the style and Leave out (F055); Empty says what it could not take out (F064); a restyle
+     repaints the room's surfaces from the photo, its pieces' changes kept (F192, pending modules S43C). A Generate that would change nothing says so instead of saving a copy
      (F197). Each refusal names its real cause (F053). */
 
 /** (audit 2026-09-26) How the engine reads and writes pictures — the browser's canvas by default. A Node check (the scripts that render
@@ -301,7 +303,6 @@ const copyFinishes = (f: Finishes): Finishes => ({ ...f, surfaces: { ...f.surfac
 const lightLabel = (p: Pending) => (p.lighting.presetId ? presetById(p.lighting.presetId)?.label ?? 'Custom' : 'Custom')
 const neutral = (): RelightKnobs => ({ sunAngle: 45, colorTemp: 4300, intensity: 50, shadows: 50, fixtures: { cove: 'unset', pendants: 'unset', downlights: 'unset', accent: 'unset' } })
 const caveatOf = (lines: (string | null | undefined)[]) => { const l = lines.filter((x): x is string => !!x); return l.length ? l.join(' · ') : null }
-const edited = (f: Finishes) => Object.keys(f.surfaces).length > 0 || f.removed.length > 0 || Object.keys(f.customized).length > 0 || f.emptied
 
 /** (F188) The light a room already has — its windows and fixtures (a sample's, and the reading's own lighting pieces) — for a grade.
     `fixtures`: 'all'; 'fitted' — an emptied room keeps its downlights, not its lamps; 'none' — a whole-room look (its own ceiling). */
@@ -478,10 +479,37 @@ const rebuildOf = (f: FurnitureDef): RebuildStep[] | undefined => (f as Furnitur
 function strands(img: Img, f: FurnitureDef, own?: Float32Array): Float32Array | null {
   const zones = (f as FurnitureDef & { wisps?: Pt[][] }).wisps
   if (!zones?.length) return null
+  /* (pending modules S43C) `wispTones` 'dark': strands darker than the pale ground behind them (olive branches over a wall in the TV's
+     shade, the shade a gradient) — each pixel against the brightest of its own neighbourhood, the ground right there, never one threshold
+     for the zone; a smooth gradient is never a strand */
+  const tones = (f as FurnitureDef & { wispTones?: ('light' | 'dark' | 'olive')[] }).wispTones
   const W = img.width, H = img.height, n = W * H, out = new Float32Array(n).fill(1), d = img.data
-  const L = (i: number) => 0.299 * d[i * 4]! + 0.587 * d[i * 4 + 1]! + 0.114 * d[i * 4 + 2]!
-  for (const q of zones) {
-    const z = polygonMask(W, H, q), ls: number[] = []
+  const L0 = (i: number) => 0.299 * d[i * 4]! + 0.587 * d[i * 4 + 1]! + 0.114 * d[i * 4 + 2]!
+  for (const [zi, q] of zones.entries()) {
+    const z = polygonMask(W, H, q)
+    /* 'olive': strands told by their colour — leaves yellower than the grey shade they hang in (the TV's edge in its shadow) */
+    if (tones?.[zi] === 'olive') {
+      for (let i = 0; i < n; i++) {
+        const w = z[i]!; if (w <= 0) continue
+        const b = rgbToLab(d[i * 4]!, d[i * 4 + 1]!, d[i * 4 + 2]!)[2]
+        const k = Math.min(1, Math.max(0, (b - 16) / 4)) * (own ? Math.min(1, Math.max(0, (own[i]! - 0.6) / 0.3)) : 1)
+        out[i] = 1 - w + w * k
+      }
+      continue
+    }
+    if (tones?.[zi] === 'dark') {
+      const R = 5
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = y * W + x, w = z[i]!
+        if (w <= 0) continue
+        let hi = 0
+        for (let dy = -R; dy <= R; dy++) { const yy = y + dy; if (yy < 0 || yy >= H) continue; for (let dx = -R; dx <= R; dx++) { const xx = x + dx; if (xx < 0 || xx >= W) continue; const v = L0(yy * W + xx); if (v > hi) hi = v } }
+        const k = Math.min(1, Math.max(0, (hi * 0.78 - L0(i)) / Math.max(6, hi * 0.12))) * (own ? Math.min(1, Math.max(0, (own[i]! - 0.6) / 0.3)) : 1)
+        out[i] = 1 - w + w * k
+      }
+      continue
+    }
+    const L = L0, ls: number[] = []
     for (let i = 0; i < n; i++) if (z[i]! > 0.5) ls.push(L(i))
     if (ls.length < 20) continue
     ls.sort((a, b) => a - b)
@@ -596,7 +624,7 @@ function lift(img: Img, ctx: Ctx, removes: FurnitureDef[], plate: Img, out?: { k
       for (let i = 0; i < n; i++) { const v = c[i]! * (1 - ownWide[i]!); if (v > 0.01) m[i] = m[i]! * (1 - Math.min(1, v * 1.3)) }
     }
     const under = cloneImg(img)   // the picture before the plate went on — a mend lays over this, never over a third of plate
-    paste(img, plate, m, keep, { feathered: true, zones })
+    paste(img, plate, m, keep, { feathered: true, zones, asIs: ctx.sample?.plateLight === 'photo' })
     /* (F181) a piece behind it had part of itself hidden by it (the console's drawer fronts behind the bowl and books on the table): the
        plate has no console there, so that part is mended from the piece's own pixels next to it — never the bare wall seen through it */
     const shades: Float32Array[] = []
@@ -906,7 +934,7 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
   const pieces = new Map(reading.furniture.map((f) => [f.id, f]))
   const picks = Object.entries(p.furniture).filter(([id, f]) => f.action !== 'keep' && pieces.has(id))
   const asked = picks.filter(([, f]) => f.action === 'remove').map(([id]) => pieces.get(id)!)
-  if (asked.length) { const t = toolAvailability({ sampleKey: i.room.sampleKey, detection: i.room.detection }, i.base.finishes, reading); if (!t.canRemove) return fail(`${t.removeWhy}. Replace or Customize the piece instead.`) }
+  if (asked.length) { const t = toolAvailability({ sampleKey: i.room.sampleKey, detection: i.room.detection }, i.base.finishes, reading); if (!t.canRemove) return fail(`${t.removeWhy}. Customize the piece instead.`) }
   /* (F064) a piece the empty plate still shows (the living room's sheer curtains) can't be taken out — said, never claimed */
   const stays: FurnitureDef[] = []
   if (asked.length && ctx.sample) for (const r of asked) if (await stillInPlate(ctx.sample, r, ctx.base.width, ctx.base.height)) stays.push(r)
@@ -915,6 +943,9 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
   const them = stayNames.length > 1 || /s$/.test(stayNames[0] ?? '') ? 'them' : 'it'
   const staysLine = stays.length ? `Kept: the ${stayNames.join(', the ')} — this photo can’t take ${them} out` : null
   for (const [id, f] of picks) { const need = pickNeeds(f, pieces.get(id)!); if (need) return fail(need) }
+  /* (pending modules S20 — Q-21 as she answered) a Replace is never rendered as a recolour here: the prototype can't draw a new piece in, and
+     says so (the Generate bar says it first; this is the backstop) */
+  for (const [id, f] of picks) if (f.action === 'replace') return fail(replaceHeld(pieces.get(id)!.label))
   /* (D3) a finish that names a part the photo doesn't mark (a planter on a plant nobody traced) is refused — never the leaves, the canvas
      or the screen painted with it */
   for (const [id, f] of picks) {
@@ -931,7 +962,7 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
   if (missed.length && missed.length === mats.length && !picks.length && !extra?.paints?.length && !p.style && !lightingSet(p.lighting.knobs, p.lighting.presetId, p.lighting.instruction)) return fail(`We couldn’t find the ${labelInText(missed[0]!.label)} where it was marked — trace its outline instead.`)
   const painted = mats.filter(({ def }) => !missed.includes(def))
   const pieceMask = new Map(picks.filter(([, f]) => f.action !== 'remove').map(([id]) => [id, regionOf(ctx.base, ctx.url, pieces.get(id)!, size, opts)]))
-  if (stays.length && !removes.length && !mats.length && !pieceMask.size && !extra?.paints?.length && !p.style && !lightingSet(p.lighting.knobs, p.lighting.presetId, p.lighting.instruction)) return fail(`${staysLine}. Replace or Customize ${them} instead.`)
+  if (stays.length && !removes.length && !mats.length && !pieceMask.size && !extra?.paints?.length && !p.style && !lightingSet(p.lighting.knobs, p.lighting.presetId, p.lighting.instruction)) return fail(`${staysLine}. Customize ${them} instead.`)
   const out: PassVariant[] = []
   let ride = { lighting: false, note: false }
   /* (round 2) the plate as the version shows the room — this Generate's picks are laid afterwards over the photo and the plate together,
@@ -940,7 +971,7 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
   let lifted: { img: Img; removed: Float32Array; under: Under; shot: { kept?: Float32Array; mended?: Map<string, Float32Array> } } | null = null
   if (removes.length) {
     const plate = await platedRoom(ctx, i.base.finishes, new Map())
-    if (!plate) return fail('Needs a photo with the room empty behind it — this one doesn’t have that. Replace or Customize the piece instead.')
+    if (!plate) return fail('Needs a photo with the room empty behind it — this one doesn’t have that. Customize the piece instead.')
     const im = cloneImg(ctx.base), sh: { kept?: Float32Array; mended?: Map<string, Float32Array> } = {}
     const rm = lift(im, ctx, removes, plate, sh)
     lifted = { img: im, removed: rm, under: { img: plate, url: ctx.sample!.empty!, kept: sh.kept }, shot: sh }
@@ -973,21 +1004,6 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
     /* (wave E) a piece takes its light from the untouched photo — a surface laid just now that ran a pixel onto it (a floor onto a sofa's
        rail) never darkens its new colour; where a piece was lifted out the picture itself is the one to read (the mended side is there) */
     const pieceLight = { light: removed ? undefined : ctx.base }
-    /* Replace (§5.1): the piece keeps its shape — the pick brings its colour and finish: a colour its words name wins, then its photo's
-       colour, then the style's (F040) */
-    for (const [id, f] of picks) {
-      if (f.action !== 'replace') continue
-      const def = pieces.get(id)!, words = `${f.replacementDesc ?? ''}`
-      /* (verify round 1) the colour the words name ("…walnut coffee table…") — the main clause first, so "…with brass legs" doesn't win */
-      const said = colourIn(words.split(/\s+with\s+|,/)[0] ?? '')?.hex ?? colourIn(words)?.hex
-      let hex = said ?? (f.refImage ? dominantColour(await loadImg(f.refImage)) : styleByName(p.style)?.colorPalette[1] ?? '#8B7355')
-      if (v > 1) hex = shade(hex, v === 2 ? 0.12 : -0.12)
-      recolor(img, paintMask(id, pieceMask.get(id)!), hex, finishSheen(words), 1, null, pieceLight)
-      /* (verify round 1) a Quick pick by its name ("Swapped for a Mid-Century coffee table"), the studio's words cut at a word */
-      const desc = words.trim() ? `Swapped for ${replacementName(words)}` : 'Swapped for the piece in the photo'
-      finishes.customized[id] = desc
-      applied.furniture.push({ id, label: def.label, action: 'customize', desc })
-    }
     for (const [id, f] of picks) {
       if (f.action !== 'customize') continue
       /* (D3) the part the finish names — the fig's pot, the art's frame, the TV's frame and stand — else the whole piece */
@@ -1037,28 +1053,11 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
 async function restylePass(i: PassInput, sample: SampleRoom | null, reading: Detection, size: number, count: number): Promise<PassOutput> {
   const style = styleByName(i.pending.style)
   if (!style) return fail('Pick a style first — that’s the look the whole room is restyled into.')
-  const look = sample?.looks[style.name]
-  const out: PassVariant[] = []
+  /* (pending modules S43C) a sample room's look is a picture the engine made ahead of this very pass (its Style card) — a restyle runs the
+     engine on the room as it does on any photo, so the room keeps its outlines and the version lists what it laid */
   const finishedBase: Finishes = { ...copyFinishes(i.base.finishes), style: style.name }
+  const out: PassVariant[] = []
   let ride = { lighting: false, note: false }
-  if (look && reading.kind === 'photo') {
-    /* (F192) 1.0's finished render: the room as photographed in the new look — a version's own finishes and pieces don't carry over,
-       and the version says so */
-    const caveat = i.base.key !== ORIGINAL && edited(i.base.finishes) ? 'Whole-room look — earlier changes replaced' : null
-    const lookImg = await loadImg(look)
-    const ctx = await makeCtx(i, { ...reading, surfaces: [], furniture: [] }, sample, size, { url: look, img: lookImg, reading: { ...reading, surfaces: [], furniture: [] }, fixtures: 'none' })
-    for (let v = 1; v <= count; v++) {
-      const x = cloneImg(lookImg)
-      if (v === 2) grade(x, { ...neutral(), colorTemp: 3600, intensity: 54 }, 0.9)
-      if (v === 3) grade(x, { ...neutral(), colorTemp: 5400, shadows: 42 }, 0.9)
-      const a: Applied = { ...blank('restyle'), style: style.name, caveat }
-      const f: Finishes = { ...finishedBase, surfaces: {}, removed: [], customized: {}, reshaped: true, emptied: false }
-      ride = await rideAlong(x, ctx, a, f, { paints: false })
-      const untouched = v === 1 && !ride.lighting && !a.lighting
-      out.push({ dataUrl: untouched ? look : toDataUrl(x), applied: a, finishes: f, materials: [] })   // an untouched finished render keeps its own address
-    }
-    return { variants: out, consumed: slots(['style'], ride) }
-  }
   if (!reading.surfaces.length) return fail('We couldn’t restyle this photo — mark its walls or floor first.')
   const ctx = await makeCtx(i, reading, sample, size)
   /* (wave E, files-17) a photo nobody traced is read roughly: a whole-room restyle lays its finishes there as a soft wash — the edges
@@ -1070,10 +1069,7 @@ async function restylePass(i: PassInput, sample: SampleRoom | null, reading: Det
   for (let v = 1; v <= count; v++) {
     const img = cloneImg(ctx.base), a: Applied = { ...blank('restyle'), style: style.name }, f: Finishes = { ...finishedBase, surfaces: { ...finishedBase.surfaces } }
     const jobs: SurfaceJob[] = []
-    for (const s of reading.surfaces) {
-      const pick = suggestMaterials(s.label, style.name, 3)[v - 1] ?? suggestMaterials(s.label, style.name, 1)[0]
-      if (!pick) continue
-      const m = fromCatalogue(pick)
+    for (const { def: s, m } of restylePicks(reading.surfaces, style.name, v)) {
       jobs.push({ def: s, mask: masks.get(s.id)!, hex: m.hex, finish: m.finish, m, ...(rough(s) ? { strength: 0.7 } : {}) })
       a.surfaces.push({ id: s.id, label: s.label, materialId: m.id, name: m.name }); f.surfaces[s.id] = finished(m, s)
     }
@@ -1219,22 +1215,12 @@ async function furnishPass(i: PassInput, sample: SampleRoom | null, reading: Det
   const t = toolAvailability({ sampleKey: i.room.sampleKey, detection: i.room.detection }, i.base.finishes, reading)
   if (!t.canFurnish || !sample) return fail(`${t.furnishWhy ?? 'Empty the room first — then furnish'}.`)
   const style = styleByName(i.pending.style || i.leadStyle || '')
-  const look = style ? sample.looks[style.name] : undefined
   const room = sampleDetection(sample)
   const leave = namedPieces(i.pending.furnish.leaveOut, room.furniture)
   const a: Applied = { ...blank('furnish'), note: [i.pending.furnish.leaveOut && `Leave out: ${i.pending.furnish.leaveOut}`, i.pending.furnish.direction].filter(Boolean).join(' · ') || null }
-  if (look) {
-    const lookImg = await loadImg(look)
-    const ctx = await makeCtx(i, { ...room, surfaces: [], furniture: [] }, sample, size, { url: look, img: lookImg, reading: { ...room, surfaces: [], furniture: [] }, fixtures: 'none' })
-    const f: Finishes = { ...copyFinishes(i.base.finishes), surfaces: {}, removed: [], customized: {}, emptied: false, reshaped: true, style: style!.name }
-    a.style = style!.name
-    a.caveat = caveatOf([leave.matched.length ? `Leave out works on the room’s own furniture — the ${style!.name} look places its own pieces` : null, Object.keys(i.base.finishes.surfaces).length ? 'Whole-room look — earlier changes replaced' : null])
-    const img = cloneImg(lookImg)
-    const ride = await rideAlong(img, ctx, a, f, { paints: false })
-    return { variants: [{ dataUrl: ride.lighting ? toDataUrl(img) : look, applied: a, finishes: f, materials: [] }], consumed: slots(['tool', 'style'], { lighting: ride.lighting, note: false }) }
-  }
-  /* no finished look: the room as photographed, furnished, wearing the emptied version's finishes — and the style's own materials on the
-     rest, in its light; Leave out lifts those pieces with the empty plate */
+  /* (pending modules S43C) the room as photographed, furnished, wearing the emptied version's finishes — and the style's own materials on
+     the rest, in its light; Leave out lifts those pieces with the empty plate (a sample's look is the engine's own picture, never a whole
+     new room) */
   const ctx = await makeCtx(i, room, sample, size, { url: sample.original, reading: room, fixtures: 'all' })
   const img = cloneImg(ctx.base)
   const f: Finishes = { ...copyFinishes(i.base.finishes), removed: [], customized: {}, emptied: false, reshaped: false, style: null }
@@ -1262,26 +1248,16 @@ async function furnishPass(i: PassInput, sample: SampleRoom | null, reading: Det
 async function sketchPass(i: PassInput, sample: SampleRoom | null, reading: Detection, size: number): Promise<PassOutput> {
   if (!sample?.sketch || i.base.key !== ORIGINAL || reading.kind !== 'sketch') return fail('Render from sketch works on the sample sketch — this picture isn’t one.')
   const style = styleByName(i.pending.style || i.leadStyle || '')
-  const look = style ? sample.looks[style.name] : undefined
   const room = sampleDetection(sample)
   const a: Applied = { ...blank('sketch') }
-  const f: Finishes = { ...copyFinishes(i.base.finishes), fromSketch: true, reshaped: !!look, style: null }
-  if (look) {
-    const lookImg = await loadImg(look)
-    const ctx = await makeCtx(i, { ...room, surfaces: [], furniture: [] }, sample, size, { url: look, img: lookImg, reading: { ...room, surfaces: [], furniture: [] }, fixtures: 'none' })
-    const img = cloneImg(lookImg)
-    a.style = style!.name; f.style = style!.name
-    const ride = await rideAlong(img, ctx, a, f, { paints: false })
-    return { variants: [{ dataUrl: ride.lighting ? toDataUrl(img) : look, applied: a, finishes: f, materials: [] }], consumed: slots(i.pending.style ? ['style'] : [], ride) }
-  }
-  /* no finished look: the room the sketch draws, in the style's materials and light (or as it is, with no style) */
+  const f: Finishes = { ...copyFinishes(i.base.finishes), fromSketch: true, reshaped: false, style: null }
+  /* the room the sketch draws (the owner's line drawing of the kitchen photo), in the style's materials and light — or as it is, with no
+     style (pending modules S43C: the engine's own render, the room's outlines kept) */
   const ctx = await makeCtx(i, room, sample, size, { url: sample.original, reading: room, fixtures: 'all' })
   const img = cloneImg(ctx.base)
   if (style) {
     const jobs: SurfaceJob[] = []
-    for (const s of room.surfaces) {
-      const c = suggestMaterials(s.label, style.name, 1)[0]; if (!c) continue
-      const m = fromCatalogue(c)
+    for (const { def: s, m } of restylePicks(room.surfaces, style.name)) {
       jobs.push({ def: s, mask: regionOf(ctx.base, ctx.url, s, size, { reading: room }), hex: m.hex, finish: m.finish, m })
       a.surfaces.push({ id: s.id, label: s.label, materialId: m.id, name: m.name }); f.surfaces[s.id] = finished(m, s)
     }
@@ -1311,6 +1287,26 @@ async function notePass(i: PassInput, sample: SampleRoom | null, reading: Detect
   const o = await editPass(ctx, 1, { note, paints: r.paints, preset: r.lighting, warmer: r.warmer }, 'note')
   if ('variants' in o) o.consumed = ['note']
   return o
+}
+
+/**
+ * (pending modules S20 — 1.0's `guardRender`, lib/visualizer/drift.ts) After a Generate, before a version is kept: check the render against
+ * the picture it was made from and, where the camera moved, make the one corrective pass — the render lined up again — and keep it only when
+ * it reads better (a repair never makes the render worse, 1.0). `repaired` is null when there was nothing to repair or the repair didn't
+ * help; null overall when the check couldn't run (non-fatal: the render goes on unchecked, as in 1.0). A picture of a different shape (a
+ * sketch's) has no framing to compare.
+ */
+export async function guardRender(photoUrl: string, renderUrl: string): Promise<{ report: DriftReport; repaired: { dataUrl: string; report: DriftReport } | null } | null> {
+  try {
+    const [photo, render] = await Promise.all([loadImg(photoUrl), loadImg(renderUrl)])
+    const f = readFraming(photo, render), report = framingReport(f)
+    if (!f || !hasBlockingDrift(report)) return { report, repaired: null }
+    const fixed = reframe(render, f), after = readFraming(photo, fixed), again = framingReport(after)
+    const better = !!after && driftScore(again) < driftScore(report) && after.base > f.base + 0.02
+    return { report, repaired: better ? { dataUrl: toDataUrl(fixed, 0.9), report: again } : null }
+  } catch {
+    return null
+  }
 }
 
 /** The canvas's live light preview (Q-22): the version on screen graded as the sliders move, before anything is kept. `scene` — the

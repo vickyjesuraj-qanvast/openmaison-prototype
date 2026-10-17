@@ -12,6 +12,7 @@ import { useSheetLayout } from '@/components/om/sheet'
 import { useMediaQuery } from '@/lib/breakpoint'
 import { duration, ease } from '@/lib/motion'
 import { ORIGINAL, type VersionView } from '@/lib/visualizer/model'
+import { fmtCredits } from '@/lib/credits/model'
 import { beforeKeyOf } from '../editor-model'
 import { carriedFacts, changedFacts, factsSince, type Labels } from './version-facts'
 import styles from './dialogs.module.css'
@@ -153,6 +154,8 @@ export function PresentDialog({ open, onClose, room, original, versions, start, 
   /* (surfaces-26 · desktop-8) the pass's own changes named as "Everything in" names them — one surface, one name, in one panel */
   const changed = !cur.v ? [] : skipped ? factsSince(cur.v, parent?.v ?? null, labels) : changedFacts(cur.v, labels)
   const caveat = cur.v?.applied.caveat ?? null
+  /* (pending modules S20) the drift guard lined this version up with its photo — said beside what changed, with what the repair cost */
+  const repair = cur.v?.applied.repair ?? null
   const carried = cur.v && parent && parent.key !== ORIGINAL ? carriedFacts(cur.v, labels) : []
   const aspect = shapes[cur.url] ?? null
   const nav = (d: -1 | 1) => {
@@ -192,6 +195,7 @@ export function PresentDialog({ open, onClose, room, original, versions, start, 
                 : <span className={styles.hint}>{cur.v ? 'A whole-room look.' : 'The room as it was photographed.'}</span>}
               {/* (F064) what the pass could not do, said beside what it was asked — the studio's own view, never the client's */}
               {caveat ? <span className={styles.hint} data-tone="warn" data-testid="viz-present-caveat"><Icon name="info" size={16} weight={300} /> {caveat}</span> : null}
+              {repair ? <span className={styles.hint} data-testid="viz-present-repair"><Icon name="check_circle" size={16} weight={300} /> {repair.words}{repair.credits > 0 ? ` · ${fmtCredits(repair.credits)} AI credits` : ''}</span> : null}
             </div>
             {carried.length ? (
               <div className={styles.section}>

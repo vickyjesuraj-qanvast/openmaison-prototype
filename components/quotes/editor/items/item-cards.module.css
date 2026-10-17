@@ -41,3 +41,11 @@
 .card[data-change]:not([data-selected]) { background: var(--om-color-tertiary-yellow-variant2); }
 /* (Dane UAT 6.15) A line under its cost (the Cost column on): its price and total in the error red, beside the "Below cost" tag. */
 .figures[data-below] .sub, .figures[data-below] .total { color: var(--om-color-tertiary-red-default); }
+/* (S44I, B3) After an open section's last card: "Add to {section}" (a sheet of its four adds), at the section's lines' indent; the empty
+   section's words before it. (S44T — call C1) The caption over the sections priced after the contract. */
+.sectionAdd { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--om-spacing-2); margin-left: var(--om-spacing-4); min-height: 44px; }
+.sectionAdd[data-depth='2'] { margin-left: var(--om-spacing-8); }
+.sectionAddEmpty { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.divider { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-3) var(--om-spacing-1) 0; border-top: var(--om-border-2) solid var(--om-color-surface-variant); margin-top: var(--om-spacing-2); }
+.dividerName { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-default); }
+.dividerHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

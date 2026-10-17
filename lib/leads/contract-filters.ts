@@ -72,3 +72,23 @@ export function searchContracts<T extends Contract>(rows: T[], query: string, ex
     ],
   }))
 }
+
+/* ── (pending modules S03 — REG-178's inert heads, "sort on the table heads") a column's own order ─────────────────────────────────────
+   The projects table's model (fix-A, A-24): a head cycles A→Z (oldest first) → Z→A (newest first) → off, and ONE sort holds at a time —
+   a head's sort sets Filters' Sort back to its default, an order picked in Filters takes the head's off. Status reads the journey's order. */
+export type ContractHeadSort = { key: ContractSortKey; dir: 'asc' | 'desc' } | null
+export const CONTRACT_SORT_KEYS = ['status', 'created', 'sent', 'updated'] as const
+export type ContractSortKey = (typeof CONTRACT_SORT_KEYS)[number]
+export const isContractSortKey = (k: string): k is ContractSortKey => (CONTRACT_SORT_KEYS as readonly string[]).includes(k)
+const statusRank = (s: string) => { const i = (CONTRACT_STATUSES as readonly string[]).indexOf(s); return i < 0 ? CONTRACT_STATUSES.length : i }
+const valueOf = (c: Contract, key: ContractSortKey): number | null =>
+  key === 'status' ? statusRank(c.status) : key === 'created' ? c.createdAt.getTime() : key === 'sent' ? c.sentAt?.getTime() ?? null : (c.updatedAt ?? c.createdAt).getTime()
+/** Rows in the head's order; an empty cell (no Sent date) always last; ties keep the order they came in. */
+export function sortByHead<T extends Contract>(rows: T[], sort: ContractHeadSort): T[] {
+  if (!sort) return rows
+  const sign = sort.dir === 'asc' ? 1 : -1
+  return rows.map((r, i) => ({ r, i, v: valueOf(r, sort.key) }))
+    .sort((a, b) => (a.v === null && b.v === null ? a.i - b.i : a.v === null ? 1 : b.v === null ? -1 : (a.v - b.v) * sign || a.i - b.i))
+    .map((x) => x.r)
+}
+export const nextHeadSort = (s: ContractHeadSort, key: ContractSortKey): ContractHeadSort => (s?.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : null)

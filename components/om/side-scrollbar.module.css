@@ -1,0 +1,14 @@
+/* ── (REG-570) The sideways scrollbar under the viewport ── A 24px bar that sticks to the bottom of the window (or the Expand's
+   scroller) while the table runs on below it — the sheet-app pattern — so panning the number columns never means reaching the
+   table's foot: a pager at each end, a track whose thumb is the visible share and follows the body; drag the thumb, press the
+   track, or press a pager. It rests at the table's foot once the end is on screen and is not drawn while the table fits. */
+.hbar { display: none; position: sticky; bottom: 0; z-index: 10; align-items: center; gap: var(--om-spacing-1); height: 24px; padding: 0 var(--om-spacing-2); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hbar[data-on] { display: flex; }
+.pager { width: 20px; height: 20px; flex-shrink: 0; border: 0; background: none; padding: 0; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.pager:hover { background: var(--om-color-hover-08p); }
+.pager::after { content: ''; position: absolute; inset: -4px; }
+.track { flex: 1; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); position: relative; cursor: pointer; touch-action: none; }
+.barThumb { position: absolute; top: 0; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); cursor: grab; transition: background-color var(--motion-hover); }
+.barThumb:hover, .barThumb[data-dragging] { background: var(--om-color-on-surface-secondary); }
+.barThumb[data-dragging] { cursor: grabbing; }
+@media (hover: none) { .pager { display: none; } }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState, useRef } from 'react'
+import { useId, useState, useRef, type ReactNode } from 'react'
 import { FORMAT_KEYS } from '@/lib/keys/registry'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
@@ -29,7 +29,7 @@ const MAX_IMAGE = 1_500_000
  * "Smart Text" here. (Dane UAT 8.03) Its trigger keeps the caret where the studio clicked: a pointer press leaves focus in the paper, and
  * the paper puts its last selection back before it inserts (doc-editor.tsx `refocus`).
  */
-export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutline, outlineOpen, disabled }: {
+export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutline, outlineOpen, disabled, writing }: {
   editor: React.RefObject<DocEditorHandle | null>
   state: DocState
   values: TokenValues
@@ -38,6 +38,8 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
   onOutline?: () => void
   outlineOpen?: boolean
   disabled?: boolean
+  /** (pending modules S29) Write with AI — the writing help's trigger, before Insert a field. */
+  writing?: ReactNode
 }) {
   const snackbar = useSnackbar()
   const [menu, setMenu] = useState<'style' | 'align' | 'smart' | null>(null)
@@ -132,6 +134,7 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
             <button type="button" className={styles.styleBtn} aria-pressed={!!outlineOpen} data-open={outlineOpen || undefined} onClick={onOutline} aria-label="Outline"><Icon name="list" size={24} weight={300} /></button>
           </Tooltip>
         ) : null}
+        {writing}
         <span className={styles.anchor}>
           <Button variant="secondary" appearance="text" isDisabled={disabled} aria-haspopup="menu" aria-expanded={menu === 'smart'} preventFocusOnPress
                   iconEnd={<span className={styles.chev} data-open={menu === 'smart' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}

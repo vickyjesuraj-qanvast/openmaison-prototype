@@ -8,13 +8,16 @@ import { studioScopeQuestions } from '@/lib/db/schema'
 import { isBankType, needsOptions, type BankType } from '@/lib/company/question-bank'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { runsStudio } from '@/lib/leads/assign-policy'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
+import type { Refusal } from '@/lib/company/template-rules'
 
 /* (REG-612, parity Q-21) Company › Questionnaire — the studio's question bank. Owners and Admins edit; a change reaches every lead's tab. */
 const touch = () => { revalidatePath('/company/questionnaire'); revalidatePath('/leads', 'layout') }
 const guard = async () => { const v = await fetchViewer(); if (!runsStudio(v.role)) throw new Error('owners and admins only') }
 const clean = (type: BankType, options: string[]) => (needsOptions(type) ? [...new Set(options.map((o) => o.trim()).filter(Boolean))].slice(0, 20) : [])
 
-export async function createScopeQuestion(input: { question: string; type: string; options?: string[]; required?: boolean }): Promise<string> {
+export async function createScopeQuestion(input: { question: string; type: string; options?: string[]; required?: boolean }): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   if (!isBankType(input.type)) throw new Error('unknown type')
   const question = input.question.trim().slice(0, 200)
@@ -26,7 +29,8 @@ export async function createScopeQuestion(input: { question: string; type: strin
   await db.insert(studioScopeQuestions).values({ id, question, questionType: input.type, options: options.length ? JSON.stringify(options) : null, isRequired: !!input.required, isEnabled: true, sortOrder: (m?.max ?? -1) + 1, createdAt: new Date() })
   touch(); return id
 }
-export async function updateScopeQuestion(id: string, input: { question: string; type: string; options?: string[]; required?: boolean }): Promise<void> {
+export async function updateScopeQuestion(id: string, input: { question: string; type: string; options?: string[]; required?: boolean }): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   if (!isBankType(input.type)) throw new Error('unknown type')
   const question = input.question.trim().slice(0, 200)
@@ -36,7 +40,8 @@ export async function updateScopeQuestion(id: string, input: { question: string;
   await db.update(studioScopeQuestions).set({ question, questionType: input.type, options: options.length ? JSON.stringify(options) : null, isRequired: !!input.required }).where(eq(studioScopeQuestions.id, id))
   touch()
 }
-export async function setScopeQuestionFlags(id: string, flags: { enabled?: boolean; required?: boolean }): Promise<void> {
+export async function setScopeQuestionFlags(id: string, flags: { enabled?: boolean; required?: boolean }): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   const patch: { isEnabled?: boolean; isRequired?: boolean } = {}
   if (flags.enabled !== undefined) patch.isEnabled = flags.enabled
@@ -44,13 +49,15 @@ export async function setScopeQuestionFlags(id: string, flags: { enabled?: boole
   if (Object.keys(patch).length) await db.update(studioScopeQuestions).set(patch).where(eq(studioScopeQuestions.id, id))
   touch()
 }
-export async function deleteScopeQuestion(id: string): Promise<void> {
+export async function deleteScopeQuestion(id: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   await db.delete(studioScopeQuestions).where(eq(studioScopeQuestions.id, id))
   touch()
 }
 /** Up or down one place; the whole list is renumbered so the order stays dense. */
-export async function moveScopeQuestion(id: string, dir: 'up' | 'down'): Promise<void> {
+export async function moveScopeQuestion(id: string, dir: 'up' | 'down'): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   const list = await db.select({ id: studioScopeQuestions.id }).from(studioScopeQuestions).orderBy(asc(studioScopeQuestions.sortOrder), asc(studioScopeQuestions.createdAt))
   const i = list.findIndex((q) => q.id === id)
@@ -61,7 +68,8 @@ export async function moveScopeQuestion(id: string, dir: 'up' | 'down'): Promise
   touch()
 }
 /** (Dane UAT 3.38) A dragged order, written whole: the bank's every question, in the order given — anything else is refused. */
-export async function reorderScopeQuestions(ids: string[]): Promise<void> {
+export async function reorderScopeQuestions(ids: string[]): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await guard()
   const list = await db.select({ id: studioScopeQuestions.id }).from(studioScopeQuestions)
   const known = new Set(list.map((q) => q.id))

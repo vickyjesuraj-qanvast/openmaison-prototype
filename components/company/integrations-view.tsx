@@ -20,9 +20,21 @@ import { ReadOnlyNote } from './read-only-note'
 import { intakeAddress, type LeadCapture } from '@/lib/settings/types'
 import { setLeadCapture, simulateArrival } from '@/app/leads/capture-actions'
 import { displayDateTimeDot } from '@/lib/format'
+import type { XeroStatus } from '@/lib/finance/xero'
+import { connectXero, disconnectXero } from '@/app/finance/xero-actions'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import styles from './integrations-view.module.css'
+import { SIMULATED_WORDS, type SimulatedKey } from '@/lib/services/registry'   // (pending modules S34)
+import { QANVAST_CONNECTION } from '@/lib/qanvast-listing/model'   // (pending modules S37)
 
 type Arrival = { fileName: string; at: number; rows: number }
+/** (pending modules S34) The connections that are still stand-ins here — the studio reads it on each card (lib/services/registry.ts's words). */
+/* (pending modules S37) the listing's own line is Company › Profile's, not a connection here */
+export type Simulated = Record<Exclude<SimulatedKey, 'listing' | 'qanvastAccount'>, boolean> & { calendar: boolean }   /* (pending modules S41b-5) Qanvast Ops › Lead credits · Reviews say their own line */
+const ALL_SIMULATED: Simulated = { qanvast: true, email: true, meta: true, gmail: true, xero: true, calendar: true }
+function SimulatedLine({ k, on }: { k: Exclude<SimulatedKey, 'listing'>; on: boolean }) {
+  return on ? <span className={styles.hint} data-testid={`int-simulated-${k}`}>{SIMULATED_WORDS[k]}</span> : null
+}
 
 /** (sweep S4 #25) A secret copied through the house hook: the button reads "Copied", and a failed copy says so — never the secret in a snackbar. */
 function CopyButton({ text, label, done, what, variant = 'text' }: { text: string; label: string; done: string; what: string; variant?: 'text' | 'outlined' }) {
@@ -38,8 +50,14 @@ const META_MAP: [string, string][] = [['Full name', 'Lead name'], ['Phone number
 /**
  * Company › Integrations (REG-602, no mock — Profile's card shell on the DS): where leads come in from. Qanvast is connected
  * (the lead return flow, REG-192); the website form's email intake shows its address; Meta Lead Ads connects a page, picks
- * the forms and shows the field map; Google Calendar, Xero and Zoho Books say what they will be. Every "arrive" here is the
+ * the forms and shows the field map; Zoho Books says what it will be. Every "arrive" here is the
  * platform's job — the prototype demonstrates it with a simulated enquiry, marked as such.
+ * (one-home N-09) Xero's connection lives here — its card says whether it is on and Connects or Disconnects it (Owners and Admins); Finance ›
+ * Accounting keeps the organisations, the accounts and tax codes, the pushes and the sync log.
+ * (pending modules S23) Calendar invites say how a meeting's invitation reaches the client's calendar — read-only, nothing to connect.
+ * (pending modules S34) Every connection that is still the prototype's stand-in says so on its card, in one line under its help — Qanvast,
+ * the website form's email, Meta Lead Ads, Email lead sources and Xero (`simulated`, lib/services/registry.ts `SIMULATED_WORDS`); a real one
+ * plugged in by the developers takes its line away. Webhooks are real (app/api/webhooks/leads/[token]) and Calendar invites need no account.
  */
 /** (REG-612) The webhook's setup steps per platform — 1.0's words, shortened. */
 const setupSteps = (platform: WebhookPlatform): string[] => platform === 'google_ads'
@@ -48,7 +66,11 @@ const setupSteps = (platform: WebhookPlatform): string[] => platform === 'google
     ? ['In Zapier / Make, start from “Facebook Lead Ads → New Lead”.', 'Add a “Webhooks → POST” step with the Webhook URL.', 'Map fields: full_name → name, phone_number → phone, email → email, plus any extras into notes.', 'Turn it on. New submissions land in Leads.']
     : ['Paste the Webhook URL into your form or tool.', 'POST a JSON body with the accepted fields.', 'New submissions land in Leads.']
 
-export function IntegrationsView({ capture: initial, studioName, arrivals, from, canManage = true }: { capture: LeadCapture; studioName: string; arrivals: Arrival[]; from?: string; /** (REG-612) Owners and Admins change the connections; everyone reads */ canManage?: boolean }) {
+export function IntegrationsView({ capture: initial, studioName, arrivals, from, canManage = true, xero, simulated = ALL_SIMULATED, qanvastListed = true }: { capture: LeadCapture; studioName: string; arrivals: Arrival[]; from?: string; /** (REG-612) Owners and Admins change the connections; everyone reads */ canManage?: boolean
+  /** (pending modules S37) whether Qanvast lists the studio (Company › Profile › Listed on Qanvast) */ qanvastListed?: boolean
+  /** (one-home N-09) Xero's connection — the server's, read again after each Connect / Disconnect (the action revalidates this page). (S44O — call C6)
+      null: the books are not this member's (Marketing) — no Xero card */ xero: XeroStatus | null
+  /** (pending modules S34) which connections are still the prototype's stand-ins (lib/services/registry.ts) — each says so plainly */ simulated?: Simulated }) {
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -121,16 +143,30 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t sync Gmail — please try again' }) } finally { setBusy(null) }
   }
+  /* (one-home N-09) Xero: the same actions Finance › Accounting used, the same words — a refusal says its rule (XERO_RULE) */
+  const xeroStep = async (key: string, what: string, fn: () => Promise<object>, done: { message: string; actionLabel?: string; onAction?: () => void }) => {
+    if (busy) return
+    setBusy(key)
+    try {
+      const r = await fn()
+      if ('error' in r) { snackbar({ message: couldnt(what, refusalOf((r as { error: string }).error)) }); return }
+      snackbar(done); router.refresh()
+    } catch (e) { snackbar({ message: couldnt(what, refusalOf(e)) }) } finally { setBusy(null) }
+  }
   const addDomain = () => { const d = domain.trim().toLowerCase().replace(/^@?/, '@'); if (d.length < 2 || email.custom.includes(d)) return; setDomain(''); void save({ email: { ...email, custom: [...email.custom, d] } }, `${d} monitored`) }
   const last = (list: Arrival[]) => (list.length ? `${list.length} ${list.length === 1 ? 'lead' : 'leads'} so far · last ${displayDateTimeDot(new Date(Math.max(...list.map((a) => a.at))))}` : 'Nothing has arrived yet')
   return (
     <CompanyShell title="Integrations" from={from} skeleton={<IntegrationsGhost />}>
       <div className={styles.layout} data-testid="integrations">
-        {canManage ? null : <ReadOnlyNote text="Only Owners and Admins connect, generate or change integrations." />}   {/* (sweep S4 #16) */}
+        {canManage ? null : <ReadOnlyNote text="Only Owners, Admins and Marketing change how leads come in; an Owner or an Admin connects Xero." />}   {/* (S44O — C6) invented copy */}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="int-qanvast">
           <div className={styles.cardHead}>
-            <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2><MetaChip color="green">Connected</MetaChip></div>
-            <p className={styles.cardHelp}>Leads from your Qanvast profile arrive as New with the source Qanvast. Return Lead sends one back with a reason; <HelpLink href="/qanvast-ops">Qanvast Ops › Leads</HelpLink> shows every return.</p>
+            {/* (pending modules S37) the card follows the studio's listing on Qanvast — its one home is Company › Profile */}
+            <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2>{qanvastListed ? <MetaChip color="green">{QANVAST_CONNECTION.listed.chip}</MetaChip> : <MetaChip>{QANVAST_CONNECTION.notListed.chip}</MetaChip>}</div>
+            {qanvastListed
+              ? <p className={styles.cardHelp} data-testid="int-qanvast-help">{QANVAST_CONNECTION.listed.lead}<HelpLink href="/qanvast-ops">{QANVAST_CONNECTION.listed.returns}</HelpLink>{QANVAST_CONNECTION.listed.mid}<HelpLink href="/company/profile#qanvast" testId="int-qanvast-listing">{QANVAST_CONNECTION.listed.link}</HelpLink>{QANVAST_CONNECTION.listed.end}</p>
+              : <p className={styles.cardHelp} data-testid="int-qanvast-help">{QANVAST_CONNECTION.notListed.lead}<HelpLink href="/company/profile#qanvast" testId="int-qanvast-listing">{QANVAST_CONNECTION.notListed.link}</HelpLink>{QANVAST_CONNECTION.notListed.end}</p>}
+            <SimulatedLine k="qanvast" on={simulated.qanvast} />
           </div>
         </section>
 
@@ -138,6 +174,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           <div className={styles.cardHead}>
             <div className={styles.titleRow}><h2 id="int-email" className={styles.cardTitle}>Website form by email</h2><MetaChip color="green">Ready</MetaChip></div>
             <p className={styles.cardHelp}>Set your website form to email this address. Each enquiry becomes a lead with the source Website, unread until someone opens it. A phone number already on a lead goes to Review imported leads instead of a second lead.</p>
+            <SimulatedLine k="email" on={simulated.email} />
           </div>
           <div className={styles.row}>
             <code className={styles.address} data-testid="intake-address">{address}</code>
@@ -153,6 +190,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           <div className={styles.cardHead}>
             <div className={styles.titleRow}><h2 id="int-meta" className={styles.cardTitle}>Meta Lead Ads</h2>{capture.meta.connected ? <MetaChip color="green">Connected</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
             <p className={styles.cardHelp}>Connect the Facebook page your ads run on, pick the lead forms, and every submission becomes a lead with the source Meta Ads. The form’s questions land in the lead’s fields as mapped below.</p>
+            <SimulatedLine k="meta" on={simulated.meta} />
           </div>
           {capture.meta.connected ? (
             <>
@@ -266,6 +304,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           <div className={styles.cardHead}>
             <div className={styles.titleRow}><h2 id="int-gmail" className={styles.cardTitle}>Email lead sources</h2>{email.connected ? <MetaChip color="green">Active</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
             <p className={styles.cardHelp}>Leads that arrive by email from the portals — Homereno, Houzz, Renopedia and more — are read and added to the listing with the portal as their source; a known phone waits in Review imported leads.</p>
+            <SimulatedLine k="gmail" on={simulated.gmail} />
           </div>
           {email.connected ? (
             <>
@@ -307,11 +346,48 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           )}
         </section>
 
+        {/* (one-home N-09) Xero, live: its connection's one home — the state, Connect and Disconnect (gaps build F2 — F2-Q13's simulated
+            connection, the same actions); the organisations, the mapping and the sync log stay Finance › Xero's (simplify S-11: the Accounting tab
+            renamed), a link away. */}
+        {xero ? (   /* (S44O — call C6) the books' card — not Marketing's */
+        <section id="xero" className={styles.card} aria-labelledby="int-xero" data-testid="int-xero">
+          <div className={styles.cardHead}>
+            <div className={styles.titleRow}><h2 id="int-xero" className={styles.cardTitle}>Xero</h2>{xero.connected ? <MetaChip color="green">Connected</MetaChip> : <MetaChip>Not connected</MetaChip>}</div>
+            <p className={styles.cardHelp}>The studio’s books pushed to Xero — clients and vendors as contacts, invoices sent, credit notes, the payments that count, supplier bills, approved expenses and payments out. Unapproved money is never pushed.{canManage ? <> The organisations, the accounts and tax codes and the sync log are in <HelpLink href="/company/finance/accounting" testId="int-xero-open">Finance › Xero</HelpLink>.</> : null}</p>
+            <SimulatedLine k="xero" on={simulated.xero} />
+          </div>
+          {xero.connected ? (
+            <div className={styles.row}>
+              <span className={styles.hint} data-testid="int-xero-line">Connected {xero.connectedAt ? displayDateTimeDot(new Date(xero.connectedAt)) : ''}{xero.by ? ` by ${xero.by}` : ''} · {xero.lastSyncAt ? `Last sync: ${displayDateTimeDot(new Date(xero.lastSyncAt))}` : 'Not yet synced'}</span>
+              {canManage ? <Button variant="secondary" appearance="outlined" isDisabled={busy !== null} onPress={() => { void xeroStep('xero', 'disconnect Xero', () => disconnectXero(), { message: 'Xero disconnected — the sync log stays' }) }} data-testid="int-xero-disconnect">Disconnect</Button> : null}
+            </div>
+          ) : (
+            <div className={styles.row}>
+              <div className={styles.emptyMail}><span className={styles.emptyTitle}>Xero is not connected</span><span className={styles.hint}>{canManage ? 'Connect it and pick the organisation for each issuing entity; the accounts and tax codes are mapped for you.' : 'An Owner or an Admin connects Xero.'}</span></div>
+              {canManage ? <Button iconStart={<Icon name="link" size={20} />} isDisabled={busy !== null} onPress={() => { void xeroStep('xero', 'connect Xero', () => connectXero(), { message: 'Xero connected — accounts and tax codes mapped', actionLabel: 'Open Xero', onAction: () => router.push('/company/finance/accounting') }) }} data-testid="int-xero-connect">Connect Xero</Button> : null}
+            </div>
+          )}
+        </section>
+        ) : null}
+
+        {/* (pending modules S23 — the held card's "Google Calendar invites") Calendar invites, live in their honest form: every meeting's
+            invitation link carries Add to calendar — Google Calendar's own event page filled in, and the invite file Apple Calendar, Outlook and
+            the rest open (app/meeting/[token]). Nothing to connect, so nothing to press; a two-way sync with the studio's own Google Calendar is
+            the developers' (pending modules S34). Xero's card pattern, read-only. (pending modules S23) (invented copy) */}
+        <section id="calendar" className={styles.card} aria-labelledby="int-calendar" data-testid="int-calendar">
+          <div className={styles.cardHead}>
+            <div className={styles.titleRow}><h2 id="int-calendar" className={styles.cardTitle}>Calendar invites</h2><MetaChip color="green">Works without connecting</MetaChip></div>
+            <p className={styles.cardHelp}>Every meeting’s invitation adds to Google Calendar, Apple Calendar or Outlook from its link — Google opens its own event page filled in, the others take the invite file. Send the invitation from a meeting in <HelpLink href="/meetings" testId="int-calendar-open">Meetings</HelpLink>.</p>
+          </div>
+          {/* (pending modules S34) the studio's own calendar is a slot (lib/meetings/calendar-sync.ts): while it is empty, the line says it comes later */}
+          <span className={styles.hint} data-testid="int-calendar-line">{simulated.calendar ? 'Syncing your studio’s own Google Calendar both ways comes later.' : 'Every meeting is in your studio’s own calendar too, kept in step as it changes.'}</span>
+        </section>
+
         <section className={styles.card} aria-labelledby="int-soon">
           <div className={styles.cardHead}><h2 id="int-soon" className={styles.cardTitle}>Coming</h2></div>
           <ul className={styles.soon}>
-            <li><span><strong>Google Calendar</strong> — meeting invites from a lead’s Met log, once the Meetings tab lands.</span><Button appearance="text" onPress={comingSoon}>Notify me</Button></li>
-            <li><span><strong>Xero · Zoho Books</strong> — invoices and payments two ways.</span><Button appearance="text" onPress={comingSoon}>Notify me</Button></li>
+            {/* (one-home N-09) Xero left Coming for its own card above; (pending modules S23) Google Calendar too — Calendar invites; Zoho Books stays to come */}
+            <li><span><strong>Zoho Books</strong> — invoices and payments two ways.</span><Button appearance="text" onPress={comingSoon}>Notify me</Button></li>
           </ul>
         </section>
       </div>

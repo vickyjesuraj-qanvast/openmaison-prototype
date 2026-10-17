@@ -11,7 +11,7 @@
    panel stays positioned: the upload toast is placed inside it. */
 .panel {
   position: relative;
-  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
+  width: var(--om-modal-xl); height: var(--om-modal-xl-height); max-height: calc(100vh - 96px);   /* (pending modules S17) the tall xl height */
 }
 
 /* Body "Filter content": V g24 p24; scrolls when the groups outgrow the fixed 928. */
@@ -57,6 +57,22 @@
 .chip[data-chrome='quote'] { font: var(--om-type-subheading-s); padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); }   /* (REG-729) 12/16/600 from the token it re-typed */
 
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-10); }
+/* (pending modules S05) The list view: the phone's list (canvas 2j, REG-393 below) at every width — one row per file: the checkbox, a 48px
+   thumbnail, the name, its kind; the folders full width. The grid stays the mock's 276 tiles. */
+.groups[data-view='list'] .row { flex-direction: column; gap: var(--om-spacing-1); }
+.groups[data-view='list'] .folder { width: 100%; }
+.groups[data-view='list'] .tile { width: 100%; height: auto; flex-direction: row; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2); }
+.groups[data-view='list'] .caption { display: contents; }
+.groups[data-view='list'] .caption > *:first-child { order: 1; }
+.groups[data-view='list'] .tileImg, .groups[data-view='list'] .tileBox { order: 2; flex: 0 0 48px; width: 48px; height: 48px; min-height: 0; }
+.groups[data-view='list'] .tileName { order: 3; }
+.groups[data-view='list'] .kind { order: 4; }
+/* (pending modules S05) the File Type chip once a kind is picked wears the house applied dot (REG-295) at its corner */
+.chip[data-applied] { position: relative; }
+.folder[role='button'] { cursor: pointer; transition: background-color var(--motion-hover); }
+.folder[role='button']:hover { background: var(--om-color-hover-04p); }
+.folder[role='button']:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.viewToggle { display: inline-flex; }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 /* Group header: checkbox 24 + "Friday, 17 Jul ’26" / "Folders" 14/Semi Bold, 8 apart. */
 .groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
@@ -195,6 +211,7 @@
      told to wrap onto is drawn OUTSIDE the row: the file list rendered on top of the toolbar, so a tap on the
      visible "Kitchen" row fired the sort button hidden beneath it. */
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); height: auto; }
+  .viewToggle { display: none; }   /* (pending modules S05) a phone always lists — the toggle would do nothing there */
   .search { width: 100%; flex-basis: 100%; flex-shrink: 1; }
   .panel .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 

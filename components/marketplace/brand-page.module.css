@@ -1,0 +1,115 @@
+/*
+ * (pending modules S24 — 1.0's brand page) A brand's page on the house pieces: the L2 header, the lead Overview's cards
+ * (components/leads/detail/card.tsx) as two stacks — the brand's About · Contact · Web links at the left, its Services · Deals · Products ·
+ * Questions at the right (the checklist: cards side by side are stacks; at one column they dissolve and `order` keeps the reading order), the
+ * gallery cards for its deals, the house square for a product's picture. What is its own: the pictures at the top (1.0's gallery: the main
+ * picture and four more beside it), and the rows inside the cards (the LEAD STAGES rows' metrics: 8 in, r4, a rule between).
+ */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+
+/* ── the pictures ─────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.gallery { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--om-spacing-2); height: 420px; min-width: 0; }
+.gallery[data-single] { grid-template-columns: minmax(0, 1fr); }
+.main { position: relative; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); min-width: 0; }
+.main > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mainEmpty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.step { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+.stepPrev { left: var(--om-spacing-3); }
+.stepNext { right: var(--om-spacing-3); }
+.count { position: absolute; right: var(--om-spacing-3); bottom: var(--om-spacing-3); z-index: 1; padding: 2px var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-overlay-60p); color: var(--om-color-on-inverse-surface-default); font: var(--om-type-caption-s); }
+.thumbs { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--om-spacing-2); min-width: 0; }
+.thumbBtn { position: relative; padding: 0; border: 0; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); cursor: pointer; min-height: 0; }
+.thumbBtn > img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform var(--motion-toggle); }
+@media (hover: hover) { .thumbBtn:hover > img { transform: scale(1.04); } }
+.thumbBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.thumbBtn[data-on]::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+/* fewer than four more pictures fill the column without blank boxes: one fills it, two stack, three put the first across the top */
+.thumbs[data-count='1'] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.thumbs[data-count='2'] { grid-template-columns: 1fr; }
+.thumbs[data-count='3'] > :first-child { grid-column: 1 / -1; }
+
+/* ── the two stacks ───────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.grid { display: flex; gap: var(--om-spacing-6); align-items: flex-start; min-width: 0; }
+.side { flex: 0 0 360px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.mainCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+
+/* a card's body: the Overview card's 20 sides */
+.cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+.text { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; white-space: pre-line; }
+.identity { display: flex; gap: var(--om-spacing-3); align-items: center; min-width: 0; }
+.logo { composes: thumb from '../om/thumb.module.css'; width: 56px; height: 56px; background: var(--om-color-surface-default); }
+.logo > img { object-fit: contain; }
+.identityText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.tagline { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.small { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.state { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; row-gap: 0; min-height: 16px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.stateIcon { display: inline-flex; color: var(--om-color-tertiary-green-default); }
+.textLink { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); }
+
+/* the rows inside a card (Contact · Web links · Questions): 8 in, r4, a rule between, a link row lights on hover */
+.rows { display: flex; flex-direction: column; padding: 0 var(--om-spacing-3) var(--om-spacing-3); min-width: 0; }
+.row { display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); min-width: 0; color: var(--om-color-on-surface-default); text-decoration: none; font: var(--om-type-body-m); }
+.row + .row { box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); border-top-left-radius: 0; border-top-right-radius: 0; }
+a.row { transition: background-color var(--motion-hover); }
+@media (hover: hover) { a.row:hover { background: var(--om-color-hover-04p); } }
+a.row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.rowIcon { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-secondary); margin-top: 2px; }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.rowLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.rowEnd { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-secondary); margin-top: 2px; }
+
+/* the deals: the gallery's cards, three across in the right stack */
+.deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--om-spacing-4); padding: 0 var(--om-spacing-5) var(--om-spacing-5); }
+
+/* the products: a picture, the words, the price, and the one press — Add to Price book, or the door to it */
+.product { display: flex; gap: var(--om-spacing-3); align-items: flex-start; padding: var(--om-spacing-3) var(--om-spacing-2); min-width: 0; }
+.product + .product { box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); }
+.productPic { composes: thumb from '../om/thumb.module.css'; width: 64px; height: 64px; }
+.productText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.productName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.productDesc { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.productPrice { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.productLinks { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); align-items: center; margin-top: var(--om-spacing-1); }
+.productAct { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-1); max-width: 220px; }
+.productState { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: right; }
+
+/* the question and its answer, as 1.0 drew them */
+.faq { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-2); }
+.faq + .faq { box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); }
+.faqQ { margin: 0; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.faqA { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+
+/* the Add to Price book dialog's product line (the Choices' Save to the Price book look) */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.picked { display: flex; gap: var(--om-spacing-3); align-items: center; min-width: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-4); }
+
+/* ── widths ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .gallery { height: 340px; grid-template-columns: minmax(0, 1fr) 200px; }
+  .grid { flex-direction: column; align-items: stretch; }
+  .side, .mainCol { display: contents; }
+  .grid > * > [data-card='brand-about'] { order: 0; }
+  .grid > * > [data-card='brand-deals'] { order: 1; }
+  .grid > * > [data-card='brand-products'] { order: 2; }
+  .grid > * > [data-card='brand-services'] { order: 3; }
+  .grid > * > [data-card='brand-faqs'] { order: 4; }
+  .grid > * > [data-card='brand-contact'] { order: 5; }
+  .grid > * > [data-card='brand-links'] { order: 6; }
+}
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  .grid { gap: var(--om-spacing-4); }
+  /* one picture at 3:2 and the others as a strip of squares under it */
+  .gallery { display: flex; flex-direction: column; height: auto; gap: var(--om-spacing-2); }
+  .main { aspect-ratio: 3 / 2; }
+  .thumbs { display: flex; gap: var(--om-spacing-2); overflow-x: auto; scrollbar-width: none; }
+  .thumbs::-webkit-scrollbar { display: none; }
+  .thumbBtn { flex: 0 0 64px; height: 64px; }
+  .deals { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+  .cardBody { padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+  .product { flex-wrap: wrap; }
+  .productAct { flex-basis: 100%; max-width: none; align-items: flex-start; padding-left: calc(64px + var(--om-spacing-3)); }
+  .productState { text-align: left; }
+  .row2 { grid-template-columns: 1fr; }
+}

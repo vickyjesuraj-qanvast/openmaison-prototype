@@ -1,0 +1,25 @@
+/* (parity map, MI-065 · FB-102) Settings › Finance › Invoice paper: the form, and beside it the live preview — the real invoice paper on a
+   sample invoice, at 0.41 of its size, held in view while the form scrolls (the brand kit's preview column: its label, its well). The card
+   measures itself (a container): with room for both, the preview stands beside the form; narrower — a tablet, a phone — it hides and a
+   Preview button opens it at full size (a sheet on a phone, REG-353). */
+.wrap { container-type: inline-size; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-6); align-items: start; }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.preview { display: none; flex-direction: column; gap: var(--om-spacing-2); position: sticky; top: calc(var(--om-spacing-2) + 68px + var(--om-spacing-6)); min-width: 0; }
+.previewLabel { composes: previewLabel from '../../company/profile-view.module.css'; }
+.previewPage { composes: previewPage from '../../company/profile-view.module.css'; }
+.previewPage { padding: var(--om-spacing-3); }
+.zoom { width: 816px; zoom: 0.41; pointer-events: none; user-select: none; }
+.previewRow { display: flex; }
+.previewOpen { align-self: flex-start; margin-left: calc(-1 * var(--om-spacing-3)); }
+.previewWait { height: 440px; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+.large { display: flex; justify-content: center; }
+.accentRow { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.accentField { max-width: 360px; }
+.split[data-read] .preview { display: flex; position: static; }
+@container (max-width: 420px) { .zoom { zoom: 0.32; } .previewWait { height: 344px; } }
+@container (min-width: 860px) {
+  .split { grid-template-columns: minmax(0, 1fr) 360px; }
+  .preview { display: flex; }
+  .previewRow { display: none; }
+}

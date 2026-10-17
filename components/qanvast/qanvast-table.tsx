@@ -90,7 +90,7 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
             </div>
           </div>
           {/* Credits "200" · Budget (S$) "70,500" (no S$ prefix — the head carries it) · Property type · created "17 Jul ’26". */}
-          <div className={`${styles.cell} ${styles.colCredits} ${L.pinned('credits') ? styles.pin : ''}`} role="cell" data-col="credits" data-pin-edge={L.edge('credits') || undefined} style={L.style('credits')}>{row.credits}</div>
+          <div className={`${styles.cell} ${styles.colCredits} ${L.pinned('credits') ? styles.pin : ''}`} role="cell" data-col="credits" data-pin-edge={L.edge('credits') || undefined} style={L.style('credits')}>{row.credits ?? '—'}</div>
           <div className={`${styles.cell} ${styles.colBudget} ${L.pinned('budget') ? styles.pin : ''}`} role="cell" data-col="budget" data-pin-edge={L.edge('budget') || undefined} style={L.style('budget')}>{money(row.budgetMinor)}</div>
           <div className={`${styles.cell} ${styles.colType} ${L.pinned('type') ? styles.pin : ''}`} role="cell" data-col="type" data-pin-edge={L.edge('type') || undefined} style={L.style('type')}><span className={styles.oneLine}>{row.propertyType}</span></div>
           <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(row.createdAt)}</div>

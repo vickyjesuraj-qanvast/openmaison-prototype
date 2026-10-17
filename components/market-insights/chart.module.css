@@ -1,0 +1,97 @@
+/*
+ * (pending modules S25 — 1.0's ArticleChart) A chart inside an article, on the house card (radius 8, the border token) and the dataviz marks:
+ * bars ≤ 24px thick with a 4px rounded end and a square base, a 2px surface gap between touching fills, 2px lines with round joins, 8px end
+ * dots with a 2px surface ring, an area's wash at 10%, a hairline grid one step off the surface, text in text tokens only (a mark beside the
+ * words carries the hue). The hues are the house categorical palette's (components/om/category-palette.module.css, its `--cat`), never set
+ * here. The part-to-whole bar is Where costs go's (components/finance/where-costs-go.module.css), composed.
+ */
+.chart {
+  --chart-value-room: 88px;
+  margin: var(--om-spacing-6) 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0;
+  padding: var(--om-spacing-5) var(--om-spacing-6); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); background: var(--om-color-surface-default);
+}
+.head { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.legend { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2) var(--om-spacing-5); }
+.key { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+/* the legend mirrors the mark: a box for bars, a short line for lines */
+.swatch { width: 10px; height: 10px; border-radius: var(--om-radius-1); flex-shrink: 0; }
+.swatch[data-mark='line'] { width: 14px; height: 3px; }
+
+/* ── columns: a few short labels along the base, each value on its cap ─────────────────────────────────────────────────────────── */
+.cols { display: flex; align-items: stretch; height: 236px; padding-top: var(--om-spacing-5); }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+/* the base line runs under every column (they touch, so it reads as one) */
+.colBars { flex: 1; min-height: 0; display: flex; align-items: flex-end; justify-content: center; gap: 2px; border-bottom: var(--om-border-1) solid var(--om-color-on-surface-border); }
+.colBar { position: relative; width: 24px; min-height: 2px; border-radius: var(--om-radius-1) var(--om-radius-1) 0 0; }
+.colBars[data-many] .colBar { width: 20px; }
+.colValue { position: absolute; bottom: 100%; left: 50%; translate: -50% 0; padding-bottom: var(--om-spacing-1); font: var(--om-type-caption-xs); color: var(--om-color-on-surface-default); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.colLabel { margin-top: var(--om-spacing-2); padding: 0 2px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── rows: a label, then each series' bar with its value at the tip ────────────────────────────────────────────────────────────── */
+.rows { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.row { display: grid; grid-template-columns: minmax(96px, 32%) minmax(0, 1fr); align-items: center; gap: var(--om-spacing-4); min-width: 0; }
+.rowLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.rowBars { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.track { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.bar { display: block; height: 16px; min-width: 2px; border-top-right-radius: var(--om-radius-1); border-bottom-right-radius: var(--om-radius-1); }
+.rowBars[data-many] .bar { height: 12px; }
+.value { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stack { display: flex; gap: 2px; height: 16px; min-width: 4px; border-top-right-radius: var(--om-radius-1); border-bottom-right-radius: var(--om-radius-1); overflow: hidden; }
+.seg { flex-basis: 0; min-width: 2px; height: 100%; }
+
+/* ── the part-to-whole bar (1.0's donut) — Where costs go's bar and legend ─────────────────────────────────────────────────────── */
+.share { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.shareBar { composes: bar from '../finance/where-costs-go.module.css'; }
+.shareSeg { composes: seg from '../finance/where-costs-go.module.css'; }
+.shareLegend { composes: legend from '../finance/where-costs-go.module.css'; }
+.shareItem { composes: item from '../finance/where-costs-go.module.css'; }
+.shareSwatch { composes: swatch from '../finance/where-costs-go.module.css'; }
+.shareName { composes: name from '../finance/where-costs-go.module.css'; }
+.sharePct { composes: share from '../finance/where-costs-go.module.css'; }
+.shareAmount { composes: amount from '../finance/where-costs-go.module.css'; }
+
+/* ── lines and areas ───────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.plot { position: relative; min-width: 0; overflow: hidden; border-radius: var(--om-radius-1); outline: none; touch-action: pan-y; }
+.plot:focus-visible { box-shadow: 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.svg { display: block; max-width: 100%; height: auto; }
+.grid { stroke: var(--om-color-surface-variant); stroke-width: 1; shape-rendering: crispEdges; }
+.tick { font: var(--om-type-caption-xs); fill: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.line { fill: none; stroke: var(--cat); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; background: none; }
+.wash { fill: var(--cat); fill-opacity: 0.1; stroke: none; background: none; }
+.dot { fill: var(--cat); stroke: var(--om-color-surface-default); stroke-width: 2; background: none; }
+.endLabel { font: var(--om-type-caption-s); fill: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.cross { stroke: var(--om-color-on-surface-secondary); stroke-width: 1; shape-rendering: crispEdges; }
+/* the crosshair's readout: the house tooltip's bubble, a row per series — the value first, the series after it */
+.readout {
+  composes: bubble from '../om/tooltip.module.css';
+  position: absolute; top: var(--om-spacing-1); width: 180px; white-space: normal; pointer-events: none;
+  display: flex; flex-direction: column; gap: var(--om-spacing-0-5);
+}
+.readoutLabel { font: var(--om-type-caption-s); }
+.readoutRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.readoutKey { width: 12px; height: 3px; border-radius: var(--om-radius-1); flex-shrink: 0; }
+.readoutValue { font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; }
+.readoutName { font: var(--om-type-body-s); opacity: 0.8; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── the foot: the editors' source, and the numbers as a table ─────────────────────────────────────────────────────────────────── */
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; min-height: 32px; }
+.source { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; }
+.sourceLink { composes: link from '../om/text-link.module.css'; }
+.numbersWrap { overflow-x: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.numbers { width: 100%; border-collapse: collapse; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.numbers th, .numbers td { padding: var(--om-spacing-2) var(--om-spacing-3); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.numbers thead th { border-top: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-bg); }
+.numbers th[scope='row'], .numbers thead th:first-child { text-align: left; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); white-space: normal; }
+.numbers thead th:first-child { background: var(--om-color-surface-bg); }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 767px) {
+  .chart { --chart-value-room: 76px; padding: var(--om-spacing-4); margin: var(--om-spacing-6) 0; }
+  /* a row's label sits over its bars, so the bars keep the width */
+  .row { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
+  .rowLabel { font: var(--om-type-body-s); }
+  .colBar { width: 20px; }
+  .colBars[data-many] .colBar { width: 14px; }
+}

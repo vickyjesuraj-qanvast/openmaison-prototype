@@ -1,0 +1,19 @@
+/* (gaps build B, item 7) Omit from the contract — the Price book modal's list (price-book-dialog.module.css), composed: its body, toolbar,
+   search, bordered list and tick rows; the contract's sections as caption heads that hold while the list scrolls. */
+.body { composes: body from './price-book-dialog.module.css'; }
+.toolbar { composes: toolbar from './price-book-dialog.module.css'; }
+.search { composes: search from './price-book-dialog.module.css'; }
+.list { composes: list from './price-book-dialog.module.css'; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.row { composes: row from './price-book-dialog.module.css'; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 56px; }
+.row[data-omitted] { cursor: default; color: var(--om-color-on-surface-secondary); }
+.row[data-omitted]:hover { background: none; }
+.text { composes: text from './price-book-dialog.module.css'; }
+.name { composes: name from './price-book-dialog.module.css'; }
+.meta { composes: meta from './price-book-dialog.module.css'; }
+.price { composes: price from './price-book-dialog.module.css'; }
+.empty { composes: empty from './price-book-dialog.module.css'; }
+.emptyGlyph { composes: emptyGlyph from './price-book-dialog.module.css'; }
+.emptyTitle { composes: emptyTitle from './price-book-dialog.module.css'; }
+.emptyHelp { composes: emptyHelp from './price-book-dialog.module.css'; }
+.groupHead { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; min-height: 36px; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.row + .groupHead { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

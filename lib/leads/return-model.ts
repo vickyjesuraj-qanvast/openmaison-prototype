@@ -49,3 +49,13 @@ export function returnWindow(createdAt: Date, used: number, now: number): Return
 }
 /** The rules in one line, for a tooltip. */
 export const RETURN_RULES_TEXT = `Qanvast's rules: a return opens ${RETURN_RULES.waitDays} days after the lead arrives, closes after ${RETURN_RULES.windowDays}, and a lead is returned at most ${RETURN_RULES.maxReturns} times. Numbers to be confirmed by Qanvast.`
+
+/* ── (S42 B-10 · call B·3) Qanvast's appeal window, said by its date once it has passed ─────────────────────────────────────────────────
+   The rejected-return banner keeps the mock's sentence (858:24095) while the window is open; past it, it names the day the window ran to and
+   that Qanvast may still look at an appeal — appeals stay display-only rules (S05). */
+const DAY_MS = 86_400_000
+/** The last day of Qanvast's appeal window (its reply plus the days it gave), else null. */
+export const appealUntil = (r: { repliedAt: Date | number | null; appealDays: number | null }): Date | null =>
+  r.repliedAt && r.appealDays ? new Date(new Date(r.repliedAt).getTime() + r.appealDays * DAY_MS) : null
+/** Whether the window has passed by `now`. */
+export const appealWindowPassed = (r: { repliedAt: Date | number | null; appealDays: number | null }, now: number): boolean => { const u = appealUntil(r); return !!u && u.getTime() < now }

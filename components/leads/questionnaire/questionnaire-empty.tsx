@@ -11,7 +11,8 @@ import styles from './questionnaire-empty.module.css'
  * from studio-level setup by admins/owners (a Company tab later), so this lead-side state only explains that.
  * Copied from components/leads/contracts/contracts-empty.tsx with the questionnaire's copy.
  */
-export function QuestionnaireEmpty({ bankCount = 0, onAddBank }: { /** (REG-612) the studio's enabled questions this lead could take */ bankCount?: number; onAddBank?: () => void }) {
+export function QuestionnaireEmpty({ bankCount = 0, onAddBank, noun = 'lead' }: { /** (REG-612) the studio's enabled questions this lead could take */ bankCount?: number; onAddBank?: () => void
+  /** (parity P-12) the record the host carries the tab on — a project's page says "this project" */ noun?: 'lead' | 'project' }) {
   return (
     <div className={styles.card} data-testid="questionnaire-empty">
       <div className={styles.inner}>
@@ -19,7 +20,7 @@ export function QuestionnaireEmpty({ bankCount = 0, onAddBank }: { /** (REG-612)
         <img src="/figma-assets/empty-questionnaire.svg" width={180} height={154} alt="" className={styles.art} />
         <div className={styles.texts}>
           <p className={styles.title}>No questions yet</p>
-          <p className={styles.body}>{bankCount > 0 ? `The studio’s question bank has ${bankCount} question${bankCount === 1 ? '' : 's'} ready for this lead.` : 'Questions are set up by your studio’s admins under Company › Questionnaire and will appear here.'}</p>
+          <p className={styles.body}>{bankCount > 0 ? `The studio’s question bank has ${bankCount} question${bankCount === 1 ? '' : 's'} ready for this ${noun}.` : 'Questions are set up by your studio’s admins under Company › Questionnaire and will appear here.'}</p>
         </div>
         {bankCount > 0 && onAddBank ? <Button onPress={onAddBank}>Add the studio’s questions</Button> : null}   {/* (REG-612, parity Q-21) */}
       </div>

@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useFlagPref } from '@/lib/prefs'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { openGlobalSearch } from './global-search'
-import { ToolsPopover, onToolsPage } from './tools-popover'
+import { ToolsPopover, onToolsPage, recordHome } from './tools-popover'
+import { readFrom } from '@/lib/nav'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { openNotifications } from '@/components/shell/notifications-panel'
 import { ViewAsPopover } from './view-as-popover'
@@ -19,6 +20,10 @@ import type { CreditsChrome } from '@/lib/credits/chrome'
 import { RailCredits } from './rail-credits'
 import { usePlatform } from '@/components/om/keys'
 import { keysPlain } from '@/lib/keys/spec'
+import { opensPath, opensWorkspace } from '@/lib/settings/roles'
+import { companyGroupsFor } from '@/lib/company/sections'
+import { badgeCount } from '@/lib/format'   // (pending modules S16) 99+, as 1.0's rail
+import { DEMO_CHROME, type StudioChrome } from '@/lib/studios/model'   // (pending modules S31)
 import styles from './app-rail.module.css'
 
 /**
@@ -28,17 +33,17 @@ import styles from './app-rail.module.css'
  * destination in phase 1.
  */
 const TOP_ITEMS = [
-  { icon: 'dashboard', label: 'Dashboard' },
+  { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },   /* (pending modules S22) live — the studio's front door (1.0's /dashboard), what needs you · what's next · where it stands */
   { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the studio's tasks, second after Dashboard as 1.0 had it; task_alt has no filled state in Material Symbols — the owner chose to leave it */
-  { icon: 'business_center', label: 'Projects' },
+  { icon: 'business_center', label: 'Projects', href: '/projects' },   /* (REG-919, Projects round 1) a destination now; its badge = the projects that need attention */
   { icon: 'people_alt', label: 'Leads', href: '/leads' },
-  { icon: 'storefront', label: 'Marketplace' },
-  { icon: 'domain', label: 'Company', panel: '/company' },   /* (REG-484) opens the Company panel beside the rail; lit on every /company page */
+  { icon: 'storefront', label: 'Marketplace', href: '/marketplace' },   /* (pending modules S24) live: Qanvast's partner brands and their deals — 1.0's rail item; Accounting's rail leaves it out (opensPath) */
+  { icon: 'domain', label: 'Company', panel: '/company' },   /* (REG-484) opens the Company panel beside the rail; lit on every /company page — (REG-1360) Finance among them, Company › Operations › Finance */
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
 ]
 const BOTTOM_ITEMS = [
   { icon: 'apps', label: 'Tools' },
-  { icon: 'chat', label: 'Chat' },
+  { icon: 'chat', label: 'Messages', href: '/chat' },   /* (gaps build H, H-Q11) every conversation with a client — its badge the conversations with an unread client message · (one-home N-08) one word for them everywhere, "Messages" (the address stays) */
   { icon: 'notifications', label: 'Notifications' },
   { icon: 'settings', label: 'Settings', href: '/settings' },
 ]
@@ -46,16 +51,27 @@ const BOTTOM_ITEMS = [
  *  `team`: the studio's members for Demo Studio › View as (REG-667).
  *  `credits`: the studio's plan and AI credits for the Upgrade slot (REG-701) — Upgrade on Free, the balance on a paid plan. */
 /** (REG-715) The rail's places the G then … keys go to (`lib/keys/registry.ts` GO). */
-const GO_BY_HREF: Record<string, string> = { '/tasks': 'go.tasks', '/leads': 'go.leads', '/settings': 'go.settings' }
+const GO_BY_HREF: Record<string, string> = { '/dashboard': 'go.dashboard', '/tasks': 'go.tasks', '/projects': 'go.projects', '/leads': 'go.leads', '/chat': 'go.messages', '/settings': 'go.settings' }   // (pending modules S16) Messages takes G M (1.0's G I)   // (REG-1360) G F still goes to Finance, now in Company — no rail item to light
 /** (UX audit V6) The rail's dead ends say so where they are pointed at — the tooltip, the name a screen reader reads — as the Company panel's
     "Soon" does; the press still answers "Coming soon in OpenMaison 2.0". */
 export const SOON = ' · coming soon'
 /** (UX audit 2026-09-30, T5) Where an item lands while it wears its badge: Tasks' red number is the viewer's own overdue tasks, so it opens them. */
-const BADGE_LANDING: Record<string, string> = { '/tasks': '/tasks?scope=mine&due=overdue' }
+const BADGE_LANDING: Record<string, string> = { '/tasks': '/tasks?scope=mine&due=overdue', '/projects': '/projects?scope=attention' }   /* (REG-919) the Needs attention tile it counts */
+/** (REG-919) What an item's count says to a screen reader — the Tasks item's overdue tasks, the Projects item's projects that need attention. */
+const BADGE_WORDS: Record<string, string> = { '/tasks': 'overdue', '/projects': 'need attention', '/chat': 'unread' }   // (gaps build H)
+/** (parity map, PR-022 · FR-040) The rail's items this member opens: every one for the studio's roles; for Accounting the places their
+    work is — Tasks, Company (its panel lists Finance and Reports), the bell and Settings — never a dead end, never the workspace. */
+export const railItemOpens = (role: string | null | undefined, it: { label: string; href?: string; panel?: string }) =>
+  opensWorkspace(role) || it.label === 'Notifications' || !!it.panel || (!!it.href && opensPath(role, it.href))
+/** (fix-A, A-38) "1 needs attention", "2 need attention". */
+const badgeWords = (href: string, n: number) => (href === '/projects' && n === 1 ? 'needs attention' : BADGE_WORDS[href] ?? 'overdue')
 
-export function AppRail({ badges, team = [], credits = null }: { badges?: Record<string, number>; team?: SessionMember[]; credits?: CreditsChrome | null } = {}) {
+export function AppRail({ badges, team = [], credits = null, studio = DEMO_CHROME }: { badges?: Record<string, number>; team?: SessionMember[]; credits?: CreditsChrome | null
+  /** (pending modules S31) the studio this prototype has open — the block's name, its second line, its picture, the Studios group */
+  studio?: StudioChrome } = {}) {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
+  const home = recordHome(pathname, readFrom(useSearchParams().get('from')))   // (S42 audit C-24) a meeting opened from its lead lights Leads
   const platform = usePlatform()
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
      Settings or Qanvast Ops remounted the rail and dropped the choice (user 2026-08-31). `animate` keeps the width
@@ -73,7 +89,8 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
   const [viewAsOpen, setViewAsOpen] = useState(false)   // (REG-667) Demo Studio › View as, beside the rail
   const studioRef = useRef<HTMLButtonElement>(null)
   const viewer = team.find((m) => m.isYou) ?? null
-  const viewingOther = !!viewer && viewer.id !== 'dane'   // Dane is who the studio is in the base state; anyone else is "Viewing as"
+  const viewingOther = !!viewer && viewer.id !== studio.baseId   // Dane is who the studio is in the base state (a new studio: its Owner); anyone else is "Viewing as"
+  const role = viewer?.role ?? null   // (parity map, PR-022) the rail shows what this member opens
   const [scrolled, setScrolled] = useState(false)   // (REG-329) the rail body has scrolled under the logo → the head takes a shadow
 
   const onEnter = () => setRailHover(true)
@@ -91,7 +108,7 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
     /* (REG-715) G then … — the key shows in the item's tooltip, collapsed or wide, and the ? panel lights it */
     const shortcut = it.href ? GO_BY_HREF[it.href] : it.label === 'Notifications' ? 'go.notifications' : undefined
     /* (UX audit V7) Tools lights on its pages — Quotes, Quote X-Ray, Contracts, the AI Visualizer and what opens from them — as Company does on /company */
-    const active = (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel)) || (it.label === 'Tools' && onToolsPage(pathname))
+    const active = home ? it.href === home : (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel)) || (it.label === 'Tools' && onToolsPage(pathname))
     /* (UX audit V6) a coming-soon item says so in its tooltip and its name */
     const soon = !it.href && !it.panel && it.label !== 'Tools' && it.label !== 'Notifications' && it.icon !== 'diamond'
     const className = extra ? `${styles.item} ${extra}` : styles.item
@@ -105,9 +122,9 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
              carry `fill: true` outright, so it read as selected from the Qanvast Ops and Settings pages too. */
           <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
-        {(it.href && badges?.[it.href]) || (it.panel && badges?.[it.panel]) ? <span className={styles.badge} aria-hidden>{badges?.[it.href ?? it.panel ?? '']}</span> : null}
-        {it.label === 'Notifications' && badges?.notifications ? <span className={styles.badge} aria-hidden>{badges.notifications}</span> : null}   {/* (REG-604) */}
-        {it.label === 'Tools' && badges?.tools ? <span className={styles.badge} aria-hidden>{badges.tools}</span> : null}   {/* (UX audit Q4) quotes waiting for this approver */}
+        {(it.href && badges?.[it.href]) || (it.panel && badges?.[it.panel]) ? <span className={styles.badge} aria-hidden>{badgeCount(badges?.[it.href ?? it.panel ?? ''] ?? 0)}</span> : null}
+        {it.label === 'Notifications' && badges?.notifications ? <span className={styles.badge} aria-hidden>{badgeCount(badges.notifications)}</span> : null}   {/* (REG-604) */}
+        {it.label === 'Tools' && badges?.tools ? <span className={styles.badge} aria-hidden>{badgeCount(badges.tools)}</span> : null}   {/* (UX audit Q4) quotes waiting for this approver */}
         <span className={styles.label}>{it.label}</span>
       </>
     )
@@ -134,7 +151,7 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
     return (
       <Tooltip key={it.label} label={soon ? `${it.label}${SOON}` : it.label} side="right" disabled={expanded && !shortcut && !soon} shortcut={shortcut}>
         {it.href ? (
-          <Link href={badges?.[it.href] ? BADGE_LANDING[it.href] ?? it.href : it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
+          <Link href={badges?.[it.href] ? BADGE_LANDING[it.href] ?? it.href : it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} ${badgeWords(it.href, badges[it.href] ?? 0)})` : it.label}
                 aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>
@@ -195,37 +212,38 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
             </Tooltip>
             <span className={styles.kbd} aria-hidden>{keysPlain('mod+k', platform)}</span>   {/* (REG-717) Ctrl+K on Windows */}
           </div>
-          <div className={styles.items}>{TOP_ITEMS.map((it) => navItem(it))}</div>
+          <div className={styles.items}>{TOP_ITEMS.filter((it) => railItemOpens(role, it)).map((it) => navItem(it))}</div>
         </div>
         <div className={styles.bottom}>
           {/* (REG-701) One slot, two states: Upgrade on Free (as drawn, 779:19690), the studio's AI credits once it pays. */}
-          {credits ? (
+          {!opensWorkspace(role) ? null : credits ? (   /* (parity map, FB-114) Accounting has no AI tool — no AI credits to show */
             <RailCredits initial={credits.summary} gstLine={credits.gstLine} expanded={expanded} tabletDown={tabletDown}
                          itemClass={styles.item} upgradeClass={styles.upgrade} labelClass={styles.label} gemTurnClass={styles.gemTurn} gemClass={styles.upgradeGlyph} />
           ) : navItem({ icon: 'diamond', label: 'Upgrade' }, styles.upgrade)}
-          {BOTTOM_ITEMS.map((it) => navItem(it))}
+          {BOTTOM_ITEMS.filter((it) => railItemOpens(role, it)).map((it) => navItem(it))}
         </div>
         {/* (REG-667) The Demo Studio block opens View as — the member the prototype is being seen as. Anyone but Dane
             puts their avatar on the studio's corner and "Viewing as …" on the second line, so nobody forgets. */}
-        <Tooltip label={viewingOther ? `Demo Studio · Viewing as ${viewer.name}` : 'Demo Studio'} side="right" disabled={expanded || viewAsOpen}>
+        <Tooltip label={viewingOther ? `${studio.name} · Viewing as ${viewer.name}` : studio.name} side="right" disabled={expanded || viewAsOpen}>
           <button ref={studioRef} type="button" className={styles.avatarRow} aria-haspopup="menu" aria-expanded={viewAsOpen}
-                  aria-label={viewingOther ? `Demo Studio, viewing as ${viewer.name}. View as` : 'Demo Studio. View as'} onClick={() => setViewAsOpen((o) => !o)}>
+                  aria-label={viewingOther ? `${studio.name}, viewing as ${viewer.name}. View as` : `${studio.name}. View as`} onClick={() => setViewAsOpen((o) => !o)} data-testid="studio-block">
             <span className={styles.avatarWrap}>
+              {/* (pending modules S31) the demo's avatar; a new studio's logo, else its initial on the house tint */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className={styles.avatar} src="/figma-assets/avatar-studio.svg" alt="" />
+              {studio.mark ? <img className={styles.avatar} src={studio.mark} alt="" /> : <span className={`${styles.avatar} ${styles.studioInitial}`} aria-hidden>{studio.name.charAt(0).toUpperCase()}</span>}
               {viewingOther ? <span className={styles.viewerMark}><Avatar name={viewer.name} color={viewer.color} size={20} tooltip={false} /></span> : null}
             </span>
             <span className={styles.studio}>
-              <span className={styles.studioName}>Demo Studio</span>
-              <span className={styles.studioOwner} data-viewing={viewingOther || undefined}>{viewingOther ? `Viewing as ${viewer.name}` : 'Dane Bruce Lee'}</span>
+              <span className={styles.studioName} data-testid="studio-name">{studio.name}</span>
+              <span className={styles.studioOwner} data-viewing={viewingOther || undefined}>{viewingOther ? `Viewing as ${viewer.name}` : studio.owner}</span>
             </span>
           </button>
         </Tooltip>
         </div>
       </nav>
       <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} counts={badges?.tools ? { quotes: badges.tools } : undefined} />
-      <ViewAsPopover open={viewAsOpen} anchor={studioRef} onClose={() => setViewAsOpen(false)} team={team} />
-      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
+      <ViewAsPopover open={viewAsOpen} anchor={studioRef} onClose={() => setViewAsOpen(false)} team={team} profile studios={studio.studios} />   {/* (pending modules S01) you first — Your profile */}
+      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} groups={companyGroupsFor(role)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} money={badges?.['company:finance'] ?? 0} />
     </div>
   )
 }

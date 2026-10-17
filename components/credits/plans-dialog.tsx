@@ -4,16 +4,15 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { Button, SegmentedButton, SegmentedButtonItem, Switch } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { IconButton } from '@/components/om/icon-button'
-import { Tooltip } from '@/components/om/tooltip'
 import { CreditToken, fillFromEmpty } from '@/components/om/credit-token'
 import { useSnackbar } from '@/components/om/snackbar'
 import { askToUpgrade, completeCheckout, startPlanCheckout, type Checkout } from '@/app/credits/actions'
 import { aboutRenders, dayMonth, fmtCredits, type CreditSummary } from '@/lib/credits/model'
 import { allowanceFor, perMonthOnYearly, planBlock, planRow, PLAN_TAGLINE, priceFor, sgd, sgd2, suggestedPlan, TOPUP_CREDITS, TOPUP_PRICE, yearlySaving, type BillingCycle } from '@/lib/credits/plans'
-import { buysFor, COMPARE, copilotLabel, FAQ, type CompareCell } from '@/lib/credits/pricing-data'
+import { buysFor, COMPARE, compareCells, copilotLabel, FAQ, type CompareCell } from '@/lib/credits/pricing-data'
 import { CheckoutPanel, PayLine, type PayStatus } from './credit-dialogs'
-import { holdRail, openManageBilling, openTopUp, seedCredits } from './credits-client'
+import { CountStepper } from './count-stepper'
+import { holdRail, openManageBilling, openTopUp, refreshCredits, seedCredits } from './credits-client'
 import type { CreditsChrome } from '@/lib/credits/chrome'
 import styles from './plans-dialog.module.css'
 
@@ -67,6 +66,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
     if (step === 'review') {
       const r = await startPlanCheckout({ planId: kind, seats, cycle, trial: trialOk && trial })
       if ('error' in r) { snackbar({ message: r.error }); return }
+      if (r.payUrl) { window.location.assign(r.payUrl); return }   // (pending modules S34) a real payment provider's own checkout page
       setCheckout(r); setPay('idle'); setPayError(null); setStep('pay')
     }
   })
@@ -82,9 +82,10 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
     setTimeout(() => setStep('done'), 450)
   })
   const ask = () => start(async () => {
-    const r = await askToUpgrade(kind)
+    const r = await askToUpgrade(kind, 'plans')
     if ('error' in r) { snackbar({ message: r.error }); return }
-    onClose(); snackbar({ message: `Asked ${r.owner} to move the studio to ${plan.name}` })
+    onClose(); snackbar({ message: r.again ? `You asked ${r.owner} on ${dayMonth(r.askedAt)} — it’s in their bell` : `Asked ${r.owner} to move the studio to ${plan.name}` })   // (S42 D-07) one ask while it waits
+    void refreshCredits()
   })
 
   const subtitle = (
@@ -171,7 +172,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
                 <tbody>
                   {COMPARE.map((g) => [
                     <tr key={g.group}><td colSpan={4} className={styles.group}>{g.group}</td></tr>,
-                    ...g.rows.map((r) => <tr key={`${g.group}-${r.label}`}><td>{r.label}</td><Cell v={r.free} /><Cell v={r.pro} pro /><Cell v={r.max} /></tr>),
+                    ...g.rows.map((r) => { const [free, pro, max] = compareCells(r); return <tr key={`${g.group}-${r.label}`}><td>{r.label}</td><Cell v={free} /><Cell v={pro} pro /><Cell v={max} /></tr> }),
                   ])}
                 </tbody>
               </table>
@@ -212,11 +213,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
           {kind === 'pro_studio' ? (
             <div className={styles.field}>
               <div><b>Seats</b><span className={styles.m}>{team} {team === 1 ? 'member is' : 'members are'} active — one seat each is the usual</span></div>
-              <span className={styles.stepper} data-testid="plans-seats">
-                <Tooltip label="Fewer seats"><IconButton icon="remove" label="Fewer seats" variant="bare" disabled={seats <= plan.minSeats} onClick={() => setSeats((n) => Math.max(plan.minSeats, n - 1))} /></Tooltip>
-                <b aria-live="polite">{seats}</b>
-                <Tooltip label="More seats"><IconButton icon="add" label="More seats" variant="bare" onClick={() => setSeats((n) => Math.min(200, n + 1))} /></Tooltip>
-              </span>
+              <CountStepper value={seats} min={plan.minSeats} max={200} onChange={setSeats} less="Fewer seats" more="More seats" testId="plans-seats" />
             </div>
           ) : null}
           <div className={styles.field}>
@@ -236,7 +233,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
             <div><span>Then</span><span>{trialOk && trial ? `${sgd(price)} after the 14 days, unless you cancel` : `${sgd(price)} ${cycle === 'yearly' ? 'a year' : 'a month'}, on the same date`}</span></div>
             <p className={styles.m}>{chrome.billing.name}{chrome.billing.uen ? ` · UEN ${chrome.billing.uen}` : ''} · {chrome.gstLine}</p>
           </div>
-          {!may ? <p className={styles.readOnly}><Icon name="lock" size={16} weight={300} />Only {s.owner.name} can change the plan.</p> : null}
+          {!may ? <p className={styles.readOnly}><Icon name="lock" size={16} weight={300} />{s.upgradeAsk ? `You asked ${s.owner.name} on ${dayMonth(s.upgradeAsk.at)} — only ${s.owner.name} can change the plan.` : `Only ${s.owner.name} can change the plan.`}</p> : null}
         </div>
       </div>
     )
@@ -244,7 +241,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
       <>
         <Button appearance="text" iconStart={<Icon name="arrow_back" size={20} />} onPress={() => setStep('choose')}>Back</Button>
         {may ? <Button onPress={next} isDisabled={pending} data-testid="plans-pay">{trialOk && trial ? 'Start the free trial' : `Pay ${sgd(price)}`}</Button>
-          : <Button onPress={ask} isDisabled={pending}>{`Ask ${s.owner.name}`}</Button>}
+          : s.upgradeAsk ? null : <Button onPress={ask} isDisabled={pending}>{`Ask ${s.owner.name}`}</Button>}
       </>
     )
   } else if (step === 'pay' && checkout) {

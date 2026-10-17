@@ -64,3 +64,50 @@ export function variationHtml(): string {
     VARIATION_SIGN_OFF(),   // (UX audit C4) somewhere for the client to sign — the initials alone could never be sent
   ].join('')
 }
+
+/** (S44R — UAT row 358, call C7, invented copy) A letter of appointment — Spaces Studio's way of starting a project: the client appoints the
+ *  studio on the quote's terms and pays the deposit (the Deposit field: the quote's first payment). Repair R127 seeds it as a template. */
+export const APPOINTMENT_TITLE = 'Letter of Appointment'
+export function appointmentHtml(): string {
+  const p = (s: string) => `<p>${s}</p>`
+  return [
+    `<h1>${APPOINTMENT_TITLE}</h1>`,
+    p(`${t('date.contract')}`),
+    p(`Dear ${t('client.name')},`),
+    p(`Thank you for appointing <strong>${t('studio.name')}</strong>(UEN ${t('studio.uen')}) to design and renovate ${t('lead.address')}. This letter confirms our appointment on the terms of quotation ${t('quote.number')}, for ${t('quote.total')}.`),
+    '<h2>The deposit</h2>',
+    p(`On signing, a deposit of <strong>${t('quote.deposit')}</strong>secures your project and starts the detailed design. The remaining payments follow the schedule in the quotation.`),
+    '<h2>What happens next</h2>',
+    p('Once the deposit is in, we confirm the works programme with you and apply for the permits your home needs. Any change to the scope after today is quoted to you as a variation before work on it begins.'),
+    '<h2>Your acceptance</h2>',
+    p(`By signing below, you appoint ${t('studio.name')}for the works in quotation ${t('quote.number')}and agree to pay the deposit above.`),
+    `<p>${signField('studio-signature')}</p>`,
+    p(`For ${t('studio.name')}`),
+    `<p>${signField('client-signature')}</p>`,
+    p(`${t('client.name')}, the Client`),
+  ].join('')
+}
+
+/** (S44R — UAT row 359, call C9, invented copy) The completion & warranty letter the Hand over sheet sends — filled from the project (the
+ *  Handover fields: its number, the completion day, the defects period and the day it ends). Repair R129 seeds it, marked *Use at handover*. */
+export const COMPLETION_TITLE = 'Completion & Warranty Letter'
+export function completionHtml(): string {
+  const p = (s: string) => `<p>${s}</p>`
+  return [
+    `<h1>Completion &amp; Warranty Letter</h1>`,
+    p(`${t('date.contract')}`),
+    p(`Dear ${t('client.name')},`),
+    p(`We are pleased to confirm that the renovation of ${t('lead.address')}(project ${t('project.number')}) was completed and handed over to you on ${t('project.completedOn')}.`),
+    '<h2>Defects liability period</h2>',
+    p(`${t('studio.name')}will make good any defect in our workmanship that you report in writing within ${t('project.defectsPeriod')}of completion — that is, by ${t('project.defectsUntil')}— at no cost to you. Fair wear and tear, misuse, and items installed by others are not covered.`),
+    '<h2>Warranties</h2>',
+    p('The manufacturers’ warranties on appliances, fittings and materials pass to you from the completion date. Please keep their cards and receipts with this letter.'),
+    '<h2>Reporting a defect</h2>',
+    p(`Write to us at ${t('studio.email')}or call ${t('studio.phone')}, with photos where you can, and we will arrange a visit within 7 working days.`),
+    p('Thank you for trusting us with your home.'),
+    `<p>${signField('studio-signature')}</p>`,
+    p(`For ${t('studio.name')}`),
+    `<p>${signField('client-signature')}</p>`,
+    p(`Received by ${t('client.name')}`),
+  ].join('')
+}

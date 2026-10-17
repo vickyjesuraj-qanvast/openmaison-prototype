@@ -1,0 +1,85 @@
+/* (Projects round 6) The portal's Money — the Client Portal Proposal's board 4 on the portal's own sheet (portal.module.css: the white card on
+   the page ground, r8, the studio's colour as --brand and the page's primary). Composed, never copied: the card, the row, the step button, the
+   link. Board 4's colours: paid = secondary ink, the payment due = a tinted block (the tertiary yellow variant, board 4's #fef5ea) with its
+   "Due now" in the yellow's ink, waiting for the studio = the brand's own tint, planned = secondary ink. */
+
+/* ── two columns at a desk (payments · paid so far), one on a phone in board 4's order (paid so far · payments · the quote) ── */
+.split { display: flex; flex-wrap: wrap; gap: var(--om-spacing-6); align-items: flex-start; }
+.main { flex: 3 1 480px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.side { flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.homeHead { margin: var(--om-spacing-2) 0 0; font: var(--om-type-subheading-xl); }
+
+/* ── Paid so far ── */
+.paid { composes: card cardPad from '../portal.module.css'; }
+.eyebrow { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.figure { margin: 0; font: var(--om-type-heading-h2); font-variant-numeric: tabular-nums; }
+.of { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.bar { height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; }
+.barFill { height: 100%; border-radius: var(--om-radius-full); background: var(--brand); }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* ── the payments (board 4's list) ── */
+.list { composes: card from '../portal.module.css'; overflow: hidden; }
+.stage { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 60px; padding: var(--om-spacing-3) var(--om-spacing-4); scroll-margin-top: 88px; }
+.stage + .stage, .stage + .due, .due + .stage, .due + .due { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.stageText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stageName { font: var(--om-type-subtitle-m); overflow-wrap: anywhere; }
+.stageLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.stageLine .link { font: var(--om-type-subtitle-s); }
+.amount { flex: none; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.link { composes: link from '../portal.module.css'; }
+
+/* the payment due: the tinted block with how to pay and I have paid */
+.due { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); background: var(--om-color-tertiary-yellow-variant2); scroll-margin-top: 88px; }
+.due[data-state='to_confirm'] { background: var(--om-color-primary-variant); }
+.dueHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.dueName { font: var(--om-type-subheading-m); }
+.dueWhen { font: var(--om-type-subtitle-s); color: var(--om-color-on-tertiary-yellow-variant); }
+.due[data-state='to_confirm'] .dueWhen { color: var(--om-color-on-primary-variant); }
+.dueAmount { flex: none; font: var(--om-type-heading-h4); font-variant-numeric: tabular-nums; }
+.payBox { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.qr { flex: none; width: 88px; height: 88px; border-radius: var(--om-radius-1); }
+.payText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.payLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.payName { font: var(--om-type-subtitle-m); overflow-wrap: anywhere; }
+.payLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.payGo { composes: stepGo from '../portal.module.css'; border: 0; cursor: pointer; width: 100%; }
+.payGo:disabled { cursor: default; filter: none; opacity: 0.6; }
+.refused { margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); font: var(--om-type-body-m); overflow-wrap: anywhere; }
+.waiting { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+/* (fix-F, F-09) the home's Money card: what is due, in the due colour (board 7's amber) */
+.dueLine { margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-tertiary-yellow-variant); }
+/* (fix-F, F-07) a part payment already confirmed on a stage still due — its line and its receipt, as a paid stage's row says them */
+.paidLine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.paidLine .link { font: var(--om-type-subtitle-s); }
+/* (fix-F, F-17) the stage the bell or What needs you opened, pulsed once — Choices' own pulse */
+.stage, .due { position: relative; }
+.stage[data-fresh]::after, .due[data-fresh]::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .stage[data-fresh]::after, .due[data-fresh]::after { animation-duration: .01ms; } }
+/* (fix-F, F-08) how to pay on a phone: the QR as a picture that saves and opens large, each value with its Copy */
+.qrButton { flex: none; padding: 0; border: 0; background: transparent; border-radius: var(--om-radius-1); cursor: zoom-in; display: inline-flex; }
+.qrButton:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.payValue { display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
+.payValue .payLine { flex: 0 1 auto; }
+
+/* the quote, the contact line */
+.quoteLink { composes: link from '../portal.module.css'; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; font: var(--om-type-subtitle-m); }
+.contact { composes: contact from '../portal.module.css'; }
+
+/* a document (an invoice, a receipt) inside the portal's frame */
+.docBack { composes: link from '../portal.module.css'; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-subtitle-m); }
+.docStage { display: flex; justify-content: center; min-width: 0; }
+.docBar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+@media print { .docBar { display: none !important; } }
+
+@media (max-width: 767px) {
+  .split { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); }
+  .main, .side { display: contents; }
+  .split > *, .main > *, .side > * { order: 5; }
+  .split [data-slot='paid'] { order: 1; }
+  .split [data-slot='payments'] { order: 2; }
+  .split [data-slot='quote'] { order: 3; }
+  .homeHead { font: var(--om-type-subheading-l); }
+  .figure { font: var(--om-type-heading-h3); }
+}

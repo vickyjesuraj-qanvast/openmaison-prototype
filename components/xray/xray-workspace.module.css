@@ -30,6 +30,8 @@
 .fileNote { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .fileNote > :first-child { flex-shrink: 0; }
 .fileNote[data-tone='done'] > :first-child { color: var(--om-color-tertiary-green-default); }
+/* (pending modules S21) the lines read don't come to the quote's own total — a word to check, never an alarm */
+.fileNote[data-tone='check'] > :first-child { color: var(--om-color-tertiary-yellow-default); }
 .fileNote b { color: var(--om-color-on-surface-default); font-weight: 600; }
 .question { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); margin-top: var(--om-spacing-1); }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

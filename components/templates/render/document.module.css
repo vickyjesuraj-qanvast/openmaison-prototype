@@ -102,8 +102,25 @@
 .para[data-grid]:first-of-type { border-top: 1px solid var(--ink); }
 .paraNo { flex: 0 0 18px; text-align: right; }
 .para > span:last-child { flex: 1; min-width: 0; }
+/* (S44Q — row 321) A Terms or Notes list line keeps its list's mark; the marks sit inside the text block (a two-digit number never meets the page edge). */
+.para > ul, .para > ol { flex: 1; min-width: 0; margin: 0; padding-left: 1.6em; }
+/* (S44Q — rows 321 · 275) the house reset (globals.css) takes every list's marks away: a printed list puts its bullets and numbers back — the
+   Terms and Notes' lists and a formatted description's or section note's (`.rich`, REG-557) alike */
+.para > ul, .rich ul { list-style: disc; }
+.para > ol, .rich ol { list-style: decimal; }
+.para li { margin: 0; }
+.para li p { margin: 0; }
 .para p, .textBlock p { margin: 0 0 4px; }
 .para p:last-child, .textBlock p:last-child { margin-bottom: 0; }
+/* (S44G — NB-08) A Text block's lists keep their bullets and numbers as the editor shows them, inside the block's box; a link in any printed
+   words — a Text block, the Terms and Notes, a description — reads as a link (underlined, in the words' own colour, which prints on any kit). */
+.textBlock ul, .textBlock ol { margin: 0 0 4px; padding-left: 1.6em; }
+.textBlock ul { list-style: disc; }
+.textBlock ol { list-style: decimal; }
+.textBlock ul:last-child, .textBlock ol:last-child { margin-bottom: 0; }
+.textBlock li { margin: 0; }
+.textBlock li p { margin: 0; }
+.textBlock a, .para a, .rich a { text-decoration: underline; }
 .textBlock[data-box='tint'] { background: var(--tint); padding: 8px 10px; border-radius: 3px; }
 .textBlock[data-box='outline'] { border: 1px solid var(--ink); padding: 8px 10px; }
 .titleBlock > div { min-height: 1em; }
@@ -137,6 +154,7 @@
 .rich p:last-child { margin-bottom: 0; }
 .rich ul, .rich ol { margin: 0; padding-left: 12px; }
 .rich li { margin: 0; }
+.rich img { max-width: 100%; height: auto; }   /* (S44I — NB-07 (a)) a picture in a section note, its paragraph's alignment kept */
 /* (REG-560) The payment schedule's Total line under a list or cards. */
 .payTotal { display: flex; justify-content: space-between; gap: 12px; margin-top: 4px; padding-top: 3px; border-top: 1px solid; font-weight: 700; }
 /* (REG-562) Bank details: the rows and the PayNow QR side by side, or stacked. */
@@ -147,3 +165,32 @@
 /* (REG-595) A revision's marks: the "New" tag after a new line's name, and a figure or name the line had before, struck. */
 .newMark { display: inline-block; margin-left: 6px; padding: 0 4px; border: 1px solid currentColor; border-radius: 3px; font-size: 0.68em; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; }
 .was { text-decoration: line-through; opacity: .65; margin-right: 5px; }
+
+/* ── (S44T — her UAT ask 2026-10-15, rows 246–364) ── */
+/* (call C2) A line's name with its emphasis: its paragraphs sit tight, as the plain name's one line did. */
+.nameRich p { margin: 0; }
+/* (row 293) A line whose description runs on in the rows after it: the rule is drawn once, under its last piece. A continuation keeps the
+   photo's place so its words stay under the line's. */
+.t[data-ruled] tr[data-split] td { border-bottom: 0; }
+.t[data-ruled] tr[data-line-end] td { border-bottom: 1px solid var(--light); }
+/* …and its pieces sit as tight as the description's own lines: the row's padding only above the line and under its last piece */
+.t tr[data-split] td { padding-bottom: 0; }
+.t tr[data-line-cont] td { padding-top: 0; padding-bottom: 0; }
+.t tr[data-line-cont][data-line-end] td { padding-bottom: var(--pad-y); }
+.thumbGap { display: block; width: 38px; flex: 0 0 auto; }
+/* (row 363) Lines between rows: the table's last row bare. */
+[data-last-row] .t[data-ruled] tr td { border-bottom: 0; }
+/* (M2, rows 253 · 300) Totals in "$ with a space": the "$" at the figures' left, the figures right-aligned under each other. */
+.totals[data-apart] .totRow > span:last-child { min-width: 90px; }
+/* (call C5, row 294) The PayNow QR beside the payment schedule. */
+.payWithQr { display: flex; gap: 12px; align-items: flex-start; }
+.payMain { flex: 1; min-width: 0; }
+
+/* ── (S44F — NB-01, her ask 2026-10-15) "Every version": the key under the Items table — each version that left a mark, in its colour ── */
+.versionKey { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.versionKeyItem { display: inline-flex; align-items: center; gap: 4px; }
+.versionSwatch { display: inline-block; width: 8px; height: 8px; background: var(--mark); }
+/* a mark in its version's colour (the kit's); a removed line's strike never runs through its mark (an inline-block) */
+.newMark[data-version-mark] { color: var(--mark); }
+/* (S44F — NB-02 (a)) a milestone the revision removed: struck through, out of the schedule's total */
+.payRemoved { text-decoration: line-through; }

@@ -53,7 +53,7 @@ function letter(): TemplateDesign {
       { id: newId(), kind: 'terms', title: 'Terms and Conditions', titleStyle: { role: 'body', weight: 700, underline: true }, style: { role: 'table', size: 8 }, numbered: true, grid: false },
       { id: newId(), kind: 'footer', height: 36, repeat: 'every', elements: [
         { id: newId('e'), kind: 'signature', x: 0, y: 0, w: 174, columns: [
-          { id: newId('c'), heading: '{prepared_by} Designer', lines: ['H/P {prepared_by_phone}'], image: 'none' },
+          { id: newId('c'), heading: '{prepared_by} {prepared_by_role}', lines: ['H/P {prepared_by_phone}'], image: 'none' },   /* (fix-D, D-08) the preparer's own role, never a fixed "Designer" (new templates; a studio's stored words stay its own) */
           { id: newId('c'), heading: '{client_name}', lines: ['{client_phone}'], image: 'none' },
         ], style: { role: 'body' }, headingStyle: { role: 'body', weight: 700 }, lineWeight: 0.5, lineColor: 'ink' },
         /* (REG-569) the signature block is ~20 mm tall (mark, line, name, phone); the address sat at 16 and printed over it */

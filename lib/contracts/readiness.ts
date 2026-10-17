@@ -15,25 +15,30 @@ export type QuoteForSend = { number: string; status: string }
  * studio stands behind: where Settings requires quote approval, a Draft — or a quote still waiting for approval — keeps the contract from
  * going out; where it doesn't, a Draft is worth saying before it goes. Client-safe; the server repeats the blocking one.
  */
-export function quoteIssue(q: QuoteForSend | null | undefined, approvalRequired: boolean): ContractIssue | null {
+export function quoteIssue(q: QuoteForSend | null | undefined, approvalRequired: boolean, /** (S44Q — row 334) the sender approves quotes */ approver = false): ContractIssue | null {
   if (!q) return null
+  /* (S44Q — row 334, her UAT ask 2026-10-15) An approver's send approves it (lib/contracts/approve-named.ts) — said before it goes, never a dead end */
+  if (approvalRequired && approver && (q.status === 'Draft' || q.status === 'Sent for Approval')) return { label: `${q.number} is ${q.status === 'Draft' ? 'still a Draft' : 'waiting for approval'} — sending this approves it`, blocking: false, fix: 'open-quote' }
   if (q.status === 'Draft') return { label: approvalRequired ? `${q.number} is still a Draft — approve and send it first` : `${q.number} is still a Draft — send it first`, blocking: approvalRequired, fix: 'open-quote' }
   if (q.status === 'Sent for Approval' && approvalRequired) return { label: `${q.number} is waiting for approval — approve it first`, blocking: true, fix: 'open-quote' }
   return null
 }
 /** The words a list says when the named quote keeps a contract from going out (its status menu, Copy Link, Send together), else null. */
-export const quoteSendBlock = (q: QuoteForSend | null | undefined, approvalRequired: boolean): string | null => { const i = quoteIssue(q, approvalRequired); return i?.blocking ? i.label : null }
+export const quoteSendBlock = (q: QuoteForSend | null | undefined, approvalRequired: boolean, approver = false): string | null => { const i = quoteIssue(q, approvalRequired, approver); return i?.blocking ? i.label : null }
 
-export function contractReadiness(o: { source: string; body: string | null; values: TokenValues; hasStudioSignature: boolean; hasQuote: boolean; /** (C2) the named quote and Settings' approval */ quote?: QuoteForSend | null; approvalRequired?: boolean }): ContractIssue[] {
-  const named = quoteIssue(o.quote, o.approvalRequired ?? true)
+export function contractReadiness(o: { source: string; body: string | null; values: TokenValues; hasStudioSignature: boolean; hasQuote: boolean; /** (C2) the named quote and Settings' approval */ quote?: QuoteForSend | null; approvalRequired?: boolean
+  /** (pending modules S03) the signature is saved but its member hasn't allowed it on their documents */ signatureOff?: boolean
+  /** (S44Q — row 334) the member sending approves quotes: a Draft quote goes approved with it */ approver?: boolean
+  /** (S44R — UAT row 359, call C9) a letter sent to read and keep: it needs no Client signature */ toRead?: boolean }): ContractIssue[] {
+  const named = quoteIssue(o.quote, o.approvalRequired ?? true, o.approver ?? false)
   if (o.source === 'uploaded') return named ? [named] : []
   const out: ContractIssue[] = []
   const body = o.body ?? ''
   if (isBlankDoc(body)) return [{ label: 'The document is empty', blocking: true }]
   const fields = signFieldsIn(body)
-  if (!fields.includes('client-signature')) out.push({ label: 'There’s no Client signature field — insert one from eSignatures', blocking: true, fix: 'esign' })
+  if (!fields.includes('client-signature') && !o.toRead) out.push({ label: 'There’s no Client signature field — insert one from eSignatures', blocking: true, fix: 'esign' })
   if (named) out.push(named)
-  if ((fields.includes('studio-signature') || fields.includes('studio-initial')) && !o.hasStudioSignature) out.push({ label: 'Your signature isn’t set up, so the Studio signature box prints blank — set it up in any quote’s Signature section', blocking: false })
+  if ((fields.includes('studio-signature') || fields.includes('studio-initial')) && !o.hasStudioSignature) out.push({ label: o.signatureOff ? 'Your signature is saved but not allowed on your documents, so the Studio signature box prints blank — turn it on in Your profile' : 'Your signature isn’t set up, so the Studio signature box prints blank — set it up in any quote’s Signature section', blocking: false })
   const used = tokensIn(body)
   if (!o.hasQuote && used.some((k) => QUOTE_KEYS.includes(k))) out.push({ label: 'It names no quote, so its quote fields print empty', blocking: false, fix: 'quote' })
   const empty = used.filter((k) => !(o.hasQuote ? [] : QUOTE_KEYS).includes(k) && !o.values[k]?.trim())
@@ -52,15 +57,16 @@ export function docBlockLine(title: string, why: string): string {
   return why   // a quote's rule names its quote already
 }
 /** (UX audit C4) Why Send together is out of reach, else null: two documents must be ready; one that isn't is named. */
-export function bundleBlockLine(docs: { title: string; why: string | null }[]): string | null {
-  if (docs.filter((d) => !d.why).length >= 2) return null
+export function bundleBlockLine(docs: { title: string; why: string | null }[], /** (pending modules S03) the studio's standard PDFs, which can go with one */ standard = 0): string | null {
+  const ready = docs.filter((d) => !d.why).length
+  if (ready >= 2 || (ready >= 1 && standard >= 1)) return null
   const held = [...new Set(docs.filter((d) => d.why).map((d) => docBlockLine(d.title, d.why!)))]   // two documents naming one Draft quote say it once
   return held.length && docs.length >= 2 ? held.slice(0, 2).join(' · ') : 'needs two documents ready to go'
 }
 /** The server's side: a composed contract goes out only with something to sign. Returns the reason, else null. */
-export function sendBlock(c: { source: string; body: string | null }): string | null {
+export function sendBlock(c: { source: string; body: string | null; /** (S44R, C9) a letter to read signs nothing */ toRead?: boolean }): string | null {
   if (c.source === 'uploaded') return null
   if (isBlankDoc(c.body)) return 'empty'
-  if (!signFieldsIn(c.body ?? '').includes('client-signature')) return 'no-client-field'
+  if (!signFieldsIn(c.body ?? '').includes('client-signature') && !c.toRead) return 'no-client-field'
   return null
 }

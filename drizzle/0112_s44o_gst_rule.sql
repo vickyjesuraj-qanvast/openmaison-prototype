@@ -1,0 +1,1 @@
+ALTER TABLE `quotes` ADD `gst_rule` text;

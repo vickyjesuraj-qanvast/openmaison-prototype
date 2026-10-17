@@ -1,0 +1,62 @@
+/*
+ * (pending modules S23) Company › Reports › Meetings — Leads › Insights' page (REG-611), composed, never copied, as Projects' is
+ * (components/projects/insights/insights.module.css): its range bar, tiles, sections, gate and the By team member table on the table core
+ * (components/leads/insights/insights-view.module.css → components/om/table-core.module.css), with its phone cards. This sheet keeps only
+ * what the meetings page adds: the space between its sections, the two cards side by side, the Objections filters, the long text cells.
+ */
+.bar { composes: bar from '../../leads/insights/insights-view.module.css'; }
+.barEnd { composes: barEnd from '../../leads/insights/insights-view.module.css'; }
+.caption { composes: caption from '../../leads/insights/insights-view.module.css'; }
+.tiles { composes: tiles from '../../leads/insights/insights-view.module.css'; }
+.section { composes: section from '../../leads/insights/insights-view.module.css'; }
+.sectionHead { composes: sectionHead from '../../leads/insights/insights-view.module.css'; }
+.sectionTitle { composes: sectionTitle from '../../leads/insights/insights-view.module.css'; }
+.sectionHelp { composes: sectionHelp from '../../leads/insights/insights-view.module.css'; }
+.empty { composes: empty from '../../leads/insights/insights-view.module.css'; }
+.foot { composes: foot from '../../leads/insights/insights-view.module.css'; }
+.gate { composes: gate from '../../leads/insights/insights-view.module.css'; }
+.gateTitle { composes: gateTitle from '../../leads/insights/insights-view.module.css'; }
+.gateBody { composes: gateBody from '../../leads/insights/insights-view.module.css'; }
+.memberCell { composes: memberCell from '../../leads/insights/insights-view.module.css'; }
+.memberText { composes: memberText from '../../leads/insights/insights-view.module.css'; }
+.memberName { composes: memberName from '../../leads/insights/insights-view.module.css'; }
+.memberRole { composes: memberRole from '../../leads/insights/insights-view.module.css'; }
+.stat { composes: stat from '../../leads/insights/insights-view.module.css'; }
+.statValue { composes: statValue from '../../leads/insights/insights-view.module.css'; }
+.statHelp { composes: statHelp from '../../leads/insights/insights-view.module.css'; }
+.num { composes: num from '../../leads/insights/insights-view.module.css'; }
+.card { composes: card from '../../leads/insights/insights-view.module.css'; }
+.head { composes: head from '../../leads/insights/insights-view.module.css'; }
+.hCell { composes: hCell from '../../leads/insights/insights-view.module.css'; }
+.hLabel { composes: hLabel from '../../leads/insights/insights-view.module.css'; }
+.row { composes: row from '../../leads/insights/insights-view.module.css'; }
+.cell { composes: cell from '../../leads/insights/insights-view.module.css'; }
+.pin { composes: pin from '../../leads/insights/insights-view.module.css'; }
+/* the lead's name opens its Meetings tab — the studio lists' lead link (the Contracts table's), cut by its column */
+.leadLink { composes: leadLink from '../../leads/contracts/contracts-table.module.css'; min-width: 0; }
+
+/* the page's sections after the first stand apart by the Company pages' section gap */
+.block { margin-top: var(--om-spacing-8); }
+/* (page checklist: cards side by side are stacks) Coaching · Deal score check — two stacks from 1025, one column below */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); align-items: start; }
+.stack { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+@media (max-width: 1024px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .stack { display: contents; }
+}
+
+/* the Objections filters: the kind chips (a rail) and the outcome pill on one row */
+.filters { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.filters > :first-child { flex: 1; min-width: 0; }
+.pillWrap { flex-shrink: 0; display: inline-flex; }
+
+/* a long value in a table cell: one line, cut, said in full on hover (Tooltip whenCut, REG-820) */
+.clip { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+
+/* ≤767 the tables are cards (insights-view.module.css): a long value wraps in full there — a card is read, not scanned */
+@media (max-width: 767px) {
+  .clip { white-space: normal; overflow-wrap: anywhere; }
+  .cell:has(.clip) { align-items: baseline; }
+  .filters { gap: var(--om-spacing-2); }
+}

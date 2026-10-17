@@ -1,9 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
-import { PageHeaderL2 } from '@/components/shell/page-header-l2'
-import { PageReveal } from '@/components/shell/page-reveal'
-import { InsightsGhost } from './insights-ghost'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChipRail } from '@/components/om/chip-rail'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Avatar } from '@/components/om/avatar'
@@ -15,12 +12,22 @@ import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, useTableColumns, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { Chips } from '@/components/om/chips'
-import { StatTile } from '@/components/om/stat-tile'
-import { useMaisonAi } from '@/lib/maison-ai'
+import { StatTile, StatTiles } from '@/components/om/stat-tile'
+import { useSnackbar } from '@/components/om/snackbar'
+import { Button } from '@/components/ds'
+import { ExportDialog } from '@/components/leads/export-dialog'
+import { useMaisonAi, type MaisonSuggestion } from '@/lib/maison-ai'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { LEGS, RANGES, formatTat, insightsReport, tatGrade, type MemberRow, type Range } from '@/lib/leads/tat'
+import { withFrom } from '@/lib/nav'
+import { dayWords, durationWords, spanWords } from '@/lib/format'
+import { money2 } from '@/lib/quotes/math'
+import { BLANK } from '@/lib/leads/row-text'
+import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
+import { DEFAULT_RANGE, INSIGHTS_SHAPE, LEGS, MEDIANS_NOTE, RANGES, insightsReport, insightsSheet, rangeLabel, rangeParam, tatGrade, type MemberRow, type Range } from '@/lib/leads/tat'
+import { setCountPref, setFlagPref } from '@/lib/prefs'
 import type { InsightsData } from '@/lib/leads/insights'
-import pageStyles from '@/app/leads/leads.module.css'
+import { LEAD_REPORTS, QUIET_DAYS, defaultGranularity, pctWords, readLeadReport, salesReport, salesSheet, type Granularity, type LeadReportKey, type SalesData } from '@/lib/leads/sales'
+import { SalesReportBody } from '@/components/company/reports/sales-report'
 import styles from './insights-view.module.css'
 
 /*
@@ -29,8 +36,9 @@ import styles from './insights-view.module.css'
  * Every number is derived per range in the browser from the facts the loader hands over (lib/leads/tat.ts). Owners and Admins;
  * anyone else meets the gate.
  */
-const AI_SUGGESTIONS = ['Who is slowest to make first contact?', 'Which leads are still unassigned?', 'Summarise this month’s turnaround']
 const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
+/** (REG-1361) Where this page lives — what a link from it carries as `from`. */
+const HERE = '/company/reports/leads'
 
 const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
@@ -41,45 +49,134 @@ const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'awaiting', label: 'Awaiting outreach', track: 'minmax(180px, 180fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
 ]
 
-/** `backLabel` (Dane's UAT 11.09): Back's words for the `from` it returns to — "Back to {lead}" when Insights was opened from a lead. Insights
-    stays studio-wide (REG-611), so the crumb keeps "Leads". */
-export function InsightsView({ data, from, backLabel }: { data: InsightsData | null; from?: string; backLabel?: string }) {
-  const [range, setRange] = useState<Range>(30)
+/** (REG-1361) Company › Reports › Leads — this body inside the Reports frame (components/company/reports/reports-workspace.tsx), which draws the
+    header, the tab strip and the page's ghost. */
+export function InsightsView({ data, sales = null, initialRange = DEFAULT_RANGE, initialReport = null }: { data: InsightsData | null; /** (pending modules S39) the address's `?range=` */ initialRange?: Range
+  /** (pending modules S45A — H-UHD-1) the Sales report's facts — an Owner's or an Admin's; null for anyone else (they read Response time alone, no chips) */ sales?: SalesData | null
+  /** (S45A) the address's `?report=` */ initialReport?: string | null }) {
+  const [range, setRange] = useState<Range>(initialRange)   // (parity P-31 · Q-16) both reports open on 90 days — (pending modules S39) or on the address's range
+  /* (S45A) the tab's two reports — Response time (REG-611) and Sales (1.0's six) — as Reports › Finance picks its reports: chips, the address keeping the pick */
+  const [kind, setKind] = useState<LeadReportKey>(sales ? readLeadReport(initialReport) : 'response')
+  const [granularity, setGranularity] = useState<Granularity | null>(null)   // the flow's own pick, else the range's default
   const report = useMemo(() => (data ? insightsReport(data.facts, data.team, data.now, range) : null), [data, range])
+  const sold = useMemo(() => (sales && kind === 'sales' ? salesReport(sales, range, granularity ?? defaultGranularity(range)) : null), [sales, kind, range, granularity])
+  /* (S45A) the report and the range ride in the address (Studio health's rule), so a reload and Back land on the same view */
+  const remember = (k: LeadReportKey, r: Range) => {
+    try {
+      const u = new URL(window.location.href)
+      if (k === 'sales') u.searchParams.set('report', 'sales'); else u.searchParams.delete('report')
+      u.searchParams.set('range', rangeParam(r))
+      window.history.replaceState(window.history.state, '', u.toString())
+    } catch { /* the address is a convenience */ }
+  }
+  const pickRange = (r: Range) => { setRange(r); remember(kind, r) }
+  /* (S45A · REG-708 · REG-817) the ghost's blocks next time: what Response time drew on the range it opens on */
+  useEffect(() => {
+    if (!report || range !== DEFAULT_RANGE) return
+    for (const { key } of LEGS) setFlagPref(INSIGHTS_SHAPE.delta(key), report.legs[key].delta !== null)
+    setFlagPref(INSIGHTS_SHAPE.assign, report.awaitingAssignment > 0); setFlagPref(INSIGHTS_SHAPE.outreach, report.awaitingOutreach > 0)
+    setCountPref(INSIGHTS_SHAPE.members, report.members.length)
+  }, [report, range])
+  const pickReport = (k: LeadReportKey) => { setKind(k); remember(k, range) }
   const mobile = useMediaQuery(MOBILE)
   const [columnsOpen, setColumnsOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const snackbar = useSnackbar()
   const columnPrefs = useTableColumns('insights-members', MEMBER_COLUMN_DEFS, mobile)
-  useMaisonAi(AI_SUGGESTIONS)
+  /* (parity P-33 · Q-02, C-08) Maison AI answers from the report on screen — the Projects report's contract (lib/maison-ai.ts); they said
+     "Coming soon" though the page held every number. Nothing metered (Q-30). Invented copy. */
+  const ai = useMemo<MaisonSuggestion[]>(() => {
+    if (!report || !data) return []
+    const span = rangeLabel(range).toLowerCase()
+    const slow = report.members.filter((m) => m.outreachMedian !== null).sort((a, b) => b.outreachMedian! - a.outreachMedian!)
+    return [
+      { label: 'Who is slowest to make first contact?', answer: {
+        title: slow.length ? `${slow[0]!.name} is slowest to first contact` : 'No first contact logged in this range',
+        text: slow.length ? `Assignment → first outreach, the median per person, ${span}.` : 'Change the range to look further back.',
+        rows: slow.map((m) => ({ id: m.id, label: m.name, meta: `median ${durationWords(m.outreachMedian)} · ${plural(m.outreachCount, 'lead')}` })) } },
+      { label: 'Which leads are still unassigned?', answer: {
+        title: report.unassigned.length ? `${plural(report.unassigned.length, 'lead')} awaiting assignment` : 'Every lead in this range has a member',
+        text: report.unassigned.length ? 'Open one to assign a member.' : undefined,
+        rows: report.unassigned.map((l) => ({ id: l.id, label: l.name, meta: `${l.stage} · added ${spanWords(l.createdAt, data.now)} ago`, href: withFrom(`/leads/${l.id}`, HERE) })) } },
+      { label: 'Summarise the turnaround', answer: {
+        title: `Turnaround · ${span}`,
+        text: `${plural(report.inRange, 'lead')} created in this range.`,
+        rows: LEGS.map(({ key, label }) => { const s = report.legs[key]; return { id: key, label, meta: s.count ? `median ${durationWords(s.median)} · avg ${durationWords(s.mean)} · ${plural(s.count, 'lead')}` : 'No completed legs yet' } }) } },
+    ]
+  }, [report, data, range])
+  /* (S45A) Sales answers from its own report — who is quiet, where leads stop, which sources pay; each lead row opens the lead (invented copy) */
+  const salesAi = useMemo<MaisonSuggestion[]>(() => {
+    if (!sold) return []
+    const span = rangeLabel(range).toLowerCase()
+    const quiet = sold.quietest.filter((l) => l.days > QUIET_DAYS)
+    return [
+      { label: 'Which leads are going quiet?', answer: {
+        title: quiet.length ? `${plural(quiet.length, 'lead')} with no contact for over ${QUIET_DAYS} days` : `No open lead has gone ${QUIET_DAYS} days without a contact`,
+        text: quiet.length ? 'Open one to log a contact or move it on.' : sold.quietest.length ? 'The open leads, longest without a contact first.' : undefined,
+        rows: (quiet.length ? quiet : sold.quietest).slice(0, 12).map((l) => ({ id: l.id, label: l.name, meta: `${l.stage} · ${l.contacted ? `last contact ${dayWords(l.days)} ago` : `never contacted · added ${dayWords(l.days)} ago`}${l.members.length ? ` · ${l.members.join(', ')}` : ''}`, href: withFrom(`/leads/${l.id}`, `${HERE}?report=sales&range=${rangeParam(range)}`) })) } },
+      { label: 'Where do leads stop?', answer: {
+        title: sold.leak ? `Most leads stop before ${sold.leak.label}` : 'No drop between the steps yet',
+        text: `Each step counts the leads added ${span} that reached at least that far.`,
+        rows: sold.funnel.map((f) => ({ id: f.key, label: f.label, meta: `${f.leads} · ${pctWords(f.ofAll)} of leads`, share: sold.funnel[0]?.leads ? f.leads / sold.funnel[0].leads : 0 })) } },
+      { label: 'Which sources win the most?', answer: {
+        title: sold.sources[0]?.won ? `${sold.sources[0].source} wins the most` : 'No source has won a lead in this range',
+        text: `Won value before GST, leads added ${span}.`,
+        rows: sold.sources.map((x) => ({ id: x.id, label: x.source, meta: `${x.won} of ${plural(x.leads, 'lead')} won${x.valueMinor ? ` · ${money2(x.valueMinor)}` : ''}` })) } },
+    ]
+  }, [sold, range])
+  useMaisonAi(kind === 'sales' ? salesAi : ai)
+  /* (parity Q-20) the house Export, as Finance's reports have it — the page's numbers as one sheet; (S45A) the report on screen */
+  const download = (format: ExportFormat) => {
+    if (sold) {
+      const sheet = salesSheet(sold)
+      return downloadBlob(buildTable(`Sales report — ${rangeLabel(range)}`, sheet.head, sheet.body, format), `sales-report-${rangeLabel(range).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${format.toLowerCase()}`)
+    }
+    if (!report) return ''
+    const sheet = insightsSheet(report)
+    const name = `leads-report-${rangeLabel(range).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${format.toLowerCase()}`
+    return downloadBlob(buildTable(`Leads report — ${rangeLabel(range)}`, sheet.head, sheet.body, format), name)
+  }
+  const exportTitle = sold ? 'Sales report' : 'Leads report'
 
   return (
-    <PageReveal skeleton={<InsightsGhost />}>
-      <div className={pageStyles.body}>
-        <PageHeaderL2 backHref={from ?? '/leads'} backLabel={backLabel} crumb="Leads" title="Insights" />
-        <div className={pageStyles.content}>
+    <>
           {!data || !report ? (
-            /* The gate (Q-41: Insights are Owners' and Admins'). Invented copy. */
+            /* The gate (Q-41: Insights are Owners' and Admins'). Invented copy — (REG-1361) "Lead reports", the tab's own word. */
             <div className={styles.gate} data-testid="insights-gate">
               <Icon name="lock" size={32} weight={300} />
-              <span className={styles.gateTitle}>Insights are for Owners and Admins</span>
+              <span className={styles.gateTitle}>Lead reports are for Owners and Admins</span>
               <span className={styles.gateBody}>Ask your studio’s owner for the turnaround numbers.</span>
             </div>
           ) : (
             <>
+              {/* (pending modules S45A — H-UHD-1) the tab's reports, picked as Reports › Finance picks its own — an Owner's and an Admin's (Marketing reads
+                  Response time alone: no chips) */}
+              {sales ? (
+                <div className={styles.reports}>
+                  <Chips label="Report" testId="leads-report-chips" options={LEAD_REPORTS.map((r) => ({ value: r.key, label: r.label }))} value={kind} onChange={(v) => pickReport(v as LeadReportKey)} />
+                </div>
+              ) : null}
               <div className={styles.bar}>
                 <ChipRail label="Range">
                   {/* (REG-614) The house chips (components/om/chips) — a radio group, as the Move stage window's ChoiceChips. */}
-                  <Chips label="Range" options={RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => setRange(v === 'all' ? null : (Number(v) as Range))} />
+                  <Chips label="Range" testId="insights-range-chips" options={RANGES.map((r) => ({ value: r.key === null ? 'all' : String(r.key), label: r.label }))} value={range === null ? 'all' : String(range)} onChange={(v) => pickRange(v === 'all' ? null : (Number(v) as Range))} />
                 </ChipRail>
-                <span className={styles.caption} data-testid="insights-range">Filtering on lead created date · {plural(report.inRange, 'lead')} in range</span>
+                <span className={styles.barEnd}>
+                  <span className={styles.caption} data-testid="insights-range">Filtering on lead created date · {plural(report.inRange, 'lead')} in range</span>
+                  {/* (parity Q-20) the house Export — Finance's reports' button */}
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => setExporting(true)} data-testid="insights-export">Export</Button>
+                </span>
               </div>
 
-              {/* The three legs: the median as the headline (robust to outliers), avg · count under it, the change vs the prior window. */}
-              <div className={styles.tiles} data-testid="insights-tiles">
+              {sold ? <SalesReportBody report={sold} range={range} onGranularity={setGranularity} /> : <>
+              {/* The three legs: the median as the headline (robust to one long job), avg · count under it, the change vs the prior window —
+                  (parity P-30) on the house tile row. */}
+              <StatTiles className={styles.tiles} testId="insights-tiles">
                 {LEGS.map(({ key, label }) => {
                   const s = report.legs[key]
                   const grade = key === 'outreach' ? tatGrade(s.median) : null
                   return (
-                    <StatTile key={key} testId={`tile-${key}`} label={label} value={formatTat(s.median)} grade={grade ?? undefined} help={s.count ? `median · avg ${formatTat(s.mean)} · ${plural(s.count, 'lead')}` : 'No completed legs in this range'}>
+                    <StatTile key={key} testId={`tile-${key}`} label={label} value={durationWords(s.median)} grade={grade ?? undefined} help={s.count ? `median · avg ${durationWords(s.mean)} · ${plural(s.count, 'lead')}` : 'No completed legs in this range'}>
                       {s.delta !== null ? (
                         <span className={styles.tileDelta}>
                           {/* A DECREASE is improving (1.0). */}
@@ -89,7 +186,7 @@ export function InsightsView({ data, from, backLabel }: { data: InsightsData | n
                     </StatTile>
                   )
                 })}
-              </div>
+              </StatTiles>
 
               {report.awaitingAssignment > 0 || report.awaitingOutreach > 0 ? (
                 <div className={styles.awaiting} data-testid="insights-awaiting">
@@ -116,13 +213,15 @@ export function InsightsView({ data, from, backLabel }: { data: InsightsData | n
                   <MembersTable rows={report.members} columns={columnPrefs.columns} onReorder={columnPrefs.reorder} />
                 )}
               </section>
-              <p className={styles.foot}>Medians shown as headline (robust to outliers). Leads with no outreach yet are excluded from elapsed-time math and counted in “Awaiting outreach”.</p>
+              {/* (parity P-35 · C-13) the reports' one first sentence, then this page's own */}
+              <p className={styles.foot}>{MEDIANS_NOTE} Leads with no outreach yet are excluded from elapsed-time math and counted in “Awaiting outreach”.</p>
+              </>}
             </>
           )}
-        </div>
-      </div>
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
-    </PageReveal>
+      <ExportDialog open={exporting} title={`Export ${exportTitle}`} onClose={() => setExporting(false)} download={(format) => download(format)}
+                    onDone={(name, format) => snackbar({ message: `Exported ${exportTitle} as ${format} · ${name}` })} />
+    </>
   )
 }
 
@@ -143,10 +242,12 @@ function MembersTable({ rows, columns, onReorder }: { rows: MemberRow[]; columns
     switch (key) {
       case 'member': return cell(key, <span className={styles.memberCell}><Avatar name={r.name} color={r.color} size={36} tooltip={false} /><span className={styles.memberText}><span className={styles.memberName}>{r.name}</span><span className={styles.memberRole}>{r.role}</span></span></span>)
       case 'leads': return cell(key, <span className={styles.num}>{r.leads}</span>)
-      case 'outreach': return cell(key, <span className={styles.stat}><span className={styles.statValue} data-grade={tatGrade(r.outreachMedian) ?? undefined}>{formatTat(r.outreachMedian)}</span><span className={styles.statHelp}>{r.outreachCount ? `med · avg ${formatTat(r.outreachMean)}` : 'no outreach yet'}</span></span>)
-      case 'won': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{formatTat(r.wonMedian)}</span><span className={styles.statHelp}>med</span></span>)
+      /* (parity P-35 · C-11) a figure's second line spells "median" as the tiles do, and an empty figure is the house "--" with no line under
+         it (it read "— / med") */
+      case 'outreach': return cell(key, <span className={styles.stat}><span className={styles.statValue} data-grade={tatGrade(r.outreachMedian) ?? undefined}>{durationWords(r.outreachMedian)}</span>{r.outreachMedian !== null ? <span className={styles.statHelp}>{`median · avg ${durationWords(r.outreachMean)}`}</span> : null}</span>)
+      case 'won': return cell(key, <span className={styles.stat}><span className={styles.statValue}>{durationWords(r.wonMedian)}</span>{r.wonMedian !== null ? <span className={styles.statHelp}>{`median · avg ${durationWords(r.wonMean)}`}</span> : null}</span>)
       case 'wonCount': return cell(key, <span className={styles.num}>{r.won}</span>)
-      case 'awaiting': return cell(key, r.awaitingOutreach > 0 ? <MetaChip color="yellow">{String(r.awaitingOutreach)}</MetaChip> : <span className={styles.num}>—</span>)
+      case 'awaiting': return cell(key, r.awaitingOutreach > 0 ? <MetaChip color="yellow">{String(r.awaitingOutreach)}</MetaChip> : <span className={styles.num}>{BLANK}</span>)
       default: return cell(key, null)
     }
   }

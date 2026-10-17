@@ -1,0 +1,36 @@
+/* (pending modules S17) The studio's definitions list — Custom fields and the Question bank — and its Add / Edit form (definition-list.tsx).
+   The card table (REG-727): this file keeps only the list's tracks, its row's own pieces and the form's. */
+.table { composes: table from './card-table.module.css'; }
+.head { composes: head from './card-table.module.css'; }
+.row { composes: row from './card-table.module.css'; }
+.col { composes: col from './card-table.module.css'; }   /* a switch, centred under its column name */
+.actionsHead { composes: actionsHead from './card-table.module.css'; }   /* the actions' blank head, gone on a phone */
+.actions { composes: actions from './card-table.module.css'; }   /* order · edit · delete at the row's end, a line of their own on a phone */
+.head, .row { grid-template-columns: minmax(240px, 1fr) 96px 96px 120px; }
+/* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
+@media (max-width: 1024px) { .head, .row { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
+@media (max-width: 767px) { .head, .row { grid-template-columns: minmax(0, 1fr) 56px 56px; } }
+
+/* (Dane UAT 3.38) Drag to reorder: the rows sit in motion's Reorder group, which draws no box of its own (the table's rows stay its children);
+   the handle leads the name cell (the task template's handle, composed) and the head's label lines up with the name. A row being dragged
+   rises on the card's own surface. */
+.rowGroup { display: contents; }
+.lead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.handle { composes: handle from '../company/templates/editors/library-editor.module.css'; flex-shrink: 0; }
+.handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.table[data-reorder] .head > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
+.row[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
+
+.text { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.name { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.row:not([data-active]) .name { color: var(--om-color-on-surface-secondary); }   /* an inactive entry keeps its row, greyed */
+.meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.flag { display: inline-flex; align-items: center; cursor: pointer; }
+
+/* The form: the options under their label, each with its remove; the Required line. */
+.optionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.optionsLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.optionRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.optionRow > :first-child { flex: 1; min-width: 0; }
+.error { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }

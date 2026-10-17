@@ -82,9 +82,9 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter, 
         <div className={styles.grid} data-rows={browse.hereFolders.length ? 'fit' : undefined} role="radiogroup" aria-label="Contract templates">
           {browse.hereEntries.map((t) => (
             <button key={t.id} type="button" role="radio" aria-checked={picked === t.id} className={styles.card} data-picked={picked === t.id || undefined} onClick={() => { if (!busy) setPicked(t.id) }} onDoubleClick={() => { if (busy) return; setPicked(t.id); use(t.id) }} data-testid="contract-template-option">
-              <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{excerptOf(t.body, 260)}</span></span>
+              <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{t.kind === 'pdf' ? `A standard PDF — ${t.fileName ?? t.title}. The lead gets its own copy, read and accepted on the signing link.` : excerptOf(t.body, 260)}</span></span>
               <span className={styles.name}>{t.title}</span>
-              <span className={styles.meta}>{t.isDefault ? <MetaChip>Default</MetaChip> : t.id === suggested?.id && suggested.why === 'last' ? <MetaChip>Last used</MetaChip> : null}{browse.where(t) ? `${browse.where(t)} · ` : ''}Edited {displayDate(t.updatedAt)}</span>
+              <span className={styles.meta}>{t.kind === 'pdf' ? <MetaChip>PDF</MetaChip> : null}{t.isDefault ? <MetaChip>Default</MetaChip> : t.id === suggested?.id && suggested.why === 'last' ? <MetaChip>Last used</MetaChip> : null}{browse.where(t) ? `${browse.where(t)} · ` : ''}Edited {displayDate(t.updatedAt)}</span>
             </button>
           ))}
         </div>

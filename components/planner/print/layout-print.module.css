@@ -1,0 +1,9 @@
+/* (gaps build J) The layout's paper — the floor plan's paper (G's stylesheet) with a 3D view beside the room schedule. */
+.planBox svg { width: 100%; height: 100%; }
+.twoUp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-5); align-items: start; }
+.shot { aspect-ratio: 16 / 10; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-bg); }
+.shotImg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shotLive { width: 100%; height: 100%; }
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+@media (max-width: 767px) { .twoUp { grid-template-columns: minmax(0, 1fr); } }
+@media print { .shotLive { display: none; } }

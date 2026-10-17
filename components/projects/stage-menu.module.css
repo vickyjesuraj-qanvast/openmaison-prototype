@@ -1,0 +1,5 @@
+/* (parity P-08) The project header's "Stage: In progress ▾" is the lead's Stage button (app/leads/[id]/overview.module.css: its anchor, its
+   one-line phone rule, the chevron that turns while the menu is open). Composed, never copied. */
+.anchor { composes: anchor from '../../app/leads/[id]/overview.module.css'; }
+.stageAction { composes: stageAction from '../../app/leads/[id]/overview.module.css'; }
+.chev { composes: chev from '../../app/leads/[id]/overview.module.css'; }

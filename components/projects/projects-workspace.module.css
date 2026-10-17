@@ -1,0 +1,22 @@
+/* (REG-924) The Projects listing: the tiles row over the toolbar and the table, in the Leads listing's content frame (leads.module.css).
+   (parity P-30) The row is the house StatTiles (components/om/stat-tile.module.css: one row from 1025, 3 + 2 at a tablet's width, two per
+   row on a phone with the odd last — the value — taking its row); `.tiles` here only paints the tiles for the phone's grey canvas. */
+/* (fix-A, A-32) the studio's contract value is a figure, not a filter: no fill, so it never reads as one of the tiles that press */
+.valueTile { display: flex; min-width: 0; }
+.valueTile > * { flex: 1; background: transparent; }
+/* A tile filters when pressed (Q-06): the house StatTile inside a plain button — the pressed one wears the primary ring, the scope it holds. */
+.tileBtn {
+  display: flex; flex-direction: column; min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer;
+  border-radius: var(--om-radius-2); font: inherit; color: inherit;
+}
+.tileBtn > * { flex: 1; transition: box-shadow var(--motion-hover); }
+.tileBtn:hover > * { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border); }
+.tileBtn[aria-pressed='true'] > * { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.tileBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+  /* the phone's listing sits on the surface-bg canvas (leads.module.css data-view='cards'): the tiles take the cards' white so they read */
+  .tiles > div, .tileBtn > * { background: var(--om-color-surface-default); }
+  /* (fix-A, A-32) the fifth tile stays a figure on the canvas */
+  .tiles > .valueTile, .valueTile > * { background: transparent; }
+}

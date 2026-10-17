@@ -35,9 +35,10 @@ const waitSaved = async (page) => { await page.waitForTimeout(1600) }
     await field.click()
     await page.getByRole('menuitemradio', { name: /^No quote/ }).click(); await waitSaved(page)
     ok('No quote is kept', sql(`select ifnull(from_quote_id,'-') from contracts where id='${OLIVIA}'`) === '-')
-    await page.getByRole('button', { name: 'Smart Text' }).click()
+    await page.getByRole('button', { name: 'Insert a field' }).click()   // (REG-875) "Smart Text" is now "Insert a field ▾"
     const quoteRow = page.getByRole('menuitem', { name: /^Quote/ })
-    ok('Smart Text says the Quote records are empty', /3 empty/.test(await quoteRow.innerText()))
+    /* (S44R — a deliberate change of this rule: UAT row 358, call C7 — the Quote group gained Deposit, the quote's first payment) */
+    ok('Insert a field says the Quote records are empty', /4 empty/.test(await quoteRow.innerText()))
     await quoteRow.click()
     const num = page.getByRole('menuitem', { name: /^Quote number/ })
     ok('and each one prints nothing yet', /Empty/.test(await num.innerText()))
@@ -78,7 +79,7 @@ const waitSaved = async (page) => { await page.waitForTimeout(1600) }
   })
   await step('the GST chip prints the issuer’s GST number', async () => {
     await openEditor(page, OLIVIA)
-    await page.getByRole('button', { name: 'Smart Text' }).click(); await page.getByRole('menuitem', { name: /^Studio/ }).click()
+    await page.getByRole('button', { name: 'Insert a field' }).click(); await page.getByRole('menuitem', { name: /^Studio/ }).click()   // (REG-875) was "Smart Text"
     ok('“GST reg. no.” reads the studio’s', /M90371234/.test(await page.getByRole('menuitem', { name: /^GST reg\. no\./ }).innerText()))
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape')
   })

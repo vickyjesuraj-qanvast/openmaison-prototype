@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { titleCaseName } from '@/lib/format'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { backLabel as backLabelFor, readFrom, withFrom } from '@/lib/nav'
@@ -10,6 +11,8 @@ import { useEscapeLayer } from '@/components/om/surface'
 import { useSheetLayout } from '@/components/om/sheet'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { setFilesShown } from '@/app/portal/studio-actions'
+import { shownLine } from '@/lib/portal/model'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -20,12 +23,18 @@ import { useFileShare } from './use-file-share'
 import { ViewerSkeleton } from './viewer-skeleton'
 import { FileInfoPanel } from './file-info-panel'
 import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
+import { PhotoDialog } from '@/components/planner/photo/photo-dialog'   // (pending modules S28)
+import { looksLikeFloorPlan } from '@/lib/planner/photo'
 import { NameDialog } from './name-dialog'
 import { TrashDialog } from './trash-dialog'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { addFileComment, createFolder, deleteFileComment, duplicateFiles, editFileComment, moveFiles, renameFile, restoreFiles, trashFiles } from '@/app/leads/files-actions'
 import { downloadBlob } from '@/lib/leads/export'
 import type { FileViewData } from '@/lib/leads/files'
+import { downloadName, fileGlyph, folderPath, paperKindOf } from '@/lib/leads/file-model'
+import { FILE_VIEWER_KEYS } from '@/lib/keys/registry'
+import { markUsed, useShortcutsHere } from '@/lib/keys/store'
+import { isTyping, layerOpen, ownsArrows } from '@/components/shell/shortcuts/dom'
 import styles from './file-viewer.module.css'
 
 /**
@@ -47,8 +56,11 @@ type Panel = 'comments' | 'info' | null
  * The header is NOT `PageHeaderL2`: that component always renders "{crumb} / " over the title and the mock has no crumb
  * (arrow + name on one 56px line), so the row is copied from page-header-l2.module.css at 56 with the spec's p16/24.
  */
-export function FileViewer({ data }: { data: FileViewData }) {
-  const { lead, file, folder, siblings, files, comments, me, now, render } = data
+/** `base` (REG-913): whose page the file belongs to — `/projects/<id>` when opened from a project's Files; the lead's by default. */
+export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?: string }) {
+  const { lead, file, folder, siblings, files, comments, me, now, render, bytes = null } = data
+  const readOnly = data.readOnly   // (pending modules S06) Accounting reads it: Download, the comments to read — nothing to change
+  const base = baseProp ?? `/leads/${lead.id}`
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -77,14 +89,22 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const zoom = ZOOM_STEPS[zoomIdx] ?? 1
   /* Back to the Files tab — inside the open folder when the file sits in one (the tab reads `?folder=`). */
   const from = readFrom(useSearchParams().get('from'))   // (REG-465) the tab URL the file was opened from, folder and origin included
-  const backHref = from ?? (folder ? `/leads/${lead.id}/files?folder=${folder.id}` : `/leads/${lead.id}/files`)
+  const backHref = from ?? (folder ? `${base}/files?folder=${folder.id}` : `${base}/files`)
   /* (F105) Back names where it goes: the lead's Files (any folder of it) reads "Back to Files"; the AI Visualizer, a quote, … their own name */
-  const backLabel = from?.startsWith(`/leads/${lead.id}/files`) ? 'Back to Files' : backLabelFor(from, { leadName: lead.name, fallback: 'Back to Files' })
+  const backLabel = from?.startsWith(`${base}/files`) ? 'Back to Files' : backLabelFor(from, { leadName: lead.name, fallback: 'Back to Files' })
   const idx = siblings.findIndex((s) => s.id === file.id)
   const prev = idx > 0 ? siblings[idx - 1] : undefined
   const next = idx >= 0 ? siblings[idx + 1] : undefined
-  /* Images render their thumbnail; a PDF shows the committed PDF glyph (no PDF viewer is mocked — frames 92–95 are all images). */
-  const src = file.thumb ?? (file.kind === 'pdf' ? '/figma-assets/file-pdf.svg' : null)
+  /* Images render their thumbnail; a PDF shows the committed PDF glyph (no PDF viewer is mocked — frames 92–95 are all images).
+     (fix-C, C-05) A kept video plays and a kept PDF shows, from their own bytes; an Office file shows its glyph with Download. */
+  const playsVideo = file.kind === 'video' && !!bytes
+  const showsPdf = (file.kind === 'pdf' || file.mime === 'application/pdf') && !!bytes
+  /* (S43E, F3-03 W3-01) a meeting's recording is kept in Files (pending modules S23) — it plays where it is kept, its Download beside it */
+  const playsAudio = (file.mime ?? '').startsWith('audio/') && !!bytes
+  /* (S42 audit C-03) a money paper's entry has no bytes: it IS its record's paper — the viewer names it and opens it, never a glyph alone */
+  const paper = file.paper ?? null
+  const src = playsVideo || showsPdf || paper ? null : file.kind === 'video' || file.kind === 'image' ? file.thumb : file.kind === 'pdf' ? '/figma-assets/file-pdf.svg' : file.thumb ?? null
+  const zoomable = !paper && !playsVideo && !showsPdf && !(!src && bytes)   // the zoom bar is the picture's; a kept video, PDF or document brings its own controls
   const togglePanel = (p: Exclude<Panel, null>) => setPanel((cur) => (cur === p ? null : p))
 
   /* files-actions revalidates the lead, the Files / Tasks tabs and the listing — not this viewer route — so file actions
@@ -93,8 +113,12 @@ export function FileViewer({ data }: { data: FileViewData }) {
 
   /* (REG-675, AI Visualizer Q-31) The photo opens as a room of the lead's design; Back there returns to this file. */
   const params = useSearchParams()
-  const here = () => { const q = params.toString(); return `/leads/${lead.id}/files/${file.id}${q ? `?${q}` : ''}` }
-  const visualize = visualizeLabel(file, render ? { [file.id]: render } : {})
+  const here = () => { const q = params.toString(); return `${base}/files/${file.id}${q ? `?${q}` : ''}` }
+  const visualize = data.tools ? visualizeLabel(file, render ? { [file.id]: render } : {}) : null   // (S45C) the studio's tools only for whoever opens them
+  /* (pending modules S28) a floor plan here offers Make a 3D picture — the file as it is in Files, for this lead (its project's, once won) */
+  const isPlan = data.tools && (file.kind === 'image' || file.kind === 'pdf') && looksLikeFloorPlan(file.name, folderPath(files, file.parentId ?? null).map((p) => p.name))
+  const [picture3d, setPicture3d] = useState(false)
+  const viewerProject = base.startsWith('/projects/') ? base.slice('/projects/'.length).split('/')[0] ?? null : null
   const openInVisualizer = async () => {
     /* (F095) a filed render opens its own version — the room, the version selected — never a new room made of the render */
     const o = liveOrigin(render)   // (files-client) a render whose design was deleted forever opens as a plain picture
@@ -104,23 +128,66 @@ export function FileViewer({ data }: { data: FileViewData }) {
     router.push(withFrom(`/visualizer/${r.id}?file=${file.id}`, here()))
   }
 
-  /* Download: image files download their thumbnail as a real file (the demo has no originals); anything else is coming soon. */
+  /* Download: (fix-C, C-05 → gaps build E, item 1) the file as it was uploaded, under its own name (/files/raw/<id>, any kind); a demo stand-in
+     picture gives the picture it shows; nothing kept (an invoice's or a receipt's entry opens its own page) is coming soon. */
   const download = async () => {
-    if (file.kind !== 'image' || !file.thumb) { comingSoon(); return }
+    if (paper) { router.push(withFrom(`${paper}?print=1`, here())); return }   // (S42 C-03) the paper itself, printing — as the Files menu's Download
+    if (!bytes && !(file.kind === 'image' && file.thumb)) { comingSoon(); return }
     try {
-      const blob = await (await fetch(file.thumb)).blob()
-      const ext = file.mime === 'image/png' ? 'png' : 'jpg'
-      downloadBlob(blob, /\.[a-z0-9]+$/i.test(file.name) ? file.name : `${file.name}.${ext}`)
+      const res = await fetch(`/files/raw/${file.id}?download=1`); if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      downloadBlob(blob, downloadName(file.name, blob.type || file.mime))
     } catch { fail('download the file') }
   }
 
+  /* (gaps build E, item 3 — 1.0's lightbox, H-138 · H-142) ← / → step through the folder's files, as the edge buttons do — not while typing, in
+     a menu or a dialog, or while a video or a widget has the arrows; Esc goes back to Files (the back link's mark). The strip under the file
+     shows every file of the folder, the open one ringed. */
+  useShortcutsHere(FILE_VIEWER_KEYS)
+  const prevHref = prev ? withFrom(`${base}/files/${prev.id}`, from) : null
+  const nextHref = next ? withFrom(`${base}/files/${next.id}`, from) : null
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.isComposing) return
+      const t = e.target
+      if (isTyping(t) || ownsArrows(t) || layerOpen()) return
+      if (t instanceof HTMLMediaElement || (t instanceof Element && t.closest('video, audio, iframe'))) return
+      const to = e.key === 'ArrowLeft' ? prevHref : nextHref
+      if (!to) return
+      e.preventDefault()
+      markUsed('file.step')
+      router.push(to)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [prevHref, nextHref, router])
+  const stripRef = useRef<HTMLOListElement>(null)
+  useEffect(() => {
+    const on = stripRef.current?.querySelector<HTMLElement>('[aria-current="true"]')
+    if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' })
+  }, [file.id])
+  /* (REG-358's way) the strip and the Maison AI button share the bottom-right corner: while the strip is up it publishes its height and the
+     button steps over it (maison-fab.module.css). Layout is read in an effect, after paint. */
+  const hasStrip = siblings.length > 1
+  useEffect(() => {
+    const el = stripRef.current?.parentElement
+    if (!hasStrip || !el) return
+    document.documentElement.style.setProperty('--app-file-strip-height', `${Math.round(el.getBoundingClientRect().height)}px`)
+    document.body.setAttribute('data-om-file-strip', '')
+    return () => {
+      document.body.removeAttribute('data-om-file-strip')
+      document.documentElement.style.removeProperty('--app-file-strip-height')
+    }
+  }, [hasStrip])
+
   return (
-    <PageReveal skeleton={<ViewerSkeleton />}>
+    <PageReveal skeleton={<ViewerSkeleton strip={siblings.length > 1} />}>
       <div className={styles.body} data-testid="file-viewer">
         {/* Page Header / Leads - L2 (931:39835) 1424×56, p16/24, bottom rule — arrow_back 24/Light · name 20/Bold · actions H g24 */}
         <header className={styles.header}>
           <Tooltip label={backLabel}>
-            <Link href={backHref} className={styles.back} aria-label={backLabel}>
+            <Link href={backHref} className={styles.back} aria-label={backLabel} data-kb="back">   {/* (gaps build E, item 3) Esc goes back, as the L2 header's back does */}
               <Icon name="arrow_back" size={24} weight={300} />
             </Link>
           </Tooltip>
@@ -142,7 +209,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 <Icon name="info" size={24} />
               </button>
             </Tooltip>
-            <span className={styles.anchor} ref={kebabRef}>
+            {/* (pending modules S06) reading only: the kebab holds nothing on a desk (Download is the bar's) — on a phone it keeps Download */}
+            {readOnly && !sheet ? null : <span className={styles.anchor} ref={kebabRef}>
               <Tooltip label="More options" disabled={kebabOpen}>
                 <button type="button" className={styles.iconBtn} aria-label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)}>
                   <Icon name="more_vert" size={24} />
@@ -153,45 +221,73 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 {/* (REG-269) Mobile only: the header's Download folds in here. (audit 2026-09-26) A row of the sheet itself, not one wrapped
                     in a `display: contents` span — the sheet's 16px row gutter is `.menuBody > button`, and the wrapper left it at 12. */}
                 {sheet ? <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem> : null}
+                {readOnly ? null : <>
                 {/* (UX audit 2026-09-30, T9) a drawing goes back to the client as a link — no Download and a manual message */}
                 {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.copyLink(file) }}>Copy link</DropdownItem> : null}
                 {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.sendWhatsApp(file) }}>Send on WhatsApp</DropdownItem> : null}
+                {/* (Projects r4a) the same item as the Files tab's menu: the client's portal shows the file, or no longer does */}
+                <DropdownItem onSelect={() => {
+                  setKebabOpen(false)
+                  const on = !file.shownToClientAt
+                  /* (pending modules S02) a render lands on the client's Designs too — the sentence says so once the server has answered */
+                  const box: { designs: number } = { designs: 0 }
+                  void run(on ? 'show the file to the client' : 'stop showing the file', async () => { const r = await setFilesShown(lead.id, [file.id], on); if ('error' in r) return r; box.designs = r.designs }, undefined, REFRESH)
+                    .then((ok) => { if (ok) snackbar({ message: shownLine(file.name, on, box.designs), actionLabel: 'Undo', onAction: () => { void run('undo that', () => setFilesShown(lead.id, [file.id], !on), undefined, REFRESH) } }) })
+                }} help={file.shownToClientAt ? 'It leaves the client’s portal' : 'It appears in the client’s portal'}>{file.shownToClientAt ? 'Stop showing to client' : 'Show to client'}</DropdownItem>
                 {visualize ? <DropdownItem onSelect={() => { setKebabOpen(false); void openInVisualizer() }}>{visualize}</DropdownItem> : null}   {/* (REG-675, AI Visualizer Q-31; F095 a render opens its version) */}
+                {isPlan ? <DropdownItem onSelect={() => { setKebabOpen(false); setPicture3d(true) }} help="Place its rooms on it, then see it in 3D">Make a 3D picture</DropdownItem> : null}   {/* (pending modules S28) */}
+                {/* (S42 audit C-03, call C·4) a money paper stays as it was filed — no Move, Duplicate, Rename or Delete */}
+                {paper ? null : <>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); void run('duplicate the file', () => duplicateFiles([file.id]), 'File duplicated', REFRESH) }}>Duplicate</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setRenaming(true) }}>Rename</DropdownItem>
                 <DropdownItem tone="danger" onSelect={() => { setKebabOpen(false); setTrashing(true) }}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
+                </>}
+                </>}
               </PortalMenu>
-            </span>
+            </span>}
           </div>
         </header>
 
         {/* Section container (931:39853): image area + optional 400px panel (931:39912) */}
         <div className={styles.stage}>
+          <div className={styles.column}>   {/* (gaps build E, item 3) the file over the strip of the folder's files */}
           <div className={styles.canvas} data-panel={panel ? '' : undefined}>
-            {src ? (
+            {playsVideo ? (
+              <video className={styles.media} src={bytes!} poster={file.thumb ?? undefined} controls playsInline preload="metadata" data-testid="viewer-video" />
+            ) : showsPdf ? (
+              <iframe className={styles.doc} src={bytes!} title={file.name} data-testid="viewer-pdf" />
+            ) : src ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img className={styles.image} src={src} alt={file.name} style={{ transform: `scale(${zoom})` }} data-testid="viewer-image" />
+            ) : bytes ? (
+              <div className={styles.docCard} data-testid="viewer-doc"><Icon name={fileGlyph(file)} size={48} weight={300} /><span>{file.name}</span>
+                {playsAudio ? <audio className={styles.audio} src={bytes!} controls preload="metadata" data-testid="viewer-audio" /> : null}
+                <button type="button" className={styles.docDownload} onClick={() => { void download() }}>Download</button></div>
+            ) : paper ? (
+              /* (S42 C-03) the document card, opening the paper itself *(invented copy: "Open the invoice")* */
+              <div className={styles.docCard} data-testid="viewer-paper"><Icon name={fileGlyph(file)} size={48} weight={300} /><span>{file.name}</span>
+                <button type="button" className={styles.docDownload} onClick={() => router.push(withFrom(paper, here()))}>{`Open the ${paperKindOf(paper)}`}</button></div>
             ) : null}
 
             {/* prev / next (931:39859): 48px white buttons at the edges (inset 16), vertically centred; hidden when there is no neighbour */}
             {prev ? (
-              <Tooltip label="Previous file" side="right">
-                <button type="button" className={styles.nav} data-side="prev" aria-label="Previous file" onClick={() => router.push(withFrom(`/leads/${lead.id}/files/${prev.id}`, from))}>
+              <Tooltip label="Previous file" side="right" keys="left">
+                <button type="button" className={styles.nav} data-side="prev" aria-label="Previous file" onClick={() => { if (prevHref) router.push(prevHref) }}>
                   <Icon name="keyboard_arrow_left" size={24} />
                 </button>
               </Tooltip>
             ) : null}
             {next ? (
-              <Tooltip label="Next file" side="left">
-                <button type="button" className={styles.nav} data-side="next" aria-label="Next file" onClick={() => router.push(withFrom(`/leads/${lead.id}/files/${next.id}`, from))}>
+              <Tooltip label="Next file" side="left" keys="right">
+                <button type="button" className={styles.nav} data-side="next" aria-label="Next file" onClick={() => { if (nextHref) router.push(nextHref) }}>
                   <Icon name="keyboard_arrow_right" size={24} />
                 </button>
               </Tooltip>
             ) : null}
 
             {/* Zoom bar (931:39855) 130×50, H g16 p12, bottom inset 22 */}
-            <div className={styles.zoomBar} role="group" aria-label="Zoom">
+            {zoomable ? (<div className={styles.zoomBar} role="group" aria-label="Zoom">
               <Tooltip label="Zoom out" side="top">
                 <button type="button" className={styles.zoomBtn} aria-label="Zoom out" aria-disabled={zoomIdx === 0} onClick={() => setZoomIdx((i) => Math.max(0, i - 1))}>
                   <Icon name="remove" size={24} />
@@ -210,7 +306,32 @@ export function FileViewer({ data }: { data: FileViewData }) {
                   <Icon name="add" size={24} />
                 </button>
               </Tooltip>
-            </div>
+            </div>) : null}   {/* (fix-C, C-05) pictures only — a video and a PDF bring their own controls */}
+          </div>
+          {/* (gaps build E, item 3 — 1.0's lightbox strip, H-146 · H-152) every file of the folder as the house square thumbnail, the open one ringed;
+              a press opens it, as ← / → and the edge buttons do. Shown once the folder holds more than one file. */}
+          {siblings.length > 1 ? (
+            <nav className={styles.strip} aria-label={`Files in ${folder?.name ?? 'All Files'}`} data-testid="viewer-strip">
+              <ol ref={stripRef} className={styles.stripList}>
+                {siblings.map((f) => {
+                  const on = f.id === file.id
+                  return (
+                    <li key={f.id}>
+                      <Tooltip label={f.name} side="top">
+                        <button type="button" className={styles.stripItem} aria-label={f.name} aria-current={on ? 'true' : undefined}
+                                onClick={() => { if (!on) router.push(withFrom(`${base}/files/${f.id}`, from)) }}>
+                          {f.thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={f.thumb} alt="" width={48} height={48} loading="lazy" data-page={f.kind === 'image' ? undefined : ''} />
+                          ) : <Icon name={fileGlyph(f)} size={20} weight={300} />}
+                        </button>
+                      </Tooltip>
+                    </li>
+                  )
+                })}
+              </ol>
+            </nav>
+          ) : null}
           </div>
 
           {panel === 'comments' ? (
@@ -222,7 +343,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 onAdd={(body) => { void run('post the comment', () => addFileComment(file.id, body)) }}
                 onEdit={(id, body) => { void run('save the comment', () => editFileComment(id, body)) }}
                 onDelete={setDeletingComment}
-                onClose={() => setPanel(null)}
+                onClose={() => setPanel(null)} readOnly={readOnly}
               />
             </aside>
           ) : panel === 'info' ? (
@@ -246,11 +367,14 @@ export function FileViewer({ data }: { data: FileViewData }) {
       <TrashDialog
         open={trashing}
         names={[file.name]}
+        seen={data.onUpdate ? `It is on the update “${data.onUpdate}” — ${titleCaseName(lead.name).split(/\s+/)[0] || 'The client'} sees it there, and it leaves that update too.` : null}
         onNo={() => setTrashing(false)}
         onYes={async () => {
           setTrashing(false)
           try {
-            await trashFiles([file.id])
+            const r = await trashFiles([file.id])
+            /* (pending modules S03) a refusal says why and the file stays — a contract's PDF, a project's own folder (it said "Moved" over a refusal) */
+            if (r && 'error' in r) { fail('move it to the Trash Folder', r.error); return }
             snackbar({ message: 'Moved to Trash Folder', actionLabel: 'Undo', onAction: () => { void restoreFiles([file.id]).then(() => router.refresh()) } })
             router.push(backHref)
           } catch { fail('delete the file') }
@@ -270,6 +394,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
         }}
         onCreateFolder={async (name: string, parentId: string | null) => {
           const id = await createFolder(lead.id, name, parentId)
+          if (typeof id !== 'string') throw new Error(id.error)   // (gaps build E, item 2) the dialog says the rule
           snackbar({ message: 'Folder created' }); refresh()
           return id
         }}
@@ -282,6 +407,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
         onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteFileComment(id), 'Comment deleted') }}
       />
 
+      {isPlan && !readOnly ? <PhotoDialog open={picture3d} onClose={() => setPicture3d(false)} target={viewerProject ? { kind: 'project', id: viewerProject } : { kind: 'lead', id: lead.id }}
+                                           from={{ kind: 'file', fileId: file.id, name: file.name }} /> : null}   {/* (pending modules S28) */}
       {/* Generic shell: Maison AI FAB + sheet (no lead brief here — the viewer carries no stage, so the sheet offers only its base controls). */}
     </PageReveal>
   )

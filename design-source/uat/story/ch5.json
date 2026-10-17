@@ -106,7 +106,7 @@
     "module": "Lead details",
     "try": "Add her NRIC and correct her key collection",
     "how": "1. Open ⋮ (\"More options\"), then \"Edit\"\n2. \"NRIC / FIN\": S8812345D · \"Key collection\": Collected\n3. Press \"Save\"\n4. In Lead info, press \"Show\" beside NRIC / FIN",
-    "expect": "\"Successfully Updated\"; Lead info shows NRIC / FIN masked as •••••345D, and \"Show\" (Owners and Admins only) reveals S8812345D; Property info shows Key collection Collected.",
+    "expect": "\"Details saved\"; Lead info shows NRIC / FIN masked as •••••345D, and \"Show\" (Owners and Admins only) reveals S8812345D; Property info shows Key collection Collected.",
     "in10": "Same as 1.0",
     "as": "Dane",
     "covers": [
@@ -142,7 +142,7 @@
     "scene": "Log the first call",
     "module": "Lead details",
     "try": "Log the call and pick the suggested tasks",
-    "how": "1. \"Contacted via\" Call · \"Date & Time\" today, now · \"Outcome\" Callback requested\n2. Under \"Schedule a call/meeting (optional)\": two days from now, 11:00 AM · \"Preferred mode\" Call\n3. Under \"Attach screenshots of your call attempts\" press \"Attach\", then \"Save\"\n4. In \"Suggested tasks\" tick the suggestion, press \"Save\"",
+    "how": "1. \"Contacted via\" Call · \"Date & Time\" today, now · \"Outcome\" Callback requested\n2. Under \"Schedule a call/meeting (optional)\": two days from now, 11:00 AM · \"Preferred mode\" Call\n3. Under \"Attach screenshots of your call attempts\" press \"Attach\", tick sophia-floor-plan.pdf (any file will do), press \"Attach 1 File\", then \"Save\"\n4. In \"Suggested tasks\" tick the suggestion, press \"Save\"",
     "expect": "\"Auto added\" shows \"Follow up with the client via Call on …\"; then \"Moved to Contacted\" and the button reads \"Stage: Contacted\".",
     "in10": "Different from 1.0: a scheduled call becomes a task automatically",
     "as": "Dane",
@@ -193,16 +193,18 @@
     "scene": "Notes and tasks",
     "module": "Lead details",
     "try": "Log a WhatsApp chat with Auto Fill",
-    "how": "1. Click \"New\", then \"Contact Log\"\n2. Press \"Auto Fill\", then \"Upload\"\n3. In \"Add tasks\" press \"Save\"\n4. Press \"Save\" under the log (if \"Add tasks\" opens again, press \"Cancel\")",
-    "expect": "The log fills with WhatsApp · Connected and a meeting in three days; \"1 task added\", then \"Contact log saved\".",
-    "in10": "Different from 1.0: a sample fill stands in for AI reading",
+    "how": "1. Click \"New\", then \"Contact Log\"\n2. Press \"Auto Fill\", then \"Upload\", and pick sophia-whatsapp-chat.txt\n3. Read the line at the top of the log, then in \"Add tasks\" press \"Save\"\n4. Press \"Save\" under the log (if \"Add tasks\" opens again, press \"Cancel\")\n5. Try \"Auto Fill\" once more with any photo",
+    "expect": "The log fills from the chat's own words: WhatsApp, 8/10/2026 7:16 PM, Meeting scheduled, and the meeting on 10/10/2026 3:00 PM in person; the line says what filled, and the chat file is attached. \"1 task added\", then \"Contact log saved\". A photo is attached and fills nothing — the line says \"We can't read pictures yet — type what was said\".",
+    "in10": "Different from 1.0: the file's words are read by rule (a chat export, an email or call notes) — no AI, no credits; a screenshot isn't read",
     "as": "Dane",
     "covers": [
       "LEADS:S-10",
       "LEADS:D-54",
       "LEADS:DEF-16"
     ],
-    "files": []
+    "files": [
+      "uat-files/sophia-whatsapp-chat.txt"
+    ]
   },
   {
     "step": "5.12",
@@ -311,9 +313,9 @@
     "scene": "What does she need?",
     "module": "Lead details",
     "try": "Ask Sophia to answer the rest herself",
-    "how": "1. Press \"Ask Client\"\n2. In \"Ask the client\", press \"Copy\" beside the portal link\n3. Press \"Send via WhatsApp\"",
-    "expect": "A message says the questions were sent to Sophia Wong (no WhatsApp tab opens here); the summary now reads \"Client asked on\" with today's date.",
-    "in10": "Different from 1.0: the ask is recorded; no 5-minute limit",
+    "how": "1. Press \"Ask Client\"\n2. In \"Ask the client\", read the ticked \"Questions to ask\", then press \"Copy\" beside \"Portal link\"\n3. Press \"Send via WhatsApp\" — a WhatsApp tab opens: close it, do not send",
+    "expect": "The box says it also invites Sophia to your portal; then \"Asked Sophia Wong — … questions are on their page\"; the summary now reads \"Client asked on\" with today's date.",
+    "in10": "Same as 1.0 (a WhatsApp with her link; one ask per 5 minutes)",
     "as": "Dane",
     "covers": [
       "LEADS:D-36",
@@ -384,7 +386,7 @@
     "module": "Lead details",
     "try": "Read everything that happened to her lead",
     "how": "1. Open the \"Activity\" tab\n2. Scroll through today",
-    "expect": "Among the lines: \"You assigned Sarah to this lead.\", \"You edited the lead — …\" and \"You asked Sophia Wong to answer the questionnaire.\"",
+    "expect": "Among the lines: \"You added Sarah to the lead.\", \"You changed the lead’s details — …\" and \"You asked Sophia Wong to answer … questions.\"",
     "in10": "Different from 1.0: built from records, plus logged edits and asks",
     "as": "Dane",
     "covers": [

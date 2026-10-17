@@ -3,6 +3,7 @@ import { moneyCompact } from '@/lib/format'
 import { BRAND_NOTES } from './brands'
 import { materialFindings } from './materials'
 import type { RefLine, RefQuote } from './reference'
+import { normUnit, sameTrade, tokens, tradeWords } from '@/lib/quotes/line-words'
 
 /**
  * Quote X-Ray (REG-529; engine 2, REG-638) — the comparison itself, pure and deterministic (the prototype's "AI"): your lines
@@ -11,7 +12,8 @@ import type { RefLine, RefQuote } from './reference'
  * comes from here. Engine 2 (X-Ray parity round 1): your side is what the quote counts (Q-02); plurals and trade words read
  * alike and one line may stand against several (Q-03); rates, not lump sums, when both sides give a quantity (Q-04); 1.0's kinds
  * of point, weights and "a question never stands alone" (Q-05); the client never reads the other studio's name (Q-07); the draft
- * follows the screen (Q-08); key points by 1.0's rules (Q-09).
+ * follows the screen (Q-08); key points by 1.0's rules (Q-09). (pending modules S21) 1.0's seventh kind of point, their arithmetic, on the
+ * rates a spreadsheet or a PDF states — readings made before carried no stated rate, so they read the same: the engine stays 2.
  */
 export const ENGINE = 2
 
@@ -36,8 +38,10 @@ export type XrayRow = {
   qty?: { yours: number; theirs: number; unit: string } | null
   /** (Q-14) A pair the studio made by hand. */
   by?: 'you' | null
+  /** (pending modules S21 — 1.0's arithmetic check) one of their lines here states an amount its own rate × quantity doesn't make */
+  slip?: { statedMinor: number; computedMinor: number } | null
 }
-export type XrayPointKind = 'missing' | 'cheaper' | 'below' | 'below-market' | 'unpriced' | 'material' | 'brand'
+export type XrayPointKind = 'missing' | 'cheaper' | 'below' | 'below-market' | 'unpriced' | 'material' | 'brand' | 'arithmetic'
 export type XrayPoint = {
   n: number; kind: XrayPointKind; say: string; evidenceLabel: string; evidence: string; asQuestion: string | null
   /** 1.0's medium confidence: a point better put as a question, never said alone. */
@@ -72,33 +76,14 @@ export const money = money2
 export const moneyK = (minor: number) => `${minor < 0 ? '−' : ''}${moneyCompact(Math.abs(minor))}`
 
 // ── Words ────────────────────────────────────────────────────────────────────────────────────────────────────────────
-const STOP = new Set(['and', 'the', 'with', 'to', 'of', 'for', 'a', 'an', 'in', 'on', 'at', 'existing', 'supply', 'install', 'installation', 'labour', 'labor', 'tools', 'works', 'work', 'design', 'fabricate', 'new', 'all', 'per', 'entire', 'unit', 'lot', 'no', 'w', 'x', 'by', 'from', 'into', 'up', 'or', 'as', 'is', 'be', 'including', 'included', 'include', 'provide', 'provision'])
-/** (Q-03) Trade words that mean the same work. */
-const SAME: Record<string, string> = {
-  hacking: 'hack', demolish: 'hack', demolishing: 'hack', demolition: 'hack', dismantle: 'hack', dismantling: 'hack', removal: 'hack', remove: 'hack',
-  cabinetry: 'cabinet', worktop: 'countertop', tiling: 'tile', painting: 'paint', plastering: 'plaster', screeding: 'screed',
-  waterproofing: 'waterproof', lighting: 'light', wiring: 'wire', rewiring: 'wire', flooring: 'floor', socket: 'point',
-  closing: 'close', glasswork: 'glass', toilet: 'bathroom', debri: 'debris', dispose: 'disposal', haulage: 'disposal', cart: 'disposal',
-  plumbing: 'plumb', partitioning: 'partition', laminated: 'laminate',
-}
-function stem(w: string): string {
-  const s = SAME[w]; if (s) return s
-  let t = w
-  if (t.length > 4 && t.endsWith('ies')) t = `${t.slice(0, -3)}y`
-  else if (t.length > 4 && /(sh|ch|x|z)es$/.test(t)) t = t.slice(0, -2)
-  else if (t.length > 3 && t.endsWith('s') && !/(ss|us|is)$/.test(t)) t = t.slice(0, -1)
-  return SAME[t] ?? t
-}
+/* (pending modules S12) STOP · SAME · stem · SHORT · tokens · tradeWords · sameTrade · normUnit moved to lib/quotes/line-words.ts unchanged —
+   the Price book's matcher reads the same words; re-exported here for anything that read them from the engine. */
+export { tokens, sameTrade, normUnit }
 /** Things a line is about — one of these shared, in the same trade and room, makes a pair (a quartz and a solid-surface countertop). */
 const ITEM_NOUNS = new Set(['countertop', 'wardrobe', 'cabinet', 'vanity', 'console', 'backsplash', 'shelving', 'desk', 'settee', 'heater', 'fan', 'screen', 'door', 'window', 'grille', 'gate', 'mirror', 'sink', 'basin'])
-/** Two-letter words that name work ("TV console", "WC", "DB box", "3D drawings"). */
-const SHORT = new Set(['tv', 'wc', 'db', '3d'])
-export const tokens = (s: string) => Array.from(new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((t) => (t.length > 2 || SHORT.has(t)) && !STOP.has(t) && !/^\d+$/.test(t)).map(stem)))
 const shared = (a: string[], b: string[]) => a.filter((t) => b.includes(t)).length
 /** Two lines' likeness: at least two shared words, as a share of the shorter list; 0 below that. */
 const score = (a: string[], b: string[]) => { if (!a.length || !b.length) return 0; const n = shared(a, b); return n < 2 ? 0 : n / Math.min(a.length, b.length) }
-const tradeWords = (t: string | null) => tokens(t ?? '').filter((w) => w !== 'common')
-export const sameTrade = (a: string | null, b: string | null) => { const x = tradeWords(a), y = tradeWords(b); return x.length > 0 && y.length > 0 && x.some((w) => y.includes(w)) }
 /** Rooms: the same room shares a word that names it; a whole-unit line fits any room; two named rooms with nothing in common clash. */
 const ROOM_GENERIC = new Set(['room', 'common', 'master', 'whole', 'area'])
 const roomWords = (r: string | null) => tokens(r ?? '').filter((w) => !ROOM_GENERIC.has(w))
@@ -109,20 +94,6 @@ const roomFit = (a: string | null, b: string | null): 'same' | 'open' | 'clash' 
   return x.some((w) => y.includes(w)) ? 'same' : 'clash'
 }
 
-/** A unit as rates compare it — metres stay metres (1.0 read "rm" and "lm" as feet, B-58). */
-export function normUnit(u: string | null | undefined): string | null {
-  const s = (u ?? '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim()
-  if (!s) return null
-  if (/^(sq ?ft|sf|psf|square f(ee|oo)t)$/.test(s)) return 'sqft'
-  if (/^(ft|feet|foot|ft run|run ft|running ft|rft|lft|l ft)$/.test(s)) return 'ft'
-  if (/^(sq ?m|m2|square met(re|er)s?)$/.test(s)) return 'sqm'
-  if (/^(m|lm|rm|met(re|er)s?|run m|running m)$/.test(s)) return 'm'
-  if (/^(pts?|points?)$/.test(s)) return 'point'
-  if (/^(pcs?|pieces?|nos?|units?|ea|each)$/.test(s)) return 'pc'
-  if (/^sets?$/.test(s)) return 'set'
-  if (/^(lots?|ls|lump ?sum|sum)$/.test(s)) return 'lot'
-  return s
-}
 const UNIT_WORD: Record<string, string> = { sqft: 'sqft', ft: 'ft', sqm: 'sqm', m: 'm', point: 'point', pc: 'piece', set: 'set' }
 
 /** Lower-case a name's first letter for the middle of a sentence — never an acronym or a brand ("TV console", "KDK fan"). */
@@ -142,7 +113,8 @@ function short(s: string, max = 72): string {
 const VERBS = /^(?:to\s+)?(?:design,?\s+fabricate\s+(?:and|&)\s+install|supply\s+(?:and|&)\s+(?:install|lay|fix)|supply\s+labou?r\s+(?:and\s+tools\s+)?to|supply|install|provide)\s+/i
 const TAIL = /,?\s+(?:supply\s+(?:and|&)\s+(?:install|lay|fix)|supply\s+only|install(?:ation)?\s+only|new)$/i
 const plainName = (s: string) => { const t = s.replace(VERBS, '').replace(TAIL, '').trim(); return t.length > 3 ? t : s }
-const say = (s: string, max = 60) => lowerFirst(short(plainName(s), max))
+/* (pending modules S21) a line read from a PDF keeps a wrapped detail after "; " — a sentence that has to be short says the line's own first words */
+const say = (s: string, max = 60) => lowerFirst(short(plainName(s.length > max && s.includes('; ') ? s.split('; ')[0]! : s), max))
 
 // ── Matching ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 type Pairing = { rows: { yours: number[]; theirs: number[]; by: 'you' | null }[] }
@@ -243,6 +215,24 @@ function rates(ys: YourLine[], ts: TheirLine[]) {
   return { unit: UNIT_WORD[u] ?? u, yq, tq, yr: ya / yq, tr: ta / tq }
 }
 
+// ── Their arithmetic (pending modules S21 — 1.0's src/lib/quote-xray/arithmetic-check.ts, deterministic) ─────────────────────────
+/**
+ * A line of theirs whose stated amount isn't its own rate × quantity, beyond S$1 or 1% of the amount (1.0's tolerance) — only where the
+ * quote states all three. A line that prints a word, or no price, is not checked. When most of their rated lines disagree the difference is
+ * the quote's way of pricing (GST or a discount in every line, a column read wrongly), not a slip: none is said (a slip disagrees with the
+ * rest). Your own lines are never checked — 1.0's rule: your slips are never a point.
+ */
+export function slipsOf(theirs: TheirLine[]): Map<number, { statedMinor: number; computedMinor: number }> {
+  const rated = theirs.map((l, j) => ({ l, j })).filter(({ l }) => (l.rateMinor ?? 0) > 0 && l.qty > 0 && l.amountMinor > 0)
+  const out = new Map<number, { statedMinor: number; computedMinor: number }>()
+  for (const { l, j } of rated) {
+    const computedMinor = Math.round(l.rateMinor! * l.qty)
+    if (Math.abs(l.amountMinor - computedMinor) > Math.max(100, Math.round(l.amountMinor * 0.01))) out.set(j, { statedMinor: l.amountMinor, computedMinor })
+  }
+  return rated.length >= 3 && out.size * 3 > rated.length ? new Map() : out
+}
+const qtyWords = (n: number, unit: string | null) => `${Number.isInteger(n) ? n : Number(n.toFixed(2))}${unit ? ` ${unit}` : ''}`
+
 // ── The reading ──────────────────────────────────────────────────────────────────────────────────────────────────────
 type Fact = { kind: XrayPointKind; weight: number; medium: boolean; say: string; asQuestion: string | null; evidenceLabel: string; evidence: string; rowKey: string | null }
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
@@ -254,6 +244,7 @@ export function compareQuotes(yours: YourLine[], other: RefQuote, ctx: { yourLab
   const theirs = other.lines
   const O = other.studio
   const { rows: pairing } = pairLines(mine, theirs, overrides)
+  const slips = slipsOf(theirs)
 
   const rows: XrayRow[] = pairing.map((p) => {
     const ys = p.yours.map((i) => mine[i]!), ts = p.theirs.map((j) => theirs[j]!)
@@ -274,6 +265,7 @@ export function compareQuotes(yours: YourLine[], other: RefQuote, ctx: { yourLab
       yourWord: words.length && words.length === ys.length ? words[0]! : null,
       qty: r && Math.abs(r.yq - r.tq) > Math.max(r.yq, r.tq) * 0.05 ? { yours: r.yq, theirs: r.tq, unit: r.unit } : null,
       by: p.by,
+      slip: p.theirs.map((j) => slips.get(j)).find(Boolean) ?? null,
     }
   })
 
@@ -340,8 +332,18 @@ export function compareQuotes(yours: YourLine[], other: RefQuote, ctx: { yourLab
       evidence: `${unpricedCount} ${plural(unpricedCount, 'line prints', 'lines print')} FOC / Inclusive in ${O}’s quote; the work is promised but not costed, so the total can move.`,
       asQuestion: 'Which of the FOC / Inclusive lines are covered in full, and by whom?' })
   }
-  // materials: 1.0's sixteen, on their lines, never when one of yours uses the same material the same way
+  // their arithmetic: a stated amount their own rate × quantity doesn't make — a hard number, never a question alone (1.0's fact 4, at most two)
   const theirRowKey = new Map<number, string>(); rows.forEach((r) => (r.theirIdx ?? []).forEach((j) => theirRowKey.set(j, r.key)))
+  for (const [j, sl] of [...slips.entries()].sort((a, b) => Math.abs(b[1].statedMinor - b[1].computedMinor) - Math.abs(a[1].statedMinor - a[1].computedMinor)).slice(0, 2)) {
+    const l = theirs[j]!, diff = Math.abs(sl.statedMinor - sl.computedMinor)
+    const times = `${m(l.rateMinor!)} × ${qtyWords(l.qty, l.unit)}`
+    facts.push({ kind: 'arithmetic', weight: diff, medium: false, rowKey: theirRowKey.get(j) ?? null,
+      say: `In the other quote, the ${say(l.name)} is priced at ${m(sl.statedMinor)}, but its own rate and quantity (${times}) come to ${m(sl.computedMinor)} — worth asking which figure is right.`,
+      evidenceLabel: 'Their numbers don’t add up',
+      evidence: `${O}’s “${short(l.name, 80)}” (${l.trade}) states ${m(sl.statedMinor)}, but ${times} is ${m(sl.computedMinor)} — a ${m(diff)} difference worth clarifying.`,
+      asQuestion: `Could you confirm the price of “${short(plainName(l.name), 60)}” — ${times} comes to ${m(sl.computedMinor)}, not ${m(sl.statedMinor)}?` })
+  }
+  // materials: 1.0's sixteen, on their lines, never when one of yours uses the same material the same way
   const yourText = (l: YourLine) => `${l.trade ?? ''} ${l.room ?? ''} ${l.name} ${l.description ?? ''} ${l.brand ?? ''}`
   const theirText = (l: TheirLine) => `${l.trade} ${l.room ?? ''} ${l.name} ${l.brand ?? ''}`
   for (const f of materialFindings(theirs.map((l, j) => ({ key: theirRowKey.get(j) ?? `t-${j}`, text: theirText(l), trade: l.trade, name: l.name, amountMinor: l.amountMinor })), mine.map((l) => ({ text: yourText(l), trade: l.trade ?? '' })), sameTrade).slice(0, 2)) {

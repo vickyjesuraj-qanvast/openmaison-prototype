@@ -1,0 +1,8 @@
+/* (parity map, SC-056 · TD-022) The suggested tasks' tick list — one row per task, its why under it (moment.module.css `.help`), hairlines between;
+   the quote's sections as small headings. The house Dialog draws the head, the foot and the phone's bottom sheet. */
+.list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.item { display: flex; flex-direction: column; gap: var(--om-spacing-0-5); padding: var(--om-spacing-2) 0; min-width: 0; }
+.item + .item { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.section + .section { padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.sectionHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }

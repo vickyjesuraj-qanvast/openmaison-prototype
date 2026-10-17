@@ -17,6 +17,7 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import type { QuoteTextTemplate } from '@/lib/db/schema'
 import { TEXT_LABEL, TOKENS, textPreview, tokenText, type TextKind } from '@/lib/quotes/text'
 import { createTextTemplate, deleteTextTemplate, updateTextTemplate } from '@/app/quotes/text-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into the caller's own failure line
 import { RichEditor, type RichEditorHandle } from './rich-editor'
 import styles from './templates-modal.module.css'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
@@ -74,7 +75,7 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
     const e = editing
     if (!e || !e.title.trim()) return
     void run('save the template', async () => {
-      const row = e.id ? await updateTextTemplate(e.id, { title: e.title, body: e.body }) : await createTextTemplate(kind, { title: e.title, body: e.body }, browse.finding ? null : browse.openAt)
+      const row = e.id ? await orThrow(updateTextTemplate(e.id, { title: e.title, body: e.body })) : await orThrow(createTextTemplate(kind, { title: e.title, body: e.body }, browse.finding ? null : browse.openAt))
       onTemplates(e.id ? templates.map((t) => (t.id === row.id ? row : t)) : [...templates, row])
       setEditing(null)
       if (andAdd) { onAdd(row); onClose() }

@@ -32,7 +32,9 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     ok('a wrong phone is refused as typed', /Enter a valid 8-digit Singapore number/.test(await dlg.innerText()))
     await dlg.getByLabel('Phone').fill('91234567'); await dlg.getByLabel('Email').fill('priya@demostudio.sg')
     await shot('01-add-member')
-    await dlg.getByRole('button', { name: 'Add member' }).click(); await snack(page, 'Priya added as a Designer')
+    // REG-795 (UX audit S6): a Designer who reports to nobody yet is added with the next step on the snackbar
+    await dlg.getByRole('button', { name: 'Add member' }).click(); await snack(page, 'Priya added')
+    ok('the snackbar offers Set who they report to', await page.locator('[role="status"]').getByRole('button', { name: 'Set who they report to' }).count() >= 1)
     ok('the member is on the record, active, with the phone', sql(`select role || '|' || is_active || '|' || phone from members where name='Priya'`) === 'Designer|1|91234567')
     await page.getByRole('button', { name: 'Add member' }).click()
     await page.getByRole('dialog', { name: 'Add member' }).getByLabel('Name').fill('Sarah')
@@ -71,7 +73,10 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     ok('the Assign picker no longer offers her', listed.length > 0 && !listed.some((l) => /Sarah/.test(l)), listed.join(', '))
     await page.keyboard.press('Escape')
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
-    ok('Settings › Studio names her as deactivated', /Sarah/.test(await page.getByTestId('team-deactivated').innerText()) && !/Sarah/.test(await page.getByTestId('team-designer').innerText()))
+    // (one-home N-06, a deliberate change of this rule) Settings › Studio keeps no team list — Company › Members (above) names her; the role
+    // columns count only the active team.
+    const designers = sql(`select count(*) from members where role='Designer' and is_active=1`)
+    ok('Settings › Studio counts her nowhere', new RegExp(`Designer · ${designers}`, 'i').test(await page.getByRole('table', { name: 'Who may do what' }).getByRole('row').first().innerText()) && (await page.getByTestId('studio-team').count()) === 0, `${designers} active Designers`)
     await page.goto(`${BASE}/company/members`); await ready(page)
     await page.getByTestId('members-inactive').getByRole('button', { name: 'Reactivate' }).click(); await snack(page, 'Sarah reactivated')
     ok('reactivated', sql(`select is_active from members where id='sarah'`) === '1')
@@ -95,7 +100,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     ok('the Owner cannot change their own role', await row(page, 'Dane').getByTestId('member-role').locator('button, input').first().isDisabled())
     ok('and is never offered Deactivate on themself', (await row(page, 'Dane').getByRole('button', { name: 'Deactivate' }).count()) === 0)
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
-    ok('Who may do what: only an Owner makes an Owner', JSON.stringify(await page.getByTestId('may-owner').locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach')))) === '["yes","no","no","no"]')
+    ok('Who may do what: only an Owner makes an Owner', JSON.stringify(await page.getByTestId('may-owner').locator('[data-reach]').evaluateAll((els) => els.map((e) => e.getAttribute('data-reach')))) === '["yes","no","no","no","no","no"]') /* (S44O — call C6, a deliberate change of this rule: a sixth column, Marketing) */ /* (parity map, FB-114 — a deliberate change of this rule: a fifth column, Accounting) */
     sql(`update members set role='Designer' where id='germaine'`)
   })
 
@@ -103,7 +108,7 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     as('alex')
     await page.goto(`${BASE}/settings?section=notifications`); await page.getByTestId('settings-notifications').waitFor(); await ready(page)
     ok('Notifications: the read-only line', (await page.getByTestId('read-only-line').count()) === 1)
-    ok('Notifications: switches disabled, no Edit', await page.getByTestId('event-new_lead').locator('input[type="checkbox"]').first().isDisabled() && (await page.getByRole('button', { name: 'Edit' }).count()) === 0)
+    ok('Notifications: switches disabled, no Edit', await page.getByTestId('event-new_lead').locator('input[type="checkbox"]').first().isDisabled() && (await page.getByRole('button', { name: 'Edit', exact: true }).count()) === 0)   // exact: the rail's AI credits button (REG-699) holds "edit"
     await shot('05-designer-notifications')
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
     ok('Profile: read-only, no Save changes', (await page.getByTestId('read-only-line').count()) === 1 && (await page.getByRole('button', { name: 'Save changes' }).count()) === 0 && await page.getByLabel('Company name').isDisabled())
@@ -113,7 +118,8 @@ const row = (page, name) => page.getByTestId('member-row').filter({ has: page.lo
     await page.goto(`${BASE}/company/templates/quotes`); await ready(page)
     await page.getByRole('button', { name: /^More options for / }).first().click({ force: true }); await page.waitForTimeout(400)
     const items = await page.getByRole('menuitem').evaluateAll((els) => els.map((e) => `${e.textContent?.trim()}:${e.getAttribute('aria-disabled') ?? e.hasAttribute('disabled')}`))
-    ok('a quote template’s default, rename and delete are refused in the menu', ['Set as default', 'Rename', 'Delete'].every((l) => items.some((i) => i.startsWith(`${l}:`) && /true/.test(i))), items.join(' · '))
+    // a disabled row prints its reason in the row (REG-728), so a row's text is its label then its reason
+    ok('a quote template’s default, rename and delete are refused in the menu', ['Set as default', 'Rename', 'Delete'].every((l) => items.some((i) => i.startsWith(l) && /:true$/.test(i))), items.join(' · '))
     await shot('07-designer-template-menu')
     await page.keyboard.press('Escape')
     await page.goto(`${BASE}/company/integrations`); await ready(page)

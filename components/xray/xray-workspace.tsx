@@ -22,23 +22,25 @@ import { useSearchTarget } from '@/components/shell/search-focus'
 import { SlashSlot } from '@/components/om/slash-slot'
 import { displayDate } from '@/lib/format'
 import { money } from '@/lib/xray/compare'
-import { FILE_GLYPH, fileKind, readSide, XRAY_ACCEPT, XRAY_MAX_BYTES, type SideRead } from '@/lib/xray/reading'
+import { FILE_GLYPH, fileKind, readSide, totalCheck, XRAY_ACCEPT, XRAY_MAX_BYTES, type SideRead } from '@/lib/xray/reading'
 import { deleteComparison, runComparison } from '@/app/quote-x-ray/actions'
 import type { XrayData } from '@/lib/xray/queries'
 import { COMPARISON_DELETE_RULE } from '@/lib/xray/policy'
 import { XraySetupGhost } from './xray-setup-ghost'
+import { answerLock, usePlanLock } from '@/components/credits/credits-client'
+import { ProLocked } from '@/components/credits/pro-tag'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './xray-workspace.module.css'
+import { DROP_HELP, SETUP_WORDS, XRAY_INTRO } from './intro-copy'   // (pending modules S19 · S21) the intro's and the setup's words, shared with its ghost
 
 type Mode = 'lead' | 'upload'
-type Side = { file: File; read: SideRead | null }
+export type Side = { file: File; read: SideRead | null }
 const STEPS = ['Reading your quotes', 'Extracting line items', 'Matching comparable items', 'Running the analysis']
 const STEP_MS = 650
 const SEARCH_FROM = 8
-const DROP_HELP = 'Drop a file or browse · PDF, PNG, JPG, WebP, CSV or XLSX'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 /** Read a picked file; "Reading…" stays long enough to be read (the Create Quote window's upload does the same). */
-async function readShown(f: File): Promise<SideRead> {
+export async function readShown(f: File): Promise<SideRead> {
   const started = Date.now()
   const read = await readSide(f)
   const wait = 600 - (Date.now() - started)
@@ -47,18 +49,23 @@ async function readShown(f: File): Promise<SideRead> {
 }
 
 /** (REG-639, Q-10) What a picked file reads as, said at once under its tile. */
-function unreadable(side: 'other' | 'yours', reason: Exclude<SideRead, { ok: true }>['reason'], name: string): string {
+export function unreadable(side: 'other' | 'yours', reason: Exclude<SideRead, { ok: true }>['reason'], name: string, currency?: string): string {
   /* (sweep S3) the formats as they are read — an old .xls gets the leads import's way out, not a promise of "Excel" */
   if (reason === 'type') return /\.xls$/i.test(name) ? 'Save the sheet as XLSX or CSV first — the old .xls format is not read.' : 'We can read PDF, PNG, JPG, WebP, CSV and XLSX files.'
   if (reason === 'size') return `${name} is over 10 MB.`
   if (reason === 'empty') return 'We couldn’t find any priced lines in this file.'
+  /* (pending modules S21) why a photo or a scan isn't read, and 1.0's hard stop on another currency */
+  if (reason === 'scan') return `${name} is a photo or a scan — it has no words to read here. A PDF the studio made, or a spreadsheet, reads best.`
+  if (reason === 'currency') return `This quote is in ${currency ?? 'another currency'} — Quote X-Ray compares quotes in S$.`
   return side === 'other' ? 'We couldn’t read this one — a spreadsheet of their quote reads best.' : 'We couldn’t read this one — try a spreadsheet of your quote, or compare from the lead instead.'
 }
 
-/** A picked file: its type's glyph, its name, Remove — and what was read from it. No stock thumbnail (E-109). */
-function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void }) {
+/** A picked file: its type's glyph, its name, Remove — and what was read from it. No stock thumbnail (E-109). (pending modules S21) A file that
+    states its own total says whether the lines read come to it — the reading checks itself, as a person would. */
+export function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void }) {
   const kind = fileKind(side.file.name) ?? 'pdf'
   const r = side.read
+  const check = r?.ok ? totalCheck(r.totalMinor, r.stated) : null
   return (
     <div className={styles.file} data-testid="xray-file">
       <span className={styles.fileRow}>
@@ -69,7 +76,12 @@ function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void }) {
       {r === null ? (
         <span className={styles.fileNote} role="status"><Icon name="upload_file" size={18} weight={300} /> Reading {side.file.name}…</span>
       ) : r.ok ? (
-        <span className={styles.fileNote} role="status" data-tone="done"><Icon name="task_alt" size={18} weight={300} /> <span><b>{r.lines.length} {r.lines.length === 1 ? 'line' : 'lines'}</b> read{r.studio ? ` from ${r.studio}’s quote` : ''} · {money(r.totalMinor)}</span></span>
+        <>
+          <span className={styles.fileNote} role="status" data-tone="done"><Icon name="task_alt" size={18} weight={300} /> <span><b>{r.lines.length} {r.lines.length === 1 ? 'line' : 'lines'}</b> read{r.studio ? ` from ${r.studio}’s quote` : ''} · {money(r.totalMinor)}{check?.agrees ? ' — the same as its own total' : ''}</span></span>
+          {check && !check.agrees ? (
+            <span className={styles.fileNote} data-tone="check" data-testid="xray-file-check"><Icon name="info" size={18} weight={300} /> <span>The quote’s own total is {money(check.statedMinor)} — a line may not have been read. Check the item-by-item list before you send anything.</span></span>
+          ) : null}
+        </>
       ) : null}
     </div>
   )
@@ -87,6 +99,7 @@ function XrayFile({ side, onRemove }: { side: Side; onRemove: () => void }) {
  */
 export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote, from }: { data: XrayData; leadId: string | null; quoteId: string | null; from: string | undefined }) {
   const router = useRouter()
+  const xrayLock = usePlanLock('quote_xray')   // (pending modules S19) Quote X-Ray is Pro
   const snackbar = useSnackbar()
   const [introHidden, setIntroHidden] = useFlagPref('om.xray.introHidden', false)
   const scoped = initialLead ? data.leads.find((l) => l.id === initialLead) ?? null : null
@@ -146,14 +159,17 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
     if (side === 'other') setStudioName('')
     set({ file: f, read: null })
     const read = await readShown(f)
-    if (read.ok) set((cur) => (cur && cur.file === f ? { file: f, read } : cur))
-    else { set((cur) => (cur && cur.file === f ? null : cur)); setError({ side, text: unreadable(side, read.reason, f.name) }) }
+    if (read.ok) {
+      set((cur) => (cur && cur.file === f ? { file: f, read } : cur))
+      if (side === 'other' && read.kind === 'pdf' && read.studio) setStudioName(read.studio)   // (S21) the letterhead's name, theirs to correct
+    } else { set((cur) => (cur && cur.file === f ? null : cur)); setError({ side, text: unreadable(side, read.reason, f.name, read.currency) }) }
   }
 
   /* The progress card walks its four steps on a timer while the reading runs; the record opens once both are done. */
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => () => { if (timer.current) clearInterval(timer.current) }, [])
   const compare = async () => {
+    if (xrayLock.locked) { xrayLock.open(); return }
     if (!ready || busy || !other?.read?.ok) return
     setBusy(true); setError(null); setRunning(0)
     const started = Date.now()
@@ -165,14 +181,17 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
         quoteId: mode === 'lead' ? quoteId : null,
         yourFile: mode === 'upload' ? mine?.file.name ?? null : null,
         otherFile: other.file.name,
-        other: o.kind === 'sheet' ? { lines: o.lines, studio: studioName.trim() || null } : null,
-        yours: mode === 'upload' && m?.ok && m.kind === 'sheet' ? { lines: m.lines } : null,
+        other: o.kind !== 'reference' ? { lines: o.lines, studio: studioName.trim() || null } : null,   // (S21) a sheet's lines or a PDF's, read here
+        yours: mode === 'upload' && m?.ok && m.kind !== 'reference' ? { lines: m.lines } : null,
+        otherRef: o.kind === 'reference' ? o.ref ?? null : null,   // (S42 E-05) recognised by its words, sent by its key
+        yourRef: mode === 'upload' && m?.ok && m.kind === 'reference' ? m.ref ?? null : null,
       })
       const wait = Math.max(0, STEPS.length * STEP_MS + 200 - (Date.now() - started))
       await sleep(wait)
       if (timer.current) { clearInterval(timer.current); timer.current = null }
       if ('error' in r) {
         setRunning(null)
+        if ('locked' in r) { answerLock(r.error, 'quote_xray'); return }
         if (r.error === 'unreadable-other') { setOther(null); setError({ side: 'other', text: unreadable('other', 'unreadable', other.file.name) }) }
         else if (r.error === 'unreadable-yours') { setMine(null); setError({ side: 'yours', text: unreadable('yours', 'unreadable', mine?.file.name ?? '') }) }
         else if (r.error === 'same-quote') { setOther(null); setError({ side: 'other', text: 'That is the same quote as yours — add the other studio’s quote.' }) }   /* (REG-641, E-94) */
@@ -188,7 +207,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
   const remove = async (id: string, label: string) => {
     try {
       const res = await deleteComparison(id)
-      if ('error' in res) { snackbar({ message: res.error === 'not-allowed' ? COMPARISON_DELETE_RULE : 'That comparison is already gone' }); router.refresh(); return }
+      if ('error' in res) { if ('locked' in res) { answerLock(res.error, 'quote_xray'); return } snackbar({ message: res.error === 'not-allowed' ? COMPARISON_DELETE_RULE : 'That comparison is already gone' }); router.refresh(); return }
       snackbar({ message: `${label} deleted` }); router.refresh()
     } catch { snackbar({ message: 'Couldn’t delete the comparison — please try again' }) }
   }
@@ -200,7 +219,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
         {s ? <XrayFile side={s} onRemove={() => { (side === 'other' ? setOther : setMine)(null); if (side === 'other') setStudioName('') }} />
           : <Dropzone title={title} label={`Upload ${title.charAt(0).toLowerCase()}${title.slice(1)}`} helper={DROP_HELP} accept={XRAY_ACCEPT} onPick={(f) => { void pick(side, f) }} />}
         {errors[side] ? <FieldError message={errors[side]!} /> : null}
-        {side === 'other' && s?.read?.ok && s.read.kind === 'sheet' ? (
+        {side === 'other' && s?.read?.ok && s.read.kind !== 'reference' ? (
           <TextField label="Their studio’s name (optional)" value={studioName} onChange={setStudioName} maxLength={80} trailingIcon={null} />
         ) : null}
       </>
@@ -228,19 +247,20 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
           {!introHidden ? (
             <section className={styles.intro} aria-label="What Quote X-Ray does">
               <div className={styles.introText}>
-                <span className={styles.introTitle}>Client comparing your quote with another studio’s? Upload theirs — we check it against yours, item by item.</span>
+                <span className={styles.introTitle}>{XRAY_INTRO.title}</span>
                 <ul className={styles.introList}>
-                  <li><Icon name="check" size={18} weight={300} /><span><b>The real price difference</b> — after counting the work each quote includes or leaves out.</span></li>
-                  <li><Icon name="check" size={18} weight={300} /><span><b>Up to three points to tell your client</b> — missing items, prices worth a question, materials and brands.</span></li>
-                  <li><Icon name="check" size={18} weight={300} /><span><b>A WhatsApp message ready to send</b> — edit it in your own words and go.</span></li>
+                  {XRAY_INTRO.points.map(([b, rest]) => <li key={b}><Icon name="check" size={18} weight={300} /><span><b>{b}</b>{rest}</span></li>)}
                 </ul>
-                <span className={styles.introNote}>Takes a moment. Always check the numbers before you send anything to a client.</span>
+                <span className={styles.introNote}>{XRAY_INTRO.note}</span>
               </div>
               <Tooltip label="Dismiss"><IconButton icon="close" label="Dismiss" size={24} variant="bare" iconSize={20} onClick={() => setIntroHidden(true)} /></Tooltip>
             </section>
           ) : null}
 
           <div className={styles.columns}>
+            {/* (pending modules S19 — 1.0's plan gating: Quote X-Ray is Pro) on Free the setup is the lock — what X-Ray does and the way on;
+                the comparisons already made stay listed beside it, kept for Pro */}
+            {xrayLock.locked ? <ProLocked feature="quote_xray" kept={recents.length ? `Your ${recents.length} ${recents.length === 1 ? 'comparison is' : 'comparisons are'} kept` : null} testId="xray-locked" /> : (
             <section className={styles.card} aria-label="New comparison" data-testid="xray-setup">
               {running !== null ? (
                 <div className={styles.progress} role="status" aria-live="polite" data-testid="xray-progress">
@@ -279,8 +299,8 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                                      onChange={(v) => pickLead(data.leads.find((x) => labels.get(x.id) === v)?.id ?? null)} />
                         )}
                         {lead ? (
-                          <div className={styles.quotes} role={comparable.length ? 'radiogroup' : undefined} aria-label={comparable.length ? 'Which quote is the client comparing against?' : undefined}>
-                            {comparable.length ? <span className={styles.question} aria-hidden>Which quote is the client comparing against?</span> : null}
+                          <div className={styles.quotes} role={comparable.length ? 'radiogroup' : undefined} aria-label={comparable.length ? SETUP_WORDS.question : undefined}>
+                            {comparable.length ? <span className={styles.question} aria-hidden>{SETUP_WORDS.question}</span> : null}
                             {comparable.length === 0 ? (
                               <div className={styles.noQuote} data-testid="xray-no-quote">
                                 <span className={styles.none}>{leadQuotes.length ? `${lead.name}’s quotes have no lines to compare yet.` : `${lead.name} has no quote yet.`}</span>
@@ -330,6 +350,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                 </>
               )}
             </section>
+            )}
 
             <aside className={styles.recents} aria-label="Recent comparisons">
               <span className={styles.recentsHead}>{scoped ? `Recent comparisons · ${scoped.name}` : 'Recent comparisons'}</span>   {/* (sweep S3) a lead's page lists only its readings — the head says so */}
@@ -349,7 +370,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                           <Icon name="chevron_right" size={20} weight={300} className={styles.chev} />
                         </Link>
                         {/* (REG-641, Q-20) its maker, an Owner or an Admin — out of reach for anyone else, and the tooltip says who */}
-                        <Tooltip label={r.canDelete ? 'Delete' : COMPARISON_DELETE_RULE}><IconButton icon="delete" label={`Delete ${label}`} size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!r.canDelete} onClick={() => setDel({ payload: r, open: true })} /></Tooltip>
+                        <Tooltip label={r.canDelete ? 'Delete' : COMPARISON_DELETE_RULE}><IconButton icon="delete" label={`Delete ${label}`} size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!r.canDelete} onClick={() => { if (xrayLock.locked) { xrayLock.open(); return } setDel({ payload: r, open: true }) }} /></Tooltip>
                       </li>
                     )
                   })}

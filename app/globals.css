@@ -30,6 +30,10 @@
   /* Modal widths (designer rule, 2026-08-29): s 400 · m 600 · l 800 · xl 1200; height follows content (capped to the viewport).
      xxl is fluid: no set width, a 48px margin on every side (viewport − 96 both ways), centred. */
   --om-modal-s: 400px; --om-modal-m: 600px; --om-modal-l: 800px; --om-modal-xl: 1200px; --om-modal-xxl-margin: 48px;
+  /* (pending modules S17 — consistency leftovers, as recommended) The one fixed height of a tall xl dialog — the Import wizard's and Attach
+     files' 928 (779:20043 · 902:28220), now also Create Quote's, the ready-made designs' and the brand kit's sample quote (they had a 960 of
+     their own, REG-512 · REG-517) — capped by the xxl margin on a shorter window. The editor's pickers keep their 680 (REG-662). */
+  --om-modal-xl-height: 928px;
 }
 /* (REG-298) ≤767 the dock takes the bottom 70px: the FAB floats 16 above it (mock: 86 from the edge) and a page's last
    content clears dock + gap + FAB + gap = 70 + 16 + 48 + 16 — plus the home-indicator inset the dock grew by (REG-308). */
@@ -201,6 +205,29 @@ svg {
   font-display: block;
   src: url('/fonts/material-symbols-outlined.subset.woff2') format('woff2');
 }
+/* (pending modules S11, card held:quote-templates — "they will print in a fallback") The faces a quote template can name, self-hosted:
+   the latin subsets of the curated web faces (+ Outfit, 1.0's sixth document font) and Carlito / Caladea, the metric twins Calibri and
+   Cambria fall back to. A file downloads only when a page sets text in it, so the app's own pages carry nothing extra. Inter is the app's
+   own (next/font, `--font-inter`, lib/templates/model.ts FONT_STACK). Licences: public/fonts/doc/OFL.txt. */
+@font-face { font-family: 'Caladea'; font-style: italic; font-weight: 400; font-display: swap; src: url('/fonts/doc/caladea-italic-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caladea'; font-style: italic; font-weight: 700; font-display: swap; src: url('/fonts/doc/caladea-italic-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caladea'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/doc/caladea-normal-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caladea'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/doc/caladea-normal-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Carlito'; font-style: italic; font-weight: 400; font-display: swap; src: url('/fonts/doc/carlito-italic-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Carlito'; font-style: italic; font-weight: 700; font-display: swap; src: url('/fonts/doc/carlito-italic-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Carlito'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/doc/carlito-normal-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Carlito'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/doc/carlito-normal-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/fraunces-italic-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/fraunces-normal-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Lato'; font-style: italic; font-weight: 400; font-display: swap; src: url('/fonts/doc/lato-italic-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Lato'; font-style: italic; font-weight: 700; font-display: swap; src: url('/fonts/doc/lato-italic-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/doc/lato-normal-400.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/doc/lato-normal-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Montserrat'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/montserrat-italic-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/montserrat-normal-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Outfit'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/outfit-normal-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/playfair-display-italic-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/doc/playfair-display-normal-400-700.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 .msr { font-family: 'Material Symbols Rounded'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .mso { font-family: 'Material Symbols Outlined'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .msr[data-weight='300'] { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
@@ -217,13 +244,21 @@ label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; mar
 
 /* Touch ergonomics (REG-273): the checkbox's own label is a 24px box — half a fingertip. On a touch pointer
    the label becomes a 44px target with the glyph still centred at its mocked 18px, and the extra is given
-   back as margin so no row shifts. A mouse (hover: hover) never sees this rule. */
+   back as margin so no row shifts. A mouse (hover: hover) never sees this rule.
+   (pending modules S15 — a bug fix) Only the control's OWN label: the DS Checkbox and Switch are each a <label> round their input, and a row
+   that wraps one in a label of its own ("Show the floor plan", a dialog's GST switch, Your profile's consent row — S14's local fix) matched
+   too — on a phone the whole row was centred, pulled 10px out of its card and the switch's knob ran into its words. `:not(:has(label))`
+   keeps the innermost label: the control keeps its 44 target, the row its place. */
 @media (hover: none) {
-  label:has(input[type='checkbox']) {
+  label:has(input[type='checkbox']):not(:has(label)) {
     min-inline-size: 44px; min-block-size: 44px;
     display: inline-flex; align-items: center; justify-content: center;
     margin: -10px;
   }
+  /* (pending modules S15 — a bug fix) the DS Switch (sm, REG-460) draws a 40 × 20 track, not the checkbox's 24: given back as the checkbox's
+     -10 its box laid out 24 wide, the track spilled 8px past both sides — over its row's edge and into its words. Its 44 target gives back
+     what the track doesn't fill: 2 a side, 12 above and below. */
+  label:has(input[role='switch']):not(:has(label)) { margin: -12px -2px; }
 }
 
 /*

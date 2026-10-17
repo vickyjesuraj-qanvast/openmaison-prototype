@@ -4,14 +4,15 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { landingFolder } from '@/lib/company/folder-landing'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
 import { leadTasks, taskTemplates, templateTasks } from '@/lib/db/schema'
-import { sessionMemberSql } from '@/lib/db/session'
+import { sessionMemberId } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { applyTemplate } from '@/app/leads/tasks-actions'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /* Company › Templates › Tasks (REG-538): the checklist library — create · save (name, switches, steps) · rename · duplicate · soft delete · restore · forever · add to a lead. */
 
@@ -32,7 +33,9 @@ export type CreateTaskTemplateInput = { name?: string; source: { kind: 'blank' }
   /** (Dane UAT 3.03) The folder open in the gallery — the new template is filed there (its maker may file it). */
   folderId?: string | null }
 /** Blank (one empty step), a copy, or the open tasks of a lead (the tab's "Save all as Template" from Company's side). Returns the id. */
-export async function createTaskTemplate(input: CreateTaskTemplateInput): Promise<string> {
+export async function createTaskTemplate(input: CreateTaskTemplateInput): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const now = new Date()
   const id = randomUUID()
   let name = clean(input.name) || 'Untitled template', keepMembers = true, keepDescription = true
@@ -52,15 +55,19 @@ export async function createTaskTemplate(input: CreateTaskTemplateInput): Promis
   const viewer = await fetchViewer()
   const { folderId } = await landingFolder('tasks', input.folderId, templateChangeBlock(viewer, viewer.id))
   await db.transaction(async (tx) => {
-    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: sessionMemberSql, updatedAt: now, folderId })
+    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: stampBy, updatedAt: now, folderId })
     await tx.insert(templateTasks).values(steps.map((s, i) => cleanStep(s, i, id)))
   })
   touch(id)
   return id
 }
 /** The editor's autosave: the name, the two switches and the steps in order (replaces the list). */
-export async function saveTaskTemplate(id: string, patch: { name?: string; keepMembers?: boolean; keepDescription?: boolean; steps?: TaskStepInput[] }): Promise<number> {
-  await row(id)
+export async function saveTaskTemplate(id: string, patch: { name?: string; keepMembers?: boolean; keepDescription?: boolean; steps?: TaskStepInput[] }): Promise<number | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const r = await row(id)
+  /* (fix-G, B-11's rule for every library) changed only by those who may rename or delete it — its author, Owners and Admins — never in the trash */
+  const block = await changeBlock(r.createdBy); if (block) return refuse(block)
+  if (r.deletedAt) return refuse(TEMPLATE_DELETED_LINE)
   const now = new Date()
   await db.transaction(async (tx) => {
     const set: Partial<typeof taskTemplates.$inferInsert> = { updatedAt: now }
@@ -76,11 +83,18 @@ export async function saveTaskTemplate(id: string, patch: { name?: string; keepM
   touch(id)
   return now.getTime()
 }
-export async function renameTaskTemplate(id: string, name: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await saveTaskTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
-export async function duplicateTaskTemplate(id: string): Promise<string> { return createTaskTemplate({ source: { kind: 'copy', id } }) }
-export async function deleteTaskTemplate(id: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
+export async function renameTaskTemplate(id: string, name: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   const block = await refusalFor(id); if (block) return refuse(block); await saveTaskTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
+export async function duplicateTaskTemplate(id: string): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   return createTaskTemplate({ source: { kind: 'copy', id } }) }
+export async function deleteTaskTemplate(id: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   const block = await refusalFor(id); if (block) return refuse(block); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
 /** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
 export async function restoreTaskTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!ids.length) return { restored: 0, kept: 0 }
   const rows = await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids))
   const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
@@ -90,6 +104,7 @@ export async function restoreTaskTemplates(ids: string[]): Promise<{ restored: n
 }
 /** Delete forever: the tasks it already added to leads keep their own rows (only their `template_id` link goes). */
 export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   let removed = 0, kept = 0
   const rows = ids.length ? await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)) : []
   const none = await nothingChangeable(rows, 'purge'); if (none) return refuse(none)   // (wave E, E7) none of them the viewer's: the rule, not "nothing was deleted"
@@ -104,11 +119,13 @@ export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ remov
   return { removed, kept }
 }
 export async function emptyTaskTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const rows = await db.select({ id: taskTemplates.id }).from(taskTemplates).where(sql`${taskTemplates.deletedAt} is not null`)
   return deleteTaskTemplatesForever(rows.map((r) => r.id))
 }
 /** The gallery's "Add to a lead…": the template's steps land on the lead (or the studio's own tasks) as open tasks. */
-export async function addTaskTemplateToLead(templateId: string, leadId: string | null): Promise<number> {
+export async function addTaskTemplateToLead(templateId: string, leadId: string | null): Promise<number | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const n = await applyTemplate(leadId, templateId)
   touch()
   return n

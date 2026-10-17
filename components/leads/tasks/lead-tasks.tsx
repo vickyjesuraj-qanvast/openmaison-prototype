@@ -9,7 +9,7 @@ import { DatePicker } from '@/components/om/date-picker'
 import { useSnackbar } from '@/components/om/snackbar'
 import { withFrom } from '@/lib/nav'
 import { ExportDialog } from '@/components/leads/export-dialog'
-import { STUDIO_TASK_COLUMN_DEFS, TasksTable } from './tasks-table'
+import { STUDIO_TASK_COLUMN_DEFS, TasksTable, type TaskRowAction } from './tasks-table'
 import { AddTaskButton, TasksMoreButton, TasksToolbar, type TasksMenuAction } from './tasks-toolbar'
 import { TasksEmpty } from './tasks-empty'
 import { TabSearchEmpty } from './tab-search-empty'
@@ -25,7 +25,8 @@ import { ChooseTemplateDialog, SaveTemplateDialog } from './template-dialogs'
 import { DeleteTasksDialog } from './delete-dialog'
 import { useRun } from './use-run'
 import { CREATE_EVENTS, useCreateIntent } from './use-create-intent'
-import { EMPTY_TASK_FILTERS, TASK_SCOPE_LABEL, activeTaskFilterCount, applyTaskFilters, type TaskFilters, type TaskScope } from '@/lib/leads/task-filters'
+import { EMPTY_TASK_FILTERS, TASK_HEAD_LABEL, TASK_SCOPE_LABEL, activeTaskFilterCount, applyTaskFilters, nextTaskHeadSort, sortTasksByHead, sourceOf, type TaskFilters, type TaskHeadSort, type TaskScope, type TaskSortKey, type TaskSource } from '@/lib/leads/task-filters'
+import { useFlagPref } from '@/lib/prefs'   // (gaps build, package C — 16)
 import { filterByQuery, matchesQuery } from '@/lib/search'
 import { displayDue, isDueToday, isOverdue } from '@/lib/format'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
@@ -38,8 +39,16 @@ import { downloadTasks } from '@/lib/leads/export'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { TASK_COLUMN_DEFS } from './tasks-table'
+import { PROJECT_TASK_COLUMN_DEFS, TASK_COLUMN_DEFS } from './tasks-table'
+import { setTaskMilestone } from '@/app/projects/schedule-actions'   // (Projects round 2)
+import { recordTaskSentOutside, setTaskOutside, undoTaskOutside } from '@/app/leads/tasks-actions'   // (gaps build, package C — M-03)
+import { OutsideDialog, recentOutside } from './outside-person'
+import { outsideKey, outsideLine, outsideMessage, outsideOf } from '@/lib/leads/outside'
+import { isUnassigned } from '@/lib/leads/task-filters'
+import { waLink } from '@/lib/portal/model'
 import styles from './lead-tasks.module.css'
+import { useSignedInRole } from '@/components/shell/access-gate'   // (S43E W6-02)
+import { opensPath } from '@/lib/settings/roles'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
 /* Anchored popovers are fixed-position: the clamp keeps the surface on screen, so it must reserve THAT popover's own
@@ -59,7 +68,7 @@ type Todo = 'overdue' | 'today' | 'unassigned'
 const TODO_TEST: Record<Todo, (t: TaskRow, now: number) => boolean> = {
   overdue: (t, now) => !t.done && isOverdue(t.dueAt, now),
   today: (t, now) => !t.done && isDueToday(t.dueAt, now),
-  unassigned: (t) => !t.done && t.assignees.length === 0,
+  unassigned: (t) => !t.done && isUnassigned(t),   // (gaps build, package C — M-03) an outside person on it is someone
 }
 const TODO_LABEL: Record<Todo, string> = { overdue: 'Overdue', today: 'Due today', unassigned: 'Unassigned' }
 const TODO_ICON: Record<Todo, string> = { overdue: 'schedule', today: 'today', unassigned: 'person_add' }
@@ -83,6 +92,7 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
   t.dueAt ? displayDue(t.dueAt) : null,
   t.done ? 'Completed' : 'Open',
   ...t.tags.map((g) => g.name),
+  t.externalName,   // (gaps build, package C — M-03) the outside person the row shows
 ]
 
 /**
@@ -91,11 +101,16 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
  * tooltips, coming-soon on inert affordances, picker-only dates, unseen band). Specs: design-source/context/lead-tasks/.
  */
 /** `leadId` null = the rail's Tasks page (REG-466): every lead's tasks and the studio's own, with a Lead column, a scope chip and Lead / Stage filters. */
-export function LeadTasks({ leadId, data, header }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode }) {
+export function LeadTasks({ leadId, data, header, base: baseProp, views }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[]; projectLeads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode
+  /** (REG-913) Whose page the tab sits on — `/projects/<id>` when a project carries the lead's tasks on; the lead's own page by default. */
+  base?: string
+  /** (simplify S-03 · S-06) On a project: the Tasks group's view switch in the toolbar's title place; the lead's own tab passes none. */
+  views?: ReactNode }) {
   const studio = leadId === null
+  const base = baseProp ?? `/leads/${leadId}`
   const router = useRouter()
   /* (REG-538) Manage Templates lands on Company › Templates › Tasks, which comes back here. */
-  const manageTemplates = () => router.push(withFrom('/company/templates/tasks', studio ? '/tasks' : `/leads/${leadId}/tasks`))
+  const manageTemplates = () => router.push(withFrom('/company/templates/tasks', studio ? '/tasks' : `${base}/tasks`))
   const { tasks, tags, files, templates, team, now } = data
   const snackbar = useSnackbar()
   const { run, fail } = useRun()
@@ -109,12 +124,23 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   const [scope, setScope] = useState<TaskScope>(() => { const v = params.get('scope'); return studio && v && v in TASK_SCOPE_LABEL ? (v as TaskScope) : 'all' })
   const [todo, setTodo] = useState<Todo | null>(() => { const v = params.get('due'); return studio && (v === 'overdue' || v === 'today') ? v : null })
   const [addLead, setAddLead] = useState<string | null>(null)   // (REG-466) the add row's lead on the rail page — null = Studio
+  /* (gaps build, package C — 16) the rail page: whose tasks (?source=), and grouped by project (per browser) */
+  const signedRole = useSignedInRole()
+  const [source, setSource] = useState<TaskSource>(() => { const v = params.get('source'); return studio && (v === 'leads' || v === 'projects') && opensPath(signedRole, '/projects') ? v : 'all' })
+  const [grouped, setGrouped] = useFlagPref('om.tasks.byProject', false)
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_TASK_FILTERS)
+  /* (pending modules S05) the heads' own order (Due date · Status) — ONE sort with Filters': a head's sort puts Filters' Sort back to its
+     default, an order picked in Filters takes the head's off (the Contracts / Quotes heads' model, S03 · S04) */
+  const [headSort, setHeadSort] = useState<TaskHeadSort>(null)
+  const onHeadSort = (key: TaskSortKey) => { setHeadSort((h) => nextTaskHeadSort(h, key)); setFilters((f) => (f.sort === EMPTY_TASK_FILTERS.sort ? f : { ...f, sort: EMPTY_TASK_FILTERS.sort })) }
+  const applyFilters = (next: TaskFilters) => { if (next.sort !== filters.sort) setHeadSort(null); setFilters(next) }
   const [filtersOpen, setFiltersOpen] = useState(false)
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
-  const columnPrefs = useTableColumns(studio ? 'studio-tasks' : 'lead-tasks', studio ? STUDIO_TASK_COLUMN_DEFS : TASK_COLUMN_DEFS, phone)
+  /* (Projects round 2) A lead with a project's milestones: the Milestone column (after Title) and filter; a lead without one is as it was. */
+  const milestones = studio ? [] : data.milestones ?? []
+  const columnPrefs = useTableColumns(studio ? 'studio-tasks' : milestones.length ? 'project-tasks' : 'lead-tasks', studio ? STUDIO_TASK_COLUMN_DEFS : milestones.length ? PROJECT_TASK_COLUMN_DEFS : TASK_COLUMN_DEFS, phone)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   /* (UX audit 2026-09-30, T4) `?add=1` — a saved log's "Add tasks" (the Notes tab, the Move stage window) lands on the add row */
   const [adding, setAdding] = useState(() => params.get('add') === '1')
@@ -130,7 +156,8 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   const unseen = useMemo(() => new Set(tasks.filter((t) => t.seenAt === null && !seenLocally.has(t.id)).map((t) => t.id)), [tasks, seenLocally])
   const filterCount = activeTaskFilterCount(filters)
   /* (REG-466) The rail page's scope comes before the filters: mine = assigned to me, unassigned = nobody's, studio = no lead. */
-  const inScope = useMemo(() => scope === 'all' ? tasks : tasks.filter((t) => scope === 'mine' ? t.assignees.some((m) => m.id === me.id) : scope === 'unassigned' ? t.assignees.length === 0 : t.leadId === null), [tasks, scope, me.id])
+  const inScope = useMemo(() => (scope === 'all' ? tasks : tasks.filter((t) => scope === 'mine' ? t.assignees.some((m) => m.id === me.id) : scope === 'unassigned' ? isUnassigned(t) : t.leadId === null))
+    .filter((t) => !studio || source === 'all' || sourceOf(t) === source), [tasks, scope, me.id, studio, source])
   const openCount = useMemo(() => inScope.filter((t) => !t.done).length, [inScope])
   /* (T5 · T4) the to-do chips count within the scope; a press narrows the list to its tasks, a second press lets go (REG-666) */
   const todoCounts = useMemo(() => Object.fromEntries((Object.keys(TODO_TEST) as Todo[]).map((k) => [k, inScope.filter((t) => TODO_TEST[k](t, now)).length])) as Record<Todo, number>, [inScope, now])
@@ -140,27 +167,35 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
      system has written other unseen, dated tasks (a log's reminder, a contract's automation, a render's call back) or the new one has
      no date — so it can be opened and changed at once, never hunted for. A change of view — the sort, a filter, the scope, a to-do
      chip, the search — lets them go to their places; leaving the page forgets them. */
-  const view = JSON.stringify([filters, scope, todo, query])
+  const view = JSON.stringify([filters, scope, todo, query, source, headSort])
   const [fresh, setFresh] = useState<{ ids: string[]; view: string }>({ ids: [], view })
   if (fresh.view !== view) setFresh({ ids: [], view })   // render-phase adjust
   /* …and the one just added is brought into view and pulses once — the quote editor's attention after an add (REG-573) */
   const [pulse, setPulse] = useState<{ id: string; n: number } | null>(null)
   const addedHere = (id: string) => { setFresh((f) => ({ ids: [id, ...f.ids.filter((x) => x !== id)], view: f.view })); setPulse((p) => ({ id, n: (p?.n ?? 0) + 1 })) }
   const matched = useMemo(() => {
-    const sorted = applyTaskFilters(todo ? inScope.filter((t) => TODO_TEST[todo](t, now)) : inScope, filters, now)
-    /* (REG-466) On the studio page the due-date sort keeps the open tasks ahead of the completed ones — a morning list, not an archive. */
-    const base = studio && filters.sort === 'due' ? [...sorted.filter((t) => !t.done), ...sorted.filter((t) => t.done)] : sorted
+    const sorted = sortTasksByHead(applyTaskFilters(todo ? inScope.filter((t) => TODO_TEST[todo](t, now)) : inScope, filters, now), headSort)   // (pending modules S05) a head's order last
+    /* (REG-466) On the studio page the due-date sort keeps the open tasks ahead of the completed ones — a morning list, not an archive. (pending
+       modules S05) A head's own order is the order asked for: it is kept as it stands. */
+    const base = studio && filters.sort === 'due' && !headSort ? [...sorted.filter((t) => !t.done), ...sorted.filter((t) => t.done)] : sorted
     /* Search is the last step, after the filters, and matches every piece of text the ROW shows (REG-274, one rule
        for every list) — `rowText` above — plus the DESCRIPTION (REG-275, user: "fix all of them"). The description
        lives in the task panel, not the row, so a hit on it alone used to read as a bug; the row now says why it is
        there (the "In description" chip beside the title), which is what unlocked matching it. */
     return filterByQuery(base, query, (t) => ({ fields: [...rowText(t), t.description] }))
-  }, [inScope, filters, query, now, studio, todo])
+  }, [inScope, filters, query, now, studio, todo, headSort])
+  /* (gaps build, package C — 16) grouped by project: each project's tasks together (by number), then the leads', then the studio's own — each run
+     keeps the list's own order */
+  const byProject = studio && (grouped || source === 'projects')
+  const groupOf = (t: TaskRow) => (t.lead?.project ? { key: `p:${t.lead.project.id}`, label: `${t.lead.project.number} · ${t.lead.project.name}`, href: `/projects/${t.lead.project.id}/tasks` }
+    : t.lead ? { key: 'leads', label: 'Leads', href: null } : { key: 'studio', label: 'Studio tasks', href: null })
+  const rank = (t: TaskRow) => (t.lead?.project ? `0${t.lead.project.number}` : t.lead ? '1' : '2')
   const visible = useMemo(() => {
-    if (!fresh.ids.length) return matched
+    const ordered = byProject ? [...matched].sort((a, b) => rank(a).localeCompare(rank(b), undefined, { numeric: true })) : matched
+    if (!fresh.ids.length) return ordered
     const first = fresh.ids.map((id) => tasks.find((t) => t.id === id)).filter((t): t is TaskRow => !!t)
-    return [...first, ...matched.filter((t) => !fresh.ids.includes(t.id))]
-  }, [matched, fresh.ids, tasks])
+    return [...first, ...ordered.filter((t) => !fresh.ids.includes(t.id))]
+  }, [matched, fresh.ids, tasks, byProject])
   /* (REG-275) The tasks whose ONLY hit is the description — the chip's trigger. Quiet by construction: empty while
      the box is empty, and empty for a task the reader can already see the query in (and for a task just added, which no search found). */
   const descriptionOnly = useMemo(() => {
@@ -198,6 +233,34 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   const [saveTemplateFor, setSaveTemplateFor] = useState<string[] | null>(null)
   const [deleting, setDeleting] = useState<{ ids: string[]; all: boolean } | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
+  /* (gaps build, package C — M-03) someone outside the studio on a task: the form's task, the people already on tasks, the send */
+  const [outsideFor, setOutsideFor] = useState<string | null>(null)
+  const outsideTask = outsideFor ? tasks.find((t) => t.id === outsideFor) ?? null : null
+  const recent = useMemo(() => recentOutside(tasks), [tasks])
+  const outsidePeople = useMemo(() => {
+    const seen = new Map<string, { key: string; name: string; line: string }>()
+    for (const t of tasks) { const o = outsideOf(t); if (o && !seen.has(outsideKey(o))) seen.set(outsideKey(o), { key: outsideKey(o), name: o.name, line: outsideLine(o) }) }
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
+  }, [tasks])
+  const sendOutside = (task: TaskRow) => {
+    const o = outsideOf(task)
+    if (!o?.phone) return
+    /* the message opens on the press (wa.me), then the send is recorded on the task */
+    const text = outsideMessage({ person: o.name, studio: data.studio ?? 'the studio', sender: me.name, client: task.lead?.name ?? null, address: task.lead?.address ?? null, title: task.title, due: task.dueAt, description: task.description })
+    window.open(waLink(o.phone, text), '_blank', 'noopener')
+    void run('record the send', () => recordTaskSentOutside(task.id), `Sent to ${o.name} on WhatsApp`)
+  }
+  const saveOutside = async (task: TaskRow, v: { name: string; phone: string; kind: string } | null): Promise<string | null> => {
+    try {
+      const r = await setTaskOutside(task.id, v)
+      if ('error' in r) { if (v) return r.error; snackbar({ message: `Couldn’t take them off — ${r.error.replace(/^./, (c) => c.toLowerCase())}` }); return null }
+      setOutsideFor(null)
+      const was = r.undo.was
+      const words = !v ? `${was?.name ?? 'They'} taken off the task` : was ? `${v.name} saved on the task` : `${v.name} added to the task`
+      if (r.undo.eventId || !v) snackbar({ message: words, actionLabel: 'Undo', onAction: () => { void run('undo the change', () => undoTaskOutside(r.undo), 'Undone') } })
+      return null
+    } catch { return 'Couldn’t save — please try again' }
+  }
 
   const startAdd = () => { setRenaming(null); setAdding(true) }
   const stopAdd = () => { setAdding(false); setAddMembers(null) }
@@ -205,11 +268,11 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   useEffect(() => {
     if (params.get('add') !== '1') return
     const next = new URLSearchParams(params.toString()); next.delete('add')
-    router.replace(`${studio ? '/tasks' : `/leads/${leadId}/tasks`}${next.size ? `?${next}` : ''}`, { scroll: false })
-  }, [params, router, studio, leadId])
+    router.replace(`${studio ? '/tasks' : `${base}/tasks`}${next.size ? `?${next}` : ''}`, { scroll: false })
+  }, [params, router, studio, base])
   // Create quick links › Task (858:26317) starts the inline add row: in place on this tab, or on landing from
   // another tab with `?new=1` (the landing the Quotes / Notes / Questionnaire tabs already accept).
-  useCreateIntent({ event: CREATE_EVENTS.tasks, landing: { href: studio ? '/tasks' : `/leads/${leadId}/tasks` }, onIntent: startAdd })
+  useCreateIntent({ event: CREATE_EVENTS.tasks, landing: { href: studio ? '/tasks' : `${base}/tasks` }, onIntent: startAdd })
   // Anchored popovers follow their trigger while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(assign || tagsFor)
   useEffect(() => {
@@ -263,12 +326,13 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   }
   const openTags = (task: TaskRow, anchor: HTMLElement) => setTagsFor((a) => (a?.el === anchor ? null : { taskId: task.id, ...tagsPos(anchor, tags.length) }))
   const openDue = (task: TaskRow, anchor: HTMLElement) => { dueAnchor.current = anchor; setDuePick(null); setDueFor((d) => (d?.el === anchor ? null : { taskId: task.id, el: anchor })) }
-  const rowMenu = (task: TaskRow, action: 'complete' | 'rename' | 'template' | 'duplicate' | 'delete') => {
+  const rowMenu = (task: TaskRow, action: TaskRowAction) => {
     if (action === 'complete') void setDone([task.id], true)
     if (action === 'rename') setRenaming(task.id)
     if (action === 'template') setSaveTemplateFor([task.id])
     if (action === 'duplicate') void run('duplicate the task', () => duplicateTasks([task.id]), 'Task duplicated')
     if (action === 'delete') setDeleting({ ids: [task.id], all: false })
+    if (action === 'send-outside') sendOutside(task)
   }
   /** Enter in a tag picker: create the tag, then tick it on the task (both entry points — the table cell and the panel, T5). */
   const createAndTag = (task: TaskRow | null, name: string) =>
@@ -305,7 +369,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
   return (
     <>
     {/* (REG-735) with no task yet the header's Add Task steps back too — the empty card carries both ways in */}
-    {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} /> }) : null}
+    {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} group={studio ? { on: grouped, onToggle: () => setGrouped(!grouped) } : undefined} /> }) : null}
     <div className={styles.tab} data-open={openId ? '' : undefined} data-studio={studio || undefined}>
       <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         scope={studio ? { value: scope, onChange: (v) => { setScope(v); setTodo(null) }, count: openCount } : undefined}
@@ -317,6 +381,8 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
         onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
         onMenu={menuAction} inHeader={!!header} bare={tasks.length === 0 && !adding}
+        source={studio && opensPath(signedRole, '/projects') ? { value: source, onChange: (v) => { setSource(v); setTodo(null) } } : undefined}   /* (S43E, S44O's walk W6-02) Leads · Projects only for a role that opens projects — Marketing's was an empty Projects */
+        views={views}
       />
       {tasks.length === 0 && !adding ? (
         /* No tasks yet → the sibling tabs' empty card (T9); the inline add row takes over as soon as one starts. */
@@ -325,7 +391,9 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
         <TabSearchEmpty noun="tasks" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_TASK_FILTERS) }} />
       ) : (
         <TasksTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
+          sort={headSort} onSort={onHeadSort}   /* (pending modules S05) */
           leadPicker={studio ? { leads: data.leads ?? [], value: addLead, onChange: setAddLead } : undefined}
+          milestonePicker={milestones.length ? { options: milestones, onPick: (t, id) => { void run(id ? 'put the task in the milestone' : 'take the task out of its milestone', () => setTaskMilestone(t.id, id), id ? `Moved into ${milestones.find((m) => m.id === id)?.title ?? 'the milestone'}` : 'Taken out of its milestone', { refresh: true }) } } : undefined}
           tasks={visible} now={now}
           selected={selected} onSelect={setSelected}
           unseen={unseen}
@@ -335,6 +403,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
              (user 2026-09-01, REG-257: "user can just keep adding tasks one after the other"). */
           onAddSubmit={(title) => { if (title.trim()) { const members = addMembers; let id = ''; void run('add the task', async () => { id = await createTask(addLeadId, title.trim(), { assignees: members }) }, 'Task added').then((ok) => { if (ok && id) addedHere(id) }); setAddRun((n) => n + 1) } else stopAdd() }}
           pulse={pulse}   /* (Dane UAT 11.02) the task just added: into view, one pulse */
+          groupOf={byProject ? (t) => ({ ...groupOf(t), href: groupOf(t).href ? withFrom(groupOf(t).href!, '/tasks') : null }) : undefined}   /* (gaps build, package C — 16) */
           addKey={addRun}
           onAddCancel={stopAdd}
           onAddClick={startAdd}
@@ -371,6 +440,8 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
           onCreateTag={(name) => { void createAndTag(openTask, name) }}
           onManageTags={() => setManageTags(true)}
           onToggleDone={() => { void toggleDone(openTask) }}
+          milestones={milestones.length ? { options: milestones, onPick: (id) => { void run(id ? 'put the task in the milestone' : 'take the task out of its milestone', () => setTaskMilestone(openTask.id, id), id ? `Moved into ${milestones.find((m) => m.id === id)?.title ?? 'the milestone'}` : 'Taken out of its milestone', { refresh: true }) } } : undefined}   /* (fix-A, A-17) */
+          outside={{ onAdd: () => setOutsideFor(openTask.id), onEdit: () => setOutsideFor(openTask.id), onSend: () => sendOutside(openTask), onRemove: () => { void saveOutside(openTask, null) } }}   /* (gaps build, package C — M-03) */
           onDetach={(fileId) => { void run('remove the file', () => detachFile(openTask.id, fileId), 'File removed') }}
         />
       ) : null}
@@ -463,9 +534,13 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
       />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <TasksFiltersModal
-        leads={studio ? data.leads : undefined}
+        leads={studio ? [...(data.leads ?? []), ...(data.projectLeads ?? [])] : undefined}   /* (fix-G, G-15) direct projects too, by name */
+        projects={studio ? (data as { projects?: { id: string; number: string; name: string }[] }).projects : undefined}   /* (fix-A, A-20) */
+        milestones={milestones.length ? milestones : undefined}
+        outside={outsidePeople}   /* (gaps build, package C — M-03) the outside people beside the members */
         open={filtersOpen} team={team} tags={tags} value={filters} now={now}
-        onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
+        onApply={applyFilters}   /* (REG-464) live — the modal closes on Done · (pending modules S05) an order picked here lets the head's go */
+        headSort={headSort ? TASK_HEAD_LABEL[headSort.key] : null} onClearHead={() => setHeadSort(null)}
         onClose={() => setFiltersOpen(false)}
       />
       <ChooseTemplateDialog
@@ -484,6 +559,9 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
         onNo={() => setDeleting(null)}
         onYes={() => { const d = deleting; setDeleting(null); if (!d) return; setSelected(new Set()); if (d.ids.includes(openId ?? '')) setOpenId(null); void run('delete', () => deleteTasks(d.ids), d.ids.length === 1 ? 'Task deleted' : `${d.ids.length} tasks deleted`) }}
       />
+      <OutsideDialog open={!!outsideTask} value={outsideTask ? outsideOf(outsideTask) : null} recent={recent} nested={!!openId}
+                     onClose={() => setOutsideFor(null)} onSave={(v) => (outsideTask ? saveOutside(outsideTask, v) : Promise.resolve(null))}
+                     onRemove={outsideTask && outsideOf(outsideTask) ? () => { const t = outsideTask; void saveOutside(t, null) } : undefined} />
       <ExportDialog
         open={exportOpen} now={now} title="Export Tasks"
         download={(format) => downloadTasks(tasks, format, new Date(now))}

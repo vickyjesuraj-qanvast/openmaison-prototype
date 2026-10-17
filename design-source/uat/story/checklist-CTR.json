@@ -21,7 +21,7 @@
   "area": "Definitions",
   "feature": "The signing library with read and accept checks",
   "now": "Built in parity round 3",
-  "why": "PDF library held (Q-26); written documents are contract templates"
+  "why": "Standard PDFs and written documents are both contract templates (S03)"
  },
  {
   "key": "CTR",
@@ -37,7 +37,7 @@
   "area": "Definitions",
   "feature": "Statuses: pending, viewed, signed, expired, cancelled",
   "now": "Built in parity round 3",
-  "why": "Expired and cancelled stay the platform’s (Q-28); viewed is a date"
+  "why": "Expired links say so; Stop the signing link is cancel; viewed is a date (S03)"
  },
  {
   "key": "CTR",
@@ -77,7 +77,7 @@
   "area": "Definitions",
   "feature": "Who signs, and how — drawn signature, phone code",
   "now": "Built in parity round 3",
-  "why": "The one-time code stays simulated — the platform’s (Q-28)"
+  "why": "The code goes through the sign-in provider; the demo says no text is sent (S42)"
  },
  {
   "key": "CTR",
@@ -101,7 +101,7 @@
   "area": "Definitions",
   "feature": "The studio’s own signature on documents",
   "now": "Built in parity round 1",
-  "why": "Its own Settings card held; set in a quote’s Signature section (Q-30)"
+  "why": "Your profile › Your signature; it prints only with your yes (S01, S03)"
  },
  {
   "key": "CTR",
@@ -149,7 +149,7 @@
   "area": "Mismatches",
   "feature": "The signing link’s life",
   "now": "Built in parity round 1",
-  "why": "Token, expiry and cancel stay the platform’s (Q-28)"
+  "why": "Token link, open 7 days by default; Stop the signing link (S03)"
  },
  {
   "key": "CTR",
@@ -333,7 +333,7 @@
   "area": "The document",
   "feature": "Download as PDF",
   "now": "Platform",
-  "why": "Stored PDFs are the platform’s; 2.0 prints the page"
+  "why": "A PDF contract downloads its kept file; a written one prints (S03, S34)"
  },
  {
   "key": "CTR",
@@ -372,8 +372,8 @@
   "id": "CD-12",
   "area": "The document",
   "feature": "An uploaded contract file",
-  "now": "Platform",
-  "why": "File contents are the platform’s; 2.0 keeps the name"
+  "now": "Built",
+  "why": "The PDF kept in the lead’s Files › Contract & VOs and shown (S03)"
  },
  {
   "key": "CTR",
@@ -661,7 +661,7 @@
   "area": "Sending",
   "feature": "The link: copy, resend, regenerate, cancel",
   "now": "Built in parity round 1",
-  "why": "Regenerate and cancel stay the platform’s (Q-28)"
+  "why": "Stop the signing link cancels; Send the link again renews it (S03)"
  },
  {
   "key": "CTR",
@@ -709,7 +709,7 @@
   "area": "The signing page",
   "feature": "The one-time code",
   "now": "Platform",
-  "why": "Real SMS codes are the platform’s; the prototype simulates (Q-28)"
+  "why": "Real SMS is the sign-in provider’s; the demo page says no text is sent (S42)"
  },
  {
   "key": "CTR",
@@ -724,8 +724,8 @@
   "id": "CP-04",
   "area": "The signing page",
   "feature": "A PDF drawn inline",
-  "now": "Platform",
-  "why": "File contents are the platform’s; a file card stands in"
+  "now": "Built",
+  "why": "The browser’s viewer shows the PDF; a phone shows its first page (S03)"
  },
  {
   "key": "CTR",
@@ -805,7 +805,7 @@
   "area": "The signing page",
   "feature": "Viewed",
   "now": "Built in parity round 3",
-  "why": ""
+  "why": "The studio’s own browser never counts as Viewed (S42)"
  },
  {
   "key": "CTR",
@@ -828,8 +828,8 @@
   "id": "CP-17",
   "area": "The signing page",
   "feature": "CaseTrust step",
-  "now": "Later",
-  "why": "A later module’s step"
+  "now": "Built",
+  "why": "An accredited studio’s client ticks the CaseTrust disclosure before signing (Projects gaps D)"
  },
  {
   "key": "CTR",
@@ -837,15 +837,15 @@
   "area": "The library and bundles",
   "feature": "The signing library",
   "now": "Built in parity round 3",
-  "why": "PDF library held (Q-26); written documents are contract templates"
+  "why": "Standard PDFs and written documents are both contract templates (S03)"
  },
  {
   "key": "CTR",
   "id": "CL-02",
   "area": "The library and bundles",
   "feature": "Upload a PDF to the library",
-  "now": "Platform",
-  "why": "Held: 2.0 keeps no file bytes (Q-26)"
+  "now": "Built",
+  "why": "Templates › Contracts › New ▾ › Upload a PDF…; Send together offers it (S03)"
  },
  {
   "key": "CTR",
@@ -885,7 +885,7 @@
   "area": "The library and bundles",
   "feature": "Viewed and accepted per document",
   "now": "Built in parity round 3",
-  "why": ""
+  "why": "The studio’s own browser never counts as Viewed (S42)"
  },
  {
   "key": "CTR",
@@ -925,7 +925,7 @@
   "area": "Signed, and after",
   "feature": "The signed copy",
   "now": "Platform",
-  "why": "Stored PDFs are the platform’s; the print carries the kept text"
+  "why": "A signed PDF stays in Files › Contract & VOs; a written one prints (S03)"
  },
  {
   "key": "CTR",
@@ -972,32 +972,32 @@
   "id": "CA-08",
   "area": "Signed, and after",
   "feature": "The project’s contract",
-  "now": "Later",
-  "why": "Projects module"
+  "now": "Built",
+  "why": "The project’s info names its contract and opens it (Projects build)"
  },
  {
   "key": "CTR",
   "id": "CA-09",
   "area": "Signed, and after",
   "feature": "The contract value and its freeze",
-  "now": "Later",
-  "why": "Finance module"
+  "now": "Built",
+  "why": "The total as signed is the contract value; later edits don’t move it (S03)"
  },
  {
   "key": "CTR",
   "id": "CA-10",
   "area": "Signed, and after",
   "feature": "Variation orders",
-  "now": "Later",
-  "why": "Finance module"
+  "now": "Built",
+  "why": "Variation orders on the project’s Money tab (Projects build)"
  },
  {
   "key": "CTR",
   "id": "CA-11",
   "area": "Signed, and after",
   "feature": "Signing in the homeowner portal",
-  "now": "Later",
-  "why": "The portal module"
+  "now": "Built",
+  "why": "The client portal’s home asks “Sign your agreement” and opens the link (Projects build)"
  },
  {
   "key": "CTR",
@@ -1060,32 +1060,32 @@
   "id": "CN-08",
   "area": "Lists, roles and follow-through",
   "feature": "The client’s page access",
-  "now": "Platform",
-  "why": "Tokens and expiry are the platform’s (Q-28)"
+  "now": "Built",
+  "why": "A token link; Settings › Quotes & pricing › Contracts sets how long (S03)"
  },
  {
   "key": "CTR",
   "id": "CZ-01",
   "area": "Touchpoints",
   "feature": "The project’s contract and setup check",
-  "now": "Later",
-  "why": "Projects module"
+  "now": "Built",
+  "why": "Project info shows the contract; “Before work starts” asks for it (Projects build)"
  },
  {
   "key": "CTR",
   "id": "CZ-02",
   "area": "Touchpoints",
   "feature": "Contract value, freeze, variation orders",
-  "now": "Later",
-  "why": "Finance module"
+  "now": "Built",
+  "why": "The signed total is the value; variation orders add to it (S03, Projects build)"
  },
  {
   "key": "CTR",
   "id": "CZ-03",
   "area": "Touchpoints",
   "feature": "Portal signing and documents tab",
-  "now": "Later",
-  "why": "The portal module"
+  "now": "Built",
+  "why": "The portal asks to sign; its Files tab shows what you share (Projects build)"
  },
  {
   "key": "CTR",
@@ -1093,7 +1093,7 @@
   "area": "Touchpoints",
   "feature": "My Signature and its auto-apply",
   "now": "Built",
-  "why": "Kept in a quote’s Signature section (Accounts Setup ST-08); auto-apply not ported"
+  "why": "Your profile › Your signature; applied only with your consent (S01, S03)"
  },
  {
   "key": "CTR",

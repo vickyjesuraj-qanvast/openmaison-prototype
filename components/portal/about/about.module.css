@@ -1,0 +1,45 @@
+/*
+ * (gaps build H — H-Q20…H-Q22) The portal's About page — on the portal's own pieces (components/portal/portal.module.css: the card, its
+ * padding, the section heads, the links): the cover photo, the story, the year and the awards, Our team's cards, Get in touch.
+ */
+.coverBtn { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: var(--om-radius-2); overflow: hidden; display: block; width: 100%; }
+.cover { width: 100%; aspect-ratio: 3 / 1; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-variant); display: block; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--om-spacing-3); }
+.galleryItem { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: var(--om-radius-1); overflow: hidden; }
+.galleryItem img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.est { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin: 0; }
+.story { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.story p { margin: 0 0 var(--om-spacing-3); }
+.story p:last-child { margin-bottom: 0; }
+.story ul, .story ol { margin: 0 0 var(--om-spacing-3); padding-left: var(--om-spacing-6); }
+.story ul { list-style: disc; }
+.story ol { list-style: decimal; }
+.h2 { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.awards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--om-spacing-3); margin: 0; padding: 0; list-style: none; }
+.award { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); }
+.awardYear { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-left: auto; }
+.badges { display: flex; flex-wrap: wrap; gap: var(--om-spacing-4); align-items: center; }
+.badge { height: 48px; width: auto; max-width: 120px; object-fit: contain; }
+/* Our team: a card per member — the portrait (or the initial on their colour) beside the name, the title and two lines */
+.team { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--om-spacing-4); }
+.member { display: grid; grid-template-columns: 72px 1fr; gap: var(--om-spacing-1) var(--om-spacing-4); align-items: start; padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.memberText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.portrait { width: 72px; height: 72px; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-variant); display: block; }
+.initial { width: 72px; height: 72px; border-radius: var(--om-radius-2); background: var(--tint, var(--om-color-on-surface-secondary)); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-primary-default); font: var(--om-type-heading-h3); }
+.memberName { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.memberTitle { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.bio { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.touch { display: flex; flex-direction: column; gap: var(--om-spacing-1); margin: 0; padding: 0; list-style: none; }
+.touchRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; font: var(--om-type-body-m); }
+.touchRow a { overflow-wrap: anywhere; }
+.follow { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+
+/* (pending modules S27 — api:designer-portfolio-profiles) a member's known-for chips and their work: a picture and its name a press away from
+   its pictures (the house WorkDialog) */
+.known { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1); margin: var(--om-spacing-1) 0; }
+.work { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); min-width: 0; }
+.workBtn { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; color: var(--om-color-primary-default); border-radius: var(--om-radius-1); }
+.workBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.workPic { width: 48px; height: 32px; object-fit: cover; border-radius: var(--om-radius-1); flex-shrink: 0; }
+.workName { font: var(--om-type-body-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+@media (hover: hover) { .workBtn:hover .workName { text-decoration: underline; text-underline-offset: 2px; } }

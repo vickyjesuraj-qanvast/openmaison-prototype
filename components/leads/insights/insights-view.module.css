@@ -1,13 +1,21 @@
 /* (REG-611) Leads › Insights — 1.0's Performance view on 2.0's pieces: the house chips for the range, three StatTiles (REG-614: the
    shared components/om pieces), the awaiting chips, the By team member table on the listing's table model (the table core below, REG-727). */
+/* (pending modules S45A) the tab's report chips (Response time · Sales) — their own row above the range, as Reports › Finance sets its report chips
+   above its period */
+.reports { display: flex; min-width: 0; margin-bottom: var(--om-spacing-3); }   /* Finance's report block's 12 (books.module.css `.block`) */
 .bar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); }
+/* (parity Q-20) the bar's right: what the range filters, then the house Export (Finance's reports' outlined button) */
+.barEnd { display: flex; align-items: center; gap: var(--om-spacing-3); margin-left: auto; min-width: 0; }
+.barEnd > :last-child { flex-shrink: 0; }   /* the caption wraps on a phone; the button never squeezes */
 .caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); margin-bottom: var(--om-spacing-4); }
+/* (parity P-30) the row itself is the house StatTiles (components/om/stat-tile) — this keeps only the page's spacing under it */
+.tiles { margin-bottom: var(--om-spacing-4); }
 .tileDelta { margin-top: var(--om-spacing-1); }
 .awaiting { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); }
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .sectionHead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-3); }
-.sectionTitle { display: block; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+/* (parity P-35 · Q-19 · C-14) a table's title in Company › Reports is heading-h4 — REG-729's Company card titles, Finance's tables' */
+.sectionTitle { display: block; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .sectionHelp { display: block; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-top: 2px; }
 .empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .foot { margin: var(--om-spacing-4) 0 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
@@ -25,11 +33,14 @@
 .statValue[data-grade='bad'] { color: var(--om-color-tertiary-red-default); }
 .statHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .num { font-variant-numeric: tabular-nums; }
-@media (max-width: 767px) {
-  .tiles { grid-template-columns: 1fr; }
-  .bar { align-items: flex-start; flex-direction: column; }
+/* (parity P-31 · Q-20) up to the tablet the range chips take their own row (four chips, never paged behind the caption), the caption and
+   Export the row under it */
+@media (max-width: 1024px) {
+  /* (pending modules S39, bug fix) one line, never wrapped: a wrapping column sized its line — so the caption row and Export — to the four
+     chips' full width (418 at 390), and Export ran past the screen's edge on every Reports tab */
+  .bar { flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); flex-wrap: nowrap; }
+  .barEnd { margin-left: 0; justify-content: space-between; }
 }
-@media (min-width: 768px) and (max-width: 1024px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ── the By team member table (REG-611) — on the table core (REG-727): the listing's frame, head, rows and frozen cells written ONCE
    (components/om/table-core.module.css), so this table can no longer drift from the listing (REG-723: the Qanvast copy it was built on
@@ -71,6 +82,7 @@
     background: var(--om-color-surface-default);
   }
   .row:hover, .row:hover .pin { background: var(--om-color-surface-default); }   /* a finger has no hover; the fill only muddied the card (the quotes cards) */
+  .row::after { content: none; }   /* (pending modules S39, bug fix) the core's trailing row rule (REG-733) has no place on a card — it drew a line across each card's top (the Quotes cards' S03 fix, Plan's G-46) */
   /* (REG-520) `!important`: the column-layout hook (REG-454) writes each cell's grid-column / grid-row as an INLINE style for the desktop
      grid, and an inline style beats this stylesheet — without it every cell would land on the card's first line. */
   .cell { grid-column: 1 !important; grid-row: auto !important; padding: 0; border: 0; min-width: 0; }

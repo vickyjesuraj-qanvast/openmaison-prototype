@@ -36,7 +36,7 @@ export function EditorSkeleton() {
           </div>
           <div className={styles.strip}>
             <Bone w={20} h={20} r={4} />
-            {[0, 1, 2, 3].map((i) => <Bone key={i} w={24} h={24} r={4} />)}
+            {[0, 1, 2].map((i) => <Bone key={i} w={24} h={24} r={4} />)}   {/* (pending modules S04) Maison AI · Price book · Templates — Brand Catalog left the strip */}
           </div>
         </div>
       </div>

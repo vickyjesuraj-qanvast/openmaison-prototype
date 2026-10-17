@@ -1,6 +1,7 @@
 // Settings parity round 3 (REG-647) — lists and records that hold: sources, reasons and trades rename (what carries the old name follows),
 // move and come back with Undo; a Lost reason's gate changes; issuing entities keep an id — a rename follows into the quotes that name one,
-// one in use is retired, not removed, and leaves the pickers; Lead capture lists every way in and a webhook's label joins the sources;
+// one in use is retired, not removed, and leaves the pickers; Lead capture (Company › Integrations, its one home since one-home N-03) lists
+// every way in and a webhook's label joins the sources;
 // the intake address keeps its slug; an inactive custom field keeps its value; the bank's Required reaches a lead's questions; Email and
 // WhatsApp go out with the in-app notice; the test template waits in Deleted Templates.
 const { chromium } = require('playwright')
@@ -50,7 +51,8 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     ok('the Lost log carries the new name', sql(`select count(*) from stage_logs where to_stage='Lost' and json_extract(payload,'$.reason')='Over budget'`) === '1' && sql(`select count(*) from stage_logs where json_extract(payload,'$.reason')='Budget mismatch'`) === '0')
     await page.getByTestId('reasons-lost').getByRole('button', { name: /^Unresponsive/ }).click()
     const d2 = page.getByRole('dialog', { name: 'Lost reason' })
-    await d2.getByLabel('Needs logged contacts').fill('5'); await d2.getByRole('button', { name: 'Save' }).click(); await snack(page, 'Reasons saved')
+    // REG-849 (Dane UAT 2.21): the gate's label is "Contacts expected first"
+    await d2.getByLabel('Contacts expected first').fill('5'); await d2.getByRole('button', { name: 'Save' }).click(); await snack(page, 'Reasons saved')
     ok('the gate is now 5', /Unresponsive\s*·\s*after 5 contacts/.test(await page.getByTestId('reasons-lost').innerText()) && sql(`select value from settings where key='lead_reasons'`).includes('"minContacts":5'))
     await shot('03-reasons')
   })
@@ -103,8 +105,11 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     } else ok('a new quote is not offered the retired entity', true, 'one entity offered — no select')
     await page.goto(`${BASE}/quotes/${q}`); await ready(page)
     ok('the quote that names it keeps it', /Acme Builders Pte Ltd/.test(await page.locator('body').innerText()))
+    // (one-home N-06, a deliberate change of this rule) Settings › Studio keeps no copy of the entities — Company › Profile shows it retired.
     await page.goto(`${BASE}/settings?section=studio`); await ready(page)
-    ok('Settings › Studio lists it', /Acme Builders Pte Ltd/.test(await page.getByTestId('studio-entities').innerText()))
+    ok('Settings › Studio keeps no copy of the entities', (await page.getByTestId('studio-entities').count()) === 0)
+    await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
+    ok('Company › Profile shows it retired', (await page.getByTestId('entity-retired').count()) >= 1)
   })
 
   await step('lead capture: every way in; a webhook’s label joins the sources; the address keeps its slug', async () => {
@@ -116,15 +121,20 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
       ok('the label joins the lead sources', sql(`select value from settings where key='lead_sources'`).includes('Zapier leads'))
       await page.keyboard.press('Escape')
     } else ok('the label joins the lead sources', false, 'no webhook form')
-    await page.goto(`${BASE}/settings?section=leads`); await page.getByTestId('ways-in').waitFor(); await ready(page)
-    const ways = await page.getByTestId('ways-in').innerText()
-    ok('ways in: website, Meta, the webhooks, email', /Website form/.test(ways) && /Meta Lead Ads/.test(ways) && /Webhook · Google Ads/.test(ways) && /Webhook · Zapier leads/.test(ways) && /Email lead sources/.test(ways))
+    // (one-home N-03, a deliberate change of this rule) Lead capture lives on Company › Integrations alone: Settings › Lead management keeps
+    // Lead sources and its Kept in Company: Integrations link, no copy of the address or the ways in.
+    await page.goto(`${BASE}/settings?section=leads`); await page.getByTestId('settings-leads').waitFor(); await ready(page)
+    ok('Lead management keeps no Lead capture copy', (await page.getByTestId('lead-capture').count()) === 0 && (await page.getByTestId('ways-in').count()) === 0 && (await page.getByTestId('intake-address').count()) === 0)
+    ok('…and links to Integrations', /Integrations/.test(await page.getByTestId('settings-leads').getByTestId('module-links').innerText()))
+    await page.goto(`${BASE}/company/integrations`); await page.getByTestId('integrations').waitFor(); await ready(page)
+    const hooks = (await page.getByTestId('webhook-row').allInnerTexts()).join(' | ')
+    ok('ways in: website, Meta, the webhooks, email', (await page.getByTestId('int-email').count()) === 1 && (await page.getByTestId('int-meta').count()) === 1 && /Google Ads/.test(hooks) && /Zapier leads/.test(hooks) && (await page.getByTestId('int-gmail').count()) === 1, hooks)
     const addr = await page.getByTestId('intake-address').innerText()
-    await page.getByTestId('ways-in').scrollIntoViewIfNeeded(); await shot('06-ways-in')
+    await page.getByTestId('int-webhooks').scrollIntoViewIfNeeded(); await shot('06-ways-in')
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
     await page.getByLabel('Company name').fill('Acme Interiors Pte Ltd')
     await page.getByRole('button', { name: 'Save changes' }).click(); await snack(page, 'Company details saved')
-    await page.goto(`${BASE}/settings?section=leads`); await page.getByTestId('lead-capture').waitFor(); await ready(page)
+    await page.goto(`${BASE}/company/integrations`); await page.getByTestId('intake-address').waitFor(); await ready(page)
     ok('a renamed studio keeps its intake address', (await page.getByTestId('intake-address').innerText()) === addr, addr)
   })
 

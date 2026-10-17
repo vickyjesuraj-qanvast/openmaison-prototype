@@ -60,6 +60,7 @@
   .head { display: none; }
   /* Each row is a stack of its cells: one column, content-tall lines, one rule between rows — the cells' own top rules go. */
   .row { grid-template-columns: 1fr; grid-auto-rows: auto; height: auto; row-gap: 0; padding: var(--om-spacing-2) 0; }
+  .row::after { content: none; }   /* (fix-E, E-26) the table core's trailing rule took a grid cell of its own here — an empty strip over every phone row */
   .row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .cell { grid-row: auto; padding: var(--om-spacing-3) var(--om-spacing-4); border-top: 0; }
   .actions { justify-content: flex-start; }

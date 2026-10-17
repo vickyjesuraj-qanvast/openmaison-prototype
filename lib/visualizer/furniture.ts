@@ -172,10 +172,15 @@ const FAMILY: Record<string, string> = { wingback: 'armchair', 'accent chair': '
   'bedside table': 'nightstand', 'media console': 'tv console', 'tv unit': 'tv console', 'media unit': 'tv console', sideboard: 'tv console', credenza: 'tv console',
   'pendant light': 'pendant', chandelier: 'pendant', 'counter stool': 'bar stool', 'area rug': 'rug', carpet: 'rug', 'fiddle leaf fig': 'plant', fig: 'plant', palm: 'plant', fern: 'plant', tree: 'plant',
   'wall art': 'art', 'gallery wall': 'art', canvas: 'art', print: 'art', poster: 'art', painting: 'art', headboard: 'bed', bedspread: 'throw', blanket: 'throw', quilt: 'throw', duvet: 'throw', drape: 'curtain', 'task lamp': 'desk lamp', television: 'tv' }
-const singular = (w: string) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)
+/** (pending modules S43C) Words that end in an s and are one thing ("pothos", "canvas") — never cut to "potho". */
+const ONE_WITH_S = new Set(['pothos', 'canvas', 'cactus', 'hibiscus', 'lotus', 'atlas'])
+const singular = (w: string) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') && !ONE_WITH_S.has(w) ? w.slice(0, -1) : w)
+/** (pending modules S43C) A label's letters without their accents ("bouclé" → "boucle"), so a word is never cut at an accented letter
+    ("Bouclé sofa" was read as "Boucl sofa"). */
+const plainLetters = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 /** A label's (or a preset's) kind: the two-word kind it ends with, else its last noun — before any "in / with" ("fig in a pot" is a fig). */
 function typeOf(text: string): { type: string; head: string } | null {
-  const main = text.toLowerCase().replace(/\([^)]*\)/g, '').split(/\s+(?:in|with|on|for|and)\s+/)[0]!.replace(/[^a-z\s-]/g, ' ').trim()
+  const main = plainLetters(text.toLowerCase()).replace(/\([^)]*\)/g, '').split(/\s+(?:in|with|on|for|and)\s+/)[0]!.replace(/[^a-z\s-]/g, ' ').trim()
   const ws = main.split(/[\s-]+/).filter(Boolean).map(singular)
   if (!ws.length) return null
   const two = ws.length > 1 ? `${ws[ws.length - 2]} ${ws[ws.length - 1]}` : ''
@@ -187,7 +192,7 @@ const canon = (t: string) => FAMILY[t] ?? FAMILY[t.split(' ').slice(-1)[0]!] ?? 
 /** (wave F) A kind named by a plainer word in a caption ("Plant" for a fiddle leaf fig, "Rug" for an area rug). */
 const KIND_WORD: Record<string, string> = { 'fiddle leaf fig': 'plant', 'area rug': 'rug' }
 /** (wave F) Words that say what a piece is made of or finished in — never its kind ("linen curtains" are curtains). */
-const FINISH_WORDS = new Set([...GENERIC_WORDS, 'linen', 'sheer', 'jute', 'knit', 'ceramic', 'upholstered', 'rattan', 'terracotta', 'marble', 'brass', 'chrome', 'cotton', 'wool', 'boucle', 'bouclé', 'concrete', 'stone', 'framed', 'fabric', 'painted', 'woven', 'lacquered', 'sage', 'emerald', 'charcoal', 'ivory', 'taupe', 'olive', 'mustard', 'pink', 'yellow', 'orange', 'purple', 'teal'])
+const FINISH_WORDS = new Set([...GENERIC_WORDS, 'linen', 'sheer', 'jute', 'knit', 'ceramic', 'upholstered', 'rattan', 'terracotta', 'marble', 'brass', 'chrome', 'cotton', 'wool', 'boucle', 'bouclé', 'concrete', 'stone', 'stainless', 'steel', 'cast', 'iron', 'undermount', 'framed', 'fabric', 'painted', 'woven', 'lacquered', 'sage', 'emerald', 'charcoal', 'ivory', 'taupe', 'olive', 'mustard', 'pink', 'yellow', 'orange', 'purple', 'teal'])
 const cap = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`.replace(/\btv\b/gi, 'TV')
 /**
  * (wave F) A piece in a version's caption: by its kind, never the photo's description of it — that carries the finish a change replaced
@@ -199,7 +204,7 @@ export function pieceKind(label: string, part?: PartKey | null): string {
   if (part === 'pot') return 'Planter'
   if (part === 'shade') return 'Lamp shade'
   if (part === 'base') return 'Lamp base'
-  const main = label.toLowerCase().replace(/\([^)]*\)/g, '').split(/\s+(?:in|with|on|for|and|of)\s+/)[0]!.replace(/[^a-z\s-]/g, ' ').trim()
+  const main = plainLetters(label.toLowerCase()).replace(/\([^)]*\)/g, '').split(/\s+(?:in|with|on|for|and|of)\s+/)[0]!.replace(/[^a-z\s-]/g, ' ').trim()
   const ws = main.split(/[\s-]+/).filter(Boolean), sing = ws.map(singular)
   if (!ws.length) return label.trim()
   const n = sing.length, two = n > 1 ? `${sing[n - 2]} ${sing[n - 1]}` : '', three = n > 2 ? `${sing[n - 3]} ${two}` : ''
@@ -207,7 +212,7 @@ export function pieceKind(label: string, part?: PartKey | null): string {
   let kind = TYPES.includes(three) ? three : TYPES.includes(two) ? two : prev && !FINISH_WORDS.has(prev) && !FINISH_WORDS.has(singular(prev)) ? two : sing[n - 1]!
   kind = KIND_WORD[kind] ?? kind
   const last = ws[n - 1]!
-  if (last.length > 3 && /s$/.test(last) && !/ss$/.test(last) && !/s$/.test(kind)) kind += 's'   // "sheer curtains" → Curtains
+  if (last.length > 3 && /s$/.test(last) && !/ss$/.test(last) && !ONE_WITH_S.has(last) && !/s$/.test(kind)) kind += 's'   // "sheer curtains" → Curtains
   if (part === 'frame') { const fam = canon(sing[n - 1]!); return /frame|mirror/.test(fam) ? cap(fam) : `${cap(fam)} frame` }
   return cap(kind)
 }

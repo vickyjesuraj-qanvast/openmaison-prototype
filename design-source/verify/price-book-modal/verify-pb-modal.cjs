@@ -24,7 +24,8 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1024 } }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
     // the strip's My Items
-    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'My Items', exact: true }).click(); await page.waitForTimeout(600)
+    // REG-773 (UX audit Q7): the Create strip's tile reads Price book (it read My Items)
+    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     ok('the strip’s My Items opens the Price book modal over the editor', await dlg.isVisible() && page.url().includes(`/quotes/${Q1}`))
     ok('it lands on My Items', (await dlg.getByRole('radio', { name: /^My Items/ }).getAttribute('aria-checked')) === 'true' || /true/.test(await dlg.locator('[data-selected="true"], [aria-checked="true"]').first().innerText().catch(() => '')) || await dlg.getByTestId('book-item').count() > 0)
@@ -65,8 +66,8 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
     ok('they land at the end, in the order ticked (item · section · item)', /^Painting/.test(last[0] ?? '') && last[1] === secName && last[2] === hafary, last.join(' | '))
     const pos = sql(`select group_concat(position) from (select position from quote_items where quote_id='${Q1}' and parent_id is null order by position)`)
     ok('the list’s positions run 0…n with no gaps', pos.split(',').every((p, i) => Number(p) === i), pos)
-    // the table's Price book link
-    await page.getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(500)
+    // the table's Price book link (REG-773: the strip's tile shares its name, so the link is the one in the Items section)
+    await page.locator('#section-items').getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(500)
     ok('the table’s Price book opens the same modal', await page.getByRole('dialog', { name: 'Price book' }).isVisible())
     await page.getByRole('dialog', { name: 'Price book' }).getByRole('button', { name: 'Manage Price book' }).click(); await page.waitForTimeout(1500)
     ok('Manage Price book leaves with the way back', page.url().includes('/company/price-book') && decodeURIComponent(page.url()).includes(`from=/quotes/${Q1}`), page.url())
@@ -80,7 +81,7 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
   await step('phone', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
-    await page.getByRole('button', { name: 'Price book', exact: true }).first().click().catch(() => {}); await page.waitForTimeout(700)
+    await page.locator('#section-items').getByRole('button', { name: 'Price book', exact: true }).first().click().catch(() => {}); await page.waitForTimeout(700)
     const open = await page.getByTestId('price-book-dialog').isVisible().catch(() => false)
     const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     ok('390: the modal opens as a sheet and fits', open && over <= 0, `${open} · ${over}px`)

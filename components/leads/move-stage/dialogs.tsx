@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
@@ -10,6 +10,9 @@ import { DEFAULT_HOLD_DURATION, HOLD_DURATIONS, holdDurationLabel, holdFollowUpA
 import { DEFAULT_HOLD_REASONS, DEFAULT_LOST_REASONS, LOST_COMPETITOR, LOST_POSTPONED, type LeadReason } from '@/lib/settings/types'
 import { ChoiceChips, DateField, Divider, Dropzone, TextField } from './fields'
 import styles from './wizard.module.css'
+import { Chips } from '@/components/om/chips'
+import { fetchCompetitorNames } from '@/app/settings/meetings-actions'   // (pending modules S23) the studio's competitors, for Lost
+import { CONTACT_ACCEPT, type ContactKind } from '@/lib/leads/contact-fill'   // (S43B · F1-01)
 
 // The dialog shell and the destructive button are generic primitives (components/om/dialog); re-exported here so the
 // screens that reached for them through this module keep working (audit 2026-08-30).
@@ -18,26 +21,47 @@ export { Dialog, DangerButton, type DialogSize } from '@/components/om/dialog'
 /** Where the two shared dialogs are used: the Move stage window (their defaults) or Lead Details › Notes (spec 02). */
 export type SharedDialogVariant = 'wizard' | 'notes'
 
+/**
+ * Auto Fill's upload (REG-319). (S43B · F1-01 — her "fix all the pending things" 2026-10-15) The picked file is READ by rule
+ * (`lib/leads/contact-fill.ts`, the host's `onUpload`): a chat export, an email or call notes fill what they plainly say; a picture is attached
+ * and said so — never the mock's scripted values. The drop zone and Upload open the picker; while it reads, "Reading {file}…".
+ */
 export function AutoFillDialog({
-  open, onClose, onUpload, title = 'Auto Fill', width = 400, variant = 'wizard',
+  open, onClose, onUpload, title = 'Auto Fill', width = 400, variant = 'wizard', kind = 'contact',
 }: {
-  open: boolean; onClose: () => void; onUpload: () => void
+  /** reads and attaches the picked file — the host closes the dialog once it lands (what filled is said under the log's Auto Fill) */
+  open: boolean; onClose: () => void; onUpload: (file: File) => Promise<void> | void
   /** Notes › Auto Fill (931:45344) reuses this shell at 600 with the same title; the wizard keeps the 400 defaults. */
   title?: string; width?: number
   /** `notes` = the 600×348 mock (spec 02): the 64px modal header (`size="modal"`) and the 552×168 p40 dropzone. */
   variant?: SharedDialogVariant
+  /** a contact log, or Met's meeting log — the helper says what each is read for */
+  kind?: ContactKind
 }) {
   const notes = variant === 'notes'
+  const [busy, setBusy] = useState<string | null>(null)
+  const input = useRef<HTMLInputElement | null>(null)
+  const pick = async (file?: File) => {
+    if (!file || busy) return
+    setBusy(file.name)
+    try { await onUpload(file) } finally { setBusy(null) }
+  }
   return (
     <Dialog open={open} onClose={onClose} title={title} width={width} size={notes ? 'modal' : 'compact'} nested={!notes}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-                     <Button onPress={onUpload}>Upload</Button></>}>
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={!!busy}>Cancel</Button>
+                     <Button onPress={() => input.current?.click()} isDisabled={!!busy}>{busy ? 'Reading…' : 'Upload'}</Button></>}>
       <Dropzone
-        title={<>Drop in the conversation or <b>browse</b></>}
-        helper="Upload a screenshot from any messaging app — we'll identify the channel, summarise the conversation, and suggest tasks."
-        onPick={onUpload}
+        title={busy ? <>Reading <b>{busy}</b>…</> : <>Drop in the conversation or <b>browse</b></>}
+        helper={kind === 'meeting'
+          ? 'Meeting notes, or the chat that set the meeting up — where and when they plainly say fill the log’s empty fields, and the file is attached. Photos are attached too; pictures can’t be read yet.'
+          : 'A chat export (WhatsApp › Export chat), an email saved as a PDF, or your call notes — what they plainly say fills the log’s empty fields, and the file is attached. Screenshots are attached too; pictures can’t be read yet.'}
+        onBrowse={() => { if (!busy) input.current?.click() }}
+        onPick={(f) => { void pick(f) }}
+        label="Choose the conversation"
         variant={notes ? 'notes' : undefined}
       />
+      <input ref={input} type="file" accept={CONTACT_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="auto-fill-input"
+             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void pick(f) }} />
     </Dialog>
   )
 }
@@ -163,8 +187,10 @@ export function OnHoldDialog({
     setOther(''); setShowErrors(false)
     onSave(v, picked.toISOString(), holdDurationLabel(picked, openedAt))
   }
+  /* (parity P-10, the owner's pick 2026-10-08) The project's Put on hold dialog's twin: the same 400 `form` size — so on a phone both rise as a
+     bottom sheet (REG-353; this one was a centred card) — and the same title; the line under it still says it is a stage move. */
   return (
-    <Dialog open={open} onClose={close} title="Move stage" width={400}
+    <Dialog open={open} onClose={close} title="Put on hold" width={400} size="form"
             subtitle={<span className={styles.subtitle}>Moving to On Hold</span>}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
                      <Button onPress={save}>Save &amp; Move</Button></>}>
@@ -212,6 +238,15 @@ export function LostDialog({
   const [competitor, setCompetitor] = useState(competitorHint?.studio ?? '')
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setCompetitor(competitorHint?.studio ?? '') }
+  /* (pending modules S23) The studio's competitors (Settings › Meetings › Competitors) are offered under the field — a press puts the name in
+     it; a firm not on the list is still typed. Read each time the dialog opens, so a name just added is there. */
+  const [rivals, setRivals] = useState<string[]>([])
+  useEffect(() => {
+    if (!open) return
+    let live = true
+    fetchCompetitorNames().then((names) => { if (live) setRivals(names.slice(0, 12)) }).catch(() => { /* the field still takes a name */ })
+    return () => { live = false }
+  }, [open])
   const [restart, setRestart] = useState('')   // d/m/yyyy, the DateField's canonical string
   const [showErrors, setShowErrors] = useState(false)
   const restartDate = restart ? parseInputDate(restart) : null
@@ -254,6 +289,9 @@ export function LostDialog({
       {reason === LOST_COMPETITOR ? (
         <TextField label="Competitor (optional)" value={competitor} onChange={setCompetitor} maxLength={80} trailingIcon={null}
                    helper={competitorHint && competitor === competitorHint.studio ? `From the Quote X-Ray of ${displayDate(new Date(competitorHint.at))}` : undefined} />
+      ) : null}
+      {reason === LOST_COMPETITOR && rivals.length ? (
+        <Chips label="Your competitors" options={rivals} value={rivals.find((n) => n.toLowerCase() === competitor.trim().toLowerCase()) ?? null} onChange={setCompetitor} testId="lost-competitor-chips" />   /* (pending modules S23) (invented copy: the group's name) */
       ) : null}
       {reason === LOST_POSTPONED ? (<>
         <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />

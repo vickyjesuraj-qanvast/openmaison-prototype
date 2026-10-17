@@ -71,6 +71,14 @@ Feature wall wallpaper,Purchase,"Textured vinyl wallpaper, supply and hang",sqft
 "Shower screen, tempered glass",Purchase,"10 mm clear tempered glass, fixed panel with hinged door",set,640.00,260.00,Glass & Mirror,Glass Studio SG
 ''')
 
+# ── A WhatsApp chat export (S43B · F1-01: Auto Fill reads its words by rule — 5.11) ──────────────────────────────────────
+with open(os.path.join(OUT, 'sophia-whatsapp-chat.txt'), 'w', encoding='utf-8') as fh:
+    fh.write('''8/10/2026, 6:58 pm - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.
+8/10/2026, 7:02 pm - Dane: Hi Sophia, this is Dane from Demo Studio — thanks for your enquiry about your home.
+8/10/2026, 7:15 pm - Sophia Wong: Hi Dane! We collect the keys next month. Could we meet at your showroom on Saturday 3pm?
+8/10/2026, 7:16 pm - Dane: Saturday 3pm works — see you at the showroom then.
+''')
+
 # ── PDFs (a minimal writer: Helvetica, WinAnsi text, lines and rectangles) ─────────────────────────
 def esc(s):
     out = []
@@ -128,6 +136,16 @@ for line in ['Homematch', 'Lead sheet exported 25 September 2026', '',
     if line: p.text(56, y, line, size=14 if line == 'Homematch' else 11, bold=(line == 'Homematch'))
     y -= 22 if line == '' else 17
 write_pdf('homematch-lead-sheet.pdf', [p], 'Homematch lead sheet')
+
+# One client's enquiry (S42F — Fill from a document reads the picked file's own words): labelled lines, one lead, nothing else that reads as a
+# name, a phone or an email. Its values match no demo lead, member or other UAT file.
+p = Page(); y = 780
+for line in ['Website enquiry', 'Sent from the studio website contact form', '',
+             'Name: Rachel Ong', 'Mobile: 9634 2817', 'Email: rachel.ong@example.com', 'Source: Instagram', 'Property type: Condo 3-bedder',
+             'Address: 12 Simei Street 3', 'District: East', 'Budget (S$): 85,000', 'Remarks: Wants a brighter kitchen and a study nook for two']:
+    if line: p.text(56, y, line, size=14 if line == 'Website enquiry' else 11, bold=(line == 'Website enquiry'))
+    y -= 22 if line == '' else 17
+write_pdf('rachel-ong-enquiry.pdf', [p], 'Website enquiry — Rachel Ong')
 
 # Sophia's floor plan — a sketch.
 p = Page()

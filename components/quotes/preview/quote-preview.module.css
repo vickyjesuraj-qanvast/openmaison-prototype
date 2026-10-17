@@ -57,3 +57,8 @@
   .column { padding: 0; gap: 0; }
   .stage { display: block; }
 }
+
+/* (S44F — NB-02 (c)) the comparison's row: its words, the version to compare with, Stop comparing — the select drops under the words on a phone */
+.compareRow { flex-wrap: wrap; }
+.compareWith { width: 200px; flex-shrink: 0; }
+@media (max-width: 767px) { .compareRow .issueText { flex: 1 1 100%; } .compareWith { flex: 1 1 auto; width: auto; min-width: 0; } }

@@ -151,3 +151,11 @@
      (page-header.module.css ≤767). Eight pixels of header is eight pixels of seam. */
   .header { min-height: 60px; padding: var(--om-spacing-3) var(--om-spacing-4); }
 }
+
+/* (parity P-26, B-17) The Leads listing's selection, as its table draws it (components/leads/table.module.css .selBox · .headSelBox): the box
+   16 in — the 18 glyph 3 inside its 24 box — and the name at 52, 40 on a touch tablet, inside the frozen first column. Positioned against the
+   cell at a desk; ≤1024 the frozen cell's own sticky box holds it. The Leads ghost's only. */
+.selCol { padding-left: 52px; }
+.selSlot { position: absolute; left: calc(var(--om-spacing-4) + 3px); top: 50%; transform: translateY(-50%); }
+@media (min-width: 1025px) { .selCol { position: relative; } }
+@media (hover: none) and (max-width: 1024px) { .selCol { padding-left: 40px; } }

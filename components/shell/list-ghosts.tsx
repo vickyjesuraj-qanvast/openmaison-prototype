@@ -4,6 +4,8 @@ import { GhostSheet } from './skeleton'
 import { GhostHead, type Action } from './ghost-kit'
 import { ContractsTabGhost, FirstRunTabGhost, QuotesTabGhost, TasksTabGhost } from '@/components/leads/detail/tab-ghosts'
 import { useFirstRunShape } from '@/lib/ghost-shape'
+import { useSignedInRole } from './access-gate'
+import { opensPath } from '@/lib/settings/roles'
 import pageStyles from '@/app/leads/leads.module.css'
 import tasksTab from '@/components/leads/tasks/lead-tasks.module.css'
 
@@ -25,7 +27,8 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
 export function TasksListGhost() {
   /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
   const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
-  const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} />
+  const sources = opensPath(useSignedInRole(), '/projects')   // (S43E W6-02) Marketing's page has no Leads · Projects
+  const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} sources={sources} />
   return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{body}</div>}>{body}</ListGhost>
 }
 

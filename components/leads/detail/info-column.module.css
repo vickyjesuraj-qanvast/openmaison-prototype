@@ -113,6 +113,7 @@
 /* Values wrap instead of truncating — this is the detail page, so the whole address should be readable (user 2026-08-30).
    `min-height` keeps a one-line row on the mock's 20px rhythm; the label column is top-aligned already (.kv align-items: start). */
 .text { display: block; min-height: 20px; overflow-wrap: anywhere; }
+.keep { white-space: nowrap; }   /* (S42 B-07, REG-456) a phone number stays whole on one line — the name before it may wrap */
 
 /* "Assign Member ›" / "Add ›" (CellDataGroup link): 14 / Semi Bold / 20 primary + 20 arrow, H g4. Hover as .headLink.
    (REG-729) The house text link too — the local LinkButton keeps only its arrow, its 20px line and its one-line rule. */

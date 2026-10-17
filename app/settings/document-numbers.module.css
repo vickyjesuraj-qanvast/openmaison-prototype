@@ -1,0 +1,33 @@
+/* (simplify S-15) Settings › Finance › Document numbers — a row per document on the numbering card's grammar (the fields, the year switch, the
+   live example — settings.module.css): the document's name, Prefix · Next number · Digits, The year, Next. One line each at a desktop; from
+   1024 down each document wraps to three lines (its name · the three fields · the year and the example). Rows part on the card's 1px rule.
+   Only the tracks and the parts are this card's; the type, the switch row and the example are Settings' own classes. */
+.rows { display: flex; flex-direction: column; }
+.row {
+  display: grid; align-items: center; gap: var(--om-spacing-3) var(--om-spacing-4);
+  grid-template-columns: minmax(180px, 1.4fr) repeat(3, minmax(96px, 1fr)) max-content minmax(160px, 1fr);
+  grid-template-areas: 'name prefix next digits year example';
+  padding: var(--om-spacing-3) 0;
+}
+.row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rows > .row:first-child { border-top: 0; padding-top: 0; }
+.rows > .row:last-child { padding-bottom: 0; }
+/* an issuing entity's own invoice prefix: its name, the prefix, the rest follows Invoices */
+.entity { grid-template-areas: 'name prefix follow follow follow example'; }
+.name { grid-area: name; display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.name > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.help { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.icon { flex-shrink: 0; }   /* the event table's icon, at its ink */
+.prefix { grid-area: prefix; min-width: 0; }
+.next { grid-area: next; min-width: 0; }
+.digits { grid-area: digits; min-width: 0; }
+.year { grid-area: year; }
+.example { grid-area: example; min-width: 0; flex-wrap: wrap; }
+.follow { grid-area: follow; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 1024px) {
+  .row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas: 'name name name' 'prefix next digits' 'year example example';
+  }
+  .entity { grid-template-areas: 'name name name' 'prefix follow follow' 'example example example'; }
+}

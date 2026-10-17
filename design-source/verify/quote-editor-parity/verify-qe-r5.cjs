@@ -2,7 +2,8 @@
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const fs = require('fs')
-const S = process.env.S, DB = process.env.TESTDB, BASE = 'http://localhost:3011'
+const path = require('path')
+const S =process.env.S, DB = process.env.TESTDB, BASE = 'http://localhost:3011'
 const results = []
 const ok = (name, pass, note = '') => { results.push({ name, pass, note }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${note ? ' — ' + note : ''}`) }
 const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toString().trim()
@@ -81,19 +82,21 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   })
 
   /* ── Upload a quote ── */
+  /* the sample files live beside this probe (./uploads), not in the scratch dir: a fresh scratch dir has none */
+  const UPLOADS = path.resolve(__dirname, '../../..', 'design-source/verify/quote-editor-parity/uploads')
   const upload = async (file) => {
     await page.goto(`${BASE}/leads/${LEAD6}/quotes`); await ready(page)
     await page.getByRole('button', { name: 'Create Quote' }).first().click()
     await page.getByTestId('create-quote').waitFor()
     const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.getByTestId('upload-quote-row').click()])
-    await fc.setFiles(`${S}/uploads/${file}`)
+    await fc.setFiles(path.join(UPLOADS, file))
     await page.getByTestId('upload-quote').waitFor()
     await page.waitForTimeout(1200)
     return page.getByTestId('upload-quote')
   }
   await step('Upload a quote: a PDF we can read becomes a quote', async () => {
     const before = Number(sql(`select count(*) from quotes where lead_id='${LEAD6}'`))
-    const box = await upload('flo-design-quotation.pdf')
+    const box = await upload('flo-design-quotation.pdf')   // (S42 E-05) the fixture now SAYS Flo Design's lines — a reference is read by its words, never its name
     const t = await box.innerText()
     ok('the lines read, with their total', /lines read from Flo Design’s quote/.test(t), t.split('\n')[0])
     await shot('03-upload-read')
@@ -128,10 +131,13 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
     const dlg = page.getByRole('dialog', { name: 'Export My Items' }); await dlg.waitFor()
     await shot('06-export-my-items')
     const [dl] = await Promise.all([page.waitForEvent('download'), dlg.getByRole('button', { name: 'Export' }).click()])
-    const path = await dl.path(); const text = fs.readFileSync(path, 'utf8')
+    const file = await dl.path(); const text = fs.readFileSync(file, 'utf8')
     const first = text.split(/\r?\n/)[0]
-    ok('a CSV with the list’s columns', /Item,Kind,Description,Unit,Cost,Markup,Unit price,Category,Vendor,Website link,Used by/.test(first.replace(/"/g, '')), first)   // (REG-653) + Link
-    ok('a row per live item', text.trim().split(/\r?\n/).length - 1 === Number(sql(`select count(*) from price_book_items where deleted_at is null`)))
+    ok('a CSV with the list’s columns', /Item,Kind,Description,Unit,Cost,Markup,Unit price,Waste %,Category,Vendor,Website link,Used by/.test(first.replace(/"/g, '')), first)   // (REG-653) + Link · (pending modules S12, a deliberate change of this rule) + Waste %, 1.0's column
+    /* (REG-835, Dane UAT 3.11) the export leaves proposed items out unless "Include proposed items" is ticked: a row per live approved item */
+    const rows = text.trim().split(/\r?\n/).length - 1, approved = Number(sql(`select count(*) from price_book_items where deleted_at is null and status != 'proposed'`))
+    const proposed = sql(`select name from price_book_items where deleted_at is null and status = 'proposed'`).split('\n').filter(Boolean)
+    ok('a row per live item (proposals left out)', rows === approved && proposed.every((n) => !text.includes(n)), `${rows} rows · ${approved} approved · ${proposed.length} proposed`)
   })
 
   /* ── phone ── */

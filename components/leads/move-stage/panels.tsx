@@ -6,20 +6,41 @@ import { ReadOnlyScope, useReadOnly } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { useComingSoon } from '@/components/om/snackbar'
 import { Avatar } from '@/components/om/avatar'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
 import { displayDate, moneySGD } from '@/lib/format'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
-import type { Member } from '@/lib/db/schema'
-import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
-import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
+import type { LeadFile, Member } from '@/lib/db/schema'
+import { AutoFillNote, ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
+import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
 import { pickable } from '@/lib/leads/assign-policy'
+import { isPdfRefusal, readPickedPdf } from '@/components/contracts/read-pdf'
+import { NOT_A_PDF } from '@/lib/contracts/pdf'
+
+/** (pending modules S05) A quote's PDF refusal in a quote's words — the contracts' says a contract is kept as one. */
+const quotePdfError = (e: string) => (e === NOT_A_PDF ? 'Choose a PDF — the quote is kept as one' : e)
 
 // OUTCOMES / SCHEDULE / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186, REG-319).
+
+/** (pending modules S05 — REG-149's 'Q-101' stand-in retired) The lead's files a step attaches, looked up by id — their picture and kind. */
+export type FileOf = (id: string) => LeadFile | undefined
+/** A step's attached files as tiles: each name with its own file's picture and kind where the step keeps its id; an older log's bare name
+    keeps the mock's picture. Removing one takes its name and its id together. */
+function AttachedTiles({ names, ids, fileOf, onRemove }: { names: string[]; ids?: string[]; fileOf?: FileOf; onRemove: (j: number) => void }) {
+  if (!names.length) return null
+  return (
+    <div className={styles.tiles}>
+      {names.map((n, j) => {
+        const f = ids?.[j] ? fileOf?.(ids[j]!) : undefined
+        return <FileTile key={`${ids?.[j] ?? n}-${j}`} name={f?.name ?? n} kind={f ? (f.kind === 'pdf' ? 'pdf' : f.kind === 'image' ? 'image' : 'doc') : undefined} thumb={f ? f.thumb ?? null : undefined} onDelete={() => onRemove(j)} />
+      })}
+    </div>
+  )
+}
+const dropAt = <T,>(xs: T[] | undefined, j: number): T[] | undefined => (xs ? xs.filter((_, k) => k !== j) : xs)
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
@@ -57,10 +78,12 @@ export function NewPanel({
  *  The read-only scope is per log (user 2026-08-29: after Add Log only the new log is open; older logs stay read-only until their own Edit).
  *  Header controls sit outside the scope so they stay live while the body is disabled. */
 function LogShell({
-  index, collapsed, onToggle, readOnly, onAutoFill, onEdit, onDelete, children,
+  index, collapsed, onToggle, readOnly, onAutoFill, onEdit, onDelete, note = null, children,
 }: {
   index: number; collapsed: boolean; onToggle: () => void; readOnly: boolean
   onAutoFill: () => void; onEdit?: () => void
+  /** (S43B · F1-01) what Auto Fill read for this log — said at the top of its body */
+  note?: string | null
   /** Extra logs can be removed while open (user 2026-08-29); the last remaining log never offers it. */
   onDelete?: () => void
   children: ReactNode
@@ -91,7 +114,7 @@ function LogShell({
       </div>
       {!collapsed ? (
         <ReadOnlyScope readOnly={readOnly}>
-          <div className={styles.logBody}>{children}</div>
+          <div className={styles.logBody}>{note && !readOnly ? <AutoFillNote text={note} /> : null}{children}</div>
         </ReadOnlyScope>
       ) : null}
     </div>
@@ -99,8 +122,15 @@ function LogShell({
 }
 
 function LogCard({
-  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today,
+  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, askNextStep = false, onAttach, fileOf, note = null,
 }: {
+  /** (S43B · F1-01) what Auto Fill read for this log */
+  note?: string | null
+  /** (pending modules S05) Attach opens the lead's files (the house Attach files modal); the tiles are the files themselves */
+  onAttach?: () => void
+  fileOf?: FileOf
+  /** (pending modules S05) the studio asks for the next call or meeting (Settings › Lead management › Lead stages) */
+  askNextStep?: boolean
   index: number; log: ContactLog
   onChange: (patch: Partial<ContactLog>) => void
   onAutoFill: () => void
@@ -113,7 +143,7 @@ function LogCard({
   const err = (f: string) => errors[`logs.${index}.${f}`]
   return (
     <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
-              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
+              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete} note={note}>
       {/* (REG-320, user 2026-09-02) Where this log lives afterwards — only here, the Notes tab is already that place. */}
       <p className={fieldStyles.callout}>
         <Icon name="info" size={16} weight={300} />
@@ -133,11 +163,12 @@ function LogCard({
       {log.outcome ? (
         <div className={styles.stack24}>
           <div className={fieldStyles.sectionHead}>
-            <span className={fieldStyles.sectionLabel}>{SCHEDULE.heading}</span>
-            <span className={fieldStyles.sectionHelper}>{SCHEDULE.helper}</span>
+            {/* (pending modules S05) asked for by the studio (never once the client said they're not interested): its heading loses "(optional)" */}
+            <span className={fieldStyles.sectionLabel}>{askNextStep && log.outcome !== 'Not interested' ? SCHEDULE.heading.replace(/\s*\(optional\)$/, '') : SCHEDULE.heading}</span>
+            <span className={fieldStyles.sectionHelper}>{askNextStep && log.outcome !== 'Not interested' ? 'Your studio asks for the next call or meeting — a task will remind you.' : SCHEDULE.helper}</span>
           </div>
           <div className={styles.fieldPair}>
-            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
+            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today} required={askNextStep && log.outcome !== 'Not interested'}
                            onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
             <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
                        onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
@@ -154,15 +185,8 @@ function LogCard({
         {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). (UX audit 2026-09-30, L2 · T3) The row is mandatory,
             so it carries the required mark, and it names what proves this contact — photos from a visit, screenshots of a call or a message. */}
         <SectionRow label={attachLabel(log.channel)} required
-                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
-        {log.files.length ? (
-          <div className={styles.tiles}>
-            {log.files.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f}
-                        onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
-            ))}
-          </div>
-        ) : null}
+                    action={<LinkButton icon="attach_file" onClick={() => onAttach?.()}>Attach</LinkButton>} />
+        <AttachedTiles names={log.files} ids={log.fileIds} fileOf={fileOf} onRemove={(j) => onChange({ files: dropAt(log.files, j) ?? [], fileIds: dropAt(log.fileIds, j) })} />
         <FieldError message={err('files')} />
       </div>
     </LogShell>
@@ -170,8 +194,15 @@ function LogCard({
 }
 
 export function ContactedPanel({
-  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, askNextStep = false, onAttach, fileOf, fillNote,
 }: {
+  /** (S43B · F1-01) what Auto Fill read for log `i` */
+  fillNote?: (i: number) => string | null
+  /** (pending modules S05) a log's Attach — the window opens the lead's files for log `i` */
+  onAttach?: (i: number) => void
+  fileOf?: FileOf
+  /** (pending modules S05) the studio asks for the next call or meeting */
+  askNextStep?: boolean
   data: WizardData; update: (patch: Partial<WizardData>) => void
   /** Auto Fill fills the log whose button was pressed. */
   onAutoFill: (i: number) => void
@@ -185,7 +216,7 @@ export function ContactedPanel({
   return (
     <>
       {data.logs.map((log, i) => (
-        <LogCard key={i} index={i} log={log} errors={errors} today={today}
+        <LogCard key={i} index={i} log={log} errors={errors} today={today} askNextStep={askNextStep && !lockedLog?.(i)} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
                  readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                  onDelete={onDeleteLog && data.logs.length > 1 ? () => onDeleteLog(i) : undefined}
                  onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
@@ -196,8 +227,12 @@ export function ContactedPanel({
 
 /** Met (780:90234, updated 2026-09-04): the same log list — Where · Date & Time / Remarks / rule / meeting documents (REG-325). */
 function MeetingCard({
-  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today,
+  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today, onAttach, fileOf, note = null,
 }: {
+  /** (S43B · F1-01) what Auto Fill read for this log */
+  note?: string | null
+  onAttach?: () => void
+  fileOf?: FileOf
   index: number; log: MeetingLog
   onChange: (patch: Partial<MeetingLog>) => void
   onAutoFill: () => void
@@ -210,7 +245,7 @@ function MeetingCard({
   const err = (f: string) => errors[`meetings.${index}.${f}`]
   return (
     <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
-              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
+              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete} note={note}>
       <div className={styles.fieldPair}>
         <TextField label="Where" required value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
                    onChange={(v) => onChange({ where: v })} error={err('where')} />
@@ -225,14 +260,8 @@ function MeetingCard({
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach meeting documents (optional)"   /* (REG-543) no longer required */
-                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
-        {log.files.length ? (
-          <div className={styles.tiles}>
-            {log.files.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f} onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
-            ))}
-          </div>
-        ) : null}
+                    action={<LinkButton icon="attach_file" onClick={() => onAttach?.()}>Attach</LinkButton>} />
+        <AttachedTiles names={log.files} ids={log.fileIds} fileOf={fileOf} onRemove={(j) => onChange({ files: dropAt(log.files, j) ?? [], fileIds: dropAt(log.fileIds, j) })} />
         <FieldError message={err('files')} />
       </div>
     </LogShell>
@@ -240,8 +269,12 @@ function MeetingCard({
 }
 
 export function MetPanel({
-  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, onAttach, fileOf, fillNote,
 }: {
+  /** (S43B · F1-01) what Auto Fill read for meeting log `i` */
+  fillNote?: (i: number) => string | null
+  onAttach?: (i: number) => void
+  fileOf?: FileOf
   data: WizardData; update: (patch: Partial<WizardData>) => void
   onAutoFill: (i: number) => void
   onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
@@ -253,7 +286,7 @@ export function MetPanel({
   return (
     <>
       {data.meetings.map((m, i) => (
-        <MeetingCard key={i} index={i} log={m} errors={errors} today={today}
+        <MeetingCard key={i} index={i} log={m} errors={errors} today={today} onAttach={onAttach ? () => onAttach(i) : undefined} fileOf={fileOf} note={fillNote?.(i) ?? null}
                      readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                      onDelete={onDeleteLog && data.meetings.length > 1 ? () => onDeleteLog(i) : undefined}
                      onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
@@ -301,6 +334,14 @@ export function signedQuoteRows(docs: StageDocuments): SystemRow[] {
     .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor,
                    meta: [q.number, moneySGD(q.amountMinor), q.signedAt ? `Signed on ${displayDate(new Date(q.signedAt))}` : q.status] }))
 }
+/** (fix-A, A-15) Won's list: the signed quotes, then the ones out with the client and not signed yet — each saying so when picked (`hold`),
+    as Quote Sent names the approval a quote still needs (UX audit Q1), where the step used to say "No system generated quotes". */
+export function wonQuoteRows(docs: StageDocuments): SystemRow[] {
+  const out = docs.quotes.filter((q) => OUT.includes(q.status))
+    .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor, hold: `${q.number} isn’t signed yet — mark it signed on the quote, or upload the signed copy`,
+                   meta: [q.number, moneySGD(q.amountMinor), q.status] }))
+  return [...signedQuoteRows(docs), ...out]
+}
 /** Won: contracts with a signed stamp, named by their signed copy (setContractStatus names it "<title>.pdf"). */
 export function signedContractRows(docs: StageDocuments): SystemRow[] {
   return docs.contracts
@@ -325,20 +366,22 @@ function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreat
 }
 
 export function AttachTabs({
-  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty,
+  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty, viewHref,
 }: {
+  /** (pending modules S05 — the card's "Move stage › From System quote 'View' (1.0 opened the quote)") where a row's View opens it: the
+      quote's or the contract's Preview, in a new tab, so the step and what was typed in it stay as they are */
+  viewHref?: (row: SystemRow) => string
   tab: 'system' | 'upload'; onTab: (t: 'system' | 'upload') => void
   selected: string | null; onSelect: (name: string, id: string) => void
   /** (UX audit 2026-09-30, Q1) The picked row's id, where the step keeps one — two quotes may share a title. */
   selectedId?: string | null
-  uploaded: string | null; uploading?: boolean; onUpload: () => void; onRemoveUpload: () => void
+  uploaded: string | null; uploading?: boolean; /** (pending modules S03) the picked file, when the step keeps it */ onUpload: (file?: File) => void; onRemoveUpload: () => void
   /** The lead's own rows; null while the window is still reading them (nothing is drawn — never a flash of the empty state). */
   quotes: SystemRow[] | null
   /** What From System shows once the rows are known to be none. */
   empty?: ReactNode
 }) {
   const ro = useReadOnly()          // read-only stage: the uploaded file keeps its row but loses its delete (REG-126)
-  const comingSoon = useComingSoon()
   return (
     <div className={styles.tabCard}>
       <div className={styles.tabBar} role="tablist">
@@ -366,8 +409,8 @@ export function AttachTabs({
                   {q.meta.map((m, i) => <span key={i}>{i > 0 ? '· ' : ''}{m}</span>)}
                 </span>
               </span>
-              {/* Inert in the prototype; stop the click so the row is not re-selected */}
-              <LinkButton onClick={(e) => { e.stopPropagation(); comingSoon() }}>View</LinkButton>
+              {/* (pending modules S05) the document itself, in a new tab — stop the click so the row is not re-selected */}
+              {viewHref ? <LinkButton ariaLabel={`View ${q.meta[0] ?? q.name} in a new tab`} onClick={(e) => { e.stopPropagation(); window.open(viewHref(q), '_blank', 'noopener') }}>View</LinkButton> : null}
             </button>
             )
           })
@@ -398,20 +441,33 @@ export function AttachTabs({
 }
 
 export function QuoteSentPanel({
-  data, update, errors, docs, onCreateQuote, rule = null,
+  data, update, errors, docs, onCreateQuote, rule = null, onAttach, fileOf,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors
+  /** (pending modules S05) the step's meeting documents and render: the lead's files, kept with the step */
+  onAttach?: (what: 'meeting' | 'render') => void
+  fileOf?: FileOf
   /** (REG-340) The lead's quotes, read when the window opened; null until they land. */
   docs: StageDocuments | null
   /** (UX audit 2026-09-30, Q1) The studio's approval rule — lists the quotes the move may send and names the one it can't. */
   rule?: SendRule | null
   /** The empty state's "Create Quote ›" — the lead's Quotes tab with a fresh draft. */
   onCreateQuote: () => void }) {
-  // Attach rows (mock: dead buttons) — local tiles like the other stages; not persisted, no validation key.
-  const [meetingFiles, setMeetingFiles] = useState<string[]>([])
-  const [renderFiles, setRenderFiles] = useState<string[]>([])
+  /* (pending modules S05) Attach rows: the lead's own files, kept with the step (they were local tiles the step never kept); no validation key */
+  const meetingIds = data.quoteMeetingFiles ?? [], renderIds = data.quoteRenderFiles ?? []
+  const namesOf = (ids: string[]) => ids.map((id) => fileOf?.(id)?.name ?? 'File')
   const quotes = docs ? approvedQuoteRows(docs, rule) : null
   const upload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)   // focus Quote amount once the file lands (user 2026-08-29)
+  /* (pending modules S05 — REG-149's stand-in retired: "every other upload keeps its bytes since gaps build E") the picked PDF itself — its
+     own name on the row, its bytes kept in Files › Quotes & BOQ when the step saves; a file that isn't a PDF, or is over 8 MB, is refused
+     under the box */
+  const [pickError, setPickError] = useState<string | null>(null)
+  const pickQuote = (f?: File) => {
+    setPickError(null)
+    if (!f) return
+    const read = readPickedPdf(f)
+    upload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setPickError(quotePdfError(r.error)); return } update({ quoteUploaded: r.name, quoteFile: r }); setJustUploaded(true) }) })
+  }
   /* (UX audit 2026-09-30, Q1) The picked quote's approval, said as soon as it is picked — Save refuses it with the same line. */
   const picked = data.quoteTab === 'system' ? quotes?.find((q) => (data.quoteSelectedId ? q.id === data.quoteSelectedId : q.name === data.quoteSelected)) : undefined
   return (
@@ -422,11 +478,12 @@ export function QuoteSentPanel({
           tab={data.quoteTab} onTab={(t) => update({ quoteTab: t })}
           selected={data.quoteSelected} selectedId={data.quoteSelectedId ?? null} onSelect={(n, id) => update({ quoteSelected: n, quoteSelectedId: id })}
           uploaded={data.quoteUploaded} uploading={upload.uploading}
-          onUpload={() => upload.start(() => { update({ quoteUploaded: SYSTEM_QUOTE }); setJustUploaded(true) })}   // 780:91468: the mock's file, whatever was picked
-          onRemoveUpload={() => update({ quoteUploaded: null })}
+          onUpload={pickQuote}   // (pending modules S05) the picked file itself (780:91468 drew the mock's)
+          onRemoveUpload={() => { setPickError(null); update({ quoteUploaded: null, quoteFile: null }) }}
           quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
+          viewHref={(q) => `/quotes/${q.id}/preview`}   /* (pending modules S05) */
         />
-        <FieldError message={errors.quote ?? picked?.hold ?? undefined} />
+        <FieldError message={pickError ?? errors.quote ?? picked?.hold ?? undefined} />
       </div>
       {/* Upload flow only — a system quote already knows its amount */}
       {data.quoteTab === 'upload' && data.quoteUploaded ? (
@@ -436,26 +493,14 @@ export function QuoteSentPanel({
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach meeting documents (optional)"   /* (REG-543) no longer required */
-                    action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach</LinkButton>} />
-        {meetingFiles.length ? (
-          <div className={styles.tiles}>
-            {meetingFiles.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f} onDelete={() => setMeetingFiles((fs) => fs.filter((_, j) => j !== i))} />
-            ))}
-          </div>
-        ) : null}
+                    action={<LinkButton icon="attach_file" onClick={() => onAttach?.('meeting')}>Attach</LinkButton>} />
+        <AttachedTiles names={namesOf(meetingIds)} ids={meetingIds} fileOf={fileOf} onRemove={(j) => update({ quoteMeetingFiles: dropAt(meetingIds, j) })} />
       </div>
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach render (optional)"
-                    action={<LinkButton icon="attach_file" onClick={() => setRenderFiles((f) => [...f, 'Q-101'])}>Attach</LinkButton>} />
-        {renderFiles.length ? (
-          <div className={styles.tiles}>
-            {renderFiles.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f} onDelete={() => setRenderFiles((fs) => fs.filter((_, j) => j !== i))} />
-            ))}
-          </div>
-        ) : null}
+                    action={<LinkButton icon="attach_file" onClick={() => onAttach?.('render')}>Attach</LinkButton>} />
+        <AttachedTiles names={namesOf(renderIds)} ids={renderIds} fileOf={fileOf} onRemove={(j) => update({ quoteRenderFiles: dropAt(renderIds, j) })} />
       </div>
     </>
   )
@@ -472,18 +517,38 @@ function signedContractName(leadName: string): string {
 }
 
 export function WonPanel({
-  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract,
+  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract, contractOptional = false,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string
+  /** (pending modules S05) the studio wins a lead on its signed quote alone (Settings › Lead management › Lead stages) */
+  contractOptional?: boolean
   /** (REG-340) The lead's quotes and contracts, read when the window opened; null until they land. */
   docs: StageDocuments | null
   onCreateQuote: () => void; onCreateContract: () => void }) {
-  const quotes = docs ? signedQuoteRows(docs) : null
+  const quotes = docs ? wonQuoteRows(docs) : null   // (fix-A, A-15) the signed ones, then the ones not signed yet — saying so
   const contracts = docs ? signedContractRows(docs) : null
+  const pickedQuote = data.wonQuoteTab === 'system' ? quotes?.find((q) => q.name === data.wonQuote) ?? null : null
   // The upload flow's file keeps the mock's convention: a signed contract named for this lead (780:92744).
   const contractName = signedContractName(leadName)
   const quoteUpload = useUploadSim()
   const contractUpload = useUploadSim()
+  /* (pending modules S03) the signed contract's PDF itself is kept with the contract the step makes — read while the upload runs; a file that
+     isn't a PDF, or is over 8 MB, is refused under the box */
+  const [contractPickError, setContractPickError] = useState<string | null>(null)
+  const pickContract = (f?: File) => {
+    setContractPickError(null)
+    if (!f) return   // (S43E, F3-02 W2-01) no file, no contract — the mock's simulated upload of a named file is gone, as the signed quote's
+    const read = readPickedPdf(f)
+    contractUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setContractPickError(r.error); return } update({ wonContractUploaded: contractName, wonContractFile: { ...r, name: contractName } }) }) })
+  }
   const [justUploaded, setJustUploaded] = useState(false)
+  /* (pending modules S05) the signed quote's PDF itself — its own name on the row, kept with its bytes in the lead's Files with the project */
+  const [quotePickError, setQuotePickError] = useState<string | null>(null)
+  const pickSignedQuote = (f?: File) => {
+    setQuotePickError(null)
+    if (!f) return
+    const read = readPickedPdf(f)
+    quoteUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setQuotePickError(quotePdfError(r.error)); return } update({ wonQuoteUploaded: r.name, wonQuoteFile: r, milestones: zeroMilestones() }); setJustUploaded(true) }) })
+  }
   const uploadedQuote = data.wonQuoteTab === 'upload'
   // The split is computed on the signed quote's amount: the selected system quote's own total, or the amount typed for an
   // upload (780:92744 total). The lead's budget stands in only until the quotes have loaded.
@@ -503,11 +568,12 @@ export function WonPanel({
           onTab={(t) => update({ wonQuoteTab: t, milestones: t === 'system' ? defaultMilestones() : data.wonQuoteUploaded ? zeroMilestones() : data.milestones })}
           selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n, milestones: defaultMilestones() })}
           uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
-          onUpload={() => quoteUpload.start(() => { update({ wonQuoteUploaded: SYSTEM_QUOTE, milestones: zeroMilestones() }); setJustUploaded(true) })}
-          onRemoveUpload={() => update({ wonQuoteUploaded: null, wonQuoteAmount: '', milestones: defaultMilestones() })}
+          onUpload={pickSignedQuote}   // (pending modules S05) the picked file itself
+          onRemoveUpload={() => { setQuotePickError(null); update({ wonQuoteUploaded: null, wonQuoteFile: null, wonQuoteAmount: '', milestones: defaultMilestones() }) }}
           quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
+          viewHref={(q) => `/quotes/${q.id}/preview`}   /* (pending modules S05) */
         />
-        <FieldError message={errors.wonQuote} />
+        <FieldError message={quotePickError ?? errors.wonQuote ?? pickedQuote?.hold ?? undefined} />
       </div>
       {uploadedQuote && data.wonQuoteUploaded ? (
         <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" numeric="amount" autoFocus={justUploaded}
@@ -515,54 +581,65 @@ export function WonPanel({
       ) : null}
       <Divider />
       <div className={styles.stack12}>
-        <SectionRow label="Attach client signed contract" />
+        <SectionRow label={contractOptional ? 'Attach client signed contract (optional)' : 'Attach client signed contract'} />
         <AttachTabs
           tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
           selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
           uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
-          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: contractName }))}
-          onRemoveUpload={() => update({ wonContractUploaded: null })}
+          onUpload={pickContract}
+          onRemoveUpload={() => { setContractPickError(null); update({ wonContractUploaded: null, wonContractFile: null }) }}
           quotes={contracts} empty={<SystemEmpty noun="contracts" onCreate={onCreateContract} />}
+          viewHref={(c) => `/contracts/${c.id}/preview`}   /* (pending modules S05) */
         />
-        <FieldError message={errors.wonContract} />
+        <FieldError message={contractPickError ?? errors.wonContract} />
       </div>
       <Divider />
-      <div className={styles.stack12}>
-        {/* 780:92850 / 92852: "Payment milestone" · Reset to default · the DS green outlined Tag with the split's total */}
-        <SectionRow label="Payment milestone"
-                    action={
-                      <span className={fieldStyles.rowActions}>
-                        <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
-                        <Tag color="green" appearance="outlined">{`${totalPct}%`}</Tag>
-                      </span>
-                    } />
-        <div className={styles.msCard}>
-          {data.milestones.map((m, i) => {
-            const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
-            return (
-              <div key={m.name} className={styles.msRow}>
-                <span className={styles.msIndex}>{i + 1}</span>
-                <span className={styles.msText}>
-                  <span className={styles.msName}>{m.name}</span>
-                  <span className={styles.msMeta}>{m.meta}</span>
-                </span>
-                <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>
-                  <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`} aria-invalid={errors.milestones ? true : undefined}
-                         onChange={(e) => setPct(i, Math.max(0, Math.min(100, Number(e.target.value.replace(/\D/g, '')) || 0)))} />
-                  <span>%</span>
-                </span>
-                <span className={styles.msAmt}>{moneySGD(amtMinor)}</span>
-              </div>
-            )
-          })}
-          <div className={`${styles.msRow} ${styles.msTotal}`}>
-            <span className={styles.msIndex} />
-            <span className={styles.msTotalLabel}>Total</span>
-            <span className={styles.msAmt}>{moneySGD(basisMinor)}</span>
+      {/* (simplify Q-17, the owner's pick 2026-10-09 — revises mock 780:92744 / REG-149 for a system quote) the split is editable only where the
+          project reads it: an uploaded quote. A system quote's own Payment Schedule is what the project bills (lib/projects/create.ts uses the
+          split for an upload alone), so the step says so in one line instead of an editor whose numbers were ignored. */}
+      {uploadedQuote ? (
+        <div className={styles.stack12}>
+          {/* 780:92850 / 92852: "Payment milestone" · Reset to default · the DS green outlined Tag with the split's total */}
+          <SectionRow label="Payment milestone"
+                      action={
+                        <span className={fieldStyles.rowActions}>
+                          <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
+                          <Tag color="green" appearance="outlined">{`${totalPct}%`}</Tag>
+                        </span>
+                      } />
+          <div className={styles.msCard}>
+            {data.milestones.map((m, i) => {
+              const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
+              return (
+                <div key={m.name} className={styles.msRow}>
+                  <span className={styles.msIndex}>{i + 1}</span>
+                  <span className={styles.msText}>
+                    <span className={styles.msName}>{m.name}</span>
+                    <span className={styles.msMeta}>{m.meta}</span>
+                  </span>
+                  <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>
+                    <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`} aria-invalid={errors.milestones ? true : undefined}
+                           onChange={(e) => setPct(i, Math.max(0, Math.min(100, Number(e.target.value.replace(/\D/g, '')) || 0)))} />
+                    <span>%</span>
+                  </span>
+                  <span className={styles.msAmt}>{moneySGD(amtMinor)}</span>
+                </div>
+              )
+            })}
+            <div className={`${styles.msRow} ${styles.msTotal}`}>
+              <span className={styles.msIndex} />
+              <span className={styles.msTotalLabel}>Total</span>
+              <span className={styles.msAmt}>{moneySGD(basisMinor)}</span>
+            </div>
           </div>
+          <FieldError message={errors.milestones} />
         </div>
-        <FieldError message={errors.milestones} />
-      </div>
+      ) : (
+        <div className={styles.stack12} data-testid="won-split-line">
+          <SectionRow label="Payment milestone" />
+          <span className={styles.splitLine}>{pickedQuote?.meta[0] ? `Payments follow ${pickedQuote.meta[0]}’s payment schedule.` : 'Payments follow the signed quote’s payment schedule.'}</span>
+        </div>
+      )}
       <Divider />
       <TextField label="Project type" value={data.projectType} mode="select"
                  options={['Whole-home renovation', 'Partial renovation', 'Commercial fit-out']}

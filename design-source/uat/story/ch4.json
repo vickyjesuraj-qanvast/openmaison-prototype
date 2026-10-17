@@ -20,15 +20,18 @@
   "scene": "A new enquiry by hand",
   "module": "Leads",
   "try": "Let the document reader fill a lead for you",
-  "how": "1. In the open form, click \"Fill from a document\"\n2. Press \"Upload\" (no file needed — this is a demo)\n3. Look at the fields, then press \"Cancel\" at the bottom",
-  "expect": "Empty fields fill with a sample enquiry (Nurul Hassan, Condo 3-bedder, East) and a PDF is attached; Cancel closes without saving anything.",
-  "in10": "Different from 1.0: fixed sample values stand in for AI reading",
+  "how": "1. In the open form, click \"Fill from a document\"\n2. Drag uat-files/kitchen-moodboard.jpg onto the box and read the line under it\n3. Click \"Upload\" and pick uat-files/rachel-ong-enquiry.pdf\n4. Read the fields and the line under \"Fill from a document\", then press \"Cancel\" at the bottom",
+  "expect": "The photo is refused: \"kitchen-moodboard.jpg has no words to read — a photo or a scanned page…\". The PDF fills the empty fields with what it says (Rachel Ong, 9634 2817, Condo 3-bedder, East, 85,000 …) and is attached; the line reads \"Filled from rachel-ong-enquiry.pdf: name, phone number, email, …\". Cancel saves nothing.",
+  "in10": "Different from 1.0: the file’s own words, read by rule, not AI",
   "as": "Dane",
   "covers": [
    "LEADS:DEF-29",
    "LEADS:C-15"
   ],
-  "files": []
+  "files": [
+   "uat-files/kitchen-moodboard.jpg",
+   "uat-files/rachel-ong-enquiry.pdf"
+  ]
  },
  {
   "step": "4.03",

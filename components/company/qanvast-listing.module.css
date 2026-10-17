@@ -1,0 +1,59 @@
+/* (pending modules S37) Company › Profile › Listed on Qanvast — the Profile card's own parts (the card, its head, title and help are
+   profile-view.module.css's; the tables are the house card table, REG-727). Its dialog's parts below. */
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); flex-wrap: wrap; }
+.chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+/* the stand-in's own line, as Company › Integrations' cards say theirs (S34) */
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.state { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.stateQuiet { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* Qanvast's note with an ask for changes: its words quoted, on the page's quiet surface */
+.ask { display: flex; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.askIcon { display: inline-flex; flex-shrink: 0; margin-top: 2px; color: var(--om-color-on-surface-secondary); }
+.askText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.askLead { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.askNote { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* one row of presses: the filled one first, the text presses after it — a text press's label lines up with the card's column */
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); }
+.actions > [data-text-press] { margin-left: calc(-1 * var(--om-spacing-3)); }
+.actions > :not([data-text-press]) + [data-text-press] { margin-left: 0; }
+/* (demo only) Qanvast's answer, played — under a dashed rule, as something that is not the studio's own work */
+.demo { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) dashed var(--om-color-on-surface-border); }
+.demoPresses { display: flex; flex-wrap: wrap; gap: 0 var(--om-spacing-3); margin-left: calc(-1 * var(--om-spacing-3)); }
+
+/* What Qanvast has — the disclosure (the house text press with its chevron), then the card table of what was sent */
+.more { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.morePress { margin-left: calc(-1 * var(--om-spacing-3)); align-self: flex-start; }
+.factTable { composes: table from '../om/card-table.module.css'; }
+.factHead { composes: head from '../om/card-table.module.css'; }
+.factRow { composes: row from '../om/card-table.module.css'; }
+.factHead, .factRow { grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); }
+.factRow { align-items: start; }
+.factLabel { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); padding-top: 2px; }
+.factFrom { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.factValue { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 2px; }
+.factValue[data-missing] { color: var(--om-color-on-surface-secondary); }
+.factValue[data-error] { color: var(--om-color-tertiary-red-default); }
+.factPress { margin-left: calc(-1 * var(--om-spacing-3)); }
+.thumbs { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.thumb { width: 56px; height: 42px; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fileLinks { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+/* a proof file's name opens it — the house text link (REG-729) */
+.fileLink { composes: link from '../om/text-link.module.css'; overflow-wrap: anywhere; }
+
+/* the dialog: its parts, one gap */
+.dialogBody { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.part { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.partHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.partTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.partHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.proof { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.proofLabel { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.tiles { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+
+@media (max-width: 767px) {
+  .factHead { display: none; }   /* a phone stacks each row: its label, then its value (the Registrations table's way) */
+  .factRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
+}

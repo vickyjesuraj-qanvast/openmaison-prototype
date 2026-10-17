@@ -1,0 +1,65 @@
+/* (pending modules S36) The trial's start and its six landing pages, on the website's token sheet (app/site/site-tokens.css) and its own
+   classes (components/site/site.module.css · pages.module.css) — only the trial's own arrangement is here: the hero beside its live before /
+   after, the sample rooms, the six tool cards, a landing page's room chips, four steps, the questions. */
+
+/* ── the start ── */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: 56px; }
+.hero[data-tool] { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+@media (max-width: 1024px) { .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
+.allowance { color: var(--site-accent); }
+.uploadRow { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+@media (max-width: 767px) { .uploadRow { flex-direction: column; align-items: stretch; } .uploadRow > * { width: 100%; } }
+/* (REG-307) a camera needs a phone: Take a photo only where there is no hover */
+.camera { display: none; }
+@media (hover: none) { .camera { display: inline-flex; } }
+.samplesHead { margin: 0 0 var(--om-spacing-3); font: var(--site-type-label); text-transform: uppercase; color: var(--site-muted); }
+.samples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+@media (max-width: 767px) { .samples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sample { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-2); background: var(--site-surface); text-align: left; cursor: pointer; transition: border-color var(--site-motion-ease), box-shadow var(--site-motion-ease); }
+@media (hover: hover) { .sample:hover:not(:disabled) { border-color: var(--site-hairline-strong); box-shadow: var(--site-shadow-sm); } }
+.sample:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
+.sample:disabled { cursor: default; opacity: 0.6; }
+.sample img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: var(--site-sunk); }
+.sampleName { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-height: 44px; padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-subtitle-s); color: var(--site-ink); }
+.sampleName > :last-child { flex-shrink: 0; color: var(--site-muted); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.figure { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.compare { width: 100%; aspect-ratio: 3 / 2; border-radius: var(--om-radius-3); overflow: hidden; box-shadow: var(--site-shadow-photo); }   /* the sample photos are 3:2 — the slider takes its shape from here */
+.caption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); font: var(--site-type-body-s); color: var(--site-muted); }
+
+/* ── the six tool cards ── */
+.toolsHead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-2); margin-bottom: var(--om-spacing-6); }
+.toolCard { display: flex; flex-direction: column; overflow: hidden; height: 100%; box-sizing: border-box; border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-3); background: var(--site-surface); }
+.toolCompare { width: 100%; aspect-ratio: 3 / 2; }
+.toolButton { display: flex; flex-direction: column; gap: var(--om-spacing-1); flex: 1; padding: var(--om-spacing-4); text-decoration: none; color: inherit; }
+.toolButton:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: -2px; }
+.toolTitle { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--site-type-strong); color: var(--site-ink); }
+.toolTitle > :first-child { color: var(--site-accent); }
+.toolTitle > :last-child { margin-left: auto; color: var(--site-muted); }
+@media (hover: hover) { .toolButton:hover .toolTitle > :last-child { color: var(--site-accent); } }
+.toolLine { font: var(--site-type-body-s); color: var(--site-ink-soft); }
+.dialogNote { margin: 0 0 var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── a landing page's sections (1.0's trial-tool-marketing.tsx) ── */
+.recap { text-align: center; }
+.rooms { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--om-spacing-2); margin-top: var(--om-spacing-4); padding: 0; list-style: none; }
+.room { padding: var(--om-spacing-2) var(--om-spacing-4); border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-full); background: var(--site-surface); font: var(--om-type-subtitle-s); color: var(--site-ink); }
+.steps4 { list-style: none; margin: var(--om-spacing-8) 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+@media (max-width: 1024px) { .steps4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) { .steps4 { grid-template-columns: minmax(0, 1fr); } }
+.faqs { display: flex; flex-direction: column; gap: var(--om-spacing-3); margin-top: var(--om-spacing-8); }
+.faq { border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-2); background: var(--site-surface); }
+.faq > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 48px; padding: var(--om-spacing-3) var(--om-spacing-4); list-style: none; cursor: pointer; font: var(--site-type-strong); color: var(--site-ink); border-radius: var(--om-radius-2); }
+.faq > summary::-webkit-details-marker { display: none; }
+.faq > summary:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
+.faq > summary > :last-child { flex-shrink: 0; color: var(--site-muted); transition: transform var(--site-motion-ease); }
+.faq[open] > summary > :last-child { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .faq > summary > :last-child { transition: none; } }
+.faq > p { margin: 0; padding: 0 var(--om-spacing-4) var(--om-spacing-4); font: var(--site-type-body); color: var(--site-ink-soft); }
+/* the site's text link, as a button (Open this sample opens the editor, it goes nowhere) */
+.linkButton { border: 0; padding: 0; background: none; cursor: pointer; }
+.linkButton:disabled { cursor: default; opacity: 0.6; }
+/* the ghost's before / after: the photos' 3:2, as the page draws it */
+.compareGhost { display: block; aspect-ratio: 3 / 2; }

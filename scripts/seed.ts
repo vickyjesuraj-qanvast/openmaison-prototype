@@ -103,7 +103,7 @@ await db.delete(schema.leads)
 await db.delete(schema.members)
 
 await db.insert(schema.members).values(TEAM.map(m => ({
-  id: m.id, name: m.name, role: m.role, color: m.color, isYou: 'isYou' in m ? !!m.isYou : false,
+  id: m.id, name: m.name, role: m.role, color: m.color, standingYou: 'isYou' in m ? !!m.isYou : false,
 })))
 
 for (const l of LEADS) {

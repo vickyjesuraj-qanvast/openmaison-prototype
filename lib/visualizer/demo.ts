@@ -7,19 +7,20 @@ import type { FurniturePick } from './furniture'
 export const DEMO_EDIT = {
   sample: 'living-room',
   surfaces: [
-    { label: 'white painted back wall', material: 'paint-002' },
-    { label: 'white wall above the window', material: 'paint-002' },
-    { label: 'light oak floor', material: 'floor-006' },
+    { label: 'cream painted side wall', material: 'paint-002' },
+    { label: 'cream painted back wall', material: 'paint-002' },
+    { label: 'cream painted TV wall', material: 'paint-002' },
+    { label: 'beige stone floor', material: 'floor-006' },
   ],
   furniture: [
-    { label: 'grey fabric sofa', pick: { action: 'customize', customizeColor: 'Emerald', customizeMaterial: 'Velvet', replacementDesc: null, refImage: null } satisfies FurniturePick },
+    { label: 'cream bouclé sofa', pick: { action: 'customize', customizeColor: 'Emerald', customizeMaterial: 'Velvet', replacementDesc: null, refImage: null } satisfies FurniturePick },
   ],
   image: '/visualizer/demo/living-room-edit.jpg',
   /** The edit relit (a relight pass on the edit, the preset's own knobs). */
   relit: { preset: 'golden-hour', image: '/visualizer/demo/living-room-edit-golden-hour.jpg' },
   /** Swatch photos for two studio materials, cut from the pictures they came from; `hex` is what each reads as (the harness prints it). */
   swatches: {
-    walnut: { image: '/visualizer/demo/swatch-walnut.jpg', hex: '#604337', from: '/visualizer/demo/living-room-edit.jpg', box: [0.84, 0.86, 0.99, 0.99] as const },
-    oak: { image: '/visualizer/demo/swatch-oak.jpg', hex: '#81623E', from: '/visualizer/samples/bedroom/original.jpg', box: [0.875, 0.22, 0.985, 0.5] as const },
+    walnut: { image: '/visualizer/demo/swatch-walnut.jpg', hex: '#67483A', from: '/visualizer/demo/living-room-edit.jpg', box: [0.885, 0.88, 0.99, 0.99] as const },
+    oak: { image: '/visualizer/demo/swatch-oak.jpg', hex: '#7D5D41', from: '/visualizer/samples/kitchen/original.jpg', box: [0.66, 0.1, 0.745, 0.32] as const },
   },
 } as const

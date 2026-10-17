@@ -10,6 +10,9 @@
   scroll-margin-top: 96px;
 }
 .cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+/* (pending modules S14) a card's own part with an address of its own (Company details › Reviews, #reviews): the card's inner gap inside it, so
+   a link that lands there marks the part whole — its head and its field */
+.subGroup { display: flex; flex-direction: column; gap: var(--om-spacing-4); border-radius: var(--om-radius-1); scroll-margin-top: 96px; }
 .cardTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); margin: 0; }   /* (REG-729) the card title: heading-h4 */
 .cardHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }
 
@@ -113,3 +116,24 @@
 /* (REG-618) The Social links sub-heading inside Company details. */
 .subTitle { margin: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
 .entityState { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }   /* (REG-647) Retired · Bring back */
+
+/* (one-home N-07) Registrations & accreditations — the card table (REG-727), composed, with its own tracks: registration (the name over its
+   line) · recorded (who · when) · done (the switch). On a phone the stack: the name, then each cell with its label. */
+.regTable { composes: table from '../om/card-table.module.css'; }
+.regHead { composes: head from '../om/card-table.module.css'; }
+.regRow { composes: row from '../om/card-table.module.css'; }
+.regCol { composes: col from '../om/card-table.module.css'; }
+.regHead, .regRow { grid-template-columns: minmax(240px, 1.6fr) minmax(140px, 1fr) 88px; }
+.regName { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.regHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.regWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .regHead { display: none; }
+  .regRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-2); }
+  .regWho[data-label]::before { content: attr(data-label) ' · '; }
+  .regCol { justify-content: flex-start; align-items: center; gap: var(--om-spacing-2); }
+  .regCol::before { content: attr(data-label); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+}
+
+/* (parity map, FB-103) An issuing entity's More details: the disclosure's press, then its fields in the card's two columns. */
+.more { display: flex; flex-direction: column; gap: var(--om-spacing-3); }

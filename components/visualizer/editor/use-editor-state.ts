@@ -59,7 +59,11 @@ function adoptIn(p: Pending, a: Addresses): Pending {
 
 export type SaveState = { saving: boolean; at: number | null; error: boolean }
 
-export function useEditorState(data: VisualizerEditorData) {
+/**
+ * `persist` (pending modules S36 — the website's no-account trial, components/visualizer/trial/*): false keeps the rooms in the page alone —
+ * the same picks, readings and undo history, no autosave, no keepalive, no draft in the tab (a trial's room is never a studio's record).
+ */
+export function useEditorState(data: Pick<VisualizerEditorData, 'rooms' | 'versions'>, { persist = true }: { persist?: boolean } = {}) {
   const [seed, setSeed] = useState(data)
   const [rooms, setRooms] = useState<EditorRoom[]>(data.rooms)
   const [versions, setVersions] = useState<Record<string, VersionView[]>>(data.versions)
@@ -158,6 +162,7 @@ export function useEditorState(data: VisualizerEditorData) {
     return true
   }, [])
   const run = useCallback(async (via: 'action' | 'keepalive' = 'action'): Promise<boolean> => {
+    if (!persist) return true   // (S36) nothing is kept anywhere
     if (retry.current) { clearTimeout(retry.current); retry.current = null }
     if (!dirtyIds().length) return true
     setSave((s) => ({ ...s, saving: true }))
@@ -180,7 +185,7 @@ export function useEditorState(data: VisualizerEditorData) {
     setSave({ saving: false, at: ok ? Date.now() : null, error: !ok })
     if (!ok && alive.current) retry.current = setTimeout(() => { void flushRef.current() }, RETRY_MS)
     return ok
-  }, [land])
+  }, [land, persist])
   /** Save every room with unsaved work now — one save at a time; resolves false when a save failed (it retries on its own). */
   const flush = useCallback((via: 'action' | 'keepalive' = 'action'): Promise<boolean> => {
     const prev = inflight.current ?? Promise.resolve(true)
@@ -193,10 +198,10 @@ export function useEditorState(data: VisualizerEditorData) {
   useEffect(() => { flushRef.current = flush })
   const revs = Object.entries(st).map(([id, r]) => `${id}:${r.rev}`).join(',')
   useEffect(() => {
-    if (!dirtyIds().length) return
+    if (!persist || !dirtyIds().length) return
     const t = setTimeout(() => { void flushRef.current() }, COALESCE_MS)
     return () => clearTimeout(t)
-  }, [revs])
+  }, [revs, persist])
   /* leaving: the tab hidden, the page going away, the editor unmounting (Back, a link) — what waits is saved at once.
      (D9) Hidden: the next save in line goes as a keepalive request, and a draft is left in the tab. Going away (a reload, a closed tab):
      every waiting room is sent at once as a keepalive request (nothing after the unload runs), with its draft. Unmounting (the page stays
@@ -228,6 +233,7 @@ export function useEditorState(data: VisualizerEditorData) {
   })
   useEffect(() => {
     alive.current = true
+    if (!persist) return () => { alive.current = false }
     const gone = () => leaveRef.current.gone()
     const hidden = () => { if (document.visibilityState === 'hidden') leaveRef.current.hidden() }
     window.addEventListener('pagehide', gone)
@@ -239,11 +245,12 @@ export function useEditorState(data: VisualizerEditorData) {
       if (retry.current) clearTimeout(retry.current)
       void flushRef.current()
     }
-  }, [])
+  }, [persist])
   /* (D9) A load that read a room before the last page's save landed: that page's draft (its revision is the one loaded, and it is fresh)
      is the room's picks — saved as usual. Any other draft is spent. Read once, after the first paint (sessionStorage is the browser's). */
   const [firstRooms] = useState(data.rooms)
   useEffect(() => {
+    if (!persist) return
     const t = setTimeout(() => {
       const now = Date.now()
       for (const room of firstRooms) {
@@ -255,7 +262,7 @@ export function useEditorState(data: VisualizerEditorData) {
       }
     }, 0)
     return () => clearTimeout(t)
-  }, [firstRooms])
+  }, [firstRooms, persist])
 
   /** A room the server just changed on its own (a new photo, its Undo): take its state as it is now — no history, nothing to save. */
   const reset = useCallback((roomId: string, next: Snap, stateRev: number) => {

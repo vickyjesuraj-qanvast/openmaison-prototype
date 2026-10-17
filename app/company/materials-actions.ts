@@ -9,6 +9,7 @@ import { actingMember } from '@/lib/contracts/automation'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { CATALOGUE_CATEGORY_LIST } from '@/lib/visualizer/catalogue'
 import { MATERIAL_PURGE_RULE, materialChangeBlock, materialPurgeRule, materialRestoreRule, MATERIALS_DELETE_RULE, MATERIALS_RESTORE_RULE } from '@/lib/visualizer/policy'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
  * Company › Materials (REG-677, Q-18) — the studio's own swatches: 1.0's `studio_materials` library, which every member could add to from
@@ -37,6 +38,7 @@ function valid(m: MaterialInput): Omit<MaterialInput, 'imageUrl'> & { imageUrl: 
 const touch = () => { revalidatePath('/company/materials'); revalidatePath('/visualizer', 'layout') }
 
 export async function createStudioMaterial(input: MaterialInput): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const v = valid(input); if ('error' in v) return v
   if (v.priceBookItemId) { const [p] = await db.select({ id: priceBookItems.id }).from(priceBookItems).where(eq(priceBookItems.id, v.priceBookItemId)); if (!p) v.priceBookItemId = null }
   const id = randomUUID(), at = new Date(), me = await actingMember()
@@ -49,6 +51,7 @@ async function mine(id: string) {
   return { m, block }
 }
 export async function updateStudioMaterial(id: string, input: MaterialInput): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await mine(id); if (!got) return { error: 'That material is gone.' }
   if (got.block) return { error: got.block }
   const v = valid({ ...input, imageUrl: input.imageUrl === undefined ? got.m.imageUrl : input.imageUrl }); if ('error' in v) return v
@@ -56,6 +59,7 @@ export async function updateStudioMaterial(id: string, input: MaterialInput): Pr
   touch(); return { ok: true }
 }
 export async function renameStudioMaterial(id: string, name: string): Promise<{ ok: true } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const got = await mine(id); if (!got) return { error: 'That material is gone.' }
   if (got.block) return { error: got.block }
   const n = clean(name, 60); if (!n) return { error: 'Give the material a name.' }
@@ -64,10 +68,12 @@ export async function renameStudioMaterial(id: string, name: string): Promise<{ 
   touch(); return { ok: true }
 }
 export async function duplicateStudioMaterial(id: string): Promise<{ id: string } | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const [m] = await db.select().from(studioMaterials).where(eq(studioMaterials.id, id)); if (!m) return { error: 'That material is gone.' }
   return createStudioMaterial({ name: `${m.name.slice(0, 60 - ' (copy)'.length).trimEnd()} (copy)`, category: m.category, hex: m.hex, finish: m.finish, imageUrl: m.imageUrl, description: m.description, priceBookItemId: m.priceBookItemId, folderId: m.folderId })
 }
 export async function deleteStudioMaterials(ids: string[]): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const all = [...new Set(ids)]
   let n = 0, kept = 0, one: string | null = null
   for (const id of all) {
@@ -82,6 +88,7 @@ export async function deleteStudioMaterials(ids: string[]): Promise<{ deleted: n
 /** Restore (the snackbar's Undo, the Deleted sheet) — (audit 2026-09-26, F129 · F204) the delete's own rule on the server too, and (F125) the
     material back where it was: its `updatedAt` untouched, so it keeps its place and its "edited" line. */
 export async function restoreStudioMaterials(ids: string[]): Promise<{ restored: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const viewer = await fetchViewer(), all = [...new Set(ids)]
   const rows = all.length ? await db.select().from(studioMaterials).where(inArray(studioMaterials.id, all)) : []
   if (all.length === 1 && !rows[0]) return { error: 'That material is gone.' }
@@ -97,6 +104,7 @@ export async function restoreStudioMaterials(ids: string[]): Promise<{ restored:
 }
 /** Delete forever — (verify round 1, F129) what the rule keeps is counted, with why; a refusal of every one is the answer. */
 export async function deleteStudioMaterialsForever(ids: string[]): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const viewer = await fetchViewer(), all = [...new Set(ids)]
   const rows = all.length ? await db.select().from(studioMaterials).where(inArray(studioMaterials.id, all)) : []
   if (all.length === 1 && !rows[0]) return { error: 'That material is gone.' }
@@ -110,6 +118,7 @@ export async function deleteStudioMaterialsForever(ids: string[]): Promise<{ del
 /** Empty Trash — (verify round 1, F129) never "Trash emptied" when the rule kept everything: that is an `Err`; a partial one says how
     many stayed. */
 export async function emptyMaterialTrash(): Promise<{ deleted: number } & Kept | Err> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const rows = await db.select({ id: studioMaterials.id }).from(studioMaterials).where(isNotNull(studioMaterials.deletedAt))
   if (!rows.length) return { deleted: 0, kept: 0, reason: null }
   const r = await deleteStudioMaterialsForever(rows.map((x) => x.id))

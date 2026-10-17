@@ -18,9 +18,11 @@ That is the whole setup. Node **≥ 20.9** (the repo pins **24** in `.nvmrc`). T
 leave your data alone. A dev server already running when a `git pull` brings a migration needs a restart.
 
 - **Reset the demo data:** Maison AI (the ✦ button) › *Reset prototype to base*, or `npm run db:reset`.
-- **Who you are:** the prototype has no sign-in. The signed-in member is the row in `members` marked `is_you` — Dane, the
-  studio owner, in the demo. *Demo Studio › View as* (the rail's studio block) switches to another member, and every read,
-  rule and write stamp follows.
+- **Who you are:** a browser that never signed in or out is the demo's standing session — the row in `members` marked
+  `is_you`, Dane, the studio owner, in the demo. *Demo Studio › View as* (the rail's studio block) switches it to another
+  member, and every read, rule and write stamp follows. A browser that signed in by a code (`/sign-in`, any six digits, or
+  an invitation's Join) is its own member — only that browser. Never read `is_you` yourself: ask `sessionMemberId()` (or
+  `fetchViewer()`) before a transaction opens and pass the id in.
 - **Something odd after a pull?** Restart `npm run dev` first; then Maison AI › *Reset prototype to base*.
 
 ## 2 · Find your way
@@ -71,7 +73,7 @@ functions — the screens must not notice.
 
 | The prototype | Production | Where |
 | --- | --- | --- |
-| No sign-in: the `members` row marked `is_you` is the signed-in member; *View as* moves it | Real authentication; the session resolves the member | `lib/db/session.ts` (`sessionMemberId` — the one place to change) |
+| Sign-in by any six digits; a browser with no session of its own is the demo's standing member (`members.is_you`, moved by *View as*) | A real code provider; no standing session (`DEMO_STANDING_SESSION = false`) — every browser is its session's member | `lib/auth/provider.ts`, `lib/auth/paths.ts`, `lib/db/session.ts` (`sessionMemberId` — the one place that says who a request is) |
 | libSQL file `local.db` | The production database (libSQL / Turso works as is: set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`) | `lib/db/index.ts` |
 | Pictures stored as data URLs in rows, served at addresses (`/files/img/…`, `/visualizer/img/…`) | Object storage; keep the same addresses | map 17 › *Conventions* |
 | The AI Visualizer's curated engine runs in the browser on three traced sample rooms | An image model behind the same `runPass` contract | `lib/visualizer/engine/`, map 17 §3 and §6 |

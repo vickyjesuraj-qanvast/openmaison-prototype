@@ -45,7 +45,7 @@
   "area": "Plans and prices",
   "feature": "Top-up 1,000 for S$20",
   "now": "Built",
-  "why": "One pack, as 1.0 sells it (Q-21); packs of 2,000 / 5,000 later."
+  "why": "Any amount 100–5,000 in fifties at S$2 per 100, as 1.0 now sells (S19)"
  },
  {
   "key": "CR",
@@ -204,8 +204,8 @@
   "id": "PM-04",
   "area": "Costs and moments",
   "feature": "Plan-locked features",
-  "now": "Later",
-  "why": "Their own round, R6 (Q-40)."
+  "now": "Built",
+  "why": "1.0’s Pro locks on Free (S19); one upgrade ask while it waits (S42)"
  },
  {
   "key": "CR",
@@ -236,8 +236,8 @@
   "id": "PM-08",
   "area": "Costs and moments",
   "feature": "Auto top-up",
-  "now": "Later",
-  "why": "Needs a saved card, off-session charging and a threshold job in 1.0 (Q-36, B-29)."
+  "now": "Built",
+  "why": "The Owner’s switch on Plan & billing: line, amount, a monthly ceiling (S19)"
  },
  {
   "key": "CR",
@@ -309,7 +309,7 @@
   "area": "Usage and billing",
   "feature": "Plan & billing: plan, seats, card, details, invoices",
   "now": "Built",
-  "why": "Auto top-up waits (PM-08)."
+  "why": "Change seats and auto top-up added on Plan & billing (S19)"
  },
  {
   "key": "CR",
@@ -349,6 +349,6 @@
   "area": "Rules, bell, phone, data",
   "feature": "/admin/plans, the visitor trial, sign-up gates",
   "now": "Excluded",
-  "why": ""
+  "why": "/admin/plans stays out; sign-up (S31) and the website trials (S36, S41b-3) built"
  }
 ]

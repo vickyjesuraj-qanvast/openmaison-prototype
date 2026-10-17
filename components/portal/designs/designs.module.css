@@ -1,0 +1,13 @@
+/* (Projects round 9) The portal's Designs on the portal's own card and tiles (portal.module.css): a link's head reads like a row — its words
+   and Open at the end — its note in the studio's words, then a tile per design with its room and its name. */
+.head { composes: cardPad from '../portal.module.css'; flex-direction: row; align-items: flex-start; justify-content: space-between; }
+.message { margin: 0; padding: 0 var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.tileFoot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-width: 0; flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .message { padding: 0 var(--om-spacing-4); }
+}
+/* (gaps build D, item 1 — M-06) under an expired link's tiles: its link has closed, the designs stay — the card's fine line */
+.closed { margin: 0; padding: 0 var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .closed { padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+}

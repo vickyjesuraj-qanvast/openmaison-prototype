@@ -155,8 +155,9 @@ export function planeMap(fr: Frame, tileM: number, heightM = 0): TexMap {
   return (x, y) => { const g = planeAt(fr, x, y, heightM); return g ? [g[0] / tileM, g[1] / tileM] : null }
 }
 
-/** A homography from the unit square onto a quad (Heckbert) and its inverse, as 3 × 3 row-major. */
-function squareToQuad(q: [Pt, Pt, Pt, Pt]): number[] {
+/** A homography from the unit square onto a quad (Heckbert) and its inverse, as 3 × 3 row-major. (pending modules S41) Exported for the
+    floor-plan photo's four corners (lib/planner/corners.ts) — one homography in the house. */
+export function squareToQuad(q: [Pt, Pt, Pt, Pt]): number[] {
   const [p0, p1, p2, p3] = q
   const dx1 = p1.x - p2.x, dx2 = p3.x - p2.x, dx3 = p0.x - p1.x + p2.x - p3.x
   const dy1 = p1.y - p2.y, dy2 = p3.y - p2.y, dy3 = p0.y - p1.y + p2.y - p3.y
@@ -164,7 +165,7 @@ function squareToQuad(q: [Pt, Pt, Pt, Pt]): number[] {
   if (Math.abs(dx3) > 1e-9 || Math.abs(dy3) > 1e-9) { const den = dx1 * dy2 - dx2 * dy1; g = (dx3 * dy2 - dx2 * dy3) / den; h = (dx1 * dy3 - dx3 * dy1) / den }
   return [p1.x - p0.x + g * p1.x, p3.x - p0.x + h * p3.x, p0.x, p1.y - p0.y + g * p1.y, p3.y - p0.y + h * p3.y, p0.y, g, h, 1]
 }
-function invert3(m: number[]): number[] {
+export function invert3(m: number[]): number[] {
   const [a, b, c, d, e, f, g, h, i] = m as [number, number, number, number, number, number, number, number, number]
   const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C
   return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det]

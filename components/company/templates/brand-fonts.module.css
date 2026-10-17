@@ -1,0 +1,43 @@
+/* (pending modules S11) Brand kit › Fonts › Your own fonts: a sub-section of the Fonts card — its title with Upload a font, the help line, the
+   card table (REG-727: frame, head, rows composed; only the tracks and the phone layout are its own) — and the Upload a font dialog's form. */
+.own { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.ownHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; }
+.ownHead > :first-child { flex: 1; min-width: 0; }
+.ownAction { margin-right: calc(-1 * var(--om-spacing-3)); }
+.none { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+.table { composes: table from '../../om/card-table.module.css'; margin-top: var(--om-spacing-2); }
+.head { composes: head from '../../om/card-table.module.css'; }
+.row { composes: row from '../../om/card-table.module.css'; }
+.actions { composes: actions from '../../om/card-table.module.css'; }
+.actionsHead { composes: actionsHead from '../../om/card-table.module.css'; }
+.head, .row { grid-template-columns: minmax(180px, 1.2fr) minmax(160px, 1fr) minmax(120px, 1fr) 36px; }
+.font { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.sample { width: 40px; flex-shrink: 0; text-align: center; font: var(--om-type-body-xl); color: var(--om-color-on-surface-default); }   /* the family is the face's own (inline) */
+.fontText, .file, .fileText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.fontName, .fileName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; }
+
+@media (max-width: 767px) {
+  .head { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) 36px; gap: var(--om-spacing-1) var(--om-spacing-3); padding-top: var(--om-spacing-3); padding-bottom: var(--om-spacing-3); }
+  .font { grid-column: 1; grid-row: 1; }
+  .actions { grid-column: 2; grid-row: 1; }
+  .file, .row > [data-label] { grid-column: 1 / -1; padding-left: calc(40px + var(--om-spacing-3)); }
+  .row > [data-label]::before { content: attr(data-label) ' · '; }
+}
+
+/* the dialog */
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; justify-content: space-between; min-height: 48px; padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
+.picked { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; color: var(--om-color-on-surface-secondary); }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--om-spacing-4); align-items: center; }
+.italic { justify-self: start; }
+.preview { padding: var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow: hidden; }
+.previewText { display: block; font: var(--om-type-body-xl); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* the family is the picked file (inline) */
+.licence { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.licence > :first-child { flex-shrink: 0; }
+.error { margin: calc(-1 * var(--om-spacing-2)) 0 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+@media (max-width: 767px) {
+  .pair { grid-template-columns: 1fr; }
+}

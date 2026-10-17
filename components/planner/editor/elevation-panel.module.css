@@ -1,0 +1,27 @@
+/* (parity map, TD-091) A wall's elevation in the house side panel — the drawing on the plan's own ink, the pieces in their own colour. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.line { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.svg { display: block; width: 100%; height: auto; background: var(--om-color-surface-default); border-radius: var(--om-radius-2); box-shadow: inset 0 0 0 1px var(--om-color-surface-variant); }
+.wall { fill: var(--om-color-surface-bg); stroke: var(--om-color-on-surface-default); }
+.open { fill: none; stroke: var(--om-color-on-surface-secondary); }
+.door rect { fill: var(--om-color-surface-default); stroke: var(--om-color-on-surface-default); }
+.window rect { fill: var(--om-color-primary-variant); stroke: var(--om-color-on-surface-default); }
+.window line { stroke: var(--om-color-on-surface-secondary); }
+.piece { stroke: var(--om-color-on-surface-default); fill-opacity: 0.6; }
+.floor { stroke: var(--om-color-on-surface-default); }
+.label { fill: var(--om-color-on-surface-default); }
+.name { font: var(--om-type-caption-s); }
+.size { font: var(--om-type-caption-xs); fill: var(--om-color-on-surface-secondary); }
+.dims line { stroke: var(--om-color-on-surface-secondary); }
+.dimText { font: var(--om-type-caption-s); fill: var(--om-color-on-surface-secondary); }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.row:last-child { border-bottom: 0; }
+.rowSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* (pending modules S15 — 1.0's reference heights) dashed in the primary colour (1.0's accent), the cabinets' band a wash of its variant; the
+   words beside the wall in the caption type. `opacity` (not stroke-opacity) so the PNG's copy of the computed look carries it. */
+.switchRow { composes: switchRow from './panels.module.css'; }
+.band { fill: var(--om-color-primary-variant); fill-opacity: 0.55; }
+.ref line { stroke: var(--om-color-primary-default); opacity: 0.75; }
+.refWords { fill: var(--om-color-primary-default); }
+.refText { font: var(--om-type-caption-xs); }

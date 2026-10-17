@@ -228,8 +228,8 @@
   "id": "MM-13",
   "area": "Mismatches",
   "feature": "Fonts, incl. Outfit and uploaded fonts",
-  "now": "Later",
-  "why": "Outfit and uploaded fonts held until the port shows the need (Q-14)"
+  "now": "Built",
+  "why": "Outfit joins the fonts; Brand kit › “Your own fonts” takes uploads (S11)"
  },
  {
   "key": "QTPL",
@@ -245,7 +245,7 @@
   "area": "Mismatches",
   "feature": "Payment milestones: fixed amounts, ordinals, footnote",
   "now": "Built in parity round 2",
-  "why": "Ordinals and footnote built; fixed-amount rows held for Finance"
+  "why": "Ordinals and footnote built; a fixed fee first prints “Fixed fee” (parity map P-A)"
  },
  {
   "key": "QTPL",
@@ -277,7 +277,7 @@
   "area": "Library and lifecycle",
   "feature": "Document Templates page with six kinds",
   "now": "Built",
-  "why": "Invoice, PO and VO templates wait for Finance"
+  "why": "Invoice and PO paper: Settings › Finance; a VO prints through its quote template (S11)"
  },
  {
   "key": "QTPL",
@@ -748,8 +748,8 @@
   "id": "TI-18",
   "area": "Items table",
   "feature": "Variation order lanes",
-  "now": "Later",
-  "why": "Belongs to Finance"
+  "now": "Built",
+  "why": "A VO prints through its quote’s template: credit lines, “Change to the contract” (Projects build)"
  },
  {
   "key": "QTPL",
@@ -789,7 +789,7 @@
   "area": "Totals, payments, bank, signature",
   "feature": "Payment milestones: layout, ordinals, footnote",
   "now": "Built in parity round 2",
-  "why": "Fixed-amount rows held for Finance"
+  "why": "A fixed fee first prints “Fixed fee”; templates hold shares only (parity map P-A)"
  },
  {
   "key": "QTPL",
@@ -917,7 +917,7 @@
   "area": "Theme and brand",
   "feature": "Fonts, sizes and line spacing",
   "now": "Built",
-  "why": "Outfit held (Q-14)"
+  "why": "Outfit added; every face prints the same on any computer (S11)"
  },
  {
   "key": "QTPL",
@@ -972,8 +972,8 @@
   "id": "TT-10",
   "area": "Theme and brand",
   "feature": "Uploading fonts",
-  "now": "Later",
-  "why": "Held with the fonts question (Q-14)"
+  "now": "Built",
+  "why": "Brand kit › “Your own fonts” › “Upload a font”, Owners and Admins (S11)"
  },
  {
   "key": "QTPL",
@@ -1252,16 +1252,16 @@
   "id": "TX-01",
   "area": "Touchpoints",
   "feature": "Invoice, PO and VO document templates",
-  "now": "Later",
-  "why": "Finance module, not built yet"
+  "now": "Built",
+  "why": "Settings › Finance sets invoice and PO paper; VOs print through quote templates (S11)"
  },
  {
   "key": "QTPL",
   "id": "TX-02",
   "area": "Touchpoints",
   "feature": "Timeline, project and milestone templates",
-  "now": "Later",
-  "why": "Projects module, not built yet"
+  "now": "Built",
+  "why": "Company › Templates › Schedules: milestones a project starts from (Projects build)"
  },
  {
   "key": "QTPL",
@@ -1292,8 +1292,8 @@
   "id": "TX-06",
   "area": "Touchpoints",
   "feature": "Cover and floor-plan templates",
-  "now": "Later",
-  "why": "Tools, not built yet"
+  "now": "Built",
+  "why": "Five cover looks (S11); the 3D planner’s flats, examples and My templates (P-J)"
  },
  {
   "key": "QTPL",

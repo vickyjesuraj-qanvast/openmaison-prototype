@@ -1,0 +1,7 @@
+/* (pending modules S41b-1) Who sees costs and margins — the card table's tracks: the role and what it hides, then one switch column. Doubled
+   class for the specificity of the event table's own tracks (settings.module.css); the phone keeps its one-column stack, each switch labelled. */
+.table.table > * { grid-template-columns: minmax(0, 1fr) 120px; }
+@media (max-width: 767px) {
+  .table.table > * { grid-template-columns: minmax(0, 1fr); }
+  .table [data-label] { justify-content: space-between; }   /* "Sees costs" at the row's start, its switch at the end — as Who may do what's cells */
+}

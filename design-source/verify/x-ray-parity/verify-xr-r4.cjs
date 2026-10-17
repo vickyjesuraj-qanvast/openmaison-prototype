@@ -13,7 +13,8 @@ async function ready(page) { await page.waitForLoadState('networkidle').catch(()
 const as = (id) => sql(`update members set is_you = case id when '${id}' then 1 else 0 end`)
 const assigned = () => sql(`insert or replace into settings (key, value, updated_at) values ('lead_visibility', '"assigned"', strftime('%s','now'))`)
 const FILES = `${S}/xr-files`; fs.mkdirSync(FILES, { recursive: true })
-const file = (name) => { const p = `${FILES}/${name}`; fs.writeFileSync(p, '%PDF-1.4 probe'); return p }
+const referenceBytes = require(require('path').resolve(__dirname, '../../..', 'design-source/verify/x-ray-parity/fixtures/reference-file.cjs'))   // (S42 E-05) a reference quote is read by its words, never its name
+const file = (name) => { const p = `${FILES}/${name}`; fs.writeFileSync(p, referenceBytes(name) ?? '%PDF-1.4 probe'); return p }
 const VIV = sql(`select id from leads where name='Vivien Lee'`), OLIVIA = sql(`select id from leads where name='Olivia Martinez'`)
 const OLI_PHONE = sql(`select phone from leads where id='${OLIVIA}'`).replace(/\D/g, '').slice(-8)
 const OLI_X = sql(`select id from quote_comparisons where lead_id='${OLIVIA}' order by created_at limit 1`)
@@ -39,7 +40,8 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     const recent = await page.getByTestId('xray-recent').allInnerTexts()
     ok('Recent: no Olivia, her own and the studio’s lead-less reading', !recent.some((t) => /Olivia/.test(t)) && recent.some((t) => /Vivien Lee/.test(t)) && recent.some((t) => /Dyel Sales Contract/.test(t)))
     await page.goto(`${BASE}/quote-x-ray/${OLI_X}`); await ready(page)
-    ok('Olivia’s record by its address: not found', /not found|could not be found|404/i.test(await page.locator('body').innerText()))
+    /* (pending modules, a deliberate change of this rule — S41b-2) the not-found is the house's app-wide page now ("This page isn’t here") */
+    ok('Olivia’s record by its address: not found', /not found|could not be found|404|This page isn’t here/i.test(await page.locator('body').innerText()))
     await shot('01-designer-recent')
   })
 
@@ -79,7 +81,7 @@ const VIV_X = sql(`select id from quote_comparisons where lead_id='${VIV}' order
     await page.goto(`${BASE}/quote-x-ray`); await ready(page)
     ok('gone from Recent', !(await page.getByTestId('xray-recent').allInnerTexts()).some((t) => /Olivia/.test(t)))
     await page.goto(`${BASE}/quote-x-ray/${OLI_X}`); await ready(page)
-    ok('its record answers as the lead does (not found)', /not found|could not be found|404/i.test(await page.locator('body').innerText()))
+    ok('its record answers as the lead does (not found)', /not found|could not be found|404|This page isn’t here|isn’t one you can open/i.test(await page.locator('body').innerText()))   // (pending modules S41b-2, a deliberate change of this rule) the house's not-found words
     sql(`update leads set deleted_at = null, delete_reason = null, stage = coalesce(stage_before_delete, stage), stage_before_delete = null where id='${OLIVIA}'`)
     await page.goto(`${BASE}/quote-x-ray`); await ready(page)
     ok('back with the lead', (await page.getByTestId('xray-recent').allInnerTexts()).filter((t) => /Olivia/.test(t)).length === n)

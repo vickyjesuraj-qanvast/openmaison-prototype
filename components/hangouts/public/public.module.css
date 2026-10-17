@@ -1,0 +1,46 @@
+/*
+ * (pending modules S27 — public:hangouts) The studio's page for a Hangout and a homeowner's own page on it — the client links' letterhead bar,
+ * cards and notice (components/contracts/sign/signing-page.module.css) and the meeting link's column, facts and sections
+ * (components/meetings/client/meeting-link-page.module.css), composed — one 720 column in the house side gutter (the designers' work needs the
+ * room a 560 meeting card doesn't). The booking form's fields 16 apart, the designers' cards under a rule.
+ */
+.root { composes: root from '../../meetings/client/meeting-link-page.module.css'; }
+.body { composes: body from '../../meetings/client/meeting-link-page.module.css'; }
+.column { composes: column from '../../meetings/client/meeting-link-page.module.css'; max-width: 720px; }
+.card { composes: card from '../../meetings/client/meeting-link-page.module.css'; }
+.column > .card { width: auto; position: static; top: auto; min-width: 0; }
+.facts { composes: facts from '../../meetings/client/meeting-link-page.module.css'; }
+.fact { composes: fact from '../../meetings/client/meeting-link-page.module.css'; }
+.factIcon { composes: factIcon from '../../meetings/client/meeting-link-page.module.css'; }
+.factText { composes: factText from '../../meetings/client/meeting-link-page.module.css'; }
+.factSub { composes: factSub from '../../meetings/client/meeting-link-page.module.css'; }
+.placeLink { composes: placeLink from '../../meetings/client/meeting-link-page.module.css'; }
+.placeWords { composes: placeWords from '../../meetings/client/meeting-link-page.module.css'; }
+.placeGlyph { composes: placeGlyph from '../../meetings/client/meeting-link-page.module.css'; }
+.text { composes: text from '../../meetings/client/meeting-link-page.module.css'; }
+.section { composes: section from '../../meetings/client/meeting-link-page.module.css'; }
+.sectionTitle { composes: sectionTitle from '../../meetings/client/meeting-link-page.module.css'; }
+.rule { composes: rule from '../../meetings/client/meeting-link-page.module.css'; }
+.contact { composes: contact from '../../meetings/client/meeting-link-page.module.css'; }
+.actions { composes: actions from '../../meetings/client/meeting-link-page.module.css'; }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-width: 0; }
+.ask { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.askLabel { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.consent { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.error { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.designers { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
+.designers > * + * { padding-top: var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.links { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); align-items: center; }
+.reviews { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-subheading-m); }
+.chat { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.chat + .chat { padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.status { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: flex; align-items: flex-start; gap: var(--om-spacing-2); }
+.statusIcon { display: inline-flex; flex-shrink: 0; color: var(--om-color-primary-default); }
+.status[data-done] .statusIcon { color: var(--om-color-tertiary-green-default); }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .actions { flex-direction: column; align-items: stretch; }
+}
+
+/* (REG-708) a ghost's block of lines in one of the page's own paragraphs — the lines stacked with no gap, as the paragraph wraps */
+.ghostLines { display: flex; flex-direction: column; }

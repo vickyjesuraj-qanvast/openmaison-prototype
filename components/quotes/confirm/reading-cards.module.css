@@ -17,3 +17,15 @@
 .captionAmount { composes: bucketMeta from '../editor/items/item-cards.module.css'; font-variant-numeric: tabular-nums; }
 .captionHint { composes: bucketMeta from '../editor/items/item-cards.module.css'; }
 .total { composes: total from './confirm-page.module.css'; }
+/* (S44T — UAT row 332) The payment schedule at the cards' end: one grid for every milestone, so the shares and the amounts stand in columns. */
+.schedule { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-1) var(--om-spacing-3); }
+.payRow { display: contents; }
+/* the cells meet (no column gap), so each milestone's rule runs unbroken across the card */
+.payRow > span { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.payRow > span:last-child { padding-right: 0; }
+.payRow:last-child > span { border-bottom: 0; }
+.payMark { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.payWords { display: flex; flex-direction: column; min-width: 0; }
+.payLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.payShare, .payAmount { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.payRow[data-total] .payLabel, .payRow[data-total] .payShare, .payRow[data-total] .payAmount { font: var(--om-type-subheading-m); }

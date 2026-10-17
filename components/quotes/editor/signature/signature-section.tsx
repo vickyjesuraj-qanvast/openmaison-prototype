@@ -7,7 +7,8 @@ import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { saveMemberSignature, setClientSignatureRequired } from '@/app/quotes/signature-actions'
+import { saveMemberSignature, setClientSignatureRequired, setSignatureConsent } from '@/app/quotes/signature-actions'
+import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into the caller's own failure line
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import { isSignatureKind, signatureFileProblem, SIGNATURE_IMAGE_ACCEPT, SIGNATURE_UPLOAD_HELP, SIGNATURE_WRONG_TYPE, type MemberSignature, type SignatureKind } from '@/lib/quotes/signature'
 import { SectionCard } from '../section-card'
@@ -26,6 +27,8 @@ export type SignatureSeed = {
   clientName: string
   /** General Info's NRIC, as typed there (REG-403). */
   nric: string | null
+  /** (pending modules S03) the member's answer on putting their signature on their documents */
+  consent?: string | null
 }
 
 /** The drawing, as stored (an SVG path on a 752×140 canvas), scaled into whatever box shows it. */
@@ -56,12 +59,13 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
   const { run } = useRun()
   const [required, setRequired] = useState(seed.required)
   const [sig, setSig] = useState<Signature>(seed.signature)
+  const [consent, setConsent] = useState<string | null>(seed.consent ?? null)
   const [settings, setSettings] = useState<SignatureDraft | null>(null)
   const [saving, setSaving] = useState(false)
 
   const toggleRequired = (v: boolean) => {
     setRequired(v)
-    void run('save the setting', async () => { const r = await setClientSignatureRequired(seed.quoteId, v); onSaved(r.updatedAt) })
+    void run('save the setting', async () => { const r = await orThrow(setClientSignatureRequired(seed.quoteId, v)); onSaved(r.updatedAt) })
   }
   const openSettings = (kind: SignatureKind) => setSettings({ kind, name: sig?.name || seed.memberName, data: sig && sig.kind === kind && sig.data ? sig.data : '' })
   /* (Dane UAT 6.23) The dialog closes once the save lands — a picture the server refuses keeps it open with the rule said. */
@@ -72,7 +76,7 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
     void run('save the signature', async () => {
       const r = await saveMemberSignature({ kind: s.kind, name: s.name.trim(), data: s.kind === 'type' ? null : s.data })
       if ('error' in r) return r
-      setSig(r); setSettings(null)
+      setSig(r); setSettings(null); if (!consent) setConsent('yes')   // (pending modules S03) the save answered it
     }, 'Signature saved').finally(() => setSaving(false))
   }
 
@@ -85,22 +89,9 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
     <SectionCard id="section-signature" title="Signature" open={open} onToggle={onToggle} actions={actions} onHandlePointerDown={onHandlePointerDown}>
       <div className={styles.panes}>
         <div className={styles.pane}>
-          <div className={styles.box} data-kind={sig?.kind ?? 'none'} aria-label="Your signature">
-            {!sig ? (
-              <div className={styles.choose}>
-                <Button variant="secondary" appearance="outlined" onPress={() => openSettings('draw')}>Draw</Button>
-                <Button variant="secondary" appearance="outlined" onPress={() => openSettings('type')}>Type</Button>
-                <Button variant="secondary" appearance="outlined" onPress={() => openSettings('image')}>Upload</Button>   {/* (Dane UAT 6.23) */}
-              </div>
-            ) : sig.kind === 'type' ? (
-              <span className={styles.typed}>{sig.name}</span>
-            ) : sig.kind === 'image' && sig.data ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.picture} src={sig.data} alt={`${sig.name}’s signature`} data-testid="signature-picture" />
-            ) : (
-              <Drawing d={sig.data ?? ''} className={styles.drawing} />
-            )}
-          </div>
+          <SignatureBox sig={sig} onChoose={openSettings} />
+          {/* (pending modules S03) off: the box prints blank on the quote — said here, with the way back on */}
+          {sig && consent === 'no' ? <span className={styles.consentNote} data-testid="signature-off">Off your documents — the quote prints the box blank. <button type="button" className={styles.link} onClick={() => { void run('turn your signature on', async () => { await setSignatureConsent(true); setConsent('yes') }, 'Your signature goes on the quotes and contracts you prepare') }}>Turn it on</button></span> : null}
           <div className={styles.who}>
             <div className={styles.whoRow}>
               <span className={styles.name}>{sig?.name || seed.memberName}</span>
@@ -120,8 +111,31 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
           </div>
         </div>
       </div>
-      <SignatureSettings open={!!settings} value={settings} busy={saving} onChange={setSettings} onClose={() => setSettings(null)} onSave={save} />
+      <SignatureSettings open={!!settings} value={settings} busy={saving} onChange={setSettings} onClose={() => setSettings(null)} onSave={save} consent={consent} />
     </SectionCard>
+  )
+}
+
+/** The signature's face (1263:35910 empty · 1263:35975 typed · 1263:36042 drawn): empty, Draw · Type · Upload open Signature Settings; set, the
+ *  name in the signature face, the picture or the drawing. (pending modules S01) Your profile › Your signature shows the same box. */
+export function SignatureBox({ sig, onChoose }: { sig: Signature; onChoose: (kind: SignatureKind) => void }) {
+  return (
+    <div className={styles.box} data-kind={sig?.kind ?? 'none'} aria-label="Your signature">
+      {!sig ? (
+        <div className={styles.choose}>
+          <Button variant="secondary" appearance="outlined" onPress={() => onChoose('draw')}>Draw</Button>
+          <Button variant="secondary" appearance="outlined" onPress={() => onChoose('type')}>Type</Button>
+          <Button variant="secondary" appearance="outlined" onPress={() => onChoose('image')}>Upload</Button>   {/* (Dane UAT 6.23) */}
+        </div>
+      ) : sig.kind === 'type' ? (
+        <span className={styles.typed}>{sig.name}</span>
+      ) : sig.kind === 'image' && sig.data ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={styles.picture} src={sig.data} alt={`${sig.name}’s signature`} data-testid="signature-picture" />
+      ) : (
+        <Drawing d={sig.data ?? ''} className={styles.drawing} />
+      )}
+    </div>
   )
 }
 
@@ -132,13 +146,15 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
  * (Dane UAT 6.23, g-signature) A third choice, Upload: a picture of the hand-signed mark — PNG, or a JPG on white, up to 1 MB (1.0's
  * rule) — picked with the house file chooser and shown in the same box; a file over the cap or of another kind is refused under the box.
  */
-export function SignatureSettings({ open, value, onChange, onClose, onSave, busy = false }: {
+export function SignatureSettings({ open, value, onChange, onClose, onSave, busy = false, consent = null }: {
   open: boolean
   value: SignatureDraft | null
   onChange: (v: SignatureDraft | null) => void
   onClose: () => void
   onSave: () => void
   busy?: boolean
+  /** (pending modules S03) the member's answer on putting it on their documents — the dialog says what Save does with it */
+  consent?: string | null
 }) {
   const v = value ?? { kind: 'type' as const, name: '', data: '' }
   const canSave = !!v.name.trim() && (v.kind === 'type' || !!v.data) && !busy
@@ -188,6 +204,8 @@ export function SignatureSettings({ open, value, onChange, onClose, onSave, busy
           <input ref={file} type="file" accept={SIGNATURE_IMAGE_ACCEPT} hidden data-testid="signature-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f) }} />
         </div>
       ) : <SignaturePad value={v.data} onChange={(data) => onChange({ ...v, data })} />}
+      {/* (pending modules S03 — 1.0 asked before stamping a signature) what Save means for the member's documents, and where to change it */}
+      <span className={styles.consentNote} data-testid="signature-consent-note">{consent === 'no' ? 'Saved, it stays off the quotes and contracts you prepare — you turned that off in Your profile.' : 'Saved, it goes on the quotes and contracts you prepare. You can turn that off in Your profile.'}</span>
       </div>
     </Dialog>
   )

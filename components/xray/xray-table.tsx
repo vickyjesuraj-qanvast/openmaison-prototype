@@ -99,7 +99,9 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
             <span className={styles.figure}><span className={styles.num}>{money(r.yoursMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.yours, r.qty.unit)}</span> : null}</span>
           )),
           theirs: () => cell('theirs', styles.colTheirs, r.theirsMinor === null ? <span className={styles.muted}>--</span> : r.theirsMinor === 0 ? <span className={styles.muted}>No price given</span> : (   /* (sweep S3) one name for a line with no price: the Status chip's and the legend's */
-            <span className={styles.figure}><span className={styles.num}>{money(r.theirsMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.theirs, r.qty.unit)}</span> : null}</span>
+            <span className={styles.figure}><span className={styles.num}>{money(r.theirsMinor)}</span>{r.qty ? <span className={styles.qty}>{qtyOf(r.qty.theirs, r.qty.unit)}</span> : null}
+              {/* (pending modules S21 — 1.0's arithmetic check) what their own rate × quantity makes, when it isn't what they state */}
+              {r.slip ? <span className={styles.qty} data-tone="slip" data-testid="xray-slip">{money(r.slip.computedMinor)} at their rate</span> : null}</span>
           )),
           diff: () => cell('diff', styles.colDiff, diff === null ? <span className={styles.muted}>--</span> : <span className={styles.num} data-sign={diff < 0 ? 'less' : diff > 0 ? 'more' : 'same'}>{diff === 0 ? 'same' : `${diff < 0 ? '−' : '+'}${money(Math.abs(diff))}`}</span>),
           status: () => cell('status', styles.colStatus, <MetaChip color={r.by === 'you' ? 'default' : STATUS_COLOR[r.status]}>{r.by === 'you' ? 'Paired by you' : STATUS_WORD[r.status]}</MetaChip>),

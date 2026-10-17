@@ -62,7 +62,13 @@ export function useRun() {
     try {
       const r: unknown = await fn()
       /* (F129) An action that answers `{ error: '…' }` refused: say so, with its reason, instead of the success line. */
-      if (r && typeof r === 'object' && 'error' in r && typeof r.error === 'string' && r.error) { fail(what, refusalOf(r.error)); return false }
+      if (r && typeof r === 'object' && 'error' in r && typeof r.error === 'string' && r.error) {
+        fail(what, refusalOf(r.error))
+        /* (fix-E, E-31) a page left open while its project was completed elsewhere: the refusal says so, and the page reads itself again —
+           into its completed state — instead of keeping its live buttons */
+        if (/^(This|The) project is complete/.test(r.error)) refresh()
+        return false
+      }
       if (done) snackbar(typeof done === 'string' ? { message: done } : done)
       if (opts?.refresh) refresh()
       return true

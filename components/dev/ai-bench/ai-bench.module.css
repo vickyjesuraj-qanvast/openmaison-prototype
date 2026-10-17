@@ -1,0 +1,105 @@
+/*
+ * (pending modules S41 — card studio:ai-sandboxes) The developers' AI bench (/dev/ai-bench): the house page frame (the listing's sheet, the
+ * L1 header, a content column 24 → 16), the read-only note's tint for the developers-only line, the tab toolbar's row for the views (a chip
+ * rail), Settings' cards for each block, the Visualizer's slider, the house stat tiles and compare slider. Nothing new in the system — only how
+ * the bench lays its pieces out.
+ */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); min-width: 0; }
+.note { composes: note from '../../company/read-only-note.module.css'; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.views { flex: 1; min-width: 0; display: flex; align-items: center; }
+.rail { min-width: 0; max-width: 100%; }
+
+/* ── a block: Settings' card ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+.card { composes: setting from '../../../app/settings/settings.module.css'; min-width: 0; }
+.cardHead { composes: settingHead from '../../../app/settings/settings.module.css'; }
+.cardTitle { composes: settingTitle from '../../../app/settings/settings.module.css'; margin: 0; }
+.cardHelp { composes: settingHelp from '../../../app/settings/settings.module.css'; margin: 0; }
+.stack { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
+.tight { gap: var(--om-spacing-2); }
+.spin { composes: spin from '../../visualizer/editor/topbar.module.css'; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3) var(--om-spacing-4); min-width: 0; }
+.rowEnd { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.label { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); margin: 0; }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 80ch; }
+.lineStrong { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); margin: 0; }
+.wait { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; }
+.refusal { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); margin: 0; }
+.switchRow { composes: switchRow from '../../../app/settings/settings.module.css'; }
+.slider { composes: slider from '../../visualizer/editor/panels/panels.module.css'; min-width: 200px; flex: 1; max-width: 320px; }
+.code { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); padding: 0 var(--om-spacing-1); overflow-wrap: anywhere; }
+
+/* ── the map: 1.0's seven and the four experiments ──────────────────────────────────────────────────────────────────────────── */
+.experiments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.experiment { composes: setting from '../../../app/settings/settings.module.css'; gap: var(--om-spacing-2); min-width: 0; }
+.expName { font: var(--om-type-subtitle-l); color: var(--om-color-on-surface-default); margin: 0; }
+.benches { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-4) var(--om-spacing-6); }
+.fact { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.list { margin: 0; padding-left: var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.homes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.home { display: flex; flex-direction: column; gap: var(--om-spacing-0-5); }
+.homeLink { font: var(--om-type-subtitle-m); color: var(--om-color-primary-default); text-decoration: none; align-self: flex-start; }
+.homeLink:hover { text-decoration: underline; }
+.homeLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.said { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; font-style: italic; }
+
+/* ── a picture on the bench: the photo's own shape ──────────────────────────────────────────────────────────────────────────── */
+.stage { position: relative; width: 100%; max-width: 960px; aspect-ratio: var(--ratio, 3 / 2); background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); overflow: hidden; }
+.stage > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.stageWait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.compare { width: 100%; max-width: 960px; aspect-ratio: var(--ratio, 3 / 2); border-radius: var(--om-radius-2); overflow: hidden; }
+.compareWrap { width: 100%; max-width: 960px; }
+.frame { position: absolute; border: var(--om-border-2) dashed var(--om-color-primary-default); pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2) var(--om-spacing-4); margin: 0; padding: 0; list-style: none; }
+.legendItem { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.swatch { width: 12px; height: 12px; border-radius: var(--om-radius-full); background: var(--cat); flex-shrink: 0; }
+.layers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.layer { display: grid; grid-template-columns: minmax(0, 1fr) 88px 136px; gap: var(--om-spacing-4); align-items: center; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.layerName { min-width: 0; overflow-wrap: anywhere; }
+.layerKind { color: var(--om-color-on-surface-secondary); }
+.layerRange { font-variant-numeric: tabular-nums; color: var(--om-color-on-surface-default); white-space: nowrap; text-align: right; }
+
+/* ── the 3D views ──────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.view3d { position: relative; width: 100%; max-width: 960px; aspect-ratio: var(--ratio, 3 / 2); background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); overflow: hidden; touch-action: none; cursor: grab; outline: none; }
+.view3d:active { cursor: grabbing; }
+.view3d:focus-visible { box-shadow: 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.view3d canvas { display: block; width: 100%; height: 100%; }
+.viewHint { position: absolute; left: 50%; bottom: var(--om-spacing-2); transform: translateX(-50%); padding: var(--om-spacing-1) var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-overlay-60p); color: var(--om-color-on-inverse-surface-default); font: var(--om-type-caption-s); white-space: nowrap; pointer-events: none; }
+.planner { width: 100%; max-width: 960px; aspect-ratio: 16 / 10; border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-bg); }
+.planner > * { width: 100%; height: 100%; }
+.moves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); max-width: 960px; }
+.move { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-1); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; text-align: left; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.move[data-selected] { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.move:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.move > img { display: block; width: 100%; aspect-ratio: var(--ratio, 3 / 2); object-fit: cover; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
+.moveName { padding: 0 var(--om-spacing-1) var(--om-spacing-1); }
+.video { display: block; width: 100%; max-width: 960px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+
+/* ── plan corners ───────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* (S42 D·1) the editor itself is Make a 3D picture's (components/planner/photo/corner-editor.tsx) — the bench keeps it to its column */
+.corners { composes: frame from '../../planner/photo/corner-editor.module.css'; max-width: 960px; }
+.result { display: block; max-width: 100%; max-height: 640px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); align-self: flex-start; }
+
+/* ── the seams ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.seams { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.terms { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--om-spacing-2) var(--om-spacing-4); margin: 0; font: var(--om-type-body-s); }
+.terms dt { color: var(--om-color-on-surface-secondary); }
+.terms dd { margin: 0; color: var(--om-color-on-surface-default); min-width: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 1024px) {
+  .experiments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
+  .experiments { grid-template-columns: minmax(0, 1fr); }
+  .facts { grid-template-columns: minmax(0, 1fr); }
+  .moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .terms { grid-template-columns: minmax(0, 1fr); gap: 0 var(--om-spacing-4); }
+  .terms dd { margin-bottom: var(--om-spacing-2); }
+  .slider { max-width: none; }
+  .layer { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; }
+  .layerKind { grid-row: 2; grid-column: 1; }
+  .layerRange { grid-row: 1; grid-column: 2; }
+  .rowEnd { margin-left: 0; }
+}

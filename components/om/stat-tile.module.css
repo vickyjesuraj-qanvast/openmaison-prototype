@@ -2,9 +2,27 @@
 .tile { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); min-width: 0; }
 .tile[data-tone='primary'] { background: var(--om-color-primary-variant); }
 .tile[data-tone='primary'] .value { color: var(--om-color-primary-default); }
-.label { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (fix-A, A-32 → parity P-30 · C-04) the caption wraps where the tile is narrow, rather than cut — the default now, so a ghost's tile drawn on
+   this class wraps as its page's does; `data-nowrap` keeps one line, cut */
+.label { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; }
+.tile[data-nowrap] .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .value { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .value[data-grade='good'] { color: var(--om-color-tertiary-green-default); }
 .value[data-grade='warn'] { color: var(--om-color-tertiary-yellow-default); }
 .value[data-grade='bad'] { color: var(--om-color-tertiary-red-default); }
 .help { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (simplify round 2, R2-A) A tile that goes somewhere (StatTile `press`): the same tile as a button or a link — the look unchanged, a pointer,
+   the house focus ring */
+.tile[data-press] { font: inherit; color: inherit; text-align: start; text-decoration: none; border: 0; margin: 0; width: 100%; cursor: pointer; }
+.tile[data-press]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (parity P-30 · C-04 · Q-15) The house row of tiles (StatTiles): one row from 1025 up; at 768–1024 never a tile under ~176px
+   (`--tiles-mid`, from the count: ≤3 stay one row, 4 → 2 + 2, 5–6 → 3 + 2 / 3 + 3); two per row on a phone, an odd last tile taking the
+   row; one per row below 360. */
+.tiles { display: grid; grid-template-columns: repeat(var(--tiles, 3), minmax(0, 1fr)); gap: var(--om-spacing-3); min-width: 0; }
+@media (min-width: 768px) and (max-width: 1024px) { .tiles { grid-template-columns: repeat(var(--tiles-mid, 3), minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles[data-odd] > :last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 359px) { .tiles { grid-template-columns: minmax(0, 1fr); } }

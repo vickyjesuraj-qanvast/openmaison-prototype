@@ -1,0 +1,19 @@
+/* (parity map, CP-148 · CP-149) Qanvast Ops › Studios on the house pieces: a card per studio (the lead Overview's Card), its switches as the card
+   table every settings list of switches uses (components/om/card-table.module.css, REG-727 — Company › Client portal's "What clients can see"),
+   each row a name over its line with the DS sm switch under the column's name; the usage as the house number tiles. The card's body lines up
+   with the card head's 20. */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-6); max-width: 960px; }
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-width: 0; padding: 0 var(--om-spacing-5) var(--om-spacing-5); }
+.table { composes: table from '../om/card-table.module.css'; }
+.head { composes: head from '../om/card-table.module.css'; }
+.row { composes: row from '../om/card-table.module.css'; }
+.col { composes: col from '../om/card-table.module.css'; }
+.head, .row { grid-template-columns: minmax(0, 1fr) 88px; }
+.name { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.line { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.ask { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.usage { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.usageHead { margin: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+@media (max-width: 767px) {
+  .head, .row { grid-template-columns: minmax(0, 1fr) 56px; }
+}

@@ -26,13 +26,13 @@ const num = (s) => Number(String(s).replace(/[^\d]/g, ''))
   const metaOf = async (label) => num(await menu().getByRole('menuitemradio').filter({ hasText: label }).first().locator('[class*="itemMeta"]').innerText())
 
   /* ───────────── L3 · morning triage in the scope pill ───────────── */
-  console.log('L3 · Needs attention in the scope pill')
+  console.log('L3 · the To do group in the scope pill')   // (parity P-20, Q-07 — a deliberate change of this rule) the group was "Needs attention"
   await go('/leads')
   const allCount = num(await pillText())
   await pill().click(); await p.waitForTimeout(300)
   const items = await menu().getByRole('menuitemradio').allInnerTexts()
   ok(items.some((t) => /^Mine/.test(t)), 'the menu has Mine')
-  ok(await menu().getByText('Needs attention', { exact: false }).count() === 1, 'the menu has a Needs attention group')
+  ok(await menu().getByText('To do', { exact: true }).count() === 1 && await menu().getByText('Needs attention', { exact: false }).count() === 0, 'the menu has a To do group')   // (parity P-20, Q-07 — a deliberate change of this rule) "To do" on both listings
   for (const l of ['Overdue follow-ups', 'Unassigned', 'Unseen']) ok(items.some((t) => t.startsWith(l)), `the group lists ${l} with its count`)
   const counts = { overdue: await metaOf('Overdue follow-ups'), unassigned: await metaOf('Unassigned'), unseen: await metaOf('Unseen'), mine: await metaOf('Mine') }
   console.log('    counts', counts, 'all', allCount)
@@ -75,7 +75,8 @@ const num = (s) => Number(String(s).replace(/[^\d]/g, ''))
   await go('/leads')
   ok(await p.locator('[role="columnheader"][data-col="inStage"]').count() === 1, 'switched on in Column settings, In stage shows')
   const inStage = await p.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row] [data-days]').allInnerTexts()
-  ok(inStage.length > 0 && inStage.every((t) => /^\d+d in (New|Contacted|Met|Quote Sent|Won|On Hold|Lost)\s*since \d+ \w{3} ’\d\d$/.test(t.replace(/\n/g, ''))), 'each cell reads "5d in Met" over "since 25 Sep ’26"')
+  /* (parity P-28, a deliberate change of this rule) the house duration words — "5 days in Met", never "5d" */
+  ok(inStage.length > 0 && inStage.every((t) => /^\d+ days? in (New|Contacted|Met|Quote Sent|Won|On Hold|Lost)\s*since \d+ \w{3} ’\d\d$/.test(t.replace(/\n/g, ''))), 'each cell reads "5 days in Met" over "since 25 Sep ’26"')
   await p.locator('[role="columnheader"][data-col="inStage"] button').click(); await p.waitForTimeout(300)
   const days = (await p.locator('[role="table"][aria-label="Leads"] [role="row"][data-kb-row] [data-days]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-days')))))
   ok(days.every((d, i) => i === 0 || d >= days[i - 1]), 'the In stage column sorts, fewest days first')
@@ -88,7 +89,8 @@ const num = (s) => Number(String(s).replace(/[^\d]/g, ''))
   const firstCard = p.locator('[data-kb-list="lead"] [data-kb-row]').first()
   ok(/^Updated (just now|\d+[mhd] ago|\d+ (mo|yr)s? ago|.+ago)$/.test((await firstCard.locator('[class*="cardAgo"]').innerText()).trim()), 'kanban: the card\'s date says what it is — "Updated … ago"')
   const ages = await p.locator('[data-kb-list="lead"] [data-testid="card-stage-age"]').allInnerTexts()
-  ok(ages.length > 0 && ages.every((t) => /^\d+d in (New|Contacted|Met|Quote Sent|Won|On Hold|Lost)$/.test(t)), 'kanban: every card carries "5d in Met"')
+  /* (parity P-28, a deliberate change of this rule) "5 days in Met" */
+  ok(ages.length > 0 && ages.every((t) => /^\d+ days? in (New|Contacted|Met|Quote Sent|Won|On Hold|Lost)$/.test(t)), 'kanban: every card carries "5 days in Met"')
   await shot('l3-kanban-cards')
 
   /* ───────────── L8 · an unknown budget ───────────── */
@@ -234,14 +236,14 @@ const num = (s) => Number(String(s).replace(/[^\d]/g, ''))
   await card.scrollIntoViewIfNeeded()
   const info = await card.locator('p').innerText()
   ok(/9232 3113\s*·\s*--\s*·/.test(info), `the card's budget reads "--" (${info.replace(/\n/g, ' ')})`)
-  ok(/·\s*\d+d in Contacted$/.test(info.trim()), 'the card carries "Nd in Contacted"')
+  ok(/·\s*\d+ days? in Contacted$/.test(info.trim()), 'the card carries "N days in Contacted"')   // (parity P-28, a deliberate change of this rule)
   const tel = card.locator('a[href^="tel:"]')
   ok(await tel.count() === 1 && (await tel.getAttribute('href')) === 'tel:+6592323113', 'the number is tap-to-call (tel:+6592323113)')
   const box = await tel.boundingBox()
   ok(!!box && box.height >= 44, `its tap box stands 44 (${box && Math.round(box.height)})`)
   await mp.screenshot({ path: path.join(dir, 'phone-cards-390.png') })
   await mp.locator('button[class*="scope-pill"]').first().click(); await mp.waitForTimeout(500)
-  ok(await mp.getByText('Needs attention').count() >= 1, 'the phone sheet carries Needs attention')
+  ok(await mp.getByText('To do', { exact: true }).count() >= 1 && await mp.getByText('Lead status', { exact: true }).count() >= 1, 'the phone sheet "Lead status" carries the To do group')   // (parity P-20, Q-07 — a deliberate change of this rule) was "Needs attention" under "Lead Status"
   await mp.screenshot({ path: path.join(dir, 'phone-pill-sheet-390.png') })
   await mp.keyboard.press('Escape'); await mp.waitForTimeout(400)
   /* the import as a phone sheet: the marks, then the three ways on at the foot, wrapped inside the screen */

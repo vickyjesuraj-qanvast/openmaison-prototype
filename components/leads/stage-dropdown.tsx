@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { anchoredSurface } from '@/lib/motion'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
-import { Tooltip } from '@/components/om/tooltip'
+import { REFUSED_KEY, Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
 import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
@@ -54,7 +54,7 @@ export function StageDropdown({
     const isCurrent = s === current
     const done = !isCurrent && (STAGES as readonly string[]).indexOf(s) <= doneThrough && (STAGES as readonly string[]).includes(s)
     return (
-      <span key={s} className={ddStyles.row} onClick={why ? () => { if (isTouchPointer()) snackbar({ message: why }) } : undefined}>
+      <span key={s} className={ddStyles.row} onClick={why ? () => { if (isTouchPointer()) snackbar({ message: why, key: REFUSED_KEY }) } : undefined}>   {/* (S43E W1-01) the house Tooltip says it on touch too — one keyed snackbar */}
         <Tooltip label={why ?? ''} side="right" disabled={!why}>
           <DropdownItem disabled={!!why} selected={isCurrent} meta={isCurrent ? 'current' : undefined} onSelect={() => onSelect(s)}>
             <span className={ddStyles.itemText}>{s}</span>

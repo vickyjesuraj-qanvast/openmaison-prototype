@@ -1,0 +1,242 @@
+/* (Projects round 4a) The client portal — the Client Portal Proposal's boards 1 · 5 · 6 · 7 on 2.0's type, tokens and one layout. The
+   studio's brand colour (the brand kit's Accent, set on the root as --brand) stands where the boards draw the teal: it becomes the page's
+   primary, so every DS button, link and ring wears it. White cards with the 1px rule on the page ground, r8; 16 apart on a phone, 24 at a
+   desk; the header 56 on a phone / 64 at a desk; the phone's section bar at the bottom, the desk's in the header. */
+
+/* (fix-F, F-01) the studio's colour as the primary — the page's root wears it, and so does a surface portalled out of it (the bell's sheet
+   and popover), so its glyphs and rings keep the studio's colour */
+.brandScope {
+  --brand: var(--om-primitive-primary-100);   /* the house purple until the page sets the studio's (a loader's ghost knows none) */
+  --om-color-primary-default: var(--brand);
+  --om-color-primary-hover: color-mix(in srgb, var(--brand) 84%, var(--om-color-on-surface-default));
+  --om-color-primary-variant: color-mix(in srgb, var(--brand) 10%, var(--om-color-surface-default));
+  --om-color-primary-variant-hover: color-mix(in srgb, var(--brand) 16%, var(--om-color-surface-default));
+  --om-color-on-primary-variant: color-mix(in srgb, var(--brand) 84%, var(--om-color-on-surface-default));
+}
+.page {
+  composes: brandScope;
+  width: 100%; flex: 1 1 auto; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default);
+}
+
+/* ── the studio's bar ── */
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); min-height: 64px; padding: 0 var(--om-spacing-8); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.brand { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.mark { flex: none; width: 36px; height: 36px; border-radius: var(--om-radius-2); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--brand); color: var(--om-color-on-primary-default); font: var(--om-type-heading-h4); }
+.mark[data-logo] { background: var(--om-color-surface-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
+.mark img { width: 100%; height: 100%; object-fit: contain; padding: var(--om-spacing-1); }
+.studio { font: var(--om-type-subheading-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav { display: flex; align-items: stretch; gap: var(--om-spacing-6); align-self: stretch; }
+.navLink { display: inline-flex; align-items: center; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); text-decoration: none; border-bottom: 4px solid transparent; padding-top: 4px; transition: color var(--motion-hover); }
+.navLink:hover { color: var(--om-color-on-surface-default); }
+.navLink[aria-current='page'] { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-bottom-color: var(--brand); }
+.who { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.whoName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.textButton { height: 36px; padding: 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: transparent; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; transition: background var(--motion-hover); }
+.textButton:hover { background: var(--om-color-primary-variant); }
+.signOutTop { flex: none; }
+.ghostBell { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }   /* (fix-F, F-42) the bell's own box in the ghost */
+.textButton:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: transparent; }
+
+/* ── the studio's preview (See it as the client · Open as a test client) ── */
+.previewBar { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); flex-wrap: wrap; padding: var(--om-spacing-2) var(--om-spacing-4); background: var(--om-color-inverse-surface-default); color: var(--om-color-on-inverse-surface-default); font: var(--om-type-body-m); text-align: center; }
+.previewBar .textButton { color: var(--om-color-on-inverse-surface-primary); }
+.previewBar .textButton:hover { background: var(--om-color-hover-12p); }
+
+/* ── the content column ── */
+.main { flex: 1; width: 100%; max-width: 1184px; margin: 0 auto; padding: var(--om-spacing-8) var(--om-spacing-8) var(--om-spacing-10); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.hello { display: flex; flex-direction: column; gap: 2px; }
+.h1 { margin: 0; font: var(--om-type-heading-h1); }
+.lede { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); }
+.cols { display: flex; flex-wrap: wrap; gap: var(--om-spacing-6); align-items: flex-start; }
+.colMain { flex: 3 1 480px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.colSide { flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+
+/* ── a card ── */
+.card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.cardPad { padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.cardHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); }
+.h2 { margin: 0; font: var(--om-type-subheading-xl); }
+.h3 { margin: 0; font: var(--om-type-subheading-l); }
+.eyebrow { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.line { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.link { composes: link from '../om/text-link.module.css'; }
+
+/* ── What needs you (boards 1 · 7) ── */
+.needs .h2 { padding: var(--om-spacing-5) var(--om-spacing-6) var(--om-spacing-3); }
+.needsEmpty { margin: 0; padding: 0 var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.need { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+/* (fix-F, F-39) the house row hover — neutral, so the glyph's own tinted circle stays; only where a pointer hovers (on touch it stuck) */
+@media (hover: hover) { .need:hover { background: var(--om-color-hover-04p); } }
+.needGlyph { flex: none; width: 40px; height: 40px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.needText { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.needTitle { font: var(--om-type-subtitle-l); }
+.needLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.needAction { flex: none; display: inline-flex; align-items: center; height: 40px; padding: 0 var(--om-spacing-4); border-radius: var(--om-radius-1); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
+.needChevron { display: none; flex: none; color: var(--om-color-on-surface-secondary); }
+
+/* ── where a home stands ── */
+.homeHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+
+/* ── Before work starts (board 6) ── */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.step { display: flex; gap: var(--om-spacing-3); align-items: flex-start; padding: var(--om-spacing-4); }
+.step[data-state='now'] { box-shadow: inset 0 0 0 1px var(--brand); border-color: var(--brand); }
+.stepMark { flex: none; width: 28px; height: 28px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 2px var(--om-color-on-surface-border); color: var(--om-color-on-surface-secondary); font: var(--om-type-heading-h5); }
+.step[data-state='now'] .stepMark { box-shadow: inset 0 0 0 2px var(--brand); color: var(--brand); }
+.step[data-state='done'] .stepMark { background: var(--brand); box-shadow: none; color: var(--om-color-on-primary-default); }
+.stepBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.stepText { display: flex; flex-direction: column; gap: 2px; }
+.stepTitle { font: var(--om-type-subheading-l); }
+.step[data-state='later'] .stepTitle { color: var(--om-color-on-surface-secondary); }
+.stepLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.stepGo { display: flex; align-items: center; justify-content: center; height: 48px; border-radius: var(--om-radius-1); background: var(--brand); color: var(--om-color-on-primary-default); font: var(--om-type-subheading-m); text-decoration: none; transition: filter var(--motion-hover); }
+.stepGo:hover { filter: brightness(0.94); }
+
+/* ── a row that opens something (designs, documents, a file) ── */
+.row { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rowText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rowTitle { font: var(--om-type-subtitle-m); overflow-wrap: anywhere; }
+.rowLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.rowLead { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.rowGlyph { composes: thumb from '../om/thumb.module.css'; width: 40px; height: 40px; color: var(--om-color-on-surface-secondary); }
+.rowGo { flex: none; min-height: 44px; display: inline-flex; align-items: center; }
+.contact { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── Files ── */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-6); }
+.tile { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-1); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: inherit; text-decoration: none; transition: background var(--motion-hover); }
+.tile:hover { background: var(--om-color-primary-variant); }
+.tileImg { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-variant); }
+.tileBox { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-variant); color: var(--om-color-on-surface-secondary); }
+.tileText { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--om-spacing-2) var(--om-spacing-2); min-width: 0; }
+.tileName { font: var(--om-type-subtitle-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── questions ── */
+.questions { display: flex; flex-direction: column; gap: var(--om-spacing-4); max-width: 720px; }
+.question { padding: var(--om-spacing-5) var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.questionText { margin: 0; font: var(--om-type-subtitle-l); }
+.questionMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.formFoot { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.formFoot .go { height: 48px; padding: 0 var(--om-spacing-6); font: var(--om-type-subheading-m); }   /* (fix-F, F-44) the portal's step button */
+@media (max-width: 767px) { .formFoot .go { flex: 1 1 100%; } }
+
+/* ── sign-in (board 5) and the notices ── */
+.signin { flex: 1; width: 100%; max-width: 440px; margin: 0 auto; padding: 72px var(--om-spacing-6) var(--om-spacing-8); display: flex; flex-direction: column; gap: var(--om-spacing-8); }
+.signinHead { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.markLarge { composes: mark; width: 56px; height: 56px; border-radius: var(--om-radius-3); font: var(--om-type-heading-h2); }
+.signinText { display: flex; flex-direction: column; gap: 6px; }
+.h1s { margin: 0; font: var(--om-type-heading-h2); }
+.lede16 { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+/* (pending modules S30) the code's boxes are the house piece now — components/om/code-boxes.module.css (the focus ring is the primary: the brand here) */
+.go { height: 52px; border: 0; border-radius: var(--om-radius-1); background: var(--brand); color: var(--om-color-on-primary-default); font: var(--om-type-subtitle-l); cursor: pointer; transition: filter var(--motion-hover); }
+.go:hover { filter: brightness(0.94); }
+.go:disabled { opacity: 0.6; cursor: default; }
+.error { margin: 0; font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+.foot { margin-top: auto; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.footStrong { margin: 0; font: var(--om-type-body-m); }
+/* (fix-F, F-41) board 5: the sign-in page is white; at a desk the column sits in the middle of the screen with its foot under the form (the
+   foot drops to the screen's foot only on a phone, as the board draws it) */
+.signinPage { background: var(--om-color-surface-default); }
+@media (min-width: 768px) {
+  .signin { flex: 0 0 auto; margin: auto; padding: var(--om-spacing-10) var(--om-spacing-6); }
+  .signin .foot { margin-top: 0; }
+}
+.notice { width: 560px; max-width: calc(100% - 2 * var(--om-spacing-4)); margin: var(--om-spacing-10) auto 0; padding: var(--om-spacing-8) var(--om-spacing-6); display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); text-align: center; }
+.noticeGlyph { width: 56px; height: 56px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+
+/* ── the phone's section bar (board 1) — (REG-1050) the studio's own dock (components/shell/mobile-nav.module.css), composed: its frame, its
+   64-wide columns with the 36 icon box tinted on the active tab, its More with the dot, and More's sheet rows (One Line, the row's count) ── */
+.dock { composes: dockFrame from '../shell/mobile-nav.module.css'; display: none; }
+.dockLink { composes: dockItem from '../shell/mobile-nav.module.css'; }
+.dockIcon { composes: dockIcon from '../shell/mobile-nav.module.css'; }
+.dockLabel { composes: dockLabel from '../shell/mobile-nav.module.css'; }
+.moreDot { composes: moreDot from '../shell/mobile-nav.module.css'; }
+.moreGroup { composes: sheetGroup from '../shell/mobile-nav.module.css'; }
+.moreItem { composes: sheetItem from '../shell/mobile-nav.module.css'; }
+.moreIcon { composes: sheetIcon from '../shell/mobile-nav.module.css'; }
+.moreLabel { composes: sheetLabel from '../shell/mobile-nav.module.css'; }
+.moreCount { composes: rowCount from '../shell/mobile-nav.module.css'; }
+.moreMeta { composes: sheetMeta from '../shell/mobile-nav.module.css'; }
+.moreRule { composes: sheetRule from '../shell/mobile-nav.module.css'; }
+
+@media (max-width: 1024px) {
+  .top { padding: 0 var(--om-spacing-6); }
+  .main { padding: var(--om-spacing-6); }
+  /* (fix-F, F-02) seven sections, the bell and Sign out don't fit a tablet's bar: the name gives way first, then the sections scroll in their
+     own row (the page itself never scrolls sideways); the studio's name ellipsises; the bell and Sign out keep their size */
+  .whoName { display: none; }
+  .brand { flex: 0 1 auto; }
+  .nav { flex: 0 1 auto; min-width: 0; gap: var(--om-spacing-4); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .navLink { flex: none; white-space: nowrap; }
+  .who { flex: none; }
+}
+@media (max-width: 767px) {
+  .top { min-height: 56px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-4); }
+  .mark { width: 32px; height: 32px; font: var(--om-type-subheading-m); }
+  .markLarge { width: 56px; height: 56px; border-radius: var(--om-radius-3); font: var(--om-type-heading-h2); }   /* (fix-F, F-41) board 5's 56 mark keeps its size on a phone */
+  .studio { font: var(--om-type-subheading-m); }
+  .nav, .whoName { display: none; }
+  .who { flex: none; }   /* (REG-1064) the bell and Sign out keep their size; the studio's name and welcome line give way (320: Sign out ran 12px off the edge) */
+  .main { padding: var(--om-spacing-5) var(--om-spacing-4) calc(var(--om-spacing-6) + 70px + env(safe-area-inset-bottom, 0px)); gap: var(--om-spacing-4); }
+  .h1 { font: var(--om-type-heading-h2); }
+  .lede { font: var(--om-type-body-m); }
+  .cols, .colMain, .colSide { gap: var(--om-spacing-4); }
+  .cols { display: flex; flex-direction: column; align-items: stretch; }
+  .colMain, .colSide { flex: none; }
+  .cardPad { padding: var(--om-spacing-4); }
+  .h2 { font: var(--om-type-subheading-l); }
+  .needs .h2 { padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-2); }
+  .needsEmpty { padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+  .need { min-height: 68px; padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); }
+  .needTitle { font: var(--om-type-subtitle-m); }
+  .needLine { font: var(--om-type-body-s); }
+  .needAction { display: none; }
+  .needChevron { display: inline-flex; }
+  .row { padding: var(--om-spacing-3) var(--om-spacing-4); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); }
+  .question { padding: var(--om-spacing-4); }
+  .signin { padding: 72px var(--om-spacing-6) var(--om-spacing-8); }
+  .dock { display: flex; }
+  /* (fix-F, F-46 · F-43) Sign out sits in More while the bar is there; with no bar (Home alone) it stays here and the page keeps no room for one */
+  .top[data-dock] .signOutTop { display: none; }
+  .main:not([data-dock]) { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
+  /* (r4b) the house snackbar rises above the portal's own bar, as it does above the studio's dock (globals: the dock's height is 0 off a
+     studio page, so a snackbar sat over the bar and took its presses) */
+  :global(html) :global(body):has(.dock) { --app-mobile-dock-height: calc(70px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* (fix-F, F-12) Download PDF prints the paper alone: no bar, no phone bar, no preview strip, no page ground */
+@media print {
+  .top, .dock, .previewBar, .legal { display: none !important; }
+  .page { background: none; min-height: 0; }
+  .main { max-width: none; padding: 0 !important; }
+}
+
+/* (Projects round 9, Q-44) the studio's welcome line under its name in the bar, on the home — one line, cut with an ellipsis */
+.brandText { display: flex; flex-direction: column; min-width: 0; }
+.welcome { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 767px) {
+  .welcome { font: var(--om-type-caption-s); }
+}
+
+/* (gaps build D, item 8) the Documents card's group heads — the card's eyebrow, between its rows */
+.docGroup { margin: 0; padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .docGroup { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-1); } }
+/* (parity map, CP-099) a kind's tiles sit under its heading as the documents' rows do: the heading's 4 below, then the tiles */
+.docGroup + .tiles { padding-top: var(--om-spacing-2); }
+
+/* (pending modules S13) The foot: the studio's own Privacy · Terms · Contact under the page's content — the house text link, centred, a rule
+   above (the sign-in page's foot keeps its own rule: there the links are its last row). At the screen's foot on a short page; 44 tall under a
+   finger. */
+.legal { margin-top: auto; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--om-spacing-1) var(--om-spacing-2); }
+.legalInline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-2); padding-top: var(--om-spacing-2); }
+.legalDot { font: var(--om-type-body-m); color: var(--om-color-on-surface-disabled); }
+@media (hover: none) and (max-width: 1024px) {
+  .legal .link, .legalInline .link { display: inline-flex; align-items: center; min-height: 44px; }
+}
+.noticeFoot { flex: 1; display: flex; flex-direction: column; width: 560px; max-width: calc(100% - 2 * var(--om-spacing-4)); margin: 0 auto; padding: var(--om-spacing-8) 0 var(--om-spacing-6); }
+.noticeFoot:empty { display: none; }

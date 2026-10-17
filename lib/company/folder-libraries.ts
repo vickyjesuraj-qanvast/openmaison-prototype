@@ -4,18 +4,18 @@ import type { FolderNode } from '@/lib/folders'
  * (REG-664) The libraries that keep folders — each its own set (the owner's pick, 2026-09-25): the five template tabs and the Price
  * book's My Items and My Sections. Pure, client-safe: the galleries, the pickers and the actions read the same names and rule.
  */
-export const FOLDER_LIBRARIES = ['quotes', 'contracts', 'tasks', 'texts', 'payments', 'book-items', 'book-sections', 'visualizer', 'materials'] as const   /* (REG-673) + the AI Visualizer's personal designs and Company › Materials */
+export const FOLDER_LIBRARIES = ['quotes', 'contracts', 'tasks', 'texts', 'payments', 'book-items', 'book-sections', 'visualizer', 'materials', 'schedules'] as const   /* (REG-673) + the AI Visualizer's personal designs and Company › Materials */
 export type FolderLibrary = (typeof FOLDER_LIBRARIES)[number]
 export const isFolderLibrary = (v: unknown): v is FolderLibrary => typeof v === 'string' && (FOLDER_LIBRARIES as readonly string[]).includes(v)
 
 /** The top of each library, as its crumb and the Move dialog say it — the tab's own name. */
 export const LIBRARY_ROOT: Record<FolderLibrary, string> = {
-  quotes: 'Quotes', contracts: 'Contracts', tasks: 'Tasks', texts: 'T&Cs & Notes', payments: 'Payments', 'book-items': 'My Items', 'book-sections': 'My Sections', visualizer: 'All designs', materials: 'All materials',   // (REG-673 · 677) a one-page section's bar reads its contents, not the page's title again
+  quotes: 'Quotes', contracts: 'Contracts', tasks: 'Tasks', texts: 'T&Cs & Notes', payments: 'Payment schedules', 'book-items': 'My Items', 'book-sections': 'My Sections', visualizer: 'All designs', materials: 'All materials', schedules: 'Schedules',   // (REG-673 · 677) a one-page section's bar reads its contents, not the page's title again
 }
 /** The Company page each library lives on. */
 export const LIBRARY_PATH: Record<FolderLibrary, string> = {
   quotes: '/company/templates/quotes', contracts: '/company/templates/contracts', tasks: '/company/templates/tasks', texts: '/company/templates/terms',
-  payments: '/company/templates/payments', 'book-items': '/company/price-book', 'book-sections': '/company/price-book/sections', visualizer: '/visualizer', materials: '/company/materials',
+  payments: '/company/templates/payments', 'book-items': '/company/price-book', 'book-sections': '/company/price-book/sections', visualizer: '/visualizer', materials: '/company/materials', schedules: '/company/templates/schedules',
 }
 
 export type Folder = FolderNode & { library: FolderLibrary; createdAt: number; updatedAt: number

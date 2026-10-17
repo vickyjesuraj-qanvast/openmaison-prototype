@@ -135,7 +135,10 @@
 }
 
 /* Expand's description modal (REG-444): the line's name under the title, the DS TextArea eight lines tall. */
-.descDialogArea { width: 100%; }
+.descDialogArea { width: 100%; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.descDialogArea + .descDialogArea { margin-top: var(--om-spacing-4); }
+/* (S44I — call C2) Words on this line: Name above, Description below, each under its caption */
+.descDialogLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */
 .find { display: inline-flex; width: 240px; }   /* Find (REG-477): the box the search glyph opens */
 /* (sweep S1) On a phone the open box takes the toolbar's row by itself (the house ToolbarSearch's way) — it ran the head 60px
@@ -195,3 +198,7 @@
 .printNoteLink { composes: link from '../../../om/text-link.module.css'; font: var(--om-type-subheading-s); white-space: nowrap; }
 /* a phone: the glyph keeps its place beside the words, the link goes under them */
 @media (max-width: 767px) { .printNote { grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: var(--om-spacing-3) var(--om-spacing-4); } .printNoteLink { grid-column: 2; justify-self: start; } }
+
+/* (S44I, B5) ⋮ › Add Item › Several…: the count on the house stepper, in the menu's own row rhythm */
+.menuStepper { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.swatchKit { background: var(--sw); }   /* (S44I, §12.14) the bulk bar's Highlight swatches: the kit colour through a custom property */

@@ -11,7 +11,8 @@ const sql = (q) => execSync(`sqlite3 "${DB}" "${q.replace(/"/g, '\\"')}"`).toStr
 async function step(name, fn) { try { await fn() } catch (e) { ok(name, false, e.message.split('\n').filter((l) => /waiting for|intercepts|Timeout|Error|expected/.test(l)).slice(0, 4).join(' | ')) } finally { sql(`update members set is_you = case id when 'dane' then 1 else 0 end`) } }
 async function ready(page) { await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(900) }
 const FILES = `${S}/xr-files`; fs.mkdirSync(FILES, { recursive: true })
-const file = (name) => { const p = `${FILES}/${name}`; fs.writeFileSync(p, '%PDF-1.4 probe'); return p }
+const referenceBytes = require(require('path').resolve(__dirname, '../../..', 'design-source/verify/x-ray-parity/fixtures/reference-file.cjs'))   // (S42 E-05) a reference quote is read by its words, never its name
+const file = (name) => { const p = `${FILES}/${name}`; fs.writeFileSync(p, referenceBytes(name) ?? '%PDF-1.4 probe'); return p }
 const Q8 = sql(`select id || '|' || lead_id from quotes where number='OM-10008'`).split('|')
 
 async function runForLead(page, leadLabel, quoteNumber, otherPath) {
@@ -74,7 +75,8 @@ async function runForLead(page, leadLabel, quoteNumber, otherPath) {
     const q = await pts.locator('li').filter({ has: page.getByRole('button', { name: 'Say it as a point' }) }).first().locator('[class*="__say"]').innerText()
     await pts.getByRole('button', { name: 'Send to client' }).click()
     const dlg = page.getByRole('dialog', { name: 'Send to client' }); await dlg.waitFor(); await page.waitForTimeout(400)
-    const text = await dlg.getByRole('textbox').inputValue()
+    // REG-790 (UX audit C12): Send to client is the contract Send dialog — recipient fields + "Message to the client", Send via WhatsApp, Reset message
+    const text = await dlg.getByLabel('Message to the client').inputValue()
     ok('the point switched to its question goes out as the question', text.includes(q.replace(/^“|”$/g, '')), q.slice(0, 60))
     ok('the draft never names the other studio', !/Flo Design/.test(text))
     ok('1.0’s like-for-like line closes it', /So like-for-like, the real difference between the two quotes is S\$[\d,]+\.\d\d, not S\$[\d,]+\.\d\d\./.test(text))

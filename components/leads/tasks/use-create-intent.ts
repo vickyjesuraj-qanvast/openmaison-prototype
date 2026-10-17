@@ -16,6 +16,7 @@ export const CREATE_EVENTS = {
   contracts: 'om:contracts:new',
   notes: 'om:notes:new',
   files: 'om:files:upload',
+  meetings: 'om:meetings:new',   // (pending modules S23) the Create strip's Meeting
 } as const
 
 /**
@@ -34,7 +35,10 @@ export function useCreateIntent<V extends string = '1'>({ event, landing, onInte
   const raw = landing ? params.get(landing.param ?? 'new') : null
   const accepted: readonly string[] = landing?.values ?? ['1']
   const value = raw !== null && accepted.includes(raw) ? (raw as V) : undefined
-  const href = landing?.href
+  /* (one-home N-10) a landing keeps where it was opened from — a Won lead's New task opens the project's Tasks with `from` = the lead, and
+     dropping `?new=` must not drop the way back */
+  const from = params.get('from')
+  const href = landing?.href ? (from ? `${landing.href}${landing.href.includes('?') ? '&' : '?'}from=${encodeURIComponent(from)}` : landing.href) : undefined
 
   const handler = useRef(onIntent)
   useEffect(() => { handler.current = onIntent })

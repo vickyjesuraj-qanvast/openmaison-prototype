@@ -39,7 +39,8 @@ const LEAD = sql(`select lead_id from quotes where id='${Q1}'`)
 
   await step('price book modal', async () => {
     await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
-    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'My Items', exact: true }).click(); await page.waitForTimeout(600)
+    // REG-773 (UX audit Q7): the Create strip's tile reads Price book (it read My Items)
+    await page.getByRole('complementary', { name: 'Create' }).getByRole('button', { name: 'Price book', exact: true }).click(); await page.waitForTimeout(600)
     const dlg = page.getByRole('dialog', { name: 'Price book' })
     const rows = await dlg.getByTestId('folder-pick-row').allInnerTexts()
     ok('My Items opens on its folders, then what sits at the top', rows.length === 2 && /Kitchen/.test(rows[0]) && /Wet works/.test(rows[1]), rows.map((r) => r.replace(/\n/g, ' ')).join(' | '))

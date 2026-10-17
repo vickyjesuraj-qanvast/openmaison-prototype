@@ -41,6 +41,7 @@
 .headEnd { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-4); }
 .close { flex-shrink: 0; }
 /* (REG-511) xxl = fluid, 48 on every side (the Review imported leads sheet's rule) — the template preview window. */
+.dialog[data-height='xl'] { height: min(var(--om-modal-xl-height), calc(100dvh - 2 * var(--om-modal-xxl-margin))); }   /* (pending modules S17) the tall xl dialog's one height */
 .dialog[data-fluid] { width: calc(100vw - 2 * var(--om-modal-xxl-margin)); height: calc(100dvh - 2 * var(--om-modal-xxl-margin)); max-height: none; }
 
 /* The body: p24 on every size; gaps 16, 24 between a modal's sections. `flush` runs a layout to the panel's edges (a rail). */
@@ -62,6 +63,13 @@
 /* (REG-720) A footer of buttons only wraps rather than clip: neither the DS Button nor the danger button breaks its label, so two long
    answers on a narrow alert (320: "Keep Pro — Studio" · "Cancel the plan") ran past the card's edge, cut off by its overflow. */
 .foot:not(:has(> :not(button))) { flex-wrap: wrap; }
+/* (fix-E, E-11) A foot with a start action (FootStart) wraps too at the narrowest phones: the start's text button kept its full width while the
+   start shrank under it, so at 320 "Send back" ran into "Cancel". Below 360 the start keeps its width and the buttons go to the next line
+   when the three don't fit; wider, nothing changes. */
+@media (max-width: 359px) {
+  .foot:has(> .footStart) { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .foot > .footStart { flex-shrink: 0; max-width: 100%; }
+}
 
 /* (REG-725) A confirm's message: 14/20 in the text's ink, as the Lead Details deletes (902:27738) — the 12/16 grey of 779:24663 read
    as a footnote to the question it asks. One message for every confirm. */

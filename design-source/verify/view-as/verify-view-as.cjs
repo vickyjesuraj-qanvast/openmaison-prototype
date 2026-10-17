@@ -20,7 +20,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   console.log('Dane (Owner)')
   await page.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
   const daneRows = await rows()
-  ok(daneRows === Number(q(`SELECT count(*) FROM leads WHERE deleted_at IS NULL`)), `Dane sees ${daneRows} leads (every live lead)`)
+  // REG-911 (Projects round 1): a direct project's client is no lead in the pipeline — the listing leaves `direct` rows out
+  ok(daneRows === Number(q(`SELECT count(*) FROM leads WHERE deleted_at IS NULL AND direct = 0`)), `Dane sees ${daneRows} leads (every live lead)`)
   const block = page.getByRole('button', { name: /^Demo Studio/ })
   ok(await block.isVisible(), 'the Demo Studio block is a button')
   ok((await block.innerText()).includes('Dane Bruce Lee'), 'second line reads Dane Bruce Lee')
@@ -29,7 +30,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   const menu = page.getByRole('menu', { name: 'View as' })
   await menu.waitFor()
   const items = menu.getByRole('group', { name: 'Members' }).getByRole('menuitemradio')   // (REG-705) the menu also holds the Studio plan group
-  ok((await items.count()) === 7, `menu lists ${await items.count()} members (7 expected, Hui Min included)`)
+  ok((await items.count()) === 9, `menu lists ${await items.count()} members (9 expected, Hui Min, Priya Tan · Accounting and Nurul Huda · Marketing included)`) /* (parity map, FB-114; S44O — call C6, R164's Marketing member: deliberate changes of this rule) */
   ok(await menu.getByText('Demo only', { exact: true }).isVisible(), 'Demo only pill')
   ok((await items.filter({ hasText: 'Dane' }).getAttribute('aria-checked')) === 'true', 'Dane is ticked')
   ok(await items.filter({ hasText: 'Hui Min' }).getByText('Admin', { exact: true }).isVisible(), 'Hui Min · Admin')
@@ -47,7 +48,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   await page.screenshot({ path: `${OUT}/va-03-sarah-leads.png` })
   await page.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
   const sarahRows = await rows()
-  const expected = Number(q(`SELECT count(DISTINCT l.id) FROM leads l JOIN lead_assignees a ON a.lead_id = l.id WHERE l.deleted_at IS NULL AND a.member_id = 'sarah'`))
+  const expected = Number(q(`SELECT count(DISTINCT l.id) FROM leads l JOIN lead_assignees a ON a.lead_id = l.id WHERE l.deleted_at IS NULL AND l.direct = 0 AND a.member_id = 'sarah'`))   // REG-911
   ok(sarahRows === expected, `Sarah sees ${sarahRows} leads (her own: ${expected})`)
   await page.goto(`${BASE}/settings`, { waitUntil: 'networkidle' })
   await page.screenshot({ path: `${OUT}/va-04-sarah-settings.png` })
@@ -90,20 +91,20 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   console.log('Phone 390')
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   await phone.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
-  await phone.getByRole('button', { name: 'More', exact: true }).click()
+  await phone.getByRole('button', { name: /^More( \(|$)/ }).click()   // REG-805 (UX audit V3): the dock's More names its counts, "More (Tasks …)"
   const row = phone.getByRole('button', { name: /View as/ })
   ok(await row.isVisible(), 'More › View as row')
   ok((await row.innerText()).includes('Dane'), 'the row names Dane')
   await phone.screenshot({ path: `${OUT}/va-07-phone-more.png` })
   await row.click()
   await phone.getByRole('menuitemradio').first().waitFor()
-  ok((await phone.getByRole('group', { name: 'Members' }).getByRole('menuitemradio').count()) === 7, 'the sheet lists the 7 members')   // (REG-705) the Studio plan group follows them
+  ok((await phone.getByRole('group', { name: 'Members' }).getByRole('menuitemradio').count()) === 9, 'the sheet lists the 9 members') /* (parity map, FB-114; S44O — call C6, R164's Marketing member: deliberate changes of this rule) */   // (REG-705) the Studio plan group follows them
   await phone.screenshot({ path: `${OUT}/va-08-phone-sheet.png` })
 
   console.log('Overflow at 320')
   const small = await browser.newPage({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true })
   await small.goto(`${BASE}/leads`, { waitUntil: 'networkidle' })
-  await small.getByRole('button', { name: 'More', exact: true }).click()
+  await small.getByRole('button', { name: /^More( \(|$)/ }).click()
   await small.getByRole('button', { name: /View as/ }).click()
   await small.getByRole('menuitemradio').first().waitFor()
   ok(await small.evaluate(() => document.documentElement.scrollWidth <= 320), 'no sideways scroll at 320')

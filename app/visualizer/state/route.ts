@@ -1,4 +1,5 @@
 import { saveRoomState, type RoomStateInput } from '@/app/visualizer/actions'
+import { signedOutResponse } from '@/lib/auth/session'   // (pending modules S30) the studio's — behind sign-in
 
 /*
  * (D9, verify round 1 — F041 · F073 · F201) The leaving page's autosave: on pagehide, or when the tab goes hidden, the editor sends its
@@ -22,6 +23,7 @@ function sameSite(req: Request): boolean {
 }
 
 export async function POST(req: Request) {
+  const out = await signedOutResponse(); if (out) return out
   if (!sameSite(req)) return Response.json({ error: 'Not allowed.' }, { status: 403 })
   const type = req.headers.get('content-type') ?? ''
   if (!/^(application\/json|text\/plain)\b/i.test(type)) return Response.json({ error: 'Send the picks as JSON.' }, { status: 415 })

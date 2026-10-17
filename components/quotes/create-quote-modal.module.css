@@ -16,7 +16,7 @@
 .panel {
   position: relative;
   width: var(--om-modal-xl); max-height: calc(100dvh - 96px);
-  height: min(960px, calc(100dvh - 96px));   /* (REG-517) one height for the rail and the picker — and the ready-made design dialog's 960 — so View all / New template never jump */
+  height: min(var(--om-modal-xl-height), calc(100dvh - 2 * var(--om-modal-xxl-margin)));   /* (REG-517) one height for the rail and the picker — and the ready-made design dialog's — so View all / New template never jump; (pending modules S17) the tall xl height every such dialog shares, 928 (was 960) */
 }
 /* (REG-494) the picker mode fills the panel, so the grid scrolls inside rather than the whole body */
 /* Body p24, the two blocks 24 apart; each block = eyebrow row + 12 + content. */
@@ -161,3 +161,5 @@
 .uploadRow > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .uploadMore, .uploadHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .uploadRow { grid-template-columns: minmax(0, 1fr) 96px; } .uploadRow > span:nth-child(1), .uploadRow > span:nth-child(3), .uploadRow > span:nth-child(4) { display: none; } }
+/* (S42 B-21) up to a tablet the item's name wraps rather than cutting — a touch screen has no hover to read the rest (P8) */
+@media (max-width: 1024px) { .uploadRow:not([data-head]) { padding-block: var(--om-spacing-2); } .uploadRow:not([data-head]) > span:nth-child(2) { white-space: normal; overflow-wrap: anywhere; } }

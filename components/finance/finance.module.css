@@ -1,0 +1,103 @@
+/*
+ * (gaps build F1 — money out) Money out's own parts, on the house pieces: the Money tab's stylesheet (money.module.css — tiles, banners, cells,
+ * fields) and the money dialogs' line grid (invoice-dialogs.module.css) are composed, never copied; what is here is only what money out adds —
+ * a PO's line with its trade, a quote line to pick, a receipt's tile, a panel's sections, Finance's toolbar. Tokens only.
+ */
+
+/* the Costs half on the Money tab: a section title above its tiles, like the tab's own head */
+.half { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; }
+.halfHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-on-surface-border); }
+.halfTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.halfHelp { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 880px; }
+/* (simplify S-07 · merge) the house tiles grid — the Money tab's own `.tiles` went with its StatTiles (a composes from a class that is gone draws nothing) */
+.tiles3 { composes: tiles from '../om/stat-tile.module.css'; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 767px) { .tiles3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 359px) { .tiles3 { grid-template-columns: minmax(0, 1fr); } }
+
+/* a PO's line: what it is · trade · qty · unit · unit price · amount · remove */
+.poLine { display: grid; grid-template-columns: minmax(0, 1fr) 136px 72px 88px 128px 104px 40px; gap: var(--om-spacing-2); align-items: center; }
+.poLine > * { min-width: 0; }
+/* (parity map, MO-009) a project with milestones: the line's ⋮ (Link to a milestone) beside its delete */
+.poLine[data-ms] { grid-template-columns: minmax(0, 1fr) 136px 72px 88px 128px 104px 80px; }
+.lineTools { display: inline-flex; align-items: center; justify-content: flex-end; }
+.lineFrom { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); grid-column: 1 / -1; margin-top: calc(-1 * var(--om-spacing-1)); }
+@media (max-width: 767px) {
+  .poLine { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 40px; }
+  .poLine[data-ms] { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 80px; }
+  .poLine .wide { grid-column: 1 / -1; }
+}
+
+/* a quote line to pick (Add from the quote) — the house card row: tick · what · trade and qty · cost */
+.picks { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); overflow: hidden; }
+.pickGroup { padding: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-bg); }
+.pick { display: grid; grid-template-columns: 24px minmax(0, 1fr) max-content; gap: var(--om-spacing-3); align-items: center; min-height: 48px; padding: var(--om-spacing-2) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-on-surface-border); cursor: pointer; }
+.pick:hover { background: var(--om-color-primary-variant); }
+.pick[data-taken] { cursor: default; color: var(--om-color-on-surface-secondary); }
+.pickName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.pickMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.pickAmt { font: var(--om-type-body-m); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mine { display: inline-block; margin-left: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-primary-default); }
+
+/* a cost record's files: the house square thumbnail at 56, the name under it */
+.docs { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.doc { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 96px; min-width: 0; text-decoration: none; color: inherit; }
+.docThumb { position: relative; width: 96px; height: 96px; border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-bg) center / cover no-repeat; display: grid; place-items: center; color: var(--om-color-on-surface-secondary); overflow: hidden; }
+.docName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.docRemove { position: absolute; top: 4px; right: 4px; }
+
+/* a record's panel (the house Drawer): its sections under rules */
+.panel { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.sectionTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.status { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.panelLines { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin: 0; padding: 0; list-style: none; }
+.panelLine { display: grid; grid-template-columns: minmax(0, 1fr) max-content; gap: var(--om-spacing-3); font: var(--om-type-body-m); }
+.panelLine .sub { grid-column: 1 / -1; }
+.history { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin: 0; padding: 0; list-style: none; }
+.historyRow { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.historyRow b { color: var(--om-color-on-surface-default); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.note { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.note[data-tone='alert'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
+
+/* (simplify S-10 · S-11) a phone's toolbar: the search and New's "+" share the first row, the chips scroll on the next (the house chip rail) */
+.phoneBar { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.phoneSearch { flex: 1 1 0; min-width: 0; }
+.phoneTools { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+/* the ghosts draw both toolbars and let the width pick one, as the page's own switch does once it knows the width */
+.ghostDesk { display: flex; }
+.ghostPhone { display: none; }
+/* (pending modules S17 — a bug fix) `.ghostDesk.ghostDesk`: the toolbar's own `display: flex`, later in this file, won over a single class — the desk toolbar stood over the phone's on every Finance ghost at 390 */
+@media (max-width: 767px) { .ghostDesk.ghostDesk { display: none; } .ghostPhone { display: flex; } }
+
+/* (simplify S-11) Money out: the kind switch scrolls as one row on a phone (the house chip rail); the kind's table below */
+.kindRail { flex: 1 1 100%; min-width: 0; }
+.kindBody { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-width: 0; }
+
+/* Finance's pages: the tab's toolbar (search · status chips · New) above its table */
+.page { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-width: 0; }
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.search { width: 280px; max-width: 100%; }
+.toolEnd { margin-left: auto; display: flex; align-items: center; gap: var(--om-spacing-2); }
+@media (max-width: 767px) { .search { width: 100%; } .toolEnd { margin-left: 0; } }
+
+/* the read file's band in the bill dialog */
+.readBand { display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.readBand[data-tone='alert'] { background: var(--om-color-tertiary-yellow-variant2, var(--om-color-surface-bg)); }
+.readMark { font: var(--om-type-body-s); color: var(--om-color-primary-default); }
+
+/* (simplify S-10) the pay dialog's payee band: the name, then the account and PayNow lines, each with its copy */
+.payTo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.payLine { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* the vendor's link page: the paper, then the answers */
+.answer { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.answerButtons { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+
+/* small layout helpers the dialogs and the panel share (no type or colour of their own) */
+.below { display: block; margin-top: var(--om-spacing-2); }
+.gapTop { margin-top: var(--om-spacing-3); }
+.inlineRow { display: inline-flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.totalsBox { margin-top: var(--om-spacing-2); }
+.grandValue { font: var(--om-type-subheading-m); }
+.wrapRow { flex-wrap: wrap; row-gap: var(--om-spacing-1); }   /* a PO's title and its chips wrap on a phone rather than push it sideways */

@@ -40,17 +40,23 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
   await step('g-tabs', async () => {
     await page.goto(`${BASE}/settings`); await ready(page)
     const tabs = await page.locator('[role="tablist"] [role="tab"]').allInnerTexts()
-    ok('g-tabs the strip reads in the new order', tabs.map((t) => t.trim()).join(' · ') === 'Studio · Lead management · Projects · Quotes & pricing · Finance · Notifications', tabs.join(' · '))
-    await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Projects' }).click()
-    ok('g-tabs Projects still answers Coming soon', /Coming soon/.test(await snack(page, /Coming soon/)))
+    // (pending modules S14, a deliberate change of this rule) the first module is named for what it holds — Roles & access
+    // (pending modules S23, a deliberate change of this rule) Meetings is a module of its own, after Lead management — the co-pilot's parts,
+    // the deal score, the checklists, the objection answers and the competitors (1.0's /copilot/settings)
+    ok('g-tabs the strip reads in the new order', tabs.map((t) => t.trim()).join(' · ') === 'Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Notifications', tabs.join(' · '))
+    // REG-921 (Projects round 1): Settings › Projects is live — and the gaps build's money out (F1, REG-1261…) made Finance live too
+    await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Finance' }).click()
+    await page.waitForURL(/section=finance/, { timeout: 8000 }).catch(() => {})
+    ok('g-tabs Finance opens its own module (money out)', /section=finance/.test(page.url()))
     /* the loader as streamed: its tab bones follow the same list (Projects and Finance narrower than their neighbours) */
     const html = (await (await page.request.get(`${BASE}/settings`)).text()).replace(/<script[\s\S]*?<\/script>/g, '')
     const probe = await ctx.newPage()
     await probe.route(`${BASE}/__ghost`, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: html }))
     await probe.goto(`${BASE}/__ghost`); await probe.waitForTimeout(800)
-    const widths = await probe.evaluate(() => { const row = [...document.querySelectorAll('[aria-label="Loading settings"] [aria-hidden]')].find((el) => el.children.length === 6); return row ? [...row.children].map((c) => c.getBoundingClientRect().width) : [] })
+    // (pending modules S23, a deliberate change of this rule) seven tabs: Meetings after Lead management
+    const widths = await probe.evaluate(() => { const row = [...document.querySelectorAll('[aria-label="Loading settings"] [aria-hidden]')].find((el) => el.children.length === 7); return row ? [...row.children].map((c) => c.getBoundingClientRect().width) : [] })
     await probe.close()
-    ok('g-tabs the ghost draws six tabs in the same order', widths.length === 6 && widths[2] < widths[1] && widths[2] < widths[3] && widths[4] < widths[3], widths.map(Math.round).join(','))
+    ok('g-tabs the ghost draws seven tabs in the same order', widths.length === 7 && widths[2] < widths[1] && widths[3] < widths[1] && widths[3] < widths[4] && widths[5] < widths[4], widths.map(Math.round).join(','))
     await page.bringToFront(); await page.keyboard.press('Meta+k')
     await page.getByRole('combobox', { name: 'Search the studio' }).fill('pricing'); await page.waitForTimeout(900)
     ok('g-tabs ⌘K still finds Quotes & pricing', /Quotes & pricing/.test(await page.locator('#gs-list').innerText()))
@@ -61,7 +67,8 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
   /* ── g-whomay (UAT 2.23 · 10.08): each row links to where its rule is set, and lands on it ── */
   await step('g-whomay', async () => {
     await page.goto(`${BASE}/settings`); await ready(page)
-    ok('g-whomay See leads names Who sees leads', (await page.getByTestId('may-link-see').innerText()) === 'Lead management › Who sees leads')
+    // (pending modules S14, a deliberate change of this rule) Who sees leads sits on this module now, above the table
+    ok('g-whomay See leads names Who sees leads', (await page.getByTestId('may-link-see').innerText()) === 'Who sees leads, above')
     ok('g-whomay a fixed rule has no link', (await page.getByTestId('may-delete-lead').locator('a').count()) === 0)
     await page.getByTestId('studio-roles').scrollIntoViewIfNeeded()
     await shot(page, 'g-whomay-links-1440', { clip: { x: 60, y: 0, width: 1380, height: 1024 } })
@@ -71,10 +78,13 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
       await page.waitForURL(new RegExp(`section=${section}.*#${hash}`)); await page.waitForTimeout(1600)
       ok(`g-whomay ${key} lands on #${hash}`, await inView(page, `#${hash}`))
     }
-    await land('see', 'lead-visibility', 'leads')
+    /* (pending modules S14, a deliberate change of this rule) See leads' rule is on this page: the link lands on the card above, no navigation */
+    await page.goto(`${BASE}/settings`); await ready(page)
+    await page.getByTestId('may-link-see').click(); await page.waitForTimeout(1200)
+    ok('g-whomay see lands on #lead-visibility, in the page', new URL(page.url()).hash === '#lead-visibility' && /section=studio|\/settings$|\/settings#/.test(page.url()) && await inView(page, '#lead-visibility'))
     await shot(page, 'g-whomay-landed-visibility-1440')
-    ok('g-whomay the landing page has Back to Settings › Studio (from=)', /from=%2Fsettings/.test(page.url()))
     await land('approve', 'quote-approval', 'quotes')
+    ok('g-whomay the landing page has Back to Settings (from=)', /from=%2Fsettings/.test(page.url()))
     await land('publish', 'template-approval', 'quotes')
     await land('payments', 'payment-lock', 'quotes')
     await page.goto(`${BASE}/settings`); await ready(page)
@@ -136,7 +146,7 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
   await step('g-dragorder questions', async () => {
     await page.goto(`${BASE}/company/questionnaire`); await ready(page)
     const rows = page.getByTestId('bank-question')
-    const qText = (i) => rows.nth(i).locator('[class*="__question"]').first().innerText()
+    const qText = (i) => rows.nth(i).locator('[class*="definition-list-module__"][class*="__name"]').first().innerText()   /* (pending modules S17, a deliberate change of this rule) the bank is the studio's definitions list — its question is the list's name cell */
     const first = await qText(0)
     await dragBelow(page, rows.nth(0).getByTestId('bank-question-handle'), rows.nth(1))
     ok('g-dragorder a dropped question answers "Order saved"', /Order saved/.test(await snack(page, /Order saved/)))
@@ -176,7 +186,7 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
     await form.getByLabel('Name').fill('priya   rajan-lim')
     await page.getByRole('dialog', { name: 'Add member' }).getByRole('button', { name: 'Add member' }).click()
     const s = await snack(page, /Priya Rajan-Lim/)
-    ok('g-nooptional the name is saved title-cased', sql(`select name from members where lower(name) like 'priya%'`) === 'Priya Rajan-Lim', s)
+    ok('g-nooptional the name is saved title-cased', sql(`select name from members where lower(name) like 'priya%' and id <> 'priya'`) === 'Priya Rajan-Lim', s) /* (parity map, FB-114 — a deliberate change of this rule: the demo has Priya Tan · Accounting) */
   })
   await step('g-ownrole', async () => {
     await page.goto(`${BASE}/company/members`); await ready(page)

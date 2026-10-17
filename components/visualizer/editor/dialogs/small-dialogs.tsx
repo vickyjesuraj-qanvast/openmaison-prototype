@@ -59,23 +59,25 @@ export function AddItemDialog({ kind, onClose, onDone, prefer = 'place' }: {
 /** The finish a category opens on — the wood-like books read as grain, everything else as matte. */
 const finishFor = (category: string) => (category === 'Flooring' || category === 'Laminates' ? 'natural' : 'matte')
 
-export function SwatchDialog({ file, suggestedCategory, onClose, onSave }: {
+export function SwatchDialog({ file, suggestedCategory, onClose, onSave, studioChoice = true }: {
   file: { url: string; name: string; hex: string } | null
   suggestedCategory: string | null
   onClose: () => void
   onSave: (m: Omit<MaterialRef, 'id' | 'source'>, toStudio: boolean) => Promise<boolean>
+  /** (pending modules S36) false — the website's trial: there is no studio to keep it for, so the swatch is used on this photo alone */
+  studioChoice?: boolean
 }) {
   const [name, setName] = useState('')
   const [cat, setCat] = useState('Paints')
   const [finish, setFinish] = useState('matte')
-  const [studio, setStudio] = useState(true)
+  const [studio, setStudio] = useState(studioChoice)
   const [busy, setBusy] = useState(false)
   const [was, setWas] = useState(file)
-  if (file !== was) { setWas(file); if (file) { setName(file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').slice(0, 40)); const c = suggestedCategory && GENERIC_CATEGORIES.includes(suggestedCategory as never) ? suggestedCategory : 'Paints'; setCat(c); setFinish(finishFor(c)); setStudio(true) } }
+  if (file !== was) { setWas(file); if (file) { setName(file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').slice(0, 40)); const c = suggestedCategory && GENERIC_CATEGORIES.includes(suggestedCategory as never) ? suggestedCategory : 'Paints'; setCat(c); setFinish(finishFor(c)); setStudio(studioChoice) } }
   const save = async () => { if (!file || !name.trim()) return; setBusy(true); const ok = await onSave({ name: name.trim(), hex: file.hex, finish: finish as MaterialRef['finish'], imageUrl: file.url, category: cat }, studio); setBusy(false); if (ok) onClose() }
   return (
-    <Dialog open={!!file} onClose={onClose} title="Add a material" subtitle="Use it in this design — and keep it for the studio’s next renders." size="form" width={400}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!name.trim() || busy} onPress={() => { void save() }}>{busy ? 'Saving…' : studio ? 'Save & use' : 'Use in this design'}</Button></>}>
+    <Dialog open={!!file} onClose={onClose} title="Add a material" subtitle={studioChoice ? 'Use it in this design — and keep it for the studio’s next renders.' : 'Use it on this photo.'} size="form" width={400}
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!name.trim() || busy} onPress={() => { void save() }}>{busy ? 'Saving…' : studio ? 'Save & use' : studioChoice ? 'Use in this design' : 'Use it'}</Button></>}>
       {file ? (
         <div className={styles.stack}>
           <div className={styles.swatchRow}>
@@ -86,10 +88,12 @@ export function SwatchDialog({ file, suggestedCategory, onClose, onSave }: {
           <TextField label="Name" required value={name} onChange={setName} placeholder="e.g. Walnut veneer" />
           <TextField label="Category" mode="select" value={cat} options={GENERIC_CATEGORIES} onChange={setCat} />
           <Chips label="Finish" options={[{ value: 'matte', label: 'Matte' }, { value: 'satin', label: 'Satin' }, { value: 'gloss', label: 'Gloss' }, { value: 'textured', label: 'Textured' }, { value: 'natural', label: 'Natural grain' }]} value={finish} onChange={setFinish} />
-          <label className={styles.switchRow}>
-            <span className={styles.switchText}>Save to the studio’s materials<span>The whole team can use it next time — Company › Materials keeps it.</span></span>
-            <Switch size="sm" isSelected={studio} onChange={(v: boolean) => setStudio(v)} aria-label="Save to the studio’s materials" />
-          </label>
+          {studioChoice ? (
+            <label className={styles.switchRow}>
+              <span className={styles.switchText}>Save to the studio’s materials<span>The whole team can use it next time — Company › Materials keeps it.</span></span>
+              <Switch size="sm" isSelected={studio} onChange={(v: boolean) => setStudio(v)} aria-label="Save to the studio’s materials" />
+            </label>
+          ) : null}
         </div>
       ) : null}
     </Dialog>

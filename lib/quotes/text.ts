@@ -27,6 +27,15 @@ export type TokenValues = Record<TokenKey, string>
 /** How a token sits in a template's text — the mock's bracketed placeholder ("[Name]", "[Company Name]"). */
 export const tokenText = (key: TokenKey) => `[${TOKENS.find((t) => t.key === key)!.label}]`
 
+/**
+ * (S44Q — row 311, her UAT ask 2026-10-15) What a template's studio tokens become when its text lands on a quote: the live fields, so the quote's
+ * Terms and Notes print the quote's issuing entity — its name and its phone (else the studio's) — whichever entity is picked, now or later. The
+ * client's name and the preparer's stay the words they were (they don't change with the entity). The T&Cs & Notes library keeps its
+ * "[Studio Name]" placeholders; the print resolves `{studio_name}` (lib/templates/fields.ts).
+ */
+export const LIVE_STUDIO_TOKENS = { studio: '{studio_name}', studioPhone: '{studio_phone}' } as const
+export const quoteTokenValues = (v: TokenValues): TokenValues => ({ ...v, ...LIVE_STUDIO_TOKENS })
+
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 /** Every token in `html` becomes the record it names (escaped). Unknown brackets are left as typed. */
 export function resolveTokens(html: string, v: TokenValues): string {

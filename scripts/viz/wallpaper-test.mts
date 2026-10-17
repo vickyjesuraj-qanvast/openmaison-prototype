@@ -5,10 +5,10 @@ import { recolor } from '../../lib/visualizer/engine/recolor.ts'
 import { catalogueItem } from '../../lib/visualizer/catalogue.ts'
 import { fromCatalogue } from '../../lib/visualizer/materials.ts'
 import { patternTile } from '../../lib/visualizer/patterns.ts'
-/* Dev check (REG-680): three wallpapers on the living room's back wall, as the engine lays them. Usage: npx tsx scripts/viz/wallpaper-test.mts <outDir> */
+/* Dev check (REG-680): four wallpapers on the living room's side wall (pending modules S43C: the owner's photo's widest wall), as the engine lays them. Usage: npx tsx scripts/viz/wallpaper-test.mts <outDir> */
 type Img = { width: number; height: number; data: Uint8ClampedArray }
 async function load(p: string): Promise<Img> { const { data, info } = await sharp(`public${p}`).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); return { width: info.width, height: info.height, data: new Uint8ClampedArray(data) } }
-const room = sampleByKey('living-room')!, wall = room.surfaces.find((s) => s.label === 'white painted back wall')!
+const room = sampleByKey('living-room')!, wall = room.surfaces.find((s) => s.label === 'cream painted side wall')!
 const cells: Buffer[] = []
 for (const id of ['wp-006', 'wp-012', 'wp-001', 'wp-004']) {
   const img = await load(room.original), m = fromCatalogue(catalogueItem(id)!)

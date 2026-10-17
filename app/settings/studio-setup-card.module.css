@@ -1,0 +1,6 @@
+/* (pending modules S08) Settings › Studio › Set up your studio: a Settings card (settings.module.css .setting) holding the LEAD STAGES rows
+   (components/projects/overview/row.tsx on project-overview.module.css — the Getting it live grammar), composed, never copied. Only the joins
+   are here: the rows' list sits out by its own inset so the icons line up with the card's title, and the head's count and button. */
+.list { margin: calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-5)) calc(-1 * var(--om-spacing-3)); min-width: 0; }
+.headEnd { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; min-height: 36px; }
+.foot { margin: 0; }

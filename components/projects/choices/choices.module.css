@@ -1,0 +1,128 @@
+/*
+ * (Projects round 8) A project's Choices tab — built on the house pieces, composed, never copied: the tab toolbar
+ * (components/om/tab-toolbar.module.css), the Updates tab's column of toolbar · chips · groups (its day head is the group's head), the
+ * detail card's white box (components/leads/detail/card.module.css) with the quote's approval / sent banner along its top as the state band
+ * (components/quotes/editor/template-bar.module.css), the house square thumbnail for every option (components/om/thumb.module.css, REG-820),
+ * the house text link and the quote Items' pulse for a choice just made or opened.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+
+/* The toolbar: "All Choices" · search · Add a choice */
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex: 1 1 auto; flex-wrap: nowrap; }
+}
+@media (max-width: 767px) { .bar { flex-wrap: nowrap; } }
+
+/* The groups: a room or a milestone each (the Updates tab's day head) */
+.groups { display: flex; flex-direction: column; gap: var(--om-spacing-8); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 24px; margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.groupCount { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.cards { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+/* One choice: the detail card's white box; its state band runs along its top edge */
+.choice { composes: card from '../../leads/detail/card.module.css'; position: relative; overflow: hidden; scroll-margin-block: 120px; }
+.choice[data-fresh]::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .choice[data-fresh]::after { animation-duration: .01ms; } }
+
+.band { composes: banner from '../../quotes/editor/template-bar.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5); }
+.bandIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
+.bandText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
+.bandActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
+.bandWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
+@media (max-width: 767px) { .band { padding: var(--om-spacing-2) var(--om-spacing-4); } }
+
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
+.head { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.choiceTitle { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 72ch; overflow-wrap: anywhere; white-space: pre-line; }
+
+/* The options: the house square, 136 on a desk — a row that wraps; three to a row on a phone */
+.options { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.option { position: relative; width: 136px; display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.optionThumb { composes: thumb from '../../om/thumb.module.css'; width: 136px; height: 136px; }
+.optionThumb[data-hex], .sourceThumb[data-hex], .pickedThumb[data-hex] { background: var(--swatch); }
+.optionThumb[data-hex]::after { box-shadow: inset 0 0 0 var(--om-border-1) color-mix(in srgb, var(--om-color-on-surface-default) 12%, transparent); }
+.option[data-chosen] .optionThumb::after { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.pickMark { position: absolute; top: var(--om-spacing-2); left: var(--om-spacing-2); z-index: 1; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
+.optionMenu { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); z-index: 2; display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+.optionName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.optionPrice { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.optionPrice[data-none] { color: var(--om-color-on-surface-secondary); }
+.optionSource { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* Add an option: a dashed square of the same size (the Files tab's dropzone border) */
+.addTile {
+  width: 136px; height: 136px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-1);
+  border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: transparent;
+  color: var(--om-color-primary-default); font: var(--om-type-subheading-s); cursor: pointer; transition: background var(--motion-hover);
+}
+.addTile:hover { background: var(--om-color-primary-variant); }
+.addTile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.addTile:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: transparent; }
+
+/* The pick's line — what it does to the contract (round 6 drafts the variation order from it) */
+.pickLine { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.pickLine > :first-child { flex-shrink: 0; }
+.pickLineAction { display: inline-flex; }
+.empty { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0; }
+
+@media (max-width: 767px) {
+  .body { padding: var(--om-spacing-4); }
+  .options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .option { width: auto; }
+  .optionThumb { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+  .addTile { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+  /* (fix-C, C-31) a phone has no hover for the cut name's tooltip: two lines before it cuts */
+  .optionName { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+  /* (fix-C, C-19) the lock's reason wraps under the band's words, never past the card's edge; the pick line's button drops under the line */
+  .band .bandWait { flex-shrink: 1; min-width: 0; }
+  .band .bandActions:has(.bandWait) { justify-content: flex-start; }
+  .pickLine { flex-wrap: wrap; align-items: flex-start; }
+  .pickLineText { flex: 1 1 0; min-width: 0; }
+  .pickLineAction { flex: 1 1 100%; padding-left: 28px; }
+}
+
+/* ── The dialogs (form dialogs; bottom sheets on a phone) ── */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+@media (max-width: 767px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+.eyebrow { composes: eyebrow from '../../company/price-book/price-book.module.css'; }
+.group2 { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.help { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Add an option › the source's list: rows of the house square and two lines, one press picks (a radio group) */
+.sourceList { display: flex; flex-direction: column; max-height: 360px; overflow-y: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); }
+.sourceGroup { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-bg); }
+.sourceRow { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); text-align: left; cursor: pointer; color: inherit; transition: background var(--motion-hover); }
+.sourceRow:first-child { border-top: 0; }
+.sourceRow:hover { background: var(--om-color-hover-04p); }
+.sourceRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.sourceThumb { composes: thumb from '../../om/thumb.module.css'; width: 40px; height: 40px; }
+.sourceText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sourceName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sourceLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sourceEmpty { padding: var(--om-spacing-6) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); text-align: center; }
+
+/* The option being made: its square at 96 beside where it came from */
+.picked { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.pickedThumb { composes: thumb from '../../om/thumb.module.css'; width: 96px; height: 96px; }
+.pickedText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pickedName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.pickedLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* "As the client sees it" — the portal's page ground under the client's card, at the phone's width (the Updates preview's frame) */
+.preview { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.previewCard { width: 100%; max-width: 420px; }
+/* (gaps build D, item 11 — 1.0 F-162) the team's own note on a choice: the card's note line, with the lock glyph that says it stays inside */
+.teamNote { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 72ch; overflow-wrap: anywhere; white-space: pre-line; }
+.teamNote > :first-child { flex-shrink: 0; margin-top: 2px; }
+.teamNote b { color: var(--om-color-on-surface-default); }
+/* (gaps build D, item 11) a vendor beside the source can run long: one line, cut */
+.optionSource { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

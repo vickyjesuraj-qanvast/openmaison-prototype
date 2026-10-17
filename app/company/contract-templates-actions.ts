@@ -4,8 +4,10 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractTemplates, contracts } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID, sessionMemberSql } from '@/lib/db/session'
+import { contractTemplateFiles, contractTemplates, contracts } from '@/lib/db/schema'
+import { checkPickedPdf, pdfNameOf, type PickedPdf } from '@/lib/contracts/pdf'
+import { PICTURE_URL, dataUrlSize } from '@/lib/leads/file-store'
+import { SESSION_MEMBER_ID, sessionMemberId } from '@/lib/db/session'
 import { AGREEMENT_TITLE, agreementHtml } from '@/lib/contracts/agreement'
 import { createContractDoc } from '@/app/contracts/actions'
 import { CONTRACT_HTML_MAX, sanitizeContractHtml } from '@/lib/contracts/sanitize'
@@ -14,6 +16,8 @@ import { fetchViewer } from '@/lib/leads/visibility'
 import { changeBlock, changeableIds, defaultBlock, nothingChangeable } from '@/lib/company/template-guard'
 import { TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { landingFolder } from '@/lib/company/folder-landing'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
+import { deskRefusal } from '@/lib/quotes/desk'   // (S45C) the editors' role rule (S44Z)
 /** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the template gone from under a stale page — else null. */
 const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: contractTemplates.createdBy }).from(contractTemplates).where(eq(contractTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
 
@@ -28,6 +32,7 @@ const TOO_LARGE = 'The document is too large to save — use a smaller picture'
 
 /** (REG-632, contracts parity Q-13) The studio's default contract template — one at most; a contract raised from a quote or the Won step starts from it. */
 export async function setDefaultContractTemplate(id: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const block = await defaultBlock(); if (block) return refuse(block)   // (REG-646, settings parity Q-07)
   const [t] = await db.select({ id: contractTemplates.id }).from(contractTemplates).where(eq(contractTemplates.id, id))
   if (!t) return refuse(TEMPLATE_GONE_LINE)
@@ -36,11 +41,28 @@ export async function setDefaultContractTemplate(id: string): Promise<void | Ref
   touch(id)
 }
 
+/** (S44R — UAT row 359, call C9, as recommended — her UAT ask 2026-10-15) *Use at handover*: the Hand over sheet offers this template as the
+    completion & warranty letter, filled from the project. One at most, as the default; Owners and Admins (the default's rule). A standard PDF
+    can't be filled from the project, so it can't be it. (invented copy) */
+export async function setHandoverContractTemplate(id: string, on: boolean): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const block = await defaultBlock(); if (block) return refuse(block)
+  const [t] = await db.select({ id: contractTemplates.id, kind: contractTemplates.kind, deletedAt: contractTemplates.deletedAt }).from(contractTemplates).where(eq(contractTemplates.id, id))
+  if (!t || t.deletedAt) return refuse(TEMPLATE_GONE_LINE)
+  if (on && t.kind === 'pdf') return refuse('A standard PDF can’t be filled from the project — use a written template at handover')
+  if (on) await db.update(contractTemplates).set({ useAtHandover: false }).where(eq(contractTemplates.useAtHandover, true))
+  await db.update(contractTemplates).set({ useAtHandover: on === true }).where(eq(contractTemplates.id, id))
+  touch(id)
+  revalidatePath('/projects', 'layout')
+}
+
 export type CreateContractTemplateInput = { title?: string; source: { kind: 'blank' } | { kind: 'starter' } | { kind: 'contract'; contractId: string }
   /** (Dane UAT 3.03) The folder open in the gallery — the new template is filed there (its maker may file it). */
   folderId?: string | null }
 /** Blank (an empty page), the starter agreement, or a copy of a contract's document. Returns the id. */
-export async function createContractTemplate(input: CreateContractTemplateInput): Promise<string> {
+export async function createContractTemplate(input: CreateContractTemplateInput): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const now = new Date()
   const id = randomUUID()
   let title = clean(input.title) || 'Untitled template', body = ''
@@ -53,11 +75,12 @@ export async function createContractTemplate(input: CreateContractTemplateInput)
   /* (REG-633, contracts parity Q-15) a new template asks the client to read to the end and tick to accept — 1.0's library default */
   const viewer = await fetchViewer()
   const { folderId } = await landingFolder('contracts', input.folderId, templateChangeBlock(viewer, viewer.id))
-  await db.insert(contractTemplates).values({ id, title, body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true, folderId })
+  await db.insert(contractTemplates).values({ id, title, body, createdBy: stampBy, updatedBy: stampBy, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true, folderId })
   touch(id)
   return id
 }
 export async function saveContractTemplate(templateId: string, patch: { title?: string; body?: string; requiresScroll?: boolean; requiresAccept?: boolean; acceptLabel?: string | null }): Promise<number | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const now = new Date()
   if (patch.title !== undefined) { const block = await refusalFor(templateId); if (block) return refuse(block) }   // (sweep S2 #16) the name is Rename's rule — the field renamed around it
   if (patch.body !== undefined && patch.body.length > CONTRACT_HTML_MAX) return refuse(TOO_LARGE)
@@ -71,23 +94,67 @@ export async function saveContractTemplate(templateId: string, patch: { title?: 
   touch(templateId)
   return now.getTime()
 }
-export async function renameContractTemplate(templateId: string, title: string): Promise<void | Refusal> { const r = await saveContractTemplate(templateId, { title }); if (typeof r !== 'number') return r }   // the save answers Rename's rule
-export async function duplicateContractTemplate(templateId: string): Promise<string> {
+export async function renameContractTemplate(templateId: string, title: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   const r = await saveContractTemplate(templateId, { title }); if (typeof r !== 'number') return r }   // the save answers Rename's rule
+export async function duplicateContractTemplate(templateId: string): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const [t] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId))
   if (!t) throw new Error('template not found')
   const now = new Date()
   const id = randomUUID()
-  await db.insert(contractTemplates).values({ id, title: `${t.title} (copy)`, body: t.body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: t.requiresScroll, requiresAccept: t.requiresAccept, acceptLabel: t.acceptLabel })
+  await db.insert(contractTemplates).values({ id, title: `${t.title} (copy)`, body: t.body, createdBy: stampBy, updatedBy: stampBy, createdAt: now, updatedAt: now, requiresScroll: t.requiresScroll, requiresAccept: t.requiresAccept, acceptLabel: t.acceptLabel,
+    kind: t.kind, fileName: t.fileName, fileSize: t.fileSize })   // (pending modules S03) a PDF's copy keeps its own bytes
+  if (t.kind === 'pdf') { const [f] = await db.select().from(contractTemplateFiles).where(eq(contractTemplateFiles.templateId, t.id)); if (f) await db.insert(contractTemplateFiles).values({ templateId: id, data: f.data, thumb: f.thumb }) }
   touch(id)
   return id
 }
+
+/* ── (pending modules S03 — 1.0's Accounts › Signing Documents › Upload PDF, contracts parity Q-26 revisited) standard PDFs ──────────────
+   A PDF a studio adds to signings — terms and conditions, a warranty, a care guide — is a contract template of kind 'pdf': the same gallery,
+   folders, rename, delete and Deleted Templates; its bytes kept apart (contract_template_files). It starts a contract (From Template, the
+   gallery's New contract from this template) and goes out with one in Send together; each lead gets its own copy, so a later change here
+   never reaches a document a client already has. Read and accept: a PDF can't be scrolled on the page, so it asks for the tick (1.0's
+   library default). Up to 8 MB (1.0's library took 5; Files' cap rules here). */
+const pdfThumbOf = (f: PickedPdf) => (typeof f.thumb === 'string' && PICTURE_URL.test(f.thumb) && f.thumb.length < 800_000 ? f.thumb : null)
+export async function createPdfTemplate(input: { title?: string; file: PickedPdf; folderId?: string | null }): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
+  const why = checkPickedPdf(input?.file, dataUrlSize); if (why) return refuse(why)
+  const now = new Date()
+  const id = randomUUID()
+  const name = pdfNameOf(input.file.name)
+  const viewer = await fetchViewer()
+  const { folderId } = await landingFolder('contracts', input.folderId, templateChangeBlock(viewer, viewer.id))
+  await db.insert(contractTemplates).values({ id, title: clean(input.title) || name.replace(/\.pdf$/i, ''), body: '', kind: 'pdf', fileName: name, fileSize: dataUrlSize(input.file.data),
+    createdBy: stampBy, updatedBy: stampBy, createdAt: now, updatedAt: now, requiresScroll: false, requiresAccept: true, folderId })
+  await db.insert(contractTemplateFiles).values({ templateId: id, data: input.file.data.replace(/^data:[^;,]*;base64,/, 'data:application/pdf;base64,'), thumb: pdfThumbOf(input.file) })
+  touch(id)
+  return id
+}
+/** A standard PDF swapped for a newer file — its author's, an Owner's or an Admin's (Rename's rule). Leads keep the copies they already have. */
+export async function replacePdfTemplate(templateId: string, input: { file: PickedPdf }): Promise<{ fileName: string } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const block = await refusalFor(templateId); if (block) return refuse(block)
+  const why = checkPickedPdf(input?.file, dataUrlSize); if (why) return refuse(why)
+  const [t] = await db.select({ kind: contractTemplates.kind }).from(contractTemplates).where(eq(contractTemplates.id, templateId))
+  if (t?.kind !== 'pdf') return refuse('A written template has no PDF of its own')
+  const name = pdfNameOf(input.file.name), data = input.file.data.replace(/^data:[^;,]*;base64,/, 'data:application/pdf;base64,')
+  await db.update(contractTemplates).set({ fileName: name, fileSize: dataUrlSize(data), updatedAt: new Date(), updatedBy: (await fetchViewer()).id ?? SESSION_MEMBER_ID }).where(eq(contractTemplates.id, templateId))
+  await db.insert(contractTemplateFiles).values({ templateId, data, thumb: pdfThumbOf(input.file) }).onConflictDoUpdate({ target: contractTemplateFiles.templateId, set: { data, thumb: pdfThumbOf(input.file) } })
+  touch(templateId)
+  return { fileName: name }
+}
 /** Soft delete (REG-502's rule for templates): contracts already on it keep their own copy of the document. */
 export async function deleteContractTemplate(templateId: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const block = await refusalFor(templateId); if (block) return refuse(block)
   await db.update(contractTemplates).set({ deletedAt: new Date() }).where(eq(contractTemplates.id, templateId)); touch(templateId)
 }
 /** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
 export async function restoreContractTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!ids.length) return { restored: 0, kept: 0 }
   const rows = await db.select({ id: contractTemplates.id, createdBy: contractTemplates.createdBy }).from(contractTemplates).where(inArray(contractTemplates.id, ids))
   const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
@@ -107,6 +174,7 @@ async function removable(ids: string[] | null): Promise<{ ids: string[]; kept: n
   return { ids: ok.map((t) => t.id), kept: rows.length - ok.length, rule }
 }
 export async function deleteContractTemplatesForever(ids: string[]): Promise<{ done: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!ids.length) return { done: 0, kept: 0 }
   const r = await removable(ids)
   if (r.rule) return refuse(r.rule)
@@ -115,6 +183,7 @@ export async function deleteContractTemplatesForever(ids: string[]): Promise<{ d
   return { done: r.ids.length, kept: r.kept }
 }
 export async function emptyContractTemplateTrash(): Promise<{ done: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const r = await removable(null)
   if (r.rule) return refuse(r.rule)
   if (r.ids.length) await db.delete(contractTemplates).where(inArray(contractTemplates.id, r.ids))
@@ -122,6 +191,8 @@ export async function emptyContractTemplateTrash(): Promise<{ done: number; kept
   return { done: r.ids.length, kept: r.kept }
 }
 /** The gallery's "New contract from this template": the lead picked, then the editor. */
-export async function contractFromTemplate(templateId: string, leadId: string): Promise<string> {
+export async function contractFromTemplate(templateId: string, leadId: string): Promise<string | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
+     // (S44Z) the editors' refusal comes back as it is
   return createContractDoc({ leadId, templateId })
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every paper's Download PDF, one call
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -12,12 +13,17 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { displayDateLong, isNric, maskNric } from '@/lib/format'
 import { acceptLabelOf } from '@/lib/contracts/policy'
 import type { BundleSigningData } from '@/lib/contracts/queries'
-import { signBundleOnline } from '@/app/contracts/actions'
+import { sendSigningCode, signBundleOnline } from '@/app/contracts/actions'
+import { CaseTrustBox } from './casetrust-box'
+import { CASETRUST_RULE } from '@/lib/contracts/casetrust'
 import { ContractPaper, type ClientSignature } from '@/components/contracts/render/contract-paper'
 import { LinkNotice } from './link-notice'
+import { ContractPdf } from '@/components/contracts/render/contract-pdf'
 import { SigningRecord } from './signing-record'
 import { deviceInfo, maskPhone } from './signing-page'
+import { SIGN_CODE_DEMO, SIGN_CODE_WRONG } from '@/lib/contracts/model'   // (S42 B-03)
 import styles from './signing-page.module.css'
+import { DepositPay, depositAhead } from './deposit-pay'   // (S44R, C7)
 
 type Step = 'review' | 'code' | 'sign' | 'done'
 
@@ -27,7 +33,8 @@ type Step = 'review' | 'code' | 'sign' | 'done'
  * gates ask (read to the end, tick its words) before Continue; the last leads to the code and one signature — typed or drawn — that
  * covers every document the agreement sentence names. A document already signed on its own shows as signed and asks nothing.
  */
-export function BundleSigningPage({ data }: { data: BundleSigningData }) {
+export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }: { data: BundleSigningData; /** (gaps build D, item 6) the studio is CaseTrust-accredited */ caseTrust?: boolean
+  /** (S42 B-03) the SMS stand-in answers — said, never "we sent a code" */ codeDemo?: boolean }) {
   const { bundle, documents, lead, studio, brand, studioSignature, state } = data
   const router = useRouter()
   const snackbar = useSnackbar()
@@ -53,7 +60,10 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
   const needsScroll = !!doc && docOpen && doc.contract.requiresScroll && doc.contract.source !== 'uploaded'
   const needsAccept = !!doc && docOpen && doc.contract.requiresAccept
   const readEnd = !needsScroll || !!read[doc!.contract.id]
-  const gatesMet = readEnd && (!needsAccept || !!accepted[doc!.contract.id])
+  /* (gaps build D, item 6) the CaseTrust disclosure rides on the last document, before Continue to sign */
+  const [caseTrustAt, setCaseTrustAt] = useState<number | null>(null)
+  const needsCaseTrust = caseTrust && state === 'open' && at >= documents.length - 1
+  const gatesMet = readEnd && (!needsAccept || !!accepted[doc!.contract.id]) && (!needsCaseTrust || !!caseTrustAt)
   const endRef = useRef<HTMLDivElement>(null)
   /* (UX audit C3) On a phone or a tablet the card sits above the paper: the single page's sticky bar (REG-660) says at the paper's foot what is
      next and does it — "Document 1 of 2 read · Next document", then "Continue to sign"; the next document starts at its own top. */
@@ -70,8 +80,20 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
     return () => io.disconnect()
   }, [step, docId, needsScroll])
   const last = at >= documents.length - 1
+  /* (S42 B-03) the code goes through the one provider; a real one's "sent" is said, the stand-in's line says no text goes */
+  const [codeBusy, setCodeBusy] = useState(false)
+  const sendCode = async (again = false) => {
+    if (codeBusy) return
+    setCodeBusy(true)
+    try {
+      const r = await sendSigningCode({ bundleId: bundle.id })
+      if ('error' in r) { snackbar({ message: r.error }); if (!again) router.refresh(); return }
+      setStep('code')
+      if (!r.demo) snackbar({ message: `${again ? 'Code sent again' : 'Code sent'} to ${masked}` })
+    } catch { snackbar({ message: 'Couldn’t send the code — please try again' }) } finally { setCodeBusy(false) }
+  }
   const next = () => {
-    if (last) { setStep('code'); snackbar({ message: `Code sent to ${masked}` }); return }
+    if (last) { void sendCode(); return }
     setAt((i) => i + 1)
     /* at a desk the page's top is the walk's; where the card stacks above the paper (≤1024), the next document's own top */
     if (window.matchMedia('(max-width: 1024px)').matches) requestAnimationFrame(() => walkRef.current?.scrollIntoView({ block: 'start' }))
@@ -85,20 +107,23 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
     setBusy(true)
     const nricKept = nric.trim() && isNric(nric) ? maskNric(nric) : null   /* (REG-563, REG-631) only the masked form leaves the page */
     try {
-      const r = await signBundleOnline(bundle.id, name.trim(), nricKept, data.fingerprint, { kind: how, drawing: how === 'draw' ? drawing : null, acceptedAt: accepted, ...deviceInfo() })
+      const r = await signBundleOnline(bundle.id, name.trim(), nricKept, data.fingerprint, { kind: how, drawing: how === 'draw' ? drawing : null, acceptedAt: accepted, caseTrustAt, code, ...deviceInfo() })
       if ('changed' in r) {
         snackbar({ message: 'These documents were updated while you were reading — please read them again before signing' })   /* (REG-631, parity Q-06) */
         setRead({}); setAccepted({}); setAt(0); setStep('review'); router.refresh(); return
       }
       if ('refused' in r) {
         if (r.refused === 'accept') { snackbar({ message: 'Tick that you accept each document first' }); setAt(0); setStep('review'); return }
+        if (r.refused === 'casetrust') { snackbar({ message: CASETRUST_RULE }); setStep('review'); return }   // (gaps build D, item 6)
+        if (r.refused === 'code') { snackbar({ message: SIGN_CODE_WRONG }); setCode(''); setStep('code'); return }   // (S42 B-03)
+        if (r.refused === 'expired') snackbar({ message: 'This link has expired — please ask for a new one' })   // (pending modules S03)
         router.refresh(); return
       }
       setSigned({ name: name.trim(), at: new Date(r.signedAt), nric: nricKept, drawing: how === 'draw' ? drawing : null }); setStep('done')
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t sign — please try again' }) } finally { setBusy(false) }
   }
-  if (state === 'not-sent' || state === 'inactive') {
+  if (state === 'not-sent' || state === 'inactive' || state === 'expired' || state === 'quote-updating') {   // (S42 B-01)
     return (
       <div className={styles.page} data-testid="bundle-signing-page" data-state={state}>
         <header className={styles.top}>
@@ -108,20 +133,16 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
             <span className={styles.studio}>{studioName}</span>
           </span>
         </header>
-        <LinkNotice state={state} studio={studioName} />
+        <LinkNotice state={state} studio={studioName} set />
       </div>
     )
   }
   const paperOf = (d: (typeof documents)[number]) => {
     const kept = d.signed
     if (d.contract.source === 'uploaded') {
-      return (
-        <div className={styles.uploaded}>
-          <span className={styles.uploadedGlyph}><Icon name="description" size={32} /></span>
-          <span className={styles.uploadedName}>{d.contract.fileName ?? d.contract.title}</span>
-          <span className={styles.uploadedHelp}>{studioName} shared this document for your signature.</span>
-        </div>
-      )
+      /* (pending modules S03) the PDF itself, through the set's own link */
+      const src = `/sign/bundle/${bundle.id}/file/${d.contract.id}`
+      return <ContractPdf name={d.pdf?.name || d.contract.fileName || d.contract.title} src={d.pdf ? src : null} thumb={d.pdf?.thumb ? `${src}?thumb=1` : null} help={`${studioName} shared this document for your signature.`} />
     }
     const client: ClientSignature = kept ? { name: d.contract.signedBy ?? signed?.name ?? recipient, at: d.contract.signedAt ?? signed?.at ?? new Date(data.now), nric: d.contract.signedNric, drawing: d.contract.signatureKind === 'draw' ? d.contract.signatureData : null } : signed
     return <ContractPaper html={kept?.body ?? d.contract.body ?? ''} values={d.values} brand={brand} studio={studio} studioSignature={kept ? kept.studioSignature : studioSignature} client={client} live={!signed && !kept} letterhead={d.letterhead} />
@@ -155,7 +176,7 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
             </section>
           ))}
           {bundle.signedAt ? (
-            <SigningRecord r={{ signedBy: bundle.signedBy, signedAt: bundle.signedAt, nric: bundle.signedNric, signatureKind: bundle.signatureKind, phone: bundle.signerPhone, device: bundle.signerUserAgent, timezone: bundle.signerTimezone, viewedAt: bundle.viewedAt, acceptedAt: null, hash: bundle.signingHash, documents: titles }} />
+            <SigningRecord r={{ signedBy: bundle.signedBy, signedAt: bundle.signedAt, nric: bundle.signedNric, signatureKind: bundle.signatureKind, phone: bundle.signerPhone, method: documents[0]?.contract.verificationMethod ?? null, device: bundle.signerUserAgent, timezone: bundle.signerTimezone, viewedAt: bundle.viewedAt, acceptedAt: null, hash: bundle.signingHash, documents: titles }} />
           ) : null}
         </div>
         <aside ref={cardRef} className={styles.card} aria-label="Sign these documents" data-step={step}>
@@ -164,7 +185,8 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
               <span className={styles.done}><Icon name="check_circle" size={40} /></span>
               <h2 className={styles.cardTitle}>Signed</h2>
               <p className={styles.cardText}>{signed ? <>{documents.length === 1 ? 'The document' : `All ${documents.length} documents`} signed by <strong>{signed.name}</strong> on {displayDateLong(signed.at)}.</> : <>Every document here is signed.</>} Both you and {studioName} keep a copy of each.</p>
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => window.print()}>Download a copy</Button>
+              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => printPaper()}>Download a copy</Button>
+              {data.deposit ? <DepositPay d={data.deposit} /> : null}   {/* (S44R — UAT row 358, call C7) the set's agreement asked for the deposit */}
             </>
           ) : (
             <>
@@ -173,7 +195,8 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
               {step === 'review' && doc ? (
                 <>
                   <ol className={styles.bundleList}>{documents.map((d, i) => <li key={d.contract.id} data-on={i === at || undefined}>{d.contract.title}</li>)}</ol>
-                  <p className={styles.cardText}>Hi {recipient.split(' ')[0]}, please read each document. One signature at the end covers all of them; we’ll send a one-time code to <strong>{masked}</strong> to confirm it’s you.</p>
+                  <p className={styles.cardText}>Hi {recipient.split(' ')[0]}, please read each document. One signature at the end covers all of them; {codeDemo ? 'a one-time code confirms it’s you.' : <>we’ll send a one-time code to <strong>{masked}</strong> to confirm it’s you.</>}</p>
+                  {data.deposit && !data.deposit.paid ? <p className={styles.fine} data-testid="deposit-ahead">{depositAhead(data.deposit)}</p> : null}   {/* (S44R, C7) */}
                   {needsScroll ? (
                     <p className={styles.gate} data-done={readEnd || undefined} data-testid="gate-scroll"><Icon name={readEnd ? 'check_circle' : 'arrow_downward'} size={20} />{readEnd ? 'You’ve read to the end' : 'Read to the end of this document to continue'}</p>
                   ) : null}
@@ -183,16 +206,17 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
                       <span>{acceptLabelOf(doc.contract)}</span>
                     </label>
                   ) : null}
-                  <Button isDisabled={!gatesMet} onPress={next}>{last ? 'Continue to sign' : 'Continue'}</Button>
+                  {needsCaseTrust ? <CaseTrustBox studio={studioName} at={caseTrustAt} onTick={setCaseTrustAt} disabled={!readEnd} /> : null}
+                  <Button isDisabled={!gatesMet || codeBusy} onPress={next}>{last ? 'Continue to sign' : 'Continue'}</Button>
                 </>
               ) : null}
               {step === 'code' ? (
                 <>
-                  <p className={styles.cardText}>We sent a six-digit code to {masked}.</p>
+                  {codeDemo ? <p className={styles.cardText} data-testid="sign-code-demo">{SIGN_CODE_DEMO}</p> : <p className={styles.cardText}>We sent a six-digit code to {masked}.</p>}
                   <TextField label="One-time code" required value={code} onChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" maxLength={6} autoFocus
                              onKeyDown={(e) => { if (e.key === 'Enter' && code.length === 6) { e.preventDefault(); setStep('sign') } }} />
                   <div className={styles.row}>
-                    <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: `Code sent again to ${masked}` })}>Send again</Button>
+                    {codeDemo ? null : <Button variant="secondary" appearance="text" isDisabled={codeBusy} onPress={() => { void sendCode(true) }}>Send again</Button>}   {/* (S42 B-03) */}
                     <Button isDisabled={code.length !== 6} onPress={() => setStep('sign')}>Verify</Button>
                   </div>
                 </>
@@ -218,7 +242,7 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
         <div className={styles.nextBar} data-testid="sign-next">
           {gatesMet
             ? <><span className={styles.nextText}>Document {at + 1} of {documents.length} read</span><Button onPress={() => { next(); if (last) toCard() }}>{last ? 'Continue to sign' : 'Next document'}</Button></>
-            : <><span className={styles.nextText}>{!readEnd ? 'Read to the end of this document' : 'Tick that you accept, in the box at the top'}</span>{readEnd ? <Button variant="secondary" appearance="outlined" onPress={toCard}>Go to the box</Button> : null}</>}
+            : <><span className={styles.nextText}>{!readEnd ? 'Read to the end of this document' : needsAccept && !accepted[doc!.contract.id] ? 'Tick that you accept, in the box at the top' : 'Tick the CaseTrust disclosure, in the box at the top'}</span>{readEnd ? <Button variant="secondary" appearance="outlined" onPress={toCard}>Go to the box</Button> : null}</>}
         </div>
       ) : null}
     </div>

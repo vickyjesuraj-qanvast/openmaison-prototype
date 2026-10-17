@@ -1,0 +1,5 @@
+/* (gaps build, package A — 11) A page that failed: the not-found notice's page and body (record-not-found.module.css), composed. */
+.page { composes: page from './record-not-found.module.css'; }
+.body { composes: body from './record-not-found.module.css'; }
+/* the error's reference on its own line under the help, in the help's own type */
+.ref { display: block; margin-top: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

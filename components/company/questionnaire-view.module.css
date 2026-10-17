@@ -1,4 +1,5 @@
-/* (REG-612) Company › Questionnaire — Profile's card shell; the bank on the card table (REG-614 · REG-727). */
+/* (REG-612) Company › Questionnaire — Profile's card shell; the bank is the studio's definitions list (components/om/definition-list.tsx, pending
+   modules S17 — it was a twin of Settings' Custom fields), on the card table (REG-614 · REG-727). */
 .layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); }   /* (REG-661, owner 2026-09-25) the content's full width, as Profile and Settings */
 .card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }   /* (REG-729) one inner gap, 16 */
 .cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
@@ -6,35 +7,3 @@
 .cardTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }   /* (REG-729) the card title: heading-h4 */
 .cardHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 80ch; }
 .empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) dashed var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }
-.text { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
-.question { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
-.options { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.flag { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
-.optionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.optionsLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.optionRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
-.optionRow > :first-child { flex: 1; min-width: 0; }
-.error { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
-/* (REG-614 · REG-727) The bank is a card table (components/om/card-table.module.css): a bordered list, a 40px caption head, 56px
-   rows, the switches centred under their column names, the actions (order · edit · delete) at the end. Here only its tracks. */
-.table { composes: table from '../om/card-table.module.css'; }
-.thead { composes: head from '../om/card-table.module.css'; }
-.trow { composes: row from '../om/card-table.module.css'; }
-.col { composes: col from '../om/card-table.module.css'; }
-.actionsHead { composes: actionsHead from '../om/card-table.module.css'; }
-.actions { composes: actions from '../om/card-table.module.css'; }
-.thead, .trow { grid-template-columns: minmax(240px, 1fr) 96px 96px 120px; }
-.trow:not([data-enabled]) .question { color: var(--om-color-on-surface-secondary); }
-/* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
-@media (max-width: 1024px) { .thead, .trow { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
-@media (max-width: 767px) { .thead, .trow { grid-template-columns: minmax(0, 1fr) 56px 56px; } }
-/* (Dane UAT 3.38) Drag to reorder: the rows sit in motion's Reorder group, which draws no box of its own (the table's rows stay its flex
-   children); the handle leads the question cell (the task template's handle, composed) and the head's label lines up with the question.
-   A row being dragged rises on the card's own surface. */
-.rowGroup { display: contents; }
-.lead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
-.handle { composes: handle from './templates/editors/library-editor.module.css'; flex-shrink: 0; }
-.handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
-.table[data-reorder] .thead > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
-.trow[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }

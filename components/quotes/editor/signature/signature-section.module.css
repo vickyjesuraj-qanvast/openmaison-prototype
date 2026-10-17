@@ -52,3 +52,4 @@
 .upload { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .uploadNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .uploadNote[data-error] { color: var(--om-color-tertiary-red-default); }
+.consentNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (pending modules S03) what Save does with the member's documents; off, the way back on */

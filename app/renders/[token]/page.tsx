@@ -1,21 +1,12 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { fetchShare, shareMeta, type PublicShare } from '@/lib/visualizer/queries'
 import { fetchBrand } from '@/lib/templates/queries'
-import { siteConfig } from '@/lib/config'
+import { requestOrigin } from '@/lib/link-cards/origin'
 import { RenderLinkClosed, RenderSharePage } from '@/components/visualizer/share/render-share-page'
 import { RenderShareSkeleton } from '@/components/visualizer/skeletons'
 import { PageReveal } from '@/components/shell/page-reveal'
 
 export const dynamic = 'force-dynamic'
-
-/** The origin the link was opened on — a WhatsApp preview needs absolute addresses, wherever the prototype is served. */
-async function origin(): Promise<URL> {
-  const h = await headers()
-  const host = h.get('x-forwarded-host') ?? h.get('host')
-  const proto = h.get('x-forwarded-proto')?.split(',')[0]?.trim() ?? (host?.startsWith('localhost') || host?.startsWith('127.') ? 'http' : 'https')
-  try { return new URL(host ? `${proto}://${host}` : siteConfig.url) } catch { return new URL(siteConfig.url) }
-}
 
 /**
  * (audit 2026-09-26, critic §2) What WhatsApp unfurls when the studio pastes the link: the studio's name, a line on what is inside and
@@ -23,7 +14,7 @@ async function origin(): Promise<URL> {
  */
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
   const { token } = await params
-  const [meta, base] = await Promise.all([shareMeta(token), origin()])
+  const [meta, base] = await Promise.all([shareMeta(token), requestOrigin()])   // (pending modules S02) the origin helper every client link shares
   const title = meta?.title ?? 'Design ideas'
   const studio = title.replace(/^Design ideas · /, '')
   /* (round 1) a closed link's preview asks the studio by name, as the page's notice does — never "your designer" */

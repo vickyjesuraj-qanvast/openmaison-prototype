@@ -1,4 +1,4 @@
-import { flattenItems, lineTotalMinor, printsWord, descendantIds } from '@/lib/quotes/math'
+import { flattenItems, lineTotalMinor, printsWord, descendantIds, withSectionWords } from '@/lib/quotes/math'
 import { htmlToPlain, printAsWord } from '@/lib/quotes/items-model'
 import type { QuoteItem } from '@/lib/db/schema'
 import type { YourLine } from './compare'
@@ -14,7 +14,7 @@ import type { YourLine } from './compare'
 type Item = Pick<QuoteItem, 'id' | 'parentId' | 'kind' | 'status' | 'position' | 'optional' | 'printAs' | 'printAsText' | 'name' | 'description' | 'category' | 'room' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct'>
 
 export function yourLinesFrom(items: Item[]): YourLine[] {
-  const ordered = flattenItems(items)
+  const ordered = flattenItems(withSectionWords(items))   // (S44I — M17) a line in a section that prints a word carries that word
   const byId = new Map(items.map((i) => [i.id, i]))
   const declined = descendantIds(items, items.filter((i) => i.kind === 'group' && i.status === 'Declined').map((i) => i.id))
   const out: YourLine[] = []

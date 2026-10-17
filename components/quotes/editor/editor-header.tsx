@@ -1,5 +1,7 @@
 'use client'
 
+import { ProTag } from '@/components/credits/pro-tag'
+import { usePlanLock } from '@/components/credits/credits-client'
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ds'
@@ -8,14 +10,16 @@ import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
+import { PROJECT_TABS } from '@/lib/projects/tabs'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { useSheetLayout } from '@/components/om/sheet'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
-import type { EditorLead, QuoteContract, QuoteSibling } from '@/lib/quotes/editor'
+import type { EditorLead, QuoteContract, QuoteSibling, QuoteVariation } from '@/lib/quotes/editor'
 import { SendButton, type SendKind, type SendMode } from '@/components/quotes/send/send-button'
 import styles from './editor-header.module.css'
+import { variationLabel } from '@/lib/projects/money'
 
-export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink'
+export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink' | 'viewLink'
 export type { SendKind, SendMode }
 
 /**
@@ -25,10 +29,24 @@ export type { SendKind, SendMode }
  * is the QUOTE's (the lead's name lives in the crumb — audit 2026-09-15); the status pill is the host's (REG-404).
  * Send, the quote switch, Preview, PDF / Print, Save as template, Revise and Version History (REG-565) are live; the comment button answers coming soon.
  */
+/** (fix-C, C-13) A variation order's last crumb: the project tab it was opened from (Choices, Money…), else Money — X / Back already return there. */
+function voCrumb(projectId: string, from: string | undefined): { label: string; href: string } {
+  const m = from ? new RegExp(`^/projects/${projectId}/([a-z]+)`).exec(from) : null
+  const tab = m?.[1] ? PROJECT_TABS.find((t) => t.slug === m[1]) : undefined
+  return tab && from ? { label: tab.label, href: from } : { label: 'Money', href: `/projects/${projectId}/money` }
+}
+
 export function EditorHeader({
   lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,
-  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval', contract = null, contractHref, deleteBlock = null,
+  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval', contract = null, contractHref, deleteBlock = null, variation = null, from, viewLink = null,
 }: {
+  /** (pending modules S02) The kebab's *Share a view-only link* — offered on a quote (not a variation order); `block` greys it with the rule in the row. */
+  viewLink?: { block: string | null } | null
+  /** (fix-C, C-13) Where the editor was opened from — a variation order's crumb names that tab of its project (Choices, Money). */
+  from?: string
+  /** (Projects round 5, F-06) A variation order: the crumb is its project's Money tab, the header says what it is, and the kebab keeps what a
+      change to the contract does (no contract, template, X-Ray or duplicate of its own). */
+  variation?: QuoteVariation | null
   /** (sweep S1) why the viewer may not delete this quote — the kebab's Delete greys with the rule, as the lists' do */
   deleteBlock?: string | null
   /** (REG-632, contracts parity Q-09) The contract raised from this quote, as a chip that opens it. */
@@ -58,18 +76,21 @@ export function EditorHeader({
   clientViewOn?: boolean
   onClientView?: () => void
 }) {
+  const xrayLocked = usePlanLock('quote_xray').locked   // (pending modules S19) Quote X-Ray is Pro
+  const tplLocked = usePlanLock('template_editor').locked   // (pending modules S19) the template editor is Pro
   const [menu, setMenu] = useState<'switch' | 'more' | null>(null)
   const folded = useMediaQuery(TABLET_DOWN)   // ≤1024 Preview and Comments live in the kebab (editor-header.module.css)
   const sheet = useSheetLayout()   // ≤767 the switch list is a bottom sheet with its own heading
   /* (Dane UAT 6.03, t-6.03) The ▾ lists the lead's OTHER quotes — beside the "Version 1" chip, a list with no heading read as versions (renaming
      changes only the title). It says whose quotes they are on every width: the sheet's heading on a phone, the house group title elsewhere. */
-  const switchHeading = `${lead.name}’s quotes`
+  const switchHeading = variation ? `${variation.projectName}’s variation orders` : `${lead.name}’s quotes`
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
   return (
     <header className={styles.header}>
       {/* (REG-455, owner 2026-09-16) The mock's arrow_back is gone: the header opens on the crumb, and the close X is the way out. */}
       <div className={styles.titleBlock}>
-        <Crumbs className={styles.crumb} items={[{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Quotes', href: `/leads/${lead.id}/quotes` }]} />   {/* (REG-536) */}
+        <Crumbs className={styles.crumb} items={variation ? [{ label: 'Projects', href: '/projects' }, { label: variation.projectName, href: `/projects/${variation.projectId}` }, voCrumb(variation.projectId, from)]
+          : [{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Quotes', href: `/leads/${lead.id}/quotes` }]} />   {/* (REG-536 · Projects round 5) */}
         <div className={styles.titleRow}>
           <span className={styles.anchor}>
             <button type="button" className={styles.switch} aria-haspopup="menu" aria-expanded={menu === 'switch'}
@@ -91,9 +112,10 @@ export function EditorHeader({
             </Dropdown>
           </span>
           <div className={styles.chips}>
+            {variation ? <MetaChip icon="request_quote" color="yellow">Variation order</MetaChip> : null}
             <MetaChip>{number}</MetaChip>
             <MetaChip>Version {version}</MetaChip>
-            <MetaChip>{status}</MetaChip>
+            <MetaChip>{variation ? variationLabel({ status }) : status}</MetaChip>{/* (fix-D, D-24) a variation order's state in the Money tab's words */}
             {contract && contractHref ? (
               <Tooltip label={`Open ${contract.title}`}>
                 <Link href={contractHref} className={styles.chipLink} data-testid="quote-contract-chip"><MetaChip icon="contract">Contract · {contract.status}</MetaChip></Link>
@@ -111,7 +133,7 @@ export function EditorHeader({
         {statusSlot}
         <span className={`${styles.sendBtn} ${styles.anchor}`}>
           {/* (UX audit Q2) The quote's one Send (components/quotes/send/send-button.tsx) — Preview's bar carries the same. */}
-          <SendButton kind={sendKind} canSend={canSend} hint={sendHint} status={status} onSend={onSend} />
+          <SendButton kind={sendKind} canSend={canSend} hint={sendHint} status={status} onSend={onSend} variation={!!variation} />
         </span>
       </span>
       <div className={styles.actions}>
@@ -146,13 +168,18 @@ export function EditorHeader({
                 <DropdownDivider />
               </>
             ) : null}
-            <DropdownItem onSelect={pick(() => onMenu('rename'))}>Rename Quote</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('duplicate'))}>Duplicate and Edit</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('rename'))}>{variation ? 'Rename' : 'Rename Quote'}</DropdownItem>
+            {variation ? null : <DropdownItem onSelect={pick(() => onMenu('duplicate'))}>Duplicate and Edit</DropdownItem>}
             <DropdownItem onSelect={pick(() => onMenu('revise'))}>Revise — new version</DropdownItem>   {/* (REG-565) keeps this version, starts the next under the same number */}
-            <DropdownItem onSelect={pick(() => onMenu('template'))}>Save as Template</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('xray'))}>Compare with another quote</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('contract'))}>Create contract from this quote</DropdownItem>   {/* (REG-534) */}
+            {variation ? null : (
+              <>
+                <DropdownItem meta={tplLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('template'))}>Save as Template</DropdownItem>
+                <DropdownItem meta={xrayLocked ? <ProTag /> : undefined} onSelect={pick(() => onMenu('xray'))}>Compare with another quote</DropdownItem>   {/* (pending modules S19) Pro on Free — the press opens the lock */}
+                <DropdownItem onSelect={pick(() => onMenu('contract'))}>Create contract from this quote</DropdownItem>   {/* (REG-534) */}
+              </>
+            )}
             <DropdownItem onSelect={pick(() => onMenu('confirmLink'))}>Copy confirmation link</DropdownItem>   {/* (REG-587) */}
+            {viewLink ? <DropdownItem disabled={!!viewLink.block} title={viewLink.block ?? undefined} onSelect={pick(() => onMenu('viewLink'))}>Share a view-only link</DropdownItem> : null}   {/* (pending modules S02 — 1.0's live preview link) */}
             <DropdownDivider />
             <DropdownItem onSelect={pick(() => onMenu('pdf'))}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('export'))}>Export</DropdownItem>

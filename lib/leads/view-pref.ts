@@ -24,5 +24,7 @@ export function rememberView(v: ListingView) {
   try { localStorage.setItem(KEY, v) } catch {}
   const url = new URL(window.location.href)
   if (v === 'table') url.searchParams.delete('view'); else url.searchParams.set('view', v)
-  window.history.replaceState(window.history.state, '', url)
+  /* (parity P-18) `null`, not the entry's own state: handed Next's state, the router took the call for its own and never learnt the new
+     address, so its next refresh wrote the old one back — `?view=` (and the listing's scope, search and Filters beside it) gone. */
+  try { window.history.replaceState(null, '', url) } catch { /* a browser's replaceState budget */ }
 }

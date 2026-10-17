@@ -1,5 +1,6 @@
 'use server'
 
+import { requirePlan } from '@/lib/credits/plan-gate'
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, eq, isNull } from 'drizzle-orm'
@@ -11,14 +12,21 @@ import { logLeadEvent } from '@/lib/leads/events'
 import { canDeleteComparison } from '@/lib/xray/policy'
 import { fetchBrand } from '@/lib/templates/queries'
 import { compareQuotes, ENGINE, readResult, refAsYours, type XrayOverrides, type YourLine } from '@/lib/xray/compare'
-import { readOtherQuote, type RefLine, type RefQuote } from '@/lib/xray/reference'
+import { readOtherQuote, referenceQuote, type RefLine, type RefQuote } from '@/lib/xray/reference'
 import { cleanLines } from '@/lib/xray/reading'
 import { loadYourLines } from '@/lib/xray/queries'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
+import type { Refusal } from '@/lib/company/template-rules'
 
-/** (REG-639, Q-10) A side read from a spreadsheet in the browser: its lines (checked again here) and, for theirs, the studio's name. */
+/** (REG-639, Q-10) A side read in the browser — a spreadsheet, or (pending modules S21) a PDF's own words: its lines (checked again here)
+    and, for theirs, the studio's name. */
 export type SheetSide = { lines: unknown; studio?: string | null }
-export type RunInput = { leadId: string | null; quoteId: string | null; yourFile: string | null; otherFile: string; other?: SheetSide | null; yours?: SheetSide | null }
-export type RunResult = { id: string } | { error: 'unreadable-other' | 'unreadable-yours' | 'nothing-to-compare' | 'same-quote' }
+export type RunInput = { leadId: string | null; quoteId: string | null; yourFile: string | null; otherFile: string; other?: SheetSide | null; yours?: SheetSide | null
+  /** (S42 E-05) a reference quote the browser recognised by the file's own words — its key; a file's name is never read as one */ otherRef?: string | null; yourRef?: string | null }
+export type RunResult = { id: string } | { error: 'unreadable-other' | 'unreadable-yours' | 'nothing-to-compare' | 'same-quote' } | PlanLock | Refusal   // (S45C) Marketing's refusal, in the gate's words
+/** (pending modules S19 — 1.0's plan gating: Quote X-Ray is Pro, every route gated) the refusal a Free studio's X-Ray press answers */
+type PlanLock = { error: string; locked: true }
+const xrayLock = async (): Promise<PlanLock | null> => { const l = await requirePlan('quote_xray'); return l ? { ...l, locked: true } : null }
 
 const OTHER_STUDIO = 'The other studio'
 /** A sheet's side as a reference-shaped quote; null when its lines don't pass the server's check. */
@@ -28,15 +36,19 @@ function sheetQuote(side: SheetSide | null | undefined, studio: string): RefQuot
 }
 
 /**
- * Quote X-Ray (REG-529) — run a comparison and keep it. The other studio's file is read by name (the three reference quotes);
- * anything else is "one we couldn't read". Your side is a studio quote's real lines, or — in Upload two quotes — a file too.
+ * Quote X-Ray (REG-529) — run a comparison and keep it. The other studio's file is one of the three reference quotes (by name), or the
+ * lines the browser read from a spreadsheet or (pending modules S21) a PDF's own words, checked again here. Your side is a studio quote's
+ * real lines, or — in Upload two quotes — a file too. The run charges nothing: Quote X-Ray is a plan feature (Pro), never a metered press —
+ * 1.0's own rule (its price list carries "Quote X-ray analysis · 10" but no route spends it; its pricing page leaves it out on purpose).
  */
 export async function runComparison(input: RunInput): Promise<RunResult> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const lock = await xrayLock(); if (lock) return lock
   /* (REG-641, parity Q-19) the run's checks (E-101): file names capped; the lead live and the viewer's; the quote live, on that
      lead, with lines to compare; the same reference on both sides of an upload is one quote, not two */
   const otherFile = String(input.otherFile ?? '').trim().slice(0, 120), yourFile = input.yourFile ? String(input.yourFile).trim().slice(0, 120) : null
   const named = typeof input.other?.studio === 'string' ? input.other.studio.trim().slice(0, 80) : ''
-  const other = input.other ? sheetQuote(input.other, named || OTHER_STUDIO) : readOtherQuote(otherFile)
+  const other = input.other ? sheetQuote(input.other, named || OTHER_STUDIO) : referenceQuote(input.otherRef)   // (S42 E-05) never by the file's name
   if (!other) return { error: 'unreadable-other' }
   const brand = await fetchBrand()
   const viewer = await fetchViewer()
@@ -50,9 +62,11 @@ export async function runComparison(input: RunInput): Promise<RunResult> {
     quoteTotalMinor = q.amountMinor
     leadId = leadId ?? q.leadId
   } else if (yourFile) {
-    const mine = input.yours ? sheetQuote(input.yours, brand.details.name) : readOtherQuote(yourFile)
+    const mine = input.yours ? sheetQuote(input.yours, brand.details.name) : referenceQuote(input.yourRef)   // (S42 E-05)
     if (!mine) return { error: 'unreadable-yours' }
     if (!input.yours && !input.other && mine.key === other.key) return { error: 'same-quote' }
+    /* (S21) one file read on both sides is one quote, not two (E-94) */
+    if (input.yours && input.other && JSON.stringify(mine.lines) === JSON.stringify(other.lines)) return { error: 'same-quote' }
     yours = refAsYours(mine)
     yourLabel = yourFile.replace(/\.[a-z0-9]+$/i, '')
     quoteId = null
@@ -76,7 +90,9 @@ export async function runComparison(input: RunInput): Promise<RunResult> {
  * Recent comparisons › delete: gone for good — a comparison is only ever a reading of two quotes (owner 2026-09-18).
  * (REG-641, parity Q-20) Its maker, an Owner or an Admin deletes it, and the lead's Activity keeps who removed which reading.
  */
-export async function deleteComparison(id: string): Promise<{ ok: true } | { error: 'gone' | 'not-allowed' }> {
+export async function deleteComparison(id: string): Promise<{ ok: true } | { error: 'gone' | 'not-allowed' } | PlanLock | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const lock = await xrayLock(); if (lock) return lock
   const c = await openComparison(id)
   if (!c) return { error: 'gone' }
   const viewer = await fetchViewer(), actor = await actingMember()
@@ -127,7 +143,9 @@ async function writeOverrides(c: QuoteComparison, inputs: Inputs, overrides: Xra
  * (Q-14) Correct a match on the record: `split` takes lines apart (Not the same item), `pair` puts two together (Same item
  * as…). Each is kept on the reading and the reading is read again. Returns the corrections as they were, for Undo.
  */
-export async function correctComparison(id: string, change: { split?: [string, number][]; pair?: [string, number][] }): Promise<{ previous: XrayOverrides } | { error: 'gone' | 'old' }> {
+export async function correctComparison(id: string, change: { split?: [string, number][]; pair?: [string, number][] }): Promise<{ previous: XrayOverrides } | { error: 'gone' | 'old' } | PlanLock | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const lock = await xrayLock(); if (lock) return lock
   const c = await openComparison(id)
   if (!c) return { error: 'gone' }
   const inputs = readInputs(c)
@@ -142,7 +160,9 @@ export async function correctComparison(id: string, change: { split?: [string, n
 }
 
 /** Undo of a correction: the reading's corrections set back exactly as they were. */
-export async function setComparisonOverrides(id: string, overrides: XrayOverrides): Promise<void> {
+export async function setComparisonOverrides(id: string, overrides: XrayOverrides): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  if (await xrayLock()) return
   const c = await openComparison(id)
   const inputs = c ? readInputs(c) : null
   if (!c || !inputs) return
@@ -153,7 +173,9 @@ export async function setComparisonOverrides(id: string, overrides: XrayOverride
  * (Q-15) Run again: a new reading of the quote as it is now against the same other quote — the old reading stays. Corrections
  * carry over where both lines still exist.
  */
-export async function rerunComparison(id: string): Promise<{ id: string } | { error: 'gone' | 'nothing-to-compare' }> {
+export async function rerunComparison(id: string): Promise<{ id: string } | { error: 'gone' | 'nothing-to-compare' } | PlanLock | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const lock = await xrayLock(); if (lock) return lock
   const c = await openComparison(id)
   if (!c?.quoteId) return { error: 'gone' }
   const [q] = await db.select({ number: quotes.number, title: quotes.title, leadId: quotes.leadId, amountMinor: quotes.amountMinor, deletedAt: quotes.deletedAt, archivedAt: quotes.archivedAt }).from(quotes).where(eq(quotes.id, c.quoteId))
@@ -179,7 +201,9 @@ export async function rerunComparison(id: string): Promise<{ id: string } | { er
 }
 
 /** (Q-16) What went to the client, and how — the last send is kept on the reading and the lead's Activity says so. */
-export async function recordComparisonSent(id: string, text: string, via: 'whatsapp' | 'copy'): Promise<void> {
+export async function recordComparisonSent(id: string, text: string, via: 'whatsapp' | 'copy'): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  if (await xrayLock()) return
   const c = await openComparison(id)
   if (!c) return
   await db.update(quoteComparisons).set({ sentAt: new Date(), sentBy: await actingMember(), sentText: text.slice(0, 4000), sentVia: via === 'copy' ? 'copy' : 'whatsapp' }).where(eq(quoteComparisons.id, id))

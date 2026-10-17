@@ -12,3 +12,4 @@
 .row[data-blocked] { cursor: default; }
 .row[data-blocked] .rowTitle { color: var(--om-color-on-surface-disabled); }
 .row[data-blocked] .rowMeta { flex-shrink: 1; max-width: 55%; text-align: right; }
+.row + .listHead { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (pending modules S03) the standard documents' own head */

@@ -1,8 +1,5 @@
-/* Contract preview (REG-534): the quote preview's stylesheet does the bar and the canvas; this adds the uploaded-PDF card and the print rule. */
-.uploaded { width: 816px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-8) var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }
-.uploadedGlyph { width: 64px; height: 64px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); display: inline-flex; align-items: center; justify-content: center; }
-.uploadedName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
-.uploadedHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 480px; }
+/* Contract preview (REG-534): the quote preview's stylesheet does the bar and the canvas; this adds the print rule. (pending modules S03) The
+   uploaded PDF is the shared ContractPdf card. */
 @media print {
   .noPrint { display: none !important; }
 }

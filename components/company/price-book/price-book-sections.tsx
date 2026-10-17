@@ -99,7 +99,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one here.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.',
         /* (REG-735) the first run carries New ▾'s row for whoever runs the book; anyone else reads who does */
         start: (place) => (runsBook ? { primary: { label: 'New section', icon: 'add', onPress: () => setEdit({ open: true, section: null, folderId: place.folderId }) } } : {}) }}>   {/* (sweep S5 #22) */}
-      <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()}
+      <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()} units={data.units}
                      onSave={save} />
     </LibraryGallery>
   )

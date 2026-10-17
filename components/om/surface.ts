@@ -12,10 +12,14 @@ import { useEffect, useRef, type RefObject } from 'react'
  * `!e.defaultPrevented` listener — then leaves its own surface open.
  */
 const SURFACE = '[data-om-surface], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [aria-modal="true"]'
+/** (fix-G, G-04) A dialog opened from inside a drawer or a dialog renders inside it — a descendant, yet the layer above: Esc is its own. An
+    inline list (the assignee picker's listbox, REG-287) is not a layer and never demotes its host. */
+const NESTED_LAYER = '[role="dialog"], [role="alertdialog"], [aria-modal="true"]'
 
 export function isTopmostSurface(el: Element | null): boolean {
   if (!el) return false
   for (const other of Array.from(document.querySelectorAll(SURFACE))) {
+    if (other !== el && el.contains(other) && other.matches(NESTED_LAYER) && other.getClientRects().length > 0) return false
     /* Skip my ancestors AND my descendants (REG-287). `compareDocumentPosition` reports a DESCENDANT as
        CONTAINED_BY | FOLLOWING, so the old check — which only skipped ancestors — let any surface nested inside
        a panel demote that panel: the Lead form holds an inline `role="listbox"` (the assignee picker), so from

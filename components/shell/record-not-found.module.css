@@ -1,0 +1,4 @@
+/* (fix-G, G-38) the notice for a record the viewer can not open, under the page header */
+/* (REG-1166) the page's root fills the shell's row like every page's (UI sweep S1 #27) — without it the header and the notice shrank to the notice's width */
+.page { flex: 1; min-width: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }
+.body { display: flex; justify-content: center; padding: var(--om-spacing-6) var(--om-spacing-4); }

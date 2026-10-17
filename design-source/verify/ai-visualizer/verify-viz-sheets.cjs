@@ -1,6 +1,8 @@
 /* AI Visualizer probe, the sheets round (REG-679 … 684): Describe a change (+ the mic where the browser listens), patterned wallpapers,
    style cards with their look and materials, the upload line, the moodboard, and an uploaded photo that keeps its picture and opens as a room.
    Usage: B=http://localhost:3011 OUT=<dir> DB=<scratch db> NODE_PATH=$PWD/node_modules node design-source/verify/ai-visualizer/verify-viz-sheets.cjs */
+/* (pending modules S43C, a deliberate change of this rule) the AI Visualizer's living room is the owner's photo (1.0's 4a51f3522): its walls are
+   'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const path = require('path')
@@ -35,7 +37,7 @@ const waitRun = async (page) => { await page.getByTestId('viz-running').waitFor(
   console.log('2 · wallpapers wear their motif (row 195)')
   await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(500)
   await page.getByTestId('viz-mode-surfaces').click()
-  await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(900)
+  await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(900)
   check('the upload line is in reach (row 200)', await page.getByTestId('viz-upload-line').isVisible())
   await page.getByRole('searchbox', { name: 'Search materials' }).fill('stripe'); await page.waitForTimeout(500)
   const chip = page.getByTestId('viz-swatch').filter({ hasText: 'Vertical Stripe Navy' }).first()

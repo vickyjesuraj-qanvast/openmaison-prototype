@@ -96,6 +96,12 @@
   font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary);
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* (pending modules S05 — REG-891's open call) An On Hold row's day, its own line under the phone: 20 + 16 + 16 and two 4px gaps sit inside the
+   64px row; ellipsised past the column's floor like the phone (the widest "Till Wed, 30 Sep ’26" is ~120 of the 163 left at 240). */
+.holdLine {
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary);
+  min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 .stageCell { cursor: pointer; }   /* (REG-332) the whole cell opens the stage menu */
 .stageBtn {

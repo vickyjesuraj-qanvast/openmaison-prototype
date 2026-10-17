@@ -1,0 +1,57 @@
+/* (Projects round 7) The ending's own rules. The checklist is the card table (components/om/card-table.module.css — the short list inside a
+   card, Settings' event table): only its tracks, its marks' colours and its phone stack are here. The bar under the tabs is the quote's
+   approval / sent banner (components/quotes/editor/template-bar.module.css), composed as it is. */
+.intro { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.intro i { color: var(--om-color-on-surface-secondary); }
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+.table { composes: table from '../../om/card-table.module.css'; }
+.head { composes: head from '../../om/card-table.module.css'; }
+.row { composes: row from '../../om/card-table.module.css'; }
+.actions { composes: actions from '../../om/card-table.module.css'; }
+.actionsHead { composes: actionsHead from '../../om/card-table.module.css'; }
+/* (fix-E, E-32) the actions column's head is named for a screen reader and drawn as nothing — Settings' rule */
+.srOnly { composes: srOnly from '../../../app/settings/settings.module.css'; }
+.head, .row { grid-template-columns: minmax(220px, 1fr) auto; }
+/* (simplify S-19) an item with its fixes in place may carry four buttons — they wrap under each other, the words keep their width */
+.actions { flex-wrap: wrap; max-width: 340px; }
+.item { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); min-width: 0; }
+.item > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.why { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* A met item wears the done tick of LEAD STAGES (stages-card .row[data-state='done'] .icon); an open one the red of an overdue follow-up. */
+.mark { flex-shrink: 0; color: var(--om-color-tertiary-green-default); }
+.row[data-open] .mark { color: var(--om-color-tertiary-red-default); }
+.loading { padding: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.retry { composes: link from '../../om/text-link.module.css'; }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+@media (max-width: 767px) {
+  .head { display: none; }
+  .head, .row { grid-template-columns: minmax(0, 1fr); }
+  .actions { max-width: none; }
+}
+
+/* The bar under the project's tabs: the quote's banner as drawn. */
+.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; }
+.bannerIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
+.bannerText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; }
+.bannerActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
+.bannerWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
+.bannerHint { composes: bannerHint from '../../quotes/editor/template-bar.module.css'; }
+
+/* (gaps build, package A) A deferred item: the field for its reason spans the row under it; its mark the yellow of a wait (a task due soon,
+   the bell's hold_due). The closing summary's figure sits where the checklist's buttons do, in the figures' tabular type. */
+.deferField { grid-column: 1 / -1; padding-left: calc(20px + var(--om-spacing-2)); }
+.row[data-deferred] .mark { color: var(--om-color-tertiary-yellow-default); }
+.figure { justify-self: end; font: var(--om-type-subtitle-m); font-variant-numeric: tabular-nums; color: var(--om-color-on-surface-default); text-align: right; }
+.row[data-open] .figure { color: var(--om-color-tertiary-red-default); }
+
+/* (parity map, PR-122 — 1.0 D-306's yellow strip) the margin far off the expected: a quiet strip above the closing summary, the wait's yellow
+   tint, its words in the body's ink */
+.strip { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1);
+  background: var(--om-color-tertiary-yellow-variant); color: var(--om-color-on-surface-default); font: var(--om-type-body-s); }
+.strip > :first-child { flex-shrink: 0; color: var(--om-color-tertiary-yellow-default); }
+
+/* (S44R — UAT row 359, call C9) the completion letter's defects period and who signs it, under its tick */
+.letterFields { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); padding-left: var(--om-spacing-8); min-width: 0; }
+.months { width: 200px; max-width: 100%; flex: none; }

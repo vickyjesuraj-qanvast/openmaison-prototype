@@ -6,8 +6,9 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { SendContractDialog } from '@/components/contracts/editor/dialogs'
 import { markQuoteStatus, sendQuote, sendQuoteForConfirmation, undoQuoteStatus } from '@/app/quotes/actions'
+import { orThrow } from '@/lib/company/template-rules'
 import { setQuoteDue } from '@/app/leads/quotes-actions'
-import { confirmLink, confirmMessage } from '@/lib/quotes/confirm'
+import { confirmKeyOf, confirmLink, confirmMessage, variationMessage } from '@/lib/quotes/confirm'
 import { firstName } from '@/lib/contracts/model'
 import { displayDateLong } from '@/lib/format'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
@@ -27,7 +28,7 @@ export type SendChange = { status: QuoteStatus; updatedAt: number; sentAt?: numb
  * Quote Sent offers "Move to Quote Sent" in its snackbar (the Move stage window with this quote picked, `lib/leads/move-link.ts`).
  */
 export function useQuoteSend(o: {
-  quote: { id: string; number: string; leadId: string; version: number }
+  quote: { id: string; number: string; leadId: string; version: number; /** (pending modules S04) the confirmation link's key */ confirmToken?: string | null }
   status: QuoteStatus
   lead: { name: string; phone: string }
   studioName: string
@@ -41,6 +42,10 @@ export function useQuoteSend(o: {
   onChange: (c: SendChange) => void
   /** Where the contract's close comes back to. */
   contractFrom: string
+  /** (Projects round 5, F-07) A variation order: its change to the contract, for the client's message; once approved, nothing is left to send. */
+  variation?: { change: string } | null
+  /** (S44F — NB-02 (b)) On a revision: what changed since the last version, in the client's words — the confirmation's message carries it. */
+  changes?: string | null
 }): { kind: SendKind; canSend: boolean; hint: string; send: (mode: SendMode) => void; openContract: () => void; dialogs: ReactNode } {
   const { quote, status } = o
   const router = useRouter()
@@ -55,7 +60,10 @@ export function useQuoteSend(o: {
   /* (REG-587) What Send offers here: for approval while that is the next step; else the client's two ways — confirm on a link first
      (Mavid's flow) or the agreement for signature; once Confirmed, only the signature is left. (REG-624, parity Q-23) An approver's own
      quote skips the approval step: their Send offers the client's two ways at once. */
-  const kind: SendKind = nextStep === 'Sent for Approval' && !o.canApprove ? 'approval' : status === 'Draft' || status === 'Approved' || status === 'Sent to Client' ? 'client' : status === 'Confirmed' ? 'confirmed' : 'done'
+  /* (REG-1055) a variation order is named as one in every message of its send — never "quote" */
+  const Noun = o.variation ? 'Variation order' : 'Quote'
+  const noun = o.variation ? 'variation order' : 'quote'
+  const kind: SendKind = nextStep === 'Sent for Approval' && !o.canApprove ? 'approval' : status === 'Draft' || status === 'Approved' || status === 'Sent to Client' ? 'client' : status === 'Confirmed' && !o.variation ? 'confirmed' : 'done'
   const flush = async () => { if (o.flush) await o.flush() }
   /* (Q1) The lead's next stage, or nothing. */
   const moveAction = (href: string | null | undefined) => (href ? { actionLabel: 'Move to Quote Sent', onAction: () => router.push(href) } : {})
@@ -78,22 +86,22 @@ export function useQuoteSend(o: {
     if (mode === 'other') {
       /* (Q2) "Sent it another way" — the old Mark as sent: the client has it, the record says so; nothing goes out. */
       const box: { r?: Extract<Awaited<ReturnType<typeof markQuoteStatus>>, { undo: unknown }> } = {}
-      void run('mark the quote sent', async () => { await flush(); const r = await markQuoteStatus(quote.id, 'Sent to Client'); if ('error' in r) return r; box.r = r; o.onChange({ status: r.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt ?? Date.now(), sentAt: r.undo.sentAt ?? Date.now() }) }, undefined, { guard: 'send' })
+      void run(`mark the ${noun} sent`, async () => { await flush(); const r = await markQuoteStatus(quote.id, 'Sent to Client'); if ('error' in r) return r; box.r = r; o.onChange({ status: r.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt ?? Date.now(), sentAt: r.undo.sentAt ?? Date.now() }) }, undefined, { guard: 'send' })
         .then((ok) => {
           const r = box.r
           if (!ok || !r) return
           snackbar(r.moveTo
-            ? { message: `Quote ${r.number} marked Sent to Client`, ...moveAction(r.moveTo) }
-            : { message: `Quote ${r.number} marked Sent to Client`, actionLabel: 'Undo', onAction: () => { void run('undo the mark', async () => { const u = await undoQuoteStatus(quote.id, r.undo); if ('error' in u) return u; o.onChange({ status: u.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt, sentAt: r.undo.sentAt }) }, `Quote ${r.number} is ${r.undo.status} again`) } })
+            ? { message: `${Noun} ${r.number} marked Sent to Client`, ...moveAction(r.moveTo) }
+            : { message: `${Noun} ${r.number} marked Sent to Client`, actionLabel: 'Undo', onAction: () => { void run('undo the mark', async () => { const u = await undoQuoteStatus(quote.id, r.undo); if ('error' in u) return u; o.onChange({ status: u.status, updatedAt: Date.now(), clientSentAt: r.undo.clientSentAt, sentAt: r.undo.sentAt }) }, `${Noun} ${r.number} is ${r.undo.status} again`) } })
         })
       return
     }
     if (!nextStep) return
-    void run('send the quote', async () => {
+    void run(`send the ${noun}`, async () => {
       await flush()
-      const r = await sendQuote(quote.id)
+      const r = await orThrow(sendQuote(quote.id))   // (S44Z) a refusal into run()'s own failure line
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, ...(r.status === 'Sent for Approval' ? { submittedAt: r.updatedAt } : {}), ...(r.status === 'Sent to Client' ? { clientSentAt: r.updatedAt } : {}) })
-      snackbar(r.status === 'Sent for Approval' ? { message: `Quote ${quote.number} sent for approval — the approvers are told` } : { message: `Quote ${quote.number} marked ${r.status}`, ...moveAction(r.moveTo) })
+      snackbar(r.status === 'Sent for Approval' ? { message: `${Noun} ${quote.number} sent for approval — the approvers are told` } : { message: `${Noun} ${quote.number} marked ${r.status}`, ...moveAction(r.moveTo) })
     }, undefined, { guard: 'send' })
   }
 
@@ -101,21 +109,23 @@ export function useQuoteSend(o: {
   const sendForConfirmation = ({ name, phone, message }: { name: string; phone: string; message: string }) => {
     setConfirmOpen(false)
     window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')
-    void run('send the quote', async () => {
+    void run(`send the ${noun}`, async () => {
       const r = await sendQuoteForConfirmation(quote.id)
+      if ('error' in r) return r   // (S44Q — row 334) the rule, said in the snackbar
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, clientSentAt: r.updatedAt })
       const due = await setFollowUpDue()
-      snackbar({ message: `Quote sent to ${name} for confirmation${due ? ` — follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })   // (Dane UAT 5.13) the follow-up's day
+      snackbar({ message: `${o.variation ? `Variation order ${quote.number}` : 'Quote'} sent to ${name} for ${o.variation ? 'approval' : 'confirmation'}${due ? ` — follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })   // (Dane UAT 5.13) the follow-up's day
     }, undefined, { guard: 'send' })
   }
   /* (sweep S1 · U-06) Copying the link sends it, the contract's rule (REG-631): a link handed out opens — with the follow-up asked for. */
   const onCopy = () => {
     if (status !== 'Draft' && status !== 'Approved') return true
-    return run('send the quote', async () => {
+    return run(`send the ${noun}`, async () => {
       const r = await sendQuoteForConfirmation(quote.id)
+      if ('error' in r) return r   // (S44Q — row 334)
       o.onChange({ status: r.status, updatedAt: r.updatedAt, sentAt: r.sentAt, clientSentAt: r.updatedAt })
       const due = await setFollowUpDue()
-      snackbar({ message: `The quote is Sent to Client — the link opens for your client now${due ? ` · follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })
+      snackbar({ message: `The ${noun} is Sent to Client — the link opens for your client now${due ? ` · follow-up on ${displayDateLong(due)}` : ''}`, ...moveAction(r.moveTo) })
     }, undefined, { guard: 'send' })
   }
 
@@ -123,14 +133,14 @@ export function useQuoteSend(o: {
   const dialogs = (
     <>
       {/* (REG-587) Send for confirmation: the contract's send dialog with the quote's words — name, number, the WhatsApp draft, the confirmation link. */}
-      <SendContractDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} link={confirmLink(quote.id)} defaults={{ name: o.lead.name, phone: o.lead.phone }}
-                          title="Send for confirmation" subtitle="Your client reads the quote in their browser and confirms it. The agreement and the signature come after."
+      <SendContractDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} link={confirmLink(confirmKeyOf(quote))} defaults={{ name: o.lead.name, phone: o.lead.phone }}
+                          title="Send for confirmation" subtitle={o.variation ? 'Your client reads the variation order in their browser and approves it. The contract value moves once they do.' : 'Your client reads the quote in their browser and confirms it. The agreement and the signature come after.'}
                           copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)" notes={notes.length ? notes : undefined}
-                          draft={(name) => confirmMessage({ clientFirst: firstName(name), studio: o.studioName, number: quote.number, link: confirmLink(quote.id), version: quote.version })}
-                          extra={<FollowUpChip days={followUp} onChange={setFollowUp} />}
+                          draft={(name) => (o.variation ? variationMessage({ clientFirst: firstName(name), studio: o.studioName, number: quote.number, link: confirmLink(confirmKeyOf(quote)), change: o.variation.change }) : confirmMessage({ clientFirst: firstName(name), studio: o.studioName, number: quote.number, link: confirmLink(confirmKeyOf(quote)), version: quote.version, changes: o.changes ?? null }))}
+                          extra={<FollowUpChip days={followUp} onChange={setFollowUp} noun={noun} />}
                           onSend={sendForConfirmation} onCopy={onCopy} />
       {contract.dialog}
     </>
   )
-  return { kind, canSend: kind !== 'done', hint: `Quote is ${status}`, send, openContract, dialogs }
+  return { kind, canSend: kind !== 'done', hint: o.variation && status === 'Confirmed' ? 'Approved by the client — the contract value has moved' : `${Noun} is ${status}`, send, openContract, dialogs }
 }

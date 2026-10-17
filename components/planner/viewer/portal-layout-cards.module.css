@@ -1,0 +1,6 @@
+/* (gaps build J) The portal's 3D layouts tiles — the Designs tiles with a drawing in the picture's place. */
+.lede { margin: 0; padding: var(--om-spacing-4) var(--om-spacing-6) 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.art { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 4 / 3; padding: var(--om-spacing-2); border-radius: var(--om-radius-0-5); background: var(--om-color-surface-default); }
+.art svg { width: 100%; height: 100%; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
+@media (max-width: 767px) { .lede { padding: var(--om-spacing-3) var(--om-spacing-4) 0; } }

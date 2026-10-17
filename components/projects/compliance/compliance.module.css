@@ -1,0 +1,65 @@
+/*
+ * (gaps build I, I-Q9 · I-Q10) A project's Compliance tab — built on the house pieces, composed, never copied: the tab toolbar
+ * (components/om/tab-toolbar.module.css), the Choices tab's column of toolbar · chips · groups and its group head, and the card table
+ * (components/om/card-table.module.css — the short list inside a card, the handover checklist's) for each category's items, with the
+ * handover checklist's done tick. An item's detail opens in place under its row, spanning it.
+ */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+@media (max-width: 767px) { .bar { flex-wrap: nowrap; } }
+
+.lead { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.progress { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.progress b { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+
+.groups { display: flex; flex-direction: column; gap: var(--om-spacing-8); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-3); scroll-margin-block: 120px; }
+.groupHead { display: flex; align-items: baseline; gap: var(--om-spacing-2); flex-wrap: wrap; margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.groupHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+.table { composes: table from '../../om/card-table.module.css'; }
+/* (simplify round 2) a project's group wears the card table's head (item-row.tsx `ItemHead`): the item, then Mark done · ⋮'s columns, named for a
+   screen reader and drawn as nothing (Settings' rule, the handover checklist's — ending.module.css). The Navigator's list has none. */
+.head { composes: head from '../../om/card-table.module.css'; }
+.actionsHead { composes: actionsHead from '../../om/card-table.module.css'; }
+.srOnly { composes: srOnly from '../../../app/settings/settings.module.css'; }
+.head, .row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.row { composes: row from '../../om/card-table.module.css'; scroll-margin-block: 120px; }
+.row[data-fresh] { animation: fresh 1.4s ease-out; }
+@keyframes fresh { 0%, 55% { background: color-mix(in srgb, var(--om-color-primary-default) 10%, transparent); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .row[data-fresh] { animation-duration: .01ms; } }
+
+.item { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }
+/* The handover checklist's mark (components/projects/ending/ending.module.css .mark): green when done, grey when not needed, the outline to do */
+.mark { flex-shrink: 0; display: inline-flex; margin-top: 2px; color: var(--om-color-on-surface-secondary); }
+.mark[data-state='done'] { color: var(--om-color-tertiary-green-default); }
+.itemText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.itemTitle { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.row[data-state='not_needed'] .itemTitle { color: var(--om-color-on-surface-secondary); }
+.meta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.toggle { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); display: inline-flex; align-items: center; gap: 2px; }
+
+.press { display: inline-flex; }
+.menuWrap { position: relative; display: inline-flex; }
+
+/* The detail, under its row: what to do, the steps, the rule it comes from, the penalty in the warning tone, the official source */
+.detail { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: 0 0 var(--om-spacing-2) calc(20px + var(--om-spacing-3)); max-width: 80ch; }
+.about { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.steps { margin: 0; padding-left: var(--om-spacing-5); list-style: disc; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--om-spacing-3); }
+.fact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.factLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.factValue { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.penalty { display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-surface-default); font: var(--om-type-body-s); }
+.penalty .msr { color: var(--om-color-tertiary-red-default); }
+.source { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); align-self: flex-start; }
+
+@media (max-width: 767px) {
+  .head { display: none; }   /* (simplify round 2) the row stacks on a phone — its head goes, as the handover checklist's does */
+  .row { grid-template-columns: minmax(0, 1fr) auto; }
+  .press { grid-column: 1 / -1; grid-row: 2; padding-left: calc(20px + var(--om-spacing-3)); }
+  .detail { padding-left: 0; }
+}

@@ -5,15 +5,18 @@ import { logLeadEvent } from '@/lib/leads/events'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadNotes, noteAttachments } from '@/lib/db/schema'
-import { sessionMemberSql } from '@/lib/db/session'
+import { sessionMemberId } from '@/lib/db/session'
 import { parseInputDateTime } from '@/lib/format'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } from '@/lib/leads/enums'
 import type { NoteDraft } from '@/lib/leads/note-model'
 import { revalidateLead } from '@/lib/leads/queries'
+import { sanitizeRichHtml } from '@/lib/rich-html'
+import { isHtmlBody } from '@/lib/leads/note-model'
 
 /* Lead Details › Notes (931-44865). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
+/* (REG-286 · REG-667 · pending modules S43A) Every write stamp is the signed-in member — this browser's (`sessionMemberId()`), read before a
+   transaction opens and passed in as a value. */
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every contact log. */
 const touch = (leadId: string) => revalidateLead(leadId)
 const leadOf = async (noteId: string) => (await db.select({ leadId: leadNotes.leadId }).from(leadNotes).where(eq(leadNotes.id, noteId)))[0]?.leadId ?? null
@@ -32,7 +35,7 @@ const columns = (d: NoteDraft) => {
   if (d.kind !== 'note' && d.kind !== 'contact') throw new Error(`Unknown note kind: ${String(d.kind)}`)
   const contact = d.kind === 'contact'
   return {
-    kind: d.kind, title: d.title.trim(), body: d.body,
+    kind: d.kind, title: d.title.trim(), body: isHtmlBody(d.body) ? sanitizeRichHtml(d.body) : d.body,   // (S44Q, triage §12.1) a formatted note through the house allowlist
     channel: contact ? oneOf(d.channel, CONTACT_CHANNELS) : null,
     contactedAt: contact ? parseInputDateTime(d.when) : null,
     outcome: contact ? oneOf(d.outcome, OUTCOMES) : null,
@@ -41,21 +44,32 @@ const columns = (d: NoteDraft) => {
   }
 }
 
+/** (pending modules S23) A contact log whose next step is to meet in person, on a day ahead, is a planned meeting on the lead (lib/meetings/plan-from-log.ts). */
+async function planFromNote(leadId: string, cols: ReturnType<typeof columns>, at: Date): Promise<void> {
+  if (cols.kind !== 'contact' || cols.nextStepMode !== 'In person') return
+  const { planInPerson } = await import('@/lib/meetings/plan-from-log')
+  await planInPerson(leadId, cols.nextStepAt, at)
+}
+
 /** New › Note / Contact Log → Save (frames 80 / 165). Returns the new id. `fileIds` = the draft's attachments. */
 export async function createNote(leadId: string, draft: NoteDraft, fileIds: string[] = []): Promise<string> {
   const id = randomUUID(); const now = new Date()
   const cols = columns(draft)
   // (REG-286) One transaction: a note saved without the attachments it was saved with is the wrong record.
+  const me = await sessionMemberId()
   await db.transaction(async (tx) => {
-    await tx.insert(leadNotes).values({ id, leadId, ...cols, authorId: ME, createdAt: now, updatedAt: now })
+    await tx.insert(leadNotes).values({ id, leadId, ...cols, authorId: me, createdAt: now, updatedAt: now })
     if (fileIds.length) await tx.insert(noteAttachments).values(fileIds.map((fileId) => ({ noteId: id, fileId, createdAt: now })))
   })
+  await planFromNote(leadId, cols, now)
   touch(leadId); return id
 }
 
 export async function updateNote(noteId: string, draft: NoteDraft): Promise<void> {
   const leadId = await leadOf(noteId); if (!leadId) return
-  await db.update(leadNotes).set({ ...columns(draft), updatedAt: new Date() }).where(eq(leadNotes.id, noteId))
+  const cols = columns(draft)
+  await db.update(leadNotes).set({ ...cols, updatedAt: new Date() }).where(eq(leadNotes.id, noteId))
+  await planFromNote(leadId, cols, new Date())
   touch(leadId)
 }
 

@@ -15,7 +15,12 @@ import { Dialog } from '@/components/om/dialog'
 import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './refusal'
 import { couldnt } from '@/components/leads/tasks/use-run'
-import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLES, FONT_ROLE_LABEL, type BrandKit, type BrandOverrides, type ColorKey, type FontRole, type TemplateDesign } from '@/lib/templates/model'
+import { COLOR_KEYS, COLOR_LABEL, FONT_ROLES, FONT_ROLE_LABEL, fontOptions, fontStack, type BrandKit, type BrandOverrides, type ColorKey, type FontFace, type FontRole, type TemplateDesign } from '@/lib/templates/model'
+import type { StudioFontsData } from '@/lib/company/studio-fonts'
+import { StudioFontFaces } from '@/components/templates/render/studio-font-faces'
+import { OwnFonts } from './brand-fonts'
+import Link from 'next/link'
+import { withFrom } from '@/lib/nav'
 import type { BrandSetting } from '@/lib/templates/brand'
 import { DEMO_BADGES, stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
@@ -54,10 +59,14 @@ function ownBrandNote(name: string, o: BrandOverrides | undefined): string | nul
  * of Templates, beside the kinds that inherit it. The company details it prints stay under Company › Profile. Saved as
  * one record with them (`settings` key `brand`); the default template's first page on the right redraws as you edit.
  */
-export function BrandKitView({ brand, previewDesign, previewName, sample, from, canRun = true }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean }) {
+export function BrandKitView({ brand, previewDesign, previewName, sample, from, canRun = true, ownFonts = { fonts: [], uses: {} } }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean; /** (pending modules S11) the studio's uploaded fonts */ ownFonts?: StudioFontsData }) {
   const snackbar = useSnackbar()
   const [kit, setKit] = useState<BrandKit>(brand.kit)
   const [saved, setSaved] = useState<BrandKit>(brand.kit)
+  /* (pending modules S11) the studio's own fonts: kept apart from the kit's draft (they save on upload, not with Save changes) and laid over it
+     wherever the page draws type — the role boxes' lists, the samples, the preview */
+  const [faces, setFaces] = useState<FontFace[]>(brand.kit.faces ?? [])
+  const shownKit = useMemo<BrandKit>(() => ({ ...kit, faces }), [kit, faces])
   const [busy, setBusy] = useState(false)
   const details = brand.details
   const logoInput = useRef<HTMLInputElement>(null)
@@ -70,7 +79,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
     const bad = Object.keys(colorDraft).filter((k) => !hexOf(colorDraft[k]!))
     if (bad.length) { setColorShown((d) => ({ ...d, ...Object.fromEntries(bad.map((k) => [k, true])) })); return false }
     setBusy(true)
-    try { await settle(saveBrand({ kit }));   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }); return true }   /* saveBrand revalidates the layout; a refresh here rendered twice */
+    try { const { faces: _own, ...kitOnly } = kit; void _own; await settle(saveBrand({ kit: kitOnly }));   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }); return true }   /* saveBrand revalidates the layout; a refresh here rendered twice */
     catch (e) { snackbar({ message: couldnt('save the brand kit', reasonOf(e)) }); return false }   /* (wave E, E7) a refusal answers { error: the rule } — said, never "saved" */
     finally { setBusy(false) }
   }
@@ -106,6 +115,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </>}>
       {canRun ? null : <ReadOnlyNote />}
+      <StudioFontFaces faces={faces} />
       {/* (UX audit S2) Unsaved edits are not lost to a move inside the app — a tab, the rail, a card — nor to a tab or a reload. */}
       <LeaveGuard dirty={dirty && canRun} what="the brand kit" onSave={save} onDiscard={discard} />
       <div className={styles.layout} data-testid="brand-kit">
@@ -198,21 +208,32 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
                 return (
                   <div key={role} className={styles.role}>
                     <span className={styles.roleLabel}>{FONT_ROLE_LABEL[role]}</span>
-                    <div className={styles.roleFamily}><TextField label="Font" value={f.family} mode="select" options={[...FONT_FAMILIES]} onChange={(v) => set({ family: v })} /></div>
+                    <div className={styles.roleFamily}><TextField label="Font" value={f.family} mode="select" options={fontOptions({ faces }, f.family)} onChange={(v) => set({ family: v })} /></div>
                     <div className={styles.roleSize}><TextField label="Size" value={sizeDraft[role] ?? String(f.size)} numeric="digits" maxLength={3} onChange={(v) => { setSizeDraft((d) => ({ ...d, [role]: v })); const n = Number(v); if (n > 0) set({ size: n }) }} onBlur={() => setSizeDraft((d) => { const n = { ...d }; delete n[role]; return n })} /></div>
                     <div className={styles.roleWeight}><TextField label="Weight" value={WEIGHTS.find((w) => w.value === f.weight)?.label ?? 'Regular'} mode="select" options={WEIGHTS.map((w) => w.label)} onChange={(v) => set({ weight: WEIGHTS.find((w) => w.label === v)?.value ?? 400 })} /></div>
-                    <span className={styles.roleSample} style={{ fontFamily: f.family, fontWeight: f.weight, fontSize: Math.max(11, Math.min(22, f.size * 1.5)) }}>Aa</span>
+                    <span className={styles.roleSample} style={{ fontFamily: fontStack(f.family), fontWeight: f.weight, fontSize: Math.max(11, Math.min(22, f.size * 1.5)) }}>Aa</span>   {/* (pending modules S11) the face's own stack — the self-hosted file, or the studio's upload */}
                   </div>
                 )
               })}
             </div>
+            {/* (pending modules S11 — card held:quote-templates) the studio's own fonts, under the four roles that use them */}
+            <OwnFonts fonts={ownFonts.fonts} uses={ownFonts.uses} canRun={canRun} onFaces={setFaces} />
           </section>
+
+          {/* (pending modules S11 — card held:quote-templates, "Invoice and PO paper live in Settings › Finance, not Templates"; as recommended:
+              their one home stays Settings › Finance, beside their numbers and money rules, and this is the door from where a studio looks for
+              how its documents look) */}
+          <Link href={`${withFrom('/settings?section=finance', '/company/templates/brand')}#invoice-paper`} className={styles.kitLink} data-testid="paper-door">
+            <span className={styles.kitLinkIcon}><Icon name="receipt_long" size={24} weight={300} /></span>
+            <span className={styles.kitLinkText}><span className={styles.kitLinkTitle}>Invoices, receipts and purchase orders</span><span className={styles.cardHelp}>They print with this kit’s logo and accent colour. Their own words — notes, terms, the acceptance block — are set in Settings › Finance.</span></span>
+            <Icon name="chevron_right" size={24} weight={300} />
+          </Link>
         </div>
         </ReadOnlyScope>
         <aside className={styles.preview} aria-label="Preview" data-testid="brand-kit-preview">
           <span className={styles.previewLabel}>{previewName ? `Default template · ${previewName}` : 'Sample quote'}</span>
           <div className={styles.previewPage}>
-            {previewDesign ? <TemplateThumb design={previewDesign} brand={kit} data={previewData} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
+            {previewDesign ? <TemplateThumb design={previewDesign} brand={shownKit} data={previewData} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
           </div>
           {/* (Dane UAT 2.01 · 3.34) Every page, large — at every width; ≤1024 the first page steps out and this stays beside the label. */}
           {previewDesign ? <span className={styles.previewOpen}><Button appearance="text" iconStart={<Icon name="visibility" size={20} weight={300} />} onPress={() => setPreviewOpen(true)} data-testid="brand-kit-preview-open">Preview</Button></span> : null}
@@ -224,9 +245,9 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
         </aside>
       </div>
       {previewDesign ? (
-        <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} size="modal" width={1200} height={960} title={previewName ?? 'Sample quote'}
+        <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} size="modal" width={1200} height="xl" title={previewName ?? 'Sample quote'}
                 subtitle={`${previewDesign.page.paper}${pageCount ? ` · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}` : ''} · drawn with this brand kit and a sample quote`}>
-          <TemplatePreviewPages paper={previewDesign.page.paper} design={previewDesign} brand={kit} sample={previewData} onPages={(n) => setPageCount((c) => (c === n ? c : n))} />
+          <TemplatePreviewPages paper={previewDesign.page.paper} design={previewDesign} brand={shownKit} sample={previewData} onPages={(n) => setPageCount((c) => (c === n ? c : n))} />
         </Dialog>
       ) : null}
     </CompanyShell>

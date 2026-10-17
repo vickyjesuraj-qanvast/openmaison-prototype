@@ -11,6 +11,14 @@ async function ready(page) { await page.waitForLoadState('networkidle').catch(()
 async function snack(page, text, timeout = 8000) { await page.getByText(text, { exact: false }).first().waitFor({ timeout }) }
 const OLIVIA_LEAD = sql(`select id from leads where name='Olivia Martinez'`)
 const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('label, [role="checkbox"], input').first().click({ force: true }) }
+/* (pending modules S14, a deliberate change of this rule) the demo studio has CaseTrust on record (repair R116, as its brand kit and About page
+   show): its signing pages carry the deposit-protection disclosure, ticked once the agreement is read — before the code. */
+const caseTrust = async (pg) => {
+  const box = pg.getByRole('checkbox', { name: 'I have read the CaseTrust deposit-protection disclosure' })
+  if (!(await box.count()) || await box.first().isChecked().catch(() => false)) return
+  await pg.getByTestId('gate-casetrust-tick').first().scrollIntoViewIfNeeded().catch(() => {})
+  await pg.getByTestId('gate-casetrust-tick').first().click(); await pg.waitForTimeout(300)
+}
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -37,8 +45,13 @@ const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('
     await page.keyboard.press('Escape')
   })
   await step('the client reads to the end and ticks before the code; the first open is kept', async () => {
-    await page.getByRole('button', { name: 'Copy signing link' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(800)
-    const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/${NEW}`); await ready(sp)
+    // (REG-780, UX audit C2) the new contract names OM-10001, a Draft under required approval, which keeps it from going out — the quote is
+    // approved first; (REG-786, UX audit C8) a Draft's copy icon reads "Copy link — marks it Sent"
+    sql(`update quotes set status='Approved' where id=(select from_quote_id from contracts where id='${NEW}')`)
+    await page.reload(); await page.getByTestId('contract-editor').waitFor(); await ready(page)
+    await page.getByRole('button', { name: 'Copy link — marks it Sent' }).click(); await snack(page, 'Sent to Client now'); await page.waitForTimeout(800)
+    const client = await browser.newContext({ viewport: { width: 1440, height: 1024 } })   // (S42 B-02, a deliberate change of this rule) the client's own browser — the studio's never stamps Viewed
+    const sp = await client.newPage(); await sp.goto(`${BASE}/sign/${sql(`select sign_token from contracts where id='${NEW}'`)}`); await ready(sp)   // (pending modules S03, a deliberate change of this rule) the link is the contract's token, never its id
     ok('the first open is stamped', sql(`select viewed_at is not null from contracts where id='${NEW}'`) === '1')
     const send = sp.getByRole('button', { name: 'Send code' })
     ok('Send code waits for the reading', await send.isDisabled() && /Read to the end/.test(await sp.getByTestId('gate-scroll').innerText()))
@@ -46,11 +59,11 @@ const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('
     await sp.getByTestId('paper-end').scrollIntoViewIfNeeded(); await sp.waitForTimeout(600)
     ok('read to the end', /read to the end/i.test(await sp.getByTestId('gate-scroll').innerText()) && !/Read to the end of the agreement/.test(await sp.getByTestId('gate-scroll').innerText()))
     ok('still waits for the tick', await send.isDisabled())
-    await tick(sp); await sp.waitForTimeout(300)
+    await tick(sp); await sp.waitForTimeout(300); await caseTrust(sp)
     ok('the tick opens Send code', await send.isEnabled())
     ok('the quote it signs is linked', /OM-10001/.test(await sp.getByTestId('view-quote').innerText()))
     await sp.screenshot({ path: `${S}/shots-ct3/03-gates-met.png` })
-    const qp = await ctx.newPage(); await qp.goto(`${BASE}/sign/${NEW}/quote`); await ready(qp)
+    const qp = await ctx.newPage(); await qp.goto(`${BASE}/sign/${sql(`select sign_token from contracts where id='${NEW}'`)}/quote`); await ready(qp)   // (pending modules S03, a deliberate change of this rule)
     ok('the quote opens read-only', (await qp.getByTestId('sign-quote-view').count()) === 1 && /Olivia Martinez/.test(await qp.locator('body').innerText()) && /Masonry/.test(await qp.locator('body').innerText()) && (await qp.getByRole('button', { name: /Confirm|Sign/ }).count()) === 0)
     await qp.screenshot({ path: `${S}/shots-ct3/04-quote-view.png` }); await qp.close()
     await send.click(); await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
@@ -62,12 +75,12 @@ const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('
     await sp.getByRole('button', { name: 'Sign agreement' }).click()
     await sp.getByRole('heading', { name: 'Signed' }).waitFor(); await sp.waitForTimeout(1500)
     const r = sql(`select signature_kind || '|' || (length(signature_data) > 20) || '|' || (accepted_at is not null) || '|' || verification_method || '|' || ifnull(signer_phone,'-') || '|' || ifnull(signer_user_agent,'-') || '|' || (signer_timezone is not null) from contracts where id='${NEW}'`)
-    ok('the record: drawn, accepted, code to the masked phone, the device', /^draw\|1\|1\|phone_code\|\+65 •••• \d{4}\|\w+ on \w+\|1$/.test(r), r)
+    ok('the record: drawn, accepted, code to the masked phone, the device', /^draw\|1\|1\|(phone_code|demo_code)\|\+65 •••• \d{4}\|\w+ on \w+\|1$/.test(r), r)   // (S42 B-03, a deliberate change of this rule) the stand-in's code is recorded as demo_code
     await ready(sp)
     const rec = sp.getByTestId('signing-record')
     ok('the page carries the signing record', /Drawn by hand/.test(await rec.innerText()) && /one-time code/.test(await rec.innerText()) && /Fingerprint/.test(await rec.innerText()))
     ok('the paper prints the drawing', (await sp.getByTestId('contract-paper').locator('[data-sign="client-signature"] svg').count()) >= 1)
-    await sp.screenshot({ path: `${S}/shots-ct3/06-signed-record.png`, fullPage: true }); await sp.close()
+    await sp.screenshot({ path: `${S}/shots-ct3/06-signed-record.png`, fullPage: true }); await sp.close(); await client.close()
   })
   await step('the studio sees Viewed and the record', async () => {
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
@@ -106,7 +119,7 @@ const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('
     await cont.click(); await sp.waitForTimeout(500)
     ok('then Scope of Works', /Document 2 of 2 · Scope of Works/.test(await sp.getByTestId('bundle-walk').innerText()))
     ok('its own gates, fresh', await sp.getByRole('button', { name: /^Continue to sign/ }).isDisabled())
-    await sp.getByTestId('paper-end').scrollIntoViewIfNeeded(); await sp.waitForTimeout(500); await tick(sp); await sp.waitForTimeout(300)
+    await sp.getByTestId('paper-end').scrollIntoViewIfNeeded(); await sp.waitForTimeout(500); await tick(sp); await sp.waitForTimeout(300); await caseTrust(sp)
     await sp.getByRole('button', { name: /^Continue to sign/ }).click()
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     ok('the sentence names both documents', /Payment Terms, Scope of Works/.test(await sp.getByTestId('agreement-sentence').innerText()))
@@ -130,7 +143,7 @@ const tick = async (scope) => { await scope.getByTestId('gate-accept').locator('
   })
   await step('on a phone the gates and the pad fit', async () => {
     const id = 'probe-ct3-phone'
-    sql(`insert into contracts (id, lead_id, title, status, created_at, sent_at, body, recipient_name, recipient_phone, source, created_by, requires_scroll, requires_accept) select '${id}', lead_id, 'Phone probe', 'Sent to Client', strftime('%s','now'), strftime('%s','now'), body, recipient_name, recipient_phone, 'composed', 'dane', 1, 1 from contracts where id='${NEW}'`)
+    sql(`insert into contracts (id, lead_id, title, status, created_at, sent_at, body, recipient_name, recipient_phone, source, created_by, requires_scroll, requires_accept, sign_token) select '${id}', lead_id, 'Phone probe', 'Sent to Client', strftime('%s','now'), strftime('%s','now'), body, recipient_name, recipient_phone, 'composed', 'dane', 1, 1, '${id}' from contracts where id='${NEW}'`)   // (pending modules S03, a deliberate change of this rule) a contract row carries its link's token
     const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const mp = await m.newPage()
     await mp.goto(`${BASE}/sign/${id}`); await ready(mp)
     const over = await mp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

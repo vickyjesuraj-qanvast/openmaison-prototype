@@ -30,3 +30,8 @@
 
 /* Nothing matched — the Filters modal's line (filters-modal.module.css .noMatch). */
 .noMatch { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* (gaps build, package A — 9) The Assign popover's suggestion card, at the top of this list (assign-popover.module.css, composed). */
+.suggest { composes: suggest from './assign-popover.module.css'; margin: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); }
+.suggestHead { composes: suggestHead from './assign-popover.module.css'; }
+.suggestReason { composes: suggestReason from './assign-popover.module.css'; }

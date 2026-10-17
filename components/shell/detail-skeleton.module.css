@@ -1,99 +1,42 @@
-/* Bones follow the Lead Details frame (858:24772): 72px header, 48px tabs, 360 · fluid · 72 row. */
+/* (parity P-07) The lead's ghost (detail-skeleton.tsx) draws on the live pieces' own stylesheets now — the L2 header, the tab strip (the kit's),
+   the info column, the brief and every card — so only what has no live class of its own lives here: the ghost header's place in the sheet, the
+   info column's phone fold and the Create strip's collapsed geometry. */
+
+/* The page's header is `position: sticky; top: 8px` (page-header-l2.module.css): at the top of the ghost's own sheet that offset pushed it 8px
+   down — the page's sits 8px down because the shell's gutter is above it. In the sheet it sits where it lands. */
+.head.head { position: relative; top: auto; }
+
+/* (REG-366) ≤767 the info column is the identity block and View Client Info across; its sections are desk-only. */
+.infoPhone { display: none; }
+.infoRest { display: contents; }
+
+/* The Create strip, collapsed (858:25094, quick-links.module.css): 72 wide, p24, the toggle · a 24×1 rule · eight 24px glyphs, 24 apart. */
+.tools { width: 72px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-6); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.toolsRule { width: 24px; height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }
+.toolsGlyphs { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+/* The strip has two widths, not one (quick-links.module.css: 72 collapsed 858:25094 · 140 expanded 858:26317, remembered per browser in
+   `om.detail.quickLinks`), so the ghost takes its width from the strip the page is actually rendering instead of from the collapsed mock —
+   otherwise the bones overhang the real cards by 68px through the whole crossfade for anyone who has the strip open. Collapsed stays the
+   default: `loading.tsx` has no page under it, and the server always renders the strip collapsed. */
+body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140px; gap: var(--om-spacing-3); }
+
+/* Bones for the L2 header shape another ghost composes (components/xray/xray-skeletons.tsx): 72px, back · crumb over the title · actions. */
 .header { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); height: 72px; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .titleCol { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .titleRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
-/* The meta chips are a slot of their own in the real header (page-header-l2.module.css .chips), which drops to
-   its own line at mobile. `display: contents` keeps the desktop row byte-identical — the three bones stay direct
-   flex items of .titleRow — while giving the ≤767 rule below something to move. (REG-269) */
-.chips { display: contents; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.convert { display: inline-flex; width: 140px; }
-.convertLocked { display: inline-flex; }
-.kebabDesk { display: inline-flex; }
-.kebabPhone { display: none; }
-.infoPhone { display: none; }
-.infoRest { display: contents; }
-.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
-.row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 48px); }
-.info { width: 360px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
-.rule { height: 1px; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
-.centre { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
-.grid { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
-.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
-.tools { width: 72px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
-/* The quick-links strip has two widths, not one (quick-links.module.css: 72 collapsed 858:25094 · 140 expanded 858:26317,
-   remembered per browser in `om.detail.quickLinks`), so the ghost takes its width from the strip the page is actually
-   rendering instead of from the collapsed mock — otherwise the bones overhang the real cards by 68px through the whole
-   crossfade for anyone who has the strip open. Collapsed stays the default: `loading.tsx` has no page under it, and the
-   server always renders the strip collapsed. */
-body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140px; gap: var(--om-spacing-3); }
 
-/* Wide tab frame (tasks / quotes / contracts / files …): toolbar row, then a table — 48px head, 56px rows (the tabs' shared geometry). */
-.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
-.toolbar > :first-child { margin-right: auto; }
-.toolbarRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.tableWrap { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
-.headRow, .tableRow { display: flex; align-items: center; }
-.headRow { height: 48px; }
-.tableRow { height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.tableWrap .col { flex-direction: row; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-4); }
-
-/* ── Responsive (REG-269) ───────────────────────────────────────────────────────────────────────────────
-   The ghost mirrors the RESPONSIVE frame at each breakpoint, not the desktop one — bones that fade into a
-   differently-shaped page are the REG-74 failure this ghost exists to prevent. Every rule below names the file
-   it mirrors. */
 @media (max-width: 1024px) {
-  .convertLocked { display: none; }   /* (UX audit 2026-09-30, L6) the page's pair up to 1024 (overview.module.css) */
-  .info { width: 300px; }                                  /* info-column.module.css ≤1024 */
-  /* Tablet locks the quick-links strip collapsed (quick-links.module.css ≤1024 pins .aside AND
-     .aside[data-state='expanded'] to 72), so the ghost stops honouring the remembered expanded width. Same
-     selector as the base rule above, restated here so it wins by order rather than by specificity accident. */
+  /* Tablet locks the Create strip collapsed (quick-links.module.css ≤1024 pins it to 72), so the ghost stops honouring the remembered width. */
   body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 72px; gap: var(--om-spacing-6); }
-  /* om Tabs at ≤1024 (om/tabs.module.css): the nine bones scroll instead of clipping; the part-cut tab is the
-     affordance, and the scrollbar is hidden as it is on the real row. */
-  .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
-  .tabs::-webkit-scrollbar { display: none; }
-  /* The card grid drops to one column (overview.module.css ≤1024); the two stacks keep their DOM order. */
-  .grid { flex-direction: column; align-items: stretch; }
-  .grid > .col { flex: none; width: 100%; }
-  /* The tab tables keep their columns and scroll sideways in their own box (tasks / quotes / contracts /
-     files-list all took the same ≤1024 scroller), so the bone rows hold their floors instead of squashing. */
-  .tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .headRow, .tableRow { width: max-content; min-width: 100%; }   /* the same idiom the real tables took */
 }
 
 @media (max-width: 767px) {
-  /* (REG-374) The ghost draws the header the page actually draws (page-header-l2.module.css ≤767 — p16, rows 12
-     apart, no crumb and no chips since REG-359), so the crossfade lands in place. It was still on the pre-REG-359
-     header — p12/16 with the chips row — which made the ghost block 137 tall against the real 117 and moved the
-     seam 20px at the swap. */
-  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); }
-  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
-  .crumb, .chips { display: none; }
-  /* (REG-708) the kebab on the title's line, the stage pill and Convert to Project filling the row under it (page-header-l2 ≤767) */
-  .kebabPhone { display: inline-flex; }
   .infoPhone { display: flex; }
   .infoRest { display: none; }
-  .kebabDesk { display: none; }
+  .tools { display: none; }   /* the strip hides on a phone (quick-links.module.css) */
+  /* (REG-374) the composed header's phone shape (X-Ray's): p16, rows 12 apart */
+  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); }
+  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .actions { flex: 1 1 100%; }
-  .convert { flex: 1; width: auto; }
-  /* The strip is the one shrinkable child of an absolutely-positioned ghost whose row keeps a min-height that does
-     not subtract the header, so flex crushed it from 48 to 28 — the height the user actually looks at for the
-     ghost beat. It never shrinks. */
-  .tabs { flex-shrink: 0; }
-  /* The three-part row stacks: info column full width above the centre, quick-links strip gone — exactly what
-     overview.module.css and info-column.module.css do at ≤767, down to the right rule becoming a bottom rule
-     and the 24 → 16 content padding. The row keeps the real min-height so the ghost is not short of the fold. */
-  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height) - 48px); }
-  .info {
-    flex: none; width: 100%;
-    padding: var(--om-spacing-4);
-    border-right: 0;
-    border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  }
-  .centre { padding: var(--om-spacing-4); }
-  .tools { display: none; }
-  /* The tab toolbars wrap rather than clip (tasks / quotes / contracts / files toolbars all took the same
-     ≤767 rule); the ghost's row measures ~366 against 358 of content at 390, so it wraps too. */
-  .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
 }

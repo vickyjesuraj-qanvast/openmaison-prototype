@@ -6,18 +6,22 @@
  * Client-safe: no DB here.
  */
 export type TokenKey =
-  | 'client.name' | 'client.phone' | 'client.email'
+  | 'client.name' | 'client.phone' | 'client.email' | 'client.company' | 'client.uen'
   | 'lead.address' | 'lead.propertyType' | 'lead.projectRef'
   | 'studio.name' | 'studio.address' | 'studio.phone' | 'studio.email' | 'studio.uen' | 'studio.gst'
   | 'quote.number' | 'quote.total' | 'quote.validUntil'
+  | 'quote.deposit'   // (S44R — UAT row 358, call C7) the quote's first payment — a letter of appointment's deposit
+  | 'project.number' | 'project.completedOn' | 'project.defectsPeriod' | 'project.defectsUntil'   // (S44R — UAT row 359, call C9) a completion letter's
   | 'date.today' | 'date.contract'
 export type TokenGroup = { key: string; label: string; tokens: { key: TokenKey; label: string }[] }
 /** Smart Text ▾ (the reference groups Project · Client · Company · Date · Docs): ours name the records the prototype has. */
 export const TOKEN_GROUPS: TokenGroup[] = [
-  { key: 'client', label: 'Client', tokens: [{ key: 'client.name', label: 'Client name' }, { key: 'client.phone', label: 'Client phone' }, { key: 'client.email', label: 'Client email' }] },
+  { key: 'client', label: 'Client', tokens: [{ key: 'client.name', label: 'Client name' }, { key: 'client.phone', label: 'Client phone' }, { key: 'client.email', label: 'Client email' }, { key: 'client.company', label: 'Company' }, { key: 'client.uen', label: 'Company UEN' }] },   /* (pending modules S05 — testers' L-3) a commercial client's */
   { key: 'lead', label: 'Project', tokens: [{ key: 'lead.address', label: 'Property address' }, { key: 'lead.propertyType', label: 'Property type' }, { key: 'lead.projectRef', label: 'Project ref' }] },
   { key: 'studio', label: 'Studio', tokens: [{ key: 'studio.name', label: 'Studio name' }, { key: 'studio.address', label: 'Studio address' }, { key: 'studio.phone', label: 'Studio phone' }, { key: 'studio.email', label: 'Studio email' }, { key: 'studio.uen', label: 'UEN' }, { key: 'studio.gst', label: 'GST reg. no.' }] },   /* (REG-632, parity Q-11) the issuer's GST number */
-  { key: 'quote', label: 'Quote', tokens: [{ key: 'quote.number', label: 'Quote number' }, { key: 'quote.total', label: 'Quote total' }, { key: 'quote.validUntil', label: 'Quote valid until' }] },
+  { key: 'quote', label: 'Quote', tokens: [{ key: 'quote.number', label: 'Quote number' }, { key: 'quote.total', label: 'Quote total' }, { key: 'quote.validUntil', label: 'Quote valid until' }, { key: 'quote.deposit', label: 'Deposit' }] },   /* (S44R, C7) */
+  /* (S44R — UAT row 359, call C9) the handover's: filled from the project when the Hand over sheet sends the completion letter (invented copy) */
+  { key: 'handover', label: 'Handover', tokens: [{ key: 'project.number', label: 'Project number' }, { key: 'project.completedOn', label: 'Completion date' }, { key: 'project.defectsPeriod', label: 'Defects period' }, { key: 'project.defectsUntil', label: 'Defects period ends' }] },
   { key: 'date', label: 'Date', tokens: [{ key: 'date.today', label: 'Today’s date' }, { key: 'date.contract', label: 'Contract date' }] },
 ]
 export const TOKEN_LABEL: Record<TokenKey, string> = Object.fromEntries(TOKEN_GROUPS.flatMap((g) => g.tokens.map((t) => [t.key, t.label]))) as Record<TokenKey, string>

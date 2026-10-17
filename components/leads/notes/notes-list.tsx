@@ -40,6 +40,8 @@ export type NotesListProps = {
   onFilter: (f: NoteFilter) => void
   /** (REG-546) The empty kind filter's own New — the toolbar's New ▾ › Note / Contact Log. */
   onNew: (kind: NoteKind) => void
+  /** (parity P-12) The record the host carries the tab on — a project's page says "this project". The lead's by default. */
+  noun?: 'lead' | 'project'
 }
 
 /** Head chips (931:44884): All · Notes (sticky_note_2) · Contact Log (call_log, REG-278) — one per NoteFilter, in the mock's order. */
@@ -62,7 +64,7 @@ type OpenMenu = { kind: 'item'; id: string } | null
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  * The whole item (except the kebab) is the select button.
  */
-export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter, onNew }: NotesListProps) {
+export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter, onNew, noun = 'lead' }: NotesListProps) {
   const [menu, setMenu] = useState<OpenMenu>(null)
   const close = () => setMenu(null)
   /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab — inline, it hung inside the scrolling list. */
@@ -100,7 +102,7 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
                offers to write it — the toolbar's New ▾ for that kind. Copy is invented. */
             <div className={emptyStyles.card} data-testid="notes-kind-empty">
               <span className={emptyStyles.title}>{filter === 'note' ? 'No notes yet' : 'No contact logs yet'}</span>
-              <span className={emptyStyles.sub}>{filter === 'note' ? 'Write the first note for this lead.' : 'Log the first call or message with this lead.'}</span>
+              <span className={emptyStyles.sub}>{filter === 'note' ? `Write the first note for this ${noun}.` : `Log the first call or message with this ${noun}.`}</span>
               <button type="button" className={emptyStyles.clear} onClick={() => onNew(filter)}>{filter === 'note' ? 'New note' : 'New contact log'}</button>
             </div>
           )}

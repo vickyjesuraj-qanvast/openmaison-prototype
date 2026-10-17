@@ -34,7 +34,7 @@
 }
 .hCell { composes: hCell from '../../om/table-core.module.css'; }   /* p16/24/16/16; relative for the column-resize handle (REG-427) */
 .hLabel { composes: hLabel from '../../om/table-core.module.css'; }   /* 12/Medium, caps as the listing head (REG-243; the mock types "Title") */
-/* Sort is inert (coming soon) — the head keeps the listing's sort-button look. */
+/* (pending modules S05) The heads that keep a glyph sort — the listing's sort-button look. */
 .hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns (flex basis = mock width) ---- */
@@ -52,6 +52,11 @@
 .colDue { flex: var(--cw-due, 0 0 240px); }   /* (Dane UAT 5.13 · 5.05) the due's day and time, uncut — was the mock's 137 */
 .colStatus { flex: var(--cw-status, 0 0 118px); }
 .colTags { flex: var(--cw-tags, 0 0 191px); }   /* --cw-*: the user's dragged widths (REG-427) */
+.colMilestone { flex: var(--cw-milestone, 0 0 200px); min-width: 0; }   /* (Projects round 2) a project's tasks: the milestone each sits in */
+.milestoneBtn { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: left; }
+.milestoneBtn > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.milestoneBtn[data-none] { color: var(--om-color-on-surface-secondary); }
+.milestoneBtn:hover > span, .milestoneBtn:focus-visible > span { color: var(--om-color-primary-default); }
 
 /* ---- Rows 1244×48 ---- */
 .row {
@@ -349,6 +354,10 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
   .row { height: auto; min-height: 64px; flex-wrap: wrap; align-items: center; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .cell { padding: 0; border-top: 0; }
   .colCreator, .colStatus, .colTags { display: none; }
+  /* (fix-A, A-17) a project's task names its milestone on the second line, after the due date — the panel changes it; none, nothing */
+  .cell.colMilestone { flex: 0 1 auto; min-width: 0; order: 4; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
+  .cell.colMilestone:has([data-none]) { display: none; }
+  .cell.colMilestone .milestoneBtn { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
   /* (REG-348) The select column stays: hidden, multi-select — and with it the bulk bar's Duplicate, Save as
      Template and Delete — had no entry point on a phone at all. It leads the row as a 44px target. */
   /* (REG-356, user 2026-09-06) Both marks sit on the ROW's centre line, not at the top of it: the row is two lines
@@ -369,7 +378,7 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
   .cell.colLead { flex: 1 1 100%; order: 2; min-width: 0; padding: 0 44px var(--om-spacing-1) 88px; }
   .row:has(.colLead) .cell.colSel, .row:has(.colLead) .colTitle .glyph { top: 22px; }
   .cell.colDue { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
-  .cell.colMember { flex: 0 0 auto; order: 4; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
+  .cell.colMember { flex: 0 0 auto; order: 5; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
   .actions { opacity: 1; pointer-events: auto; position: absolute; width: auto; height: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }   /* height auto: the kebab's own height, or translateY(-50%) of the core's zero height would drop it half a kebab */
   .actionsInner { position: static; transform: none; }
   .actionsInner > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */
@@ -395,4 +404,29 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
    title. They sit on the title line again (1 border + 12 padding + 22). */
 @media (max-width: 767px) and (hover: none) {
   .row:has(.colLead) .cell.colSel, .row:has(.colLead) .colTitle .glyph { top: 34px; }
+}
+
+/* (gaps build, package C — 16) The Tasks page grouped by project: a header row before each project's tasks, on the page ground, its words
+   kept at the card's left edge while the rows scroll sideways (sticky), the project's link in the house text link. */
+.groupRow { display: flex; min-height: 44px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); }
+.groupInner { position: sticky; left: 0; display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); min-width: 0; }
+.groupLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.groupCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.groupLink { composes: link from '../../om/text-link.module.css'; white-space: nowrap; }
+@media (max-width: 767px) {
+  .groupRow { border-radius: var(--om-radius-1); }
+  .groupInner { padding-inline: var(--om-spacing-2); flex-wrap: wrap; }
+}
+
+/* (parity P-27, B-18) The Tasks page's For column names a project as the Projects listing does: its name over its number (the listing's
+   second-line type). Two lines in the 48 row: the cell gives its 12/12 to 4/4 at a desk; on a phone card the two read as one line. */
+.leadTwo { display: flex; flex-direction: column; min-width: 0; }
+.leadSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 768px) {
+  .cell.colLead:has(.leadTwo) { padding-block: var(--om-spacing-1); }
+}
+@media (max-width: 767px) {
+  .leadTwo { flex-direction: row; gap: var(--om-spacing-1); }
+  .leadSub { font: var(--om-type-subheading-m); }
+  .leadSub::before { content: '· '; }
 }

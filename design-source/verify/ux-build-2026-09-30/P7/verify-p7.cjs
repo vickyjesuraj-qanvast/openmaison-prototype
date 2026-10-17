@@ -1,6 +1,8 @@
 /* UX audit build, package P7 — the shell, search and the AI Visualizer (V1…V10, V12, S3's and L11's search parts), against a production build
    on a scratch copy of the demo DB with the two designs restored (it writes: a reply, a link, a design, marks the bell read — run it on a copy).
    Usage: B=http://localhost:3027 DB=<scratch test.db> OUT=<dir> NODE_PATH=$PWD/node_modules node design-source/verify/ux-build-2026-09-30/P7/verify-p7.cjs */
+/* (pending modules S43C, a deliberate change of this rule) the AI Visualizer's living room is the owner's photo (1.0's 4a51f3522): its walls are
+   'Cream Painted Side Wall' · 'Cream Painted Back Wall' · 'Cream Painted TV Wall', its sofa 'Cream Bouclé Sofa' (were 'White Painted Back Wall', 'Grey Fabric Sofa'). */
 const { chromium } = require('playwright')
 const { execSync } = require('child_process')
 const path = require('path')
@@ -40,15 +42,22 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await page.locator('nav[aria-label="Workspace"] button[aria-label="Tools"]').click(); await page.waitForTimeout(400)
     const menu = page.getByRole('menu', { name: 'Tools' })
     const soon = menu.locator('[data-soon]')
-    check('five Tools tiles wear the Soon tag', (await soon.count()) === 5 && (await soon.first().innerText()).includes('Soon'))
-    check('…and say "coming soon" in their names', ((await soon.first().getAttribute('aria-label')) ?? '').endsWith('coming soon'))
+    /* (the gaps build, I-Q12 · J) the Compliance Navigator and the 3-D Space Planner went live: every tile still to come — and only those — wears Soon */
+    const tiles = await menu.locator('[role="menuitem"]').evaluateAll((els) => els.map((e) => ({ soon: e.hasAttribute('data-soon') || !!e.querySelector('[data-soon]'), href: e.getAttribute('href') })))
+    /* (pending modules S25, a deliberate change of this rule) Market Insights went live — the last tile still to come: no tile wears Soon any more,
+       and a tile that did would still have to be one still to come */
+    const names = await menu.locator('[role="menuitem"]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''))
+    check('every Tools tile is live — none wears the Soon tag, and any that did would be one still to come', (await soon.count()) === 0 && tiles.filter((t) => t.soon).every((t) => !t.href))
+    check('…and none says "coming soon" in its name', names.length > 0 && names.every((n) => !n.endsWith('coming soon')))
     check('the tool you are in is marked', (await menu.locator('[data-on]').innerText()).includes('Quotes'))
     await shot(page, 'v6-tools-soon')
     await page.keyboard.press('Escape'); await page.mouse.click(900, 600); await page.waitForTimeout(300)
-    const dash = page.locator('nav[aria-label="Workspace"] button[aria-label="Dashboard · coming soon"]')
-    check('the rail’s Dashboard names itself coming soon', (await dash.count()) === 1)
+    /* (pending modules S22, a deliberate change of this rule) the Dashboard is built — the rail's last dead end is a link; no rail item says
+       "coming soon" now, and its tooltip names it */
+    const dash = page.locator('nav[aria-label="Workspace"] a[href="/dashboard"]')
+    check('the rail’s Dashboard is live (S22) — no rail item names itself coming soon', (await dash.count()) === 1 && (await page.locator('nav[aria-label="Workspace"] [aria-label$="coming soon"]').count()) === 0)
     await dash.hover(); await page.waitForTimeout(700)
-    check('…in its tooltip too', (await page.getByRole('tooltip').innerText().catch(() => '')).includes('coming soon'))
+    check('…its tooltip names it', (await page.getByRole('tooltip').innerText().catch(() => '')).includes('Dashboard'))
     await shot(page, 'v6-rail-tooltip')
   })
 
@@ -62,10 +71,15 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await bell.click(); await page.waitForTimeout(1200)
     const panel = page.getByTestId('notifications-panel')
     const due = page.getByTestId('notifications-due'), notices = page.getByTestId('notifications-notices')
-    check('the notices lead, headed Updates', (await notices.locator('h3').innerText()).toLowerCase().startsWith('updates') && (await panel.locator('section').first().getAttribute('data-testid')) === 'notifications-notices')
+    /* (REG-895, Dane UAT 11.06) while any Due row is late the Due group comes first; otherwise Updates lead — Dane was just given a late task */
+    const late = await due.locator('[data-late]').count()
+    const firstGroup = await panel.locator('section').first().getAttribute('data-testid')
+    /* (pending modules S18, a deliberate change of this rule — one-home N-14: the bell's notices are headed Notices, no longer Updates) */
+    check('the notices are headed Notices, and lead unless a Due row is late (then Due leads)', (await notices.locator('h3').innerText()).toLowerCase().startsWith('notices') && firstGroup === (late > 0 ? 'notifications-due' : 'notifications-notices'), `${firstGroup} · late ${late}`)
     check('…due rows sit in their own group, headed Due', (await due.locator('h3').innerText()).toLowerCase().startsWith('due'))
     const meta = await due.locator('[data-testid="notification-row"]').first().locator('[class*="meta"]').innerText()
-    check('a due row says when and how late', /^Due (today|\d{1,2} [A-Z][a-z]{2}|in \d+ min)( · \d+ (day|days|h|min) late)?/.test(meta), meta)
+    /* (REG-891, Dane UAT 5.13) a date people plan by wears its day: "Due Mon, 5 Oct ’26 · 15 h late" */
+    check('a due row says when and how late', /^Due (today|(Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} [A-Z][a-z]{2} ’\d\d|in \d+ min)( · \d{1,2}:\d\d (AM|PM))?( · \d+ (day|days|h|min) late)?/.test(meta), meta)
     await shot(page, 'v8-bell-groups')
     await page.getByRole('button', { name: 'Mark all as read' }).click(); await page.waitForTimeout(1500)
     check('Mark all as read says the due ones stay', /All read — \d+ follow-ups? (is|are) due/.test(await snackText(page)), await snackText(page))
@@ -81,7 +95,8 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await page.keyboard.press('Meta+k'); await page.waitForTimeout(400)
     const panel = page.getByRole('dialog', { name: 'Search' })
     const create = panel.getByRole('group', { name: 'Create' })
-    check('empty, it offers Create under Go to', (await create.getByRole('option').count()) === 4 && (await panel.locator('[role="group"]').last().getAttribute('aria-label')) === 'Create')
+    /* (REG-922, Projects round 1) Create gains "New project": five rows */
+    check('empty, it offers Create under Go to', (await create.getByRole('option').count()) === 5 && (await create.getByRole('option').filter({ hasText: 'New project' }).count()) === 1 && (await panel.locator('[role="group"]').last().getAttribute('aria-label')) === 'Create', `${await create.getByRole('option').count()} rows`)
     await shot(page, 'v9-search-empty')
     const input = page.getByRole('combobox', { name: 'Search the studio' })
     await input.fill('add lead'); await page.waitForTimeout(900)
@@ -111,7 +126,7 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     const input = page.getByRole('combobox', { name: 'Search the studio' })
     const panel = page.getByRole('dialog', { name: 'Search' })
     const cases = [['gst', 'GST', /\/settings\?section=quotes#gst/, 'gst'], ['paynow', 'Issuing entities & bank details', /\/company\/profile#entities/, 'entities'], ['lost reason', 'Lost and On Hold reasons', /section=leads#lead-reasons/, 'lead-reasons'],
-      ['who sees leads', 'Who sees leads', /section=leads#lead-visibility/, 'lead-visibility'], ['quote number', 'Quote numbers', /section=quotes#numbering/, 'numbering'], ['validity', 'Quote validity', /\/company\/templates\/quotes/, null],
+      ['who sees leads', 'Who sees leads', /section=studio#lead-visibility/, 'lead-visibility'],   // (pending modules S14, a deliberate change of this rule) its one home: Roles & access ['quote number', 'Quote numbers', /section=quotes#numbering/, 'numbering'], ['validity', 'Quote validity', /\/company\/templates\/quotes/, null],
       ['signature', 'Designers’ signatures', /\/company\/members#members/, 'members'], ['payment schedule', 'Payment schedule', /section=quotes#payment-lock/, 'payment-lock']]
     for (const [term, title, url, anchor] of cases) {
       await page.goto(`${B}/leads`); await page.waitForTimeout(700)
@@ -168,6 +183,8 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
   })
 
   await step('V10 · the client’s link names things as the studio does', async () => {
+    /* the demo link's fixed expiry (1 Oct 2026) has passed — it would open as "expired": keep it open a month from now on the scratch DB */
+    q(`UPDATE render_share_links SET expires_at = strftime('%s','now') + 30*86400 WHERE token = '${TOKEN}' AND expires_at < strftime('%s','now') + 86400`)
     const cp = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const p = await cp.newPage()
     await p.goto(`${B}/renders/${TOKEN}?preview=1`); await p.waitForTimeout(2200)
@@ -238,7 +255,7 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
   await step('V4 · the fresh version: Share on its ⋯ and after Compare', async () => {
     await page.goto(`${B}/visualizer/${KEVIN}`); await page.waitForTimeout(2500)
     await page.getByTestId('viz-version').first().click(); await page.waitForTimeout(600)
-    await page.getByRole('button', { name: 'White Painted Back Wall' }).click(); await page.waitForTimeout(1200)
+    await page.getByRole('button', { name: 'Cream Painted Side Wall' }).click(); await page.waitForTimeout(1200)
     await page.getByTestId('viz-swatch').filter({ hasText: 'Cool Grey' }).first().click(); await page.waitForTimeout(300)
     await page.getByTestId('viz-generate').click(); await page.waitForTimeout(500)
     await page.getByTestId('viz-running').waitFor({ state: 'detached', timeout: 30000 }); await page.waitForTimeout(1200)
@@ -304,7 +321,9 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     await shot(page, 'v2-linked')
     await page.locator('[role="status"][aria-live="polite"]').last().getByRole('button', { name: 'Undo' }).click(); await page.waitForTimeout(2000)
     check('Undo puts it back as a personal design', q(`SELECT kind||'|'||name FROM visualizer_designs WHERE id='${SHOWROOM}'`) === 'personal|Showroom — kitchen concept')
-    await page.goto(`${B}/visualizer`); await page.waitForTimeout(1600)
+    /* the demo files the showroom design in its "Showroom ideas" folder (R61), and Undo puts it back there (REG-804): open the folder it is in */
+    const inFolder = q(`SELECT coalesce(folder_id, '') FROM visualizer_designs WHERE id='${SHOWROOM}'`)
+    await page.goto(`${B}/visualizer${inFolder ? `?folder=${inFolder}` : ''}`); await page.waitForTimeout(1600)
     const card = page.getByTestId('library-card').filter({ hasText: 'Showroom' }).first()
     await card.hover(); await card.getByRole('button', { name: /More|options/i }).first().click(); await page.waitForTimeout(400)
     check('the landing’s card menu offers Link to a lead… too', await page.getByRole('menuitem', { name: 'Link to a lead…' }).isVisible())
@@ -313,13 +332,21 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
 
   await step('V2 · after the welcome’s upload: "For a lead? Link it"', async () => {
     q(`UPDATE visualizer_designs SET deleted_at = strftime('%s','now')`)
-    await page.goto(`${B}/visualizer`); await page.waitForTimeout(1800)
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByTestId('viz-welcome-upload').click()])
-    await chooser.setFiles(path.join(__dirname, '../../../../public/uat-files/sophia-living-room.jpg'))
-    await page.waitForURL(/\/visualizer\/[0-9a-f-]+/, { timeout: 15000 }); await page.waitForTimeout(4000)
-    check('the editor asks, quietly, whether it is for a lead', await page.getByTestId('viz-link-ask').isVisible())
-    await shot(page, 'v2-link-ask')
-    q(`UPDATE visualizer_designs SET deleted_at = NULL WHERE id IN ('${KEVIN}', '${SHOWROOM}')`)
+    /* a studio with no design opens on the welcome only when it has no folder either (REG-736/737 `firstRun`): the demo's "Showroom ideas"
+       folder (R61) steps aside too, and comes back below */
+    const folders = q(`SELECT group_concat(id) FROM library_folders WHERE library='visualizer' AND deleted_at IS NULL`)
+    q(`UPDATE library_folders SET deleted_at = strftime('%s','now') WHERE library='visualizer' AND deleted_at IS NULL`)
+    try {
+      await page.goto(`${B}/visualizer`); await page.waitForTimeout(1800)
+      const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByTestId('viz-welcome-upload').click()])
+      await chooser.setFiles(path.join(__dirname, '../../../../public/uat-files/sophia-living-room.jpg'))
+      await page.waitForURL(/\/visualizer\/[0-9a-f-]+/, { timeout: 15000 }); await page.waitForTimeout(4000)
+      check('the editor asks, quietly, whether it is for a lead', await page.getByTestId('viz-link-ask').isVisible())
+      await shot(page, 'v2-link-ask')
+    } finally {
+      q(`UPDATE visualizer_designs SET deleted_at = NULL WHERE id IN ('${KEVIN}', '${SHOWROOM}')`)
+      if (folders) q(`UPDATE library_folders SET deleted_at = NULL WHERE id IN (${folders.split(',').map((f) => `'${f}'`).join(',')})`)
+    }
   })
 
   await step('V9 · New design from search starts a blank design', async () => {
@@ -342,13 +369,15 @@ const step = async (name, fn) => { console.log(name); try { await fn() } catch (
     const more = p.locator('nav[aria-label="Primary"]').getByRole('button', { name: /^More/ })
     const moreLabel = (await more.getAttribute('aria-label')) ?? ''
     check('More wears a dot when a row inside counts', /^More \(/.test(moreLabel) && (await more.locator('[class*="moreDot"]').count()) === 1, moreLabel)
-    const dash = p.locator('nav[aria-label="Primary"] button[aria-label="Dashboard · coming soon"]')
-    check('the dock’s Dashboard names itself coming soon', (await dash.count()) === 1)
+    // (pending modules S22, a deliberate change of this rule) the dock's Dashboard is a link now
+    const dash = p.locator('nav[aria-label="Primary"] a[href="/dashboard"]')
+    check('the dock’s Dashboard is live (S22)', (await dash.count()) === 1 && (await p.locator('nav[aria-label="Primary"] button[aria-label="Dashboard · coming soon"]').count()) === 0)
     await shot(p, 'v3-phone-bar')
     await more.click(); await p.waitForTimeout(600)
     const tasks = p.getByRole('dialog', { name: 'More' }).getByRole('link', { name: /^Tasks \(\d+ overdue\)/ })
     check('the More sheet’s Tasks row shows its count', (await tasks.count()) === 1)
-    check('…and Marketplace wears Soon', (await p.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Marketplace · coming soon' }).innerText()).includes('Soon'))
+    // (pending modules S24, a deliberate change of this rule) the Marketplace is built — More's row is a live link, no Soon
+    check('…and Marketplace is a live row', (await p.getByRole('dialog', { name: 'More' }).getByRole('link', { name: 'Marketplace' }).count()) === 1)
     await shot(p, 'v3-phone-more')
     await p.goto(`${B}/quotes`); await p.waitForTimeout(1500)
     check('V7 · the dock lights Tools on Tools pages', (await p.locator('nav[aria-label="Primary"] button[aria-haspopup="menu"]').first().getAttribute('data-active')) === 'true')

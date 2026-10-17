@@ -1,5 +1,6 @@
 import { COMPANY_GROUPS, TEMPLATE_KINDS } from '@/lib/company/sections'
 import { SETTINGS_MODULES, settingsHref } from '@/lib/settings/modules'
+import { opensPath } from '@/lib/settings/roles'
 
 /**
  * (REG-709, owner 2026-09-28: "this search is a global prototype search … a popover window like what we have for company tab with a search
@@ -7,7 +8,14 @@ import { SETTINGS_MODULES, settingsHref } from '@/lib/settings/modules'
  * against what was typed (the house rule of REG-274 — it matches when the words appear in the text the result shows, a phone number digit
  * to digit — with every word of the query needing a match), the pieces of a line to mark, and the pages "Jump to" offers.
  */
-export type SearchKind = 'lead' | 'quote' | 'xray' | 'contract' | 'task' | 'note' | 'file' | 'design' | 'template' | 'book' | 'material' | 'member' | 'page' | 'create'
+export type SearchKind = 'lead' | 'project' | 'quote' | 'xray' | 'contract' | 'task' | 'note' | 'file' | 'design' | 'template' | 'book' | 'material' | 'member' | 'page' | 'create'
+  | 'finance'   // (gaps build F1) vendors, purchase orders, supplier bills
+  | 'ticket'   // (gaps build H, H-Q26) a project's tickets — the client's issues
+  | 'layout'   // (gaps build J, J-Q17) the 3D Space Planner's layouts — under Designs
+  | 'message'   // (parity map, UC-069) a message in a conversation — it opens the conversation at it
+  | 'meeting'   // (pending modules S23) a meeting — it opens the meeting's page
+  | 'brand'   // (pending modules S24) a Marketplace brand or deal — the brand's page, or the deal's dialog
+  | 'article'   // (pending modules S25) a Market Insights article — its page
 
 /** One result: its line, the line under it, a chip (a stage, a status), where it opens, and how it is drawn. */
 export type SearchHit = {
@@ -29,25 +37,59 @@ export type SearchResult = { query: string; scope: SearchScope; groups: SearchGr
 export const SCOPES = [
   { key: 'all', label: 'All', kinds: [] as SearchKind[] },
   { key: 'leads', label: 'Leads', kinds: ['lead'] as SearchKind[] },
+  { key: 'projects', label: 'Projects', kinds: ['project'] as SearchKind[] },   // (REG-922)
   { key: 'quotes', label: 'Quotes', kinds: ['quote', 'xray'] as SearchKind[] },
   { key: 'contracts', label: 'Contracts', kinds: ['contract'] as SearchKind[] },
   { key: 'tasks', label: 'Tasks', kinds: ['task'] as SearchKind[] },
   { key: 'notes', label: 'Notes & Logs', kinds: ['note'] as SearchKind[] },
+  { key: 'meetings', label: 'Meetings', kinds: ['meeting'] as SearchKind[] },   // (pending modules S23)
   { key: 'files', label: 'Files', kinds: ['file'] as SearchKind[] },
-  { key: 'designs', label: 'Designs', kinds: ['design'] as SearchKind[] },
+  { key: 'designs', label: 'Designs', kinds: ['design', 'layout'] as SearchKind[] },   // (gaps build J) the 3D layouts beside the AI Visualizer's designs
   { key: 'library', label: 'Templates & Price book', kinds: ['template', 'book', 'material'] as SearchKind[] },
   { key: 'people', label: 'People', kinds: ['member'] as SearchKind[] },
+  { key: 'finance', label: 'Finance', kinds: ['finance'] as SearchKind[] },   // (gaps build F1)
+  { key: 'tickets', label: 'Tickets', kinds: ['ticket'] as SearchKind[] },   // (gaps build H)
+  { key: 'messages', label: 'Messages', kinds: ['message'] as SearchKind[] },   // (parity map, UC-069) words in a conversation
 ] as const
 export type SearchScope = (typeof SCOPES)[number]['key']
+/** (parity map, FB-114) What an Accounting member's ⌘K finds — the books only: a project (opening on its Money), their own tasks, Finance's
+    records; the scopes that hold them. The server reads the same list (lib/global-search/queries.ts), whatever scope is asked. */
+export const ACCOUNTING_KINDS: readonly SearchKind[] = ['project', 'task', 'finance']
+/** (S44O — call C6) …and a Marketing member's — the leads' own: a lead, its tasks, notes and logs, its files (never a quote, a contract, a project
+    or Finance). */
+export const MARKETING_KINDS: readonly SearchKind[] = ['lead', 'task', 'note', 'file']
+export const scopesFor = (accounting: boolean, marketing = false) => (accounting ? SCOPES.filter((s) => s.key === 'all' || s.kinds.some((k) => ACCOUNTING_KINDS.includes(k)))
+  : marketing ? SCOPES.filter((s) => s.key === 'all' || s.kinds.some((k) => MARKETING_KINDS.includes(k))) : SCOPES)
 export const isScope = (v: string): v is SearchScope => SCOPES.some((s) => s.key === v)
 export const scopeOf = (kind: SearchKind): SearchScope => SCOPES.find((s) => (s.kinds as readonly SearchKind[]).includes(kind))?.key ?? 'all'
 
 /** Each group's heading and the order the groups read in. */
 export const KIND_LABEL: Record<SearchKind, string> = {
-  lead: 'Leads', quote: 'Quotes', xray: 'Quote X-Ray', contract: 'Contracts', task: 'Tasks', note: 'Notes & Logs', file: 'Files',
+  lead: 'Leads', project: 'Projects', quote: 'Quotes', xray: 'Quote X-Ray', contract: 'Contracts', task: 'Tasks', note: 'Notes & Logs', file: 'Files',
   design: 'AI Visualizer', template: 'Templates', book: 'Price book', material: 'Materials', member: 'People', page: 'Go to', create: 'Create',
+  finance: 'Finance',   // (gaps build F1)
+  ticket: 'Tickets',   // (gaps build H)
+  layout: '3D Space Planner',   // (gaps build J)
+  message: 'Messages',   // (parity map, UC-069)
+  meeting: 'Meetings',   // (pending modules S23)
+  brand: 'Marketplace',   // (pending modules S24)
+  article: 'Market Insights',   // (pending modules S25)
 }
-export const KIND_ORDER: SearchKind[] = ['lead', 'quote', 'contract', 'task', 'note', 'file', 'xray', 'design', 'template', 'book', 'material', 'member', 'page']
+export const KIND_ORDER: SearchKind[] = ['lead', 'project', 'quote', 'contract', 'task', 'note', 'file', 'xray', 'design', 'template', 'book', 'material', 'member', 'page']
+/* (gaps build F1) money out's records, after the studio's people and before the pages — the order the groups read in */
+KIND_ORDER.splice(KIND_ORDER.indexOf('page'), 0, 'finance')
+/* (gaps build H) tickets read after the projects they belong to */
+KIND_ORDER.splice(KIND_ORDER.indexOf('project') + 1, 0, 'ticket')
+/* (gaps build J) layouts read after the AI Visualizer's designs */
+KIND_ORDER.splice(KIND_ORDER.indexOf('design') + 1, 0, 'layout')
+/* (parity map, UC-069) messages read after the tickets — both the client's words */
+KIND_ORDER.splice(KIND_ORDER.indexOf('ticket') + 1, 0, 'message')
+/* (pending modules S23) meetings read after the notes and logs — a meeting held is its Met log */
+KIND_ORDER.splice(KIND_ORDER.indexOf('note') + 1, 0, 'meeting')
+/* (pending modules S24) the Marketplace's brands and deals read after the studio's own libraries, before its people — found under All (no scope of their own) */
+KIND_ORDER.splice(KIND_ORDER.indexOf('member'), 0, 'brand')
+/* (pending modules S25) Market Insights' articles read after the Marketplace — found under All (no scope of their own), not by Accounting */
+KIND_ORDER.splice(KIND_ORDER.indexOf('brand') + 1, 0, 'article')
 
 /** How many results a group shows under All before "Show all"; a scope shows up to `SCOPE_LIMIT`. */
 export const ALL_LIMIT = 4
@@ -106,70 +148,186 @@ export function marks(text: string, query: string): { text: string; hit: boolean
     studio calls the place when it isn't its name ("PayNow", "tax"); found, never shown. */
 export type SearchPage = { id: string; title: string; sub: string; icon: string; href: string; words?: string
   /** A Create row whose page's Create opens a menu: the row to choose in it ("Create New Task"). */
-  pick?: string }
+  pick?: string
+  /** (gaps build F1) a Create row offered only once something is typed — the empty search keeps its own rows */ onlyTyped?: boolean
+  /** (simplify S-14 · F1 §6.9.6) …except for a Manager or a Designer, whose weekly job on site it is: their empty search offers it too */ forMembers?: boolean
+  /** (pending modules S08) a page only Owners and Admins have — a Manager's or a Designer's search leaves it out */ runners?: boolean
+  /** (pending modules S41b-5) a page only the studio's Owner opens (1.0's rule for Qanvast Ops' Credits and Reviews) — everyone else's search leaves it out */ owners?: boolean }
 /** (UX audit S3) Where things live: every Settings card and every Company card, by its own title, with a link to the card itself
     (`#<the card>` — the page's id or data-testid; `useArrival` in global-search.tsx brings it into view and marks it). */
 const settingCard = (section: string, id: string, title: string, sub: string, anchor: string | null, words: string): SearchPage =>
   ({ id: `set-${id}`, title, sub: `Settings › ${sub}`, icon: 'settings', href: `${settingsHref(section)}${anchor ? `#${anchor}` : ''}`, words })
 const companyCard = (id: string, title: string, sub: string, icon: string, href: string, words: string): SearchPage => ({ id: `co-${id}`, title, sub: `Company › ${sub}`, icon, href, words })
 export const SETTING_PAGES: SearchPage[] = [
-  settingCard('studio', 'team', 'Team', 'Studio · the members, by role', 'studio-team', 'members people staff roles'),
-  settingCard('studio', 'entities', 'Issuing entities', 'Studio · the companies a quote is issued under', 'studio-entities', 'company uen entity entities'),
-  settingCard('studio', 'roles', 'Who may do what', 'Studio · what each role may do', 'studio-roles', 'permissions access owner admin designer manager rights'),
-  settingCard('leads', 'stages', 'Stage movement', 'Lead management · one stage at a time, or any', null, 'stages pipeline linear flexible move'),
+  /* (one-home N-06) Settings › Studio's Team and Issuing entities cards were read-only copies of Company's — the Team row opens Company › Members,
+     and "Issuing entities" is Profile's own row below (its words carry the old row's) */
+  companyCard('team', 'Team', 'Members · the members, by role', 'group', '/company/members#members', 'members people staff roles'),
+  /* (pending modules S08) the set-up list: its one home is Settings › Studio (S14: Roles & access); `setup=1` shows it as it stands even once hidden or finished */
+  { id: 'set-setup', title: 'Set up your studio', sub: 'Settings › Roles & access · what your quotes, invoices and contracts need, and where each is kept', icon: 'settings', href: '/settings?section=studio&setup=1#studio-setup', words: 'setup set up getting started onboarding checklist first steps new studio logo bank details company details welcome', runners: true },
+  settingCard('studio', 'roles', 'Who may do what', 'Roles & access · what each role may do', 'studio-roles', 'permissions access owner admin designer manager rights roles'),   // (pending modules S14) the module's name
+  /* (pending modules S14) Who sees leads' one home is Roles & access, above Who may do what */
+  settingCard('studio', 'visibility', 'Who sees leads', 'Roles & access · who sees and assigns which leads, and their projects', 'lead-visibility', 'visibility access managers assign see leads projects'),
+  /* (pending modules S41b-1 — 1.0's Cost & Margin Visibility) its one home, beside Who sees leads */
+  settingCard('studio', 'cost-visibility', 'Who sees costs and margins', 'Roles & access · hide cost, mark-up and margin from a role', 'cost-visibility', 'cost costs margin margins markup mark-up profit hide visibility confidential designers accounting admins'),
+  settingCard('leads', 'stages', 'Lead stages', 'Lead management · what each stage keeps, and how leads move', 'lead-stages', 'stages pipeline linear flexible move stage movement manage stages funnel next call follow-up signed contract won contacted'),   // (S42 B-13) the card S05 made of Stage movement
   settingCard('leads', 'sources', 'Lead sources', 'Lead management · where a lead can come from', 'lead-sources', 'source website instagram facebook referral qanvast'),
   settingCard('leads', 'reasons', 'Lost and On Hold reasons', 'Lead management · Reasons', 'lead-reasons', 'lost reason reasons hold on hold why'),
   settingCard('leads', 'fields', 'Custom fields', 'Lead management · your own fields on every lead', 'custom-fields', 'field fields lead form extra'),
-  settingCard('leads', 'capture', 'Lead capture', 'Lead management · the website form’s address', 'lead-capture', 'website form email intake enquiry enquiries webhook'),
-  settingCard('leads', 'visibility', 'Who sees leads', 'Lead management · who sees and assigns which leads', 'lead-visibility', 'visibility access managers assign see leads'),
+  /* (pending modules S23) Settings › Meetings — the co-pilot's playbook, each card by its own title (1.0's Accounts › AI & Copilot words among the words) */
+  settingCard('meetings', 'meeting-parts', 'During a meeting', 'Meetings · the co-pilot’s parts, each on or off', 'meetings-features', 'copilot co-pilot assistant ai tips coaching features switches session estimate add-ons mood boards portfolio past projects photos floor plan'),
+  settingCard('meetings', 'deal-score', 'Deal score', 'Meetings · how much budget, timeline, trust and the rest count', 'meetings-score', 'deal score scoring weights weight tuning copilot tuning hot warm cool cold distribute evenly'),
+  settingCard('meetings', 'meeting-checklists', 'Meeting checklists', 'Meetings · what to cover in each kind of meeting', 'meetings-checklists', 'checklist checklists questions ask cover first consultation follow-up site visit quote walk-through closing'),
+  settingCard('meetings', 'objections', 'Objection answers', 'Meetings · what to say when a client pushes back', 'meetings-answers', 'objection objections objection responses responses answers pushback push back too expensive discount price'),
+  settingCard('meetings', 'competitors', 'Competitors', 'Meetings · the studios you compete with', 'meetings-competitors', 'competitor competitors competitor list rival rivals other studios firms lost to'),
+  companyCard('capture', 'Lead capture', 'Integrations · the website form’s address', 'link', '/company/integrations#email', 'website form email intake enquiry enquiries webhook'),   // (one-home N-03) Integrations is lead capture's one home
   settingCard('quotes', 'approval', 'Quote approval', 'Quotes & pricing · review before a quote goes out', null, 'approve approval review'),
   settingCard('quotes', 'tpl-approval', 'Template approval', 'Quotes & pricing · who publishes templates', null, 'approve approval templates publish'),
   settingCard('quotes', 'numbers', 'Quote numbers', 'Quotes & pricing · the pattern new quotes are numbered with', 'numbering', 'number numbering prefix sequence running om-'),
   settingCard('quotes', 'trades', 'Trades', 'Quotes & pricing · the categories every quote offers', 'trades', 'trade category categories carpentry'),
-  settingCard('quotes', 'gst', 'GST', 'Quotes & pricing · whether the studio charges it, and the rate', 'gst', 'tax gst rate 9% 9'),
+  settingCard('quotes', 'units', 'Units', 'Quotes & pricing · the units every line is priced by', 'units', 'unit units sqft lot pieces measure uom'),   // (S44I — M9)
+  settingCard('quotes', 'gst', 'GST', 'Quotes & pricing · the rate', 'gst', 'tax gst rate 9% 9'),   // (one-home N-13) whether the studio is registered is its entity's, on Company › Profile
   settingCard('quotes', 'rounding', 'Selling prices', 'Quotes & pricing · round prices to a step', 'rounding', 'rounding round price prices markup'),
   settingCard('quotes', 'payments', 'Payment schedule', 'Quotes & pricing · who may change a quote’s milestones', 'payment-lock', 'payment payments schedule milestones lock deposit'),
+  settingCard('quotes', 'contracts', 'Contracts · signing links', 'Quotes & pricing · how long a signing link stays open', 'contracts', 'contract contracts signing link links expiry expire days sign'),   // (pending modules S03)
   settingCard('quotes', 'backup', 'Backup approver', 'Quotes & pricing · approves when an Owner is away', 'backup-approver', 'approver backup away'),
   settingCard('quotes', 'prepared', 'Prepared by', 'Quotes & pricing · the name a quote prints', 'prepared-by', 'prepared name print designer'),
+  settingCard('quotes', 'optional-picks', 'Optional works on the confirmation link', 'Quotes & pricing · whether the client may pick them', 'optional-picks', 'optional optional works optional items pick picks tick add-on confirm confirmation link client'),   // (S44Q, row 357)
   settingCard('notifications', 'channels', 'Events and channels', 'Notifications · what reaches whom, by email or WhatsApp', 'notification-channels', 'notifications alerts email whatsapp in app bell'),
   settingCard('notifications', 'followups', 'Follow-ups', 'Notifications · the untouched-lead delay', 'notification-followups', 'untouched delay reminder follow-up follow up 30 minutes'),
-  settingCard('notifications', 'messages', 'Messages', 'Notifications · the words every email and WhatsApp sends', 'notification-messages', 'message messages wording email whatsapp text'),
+  settingCard('notifications', 'messages', 'Message wording', 'Notifications · the words every email and WhatsApp sends', 'notification-messages', 'message messages wording email whatsapp text'),   // (one-home N-08) "Messages" is the client conversations' word
   companyCard('details', 'Company details', 'Profile · name, UEN, address and contacts', 'store', '/company/profile#details', 'uen address phone email socials instagram website name'),
-  companyCard('bank', 'Issuing entities & bank details', 'Profile · bank, account and PayNow QR', 'account_balance', '/company/profile#entities', 'bank paynow qr account swift entity letterhead gst registered'),
+  /* (pending modules S14 — 1.0's Review Link) where clients review the studio; Ask for a review sends it */
+  companyCard('reviews', 'Review link', 'Profile · the page where clients review you — Ask for a review sends it', 'store', '/company/profile#reviews', 'review reviews google rating ratings rate testimonial testimonials ask for a review feedback qanvast'),
+  companyCard('bank', 'Issuing entities & bank details', 'Profile · bank, account and PayNow QR', 'account_balance', '/company/profile#entities', 'bank paynow qr account swift entity entities issued company uen letterhead gst registered'),   // (one-home N-06 · N-13)
+  /* (one-home N-07) CaseTrust and the studio's other registrations are recorded once, on Company › Profile (its card's own title) */
+  companyCard('registrations', 'Registrations & accreditations', 'Profile · CaseTrust, HDB, bizSAFE, BCA and ACRA, recorded once', 'store', '/company/profile#registrations', 'casetrust case trust accreditation accredited registration registrations licence license hdb bca bizsafe acra'),
+  /* (pending modules S37) the studio's listing on Qanvast — 1.0's /verify, one home on Company › Profile */
+  companyCard('qanvast', 'Listed on Qanvast', 'Profile · apply to be listed, or keep your listing up to date', 'store', '/company/profile#qanvast', 'qanvast listing listed list verify verified verification apply application homeowners directory marketplace profile'),
   companyCard('marks', 'Logo and marks', 'Templates › Brand kit · logo, stamp and badges', 'palette', '/company/templates/brand#marks', 'logo stamp badge badges brand'),
   companyCard('colours', 'Colours', 'Templates › Brand kit · the six named colours', 'palette', '/company/templates/brand#colours', 'colour colours color colors accent brand'),
   companyCard('fonts', 'Fonts', 'Templates › Brand kit · the four type roles', 'palette', '/company/templates/brand#type', 'font fonts type typography brand'),
+  /* (pending modules S01) your own signature's one home: Your profile › Your signature */
+  /* (pending modules S14 — the steps' note after S01) your own PayNow, for every member — Accounting too, who don't open Members */
+  { id: 'setting-my-paynow', title: 'Your PayNow', sub: 'Your profile · where the studio pays your claims and commission', icon: 'account_circle', href: '/profile#paynow', words: 'paynow pay me payment claim claims commission reimburse reimbursement my bank mobile uen' },
+  { id: 'setting-my-signature', title: 'Your signature', sub: 'Your profile · drawn, typed or a picture — it prints on the quotes you prepare', icon: 'signature', href: '/profile#signature', words: 'signature sign my signature draw typed upload' },
+  /* (pending modules S18) your own mute and daily summary's one home: Your profile › Your notifications */
+  { id: 'setting-my-notifications', title: 'Your notifications', sub: 'Your profile · mute a notice, or get one summary email a day', icon: 'notifications', href: '/profile#notifications', words: 'notifications notification notices mute muted unmute digest daily summary email emails quiet bell alerts' },
   companyCard('signature', 'Designers’ signatures', 'Members · each is drawn or typed in a quote’s Signature Settings', 'group', '/company/members#members', 'signature signatures sign'),
   companyCard('validity', 'Quote validity', 'Templates › a quote template’s New quotes tab', 'request_quote', '/company/templates/quotes', 'validity valid days expiry expire new quotes defaults t&cs terms starting sections'),
   companyCard('webhooks', 'Webhooks', 'Integrations · leads from other systems', 'link', '/company/integrations#webhooks', 'webhook api integration zapier'),
   companyCard('meta', 'Meta Lead Ads', 'Integrations · leads from Facebook and Instagram ads', 'link', '/company/integrations#meta', 'facebook instagram meta ads'),
   companyCard('gmail', 'Email lead sources', 'Integrations · leads from a Gmail inbox', 'link', '/company/integrations#gmail', 'gmail email inbox'),
+  companyCard('xero', 'Xero', 'Integrations · connect or disconnect the studio’s books', 'link', '/company/integrations#xero', 'xero accounting books connect disconnect bookkeeper'),   // (one-home N-09) the connection's one home; Accounting keeps the mapping and the sync log
   companyCard('billing', 'Plan & billing', 'Plan & AI credits · the plan, the card and invoices', 'diamond', '/company/plan/billing', 'plan billing invoice invoices card subscription upgrade'),
+  /* (Projects r4a) the client portal's set-up and its clients */
+  companyCard('portal-address', 'Client portal address', 'Client portal · the address clients sign in at, Live or Paused', 'home', '/company/portal', 'portal homeowner client address url link live paused pause sign in login test'),
+  companyCard('portal-clients', 'Clients with portal access', 'Client portal · who is invited, who opened it, withdraw', 'home', '/company/portal/clients', 'portal homeowner client clients invite invited access withdraw opened'),
+  /* (pending modules S13) the studio's privacy notice, terms and contact page — the links at the foot of every portal page */
+  companyCard('portal-links', 'Privacy and terms', 'Client portal · your privacy notice, terms and contact page at the foot of every page', 'home', '/company/portal#portal-links', 'privacy policy notice pdpa personal data terms conditions contact footer foot legal links portal homeowner client'),
 ]
 export const PAGES: SearchPage[] = [
+  /* (pending modules S22) the rail's first item — what needs you, what's next, where the studio stands */
+  { id: 'dashboard', title: 'Dashboard', sub: 'What needs you, what’s next and where the studio stands', icon: 'dashboard', href: '/dashboard', words: 'home today overview summary needs you what needs me studio pulse start front' },
   { id: 'leads', title: 'Leads', sub: 'Every lead in the studio', icon: 'people_alt', href: '/leads' },
+  { id: 'projects', title: 'Projects', sub: 'Every project in the studio', icon: 'business_center', href: '/projects', words: 'project jobs work site handover' },   // (REG-922)
   { id: 'tasks', title: 'Tasks', sub: 'Every task, a lead’s or the studio’s', icon: 'task_alt', href: '/tasks', words: 'overdue due today my tasks' },
-  { id: 'insights', title: 'Insights', sub: 'Leads · turnaround by team member', icon: 'trending_up', href: '/leads/insights' },
+  /* (one-home N-08) the rail's Messages — every conversation with a client (the `/chat` address); "messages" finds it before Message wording */
+  { id: 'messages', title: 'Messages', sub: 'Every conversation — clients, the team, groups', icon: 'chat', href: '/chat', words: 'chat chats conversation conversations inbox client clients reply unread team group groups direct member members everyone' },   // (pending modules S26) the studio's own conversations joined it
+  { id: 'insights', title: 'Lead reports', sub: 'Company › Reports · turnaround by team member', icon: 'trending_up', href: '/company/reports/leads', words: 'insights report turnaround response outreach performance' },   // (REG-1361) was Leads › Insights
+  /* (pending modules S45A — H-UHD-1) Reports › Leads' second report — Owners and Admins, as the report */
+  { id: 'sales-report', title: 'Sales report', sub: 'Company › Reports › Leads · wins by member, source and month, the pipeline, leads going quiet', icon: 'trending_up', href: '/company/reports/leads?report=sales', words: 'sales report conversion won value revenue funnel source sources pipeline forecast quiet stalled aging scorecard', runners: true },
+  /* (pending modules S01) your own name, email, phone, photo and signature — the rail's studio block and the phone's avatar open it too */
+  { id: 'profile', title: 'Your profile', sub: 'Your name, photo, email, phone and signature', icon: 'account_circle', href: '/profile', words: 'profile account me my name photo picture avatar email phone number details signature' },
   { id: 'imports', title: 'Lead Import History', sub: 'Leads · every import', icon: 'upload_file', href: '/leads/imports' },
   { id: 'qanvast', title: 'Qanvast Ops', sub: 'Qanvast leads and returns', icon: 'account_balance', href: '/qanvast-ops' },
+  /* (pending modules S27) (invented copy) Qanvast Ops › Hangouts, and a member's own public card */
+  { id: 'hangouts', title: 'Hangouts', sub: 'Qanvast Ops · meet-the-designer events — apply, plan, the chats, how it went', icon: 'group', href: '/qanvast-ops/hangouts', words: 'hangout hangouts event events qanvast homeowners meet designers tables booking page walk-in walk-ins' },
+  /* (pending modules S41b-5) (invented copy) 1.0's Qanvast line's Credits and Reviews & Rankings — the Owner's alone; (S42E, call E·2) Reviews are an Admin's too */
+  { id: 'qanvast-credits', title: 'Lead credits', sub: 'Qanvast Ops · credits left, the month’s statement and your contracts with Qanvast', icon: 'credit_card', href: '/qanvast-ops/credits', words: 'credits credit qanvast lead leads balance top up topup contract contracts statement transactions refund refunds photoshoot social media bd', owners: true },
+  { id: 'qanvast-reviews', title: 'Reviews', sub: 'Qanvast Ops · your Qanvast reviews, replies, ranking and homeowners’ feedback', icon: 'star', href: '/qanvast-ops/reviews', words: 'review reviews rating ratings stars reply respond rank ranking rankings feedback supertrust request reviews qanvast', runners: true },   // (S42E, call E·2) Owners and Admins
+  { id: 'qanvast-request-reviews', title: 'Request reviews', sub: 'Qanvast Ops › Reviews · ask finished projects’ clients for a review on WhatsApp', icon: 'send', href: '/qanvast-ops/reviews?request=1', words: 'ask for a review request review reviews whatsapp homeowners clients qanvast', runners: true },
+  { id: 'public-profile', title: 'Your public profile', sub: 'Your card and your work — what clients read about you', icon: 'badge', href: '/profile#public', words: 'public profile portfolio work card bio years experience specialisation specialisations about team photos' },
   { id: 'quotes', title: 'Quotes', sub: 'Tools · every quote in the studio', icon: 'request_quote', href: '/quotes' },
   { id: 'xray', title: 'Quote X-Ray', sub: 'Tools · compare a quote with another studio’s', icon: 'scan', href: '/quote-x-ray' },
   { id: 'contracts', title: 'Contracts', sub: 'Tools · every contract in the studio', icon: 'contract', href: '/contracts' },
+  /* (pending modules S23) (invented copy) */
+  { id: 'meetings', title: 'Meetings', sub: 'Tools · Meeting Copilot — every meeting, and the co-pilot in each', icon: 'event', href: '/meetings', words: 'meeting copilot co-pilot brief consultation site visit' },
+  { id: 'meetings-reports', title: 'Meeting reports', sub: 'Company › Reports · meetings, coaching and objections', icon: 'bar_chart', href: '/company/reports/meetings', words: 'meeting reports analytics coaching objections deal score' },
+  /* (pending modules S39) (invented copy) 1.0's Studio Health — Owners and Admins (the tab's gate for anyone else, so it is offered to them only) */
+  { id: 'studio-health', title: 'Studio health', sub: 'Company › Reports · how the team and its clients use OpenMaison', icon: 'bar_chart', href: '/company/reports/health', words: 'usage activity active members sign-ins logins sessions ai runs engagement adoption analytics team health portal', runners: true },
   { id: 'visualizer', title: 'AI Visualizer', sub: 'Tools · every design', icon: 'wand_shine', href: '/visualizer' },
+  /* (pending modules S24) (invented copy) the rail's Marketplace */
+  { id: 'marketplace', title: 'Marketplace', sub: 'Brands and deals from Qanvast’s partners', icon: 'storefront', href: '/marketplace', words: 'brands brand deals deal suppliers supplier partners furniture lighting flooring kitchen bathroom paint curtains blinds smart home promotions offers' },
+  /* (pending modules S25) (invented copy) Tools › Market Insights */
+  { id: 'market-insights', title: 'Market Insights', sub: 'Tools · articles from OpenMaison’s editors', icon: 'trending_up', href: '/market-insights', words: 'articles article trends reports case studies industry news insights market reading' },
+  { id: 'planner', title: '3D Space Planner', sub: 'Tools · every 3D layout', icon: 'space_dashboard', href: '/planner', words: '3d layout floor plan furniture room planner space' },   // (gaps build J)
   ...COMPANY_GROUPS.flatMap((g) => g.items.filter((s) => s.href).map((s) => ({ id: `company-${s.key}`, title: s.label, sub: `Company · ${s.help}`, icon: s.icon, href: s.href! }))),
   /* Templates' own tabs (Quotes is Company's Templates row above) */
-  ...TEMPLATE_KINDS.filter((k) => k.key !== 'quotes').map((k) => ({ id: `templates-${k.key}`, title: k.title, sub: `Company › Templates · ${k.help}`, icon: k.icon, href: k.href })),
+  ...TEMPLATE_KINDS.filter((k) => k.key !== 'quotes').map((k) => ({ id: `templates-${k.key}`, title: k.title, sub: `Company › Templates · ${k.help}`, icon: k.icon, href: k.href, words: k.label })),   // (one-home N-14) found by its tab's name too: "payment schedules"
   ...SETTINGS_MODULES.filter((m) => m.live).map((m) => ({ id: `settings-${m.key}`, title: m.label, sub: 'Settings', icon: 'settings', href: settingsHref(m.key) })),
   /* (REG-715, Q-03) not a page: the ? panel, opened over the page you are on (`#shortcuts`, global-search.tsx) */
   { id: 'shortcuts', title: 'Keyboard shortcuts', sub: 'Keys for this page and every other', icon: 'keyboard', href: '#shortcuts' },
+  /* (S42 audit A-08) the people steps' presses, found by what a studio calls them: Sign out (not a page — the studio menu's own leave, run
+     here: `#sign-out`, global-search.tsx) and your own Open to new leads (your row on Members) */
+  { id: 'sign-out', title: 'Sign out', sub: 'Leave OpenMaison on this browser — sign-in opens', icon: 'logout', href: '#sign-out', words: 'sign out signout log out logout log off leave exit quit' },
+  { id: 'open-to-leads', title: 'Open to new leads', sub: 'Company › Members · your row — whether new leads can be suggested for you', icon: 'group', href: '/company/members?open=me', words: 'accepting leads open closed to new leads take leads available away busy leave holiday suggestions assign me' },
   ...SETTING_PAGES,
+  /* (gaps build F1 — F-01) Finance's tabs · (simplify S-11) Purchase orders · Bills · Expenses · Payments out are Money out's kinds now */
+  /* (parity map, FB-013 · FB-016 · FB-012 — P-A's) Money in, the twin of Money out */
+  { id: 'finance-money-in', title: 'Money in', sub: 'Company › Finance · every invoice, client payment, variation order and credit note', icon: 'payments', href: '/company/finance/money-in', words: 'money in invoices invoice receipts receipt payments client payments variation orders vo credit notes register' },
+  { id: 'finance-pos', title: 'Purchase orders', sub: 'Company › Finance › Money out · every PO to a vendor', icon: 'local_shipping', href: '/company/finance/money-out?kind=purchase-orders', words: 'po purchase order vendor supplier subcontractor money out costs' },
+  { id: 'finance-bills', title: 'Supplier bills', sub: 'Company › Finance › Money out · bills from vendors, to pay', icon: 'receipt_long', href: '/company/finance/money-out?kind=bills', words: 'bill invoice supplier vendor pay owe money out' },
+  { id: 'finance-expenses', title: 'Expenses', sub: 'Company › Finance › Money out · expenses and claims', icon: 'shopping_cart', href: '/company/finance/money-out?kind=expenses', words: 'expense claim reimbursement receipt overhead' },
+  { id: 'finance-payments', title: 'Payments out', sub: 'Company › Finance › Money out · what the studio paid', icon: 'payments', href: '/company/finance/money-out?kind=paid', words: 'paid payment vendor money out' },
+  { id: 'finance-vendors', title: 'Vendors', sub: 'Company › Finance · sub-contractors and suppliers', icon: 'storefront', href: '/company/finance/vendors', words: 'vendor supplier subcontractor contractor directory' },
+  /* (gaps build F2 — F2-Q15) the books' pages */
+  /* (simplify S-10) Finance's Overview became To do — what to approve, pay and collect, and what is stuck; "who owes us" is found here (Q-07) */
+  { id: 'finance-overview', title: 'Finance · To do', sub: 'Company › Finance · what to approve, pay and collect', icon: 'task', href: '/company/finance/todo', words: 'to do todo approve pay collect owes owed overdue verify stuck waiting overview who owes us' },
+  { id: 'finance-profitability', title: 'Profitability', sub: 'Company › Reports › Finance · profit and margin by project, by type and by designer', icon: 'bar_chart', href: '/company/reports/finance?report=profitability', words: 'pipeline projects contract margin profit invoiced collected committed report' },
+  { id: 'finance-commissions', title: 'Commission', sub: 'Company › Finance · what the team earns, is paid and is owed', icon: 'workspace_premium', href: '/company/finance/commissions', words: 'commission commissions payout earned owed rate designer ask' },
+  { id: 'finance-reports', title: 'Finance reports', sub: 'Company › Reports · profit and loss, aging, profitability, cash flow', icon: 'bar_chart', href: '/company/reports/finance', words: 'report profit loss p&l aging ar ap cash flow vendor spend statement export' },
+  { id: 'finance-accounting', title: 'Xero', sub: 'Company › Finance · the books pushed to Xero', icon: 'account_balance', href: '/company/finance/accounting', words: 'xero accounting sync books bookkeeper mapping tax code' },
+  /* (simplify round 2 · S-15 · S-20) the two cards round 1 made: one Document numbers card on Settings › Finance, and the approvals gathered at the
+     top of Settings › Projects — each lands on its card (`#document-numbers` · `#owner-approvals`) */
+  settingCard('finance', 'numbers', 'Document numbers', 'Finance · how invoices, receipts, credit notes and POs are numbered', 'document-numbers', 'invoice invoices receipt receipts credit note notes po purchase order number numbers numbering prefix sequence running inv rct cn'),
+  /* (S42 audit C-11) every other Settings › Finance card by its own title (the UX audit's S3 rule) — "expense categories" and "purchase order
+     paper" found nothing; the Money in and Commission cards with them */
+  settingCard('finance', 'invoices', 'Invoices', 'Finance · when an invoice goes out, and how a payment schedule splits', 'invoice-settings', 'invoice invoices send schedule split splits fee first deposit due days'),
+  settingCard('finance', 'invoice-paper', 'Invoice paper', 'Finance · what invoices, receipts and variation orders print besides their figures', 'invoice-paper', 'invoice paper print colour color notes terms bank details balance receipt variation order vo letterhead'),
+  settingCard('finance', 'client-payments', 'Client payments', 'Finance · who confirms a client’s payment, and the ways clients may pay', 'payment-settings', 'payment payments confirm proof paynow bank transfer cheque cash methods client'),
+  settingCard('finance', 'credit-notes', 'Credit notes', 'Finance · how a credit note takes money off a sent invoice', 'credit-settings', 'credit note notes refund cn'),
+  settingCard('finance', 'costs', 'Costs', 'Finance · who approves purchase orders, expenses and supplier bills, and when vendors are paid', 'cost-settings', 'cost costs purchase order po approval approve limit expense expenses vendor vendors terms advance bill bills supplier tolerance'),   // (S44R, C8) bills too
+  settingCard('finance', 'expense-categories', 'Expense categories', 'Finance · what an expense is logged under', 'expense-categories', 'expense expenses category categories claim claims xero account accounts'),
+  settingCard('finance', 'po-paper', 'The purchase order paper', 'Finance · what every PO prints — your note, terms and the vendor’s signature', 'po-paper', 'purchase order paper po print terms header note acceptance sign signature vendor bank details'),
+  settingCard('finance', 'commission', 'Commission', 'Finance · what the team earns on its projects, and the rate', 'commission-settings', 'commission commissions rate rule earn share designer'),
+  settingCard('projects', 'project-start', 'When a project starts', 'Projects · the quote is signed, or the agreement is signed', 'project-start', 'start starts won project agreement letter appointment signed signature quote deposit'),   // (S44R, C7)
+  settingCard('projects', 'approvals', 'What waits for an Owner or an Admin', 'Projects · the approvals a project can wait for', 'owner-approvals', 'approval approvals approve review reviewer reviewers owner admin updates invoice invoices done share handover purchase order expense'),
+  /* (gaps build I) the Workload view, Projects › Insights, the Compliance Navigator and the two settings cards */
+  { id: 'projects-workload', title: 'Workload', sub: 'Projects · who runs how many, against their capacity', icon: 'group', href: '/projects?view=workload', words: 'workload capacity load busy free room designer team' },
+  /* (S45B · H-UHD-2 — 1.0's /contractors page, its 2.0 home) the Workload view's Contractors */
+  { id: 'projects-contractors', title: 'Contractors', sub: 'Projects › Workload · who is free, who is over capacity, the work with no contractor', icon: 'handyman', href: '/projects?view=workload&of=contractors', words: 'contractor contractors crew site sites idle free capacity trade trades hacker carpenter tiler electrician plumber painter workload' },
+  { id: 'projects-insights', title: 'Project reports', sub: 'Company › Reports · started, completed, duration, late milestones, collection', icon: 'bar_chart', href: '/company/reports/projects', words: 'insights report duration late milestones collection days numbers' },
+  { id: 'compliance', title: 'Compliance Navigator', sub: 'Tools · the studio’s registrations and Singapore’s rules by home', icon: 'verified_user', href: '/compliance', words: 'compliance hdb drc casetrust bizsafe bca acra permit rules regulations mcst ura lew' },
+  settingCard('projects', 'workload', 'Workload', 'Projects · projects one person can run at once', 'workload-settings', 'capacity workload default'),
+  { id: 'members-capacity', title: 'Projects at once', sub: 'Company › Members · how many projects each person can run', icon: 'group', href: '/company/members', words: 'capacity workload projects at once member' },   // (one-home N-17) a member's capacity lives on Members
+  settingCard('projects', 'compliance', 'Compliance tasks', 'Projects · start each project with its compliance tasks', 'compliance-settings', 'compliance starter tasks permit'),
 ]
 /** The pages shown before anything is typed. */
-export const JUMP_TO = ['leads', 'tasks', 'quotes', 'contracts', 'visualizer', 'company-templates', 'settings-studio', 'shortcuts']
+export const JUMP_TO = ['leads', 'projects', 'tasks', 'quotes', 'contracts', 'visualizer', 'company-templates', 'settings-studio', 'shortcuts']
+/** (parity map, FB-114) …and Accounting's — their work, in the order they reach for it. */
+export const ACCOUNTING_JUMP_TO = ['finance-overview', 'finance-money-in', 'finance-reports', 'tasks', 'settings-finance', 'shortcuts']
+/** (S44O — call C6) …and Marketing's — the lead desk's. */
+export const MARKETING_JUMP_TO = ['dashboard', 'leads', 'tasks', 'insights', 'settings-leads', 'shortcuts']
+/** (S44O — C6) A page a Marketing member opens (lib/settings/roles.ts `opensPath`) — of Settings, Lead management alone. */
+export const marketingPage = (href: string) => href.startsWith('#') || (href.startsWith('/settings') ? href.includes('section=leads') : opensPath('Marketing', href))
+/** (parity map, FB-114) A page an Accounting member opens (lib/settings/roles.ts `opensPath`) — of Settings, Finance's module alone; of
+    Reports, Finance's tab. */
+export const accountingPage = (href: string) => href.startsWith('#') || (href.startsWith('/settings') ? href.includes('section=finance')
+  : href.startsWith('/company/reports') ? /^\/company\/reports(\/finance)?(\?|#|$)/.test(href) : opensPath('Accounting', href))
 
 /** Pages that answer the query (matched in the browser — they are the app's own words). */
-export function pageHits(query: string): SearchHit[] {
-  return PAGES.flatMap((p) => {
+export function pageHits(query: string, o: { accounting?: boolean; /** (S44O — C6) a Marketing member */ marketing?: boolean; /** (pending modules S08) a Manager or a Designer */ member?: boolean; /** (pending modules S41b-5) the studio's Owner */ owner?: boolean } = {}): SearchHit[] {
+  return PAGES.filter((p) => (!o.accounting || accountingPage(p.href)) && (!o.marketing || marketingPage(p.href)) && !((o.member || o.accounting) && p.runners) && (!p.owners || !!o.owner)).flatMap((p) => {
     const rank = rankOf(query, p.title, [p.sub, p.words])
     return rank === null ? [] : [{ kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank }]
   }).sort((a, b) => b.rank - a.rank)
@@ -182,16 +340,30 @@ export function pageHits(query: string): SearchHit[] {
  */
 export const CREATE: SearchPage[] = [
   { id: 'create-lead', title: 'New lead', sub: 'Leads · add a lead by hand', icon: 'person_add', href: '/leads', words: 'add create lead enquiry client' },
+  { id: 'create-project', title: 'New project', sub: 'Projects · a project with no lead before it', icon: 'business_center', href: '/projects?new=1', words: 'add create project job direct' },   // (REG-922)
   { id: 'create-quote', title: 'Create quote', sub: 'Tools › Quotes · for any lead, blank or from a template', icon: 'request_quote', href: '/quotes', words: 'new add quote quotation estimate' },
   { id: 'create-task', title: 'New task', sub: 'Tasks · for a lead or the studio', icon: 'task_alt', href: '/tasks', pick: 'Create New Task', words: 'add create task todo to-do reminder follow-up' },
+  /* (S42 audit A-08) inviting your team (S09): Add member opens on Members, empty (`?new=1`) — Owners and Admins only, who may add */
+  { id: 'create-member', onlyTyped: true, runners: true, title: 'Add a member', sub: 'Company › Members · they get an invitation to join', icon: 'person_add', href: '/company/members?new=1', words: 'add invite invitation team member colleague designer staff person join new hire' },
   { id: 'create-design', title: 'New design', sub: 'AI Visualizer · start from a room photo', icon: 'wand_shine', href: '/visualizer?new=1', words: 'add create design render visualise visualize room' },
+  { id: 'create-message', onlyTyped: true, title: 'New message', sub: 'Messages · to a member, a new group or a client', icon: 'chat', href: '/chat', words: 'add create start write message chat group team direct conversation' },   // (pending modules S26) New message ▾ opens on arrival
+  { id: 'create-layout', onlyTyped: true, title: 'New 3D layout', sub: '3D Space Planner · from an HDB, condo or landed flat', icon: 'space_dashboard', href: '/planner?new=1', words: 'add create 3d layout floor plan furniture planner space hdb condo' },   // (gaps build J)
+  { id: 'create-picture', onlyTyped: true, title: 'Make a 3D picture', sub: '3D Space Planner · from a floor-plan photo', icon: 'view_in_ar', href: '/planner?view=iso&photo=1', words: 'add create make 3d picture floor plan photo isometric dollhouse top down floorplan' },   // (pending modules S28)
+  /* (gaps build F1) money out */
+  /* (simplify S-14 · F1 §6.9.6) a member's empty search offers them too — Log an expense first, their weekly job on site */
+  { id: 'create-expense', onlyTyped: true, forMembers: true, title: 'Log an expense', sub: 'Company › Finance · a project’s cost, the overhead, a claim', icon: 'shopping_cart', href: '/company/finance/money-out?kind=expenses&new=1', words: 'add create log expense claim reimbursement receipt' },
+  { id: 'create-po', onlyTyped: true, forMembers: true, title: 'New purchase order', sub: 'Company › Finance · to a vendor, for a project', icon: 'local_shipping', href: '/company/finance/money-out?kind=purchase-orders&new=1', words: 'add create po purchase order vendor supplier' },
+  { id: 'create-bill', onlyTyped: true, forMembers: true, title: 'Record a supplier bill', sub: 'Company › Finance · drop its PDF and it is read for you', icon: 'receipt_long', href: '/company/finance/money-out?kind=bills&new=1', words: 'add create record bill supplier invoice vendor' },
 ]
 /** A query that starts by asking to make something ("new lead", "add a task", "create quote") puts Create first. */
 const CREATE_VERB = /^(new|add|create|make|start)\b/i
+/** (parity map, FB-114) Accounting's Create rows: a task, an expense, a supplier bill — never a lead, a project, a quote or a PO. */
+const ACCOUNTING_CREATE = ['create-task', 'create-expense', 'create-bill']
 /** The Create rows a query matches — all four when nothing is typed. */
-export function createHits(query: string): SearchHit[] {
+export function createHits(query: string, o: { member?: boolean; accounting?: boolean; /** (S44O — C6) a new lead and a task only */ marketing?: boolean } = {}): SearchHit[] {
   const asks = CREATE_VERB.test(query.trim())
-  return CREATE.flatMap((p) => {
+  return CREATE.filter((p) => (!o.accounting || ACCOUNTING_CREATE.includes(p.id)) && (!o.marketing || p.id === 'create-lead' || p.id === 'create-task') && !(o.member && p.runners)).flatMap((p) => {   // (S42 audit A-08) a runners' Create row too
+    if (p.onlyTyped && !query.trim() && !((o.member || o.accounting) && p.forMembers)) return []   // (gaps build F1) · (simplify S-14) a member's own Create rows
     const found = query.trim() ? rankOf(query, p.title, [p.sub, p.words]) : 0
     const rank = found !== null && asks ? found + 200 : found
     return rank === null ? [] : [{ kind: 'create' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank }]

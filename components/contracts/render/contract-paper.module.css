@@ -31,8 +31,6 @@
 .client:not([data-signed='1']) .mark { border-bottom-color: var(--om-color-primary-default); }
 .client:not([data-signed='1']) .caption { color: var(--om-color-primary-default); }
 .client[data-signed='1'] .typed { color: var(--om-color-on-surface-default); }
-.foot { padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-align: center; }
-.paper[data-compact] .foot { display: none; }
 @media (max-width: 767px) {
   .paper { padding: var(--om-spacing-6) var(--om-spacing-4); min-height: 0; }
   .head { flex-direction: column; align-items: flex-start; }

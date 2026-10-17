@@ -1,0 +1,36 @@
+/*
+ * (S45B · H-UHD-2) The Workload view's Contractors — composed from the Members view (components/projects/workload/workload.module.css: the
+ * caption, the card of rows, the bar of slots, the state over its count), the listing's pressable tiles (projects-workspace.module.css
+ * `.tileBtn`) and the card's white box; the By site table is the house table on the listing's model (CreditsTable). Tokens only.
+ */
+.tileBtn { composes: tileBtn from '../projects-workspace.module.css'; }
+
+/* the gaps: a milestone of a trade some contractor does, starting within the week, nobody on it — one row each, its one filled button */
+.gapCard { composes: card from '../../leads/detail/card.module.css'; overflow: hidden; }
+.gapHead { display: flex; align-items: baseline; gap: var(--om-spacing-2); flex-wrap: wrap; padding: var(--om-spacing-4) var(--om-spacing-5) 0; }
+.gapTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.gapHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.gapRow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-5); min-height: 64px; }
+.gapRow + .gapRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.gapText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gapName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.gapLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+
+.assign { margin-top: var(--om-spacing-1); }
+.blockTrade { flex-shrink: 0; font: var(--om-type-body-s); opacity: 0.8; }
+
+/* the By site table's cells */
+.cellChips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1); min-width: 0; }
+.cellGap { display: flex; flex-direction: column; gap: 2px; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.cellNone { font: var(--om-type-body-m); color: var(--om-color-on-surface-disabled); }
+.siteName { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-m); text-align: left; }
+.whoName { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subtitle-m); text-align: left; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.siteSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+@media (max-width: 767px) {
+  .gapCard { background: var(--om-color-surface-default); }
+  .gapRow { grid-template-columns: 36px minmax(0, 1fr); padding: var(--om-spacing-3) var(--om-spacing-4); }
+  .gapRow > :last-child { grid-column: 2; justify-self: start; }
+  .gapHead { padding: var(--om-spacing-4) var(--om-spacing-4) 0; }
+}

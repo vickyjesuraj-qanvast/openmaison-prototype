@@ -16,7 +16,7 @@ export type EmptyAction = { label: string; icon?: string; onPress: () => void; b
  * (a library's samples). Rules (design-source/context/page-checklist.md › Empty states): a first run always carries its action; one filled
  * button on the screen; "No results found" (TabSearchEmpty) is a different card, for a search or a filter.
  */
-export function EmptyState({ icon, title, help, primary, secondary, link, extra, extraLabel, tone = 'first', testId = 'empty-state' }: {
+export function EmptyState({ icon, title, help, primary, secondary, link, extra, extraLabel, tone = 'first', testId = 'empty-state', kb = true }: {
   icon: string
   title: string
   help: ReactNode
@@ -29,12 +29,14 @@ export function EmptyState({ icon, title, help, primary, secondary, link, extra,
   /** 'first': the list's first run (the primary-tinted well). 'plain': an empty place with nothing to start (an empty folder). */
   tone?: 'first' | 'plain'
   testId?: string
+  /** (pending modules S19) false: the primary is not the page's C — a place whose way on isn't making one (a Pro feature's lock, Plans). */
+  kb?: boolean
 }) {
   const button = (a: EmptyAction, kind: 'primary' | 'secondary' | 'link') => {
     const b = (
       <Button key={a.label} variant="primary" appearance={kind === 'primary' ? 'filled' : kind === 'secondary' ? 'outlined' : 'text'}
               iconStart={a.icon && kind !== 'link' ? <Icon name={a.icon} size={20} /> : undefined} isDisabled={!!a.block} onPress={a.onPress}
-              data-testid={a.testId} {...(kind === 'primary' && !a.block ? { 'data-kb': 'create', 'data-kb-label': a.label } : {})}>
+              data-testid={a.testId} {...(kind === 'primary' && !a.block && kb ? { 'data-kb': 'create', 'data-kb-label': a.label } : {})}>
         {a.label}
       </Button>
     )

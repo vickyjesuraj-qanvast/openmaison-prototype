@@ -1,0 +1,74 @@
+/*
+ * (gaps build F2 — the books) What the books add to Finance's pages and the Money tab, on the house pieces: the Money tab's tiles, banners and
+ * cells (money.module.css) and Finance's page and toolbar (finance.module.css) are composed, never copied. Tokens only.
+ */
+
+/* a page of the books: sections stacked like the Money tab's */
+.page { composes: page from '../finance.module.css'; gap: var(--om-spacing-6); }
+.toolbar { composes: toolbar from '../finance.module.css'; }
+.toolEnd { composes: toolEnd from '../finance.module.css'; }
+.search { composes: search from '../finance.module.css'; }
+/* (simplify S-07 · merge) the house tiles grid (the Money tab's `.tiles` is gone): as many across as fit, none narrower than a tile reads */
+.tiles { composes: tiles from '../../om/stat-tile.module.css'; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
+.tiles3 { composes: tiles3 from '../finance.module.css'; }
+@media (max-width: 767px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 359px) { .tiles { grid-template-columns: minmax(0, 1fr); } }
+
+/* a section's title and its line, above its tiles or banners (the tables carry their own head) */
+.head { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.headTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.headHelp { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 880px; }
+.block { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+
+/* the banners (what the numbers say) — the Money tab's own */
+.banners { composes: banners from '../../projects/money/money.module.css'; }
+.banner { composes: banner from '../../projects/money/money.module.css'; }
+.bannerIcon { composes: bannerIcon from '../../projects/money/money.module.css'; }
+.bannerText { composes: bannerText from '../../projects/money/money.module.css'; }
+.bannerActions { composes: bannerActions from '../../projects/money/money.module.css'; }
+.calm { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* table cells */
+.stack { composes: stack from '../../projects/money/money.module.css'; }
+.sub { composes: sub from '../../projects/money/money.module.css'; }
+.num { composes: num from '../../projects/money/money.module.css'; }
+.none { composes: none from '../../projects/money/money.module.css'; }
+.nameLink { composes: nameLink from '../../projects/money/money.module.css'; }
+.rowActions { composes: rowActions from '../../projects/money/money.module.css'; }
+.void { text-decoration: line-through; color: var(--om-color-on-surface-secondary); }
+.toneGreen { color: var(--om-color-tertiary-green-default); }
+.toneYellow { color: var(--om-color-tertiary-yellow-default); }
+.toneRed { color: var(--om-color-tertiary-red-default); }
+.strong { font: var(--om-type-subheading-m); }
+
+/* (simplify S-12) Commission's grouped table: a member's row (the fold, the name) and their projects stepped in under it */
+.memberCell { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.indent { padding-left: var(--om-spacing-8); }
+@media (max-width: 767px) { .indent { padding-left: 0; } }
+
+/* (simplify S-12) Pay {member}: what the amount pays on each project, oldest first */
+.payParts { display: flex; flex-direction: column; gap: var(--om-spacing-1); margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); list-style: none; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.payParts li { display: flex; justify-content: space-between; gap: var(--om-spacing-3); min-width: 0; }
+.payParts li > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* (simplify S-13) Reports' report picker: chips at a desk, a select on a phone */
+.phoneOnly { display: none; }
+@media (max-width: 767px) { .phoneOnly { display: block; } }
+
+/* the shares between a project's team: name · share */
+.share { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: var(--om-spacing-3); align-items: center; }
+
+/* the Accounting page: a switch row inside Integrations' card */
+.cardRow { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+
+/* Settings › Finance › Commission: the three Add buttons, wrapping on a phone */
+.adds { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--om-spacing-2); }
+@media (max-width: 767px) { .adds { justify-content: stretch; } }
+
+/* (parity map, FB-043) A project's commission › Pay on chosen payment stages: the switch, then a tick per stage with its own rate beside it */
+.stagePick { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.stageList { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin: 0; padding: 0; list-style: none; }
+.stageRow { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: var(--om-spacing-3); align-items: center; min-height: 48px; }
+@media (max-width: 767px) { .stageRow { grid-template-columns: minmax(0, 1fr); } }
+/* (parity map, FB-042) a Designer's ask on the project: the sentence and Take it back */
+.askLine { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }

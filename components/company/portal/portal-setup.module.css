@@ -1,0 +1,57 @@
+/* (Projects r4a, board 9) Company › Client portal on the house pieces: the lead Overview's two stacks of cards (overview.module.css) with the
+   LEAD STAGES rows inside them (stages-card.module.css) — the Getting it live checklist reads like a project's Getting started; the real
+   client page in a phone frame; the Clients list on the listing's table model (CreditsTable). */
+.page { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.grid { composes: grid from '../../../app/leads/[id]/overview.module.css'; }
+.column { composes: column from '../../../app/leads/[id]/overview.module.css'; }
+.body { composes: body from '../../leads/detail/stages-card.module.css'; }
+.group { composes: group from '../../leads/detail/stages-card.module.css'; }
+.row { composes: row from '../../leads/detail/stages-card.module.css'; text-decoration: none; }
+.icon { composes: icon from '../../leads/detail/stages-card.module.css'; }
+.label { composes: label from '../../leads/detail/stages-card.module.css'; }
+.nameGroup { composes: nameGroup from '../../leads/detail/stages-card.module.css'; }
+.name { composes: name from '../../leads/detail/stages-card.module.css'; }
+.till { composes: till from '../../leads/detail/stages-card.module.css'; }
+.meta { composes: meta from '../../leads/detail/stages-card.module.css'; }
+.chevron { composes: chevron from '../../leads/detail/stages-card.module.css'; }
+.row[data-state='done'] .icon { color: var(--om-color-tertiary-green-default); }
+.row[data-state='future'] .icon { color: var(--om-color-primary-default); }
+/* a checklist row carries a sentence: its line goes under the name and wraps (the row grows) */
+.row[data-stack] { height: auto; min-height: 36px; align-items: flex-start; }
+.row[data-stack] .nameGroup { flex-direction: column; align-items: flex-start; gap: 2px; }
+.row[data-stack] .till { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.row[data-stack] .rowAction { align-self: center; }
+.rowAction { display: inline-flex; flex-shrink: 0; margin: calc(-1 * var(--om-spacing-2)) calc(-1 * var(--om-spacing-1)) calc(-1 * var(--om-spacing-2)) 0; }
+/* (parity map, CP-127) the address row's Copy and Open: two bare 36 icon buttons before its Change, on the row's centre */
+.rowTools { display: inline-flex; flex-shrink: 0; align-self: center; gap: var(--om-spacing-1); margin: calc(-1 * var(--om-spacing-2)) 0; }
+.rowEnd { flex: none; display: inline-flex; align-items: center; }
+
+/* the inline warning while the portal is paused (REG-898: what should change a decision sits where it is made) */
+.paused { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex-wrap: wrap; padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-yellow-variant1); color: var(--om-color-on-tertiary-yellow-variant); }
+.pausedText { flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px; }
+.pausedTitle { font: var(--om-type-subheading-m); }
+.pausedLine { font: var(--om-type-body-m); }
+
+/* What a client sees: the real page in a phone's frame */
+.preview { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-5) var(--om-spacing-5); }
+.previewHelp { margin: 0; align-self: stretch; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.phone { position: relative; width: 262px; height: 520px; flex: none; overflow: hidden; border: 6px solid var(--om-color-on-surface-default); border-radius: var(--om-radius-5); background: var(--om-color-surface-bg); }
+.phone iframe { position: absolute; top: 0; left: 0; width: 390px; height: 776px; border: 0; transform: scale(0.641); transform-origin: 0 0; }   /* (fix-G, G-17) it scrolls and reads as the client sees it — read-only on the server */
+.previewEmpty { margin: 0; padding: var(--om-spacing-4) 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); text-align: center; }
+.link { composes: link from '../../om/text-link.module.css'; }
+
+/* the address dialog */
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.prefix { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; padding-left: var(--om-spacing-4); }
+.old { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Clients */
+.client { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.clientName { composes: name from '../../leads/detail/stages-card.module.css'; border: 0; padding: 0; background: none; text-align: left; cursor: pointer; }
+.clientName:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m { color: var(--om-color-on-surface-secondary); }
+
+/* (Projects round 9, Q-42) someone from the household sits under their client: the name indented by the initials' width, their line quieter */
+.household { padding-left: var(--om-spacing-5); border-left: 2px solid var(--om-color-surface-variant); }

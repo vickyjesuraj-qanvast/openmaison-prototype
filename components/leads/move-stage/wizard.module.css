@@ -90,6 +90,8 @@
 .logBody { padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-8); }
 .fieldPair { display: flex; gap: var(--om-spacing-4); width: 100%; }
 .stack12 { display: flex; flex-direction: column; gap: var(--om-spacing-3); width: 100%; }
+/* (simplify Q-17) the Won step's one line for a system quote's payments — the split is the quote's own Payment Schedule */
+.splitLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .stack24 { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
 .tiles { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }   /* attached-file tiles, 12 apart; they wrap (as the Tasks panel's do) — the log body is 462 wide, exactly the mock's three tiles, so a fourth starts a row instead of squashing all four */
 

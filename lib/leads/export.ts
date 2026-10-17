@@ -1,5 +1,6 @@
 import type { LeadRow } from '@/lib/leads/queries'
-import { displayDate, displayDateTimeDot, inputDate, money } from '@/lib/format'
+import { commercialOf } from '@/lib/leads/enums'   // (S42 B-05)
+import { displayDate, displayDateTimeDot, inputDate, money, phoneDisplay } from '@/lib/format'
 
 /**
  * "Export all as…" (784:113420 pattern): the listing's leads as a real file the browser downloads.
@@ -11,7 +12,7 @@ export const EXPORT_FORMATS: ExportFormat[] = ['CSV', 'XLS', 'XLSX', 'PDF']
 
 /* (REG-610, parity L-32) The full column set — 1.0's 23 in 2.0's words, on the listing's row. `key` names each column so the export
    dialog can send the listing's visible columns (LISTING_EXPORT) or everything. The mock's ten stay first and in order. */
-export type ExportColumn = { key: string; label: string; value: (r: LeadRow) => string }
+export type ExportColumn<R = LeadRow> = { key: string; label: string; value: (r: R) => string }
 const nextDue = (r: LeadRow) => r.tasks.find((t) => !t.done && t.dueAt) ?? null
 export const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'name', label: 'Lead name', value: (r) => r.name },
@@ -38,17 +39,61 @@ export const EXPORT_COLUMNS: ExportColumn[] = [
   { key: 'leadReturn', label: 'Lead return', value: (r) => (r.returnStatus ? `Return ${r.returnStatus}` : '') },
   { key: 'nric', label: 'NRIC / FIN', value: (r) => r.icNumber ?? '' },
   { key: 'customerId', label: 'Customer ID', value: (r) => r.customerId ?? '' },
+  /* (pending modules S05 — testers' L-3 · L-4) a commercial client's company and UEN; the second client (a co-owner) */
+  { key: 'company', label: 'Company', value: (r) => commercialOf(r).company },   // (S42 B-05) only while the lead is commercial
+  { key: 'uen', label: 'UEN', value: (r) => commercialOf(r).uen },
+  { key: 'secondClient', label: 'Second client', value: (r) => (r.client2Name ? [r.client2Name, r.client2Phone ? `+65 ${r.client2Phone}` : null].filter(Boolean).join(' · ') : '') },
+  /* (pending modules S05 — the card's "Quote status and Project type columns — dropped · revisit: a Won lead has a project and each quote has a
+     status") 1.0's two columns: the latest live quote with its status, and the project's type (the Won step's, before a project carries it) */
+  { key: 'quoteStatus', label: 'Quote status', value: (r) => (r.latestQuote ? `${r.latestQuote.number} · ${r.latestQuote.status}` : '') },
+  { key: 'projectType', label: 'Project type', value: (r) => r.project?.type ?? (r.stage === 'Won' ? r.stageData.projectType ?? '' : '') },
   { key: 'remarks', label: 'Remarks', value: (r) => r.notes ?? '' },
 ]
 /** The listing's column keys → the export columns that carry them (the Name column carries the phone; Tasks is the open count). */
 export const LISTING_EXPORT: Record<string, string[]> = {   // keyed by the listing's own column keys (components/leads/table.tsx DEFAULT_COLUMNS)
   name: ['name', 'phone'], stage: ['stage'], tasks: ['openTasks'], assignees: ['members'], source: ['source'], budget: ['budget'], propertyType: ['propertyType'], created: ['created'], address: ['address'], lastContact: ['lastContact'], district: ['district'], nextFollowUp: ['nextFollowUp'],
 }
-export const columnsFor = (keys?: string[] | null): ExportColumn[] => (keys && keys.length ? keys.map((k) => EXPORT_COLUMNS.find((c) => c.key === k)).filter((c): c is ExportColumn => !!c) : EXPORT_COLUMNS)
+export const columnsFor = (keys?: string[] | null): ExportColumn[] => statementColumns(LEAD_STATEMENT, keys)
+
+/**
+ * (parity P-25, B-15) The statement, for any listing (REG-610, the owner's "like a bank statement"): which rows · a period on one of the
+ * row's dates · every column or the listing's own · the format · the summary line. A listing hands its rows' columns, how its visible
+ * columns map onto them, the date the period reads and its words; the export dialog does the rest. Leads' is `LEAD_STATEMENT`; Projects
+ * builds its own from its column registry (components/projects/project-columns.tsx `projectStatement`).
+ */
+export type StatementSpec<R> = {
+  /** The rows' noun, one and many: "lead" · "leads". */
+  one: string
+  many: string
+  /** The period's field — its label in the dialog ("Created" · "Start date") and the row's date (null: in no period but All time). */
+  dateLabel: string
+  dateOf: (r: R) => Date | null
+  /** Every column the file can carry, in order — "Everything". */
+  columns: ExportColumn<R>[]
+  /** The listing's column keys → the export columns that carry them — "As the list shows", in the listing's order. */
+  listing: Record<string, string[]>
+  /** The file's title and its name: "OpenMaison — Leads", `openmaison-leads-2026-10-08.csv`. */
+  title: string
+  file: string
+}
+export const LEAD_STATEMENT: StatementSpec<LeadRow> = {
+  one: 'lead', many: 'leads', dateLabel: 'Created', dateOf: (r) => r.createdAt,
+  columns: EXPORT_COLUMNS, listing: LISTING_EXPORT, title: 'OpenMaison — Leads', file: 'openmaison-leads',
+}
+/** The statement's columns: the keys asked for, in their order — or every column. */
+export function statementColumns<R>(spec: StatementSpec<R>, keys?: string[] | null): ExportColumn<R>[] {
+  return keys && keys.length ? keys.map((k) => spec.columns.find((c) => c.key === k)).filter((c): c is ExportColumn<R> => !!c) : spec.columns
+}
+/** The listing's visible column keys, in order → the statement's column keys (a listing column may carry two, the Name its phone). */
+export const listingKeys = <R>(spec: StatementSpec<R>, visible: string[]): string[] => visible.flatMap((k) => spec.listing[k] ?? [])
+export function downloadStatement<R>(spec: StatementSpec<R>, rows: R[], format: ExportFormat, now: Date, keys?: string[] | null): string {
+  const cols = statementColumns(spec, keys)
+  return downloadBlob(buildTable(spec.title, cols.map((c) => c.label), rows.map((r) => cols.map((c) => c.value(r))), format), `${spec.file}-${dayStamp(now)}.${format.toLowerCase()}`)
+}
+const dayStamp = (now: Date) => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
 export function exportFileName(format: ExportFormat, now: Date): string {
-  const d = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  return `openmaison-leads-${d}.${format.toLowerCase()}`
+  return `openmaison-leads-${dayStamp(now)}.${format.toLowerCase()}`
 }
 
 export function buildExport(rows: LeadRow[], format: ExportFormat, keys?: string[] | null): Blob {
@@ -71,9 +116,11 @@ export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date, 
 }
 
 /** Export Tasks (902:29293): the lead's tasks as a table. */
-export function downloadTasks(tasks: { title: string; assignees: { name: string }[]; dueAt: Date | null; done: boolean; tags: { name: string }[]; createdAt: Date }[], format: ExportFormat, now: Date): string {
-  const head = ['Title', 'Members', 'Due date', 'Status', 'Tags', 'Created']   /* REG-290 */
-  const body = tasks.map((t) => [t.title, t.assignees.map((m) => m.name).join(', '), t.dueAt ? displayDate(t.dueAt) : '', t.done ? 'Completed' : 'Open', t.tags.map((g) => g.name).join(', '), displayDate(t.createdAt)])
+export function downloadTasks(tasks: { title: string; assignees: { name: string }[]; dueAt: Date | null; done: boolean; tags: { name: string }[]; createdAt: Date; externalName?: string | null; externalPhone?: string | null; externalKind?: string | null }[], format: ExportFormat, now: Date): string {
+  /* (gaps build, package C — M-03) the outside person after the members: "Ah Seng (Subcontractor) +65 9123 4567" */
+  const head = ['Title', 'Members', 'Outside person', 'Due date', 'Status', 'Tags', 'Created']   /* REG-290 */
+  const outside = (t: (typeof tasks)[number]) => (t.externalName ? `${t.externalName}${t.externalKind ? ` (${t.externalKind === 'supplier' ? 'Supplier' : 'Subcontractor'})` : ''}${t.externalPhone ? ` ${phoneDisplay(t.externalPhone)}` : ''}` : '')
+  const body = tasks.map((t) => [t.title, t.assignees.map((m) => m.name).join(', '), outside(t), t.dueAt ? displayDate(t.dueAt) : '', t.done ? 'Completed' : 'Open', t.tags.map((g) => g.name).join(', '), displayDate(t.createdAt)])
   return downloadBlob(buildTable('OpenMaison — Tasks', head, body, format), `openmaison-tasks-${now.toISOString().slice(0, 10)}.${format.toLowerCase()}`)
 }
 

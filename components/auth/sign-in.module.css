@@ -1,0 +1,15 @@
+/* (pending modules S30) The studio's sign-in — the client portal's sign-in page composed (portal.module.css: the white page, the 440 column, the
+   head, the form, the step button, the foot — the card's "the client portal's sign-in is the pattern to reuse"), in OpenMaison's frame: the
+   rail's mark and wordmark where the portal draws the studio's. The page's notice is the house's tinted info strip (read-only-note). */
+.brand { display: inline-flex; align-items: center; gap: var(--om-spacing-3); height: 40px; align-self: flex-start; text-decoration: none; border-radius: var(--om-radius-1); }
+.brand:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 4px; }
+.logo { width: 40px; height: 40px; display: block; }
+.wordmark { height: 22px; width: auto; display: block; }
+.notice { composes: note from '../company/read-only-note.module.css'; }
+.check { display: flex; align-items: center; min-height: 40px; }
+.fine { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (pending modules S35) A link inside the fine line (the Terms line): the house link at the line's own size — 12/16 semibold — so the line keeps
+   its height and its ghost's bars land on it. */
+.fineLink { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); }
+.foot { composes: foot from '../portal/portal.module.css'; }
+.foot:empty { display: none; }

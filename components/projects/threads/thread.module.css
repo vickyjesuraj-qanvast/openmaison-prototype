@@ -1,0 +1,111 @@
+/*
+ * (gaps build H — H-Q12) A conversation's lines, both sides of it: the house comment thread (components/leads/tasks/comments-panel.module.css —
+ * avatar 36, the name and the time on a 20 line, the words under it) composed, never copied; what a conversation adds is here — the photos
+ * under the words (the house square thumbnail at 64), the New rule, a state line, the composer's tools.
+ */
+.lines { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.line { composes: comment from '../../leads/tasks/comments-panel.module.css'; }
+.col { composes: textCol from '../../leads/tasks/comments-panel.module.css'; }
+.meta { composes: meta from '../../leads/tasks/comments-panel.module.css'; }
+.author { composes: author from '../../leads/tasks/comments-panel.module.css'; }
+.time { composes: time from '../../leads/tasks/comments-panel.module.css'; }
+.kebabWrap { composes: kebabWrap from '../../leads/tasks/comments-panel.module.css'; }
+.kebabBtn { composes: kebabBtn from '../../leads/tasks/comments-panel.module.css'; }
+.body { composes: body from '../../leads/tasks/comments-panel.module.css'; }
+.removed { font: var(--om-type-body-m); font-style: italic; color: var(--om-color-on-surface-secondary); margin: 0; }
+.line[data-internal] .body { color: var(--om-color-on-surface-default); }
+.line[data-internal] .col { padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+
+.photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); margin-top: var(--om-spacing-1); }
+.photo { composes: thumb from '../../om/thumb.module.css'; width: 64px; height: 64px; padding: 0; border: 0; cursor: zoom-in; }
+.photo:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* A state line — "Germaine marked it resolved · 3 Oct" — in the thread's left edge, under the avatar's column. */
+.event { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-2); }
+.event[data-tone='green'] { color: var(--om-color-on-tertiary-green-variant); }
+
+/* The New rule — where this reader's unread lines start. */
+.newRule { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); color: var(--om-color-primary-default); }
+.newRule::before, .newRule::after { content: ''; flex: 1; height: var(--om-border-1); background: var(--om-color-primary-default); opacity: 0.4; }
+
+.day { align-self: center; font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+.earlier { align-self: center; }
+
+/* The composer: the DS TextArea, then one row — photos · the chosen photos · a hint · Send. */
+.composer { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.field textarea { block-size: 64px; min-block-size: 64px; resize: none; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; min-height: 36px; }
+.picked { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.pick { composes: thumb from '../../om/thumb.module.css'; width: 40px; height: 40px; }
+.unpick { position: absolute; top: 0; right: 0; z-index: 1; width: 20px; height: 20px; border: 0; padding: 0; border-radius: var(--om-radius-1);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); }
+.hint { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); flex: 1; min-width: 120px; }
+.send { margin-left: auto; display: inline-flex; gap: var(--om-spacing-2); align-items: center; }
+.fileInput { display: none; }
+
+@media (max-width: 767px) {
+  .hint { flex-basis: 100%; order: 3; }
+}
+
+/* ── (parity map 2026-10-10, UC-066 · UC-067 · UC-068 · UC-069) a line's files, a shared place or card, a search's marks, the composer's
+   "+", the emoji button, the voice note being recorded, the suggested replies — composed from the house pieces: the detail card's box for a
+   file row, the house text link for its press, the house chip for a suggestion. ── */
+.files { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin-top: var(--om-spacing-1); max-width: 420px; }
+.file, .share { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 48px; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2);
+  border: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); color: inherit; text-decoration: none; min-width: 0; max-width: 420px; }
+a.file:hover, a.share:hover { background: var(--om-color-hover-04p); }
+.file:focus-visible, .share:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+.fileIcon { color: var(--om-color-on-surface-secondary); flex: none; }
+.fileName { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileMeta { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.voice { display: flex; align-items: center; gap: var(--om-spacing-2); max-width: 420px; }
+.audio { height: 36px; flex: 1; min-width: 0; max-width: 320px; }
+.video { display: flex; flex-direction: column; gap: var(--om-spacing-1); max-width: 360px; }
+.videoEl { width: 100%; max-height: 240px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.share { margin-top: var(--om-spacing-1); }
+.shareText { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.shareText .fileMeta { white-space: normal; }
+.shareActions { display: inline-flex; gap: var(--om-spacing-3); }
+.shareGo { composes: link from '../../om/text-link.module.css'; white-space: nowrap; }
+
+/* (UC-069) a search's matches — the words marked, the current line ringed */
+.found { background: var(--om-color-tertiary-yellow-variant); color: inherit; border-radius: var(--om-radius-1); padding: 0 1px; }
+.line[data-current] .col { box-shadow: 0 0 0 var(--om-border-2) var(--om-color-primary-default); border-radius: var(--om-radius-2); }
+.line { scroll-margin-block: 96px; }
+
+/* (UC-064) where the lead's lines end and the project's begin */
+.began { composes: newRule; color: var(--om-color-on-surface-secondary); }
+.began::before, .began::after { background: var(--om-color-surface-variant); opacity: 1; }
+
+/* (UC-067) the emoji button rides inside the box, at its end */
+.fieldWrap { position: relative; }
+.emojiSlot { position: absolute; right: var(--om-spacing-2); bottom: var(--om-spacing-2); }
+.fieldWrap:has(.emojiSlot) .field textarea { padding-right: 40px; }
+.emojiGlyph { font: var(--om-type-body-l); }
+.emojiGrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--om-spacing-1); padding: var(--om-spacing-2); }
+.emojiBtn { width: 32px; height: 32px; border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-body-xl); display: inline-flex; align-items: center; justify-content: center; }
+.emojiBtn:hover, .emojiBtn:focus-visible { background: var(--om-color-hover-08p); outline: none; }
+.plusSlot { display: inline-flex; }
+
+/* (UC-066) a file on its way, a voice note, a shared place — chips beside the photos */
+.pickChip { display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 32px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border-radius: var(--om-radius-1);
+  border: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); font: var(--om-type-body-s); max-width: 280px; }
+.pickName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unpickChip { width: 20px; height: 20px; border: 0; padding: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
+.unpickChip:hover { background: var(--om-color-hover-04p); }
+
+/* (UC-067) a voice note being recorded */
+.recording { display: flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.recDot { width: 10px; height: 10px; border-radius: var(--om-radius-full); background: var(--om-color-tertiary-red-default); animation: recPulse 1.2s ease-in-out infinite; }
+@keyframes recPulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .recDot { animation: none; } }
+
+/* (UC-068) the suggested replies under the client's newest message — the house chip, a press fills the box */
+.suggest { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); }
+.suggestLabel { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+.suggestChip { composes: chip from '../../om/chips.module.css'; height: auto; min-height: 32px; padding-block: var(--om-spacing-1); text-align: left; white-space: normal; max-width: 100%; }
+
+/* (pending modules S26) a web address in a message's words opens (the house text link's colour, underlined so it reads as one) */
+.inlineLink { color: var(--om-color-primary-default); text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+.inlineLink:hover { color: var(--om-color-primary-hover); }
+.inlineLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }

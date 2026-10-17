@@ -1,0 +1,71 @@
+/*
+ * (REG-924) The Projects listing — the table core (components/om/table-core.module.css, REG-727): the frame, the 56 head, the 64 rows, the
+ * frozen block, the parked actions. What stays here is this table's own: its tracks (the selection 40 · the columns from the registry ·
+ * the actions trail, `--tracks`), the selection cell, the Project cell's two lines and the empty marks. One grid, head and rows its
+ * subgrids (REG-180). The Members cell is the Leads listing's (components/leads/table.module.css, from project-columns.tsx — parity P-17).
+ */
+.card { composes: frame card from '../om/table-core.module.css'; grid-template-columns: var(--tracks); }
+.pin { composes: pin from '../om/table-core.module.css'; }
+.head { composes: head from '../om/table-core.module.css'; }
+.hCell { composes: hCell from '../om/table-core.module.css'; }
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }
+.hSort { composes: hSort from '../om/table-core.module.css'; }
+.row { composes: row from '../om/table-core.module.css'; }
+.cell { composes: cell from '../om/table-core.module.css'; }
+.actions { composes: actions from '../om/table-core.module.css'; }
+.actionsInner { composes: actionsInner from '../om/table-core.module.css'; }
+.float { composes: float from '../om/table-core.module.css'; }
+.menuWrap { position: relative; display: inline-flex; }
+
+/* The selection column (REG-614): always visible. (parity P-22, B-06) The Quotes table's — a 40 track, the box 16 in (p12/0/12/16, the head
+   p16/0/16/16) — and the first column after it pads 12, so the name lands at 52 as every table's does (REG-820); it sat at 68. */
+.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
+.hCell.colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }
+.colSel + .cell, .colSel + .hCell { padding-left: var(--om-spacing-3); }
+
+/* The Project cell: the name over "client · property" — the listing's name (bold, primary + underline on row hover, REG-450). (parity P-22)
+   The lead's 4 between the two lines (it was 0), and the whole cell is the press (REG-349). */
+.identityCell { cursor: pointer; }
+.identity { display: flex; flex-direction: column; min-width: 0; gap: var(--om-spacing-1); }
+.name {
+  font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default);
+  min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left; border-radius: var(--om-radius-1);
+  text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover);
+}
+.row:hover .name, .name:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* (REG-914) the worst reason it needs attention, leading the client line — the red of an overdue task */
+.why { color: var(--om-color-tertiary-red-default); }
+.why::after { content: ' · '; color: var(--om-color-on-surface-secondary); }
+
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.none { color: var(--om-color-on-surface-secondary); }
+
+/* (parity P-22, B-10) Touch: the head's sort buttons and the row's height come from the table core's touch block (44 targets, the row grows);
+   the name is its own 44 box as the Leads listing's (REG-273 · REG-307) — the second line is words, the whole cell its target. */
+@media (hover: none) and (max-width: 1024px) {
+  .identity { gap: 0; }
+  .name { padding-block: 12px; }
+}
+
+/* Touch: the row's actions are permanent where there is no hover (REG-310 / REG-391). */
+@media (hover: none) and (max-width: 1024px) {
+  .actions { opacity: 1; pointer-events: auto; }
+  /* (fix-A, A-33 — REG-310's rule, the Leads listing's way) always on, the kebab can't float over the Team avatars at the visible edge: it
+     takes the trailing track (ACTIONS_TRAIL) as an in-flow cell the row scrolls to */
+  .actions { position: static; grid-column: -2 / -1; justify-self: center; width: auto; height: auto; }
+  .actionsInner { position: static; transform: none; }
+}
+
+/* (gaps build, package A — M-01) the hold's mark beside the stage's tag (a glyph that names itself, in the secondary ink), and its words on the
+   row's second line before the property — the Leads listing's "On hold till" */
+.stageHold { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-wrap: nowrap; }
+.holdMark { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.held { color: var(--om-color-on-surface-default); }
+.held::after { content: ' · '; color: var(--om-color-on-surface-secondary); }
+
+/* (parity P-23) The phone card's members (project-cards.tsx): the lead card's foot lays its avatars, "+n" and person_add straight in its 8-gap
+   row (lead-cards.module.css .members); this wrapper keeps that row, nothing of its own. */
+.cardMembers { display: contents; }

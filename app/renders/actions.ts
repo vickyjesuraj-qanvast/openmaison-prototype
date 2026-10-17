@@ -10,6 +10,7 @@ import { renderFeedbackIds } from '@/lib/notifications/queries'
 import { callBackDue, PIN_CHARS, PIN_LIMIT } from '@/lib/visualizer/policy'
 import { closedLinkMessage, parseComments, readShareLink, type ShareLinkRead } from '@/lib/visualizer/queries'
 import { isSgPhone, phoneDigits } from '@/lib/format'
+import { isStudioVisit } from '@/lib/auth/studio-visit'   // (S42F — B-02's sibling)
 
 /*
  * The client's side of a shared render (REG-676, Q-14 · Q-15 · Q-16) — no session: the token is the key. What the client says reaches
@@ -124,8 +125,43 @@ export async function clientReply(token: string, pinId: string, body: string): P
   refresh(o.s); return { ok: true }
 }
 
-/** The client opened the link (1.0's `view_count`), with when — only a link that opens counts. */
+/* (parity map, CP-072 — 1.0's homeowner annotator, I-276 · I-277) The client keeps their own pins: marks one resolved or reopens it, and removes
+   one (Undo puts it back). Only a pin the client dropped, on a version still on this link — the studio's pins never reach the link (D1). 1.0
+   told nobody of these; the studio's own view shows the pin resolved, or no longer there, on its next look. */
+async function ownPin(o: Open, pinId: string, deleted: boolean) {
+  const [p] = await db.select().from(renderAnnotations).where(eq(renderAnnotations.id, String(pinId)))
+  if (!p || p.authorRole !== 'client' || (deleted ? !p.deletedAt : !!p.deletedAt)) return null
+  return versionIn(o, `${p.jobId}:${p.variantId}`) ? p : null
+}
+/** Resolved / open — the client's word on their own pin. */
+export async function clientPinStatus(token: string, pinId: string, status: 'open' | 'resolved'): Promise<{ ok: true } | Err> {
+  const o = await openLink(token); if ('error' in o) return o
+  if (status !== 'open' && status !== 'resolved') return { error: 'Choose resolved or open.' }
+  const p = await ownPin(o, pinId, false); if (!p) return { error: 'That pin is gone.', gone: true }
+  await db.update(renderAnnotations).set({ status, updatedAt: new Date() }).where(eq(renderAnnotations.id, p.id))
+  refresh(o.s); return { ok: true }
+}
+/** Remove the client's own pin — softly, so its Undo brings it back with its replies. */
+export async function clientRemovePin(token: string, pinId: string): Promise<{ ok: true } | Err> {
+  const o = await openLink(token); if ('error' in o) return o
+  const p = await ownPin(o, pinId, false); if (!p) return { error: 'That pin is gone.', gone: true }
+  await db.update(renderAnnotations).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(renderAnnotations.id, p.id))
+  refresh(o.s); return { ok: true }
+}
+/** Remove's Undo: the pin back where it was, its replies with it — refused once the design holds as many pins as it may. */
+export async function clientRestorePin(token: string, pinId: string): Promise<{ ok: true } | Err> {
+  const o = await openLink(token); if ('error' in o) return o
+  const p = await ownPin(o, pinId, true); if (!p) return { error: 'That pin is gone.', gone: true }
+  const count = (await db.select({ id: renderAnnotations.id }).from(renderAnnotations).where(and(eq(renderAnnotations.jobId, p.jobId), eq(renderAnnotations.variantId, p.variantId), isNull(renderAnnotations.deletedAt)))).length
+  if (count >= PIN_LIMIT) return { error: 'This design has too many pins already.' }
+  await db.update(renderAnnotations).set({ deletedAt: null, updatedAt: new Date() }).where(eq(renderAnnotations.id, p.id))
+  refresh(o.s); return { ok: true }
+}
+
+/** The client opened the link (1.0's `view_count`), with when — only a link that opens counts. (S42F, B-02's sibling) The studio opening its
+    own link in its own browser is never the client's view (`isStudioVisit`). */
 export async function stampShareView(token: string): Promise<void> {
+  if (await isStudioVisit()) return
   const r = await readShareLink(String(token)); if (!r || r.state !== 'open') return
   await db.update(renderShareLinks).set({ viewCount: r.s.viewCount + 1, lastViewedAt: new Date() }).where(eq(renderShareLinks.id, r.s.id))
 }

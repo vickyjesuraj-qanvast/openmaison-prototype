@@ -1,4 +1,4 @@
-import { displayDate, money, moneySGD } from '@/lib/format'
+import { calendarDaysBetween, dayWords, displayDate, money, moneySGD } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 
 /**
@@ -13,13 +13,14 @@ export const BLANK = '--'
 export const budgetCell = (minor: number): string => (minor > 0 ? money(minor) : BLANK)
 export const budgetCard = (minor: number): string => (minor > 0 ? moneySGD(minor) : BLANK)
 
-/** (UX audit L3) Whole days the lead has sat in its stage — whole 24 hours, the listing's own relative clock (`relativeTime`'s "8d ago"), so
- *  a New lead's card never reads "8d ago" beside "9d in New". */
+/** (UX audit L3) Days the lead has sat in its stage — (parity P-29 · Q-14) calendar days, as the Schedule, the record cards and the reports
+ *  count them (REG-1131: never elapsed 24-hour spans, which read one day fewer before midnight). */
 export const daysInStage = (row: Pick<LeadRow, 'stageSince'>, now: number): number =>
-  Math.max(0, Math.floor((now - row.stageSince.getTime()) / 86_400_000))
+  Math.max(0, calendarDaysBetween(row.stageSince, now))
 
-/** (UX audit L3) "5d in Met" — the cards' days-in-stage figure and the In stage column's first line. */
-export const stageAge = (row: Pick<LeadRow, 'stageSince' | 'stage'>, now: number): string => `${daysInStage(row, now)}d in ${row.stage}`
+/** (UX audit L3) "5 days in Met" — the cards' days-in-stage figure and the In stage column's first line; (parity P-28 · Q-13) the house
+ *  words, never "5d". */
+export const stageAge = (row: Pick<LeadRow, 'stageSince' | 'stage'>, now: number): string => `${dayWords(daysInStage(row, now))} in ${row.stage}`
 
 /** The In stage column's second line: "since 25 Sep ’26". */
 export const stageSinceText = (row: Pick<LeadRow, 'stageSince'>): string => `since ${displayDate(row.stageSince)}`

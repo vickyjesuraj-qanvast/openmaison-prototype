@@ -28,7 +28,9 @@ const GO_SHORT: Record<string, string> = { 'Furnish the room': 'Furnish', 'Empty
  * still spend after it, when they may know) on the options line, `short` replaces that line when it can't be afforded — with the cheaper
  * way when there is one — and `per` prices one version of each quality on the Quality switch (null where quality doesn't change the price).
  */
-export type FootPrice = { cost: number; left: number | null; short: string | null; per: { fast: number; high: number } | null }
+export type FootPrice = { cost: number; left: number | null; short: string | null; per: { fast: number; high: number } | null
+  /** (pending modules S20) what a drift repair costs a version, when this pass is checked — null when it isn't */
+  repair?: number | null }
 const fmtN = (n: number) => n.toLocaleString('en-SG')
 /** The cost on the button: a white token and the number (the approved proposal's chip). */
 function CostChip({ n }: { n: number }) {
@@ -103,7 +105,7 @@ function ChangeChips({ changes, ignored, capped }: { changes: Change[]; ignored:
  * `changeList` (the intent's `total`); what the next pass leaves for later is muted with the intent's `ignoredNote` (F052).
  * (F066 · F144) ≤1024 the count opens the changes in a sheet, each with its ×, and Clear all.
  */
-export function GenerateFooter({ changes, onClear, intent, variants, onVariants, quality, onQuality, onGenerate, busy, error, compact = false, disabled = false, describe = null, reasonLink = null, price = null }: {
+export function GenerateFooter({ changes, onClear, intent, variants, onVariants, quality, onQuality, onGenerate, busy, error, compact = false, disabled = false, describe = null, reasonLink = null, price = null, allowance = null }: {
   changes: Change[]; onClear: () => void; intent: Intent
   variants: 1 | 2 | 3; onVariants: (n: 1 | 2 | 3) => void; quality: Quality; onQuality: (q: Quality) => void
   onGenerate: () => void; busy: boolean; error: string | null
@@ -117,6 +119,9 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
   reasonLink?: { text: string; label: string; onPress: () => void } | null
   /** (REG-704) The price of this Generate — null where nothing is charged. */
   price?: FootPrice | null
+  /** (pending modules S36 — the website's trial: one version, Fast, 1.0's) What this Generate allows, said in place of the Versions and
+      Quality options — "2 of 3 free renders left"; the options and their Change (and the compact tune button) step away. */
+  allowance?: ReactNode
 }) {
   const many = intent.kind === 'edit' || intent.kind === 'restyle' || intent.kind === 'transfer'
   /* (UAT walk) only a pass that can make one version holds the choice at 1 — with nothing waiting, the choice stays the studio's own to set
@@ -153,6 +158,8 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
           </SegmentedButton>
         </span>
       </Tooltip>
+      {/* (pending modules S20 — the drift guard, 1.0's render_repair) the one charge Generate can add after the press, said where the prices are */}
+      {price?.per && price.repair ? <span className={styles.optsText} data-testid="viz-repair-note">If the camera moves in a render, it’s lined up with your photo again — {fmtN(price.repair)} AI credits a version</span> : null}
     </div>
   )
   const errorLine = error ? <span className={styles.error} role="alert" data-testid="viz-error"><Icon name="error" size={16} weight={300} />{error}</span> : null
@@ -167,7 +174,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
     return (
       /* (new:style-light-tools:FAB over the knobs) data-viz-knobs tells the frame the switches are up — the Maison AI button steps aside */
       <div className={styles.foot} data-compact="" data-viz-knobs={opts || undefined}>
-        {opts ? knobs : null}
+        {opts && !allowance ? knobs : null}
         <div className={styles.compactRow}>
           {changes.length ? (
             <button type="button" className={styles.compactToggle} aria-haspopup="dialog" aria-expanded={sheet} onClick={() => setSheet(true)} data-testid="viz-changes-toggle">
@@ -175,7 +182,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
             </button>
           ) : null}
           <span className={styles.compactStatus}>{changes.length ? null : status}</span>
-          <Tooltip label={`Makes ${oneOnly ? 1 : variants} · ${quality === 'high' ? 'High quality' : 'Fast'}`}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} /></Tooltip>
+          {allowance ? null : <Tooltip label={`Makes ${oneOnly ? 1 : variants} · ${quality === 'high' ? 'High quality' : 'Fast'}`}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} /></Tooltip>}
           {/* (F158) the count lives in the text beside it — the button says only what it does (its full words stay its name) */}
           <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.goCompact} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate">
             <span className={styles.goText}>{busy ? intent.busy : intent.kind === 'edit' ? 'Generate' : intent.kind === 'restyle' ? 'Restyle' : intent.label}</span>
@@ -184,6 +191,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
           </Button>
         </div>
         {changes.length && status ? <div className={styles.compactLine}>{status}</div> : null}
+        {allowance ? <div className={styles.compactLine} data-testid="viz-allowance"><span className={styles.optsText}>{allowance}</span></div> : null}
         <Sheet open={sheet} onClose={() => setSheet(false)} title={`Your changes · ${total}`} label="Your changes"
                headActions={<span className={styles.sheetAction}><Button appearance="text" onPress={() => { onClear(); setSheet(false) }}>Clear all</Button></span>} bodyClassName={styles.sheetBody}>
           <ChangeChips changes={changes} ignored={ignored} capped={false} />
@@ -207,11 +215,11 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
       {errorLine ?? (reason ? <span className={styles.hint} data-idle={!intent.total || undefined}>{reason}</span> : null)}
       {/* (simplicity pass) how many versions and how fine: one quiet line, the two switches only on Change; (REG-704) the price and what's
           left after it on the same line — or, when it can't be afforded, what it needs and the cheaper way */}
-      <div className={styles.opts}>
+      {allowance ? <div className={styles.opts} data-testid="viz-allowance"><span className={styles.optsText}>{allowance}</span></div> : <div className={styles.opts}>
         {shortLine ?? <span className={styles.optsText} data-testid="viz-options">Makes {!oneOnly ? `${variants} ${variants === 1 ? 'version' : 'versions'}` : '1 version'} · {quality === 'high' ? 'High quality' : 'Fast'}{priced ? ` · ${fmtN(price.cost)} AI credits${price.left != null ? ` · ${fmtN(price.left)} left after` : ''}` : ''}</span>}
         <button type="button" className={styles.link} aria-expanded={opts} onClick={() => setOpts((o) => !o)} data-testid="viz-options-toggle">{opts ? 'Done' : 'Change'}</button>
-      </div>
-      {opts ? knobs : null}
+      </div>}
+      {opts && !allowance ? knobs : null}
     </div>
   )
 }

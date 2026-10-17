@@ -39,6 +39,7 @@ export function KanbanSkeleton() {
           <div className={shell.toolbarRight}>
             <Bone w={280} h={36} r="var(--om-radius-1)" />
             <Bone w={36} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />   {/* (parity P-26, B-17) Column settings (`tune`) — the board's row shows it too */}
             <Bone w={72} h={36} r="var(--om-radius-1)" />
           </div>
         </div>

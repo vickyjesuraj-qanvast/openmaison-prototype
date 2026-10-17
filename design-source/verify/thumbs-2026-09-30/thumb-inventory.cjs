@@ -8,7 +8,7 @@ const pages = [
   ['/quotes', 0], ['/contracts', 0], ['/tasks', 0],
   ['/company/templates/quotes', 1], ['/company/templates/contracts', 1], ['/company/templates/tasks', 1], ['/company/templates/terms', 1], ['/company/templates/payments', 1],
   ['/company/price-book', 1], ['/company/price-book/sections', 1], ['/company/materials', 1], ['/visualizer', 1],
-  ['/company/members', 0], ['/company/plan', 0], ['/qanvast-ops', 0], ['/leads/insights', 0], ['/quote-x-ray', 0],
+  ['/company/members', 0], ['/company/plan', 0], ['/qanvast-ops', 0], ['/company/reports/leads', 0], ['/quote-x-ray', 0],
 ]
 ;(async () => {
   const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 1024 } }); const p = await ctx.newPage()

@@ -4,13 +4,15 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
-import { SPLIT_DEFAULT_DELETE_RULE, TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
+import { SPLIT_DEFAULT_DELETE_RULE, TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { landingFolder } from '@/lib/company/folder-landing'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { db } from '@/lib/db'
 import { paymentTemplates, quotePayments, quotes, quoteTemplates } from '@/lib/db/schema'
-import { sessionMemberSql } from '@/lib/db/session'
-import { DEFAULT_SPLIT_ID, PRESET_SPLITS, parseSplitRows, type SplitRow } from '@/lib/quotes/payments'
+import { sessionMemberId } from '@/lib/db/session'
+import { DEFAULT_SPLIT_ID, PRESET_SPLITS, isFixedRow, parseSplitRows, type SplitRow } from '@/lib/quotes/payments'
+import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
+import { deskRefusal } from '@/lib/quotes/desk'   // (S45C) the editors' role rule (S44Z)
 
 /* Company › Templates › Payments (REG-538): the splits as a library — create · save · rename · duplicate · soft delete · restore · forever. */
 
@@ -22,13 +24,15 @@ function cleanRows(rows: SplitRow[]): SplitRow[] {
 }
 const row = async (id: string) => { const [r] = await db.select().from(paymentTemplates).where(eq(paymentTemplates.id, id)); if (!r) throw new Error('template not found'); return r }
 /** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the split gone from under a stale page — else null. */
-const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(eq(paymentTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
+const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: paymentTemplates.createdBy, deletedAt: paymentTemplates.deletedAt }).from(paymentTemplates).where(eq(paymentTemplates.id, id)); return r ? (r.deletedAt ? TEMPLATE_DELETED_LINE : changeBlock(r.createdBy)) : TEMPLATE_GONE_LINE }   // (fix-G) a deleted template is restored before it changes
 
 export type CreatePaymentTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'quote'; quoteId: string }
   /** (Dane UAT 3.03) The folder open in the gallery — the new split is filed there (its maker may file it). */
   folderId?: string | null }
 /** Blank (a deposit and a completion), a copy of another split, or the schedule a quote has right now. Returns the id. */
-export async function createPaymentTemplate(input: CreatePaymentTemplateInput): Promise<string> {
+export async function createPaymentTemplate(input: CreatePaymentTemplateInput): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+  const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const now = new Date()
   const id = randomUUID()
   let name = clean(input.name) || 'Untitled split'
@@ -39,17 +43,20 @@ export async function createPaymentTemplate(input: CreatePaymentTemplateInput): 
   } else if (input.source.kind === 'quote') {
     const pays = await db.select().from(quotePayments).where(eq(quotePayments.quoteId, input.source.quoteId)).orderBy(asc(quotePayments.position))
     if (!pays.length) throw new Error('no schedule')
-    rows = pays.map((p) => ({ name: p.name, description: p.description, pct: p.pct }))
+    /* (S44O — UAT row 297) a template holds shares only (MI-021): a fixed fee first stays the quote's own — its shares are the split, never a
+       "0%" row that would land on every quote the template starts */
+    rows = pays.filter((p, i) => !isFixedRow(p, i)).map((p) => ({ name: p.name, description: p.description, pct: p.pct }))
     if (!clean(input.name)) { const [q] = await db.select({ title: quotes.title }).from(quotes).where(eq(quotes.id, input.source.quoteId)); name = `${q?.title ?? 'Quote'} split` }
   }
   const viewer = await fetchViewer()
   const { folderId } = await landingFolder('payments', input.folderId, templateChangeBlock(viewer, viewer.id))
-  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: sessionMemberSql, createdAt: now, updatedAt: now, folderId })
+  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: stampBy, createdAt: now, updatedAt: now, folderId })
   touch(id)
   return id
 }
 /** The editor's autosave: the name and the rows. */
-export async function savePaymentTemplate(id: string, patch: { name?: string; rows?: SplitRow[] }): Promise<number> {
+export async function savePaymentTemplate(id: string, patch: { name?: string; rows?: SplitRow[] }): Promise<number | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   await row(id)
   const now = new Date()
   const set: Partial<typeof paymentTemplates.$inferInsert> = { updatedAt: now }
@@ -59,10 +66,15 @@ export async function savePaymentTemplate(id: string, patch: { name?: string; ro
   touch(id)
   return now.getTime()
 }
-export async function renamePaymentTemplate(id: string, name: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await savePaymentTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
-export async function duplicatePaymentTemplate(id: string): Promise<string> { return createPaymentTemplate({ source: { kind: 'copy', id } }) }
+export async function renamePaymentTemplate(id: string, name: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   const block = await refusalFor(id); if (block) return refuse(block); await savePaymentTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
+export async function duplicatePaymentTemplate(id: string): Promise<string | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
+   return createPaymentTemplate({ source: { kind: 'copy', id } }) }
 /** Soft delete; the studio default (the seeded 10/30/30/30) stays — every fallback lands on it. */
 export async function deletePaymentTemplate(id: string): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (id === DEFAULT_SPLIT_ID) return refuse(SPLIT_DEFAULT_DELETE_RULE)
   const block = await refusalFor(id); if (block) return refuse(block)
   await db.update(paymentTemplates).set({ deletedAt: new Date() }).where(eq(paymentTemplates.id, id))
@@ -78,6 +90,7 @@ export async function deletePaymentTemplate(id: string): Promise<void | Refusal>
 }
 /** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
 export async function restorePaymentTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   if (!ids.length) return { restored: 0, kept: 0 }
   const rows = await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids))
   const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
@@ -96,6 +109,7 @@ async function usedBy(id: string): Promise<number> {
   return n
 }
 export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   let removed = 0, kept = 0
   const rows = ids.length ? await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)) : []
   const none = await nothingChangeable(rows, 'purge'); if (none) return refuse(none)   // (wave E, E7) none of them the viewer's: the rule, not "nothing was deleted"
@@ -109,17 +123,20 @@ export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ re
   return { removed, kept }
 }
 export async function emptyPaymentTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const rows = await db.select({ id: paymentTemplates.id }).from(paymentTemplates).where(sql`${paymentTemplates.deletedAt} is not null`)
   return deletePaymentTemplatesForever(rows.map((r) => r.id))
 }
 /** The Payment Schedule's presets ▾ › "Save this split as a template": the quote's rows, named. */
-export async function saveQuoteScheduleAsTemplate(quoteId: string, name: string): Promise<string> {
+export async function saveQuoteScheduleAsTemplate(quoteId: string, name: string): Promise<string | Refusal> {
+  { const no = await deskRefusal(); if (no) return no }   // (S45C) the editors' role rule (S44Z) — before anything is read
   const id = await createPaymentTemplate({ name, source: { kind: 'quote', quoteId } })
   revalidatePath(`/quotes/${quoteId}`)
   return id
 }
 /** Repair / first run: the four presets as templates with their old keys as ids (idempotent). */
-export async function seedPaymentPresets(): Promise<void> {
+export async function seedPaymentPresets(): Promise<void | Refusal> {
+  { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const now = new Date()
   for (const p of PRESET_SPLITS) {
     const [exists] = await db.select({ id: paymentTemplates.id }).from(paymentTemplates).where(and(eq(paymentTemplates.id, p.id)))
