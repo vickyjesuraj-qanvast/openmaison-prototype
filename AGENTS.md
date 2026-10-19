@@ -36,7 +36,8 @@ changed rule), treat that part as visible.
 
 ## Always, with a developer
 
-- Read `DESIGN-PRINCIPLES.md` and `CONTRIBUTING.md` first. Find the code through the *Map* in `CLAUDE.md`.
+- Read `DESIGN-PRINCIPLES.md` and `CONTRIBUTING.md` first. Find the code through the *Map* in `CLAUDE.md`, and where each part
+  of 1.0 went in `FROM-1.0-TO-2.0.md`.
 - Don't edit `CLAUDE.md`, `DESIGN-PRINCIPLES.md`, `design-source/**` or `.github/CODEOWNERS`. They are Vicky's.
 - Never write to `local.db` from a test or script. Put `DATABASE_URL=file:<scratch path>` on the same command.
 - Migrations are additive only. A refused action answers `{ error: <the rule> }`. A long string (a picture, rich text)

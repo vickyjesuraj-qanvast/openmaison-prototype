@@ -13,6 +13,7 @@ Not a mockup: real database, real server actions, real state.
 | --- | --- |
 | **[DESIGN-PRINCIPLES.md](DESIGN-PRINCIPLES.md)** | Vicky's design principles — and the one rule: **nothing a user can see changes without Vicky** |
 | **[CONTRIBUTING.md](CONTRIBUTING.md)** | The developer guide: running it, finding your way, the 1.0 → 2.0 migration maps, what production replaces, pull requests |
+| **[FROM-1.0-TO-2.0.md](FROM-1.0-TO-2.0.md)** | Where every part of 1.0 lives in 2.0: what changed, what was left out, the renamed words, the tables, and the stand-ins to plug in |
 | **[CLAUDE.md](CLAUDE.md)** › *Map* | Where every screen, action, table and rule lives, module by module |
 | [AGENTS.md](AGENTS.md) | The rules AI coding assistants follow in this repo |
 
@@ -207,4 +208,4 @@ Turso URL (plus `DATABASE_AUTH_TOKEN`) to use the hosted variant; no code change
 
 Every affordance that isn't built answers **"Coming soon in OpenMaison 2.0"**. What the prototype stands in for — sign-in,
 lead capture from Gmail and webhooks, WhatsApp sending, object storage, the AI Visualizer's image model — and what
-production replaces, is listed in [CONTRIBUTING.md](CONTRIBUTING.md) § 4.
+production replaces, is listed in [FROM-1.0-TO-2.0.md](FROM-1.0-TO-2.0.md) § 7.

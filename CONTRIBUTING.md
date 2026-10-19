@@ -35,24 +35,10 @@ leave your data alone. A dev server already running when a `git pull` brings a m
 | What 1.0 had, and where it went in 2.0 | the module's audit and migration map (below) |
 | How a tester walks the product end to end | `design-source/uat/` (13 chapters, 302 steps) |
 
-**1.0 → 2.0, module by module.** Each audit inventories 1.0 (the sibling `qanvast-id-tool` repo) and records the calls
-made; each migration map lists 1.0's tables, JSON shapes and rules and says where each lives in 2.0 — the map is where to
-start a port.
-
-| Module | 1.0 audit | Migration map | Register |
-| --- | --- | --- | --- |
-| Leads | `parity/01-leads-1.0-to-2.0-audit-2026-09-24.md` | `parity/02-leads-migration-map-2026-09-24.md` | REG-599…614 |
-| Quote templates | `parity/03-…` | `parity/04-quote-templates-migration-map-2026-09-24.md` | REG-615…620 |
-| Quote editor | `parity/05-…` | `parity/06-quote-editor-migration-map-2026-09-24.md` | REG-621…628 |
-| Contracts | `parity/07-…` | `parity/08-contracts-migration-map-2026-09-25.md` | REG-629…635 |
-| Quote X-Ray | `parity/09-…` | `parity/10-quote-x-ray-migration-map-2026-09-25.md` | REG-636…642 |
-| Accounts Setup → Settings | `parity/11-…` | `parity/12-accounts-setup-migration-map-2026-09-25.md` | REG-643…648 |
-| Price book | `parity/13-…` | `parity/14-price-book-migration-map-2026-09-25.md` | REG-649…655 |
-| AI Visualizer | `parity/16-…` · the audit `parity/18-…` | `parity/17-ai-visualizer-migration-map-2026-09-25.md` | REG-671…698 |
-
-(`parity/` is `design-source/context/parity/`.) The earlier modules — Lead Details' tabs, Tasks, Quotes, Files, Notes,
-Questionnaire, Activity, Qanvast lead return — have their specs in `design-source/context/lead-*` and their decisions in
-the register.
+**1.0 → 2.0: where everything went.** [`FROM-1.0-TO-2.0.md`](FROM-1.0-TO-2.0.md) maps every 1.0 module to its 2.0 home:
+what changed, what was left out on purpose, the renamed words, 1.0's tables against 2.0's, the stand-ins to plug in and the
+questions still open. Read it before you port anything. Its §13 lists the per-module migration maps and audits in
+`design-source/context/parity/`, which have the column-level detail.
 
 ## 3 · Two lanes
 
@@ -68,23 +54,19 @@ build it first and hope. See *How to propose a change* in `DESIGN-PRINCIPLES.md`
 
 ## 4 · What production replaces
 
-The prototype stands in for a few things so it can run on a laptop with no services. Replace them behind the same
-functions — the screens must not notice.
+The prototype stands in for every outside service, so it runs on a laptop with nothing else. Replace each one behind the same
+function; the screens must not notice. The full list is [`FROM-1.0-TO-2.0.md`](FROM-1.0-TO-2.0.md) §7: the 43 stand-ins, the one
+call that plugs each in, their env names, the endpoints outside systems call and the demo switches to turn off. Its source is
+`lib/services/registry.ts`, and `GET /api/services` reports which services are still stand-ins.
 
-| The prototype | Production | Where |
-| --- | --- | --- |
-| Sign-in by any six digits; a browser with no session of its own is the demo's standing member (`members.is_you`, moved by *View as*) | A real code provider; no standing session (`DEMO_STANDING_SESSION = false`) — every browser is its session's member | `lib/auth/provider.ts`, `lib/auth/paths.ts`, `lib/db/session.ts` (`sessionMemberId` — the one place that says who a request is) |
-| libSQL file `local.db` | The production database (libSQL / Turso works as is: set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`) | `lib/db/index.ts` |
-| Pictures stored as data URLs in rows, served at addresses (`/files/img/…`, `/visualizer/img/…`) | Object storage; keep the same addresses | map 17 › *Conventions* |
-| The AI Visualizer's curated engine runs in the browser on three traced sample rooms | An image model behind the same `runPass` contract | `lib/visualizer/engine/`, map 17 §3 and §6 |
-| Lead capture from Gmail, webhooks and forms is simulated | The real connections, into the same `captureLead` path | `app/leads/capture-actions.ts` |
-| WhatsApp is a `wa.me` link the user presses; notifications are in-app only | The WhatsApp / email senders, from the same events | `lib/notifications/` |
-| PDFs are the browser's Print or save as PDF | Server-side PDF if needed — the printed layout is the design | the Preview pages |
-| "Coming soon in OpenMaison 2.0" answers every affordance not built yet | Build it only when Vicky has designed it | `useComingSoon` |
-| Demo data: `fixtures/baseline.json` plus the repair rules | 1.0's data, ported by the migration maps | `scripts/repair-demo-data.ts` |
+Three more things to know:
 
-**The studio's picture routes need a signed-in session in production.** Today any request reads as the signed-in
-member, because there is no login (map 17 › *Conventions*).
+- **The database** is a libSQL file, `local.db`. libSQL / Turso works as it is: set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`
+  (`lib/db/index.ts`).
+- **"Coming soon in OpenMaison 2.0"** answers every affordance that isn't built yet (`useComingSoon`). Build it only when Vicky
+  has designed it.
+- **The demo data** (`fixtures/baseline.json` plus the repair rules in `scripts/repair-demo-data.ts`) belongs to the demo
+  studio. 1.0's data is ported by the maps. Never run the repair rules on ported data.
 
 ## 5 · House rules in the code
 
