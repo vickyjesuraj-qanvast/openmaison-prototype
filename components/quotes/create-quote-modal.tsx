@@ -29,6 +29,7 @@ import type { DocData } from '@/lib/templates/data'
 import { UPLOAD_ACCEPT, UPLOAD_KINDS, unreadHelp, type UploadRead } from '@/lib/quotes/upload'
 import { readQuoteUpload } from '@/lib/quotes/read-upload'   // (S42 B·4 · E-05) the one reader
 import { UploadReadingView } from './upload-reading'
+import { Dropzone } from '@/components/leads/move-stage/fields'   // (S46A) the house drop box — the website's Upload a quote trial draws the same
 import { chargeAI, openPlanLock, refundAIWork, usePlanLock } from '@/components/credits/credits-client'
 import { ProTag } from '@/components/credits/pro-tag'
 import { costOf } from '@/lib/credits/schedule'
@@ -41,6 +42,9 @@ import styles from './create-quote-modal.module.css'
 /** The rail shows the default and the most recently used; the rest sit behind View all (design reference). */
 const RAIL_MAX = 3
 type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { kind: 'upload'; name: string; read: UploadRead | null; quoteId: string; refunded: number }
+  /* (S46A — the findability audit's T-1 · M4) Upload a quote before a file is picked: the window opened on it (`opensOn="upload"` — ⌘K's Create ›
+     Upload a quote, the empty Quotes list's Upload a quote) */
+  | { kind: 'choose' }
   /* (pending modules S04) Draft with Maison AI: the brief as typed, the plan read for it (null while reading), and the brief it was read for */
   | { kind: 'draft' }
 
@@ -54,7 +58,7 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { ki
  * ≤767 it is the canvas' bottom sheet (REG-353). (pending modules S04) Draft with Maison AI is a rule-built first cut from the price book
  * (lib/quotes/draft.ts) — the brief, the lines it drafts as you type, Create the quote; Upload's chip names what it truly reads.
  */
-export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, priceBookCount, render, preselect, onUpload, onDraft }: {
+export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, priceBookCount, render, preselect, opensOn = null, onUpload, onDraft }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
@@ -77,6 +81,9 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   render?: { brand: BrandKit; sample: DocData; extras?: PickerExtras }
   /** (REG-495) Opened from a template ("Start a quote with this template"): the picker opens on it. */
   preselect?: string | null
+  /** (S46A — the findability audit's T-1 · M4, 1.0's Quote Digitizer) Opened to read an existing quote: the window starts on Upload a quote —
+      its drop box under the Client field when there is one; Back leads to the other ways to start. Without `onUpload`, the usual start. */
+  opensOn?: 'upload' | null
   /** (REG-627, parity Q-16) Upload a quote: the lines read from the file, for the page to create the quote with. Absent = coming soon.
    *  (REG-704) `quoteId` — the id the read was charged to (`quote:<id>`); the page creates the quote under it. */
   onUpload?: (read: Extract<UploadRead, { ok: true }>, clientId: string | null, quoteId: string) => void
@@ -91,9 +98,11 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [clientError, setClientError] = useState(false)
-  const [mode, setMode] = useState<Mode>(() => (preselect ? { kind: 'all', selectedId: preselect } : { kind: 'rail' }))   // (REG-495) opened on a template: the picker first
+  /* (REG-495) opened on a template: the picker first — (S46A) opened to upload: Upload a quote */
+  const firstMode = (): Mode => (preselect ? { kind: 'all', selectedId: preselect } : opensOn === 'upload' && onUpload ? { kind: 'choose' } : { kind: 'rail' })
+  const [mode, setMode] = useState<Mode>(firstMode)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setMode(preselect ? { kind: 'all', selectedId: preselect } : { kind: 'rail' }) } }   // every opening starts afresh (render-phase adjust)
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setMode(firstMode()) } }   // every opening starts afresh (render-phase adjust)
   const client = clients?.find((c) => c.id === clientId) ?? null
   /* (Dane UAT 6.41) Studio-wide the Client decides everything after it: the field takes the focus as the modal opens (its active stroke
      says "start here", and typing searches it), and a press that needs a client first brings the caret back to it with its error. */
@@ -192,7 +201,7 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel: Back leads the head off the rail */}
             <SurfaceHead className={styles.heading} onClose={onClose}
                          leading={mode.kind !== 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : undefined}
-                         title={mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : mode.kind === 'draft' ? `Draft with Maison AI${forName ? ` for ${forName}` : ''}` : title} />
+                         title={mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' || mode.kind === 'choose' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : mode.kind === 'draft' ? `Draft with Maison AI${forName ? ` for ${forName}` : ''}` : title} />
             <div ref={scrollRef} className={styles.body}>
               {clients ? (
                 /* (REG-422) Studio-wide: the Client field decides which lead the quote belongs to; a tile pressed before a pick shows the field's error. */
@@ -228,6 +237,14 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
                       <p className={styles.uploadHelp}>Prices come from your price book, at a quantity of 1 unless you gave one — check the quantities on the quote. It starts from the studio’s default template.</p>
                     </>
                   ) : null}
+                </section>
+              ) : mode.kind === 'choose' ? (
+                /* (S46A) the row's own words, then the house drop box: a press asks for the client first (studio-wide), then the file chooser; a
+                   dropped file is read as a chosen one — the same read, the same 5 AI credits, said on the box as on the row's chip */
+                <section className={styles.block} aria-label="Upload a quote" data-testid="upload-quote-choose">
+                  <p className={styles.uploadHelp}>Bring in an existing quote’s lines from a spreadsheet or a PDF — we read them into editable line items</p>
+                  <Dropzone title={<>Drop the quote here or <b>browse</b></>} helper={`${UPLOAD_KINDS} · ${costOf('quote_digitize')} AI credits`} accept={UPLOAD_ACCEPT} label="Upload a quote"
+                            onBrowse={chooseFile} onPick={(f) => { if (f) void pickFile(f) }} />
                 </section>
               ) : mode.kind === 'upload' ? (
                 <section className={styles.block} aria-label="Upload a quote" data-testid="upload-quote">

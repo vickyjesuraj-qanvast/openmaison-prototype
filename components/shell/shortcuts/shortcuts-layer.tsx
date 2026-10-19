@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useRunUndo, useSnackbar } from '@/components/om/snackbar'
 import { Keys, usePlatform } from '@/components/om/keys'
 import { openNotifications } from '@/components/shell/notifications-panel'
-import { GO, keyDef } from '@/lib/keys/registry'
+import { GO, goFor, keyDef } from '@/lib/keys/registry'
 import { alternatives, keysPlain } from '@/lib/keys/spec'
 import { flagOn, markUsed, mouseUse, openShortcuts, runHandler, SINGLE_KEYS, tipShown, toggleShortcuts, useShortcutsOpen } from '@/lib/keys/store'
 import { withFrom } from '@/lib/nav'
@@ -140,7 +140,7 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
       fire('tabs'); return true
     }
     const goTo = (c: string) => {
-      const g = GO.find((x) => x.key === c)
+      const g = goFor(c)   // (S46A — H1) 1.0's G I and G E answer too, unlisted
       if (!g) return
       fire(g.id)
       /* (pending modules S16 — a bug fix) G then … moved in script, past the unsaved-edits guard REG-791 says it honours: an edited Company or

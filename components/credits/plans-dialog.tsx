@@ -14,6 +14,7 @@ import { CheckoutPanel, PayLine, type PayStatus } from './credit-dialogs'
 import { CountStepper } from './count-stepper'
 import { holdRail, openManageBilling, openTopUp, refreshCredits, seedCredits } from './credits-client'
 import type { CreditsChrome } from '@/lib/credits/chrome'
+import type { PlanIntent } from '@/lib/credits/plan-intent'
 import styles from './plans-dialog.module.css'
 
 /**
@@ -28,7 +29,9 @@ import styles from './plans-dialog.module.css'
 type Step = 'choose' | 'review' | 'pay' | 'done'
 const STEPS: { key: Step; label: string }[] = [{ key: 'choose', label: 'Choose' }, { key: 'review', label: 'Review' }, { key: 'pay', label: 'Pay' }, { key: 'done', label: 'Done' }]
 
-export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: boolean; onClose: () => void; chrome: CreditsChrome; summary: CreditSummary; onTalk: () => void }) {
+export function PlansDialog({ open, onClose, chrome, summary, onTalk, initial = null }: { open: boolean; onClose: () => void; chrome: CreditsChrome; summary: CreditSummary; onTalk: () => void
+  /** (S46D — D4) the plan picked before the studio was open (the website's Pricing, 1.0's /upgrade?plan=): Choose opens on it, its period and seats */
+  initial?: PlanIntent | null }) {
   const snackbar = useSnackbar()
   const s = summary
   const current = s.planId
@@ -48,7 +51,9 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) {   // every opening starts at Choose, on the studio's own numbers (render-phase adjust)
     setWasOpen(open)
-    if (open) { setStep('choose'); setCycle(s.planId !== 'free' ? (s.billingCycle as BillingCycle) : 'monthly'); setKind(current === 'pro_freelance' ? 'pro_freelance' : suggestedPlan(team) as 'pro_studio' | 'pro_freelance'); setSeats(current === 'pro_studio' ? Math.max(3, s.seats) : Math.max(3, team)); setTrial(false); setCheckout(null); setPay('idle'); setPayError(null); setDone(null) }
+    if (open) { setStep('choose'); setCycle(s.planId !== 'free' ? (s.billingCycle as BillingCycle) : 'monthly'); setKind(current === 'pro_freelance' ? 'pro_freelance' : suggestedPlan(team) as 'pro_studio' | 'pro_freelance'); setSeats(current === 'pro_studio' ? Math.max(3, s.seats) : Math.max(3, team)); setTrial(false); setCheckout(null); setPay('idle'); setPayError(null); setDone(null)
+      /* (S46D — D4) a picked plan wins over the guess: its kind, its period, its seats (Studio at least its three) */
+      if (initial) { if (initial.plan === 'pro_freelance' || initial.plan === 'pro_studio') setKind(initial.plan); if (initial.cycle) setCycle(initial.cycle); if (initial.seats && initial.plan === 'pro_studio') setSeats(Math.max(3, initial.seats)) } }
   }
   /* the rail keeps Upgrade while Plans is open; closing lets the upgrade moment play */
   useEffect(() => { if (open) holdRail(true); return () => { if (open) holdRail(false) } }, [open])
@@ -114,7 +119,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
             <div className={styles.cardTop}><h3>Free</h3>{current === 'free' ? <span className={styles.tag}>Your plan</span> : null}</div>
             <p className={styles.tagline}>{PLAN_TAGLINE.free}</p>
             <div className={styles.price}><span className={styles.v}>S$0</span><span className={styles.per}>forever</span></div>
-            <p className={styles.note}>1 seat</p>
+            <p className={styles.note}>Any number of members</p>{/* (S46D — D4) Free asks no seat (Company › Members never checks one); the website says the same */}
             <p className={styles.allow}><CreditToken size={18} /><span>150 AI credits to start, then 30 a month <span className={styles.m}>· about 3 renders a month</span></span></p>
             <div className={styles.cta}>{current === 'free' ? <Button variant="secondary" appearance="outlined" isDisabled className={styles.full}>Your plan</Button> : <Button variant="secondary" appearance="outlined" className={styles.full} onPress={() => { onClose(); openManageBilling() }}>Move to Free in Manage billing</Button>}</div>
           </article>
@@ -152,7 +157,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
           <h4>What your AI credits buy</h4>
           <div className={styles.tableBox}>
             <table className={styles.table}>
-              <thead><tr><th>A month of</th><th>Renders</th><th>Quotes read</th><th>Meeting Co-Pilot</th></tr></thead>
+              <thead><tr><th>A month of</th><th>Renders</th><th>Quotes read</th><th>Meeting Copilot</th></tr></thead>
               <tbody>
                 {[['Free', 30, current === 'free'], ['Pro Freelance', 1500, current === 'pro_freelance'], [`Pro Studio, ${seats} seats`, allowanceFor(planRow('pro_studio'), seats), current === 'pro_studio' || kind === 'pro_studio'], ['Max, per seat', 3000, current === 'max']].map(([label, c, on]) => {
                   const b = buysFor(c as number)
@@ -161,7 +166,7 @@ export function PlansDialog({ open, onClose, chrome, summary, onTalk }: { open: 
               </tbody>
             </table>
           </div>
-          <p className={styles.m}>A Fast render is 10, High is 20, reading a quote is 5, and ten minutes of Meeting Co-Pilot is 25. This month’s credits are used first; top-ups never expire.</p>
+          <p className={styles.m}>A Fast render is 10, High is 20, reading a quote is 5, and ten minutes of the Meeting Copilot is 25. This month’s credits are used first; top-ups never expire.</p>
         </section>
         <section className={styles.acc} data-open={compare || undefined}>
           <button type="button" className={styles.accHead} aria-expanded={compare} onClick={() => setCompare((c) => !c)}>Compare everything<Icon name="expand_more" size={20} /></button>

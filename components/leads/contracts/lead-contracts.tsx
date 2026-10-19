@@ -249,7 +249,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
                               onUse={(templateId) => { void create({ templateId }, 'Contract created from the template') }}
                               onStarter={newBlank} />
       <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)}
-                            onImport={(o) => { setImportOpen(false); void create({ upload: { fileName: o.fileName, signed: o.signed, title: o.title, file: o.file } }, o.signed ? 'Signed contract imported' : 'Contract imported') }} />
+                            onImport={(o) => { setImportOpen(false); void create({ upload: { fileName: o.fileName, signed: o.signed, title: o.title, file: o.file ?? null, fromFileId: o.fromFileId ?? null } }, o.signed ? 'Signed contract imported' : 'Contract imported') }} />
       {/* (REG-591) Send together: the WhatsApp window opens on the press (a popup blocker eats one opened after the round trip — REG-534), then the bundle is recorded. */}
       {/* (REG-633, E-118) addressed to the documents' recipient; Copy link records the bundle so the copied link opens */}
       <SendBundleDialog open={bundleOpen} onClose={() => { setBundleOpen(false); setBundleFirst(null) }} contracts={bundleable} quoteBlock={quoteBlockOf} defaults={{ name: bundleable[0]?.recipientName || data.lead.name, phone: bundleable[0]?.recipientPhone || data.lead.phone }}

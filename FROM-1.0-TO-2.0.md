@@ -3,7 +3,8 @@
 For the developers bringing 1.0's data and services into 2.0. It answers four questions for every part of 1.0: **where it lives
 in 2.0, what changed, what was left out on purpose, and what you plug in.**
 
-Checked on 17 Oct 2026 against 2.0 at commit `b8b600d` and the 1.0 branches in §1. Sections 1–11 are the whole picture and
+Checked on 17 Oct 2026 against 2.0 at commit `b8b600d`; updated 19 Oct for the findability fixes (S46,
+`design-source/context/parity/31-findability-audit-2026-10-19/`) and the 1.0 branches in §1. Sections 1–11 are the whole picture and
 take about ten minutes to read. Section 12 is the reference: one card per 1.0 module. Read a module's card before you port it.
 
 ---
@@ -83,9 +84,9 @@ URLs leave out route groups: `app/(editor)/quotes/[quoteId]` is `/quotes/<id>`.
 | Chats (Inbox) | Messages | `/chat` |
 | Projects | Projects | `/projects` |
 | Tasks | Tasks | `/tasks` |
-| Escalations | Projects › Tickets (the client sees "Issues") | `/projects/tickets` |
+| Escalations | Tickets, on the rail after Tasks as in 1.0, with its count (the client sees "Issues"); also the Dashboard's Tickets tile, ⌘K ("escalations"), G then E | `/tickets` |
 | Marketplace | Marketplace | `/marketplace` |
-| Tools › Quote Digitizer | Create Quote › Upload a quote, from a lead's Quotes or Tools › Quotes | `/quotes` |
+| Tools › Quote Digitizer | Create Quote › Upload a quote, from a lead's Quotes or Tools › Quotes; the empty Quotes list and ⌘K ("digitizer") open it directly | `/quotes?upload=1` |
 | Tools › Quote X-Ray | Tools › Quote X-Ray | `/quote-x-ray` |
 | Tools › AI Visualizer | Tools › AI Visualizer | `/visualizer` |
 | Tools › Floorplan to 3D Isometric | Tools › Floorplan to 3D Isometric (part of the 3D Space Planner) | `/planner?view=iso&photo=1` |
@@ -109,7 +110,7 @@ New in 2.0's rail:
 - **Search** (⌘K);
 - **Notifications**.
 
-Every old 1.0 address lands on its 2.0 page (card A10).
+Every old 1.0 address, on all three branches, lands on its 2.0 page (card A10). 1.0's own words find their 2.0 page in ⌘K.
 
 ---
 
@@ -185,7 +186,7 @@ Every old 1.0 address lands on its 2.0 page (card A10).
 | The homeowner portal `/my` | The client portal `/my/<address>` | Reshaped | P11 |
 | Tools › Homeowner Portal, Invite to Portal | Company › Client portal, the Client access panel | Reshaped | P12 |
 | Inbox (Chats), the portal's Project Chat | Messages `/chat`, Project › Client › Messages | Renamed and split | P13 |
-| Escalations, support tickets | Tickets (studio), Issues (client) | Renamed | P14 |
+| Escalations, support tickets | Tickets on the rail (studio), Issues (client) | Renamed | P14 |
 | Floor Plan (mark-up) | Project › Design › Floor plan | Same in substance | P15 |
 | 3-D Space Planner, Floorplan to 3D | Tools › 3D Space Planner | Reshaped | P16 |
 | Compliance Navigator | Tools › Compliance Navigator, Project › Tasks › Compliance | Reshaped | P17 |
@@ -223,7 +224,8 @@ Search 2.0's code and screens for the 2.0 word. The 1.0 word won't be there.
 | Settings (personal) | Your profile | `/profile` |
 | Bucket / status / sub-status | Stage: New · Contacted · Met · Quote Sent · Won · On Hold · Lost | a lead |
 | Signed · Inactive | Won · Lost | a lead |
-| Archive · Revive | Delete (soft) · Restore | leads, quotes, projects |
+| Archive · Revive (a lead) | Lost with the reason "Archived in 1.0" · Resume | a lead |
+| Delete (a lead, a quote, a project) | Delete (soft) · Restore; Deleted Leads removes a lead for good after 30 days | leads, quotes, projects |
 | Outreach attempt | Contact log | Notes & Logs |
 | Next follow-up (a field on the lead) | Follow-up task | Tasks |
 | Lead drawer | Lead Details (a page) | `/leads/<id>` |
@@ -273,7 +275,7 @@ Search 2.0's code and screens for the 2.0 word. The 1.0 word won't be there.
 | Homeowner Portal, client hub | Client portal | Company |
 | Preview as Homeowner | See it as {client} | the Client access panel |
 | Inbox, Chats | Messages | rail (`/chat`) |
-| Escalations | Tickets (the client reads "Issues") | Projects › Tickets |
+| Escalations | Tickets (the client reads "Issues") | rail › Tickets |
 | Escalation Categories | Ticket categories | Settings › Projects |
 | Customer Notifications | Messages to clients | Settings › Notifications |
 | Studio Finance › Operations | To do · Money in · Money out | Company › Finance |
@@ -318,7 +320,9 @@ Search 2.0's code and screens for the 2.0 word. The 1.0 word won't be there.
   `homeowner_lead_links.portal_token` and the layout share's token.
 - **Vendors and issuing entities are linked by name, not id** (`price_book_items.vendor`, `quote_items.vendor`,
   `quotes.issuing_entity`, `contracts.issuing_entity`). A rename is carried by `reconcileEntities` and `mergeTrade`.
-- **Nothing is hard-deleted.** 1.0's archive and delete become `deleted_at` (soft delete), with Restore and Delete forever.
+- **Delete is soft first.** 1.0's delete becomes `deleted_at` (soft delete), with Restore and Delete forever. Deleted Leads removes a lead
+  for good 30 days after its delete (`purgeExpiredLeads`, the sweep's `deleted-leads`). **1.0's archived leads are not deletes:** they land in
+  Lost with the reason "Archived in 1.0" (`lib/port/archived-leads.ts`), never in the trash.
 - **Every project has a lead.** `projects.lead_id` is required and unique. A project with no lead gets a `direct` lead
   (`leads.direct = 1`), which no lead list shows.
 - **Variation orders are quotes** with `kind = 'variation'`. Every quote list filters `kind = 'quote'`.
@@ -348,7 +352,7 @@ Search 2.0's code and screens for the 2.0 word. The 1.0 word won't be there.
 
 | 1.0 table | 2.0 table | Note |
 | --- | --- | --- |
-| `leads` | `leads` (+ `stage_logs`, `lead_events`) | position → `stage` + its logs; `budget` × 100; `archived_at` → `deleted_at` |
+| `leads` | `leads` (+ `stage_logs`, `lead_events`) | position → `stage` + its logs; `budget` × 100; a delete → `deleted_at`; `archived_at` → Lost + its stage log (`lib/port/archived-leads.ts`) |
 | `lead_assignees` | `lead_assignees` (+ `assigned_by`) | commission split → Finance |
 | `lead_activity_log` | worked out (+ `lead_events`) | `lib/leads/activity.ts` |
 | `lead_outreach_attempts` | `lead_notes` (kind `contact`) + the Contacted log | |
@@ -561,6 +565,7 @@ server memory until its last piece arrives; it needs multipart upload to storage
 | `GET`/`POST /api/cron/run` (every job, every 5 minutes) | your scheduler | `Authorization: Bearer <CRON_SECRET>`; refuses everything in production while unset |
 | `/api/cron/notification-scheduled`, `notification-digest`, `accounting-sync` | your scheduler, with 1.0's job names | the same |
 | `/api/cron/repeats` (repeating expenses and the credits month), `/api/cron/feeds` | your scheduler, hourly | the same |
+| `/api/cron/deleted-leads` | your scheduler, daily (Deleted Leads' 30 days; also inside `run`) | the same |
 | `/api/cron/anon-sweep` (06:00), `/api/cron/anon-storage-gc` (08:00) | your scheduler, with plg's names | the same |
 | `POST /api/webhooks/whatsapp?token=…` (+ `GET` for the challenge) | 360dialog / WhatsApp Cloud API | `WHATSAPP_WEBHOOK_SECRET` (unset = 503) |
 | `POST /api/webhooks/payments` | the payment provider (plg used `/api/webhooks/dodo`) | the adapter; 404 while the demo checkout answers |
@@ -592,7 +597,8 @@ Each of these was Vicky's call, recorded in the audit named.
 **Leads and people**
 - Journey mode, its evidence (`lead_artifacts`) and Lead Experience.
 - Temperature (hot / warm / cold) and AI fit / intent scores.
-- Archive and revive. Leads use soft delete with a reason instead.
+- Archive and revive as a state of its own. An archived lead lands in Lost ("Archived in 1.0") and Resume brings it back; a delete is soft
+  for 30 days, then for good.
 - Renaming, adding or reordering stages; custom roles; per-member permission overrides (all on hold).
 - Settings saved in 1.0 but never read: Lead Categories, `pipeline_stages`, AI Assignment Logic, Quote Sharing, `ads_enabled`,
   `id_buddy_enabled`.
@@ -620,7 +626,8 @@ Each of these was Vicky's call, recorded in the audit named.
 - The expense verification track; vendor kind and default markup; the AI PO-vs-quote compare.
 - The double-entry journal. Xero keeps the ledger.
 - Portal themes and layouts; automatic portal access for every lead with a phone; client to-dos; *Show chat history*.
-- Ticket AI analysis and Proactive Alerts.
+- Ticket AI analysis and its Proactive Alerts (unbacked in 1.0). Accounts Setup's *Proactive Alerts* tab is a different thing: it is
+  Settings › Projects › Alerts lead time (REG-1222).
 - 3D: Render Tour, HD models and sun angle.
 - The PO pipeline board.
 
@@ -638,7 +645,7 @@ Each of these was Vicky's call, recorded in the audit named.
 | --- | --- | --- |
 | 1 | **Quote revisions on `deployment/qanvast`** are separate quote rows (`quotes.revision_of`, migration 427). 2.0 keeps one quote and its earlier versions in `quote_versions`. No port rule is written yet. | Vicky |
 | 2 | **1.0's `quotes.preview_token`.** Build step S02 maps it to `view_token` (view only); S04 maps it to `confirm_token` (the confirmation link). Decide which, or both. | Vicky |
-| 3 | **1.0's `/sign/document/<token>` links** (signing any lead file, qanvast only) have no entry in `lib/links/old-addresses.ts`, so they'd land on "page not found". | Vicky |
+| 3 | ~~1.0's `/sign/document/<token>` links~~ **Settled 19 Oct (S46D):** they go to `/sign/<token>` when a contract or set carries the token (the port keeps 1.0's request token in `contracts.sign_token`), else the studio's notice. A PDF in Files has *Send for signature*. | done |
 | 4 | **A 1.0 member tagged only "accounting".** Map 12 lands them inactive, but it was written before 2.0 had an Accounting role. They should most likely become Accounting. | Vicky |
 | 5 | **Dodo's env names.** 2.0 says `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY` and `/api/webhooks/payments`. plg reads `DODO_API_KEY`, `DODO_WEBHOOK_SECRET`, `DODO_ENVIRONMENT`, `DODO_TOPUP_PRODUCT_ID`, `DODO_TOPUP_CURRENCY`, `DODO_CREDIT_ENTITLEMENT_ID`, `NEXT_PUBLIC_DODO_ENVIRONMENT` and serves `/api/webhooks/dodo`. Pick one set. | You (nothing visible) |
 | 6 | **Price book item photos** have no storage seam in the registry (they are data URLs in `thumb`). Choose where they go with the other pictures. | You |
@@ -738,6 +745,7 @@ One card per 1.0 module. Short names used on the cards:
   - the Performance view moved to Reports (L18).
 - **Left out:** temperature, the Hot filter, AI fit / intent scores.
 - **Plug in:** the suggested member is by rule (`suggestMember`, `lib/leads/suggest.ts`).
+- **Since 19 Oct (S46):** the Leads rail item counts the unseen new leads the viewer sees (→ `/leads?scope=unseen`); District is in the listing's search; Deleted Leads removes a lead for good after 30 days.
 - **Read:** map 02 §1–§3; audit 01 §4.6 (how 1.0's states map).
 
 #### L2 · Lead Details (1.0: the lead drawer)
@@ -784,6 +792,7 @@ One card per 1.0 module. Short names used on the cards:
 - **Changed:**
   - quote approvals are not tasks; they live on the quote (Q2);
   - a follow-up is a dated task of kind Follow-up, for the lead's members.
+- **Since 19 Oct (S46):** Tasks says "n approvals wait for you on the Dashboard" when they do; an *Upcoming* chip beside Overdue · Due today.
 - **Read:** map 02 §1 (`tasks`) and §3.
 
 #### L5 · Notes & Logs, Files, Activity (1.0: outreach attempts, lead files, the activity log)
@@ -802,6 +811,7 @@ One card per 1.0 module. Short names used on the cards:
 - **Plug in:**
   - file bytes are stored in the database → `setFileStore` (`lib/leads/file-store.ts`);
   - Auto Fill reads by rule → `readContactFile` (`lib/leads/contact-fill.ts`).
+- **Since 19 Oct (S46):** the lead's email is a mail link.
 - **Read:** map 02 §1; services.md › storage.
 
 #### L6 · Questionnaire (1.0: scope questions and answers)
@@ -959,6 +969,7 @@ One card per 1.0 module. Short names used on the cards:
   - a rename carries its records (`renameLeadSource`, `editLeadReason`, `renameTrade`).
 - **Left out:** Lead Experience, Lead Categories, Pipeline Stages, AI Assignment Logic, Quote Sharing, Chat Identity, the Project
   Types editor, region and currency.
+- **Since 19 Oct (S46):** every Settings module head points to Your profile (1.0's personal Settings).
 - **Read:** map 12 (all of it; §4 is the port order); audit 11 §9; outcome S14.
 
 #### L15 · Listed on Qanvast (1.0: Verify)
@@ -1005,6 +1016,7 @@ One card per 1.0 module. Short names used on the cards:
 - **Plug in:**
   - RSS headlines → `setFeedSource({ fetchText })`;
   - Ask → `readQuestion`.
+- **Since 19 Oct (S46):** a *Tickets* tile (the open tickets waiting on the studio) beside the others.
 - **Read:** outcomes S22, S45A.
 
 #### L18 · Reports › Leads and Studio health (1.0: Performance view, Response time, Studio Health; UHD's Sales reports)
@@ -1040,6 +1052,7 @@ One card per 1.0 module. Short names used on the cards:
   - transcription → `setTranscriber` (+ `NEXT_PUBLIC_TRANSCRIPTION=1`);
   - calendar → `setCalendarSync`;
   - reading and the brief → `readMeeting`, `briefOf`.
+- **Since 19 Oct (S46):** Meeting Copilot has an *Insights* door to Company › Reports › Meetings.
 - **Read:** outcome S23; `steps/read-S23-copilot-before-during.md`.
 
 #### L20 · Search and keyboard shortcuts (1.0: the top bar's search, a fixed key list)
@@ -1052,6 +1065,7 @@ One card per 1.0 module. Short names used on the cards:
 - **Changed:**
   - results follow Who sees leads;
   - G then I became G then M (Messages); G then E is gone; G then B was added.
+- **Since 19 Oct (S46):** 1.0's G then I (→ Messages) and G then E (→ Tickets) work as quiet aliases; ⌘K knows 1.0's names (word maps in `lib/global-search/model.ts`).
 - **Read:** `CLAUDE.md` › Map › *The studio-wide search*, *Keyboard shortcuts*.
 
 ### Quotes, contracts and the price book
@@ -1118,6 +1132,7 @@ One card per 1.0 module. Short names used on the cards:
   - reading a file → `readQuoteUpload`;
   - PDF text → `readQuoteText`;
   - the drafter → `draftPlan`.
+- **Since 19 Oct (S46):** *Upload a quote* is findable: the empty Quotes list, ⌘K ("digitizer", Create › Upload a quote), `CreateQuoteModal opensOn="upload"`.
 - **Read:** outcomes S04, S21, S12; services.md › quote-digitizer, quote-draft.
 
 #### Q4 · Quote lists (1.0: the drawer's quotes, Finance › Operations)
@@ -1269,6 +1284,7 @@ One card per 1.0 module. Short names used on the cards:
   - the signing code → `setSignInProvider`;
   - the executed PDF → `setPdfRenderer`;
   - sending the link → `setDeliveryAdapter`.
+- **Since 19 Oct (S46):** 1.0's `/sign/document/<token>` lands (`app/sign/document/[token]`); a PDF's ⋮ in Files has *Send for signature* (pictures are refused: "Save it as a PDF first").
 - **Read:** map 08 §1–§3; outcomes S03, S44Q. Open: §9 #3.
 
 #### Q12 · Quote X-Ray (1.0: Tools › Quote X-Ray)
@@ -1417,6 +1433,7 @@ One card per 1.0 module. Short names used on the cards:
   - Completed is read-only except for payments;
   - delete is soft, and refused while money is recorded.
 - **Left out:** Archive (archived projects map to Completed); Cancelled; the satisfaction rating.
+- **Since 19 Oct (S46):** the project's ⋮ has *Complete handover* just before Delete (the Stage menu's own Completed row, same sheet, same refusals).
 - **Read:** map 24 §3.2, §5, D-1; outcome S44R.
 
 #### P6 · Workload and contractors (1.0: the Workload view; Contractors on UHD's branch)
@@ -1562,6 +1579,7 @@ One card per 1.0 module. Short names used on the cards:
   - About and Team come from Company › Profile and Members;
   - *Getting it live* checks the Privacy, Terms and Contact links.
 - **Left out:** hand-typed team cards; per-portal branding; YouTube embeds.
+- **Since 19 Oct (S46):** the project's ⋮ has *See it as {client}* beside Invite to Portal.
 - **Read:** map 24 §3.9; outcome S13.
 
 #### P13 · Messages (1.0: Inbox / Chats, the portal's Project Chat)
@@ -1584,23 +1602,25 @@ One card per 1.0 module. Short names used on the cards:
   - sending → `setDeliveryAdapter`;
   - WhatsApp replies → `/api/webhooks/whatsapp`;
   - large files → object storage (multipart).
+- **Since 19 Oct (S46):** a client conversation's *People and files* shows the client's number with Call (dials on touch; copies at a desk) and Copy.
 - **Read:** `parity/projects-gaps-build/h-read.md` §3, `h-outcomes.md`; map 28's `build/outcome-P-G.md`; outcome S26.
 
 #### P14 · Tickets (1.0: Escalations, support tickets)
 - **1.0:** `/escalations`, `/escalations/[ticketId]`, `/escalations/new`; the portal's Support tab; API `escalations/**`,
   `homeowner/projects/[id]/issues`; tables `escalations`, `escalation_comments`.
 - **2.0:**
-  - screens: Projects › Tickets `/projects/tickets`; Project › Client › Tickets; the client's Issues; Settings › Projects › Ticket
+  - screens: Tickets on the rail `/tickets`; Project › Client › Tickets; the client's Issues; Settings › Projects › Ticket
     categories;
-  - code: `app/projects/tickets`, `components/projects/tickets/*`, `lib/projects/{tickets,tickets-model}.ts`;
+  - code: `app/tickets`, `components/projects/tickets/*`, `lib/projects/{tickets,tickets-model}.ts`;
   - tables: `project_tickets`, `ticket_replies`; settings `ticket_categories`.
 - **Changed:**
   - the studio reads "ticket" and the client reads "issue";
   - one number, `T-{YYYY}-{nnn}` (a port keeps 1.0's);
   - states Open · In progress · Resolved · Closed;
   - categories are stored by their words;
-  - there is no rail item.
+  - a rail item since 19 Oct (REG-2524), as 1.0's Escalations had.
 - **Left out:** AI analysis and Proactive Alerts.
+- **Since 19 Oct (S46):** Tickets is a rail place after Tasks (`/tickets`, REG-2524; `/projects/tickets` redirects), with the open count; *New ticket* (pick the project, then its own compose; `?new=1`); the Dashboard's *Tickets* tile shows the same count.
 - **Read:** `parity/projects-gaps-build/h-read.md`, `h-outcomes.md`.
 
 #### P15 · Floor-plan mark-up (1.0: Management › Floor Plan)
@@ -1670,6 +1690,7 @@ One card per 1.0 module. Short names used on the cards:
   - every image pass → `runPass`, `setImageIO`, `guardRender`;
   - any other photo → `fallbackDots`;
   - pictures → object storage behind the same addresses.
+- **Since 19 Oct (S46):** New ▾ *For a project…* and a *Projects* kind in the filter.
 - **Read:** map 17 §1–§3 and §6 (§6 wins); outcome S20.
 
 #### A2 · The developers' AI bench (1.0: the AI sandboxes)
@@ -1771,7 +1792,10 @@ One card per 1.0 module. Short names used on the cards:
   - the site lives at `/site`, with canonical addresses from `NEXT_PUBLIC_SITE_URL`;
   - claims 2.0 doesn't make were cut;
   - forms email the team through the outbox.
-- **Left out:** the hidden pricing page; `/uae-get-started`.
+- **Left out:** `/uae-get-started`.
+- **Pricing (S46D, 19 Oct):** `/site/pricing` from the one price source (`lib/credits/plans.ts`, the schedule, `pricing-data.ts`), in the
+  header, the footer and every *See pricing*; a plan's button carries `?plan=&period=` through sign-up into Plans (`lib/credits/plan-intent.ts`,
+  read by CreditsHost); `/pricing` and 1.0's `/upgrade?plan=` land on it.
 - **Read:** outcome S35.
 
 #### A9 · Try without an account (1.0: `/try-visualizer`, `/try`, anon workspaces; plg)
@@ -1798,6 +1822,7 @@ One card per 1.0 module. Short names used on the cards:
     record;
   - the redirects are 307 for now; make them permanent once the site is live.
 - **Plug in:** nothing. A port that carries 1.0's tokens into 2.0's columns makes each link land on its record. Open: §9 #3.
+- **Since 19 Oct (S46):** plg's and UHD's own addresses land too (S46A), and plg's ad links (`/tools/ai-visualizer`, `/tools/quote-xray`, `/tools/quote-digitizer`) send a visitor with no account to the website's trial, a member to the tool (`proxy.ts`).
 - **Read:** outcome S41b2; the header of `lib/links/old-addresses.ts`.
 
 #### A11 · Real services, the scheduler and webhooks (1.0: Resend, 360dialog, Twilio, Supabase Storage, Chromium, `vercel.json` crons)

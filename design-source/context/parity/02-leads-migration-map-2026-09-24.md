@@ -47,7 +47,7 @@ Conventions: 2.0's data is Drizzle over libSQL (`lib/db/schema.ts`), rules live 
 | `first_assigned_at, first_outreach_at/by, signed_at` | derived: `min(lead_assignees.assigned_at)`, the earliest contact log, the Won stage log (`lib/leads/insights.ts` `factsFrom`) | R5 |
 | `hold_restart_date`, `closed_reason_code/detail` | the On Hold log's `followUpAt` · the Lost log's `reason` + `competitor` / `restartAt` | R1 |
 | `possibly_duplicate, duplicate_of_lead_id` | — (Create anyway creates; imports flag `import_rows`) | R3 |
-| `archived_at` | `deleted_at` + `delete_reason` (a 30-day trash) | — |
+| `archived_at` | **never `deleted_at`** (Deleted Leads removes for good after 30 days). The lead lands in **Lost** with one Lost `stage_logs` row: from its mapped stage, at `archived_at`, reason "Archived in 1.0" (a system reason, never added to `settings.lead_reasons`), `moved_by` = the member of its "Lead archived" `lead_activity_log` line; a lead already Lost keeps its own log, a lead with a project stays where the project holds it — `lib/port/archived-leads.ts` (`portArchivedLead`) | S46C (2026-10-19, corrects the earlier `deleted_at` row) |
 | `temperature` | — (owner: no temperature) | — |
 
 ## 3. Rules and where they live

@@ -166,8 +166,10 @@ async function railBadgesUncached(): Promise<Record<string, number>> {
      prerender answers by bailing out to a dynamic page — never a failed count */
   const soft = (p: Promise<number>): Promise<number> => p.catch((e: unknown) => { unstable_rethrow(e); console.error('[rail] a badge count could not be read —', e instanceof Error ? e.message : e); return 0 })
   const [overdue, pending, unread, proposed, asks] = await Promise.all([soft(countOverdueTasks()), soft(countPendingTemplates()), soft(unreadCount()), soft(countProposalsToReview()), soft(countCreditAsks())])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell · (REG-652) proposed items · (REG-703) asks for AI credits
+  const fresh = await soft(countUnseenLeads())   // (pending modules S46C · H2) the Leads item: the leads nobody has opened yet
   const toApprove = await soft(countQuotesToApprove())   // (UX audit Q4) quotes waiting for this approver — the Tools item
   const attention = await soft(import('@/lib/projects/queries').then((m) => m.countProjectsNeedingAttention()))   // (REG-919) the Projects item: projects that need attention
+  const tickets = await soft(import('@/lib/projects/tickets').then((m) => m.countTicketsToAnswer()))   // (S46 — REG-2524) the Tickets item: the tickets waiting on the studio, the Dashboard tile's count
   const chats = await soft(import('@/lib/projects/messages').then((m) => m.countUnreadChats()))   // (gaps build H, H-Q11) the Chat item: conversations with a client's unread message
   const money = await soft(import('@/lib/finance/todo-server').then((m) => m.countFinanceToApprove()))   // (simplify S-16) Finance › To do's To approve — an Owner's or an Admin's queue
   /* (parity map, PR-022) Accounting's Company panel lists Finance and Reports alone: no count for templates, the Price book or AI credits they
@@ -178,16 +180,50 @@ async function railBadgesUncached(): Promise<Record<string, number>> {
     ...(money > 0 ? { '/company': money, 'company:finance': money } : {}),
   }
   /* (S44O — call C6) Marketing's rail is Tasks, Leads, Company (Integrations · Reports) and the bell — no count for what they can't open */
-  if (isMarketing(role)) return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(unread > 0 ? { notifications: unread } : {}) }
+  if (isMarketing(role)) return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(fresh > 0 ? { '/leads': fresh } : {}), ...(unread > 0 ? { notifications: unread } : {}) }   // (S46C · H2) the leads are their desk
   return {
     ...(toApprove > 0 ? { tools: toApprove } : {}),
+    ...(fresh > 0 ? { '/leads': fresh } : {}),   // (pending modules S46C · H2)
     ...(attention > 0 ? { '/projects': attention } : {}),
     ...(chats > 0 ? { '/chat': chats } : {}),   // (gaps build H)
+    ...(tickets > 0 ? { '/tickets': tickets } : {}),   // (S46 — REG-2524)
     ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending + proposed + asks + money > 0 ? { '/company': pending + proposed + asks + money } : {}), ...(unread > 0 ? { notifications: unread } : {}),
     ...(pending > 0 ? { 'company:templates': pending } : {}), ...(proposed > 0 ? { 'company:price-book': proposed } : {}), ...(asks > 0 ? { 'company:plan': asks } : {}),   // the Company panel's rows
     ...(money > 0 ? { 'company:finance': money } : {}),   // (simplify S-16) "n to approve" on the panel's Finance row
   }
 }
+/**
+ * (pending modules S46C · H2 — her "fix everything" 2026-10-19 after the findability audit, finding N-6; 1.0's rail and dock counted the leads in
+ * the first stage) The Leads item's count: the leads nobody has opened yet — `seen_at` null, the listing's primary band and its Unseen scope, ONE
+ * rule — that this member may see (Who sees leads, REG-601). The listing's own rows: never a lead in the trash, never a direct project's client
+ * record (REG-911). Opening the lead clears it (`markLeadSeen`); a press on the counted item lands on that scope (the rail's badge-landing rule,
+ * UX audit T5).
+ */
+async function countUnseenLeads(): Promise<number> {
+  const viewer = await fetchViewer()
+  const rows = await db.select({ id: leads.id }).from(leads).where(and(isNull(leads.seenAt), isNull(leads.deletedAt), eq(leads.direct, false)))
+  if (!rows.length) return 0
+  const seen = await visibleLeadIds(viewer)
+  return seen ? rows.filter((r) => seen.has(r.id)).length : rows.length
+}
+
+/**
+ * (pending modules S46C · M3 — her "fix everything" 2026-10-19 after the findability audit, finding L-2; 1.0's Tasks › Approvals chip) How many
+ * approvals wait for the signed-in member: the Dashboard's own *Needs your OK* rows, read through the Dashboard itself (`fetchDashboard`) — one
+ * rule and one number, the count its group label shows, so the Tasks page's line never says another figure than the place it opens. Read once
+ * per request; a Dashboard that can't be read shows no line, never a failed page.
+ */
+export const countApprovalsWaiting = cache(async (): Promise<number> => {
+  try {
+    const { fetchDashboard } = await import('@/lib/dashboard/queries')   // (a cycle otherwise: the Dashboard reads railBadges from here)
+    return (await fetchDashboard()).needs.filter((r) => r.ok).length
+  } catch (e) {
+    unstable_rethrow(e)
+    console.error('[tasks] the approvals waiting could not be read —', e instanceof Error ? e.message : e)
+    return 0
+  }
+})
+
 /** (UX audit Q4) Quotes waiting at Sent for Approval on the leads this member sees — an approver's queue only (an Owner, an Admin or the
     backup approver, REG-590), and only while the studio asks for approval. The Tools item counts them; Tools › Quotes' chip lists them. */
 async function countQuotesToApprove(): Promise<number> {

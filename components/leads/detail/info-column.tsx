@@ -264,7 +264,9 @@ export function InfoColumn({
           </div>
           {lead.email ? (
             <div className={styles.contactRow}>
-              <span className={styles.contactText}>{lead.email}</span>
+              {/* (pending modules S46C · H4 — 1.0's drawer: the email was a mailto: link on every screen) a desk has mail too, so the email writes
+                  to the client at every width; Copy stays beside it. (The number keeps REG-746's rule: it dials on a touch screen, a mouse copies.) */}
+              <a className={`${styles.contactText} ${styles.mailLink}`} href={`mailto:${lead.email}`} aria-label={`Email ${lead.email}`} data-testid="lead-email-link">{lead.email}</a>
               <Tooltip label="Copy email">
                 <button type="button" className={styles.iconBtn} data-size="16" aria-label="Copy email"
                         onClick={() => onCopy('email', lead.email!)}>

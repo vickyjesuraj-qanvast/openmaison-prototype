@@ -53,6 +53,7 @@ export function fromLabel(from: string | undefined): string | undefined {
   if (p.startsWith('/profile')) return 'Your profile'   // (pending modules S01) Your profile's way to the member's row on Members
   if (p.startsWith('/marketplace')) return 'Marketplace'   // (pending modules S24) a brand's page opens Finance › Vendors and the Price book with the way back
   if (p.startsWith('/market-insights')) return 'Market Insights'   // (pending modules S25) an article's link into the Marketplace or the Price book goes back to it
+  if (p === '/meetings') return 'Meetings'   // (pending modules S46B, M5) Tools › Meeting Copilot's Insights door into Company › Reports › Meetings
   return undefined
 }
 

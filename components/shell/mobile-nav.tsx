@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { ToolsPopover, onToolsPage, recordHome } from './tools-popover'
 import { readFrom } from '@/lib/nav'
-import { SOON, railItemOpens } from './app-rail'
+import { SOON, badgeHref, badgeLabel, railItemOpens } from './app-rail'   // (pending modules S46C · H2) the rail's badge rule, one for both
 import { isAccounting, isMarketing } from '@/lib/settings/roles'
 import { companyGroupsFor } from '@/lib/company/sections'
 import { Tooltip } from '@/components/om/tooltip'
@@ -39,6 +39,7 @@ const DOCK = [
 /** The More sheet's rows (1082:24995): the rail's remaining destinations, in the mock's order and groups. */
 const MORE_TOP = [
   { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the dock keeps the mock's five; Tasks leads the sheet */
+  { icon: 'handyman', label: 'Tickets', href: '/tickets' },   /* (S46 — REG-2524) after Tasks, as on the rail (1.0's More › Pages had Escalations there) */
   { icon: 'storefront', label: 'Marketplace', href: '/marketplace' },   /* (pending modules S24) live — 1.0's More › Marketplace */
   { icon: 'domain', label: 'Company' },   /* (REG-1360) Finance is a Company section — More › Company › Finance */
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
@@ -103,9 +104,9 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
   const home = recordHome(pathname, readFrom(useSearchParams().get('from')))   // (S42 audit C-24) a meeting opened from its lead lights Leads
   /* (UX audit V3) what each row inside More counts, and whether More wears its dot */
   const unread = badges?.notifications ?? 0
-  const countOf = (label: string) => (label === 'Tasks' ? badges?.['/tasks'] ?? 0 : label === 'Company' ? badges?.['/company'] ?? 0 : 0)
-  const counts = { Tasks: books ? 0 : countOf('Tasks'), Company: countOf('Company') }   // (parity map, PR-022) Accounting's Tasks count rides the dock
-  const moreHas = counts.Tasks + counts.Company > 0
+  const countOf = (label: string) => (label === 'Tasks' ? badges?.['/tasks'] ?? 0 : label === 'Tickets' ? badges?.['/tickets'] ?? 0 : label === 'Company' ? badges?.['/company'] ?? 0 : 0)
+  const counts = { Tasks: books ? 0 : countOf('Tasks'), Tickets: countOf('Tickets'), Company: countOf('Company') }   // (parity map, PR-022) Accounting's Tasks count rides the dock
+  const moreHas = counts.Tasks + counts.Tickets + counts.Company > 0
   const countWords = (label: string, n: number) => (label === 'Tasks' ? `${n} overdue` : `${n} waiting`)
   /** One Line row (1082:25102): glyph 20 secondary · body/m label. Destinations navigate and close; the rest are coming soon. */
   const moreItem = (it: { icon: string; label: string; href?: string }) => {
@@ -122,7 +123,8 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
     )
     const label = n > 0 ? `${it.label} (${countWords(it.label, n)})` : !it.href && it.label !== 'Company' ? `${it.label}${SOON}` : undefined
     return it.href ? (
-      <Link key={it.label} href={it.href} className={styles.sheetItem} aria-current={active(it.href) ? 'page' : undefined} aria-label={label} onClick={close}>
+      /* (pending modules S46C · H2) a counted row lands where the rail's item does — Tasks' overdue opens My Tasks with Overdue on (UX audit T5) */
+      <Link key={it.label} href={badgeHref(it.href, n)} className={styles.sheetItem} aria-current={active(it.href) ? 'page' : undefined} aria-label={label} onClick={close}>
         {inner}
       </Link>
     ) : it.label === 'Company' ? (
@@ -167,7 +169,7 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
         {dock.map((it) => {
           /* (UX audit V7) Tools lights on its own pages, as it does on the rail */
           const on = home ? it.href === home : it.href ? active(it.href) : it.label === 'Tools' && onToolsPage(pathname)   // (S42 audit C-24)
-          const n = it.href ? badges?.[it.href] ?? 0 : 0   /* (REG-919) the rail's count on the dock — Projects' projects that need attention */
+          const n = it.href ? badges?.[it.href] ?? 0 : 0   /* (REG-919) the rail's count on the dock — Projects' projects that need attention; (S46C · H2) Leads' new leads */
           const inner = (
             <>
               <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} />{n > 0 ? <span className={styles.dockBadge} aria-hidden>{badgeCount(n)}</span> : null}</span>
@@ -175,8 +177,10 @@ export function MobileChrome({ team = [], credits = null, badges, studio = DEMO_
             </>
           )
           return it.href ? (
-            <Link key={it.label} href={n > 0 && it.href === '/projects' ? '/projects?scope=attention' : it.href} className={styles.dockItem} data-active={on || undefined}
-                  aria-current={on ? 'page' : undefined} aria-label={n > 0 ? `${it.label} (${n} ${n === 1 ? 'needs' : 'need'} attention)` : undefined}>
+            /* (pending modules S46C · H2) the rail's own landing and words for every counted item — Leads' "2 new" lands on the Unseen scope;
+               the Accounting and Marketing docks' Tasks said "need attention" and opened every task */
+            <Link key={it.label} href={badgeHref(it.href, n)} className={styles.dockItem} data-active={on || undefined}
+                  aria-current={on ? 'page' : undefined} aria-label={badgeLabel(it.label, it.href, n)}>
               {inner}
             </Link>
           ) : it.label === 'Tools' ? (

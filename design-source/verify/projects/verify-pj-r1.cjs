@@ -56,7 +56,8 @@ const VIVIEN = 'bb054aa5-7284-492e-b232-607bd4cfb0f6'   // Quote Sent · Won rea
     /* (Lead ↔ Project parity, package K-D2 — new rules) the Leads listing's header, scope menu and Members cell */
     ok(await p.locator('[data-testid="open-insights"]').isVisible() && await p.locator('[data-testid="open-tickets"]').count() === 0, 'the header: the outlined Insights after New project — Tickets went into ⋮ (P-21 · Q-06)')
     await p.locator('[data-testid="projects-kebab"]').click(); await p.waitForTimeout(300)
-    ok(await p.getByRole('menuitem', { name: /^Tickets/ }).count() === 1 && await p.getByRole('menuitem', { name: 'Insights', exact: true }).count() === 0, '⋮: Tickets (its count in the row), no Insights row (P-21)')
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+    ok(await p.getByRole('menuitem', { name: /^Tickets/ }).count() === 0 && await p.getByRole('menuitem', { name: 'Insights', exact: true }).count() === 0, '⋮: no Tickets row (it is on the rail now), no Insights row (P-21)')
     await p.keyboard.press('Escape'); await p.waitForTimeout(300)
     ok(await p.locator('[role="columnheader"][data-col="team"]').innerText().then((t) => /MEMBERS/i.test(t)) && await p.locator('[data-testid="members-cell"], [data-testid="members-assign"]').count() >= 4, 'the Members column (REG-290), the lead\'s cell on every row (P-17)')
     { const first = rows().first().locator('[data-col="project"]')

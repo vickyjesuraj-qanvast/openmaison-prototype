@@ -22,7 +22,7 @@ import { useShortcut } from '@/lib/keys/store'
 import { CHANGE_RULE } from '@/lib/projects/policy'
 import type { CustomValues } from '@/lib/leads/custom-fields-model'
 import { createVariationOrder } from '@/app/projects/money-actions'
-import { ProjectStageButton, ProjectStageMenu, stageWord, type ProjectStageFacts, type ProjectStageMove } from './stage-menu'
+import { ProjectStageButton, ProjectStageMenu, TEAM_RULE, stageWord, type ProjectStageFacts, type ProjectStageMove } from './stage-menu'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { GHOST_MIN_MS, PageReveal } from '@/components/shell/page-reveal'
 import { assignMembers, updateLead } from '@/app/leads/actions'
@@ -133,6 +133,10 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
     else if (a === 'contract' && d.contract) router.push(withFrom(`/contracts/${d.contract.id}`, here()))
     else if (a === 'copy') void copyText(`${window.location.origin}/projects/${p.id}`).then(() => snackbar({ message: 'Link copied' }), () => snackbar({ message: 'Couldn’t copy — please try again' }))
     else if (a === 'access') setAccess(true)
+    /* (S46B, M7) the Invite to Portal panel's See it as {client}: the real portal as the client, read-only, in a new tab — on the press */
+    else if (a === 'preview' && d.withClient.portal.home) window.open(`${d.withClient.portal.home}/preview?client=${encodeURIComponent(lead.id)}`, '_blank')
+    /* (S46B, M6) the Stage menu's Completed row from ⋮: Complete handover — Review the handover while one waits for this Owner or Admin */
+    else if (a === 'complete') ending.open(d.ending.request && d.ending.runs ? 'review' : 'complete', target)
     else if (a === 'delete') ending.open('delete', target)   // (Projects round 7) "{name} deleted" with Undo (P-14)
     else if (a === 'visualizer') openVisualizer()   // (fix-A) 1.0's Photo Renders
     else if (a === 'planner') setPlannerOpen(true)   // (gaps build J, J-Q3)
@@ -140,6 +144,11 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
   /* (parity P-08 · Q-24) Every stage row runs its own flow, each dialog with its own title: Start the project · Complete handover (Review the
      handover, while one waits for this viewer) · Reopen · Put on hold (Change the hold, from the current On hold row) · Resume. The Overview's
      Project stages rows run the same flows (`openStep`). */
+  /* (S46B, M7) See it as {client} in ⋮ — the panel's own rule: whoever works on the client (its team, their Managers, Owners, Admins), and not
+     once their access is withdrawn (the panel offers it then neither); the row says why in its second line (REG-728) */
+  const portal = d.withClient.portal
+  const clientFirst = titleCaseName(lead.name).split(/\s+/)[0] ?? lead.name
+  const seeAs = portal.home ? { first: clientFirst, why: !portal.mayAct ? TEAM_RULE : portal.state === 'withdrawn' ? `${clientFirst} can no longer open the portal` : null } : undefined
   const stageFacts: ProjectStageFacts = { stage: p.stage, held: !!p.hold, startedAt: p.startedAt ? p.startedAt.getTime() : null, mayChange: d.mayChange,
     mayHandover: d.ending.mayHandover, runs: d.ending.runs, requested: !!d.ending.request }
   const runStage = (m: ProjectStageMove) => {
@@ -422,7 +431,8 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
                 {phoneSheet ? <QuickLinkItems set="project" busy={openingDesign ? 'AI Visualizer' : startingVo ? 'Variation order' : null} onPicked={() => setKebab(false)}
                                               onTask={onNewTask} onNote={() => onNewNote('note')} onCallLog={() => onNewNote('contact')} onOther={onCreate} /> : null}
                 <ProjectMenuItems project={{ direct: lead.direct, quoteId: d.quote?.id ?? null, contractId: d.contract?.id ?? null, stage: p.stage, hold: p.hold ? holdSummary(p.hold, d.now) : null }} canRename={d.mayChange} onPick={onMenu}
-                                  edit ends={{ mayHandover: d.ending.mayHandover, runs: d.ending.runs, requested: !!d.ending.request, requestedBy: d.ending.request?.by.name ?? null, requestedAt: d.ending.request?.at ?? null }} />
+                                  edit ends={{ mayHandover: d.ending.mayHandover, runs: d.ending.runs, requested: !!d.ending.request, requestedBy: d.ending.request?.by.name ?? null, requestedAt: d.ending.request?.at ?? null }}
+                                  seeAs={seeAs} />
               </PortalMenu>
             </span>
           }

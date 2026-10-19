@@ -56,7 +56,7 @@ import { responseLine } from '@/lib/leads/tat'
 import { suggestMember } from '@/lib/leads/suggest'
 import { ReturnDetailsModal } from '@/components/leads/return/return-details-modal'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
-import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, moveStage, quickMoveStage, resolveMoveHandoff, restoreLeads, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
+import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, markLeadSeen, moveStage, quickMoveStage, resolveMoveHandoff, restoreLeads, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
 import { createQuote } from '@/app/leads/quotes-actions'
 import { askClientQuestions } from '@/app/leads/questions-actions'
 import { fetchAppealDraft, returnLead, undoReturn, type AppealDraft, type ReturnInput } from '@/app/leads/return-actions'
@@ -128,6 +128,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
   const refresh = () => router.refresh()
+  /* (pending modules S46C · H2) Opening the lead from anywhere — ⌘K, the bell, the Dashboard, a link — opens it: the listing's band and the Leads
+     item's count clear as the listing's own press clears them (`markLeadSeen` stamps once and revalidates, so the rail's number follows). */
+  const unseenId = lead.seenAt === null ? lead.id : null
+  useEffect(() => { if (unseenId) void markLeadSeen(unseenId).catch(() => {}) }, [unseenId])
   /** Server actions awaited after their dialog has closed: a failure lands in the snackbar instead of vanishing (audit 2026-08-30). */
   const run = async (work: () => Promise<void>, failure: string) => { try { await work() } catch { snackbar({ message: failure }) } }
 

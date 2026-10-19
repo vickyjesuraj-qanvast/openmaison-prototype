@@ -92,7 +92,8 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   /* The Create Quote modal (REG-412). A tile creates ONE Draft per press — a double click cannot create two (RACE-05) —
      from the chosen template (null = Blank Quote) and opens it in the editor. */
   const [createOpen, setCreateOpen] = useState(false)
-  const openCreate = () => setCreateOpen(true)
+  const [createStart, setCreateStart] = useState<'upload' | null>(null)   // (S46A — T-1 · M4) the empty list's Upload a quote opens the window on it
+  const openCreate = () => { setCreateStart(null); setCreateOpen(true) }
   const startQuote = (templateId: string | null) => run('create the quote', async () => { const id = await createQuote(leadId, templateId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, undefined, { guard: 'create' })
   /* (REG-465) The editor carries this tab's own URL (folder-free, origin and all) so its close comes straight back here. */
   const pathname = usePathname(); const search = useSearchParams().toString()
@@ -149,7 +150,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
       />
       {quotes.length === 0 ? (
         /* (UX audit Q12, supersedes REG-412 here) From Scratch makes the blank quote at once — the Blank Quote tile's quote; From Template keeps the modal. */
-        <QuotesEmpty onFromScratch={() => { void startQuote(null) }} onFromTemplate={openCreate} />
+        <QuotesEmpty onFromScratch={() => { void startQuote(null) }} onFromTemplate={openCreate} onUpload={() => { setCreateStart('upload'); setCreateOpen(true) }} />
       ) : nothingMatches ? (
         <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS); setQuick('') }} />
       ) : (
@@ -188,7 +189,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
       <CreateQuoteModal
         open={createOpen} leadName={leadName} leadId={leadId} templates={templates} priceBookCount={priceBookCount} now={now}
         render={{ brand: data.brand, sample: data.sample, extras: data.extras }}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => { setCreateOpen(false); setCreateStart(null) }} opensOn={createStart}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
         defaultBlock={viewer ? templateDefaultBlock(viewer) : null}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */

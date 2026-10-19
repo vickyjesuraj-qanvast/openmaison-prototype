@@ -92,8 +92,8 @@ export const UPDATES_WINDOW_DAYS = 14
 export const seesTeam = (role: string | null | undefined) => role === 'Owner' || role === 'Admin' || role === 'Manager'
 /** Who sees the latest site updates — 1.0's owner feed; in 2.0 the studio's runners (Owners and Admins share every rule but the plan). */
 export const seesSiteUpdates = (role: string | null | undefined) => runsStudio(role)
-/** Where it stands' tiles for a role, by their captions: the studio's (Leads · Sales · Response time · Open projects · Messages · Owed to you ·
-    Profit this month — S45A added Reports › Leads' two), a
+/** Where it stands' tiles for a role, by their captions: the studio's (Leads · Sales · Response time · Open projects · Contractors · Tickets ·
+    Messages · Owed to you · Profit this month — S45A added Reports › Leads' two, S45B Contractors, S46B Tickets), a
     Manager's three over their team, a Designer's three over their own, the books' three (Reports › Finance's Owed to you · You owe, the P&L's
     profit). The page and its ghost read the same list. */
 export function tileLabelsFor(role: string | null | undefined, /** (pending modules S41b-1) sees costs and margins — else no Profit tile */ costs = true): string[] {
@@ -101,9 +101,10 @@ export function tileLabelsFor(role: string | null | undefined, /** (pending modu
   /* (pending modules S45A — H-UHD-3) Reports › Leads' Sales (Owners and Admins) and Response time (whoever reads the report) beside Leads */
   if (isMarketing(role)) return ['Leads', 'Response time']   // (S44O — call C6) the lead desk's figures: the pipeline, the listing's own count
   /* (pending modules S45B — H-UHD-2) the Workload view's Contractors after Open projects, for whoever reads the Workload view */
-  if (runsStudio(role)) return costs ? ['Leads', 'Sales', 'Response time', 'Open projects', 'Contractors', 'Messages', 'Owed to you', 'Profit this month'] : ['Leads', 'Sales', 'Response time', 'Open projects', 'Contractors', 'Messages', 'Owed to you']
-  if (role === 'Manager') return ['Leads', 'Open projects', 'Contractors', 'Messages']
-  return ['My leads', 'My projects', 'Messages']
+  /* (pending modules S46B, M1) Projects › Tickets' figure after the projects' own, for whoever opens projects — the Projects ⋮ row's count */
+  if (runsStudio(role)) return costs ? ['Leads', 'Sales', 'Response time', 'Open projects', 'Contractors', 'Tickets', 'Messages', 'Owed to you', 'Profit this month'] : ['Leads', 'Sales', 'Response time', 'Open projects', 'Contractors', 'Tickets', 'Messages', 'Owed to you']
+  if (role === 'Manager') return ['Leads', 'Open projects', 'Contractors', 'Tickets', 'Messages']
+  return ['My leads', 'My projects', 'Tickets', 'Messages']
 }
 export const tileCountFor = (role: string | null | undefined, costs = true) => tileLabelsFor(role, costs).length
 export const shapeFor = (role: string | null | undefined, o: { updates: boolean; article: boolean; costs?: boolean }): DashboardShape =>

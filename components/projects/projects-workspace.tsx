@@ -85,7 +85,7 @@ const list = (v: string | null) => (v ? v.split(',').map((x) => x.trim()).filter
  * count (P-21, Q-06); the Members cell assigns from the row and the card (P-17); the scope menu in the lead's order with Mine (P-20); the
  * chosen view remembered per browser, the address winning (P-24); Export as the lead's statement, the bulk bar's on the selection (P-25).
  */
-export function ProjectsWorkspace({ data, url, tickets = 0 }: { data: ProjectsListData; url: ProjectsUrlState; /** (gaps build H, H-Q2) tickets waiting on the studio — the header's Tickets button */ tickets?: number }) {
+export function ProjectsWorkspace({ data, url }: { data: ProjectsListData; url: ProjectsUrlState }) {
   const { team, now, viewer } = data
   const router = useRouter()
   const pathname = usePathname()
@@ -320,8 +320,7 @@ export function ProjectsWorkspace({ data, url, tickets = 0 }: { data: ProjectsLi
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Projects">
                 <DropdownItem onSelect={() => { setKebabOpen(false); setExportSel([]) }}>Export all as…</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setTrashOpen(true) }}>Deleted Projects</DropdownItem>   {/* (Projects round 7, Q-26) */}
-                {/* (parity P-21, Q-06; gaps build H, H-Q2) every ticket on the projects this member sees — its count the tickets waiting on the studio */}
-                {first ? null : <DropdownItem meta={tickets ? String(tickets) : undefined} onSelect={() => { setKebabOpen(false); router.push(withFrom('/projects/tickets', here())) }}>Tickets</DropdownItem>}
+                {/* (S46 — REG-2524) Tickets left this menu for the rail, a place of its own as Tasks is (her ask 2026-10-19) */}
                 <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=projects', here())) }}>Projects Settings</DropdownItem>
               </Dropdown>
             </div>

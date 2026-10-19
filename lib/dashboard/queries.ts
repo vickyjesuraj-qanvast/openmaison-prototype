@@ -22,6 +22,7 @@ import { fetchSales } from '@/lib/leads/sales-queries'
 import { DEFAULT_RANGE, insightsReport, rangeLabel, rangeParam } from '@/lib/leads/tat'
 import { salesReport, salesTile } from '@/lib/leads/sales'
 import { boardOf } from '@/lib/projects/contractors-model'   // (pending modules S45B — H-UHD-2) the Contractors tile
+import { ticketTally } from '@/lib/projects/tickets'   // (pending modules S46B, M1) the Tickets tile — the rail's Tickets count (S46, REG-2524)
 import { EMPTY_FILTERS, applyFilters, isOverdueLead } from '@/lib/leads/filters'
 import { railBadges } from '@/lib/leads/tasks'
 import { fetchMemberStats } from '@/lib/company/members'
@@ -296,6 +297,19 @@ export async function fetchDashboard(): Promise<DashboardData> {
     tiles.push({ key: 'contractors', label: 'Contractors', value: k.contractors ? String(k.freeNow) : '--', help,
       href: k.contractors ? '/projects?view=workload&of=contractors' : from('/company/finance/vendors'),
       aria: k.contractors ? `Contractors: ${k.freeNow} free this week — open the contractors` : 'Contractors: none yet — open Finance › Vendors' })
+  }
+  /* (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M1; 1.0's rail "Escalations (3)" and Studio Pulse's
+     escalations) the studio's tickets in one figure, for whoever opens projects: the tickets waiting on the studio — the Projects ⋮'s Tickets
+     row's own count (`countTicketsToAnswer` reads the same tally) — its line how many are open in all and escalated; the door is Projects ›
+     Tickets with the way back. No colour: a ticket left waiting is red on its project's Needs you, where it is answered. */
+  if (workspace) {
+    const tt = await ticketTally().catch(() => null)
+    if (tt) {
+      const rest = [tt.open > tt.toAnswer ? `${tt.open} open` : null, tt.escalated ? `${tt.escalated} escalated` : null].filter(Boolean)
+      const help = tt.toAnswer ? ['waiting on you', ...rest].join(' · ') : tt.open ? ['Nothing waits on you', ...rest].join(' · ') : 'No open tickets'
+      tiles.push({ key: 'tickets', label: 'Tickets', value: String(tt.toAnswer), help, href: from('/tickets'),
+        aria: `Tickets: ${tt.toAnswer} waiting on you — open Tickets` })
+    }
   }
   if (workspace) tiles.push({ key: 'messages', label: 'Messages', value: String(unread), help: unread ? `${unread === 1 ? 'conversation' : 'conversations'} with something unread` : 'You’re up to date', href: unread ? '/chat?show=unread' : '/chat', aria: `Messages: ${unread} unread — open Messages` })
   if (books && todo?.books) {

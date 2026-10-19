@@ -202,9 +202,13 @@ const T0 = Math.floor(Date.now() / 1000) - 2
     await menuItem(s, /^One-off invoice/).click(); await settle(s, 500)
     const od = dialog(s)
     await od.locator('[data-testid="oneoff-pdf-input"]').setInputFiles(path.join(REPO, 'public/uat-files/printhub-bill-PH-2210.pdf')); await settle(s, 3000)
-    ok(/Read from printhub-bill-PH-2210\.pdf — 2 lines and the due day filled/.test(await od.locator('[data-testid="oneoff-read"]').innerText().catch(() => '')), 'a text PDF fills the lines and the due day, and says so')
+    /* (S46 closing regression, 2026-10-19 — a date, not a rule, had gone stale) the sample bill is due 17 Oct 2026; a due day already gone stays
+       the studio's to pick (invoice-dialogs.tsx: "a day already gone stays the studio's to pick"), so the read names the due day only while it is ahead */
+    const pdfDueAhead = new Date(2026, 9, 17).getTime() >= new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime()
+    const readLine = await od.locator('[data-testid="oneoff-read"]').innerText().catch(() => '')
+    ok(pdfDueAhead ? /Read from printhub-bill-PH-2210\.pdf — 2 lines and the due day filled/.test(readLine) : /Read from printhub-bill-PH-2210\.pdf — 2 lines filled/.test(readLine) && !/due day/.test(readLine), pdfDueAhead ? 'a text PDF fills the lines and the due day, and says so' : 'a text PDF fills the lines; its due day, already gone, is left to the studio (and the read says only the lines)')
     ok(await od.locator('[data-testid="oneoff-line"]').count() === 2 && (await od.getByLabel('Description', { exact: true }).first().inputValue()) === 'A1 plotting of design drawings', 'its lines are the PDF’s')
-    ok(/Read from the file — check it/.test(await od.innerText()), 'the due day says it was read, until it is changed')
+    if (pdfDueAhead) ok(/Read from the file — check it/.test(await od.innerText()), 'the due day says it was read, until it is changed')
     await shot(s, 'a07-oneoff-from-pdf', false)
     await od.locator('[data-testid="oneoff-pdf-input"]').setInputFiles(path.join(REPO, 'public/uat-files/fluted-panel.jpg')); await settle(s, 1200)
     ok(/This file has no text to read — type the lines in/.test(await od.locator('[data-testid="oneoff-read"]').innerText().catch(() => '')), 'a picture says plainly it has no text to read')

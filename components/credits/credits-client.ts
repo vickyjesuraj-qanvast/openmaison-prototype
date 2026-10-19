@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useSyncExternalStore } from 'react'
+import type { PlanIntent } from '@/lib/credits/plan-intent'
 import { isRefusal, type CreditSummary, type Refusal } from '@/lib/credits/model'
 import { isLockRule, type ProFeature } from '@/lib/credits/features'
 import { readCredits, refundAI, spendAI } from '@/app/credits/actions'
@@ -45,14 +46,19 @@ export async function refreshCredits(): Promise<CreditSummary | null> {
 export const HOLD_EVENT = 'om:credits:released'
 let held = false
 export const isRailHeld = () => held
-export function holdRail(on: boolean) { held = on; if (!on) window.dispatchEvent(new CustomEvent(HOLD_EVENT)) }
+export function holdRail(on: boolean) { held = on; window.dispatchEvent(new CustomEvent(HOLD_CHANGE)); if (!on) window.dispatchEvent(new CustomEvent(HOLD_EVENT)) }
+/** (S46D — D4) Whether Plans is open, as a store: a member's first-visit welcome waits while Plans opens on a plan picked on the website. */
+const HOLD_CHANGE = 'om:credits:hold'
+export function usePlansOpen(): boolean {
+  return useSyncExternalStore((cb) => { window.addEventListener(HOLD_CHANGE, cb); return () => window.removeEventListener(HOLD_CHANGE, cb) }, isRailHeld, () => false)
+}
 
 /* ── openers ── */
 export const CREDITS_EVENT = 'om:credits'
 /** What the AI credits pay for — (pending modules S23) a meeting's co-pilot, 10 minutes at a time, beside renders and quote reads. */
 export type CreditWork = 'render' | 'quote' | 'meeting'
 export type CreditsOpen =
-  | { kind: 'plans'; step?: 'choose'; focus?: 'plan' | 'topup' }
+  | { kind: 'plans'; step?: 'choose'; focus?: 'plan' | 'topup'; /** (S46D — D4) the plan the website's Pricing (or 1.0's /upgrade) picked */ intent?: PlanIntent }
   | { kind: 'topup'; credits?: number }
   | { kind: 'billing' }
   | { kind: 'seats'; nested?: boolean }
@@ -61,6 +67,8 @@ export type CreditsOpen =
 const open = (detail: CreditsOpen) => window.dispatchEvent(new CustomEvent<CreditsOpen>(CREDITS_EVENT, { detail }))
 /** Upgrade, Change plan, a moment's "See plans". */
 export const openPlans = () => open({ kind: 'plans' })
+/** (S46D — D4) Plans on a plan picked before the studio was open — the website's Pricing through sign-up, 1.0's `/upgrade?plan=` (lib/credits/plan-intent.ts). */
+export const openPlansOn = (intent: PlanIntent) => open({ kind: 'plans', intent })
 /** (pending modules S23) The out-of-credits moment for work that charges through its own server action (a meeting's next 10 minutes). */
 export const openCreditBlock = (o: { refusal: Refusal; what: CreditWork; needed: number; retry?: () => void }) => open({ kind: 'block', refusal: o.refusal, what: o.what, needed: o.needed, retry: o.retry, smaller: null })
 /** (pending modules S19) Buy AI credits — on 1.0's amount picker, starting on `credits` (1,000 when none is given). */

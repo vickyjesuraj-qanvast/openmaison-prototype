@@ -1,9 +1,14 @@
 'use client'
 
 import { GhostSheet } from './skeleton'
-import { GhostHead, type Action } from './ghost-kit'
+import { Bone } from './skeleton'
+import { GhostHead, GhostTextButton, Words, type Action } from './ghost-kit'
 import { ContractsTabGhost, FirstRunTabGhost, QuotesTabGhost, TasksTabGhost } from '@/components/leads/detail/tab-ghosts'
-import { useFirstRunShape } from '@/lib/ghost-shape'
+import { useFirstRunShape, useSeedFlag } from '@/lib/ghost-shape'
+import { useCountPref } from '@/lib/prefs'
+import { APPROVALS_COUNT_KEY, APPROVALS_DOOR, APPROVALS_SHAPE, approvalsWords } from '@/components/tasks/approvals-line'
+import note from '@/components/company/read-only-note.module.css'
+import approvalsLine from '@/components/tasks/approvals-line.module.css'
 import { useSignedInRole } from './access-gate'
 import { opensPath } from '@/lib/settings/roles'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -24,12 +29,27 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
   )
 }
 
-export function TasksListGhost() {
+/** (pending modules S46C · M3) The Tasks page's approvals line as a ghost — the strip, its glyph, the sentence in the page's own class and the door. */
+function ApprovalsGhost({ count }: { count: number }) {
+  return (
+    <div className={`${note.note} ${approvalsLine.line}`}>
+      <Bone w={20} h={20} r={4} /><Words className={approvalsLine.text}>{approvalsWords(count)}</Words><GhostTextButton label={APPROVALS_DOOR} className={approvalsLine.door} />
+    </div>
+  )
+}
+
+/** `approvals` — (pending modules S46C · M3) the page's own count when the reveal draws it; the loader draws what this browser saw last, else
+    what the shell's seed knows now (lib/ghost-shapes.server.ts `tasks.approvals`). */
+export function TasksListGhost({ approvals }: { approvals?: number } = {}) {
   /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
   const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
   const sources = opensPath(useSignedInRole(), '/projects')   // (S43E W6-02) Marketing's page has no Leads · Projects
+  const seeded = useSeedFlag(APPROVALS_SHAPE, false)
+  const remembered = useCountPref(APPROVALS_COUNT_KEY, seeded ? 2 : 0)
+  const count = approvals ?? remembered
+  const notice = count > 0 ? <ApprovalsGhost count={count} /> : null
   const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} sources={sources} />
-  return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{body}</div>}>{body}</ListGhost>
+  return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{notice}{body}</div>}>{body}</ListGhost>
 }
 
 export function QuotesListGhost() {

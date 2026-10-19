@@ -20,6 +20,7 @@ const TILE_GHOST: Record<string, { v: number; w: number; desk: number; phone: nu
   Sales: { v: 120, w: 180, desk: 2, phone: 3 }, 'Response time': { v: 48, w: 180, desk: 2, phone: 4 },
   'Open projects': { v: 24, w: 120, desk: 1, phone: 1 }, 'My projects': { v: 24, w: 120, desk: 1, phone: 1 },
   Contractors: { v: 16, w: 184, desk: 2, phone: 4 },   // (pending modules S45B) "free this week · 1 over capacity · 1 starting with no contractor"
+  Tickets: { v: 16, w: 176, desk: 1, phone: 2 },   // (pending modules S46B) "Nothing waits on you · 3 open"
   Messages: { v: 24, w: 176, desk: 2, phone: 2 }, 'Owed to you': { v: 112, w: 180, desk: 2, phone: 3 }, 'You owe': { v: 112, w: 180, desk: 2, phone: 3 },
   'Profit this month': { v: 104, w: 200, desk: 1, phone: 1 },
 }

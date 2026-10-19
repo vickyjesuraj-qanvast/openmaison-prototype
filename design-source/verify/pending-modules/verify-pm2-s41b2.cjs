@@ -111,12 +111,13 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       ['/inbox?chat=8c1d2e3f-1.0-chat', '/chat'],
       ['/inbox/8c1d2e3f-1.0-chat', '/chat'],
       [`/inbox?newChat=91234567&name=Ben&leadId=${BEN_LEAD}`, `/chat?open=${encodeURIComponent(`lead:${BEN_LEAD}`)}`],
-      ['/escalations', '/projects/tickets'],
-      ['/escalations/new', '/projects/tickets'],
-      [`/escalations/${TICKET.number}`, `/projects/tickets?open=${TICKET.id}`],
-      [`/escalations/${TICKET.number.toLowerCase()}`, `/projects/tickets?open=${TICKET.id}`],
-      [`/escalations/${TICKET.id}`, `/projects/tickets?open=${TICKET.id}`],
-      ['/escalations/T-1999-000404', '/projects/tickets'],
+      /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+      ['/escalations', '/tickets'],
+      ['/escalations/new', '/tickets?new=1'],   // (S46A — the findability audit's M1, a deliberate change of this rule) 1.0's New Ticket page → Tickets' own New ticket
+      [`/escalations/${TICKET.number}`, `/tickets?open=${TICKET.id}`],
+      [`/escalations/${TICKET.number.toLowerCase()}`, `/tickets?open=${TICKET.id}`],
+      [`/escalations/${TICKET.id}`, `/tickets?open=${TICKET.id}`],
+      ['/escalations/T-1999-000404', '/tickets'],
       ['/finance/operations', '/company/finance/todo'],
       ['/finance/operations?tab=overview', '/company/finance/todo'],
       ['/finance/operations?tab=review', '/company/finance/todo'],
@@ -232,7 +233,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
         `${u} → 404, the house's page not found (not Next's)${tab ? ', titled "Page not found"' : ''}`)
     }
     /* proxy's rules leave 2.0's own addresses alone */
-    for (const u of ['/leads?view=kanban', `/projects/${BEN}?from=%2Fprojects`, '/projects/tickets', `/projects/${BEN}/money`, '/settings?section=leads']) {
+    for (const u of ['/leads?view=kanban', `/projects/${BEN}?from=%2Fprojects`, '/tickets', `/projects/${BEN}/money`, '/settings?section=leads']) {
       const r = await chain(u)
       ok(r.hops.length === 1 && r.status === 200, `${u} is 2.0's own address: answered as it is (200, no redirect)`)
     }
@@ -241,7 +242,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     console.log('\n2 · a member who may see the record lands on it; one who may not lands where that kind lives (Who sees leads: assigned)')
     sql(`insert into settings (key, value, updated_at) values ('lead_visibility', '"assigned"', strftime('%s','now')) on conflict(key) do update set value = excluded.value`)
     const PAIRS = [
-      [`/escalations/${TICKET.number}`, `/projects/tickets?open=${TICKET.id}`, '/projects/tickets'],
+      [`/escalations/${TICKET.number}`, `/tickets?open=${TICKET.id}`, '/tickets'],
       [`/finance/operations?invoiceId=${INV}`, `/projects/${BEN}/money?open=${INV}`, '/company/finance/money-in'],
       [`/finance/operations?tab=pos&project=${BEN}`, `/projects/${BEN}/money`, '/company/finance/money-out?kind=purchase-orders'],
       [`/finance/invoices/${INV}/preview`, `/projects/${BEN}/invoices/${INV}`, '/company/finance/money-in'],
@@ -261,7 +262,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     ok(rel(mm.final) === `/meetings/${MEET.id}` && rel(mg.final) === '/meetings', 'a co-pilot session: its lead\'s member lands on the meeting, another Designer on Meetings')
     /* Accounting: the books' records — an invoice's paper — open; the workspace's (a ticket) answers with the gate's page, never the ticket */
     as('priya'); const ai = await chain(`/finance/invoices/${INV}/preview`), at = await chain(`/escalations/${TICKET.number}`)
-    ok(rel(ai.final) === `/projects/${BEN}/invoices/${INV}` && rel(at.final) === '/projects/tickets' && /access-gate/.test(at.body), 'Accounting (Priya): an invoice\'s paper opens (the books are theirs); a ticket\'s link lands on Tickets\' gate, never the ticket')
+    ok(rel(ai.final) === `/projects/${BEN}/invoices/${INV}` && rel(at.final) === '/tickets' && /access-gate/.test(at.body), 'Accounting (Priya): an invoice\'s paper opens (the books are theirs); a ticket\'s link lands on Tickets\' gate, never the ticket')
     as('dane')
     sql(`delete from settings where key = 'lead_visibility'`)
 
@@ -283,7 +284,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       await p.getByTestId('sign-in-digit').first().click(); await p.keyboard.type('123456'); await settle(p, 200)
       await p.getByTestId('sign-in-go').click()
       await p.waitForURL((u) => !/\/sign-in/.test(String(u)), { timeout: 15000 }).catch(() => {}); await settle(p, 1800)
-      ok(pathOf(p) === '/projects/tickets' && /T-\d{4}-\d+/.test(await text(p.getByRole('dialog'))), `signing in from 1.0's ticket link lands on Projects › Tickets with ${TICKET.number} open (landed ${pathOf(p)})`)
+      ok(pathOf(p) === '/tickets' && /T-\d{4}-\d+/.test(await text(p.getByRole('dialog'))), `signing in from 1.0's ticket link lands on Projects › Tickets with ${TICKET.number} open (landed ${pathOf(p)})`)
       const m = await chain('/manifest.json', OUT), f = await chain('/brand/favicon.svg', OUT)
       ok(m.status === 200 && f.status === 200 && m.hops.length === 1, 'signed out, the manifest and the icon still read (no session asked)')
       await C.close()
@@ -294,7 +295,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     console.log('\n4 · 1.0’s notification links land from where they were sent')
     const BELL = [
       [`/leads?leadId=${BEN_LEAD}`, `/leads/${BEN_LEAD}`],
-      [`/escalations/${TICKET.number}`, `/projects/tickets`],
+      [`/escalations/${TICKET.number}`, `/tickets`],
       [`/finance/operations?invoiceId=${INV}`, `/projects/${BEN}/money`],
       [`/projects/${BEN}?tab=management&milestone=${MS}`, `/projects/${BEN}/schedule`],
       ['/accounts', '/company/members'],
@@ -314,7 +315,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       }
       await C.close()
       /* an email's or a WhatsApp's link: the absolute address, opened in a fresh tab (no history, no referrer) */
-      for (const [href, want] of [[`/finance/operations?invoiceId=${INV}`, `/projects/${BEN}/money`], [`/escalations/${TICKET.number}`, '/projects/tickets'], [`/leads?leadId=${BEN_LEAD}`, `/leads/${BEN_LEAD}`], [`/my/projects/${BEN}?tab=floor-plan`, `/my/${SLUG}`]]) {
+      for (const [href, want] of [[`/finance/operations?invoiceId=${INV}`, `/projects/${BEN}/money`], [`/escalations/${TICKET.number}`, '/tickets'], [`/leads?leadId=${BEN_LEAD}`, `/leads/${BEN_LEAD}`], [`/my/projects/${BEN}?tab=floor-plan`, `/my/${SLUG}`]]) {
         const E = await desk(); const e = await page(E, 'email')
         const r = await e.goto(BASE + href, { waitUntil: 'networkidle' }); await settle(e, 900)
         ok(r.status() === 200 && new URL(e.url()).pathname.startsWith(want), `an email's / WhatsApp's link ${href} opened fresh → ${pathOf(e)}`)

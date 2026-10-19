@@ -35,6 +35,8 @@ import { Button } from '@/components/ds'
 import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
 import { useFileUpload } from './use-file-upload'   // (pending modules S05) the lead's one upload
+import { useSendForSignature } from './use-send-for-signature'   // (S46D — D2)
+import { signRowFor } from '@/lib/contracts/file-signing'
 import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
 import { PhotoDialog } from '@/components/planner/photo/photo-dialog'   // (pending modules S28)
 import { looksLikeFloorPlan } from '@/lib/planner/photo'
@@ -48,6 +50,7 @@ import styles from './lead-files.module.css'
 type FolderMenuAction = 'open' | 'move' | 'rename' | 'delete'
 /** File tile kebab (931:40131): Open · Move · Duplicate · Download · Rename · Delete. */
 type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize' | 'copyLink' | 'whatsapp' | 'shown' | 'picture3d'   // (pending modules S28) a floor plan's Make a 3D picture
+  | 'sign'   // (S46D — D2) a PDF's Send for signature
 
 type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
 /**
@@ -106,6 +109,9 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
      offers Make a 3D picture: the 3D Space Planner's photo dialog for this lead (its project's, once won) with the file as it is in Files */
   const floorPlanOf = (f: FileRow) => data.tools && !isFolder(f) && (f.kind === 'image' || f.kind === 'pdf') && looksLikeFloorPlan(f.name, folderPath(files, f.parentId ?? null).map((p) => p.name))
   const [picture3d, setPicture3d] = useState<FileRow | null>(null)
+  /* (S46D — D2, finding D2) a PDF's Send for signature: Import a contract with the file already in it; a picture or a document says why not */
+  const signRow = (f: FileRow) => signRowFor(f, { signs: data.signs, contract: data.contracts[f.id] ?? null })
+  const signing = useSendForSignature({ leadId, files, here: () => here })
   const projectId = base?.startsWith('/projects/') ? base.slice('/projects/'.length).split('/')[0] ?? null : null
   const openInVisualizer = async (f: FileRow) => {
     const o = liveOrigin(renders[f.id])   // a render whose design was deleted forever opens as a plain picture
@@ -230,6 +236,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
     else if (action === 'whatsapp') share.sendWhatsApp(f)
     else if (action === 'shown') toggleShown(f)
     else if (action === 'picture3d') setPicture3d(f)   // (pending modules S28)
+    else if (action === 'sign') { if (!signRow(f)?.why) signing.open(f) }   // (S46D — D2)
     else download(f)
   }
   /* (Projects r4a) Show to client / Stop showing: the portal's Files lists only files marked so — Undo puts it back */
@@ -282,14 +289,14 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
           folders={folders} groups={groups}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf}
+          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf} signRow={signRow}
         />
       ) : (
         <FilesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           rows={sortFilesByHead(visible, headSort)} sort={headSort} onSort={(k) => setHeadSort((h) => nextFileHeadSort(h, k))}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onRowMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf}
+          onRowMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor} readOnly={readOnly} floorPlan={floorPlanOf} signRow={signRow}
         />
       )}
       {/* Hidden picker behind New File › From Local Files and the empty state's Upload Files (REG-149: any file works). */}
@@ -358,6 +365,7 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
         onEmptyTrash={() => run('empty the trash', () => emptyFileTrash(leadId), 'Trash emptied')}
       />
       {uploadToast}
+      {signing.dialog}
       <FilesFiltersModal open={filtersOpen} team={team} types={fileTypesIn(files)} value={filters} now={now}
         onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
         onClose={() => setFiltersOpen(false)} />

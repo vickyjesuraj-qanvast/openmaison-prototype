@@ -270,7 +270,7 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
       await go(p, '/dashboard', 1600)
       await p.getByTestId('tile-response').click(); await p.waitForURL(/\/company\/reports\/leads/, { timeout: 10000 }).catch(() => {}); await settle(p, 1600)
       ok(!/report=sales/.test(p.url()) && /range=90/.test(p.url()) && await p.getByTestId('insights-tiles').isVisible(), 'Response time opens its report on 90 days')
-      for (const [who, expect] of [['huimin', ['LEADS', 'SALES', 'RESPONSE TIME']], ['nurul', ['LEADS', 'RESPONSE TIME']], ['germaine', ['MY LEADS', 'MY PROJECTS', 'MESSAGES']], ['james', ['LEADS', 'OPEN PROJECTS', 'CONTRACTORS', 'MESSAGES']]]) {   /* (pending modules S45B, a deliberate change of this rule) a Manager's Contractors tile after Open projects */
+      for (const [who, expect] of [['huimin', ['LEADS', 'SALES', 'RESPONSE TIME']], ['nurul', ['LEADS', 'RESPONSE TIME']], ['germaine', ['MY LEADS', 'MY PROJECTS', 'TICKETS', 'MESSAGES']], ['james', ['LEADS', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES']]]) {   /* (pending modules S45B, a deliberate change of this rule) a Manager's Contractors tile after Open projects — (S46B, a deliberate change of this rule) and Tickets after the projects' own */
         as(who)
         await go(p, '/dashboard', 1800)
         const got = (await p.locator('[data-testid="stands-tiles"] > *').evaluateAll((els) => els.map((e) => (e.querySelector('[class*="__label"]')?.textContent ?? '').trim().toUpperCase())))

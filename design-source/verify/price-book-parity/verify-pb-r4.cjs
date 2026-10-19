@@ -129,7 +129,10 @@ const names = async (page) => (await page.getByTestId('library-row').evaluateAll
     await page.getByText('Set category', { exact: true }).click()
     const c = page.getByRole('dialog', { name: 'Set category' }); await c.waitFor()
     await c.getByRole('combobox', { name: 'Category' }).click(); await page.getByRole('option', { name: 'Tiling', exact: true }).click(); await c.getByRole('button', { name: 'Apply to 1 item' }).click(); await snack(page, '1 item changed')
-    ok('Set category', sql(`select category from price_book_items where name='Cement screeding and waterproofing'`) === 'Tiling')
+    /* (S46 closing regression, 2026-10-19) Set vendor's "1 item changed" can still be on screen when this one's is awaited, so the read waits
+       for the save to land instead of trusting the snackbar alone */
+    let cat = ''; for (let i = 0; i < 20 && cat !== 'Tiling'; i++) { cat = sql(`select category from price_book_items where name='Cement screeding and waterproofing'`); if (cat !== 'Tiling') await page.waitForTimeout(250) }
+    ok('Set category', cat === 'Tiling')
     await page.waitForTimeout(800)
     const glass = page.getByRole('checkbox', { name: 'Select Tempered glass shelf' }); await glass.focus(); await page.keyboard.press('Space'); await page.waitForTimeout(400)   // the stacked snackbars cover the row's box
     await page.locator('button:visible', { hasText: /^Delete$/ }).last().click()   // the bar's Delete (the row menus' are closed)

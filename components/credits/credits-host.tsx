@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { readPlanIntent, withoutPlanIntent, type PlanIntent } from '@/lib/credits/plan-intent'
 import { useSnackbar } from '@/components/om/snackbar'
 import type { CreditsChrome } from '@/lib/credits/chrome'
 import { CreditBlockDialog, ManageBillingDialog, TalkToUsDialog, TopUpDialog } from './credit-dialogs'
@@ -33,11 +35,15 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
   const [topUp, setTopUp] = useState<{ then: (() => void) | null; nested: boolean; credits?: number } | null>(null)
   const [block, setBlock] = useState<Block | null>(null)
 
+  const [intent, setIntent] = useState<PlanIntent | null>(null)   // (S46D — D4) the plan Plans opens on, when one was picked before
+  /* (S46D — D4) Plans on a picked plan: Max is arranged with the team, so Talk to us opens over it */
+  const openOn = useCallback((i: PlanIntent | null) => { setIntent(i); setPlans(true); if (i?.plan === 'max') setTalk(true) }, [])
+
   useEffect(() => {
     const on = (e: Event) => {
       const d = (e as CustomEvent<CreditsOpen>).detail
       if (!d) return
-      if (d.kind === 'plans') setPlans(true)
+      if (d.kind === 'plans') openOn(d.intent ?? null)
       else if (d.kind === 'topup') setTopUp({ then: null, nested: false, credits: d.credits })
       else if (d.kind === 'billing') setBilling(true)
       else if (d.kind === 'seats') setSeats({ nested: !!d.nested })
@@ -46,7 +52,7 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
     }
     window.addEventListener(CREDITS_EVENT, on)
     return () => window.removeEventListener(CREDITS_EVENT, on)
-  }, [])
+  }, [openOn])
 
   /* the one-time tip after a member's first charge (E-17) */
   useEffect(() => {
@@ -65,7 +71,8 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
   if (!chrome || !live) return null
   return (
     <>
-      <PlansDialog open={plans} onClose={() => setPlans(false)} chrome={chrome} summary={live} onTalk={() => setTalk(true)} />
+      <Suspense fallback={null}><PlanIntentLanding onIntent={openOn} /></Suspense>
+      <PlansDialog open={plans} onClose={() => setPlans(false)} chrome={chrome} summary={live} onTalk={() => setTalk(true)} initial={intent} />
       <TalkToUsDialog open={talk} onClose={() => setTalk(false)} summary={live} nested={plans} />
       <ManageBillingDialog open={billing} onClose={() => setBilling(false)} summary={live} />
       <SeatsDialog open={!!seats} nested={seats?.nested ?? false} onClose={() => setSeats(null)} summary={live} />
@@ -76,4 +83,23 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
       <TopUpDialog open={!!topUp} onClose={() => setTopUp(null)} chrome={chrome} then={topUp?.then ?? null} nested={topUp?.nested ?? false} credits={topUp?.credits} />
     </>
   )
+}
+
+/**
+ * (S46D — D4, her "fix everything" 2026-10-19; finding D4) An address that carries a plan picked before — the website's Pricing through sign-up
+ * (`?plan=…&period=…`), 1.0's `/upgrade?plan=` landing on Plan & billing — opens Plans on it once, on whichever studio page it lands, and the
+ * address is tidied (the plan keys out, the rest kept). Free carries none.
+ */
+function PlanIntentLanding({ onIntent }: { onIntent: (i: PlanIntent) => void }) {
+  const params = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+  const intent = readPlanIntent(params)
+  const key = intent ? `${pathname}?${params.toString()}` : null
+  useEffect(() => {
+    if (!intent || !key) return
+    onIntent(intent)
+    router.replace(withoutPlanIntent(pathname, params.toString()), { scroll: false })
+  }, [key])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
+  return null
 }

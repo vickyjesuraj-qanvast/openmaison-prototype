@@ -36,7 +36,9 @@ import { contractIdForToken, newSignToken, windowFrom } from '@/lib/contracts/li
 import { notStartedWords, startedWords, wonOnSigning, type WonOnSigning } from '@/lib/leads/won-on-signing'   // (S44R, C7)
 import { depositOptions } from '@/lib/contracts/deposit'
 import { depositWhy } from '@/lib/contracts/deposit-model'
-import { keepContractPdf } from '@/lib/contracts/files'
+import { contractPdfFromFile, keepContractPdf } from '@/lib/contracts/files'
+import { FILES_READ_RULE } from '@/lib/leads/file-model'
+import { isAccounting } from '@/lib/settings/roles'   // (S46D — D2)
 import { checkPickedPdf, pdfNameOf, type PickedPdf } from '@/lib/contracts/pdf'
 import { canOpenLead } from '@/lib/leads/visibility'
 import { contractTemplateFiles, leadEvents } from '@/lib/db/schema'
@@ -46,7 +48,7 @@ import { isStandInProvider, signInProvider } from '@/lib/auth/provider'   // (S4
 import { takeTry } from '@/lib/auth/limit'
 import { visitorTry } from '@/lib/auth/visitor'
 import { deskRefusal, keepOffDesk } from '@/lib/quotes/desk'   // (S44Z) the editors' role rule on the server
-import { orThrow, type Refusal } from '@/lib/company/template-rules'
+import { orThrow, refuse, type Refusal } from '@/lib/company/template-rules'
 
 /* Contracts (REG-534): the editor's, the signing page's and the tab's new writes. Every action revalidates the lead's pages,
    the studio list and the editor's own routes. */
@@ -97,7 +99,10 @@ export type CreateContractInput = {
   fromQuoteId?: string | null
   /** Import from File: an uploaded PDF, no editable body. `signed` marks it Signed with the file as the signed copy. (pending modules S03)
    *  `file` is the PDF itself, kept in the lead's Files › Contract & VOs — inside this one object, as every long string travels (F205). */
-  upload?: { fileName: string; signed: boolean; title?: string; file?: PickedPdf | null } | null
+  upload?: { fileName: string; signed: boolean; title?: string; file?: PickedPdf | null
+    /** (S46D — D2) Files › ⋮ › Send for signature: one of the lead's own PDFs, by id — read here, never uploaded again
+        (lib/contracts/files.ts `contractPdfFromFile`) */
+    fromFileId?: string | null } | null
   /** (pending modules S03) A standard document added to a signing (Send together): it goes with the agreement and signs no quote itself. */
   standard?: boolean
 }
@@ -120,6 +125,12 @@ export async function createContractDoc(input: CreateContractInput): Promise<str
       if (t.kind === 'pdf') { const [f] = await db.select().from(contractTemplateFiles).where(eq(contractTemplateFiles.templateId, t.id)); if (!f) throw new Error('The PDF isn’t in the library any more'); pdfTemplate = { name: pdfNameOf(t.fileName ?? t.title), data: f.data, thumb: f.thumb }; body = null; gates = { ...gates, requiresScroll: false } } }
   }
   if (input.upload) gates = { ...gates, requiresScroll: false }
+  const fromFile = input.upload?.fromFileId && !input.upload.file ? input.upload.fromFileId : null
+  if (fromFile) {   // (S46D — D2) a file of the lead's Files: the lead must be one this member opens; Accounting reads Files only (S06)
+    const viewer = await fetchViewer()
+    if (isAccounting(viewer.role)) return refuse(FILES_READ_RULE)
+    if (!(await canOpenLead(viewer, lead.id))) return refuse('This lead isn’t one you can open')
+  }
   if (input.upload?.file) { const why = checkPickedPdf(input.upload.file, dataUrlSize); if (why) throw new Error(why) }
   /* (REG-632, parity Q-08 · Q-10) A contract names its quote from the start — the one it was raised from, else the lead's Signed quote,
      else its latest — and is issued by that quote's entity. Stored, so it never reads another quote in its place. */
@@ -129,9 +140,12 @@ export async function createContractDoc(input: CreateContractInput): Promise<str
   const signed = !!input.upload?.signed
   /* (pending modules S03) the PDF itself, in the lead's Files › Contract & VOs — the import's, or the library's copy */
   const picked: PickedPdf | null = input.upload?.file ?? (pdfTemplate ? { name: pdfTemplate.name, data: pdfTemplate.data, thumb: pdfTemplate.thumb } : null)
-  const fileId = picked ? await keepContractPdf(db, lead.id, picked, now) : null
+  /* (S46D — D2) the lead's own PDF: kept where it is when it sits in Files › Contract & VOs, else a copy kept there; a refusal says its rule */
+  const own = fromFile ? await contractPdfFromFile(lead.id, fromFile, now, stampBy) : null
+  if (own && 'error' in own) return refuse(own.error)
+  const fileId = own ? own.fileId : picked ? await keepContractPdf(db, lead.id, picked, now) : null
   if (fileId && typeof fileId !== 'string') throw new Error(fileId.error)
-  const fileName = input.upload ? (picked ? pdfNameOf(picked.name) : input.upload.fileName) : pdfTemplate ? pdfTemplate.name : null
+  const fileName = own ? own.name : input.upload ? (picked ? pdfNameOf(picked.name) : input.upload.fileName) : pdfTemplate ? pdfTemplate.name : null
   await db.insert(contracts).values({
     id, leadId: lead.id, title: await nextTitle(lead.id, title), status: signed ? 'Signed' : 'Draft', createdAt: now, updatedAt: now,
     body, recipientName: lead.name, recipientPhone: digits(lead.phone), contractDate: now, templateId, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null,

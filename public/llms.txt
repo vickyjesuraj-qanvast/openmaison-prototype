@@ -37,6 +37,7 @@ Most interior design software is presentation-first and stops at mood boards and
 
 - Home: https://openmaison.ai/site
 - Platform overview: https://openmaison.ai/site/platform
+- Pricing: https://openmaison.ai/site/pricing
 - Story (about + Qanvast lineage): https://openmaison.ai/site/story
 - Trust & Security: https://openmaison.ai/site/trust
 - Blog: https://openmaison.ai/site/blog
@@ -46,7 +47,7 @@ Most interior design software is presentation-first and stops at mood boards and
 
 ## Trust & security
 
-Data is encrypted in transit and at rest. Studios own their data and can export it at any time. Access is role-based per team member. Pricing is not public yet (pre-launch); access is by early-access request.
+Data is encrypted in transit and at rest. Studios own their data and can export it at any time. Access is role-based per team member. Pricing is public (https://openmaison.ai/site/pricing): a Free plan with no card needed, Pro (Freelance for one person, Studio for a team) and Max, priced per seat with our team. AI work runs on AI credits, with a published price for every AI action; everything else is never counted.
 
 ## Contact
 

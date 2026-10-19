@@ -227,6 +227,9 @@ export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; t
 /** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. (fix-E, E-01 · E-09) Each with the project that keeps
  *  it from being deleted forever — live, or in Deleted Projects — so Delete Forever and Empty Trash count what they will really remove. */
 export async function fetchDeletedLeads(): Promise<DeletedLead[]> {
+  /* (pending modules S46C · R1) the sheet's "permanently removed after 30 days", kept before it is read — the sweep's job, run here too (no
+     scheduler in the prototype); a lead a project keeps stays, as Delete Forever leaves it. A failed purge never takes the listing down. */
+  await import('@/lib/leads/purge').then((m) => m.purgeExpiredLeads()).catch((e: unknown) => { console.error('[leads] the 30-day purge could not run —', e instanceof Error ? e.message : e) })
   const [rows, projs] = await Promise.all([
     db.select().from(leads).where(and(isNotNull(leads.deletedAt), eq(leads.direct, false))).orderBy(desc(leads.deletedAt)),   // (REG-911)
     db.select({ id: projects.id, number: projects.number, leadId: projects.leadId, deletedAt: projects.deletedAt }).from(projects),

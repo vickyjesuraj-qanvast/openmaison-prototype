@@ -23,6 +23,7 @@ import { CHANNELS, EVENTS } from '@/lib/notifications/model'
 import { DOCS, TICKET_DOC } from '@/lib/settings/document-numbers'
 import { ACCOUNTING, MARKETING, opensPath } from '@/lib/settings/roles'
 import styles from './settings.module.css'
+import { YOURS_LINE } from './module-head'   // (pending modules S46C · M2)
 import choice from '@/components/om/choice-card.module.css'
 import updateReview from '@/components/projects/updates/update-review-setting.module.css'
 import own from './studio-settings.module.css'   // (parity P-38) Who may do what's group bands
@@ -136,6 +137,8 @@ function ModuleHeadGhost({ head, links, readOnly }: { head: Head; links: readonl
           (ModuleHead `readOnly`) — the ghost drew none, so a Designer's page moved down on reveal */}
       {readOnly ? <p className={note.note}><Bone w={20} h={20} r={4} /><Words>Only Owners and Admins change these.</Words></p> : null}
       {links.length ? <div className={styles.moduleLinks}><Words className={styles.settingHelp}>Kept in Company:</Words>{links.map((l) => <GhostTextButton key={l.label} icon label={l.label} />)}</div> : null}
+      {/* (pending modules S46C · M2) the line every module draws for every role: where a member's own settings are */}
+      <div className={styles.moduleLinks}><Words className={styles.settingHelp}>{YOURS_LINE.words}</Words><GhostTextButton icon label={YOURS_LINE.label} /></div>
     </div>
   )
   const pointers = (head.pointers ?? []).map((t) => <Words key={said(t)} className={styles.settingHelp}>{said(t)}</Words>)

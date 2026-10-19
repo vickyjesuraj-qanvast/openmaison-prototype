@@ -6902,12 +6902,39 @@ async function main() {
     console.log(`  ${marked} vendor(s) marked as working on site · ${made} place(s) on projects${made || marked ? '' : ' — already in step'}`)
   }
 
+  /* ── R176 · Deleted Leads' demo leads sit inside its 30 days (pending modules S46C · R1 — her "fix everything" 2026-10-19, findability L-1) ──
+     Deleted Leads now keeps the promise its words make — a lead deleted more than 30 days ago is removed for good (lib/leads/purge.ts
+     `purgeExpiredLeads`, run whenever the sheet is read and by the daily sweep). The demo's deleted leads were deleted 46–57 days before the demo
+     day, so the sheet would have emptied on its first read. Each keeps its story and its order — Jason Lim (Not a real lead), then Daniel Ong
+     (Duplicate), then the six test leads deleted together — now 25, 19 and 14 days before the day it runs; a restore moves every moment with
+     the demo day (lib/db/demo-day.ts), so they stay inside the 30 days. Only a deleted lead no project keeps and older than 28 days moves (any
+     other: 20 days), never before it was made; `updated_at` follows where it was the deletion's moment. Idempotent: a second run finds none. */
+  console.log('\nR176 deleted demo leads inside Deleted Leads’ 30 days')
+  {
+    const DAY_S = 86_400, nowS = Math.floor(Date.now() / 1000)
+    const AGO: Record<string, number> = {
+      '793719a3-2863-4daa-ac02-feb4358d7a01': 25,   // Jason Lim — Not a real lead
+      'de7dd8d9-3485-416c-bc30-24e8ad0376e0': 19,   // Daniel Ong — Duplicate
+      ...Object.fromEntries(['b4e86bf8-9eba-4fa3-bbef-d8c3ffa8b29f', 'cdd17b82-c0ad-457a-aee2-8f9a3158f89d', '75b22b2c-ee2e-454b-b96c-a9e888cc17a1',
+        '9c4e9136-7c42-4bad-9ce0-fa158605d2f1', 'c37196a9-9afa-4d5d-99ab-dffab3a3b173', 'e27ce3b9-d4f6-4731-98ad-e79f4f2dc12e'].map((id) => [id, 14])),   // the six test leads, one delete
+    }
+    const stale = rows<{ id: string; created_at: number }>(await client.execute({ sql: `SELECT id, created_at FROM leads WHERE deleted_at IS NOT NULL AND direct = 0 AND deleted_at < ? AND id NOT IN (SELECT lead_id FROM projects)`, args: [nowS - 28 * DAY_S] }))
+    for (const l of stale) {
+      const at = Math.max(nowS - (AGO[l.id] ?? 20) * DAY_S, Number(l.created_at) + 3600)
+      await client.execute({ sql: `UPDATE leads SET updated_at = CASE WHEN updated_at = deleted_at THEN ? ELSE updated_at END, deleted_at = ? WHERE id = ?`, args: [at, at, l.id] })
+    }
+    console.log(`  ${stale.length ? `${stale.length} deleted lead(s) brought inside the 30 days` : 'every deleted lead inside the 30 days'}`)
+  }
+
   /* (pending modules S43C, R162) the labels each sample room has now — a version on it lists only those */
   const SAMPLE_LABEL_CHECK = SAMPLE_ROOMS.map((r) => `SELECT j.id FROM render_jobs j JOIN project_rooms pr ON pr.id = j.room_id, json_each(j.variants_json) v, json_each(json_extract(v.value, '$.applied.surfaces')) s WHERE pr.sample_key = '${r.key}' AND json_extract(s.value, '$.id') LIKE '${r.key}-s%' AND json_extract(s.value, '$.label') NOT IN (${r.surfaces.map((x) => `'${x.label.replace(/'/g, "''")}'`).join(', ')})`).join(' UNION ALL ')
 
   /* (S44O — C3, R163) a quote this run seeded with its client since R163 ran keeps the GST its amount was worked out by */
   { const late = await stampSentGst(); if (late.line + late.rate) note(`R163 again: ${late.line + late.rate} quote(s) seeded since stamped`) }
   const checks: [string, string][] = [
+    /* (pending modules S46C · R1, R176) Deleted Leads keeps its 30 days — nothing it lists is past them, unless a project keeps it */
+    ['deleted lead past Deleted Leads’ 30 days that no project keeps (S46C, R176)', `SELECT name FROM leads WHERE deleted_at IS NOT NULL AND direct = 0 AND deleted_at < strftime('%s','now') - 30 * 86400 AND id NOT IN (SELECT lead_id FROM projects)`],
+    ['deleted lead deleted before it was made (S46C, R176)', `SELECT name FROM leads WHERE deleted_at IS NOT NULL AND deleted_at < created_at`],
     /* (S45B · H-UHD-2, R148) contractors on site keep their rules */
     ['contractor with no trade, or sites at once out of 1–20 (S45B, R148)', `SELECT name FROM vendors WHERE is_contractor = 1 AND (trades_json IS NULL OR json_valid(trades_json) = 0 OR json_array_length(trades_json) = 0 OR crew_capacity < 1 OR crew_capacity > 20)`],
     ['crew row on a missing vendor, or on a milestone of another project (S45B, R148)', `SELECT c.id FROM project_contractors c LEFT JOIN vendors v ON v.id = c.vendor_id LEFT JOIN project_milestones m ON m.id = c.milestone_id WHERE v.id IS NULL OR (c.milestone_id IS NOT NULL AND m.id IS NOT NULL AND m.project_id <> c.project_id)`],

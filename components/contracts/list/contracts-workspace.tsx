@@ -32,7 +32,6 @@ import { ArchivedContractsSheet } from '@/components/contracts/archived-contract
 import { createContractDoc, deleteContractsForever, emptyContractTrash, renewSigningLink, reopenSigningLink, restoreContracts, sendBundle, shareContractLink, stopSigningLink } from '@/app/contracts/actions'
 import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into the caller's own failure line
 import { useOpenSignedCopy } from '@/components/contracts/use-signed-copy'
-import type { PickedPdf } from '@/lib/contracts/pdf'
 import { canDeleteContract, CONTRACT_DELETE_RULE, contractsDeletedLine, unsignBlock } from '@/lib/contracts/policy'
 import { bundleBlockLine, quoteSendBlock, SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
 import { MarkSignedDialog, SendContractDialog } from '@/components/contracts/editor/dialogs'
@@ -40,13 +39,13 @@ import { markContractSigned } from '@/app/contracts/actions'
 import { UnsignDialog } from '@/components/contracts/unsign-dialog'
 import { fetchContractTemplateOptionsAction, fetchDeletedContractsAction, fetchStandardDocsAction } from '@/app/contracts/read-actions'
 import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
-import { ImportContractDialog } from '@/components/contracts/import-contract-dialog'
+import { ImportContractDialog, type ImportPick } from '@/components/contracts/import-contract-dialog'
 import { DeletedContractsSheet } from '@/components/contracts/deleted-contracts-sheet'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from '@/components/quotes/list/quotes-workspace.module.css'
 
-type Pending = { kind: 'blank' } | { kind: 'template'; templateId: string | null } | { kind: 'import'; title: string; fileName: string; signed: boolean; /** (pending modules S03) the PDF itself */ file: PickedPdf }
+type Pending = { kind: 'blank' } | { kind: 'template'; templateId: string | null } | ({ kind: 'import' } & ImportPick)   /* (pending modules S03) the PDF itself — (S46D) or a file of the lead's Files */
 
 /**
  * Tools › Contracts (REG-534; the quotes list's twin, REG-422): every live contract in the studio — the Contracts tab's
@@ -121,7 +120,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
     if (creating) return
     setCreating(true)
     try {
-      const id = await orThrow(createContractDoc(p.kind === 'blank' ? { leadId } : p.kind === 'template' ? { leadId, templateId: p.templateId } : { leadId, upload: { fileName: p.fileName, signed: p.signed, title: p.title, file: p.file } }))
+      const id = await orThrow(createContractDoc(p.kind === 'blank' ? { leadId } : p.kind === 'template' ? { leadId, templateId: p.templateId } : { leadId, upload: { fileName: p.fileName, signed: p.signed, title: p.title, file: p.file ?? null, fromFileId: p.fromFileId ?? null } }))
       snackbar({ message: p.kind === 'import' ? (p.signed ? 'Signed contract imported' : 'Contract imported') : 'Contract created' })
       rememberContractPdf(id, p.kind === 'import')   // (S42 B-17)
       openEditor(id)

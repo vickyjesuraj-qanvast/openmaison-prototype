@@ -46,11 +46,13 @@ async function pick(page, combo, option) { await combo.click(); await page.getBy
     await leave().waitFor()
     ok('S2 a bell notice asks too (a navigation in script)', page.url().endsWith('/company/profile'))
     await leave().getByRole('button', { name: 'Keep editing' }).click(); await leave().waitFor({ state: 'hidden' })
-    await page.getByRole('link', { name: 'Leads', exact: true }).first().click()   // the rail
+    /* (pending modules S46C · H2, a deliberate change of this rule) the rail's Leads counts the new leads nobody has opened — "Leads (2 new)",
+       landing on the listing's Unseen scope while it does — so the item is found by its key, and the listing by its path */
+    await page.locator('nav[aria-label="Workspace"] a[data-kb="go.leads"]').first().click()   // the rail
     await leave().waitFor()
     ok('S2 the rail asks too', page.url().endsWith('/company/profile'))
     await leave().getByRole('button', { name: 'Discard' }).click()
-    await page.waitForURL(/\/leads$/)
+    await page.waitForURL(/\/leads(\?|$)/)
     ok('S2 Discard goes on without saving', !sql(`select value from settings where key='brand'`).includes('OCBC Probe Bank'))
     await page.goto(`${BASE}/company/profile`); await page.getByTestId('profile').waitFor(); await ready(page)
     await page.getByTestId('entity').first().getByLabel('Bank').fill('UOB Probe Bank')

@@ -23,10 +23,13 @@ export const ScopePill = forwardRef<HTMLButtonElement, {
   menu?: boolean
   /** What the pill says where the bar is narrow (≤1024): "All" for "Status: All", "1" for "1 awaiting approval". */
   short?: string
-}>(function ScopePill({ label, onClick, open = false, scoped = false, tone = 'default', selected = false, icon, menu = true, short }, ref) {
+  /** (pending modules S46C · H4) Say only `short` at any width — the bar that holds it measured that its full words don't fit (the rail's
+      Tasks page with four to-do chips beside an expanded rail). */
+  compact?: boolean
+}>(function ScopePill({ label, onClick, open = false, scoped = false, tone = 'default', selected = false, icon, menu = true, short, compact = false }, ref) {
   return (
     <button ref={ref} type="button" className={styles.pill} onClick={onClick} data-tone={tone === 'attention' ? 'attention' : undefined}
-            data-open={open || undefined} data-selected={selected || undefined} data-short={short !== undefined || undefined} aria-label={short !== undefined ? label : undefined}
+            data-open={open || undefined} data-selected={selected || undefined} data-short={short !== undefined || undefined} data-compact={(compact && short !== undefined) || undefined} aria-label={short !== undefined ? label : undefined}
             aria-haspopup={menu ? 'menu' : undefined} aria-expanded={menu ? open : undefined} aria-pressed={menu ? undefined : selected}>
       {icon ? <Icon name={icon} size={18} weight={300} /> : null}
       <span className={styles.label}>{label}</span>

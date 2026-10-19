@@ -102,7 +102,7 @@ const safeId = (v: unknown): string | null => (typeof v === 'string' && v.length
 /** `/escalations/<ticket>` — 1.0 named a ticket by its number (`T-2026-…`, kept as 2.0's `number` by a port), 2.0's own links by its id. */
 export async function oldTicketTarget(ref: string): Promise<string> {
   const key = safeId(ref)
-  const home = '/projects/tickets'
+  const home = '/tickets'   // (S46 — REG-2524)
   if (!key) return home
   const viewer = await fetchViewer()
   if (await refusesWorkspace(viewer)) return home   // Accounting: the page answers with the house gate

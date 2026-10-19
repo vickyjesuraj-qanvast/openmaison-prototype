@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams, usePathname } from 'next/navigation'
 import { QuoteTasksDialog } from '@/components/projects/schedule/suggest-tasks-dialog'   // (parity map, TD-022) P-E's one entry
 import { readQuoteTaskSuggestions } from '@/app/projects/schedule-actions'
@@ -127,13 +127,35 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
   const [scopeOpen, setScopeOpen] = useState(false)
   const sheet = useSheetLayout()
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
+  /* (pending modules S46C · H4) Four to-do chips (Upcoming joined Overdue · Due today · Unassigned) don't always fit beside the scope, the Leads ·
+     Projects switch and the search — an expanded rail, a 1280 screen: then every chip says only its glyph and count (its words stay its name
+     and its tooltip), as they do on a tablet, and the full words come back once the row has room for them. Measured, never guessed. */
+  const wrapRef = useRef<HTMLSpanElement>(null)
+  const [compact, setCompact] = useState(false)
+  const compactRef = useRef(false)
+  const needRef = useRef(0)
+  const todoKey = (todos ?? []).map((t) => t.label).join('|')
+  useLayoutEffect(() => {
+    const el = wrapRef.current
+    if (!el || !todoKey) return
+    const fit = () => {
+      if (!compactRef.current) {
+        if (el.scrollWidth > el.clientWidth + 1) { needRef.current = el.scrollWidth; compactRef.current = true; setCompact(true) }
+      } else if (el.clientWidth >= needRef.current) { compactRef.current = false; setCompact(false) }
+    }
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    const chips = el.querySelector('[data-testid="task-todos"]')
+    if (chips) ro.observe(chips)   // a count that grows, or the words coming back, re-measures too
+    return () => ro.disconnect()
+  }, [todoKey])
 
   return (
     <div className={styles.bar}>
       {scope && !bare ? (
         /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count.
            (REG-729) The house scope pill (components/om/scope-pill), as the listing's: the applied dot off "All Tasks" (REG-295), the 4% hover. */
-        <span className={styles.scopeWrap}>
+        <span className={styles.scopeWrap} ref={wrapRef}>
           <ScopePill label={`${TASK_SCOPE_LABEL[scope.value]} (${scope.count})`} open={scopeOpen} scoped={scope.value !== 'all'} onClick={() => setScopeOpen((o) => !o)} />
           <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" sheetTitle="Show">
             {(Object.keys(TASK_SCOPE_LABEL) as TaskScope[]).map((k) => (
@@ -155,7 +177,9 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
           {todos?.length ? (
             <span className={styles.todos} data-testid="task-todos">
               {todos.map((t) => (
-                <ScopePill key={t.key} tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} selected={t.selected} onClick={t.onClick} />
+                <Tooltip key={t.key} label={t.label} disabled={!compact}>
+                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} compact={compact} selected={t.selected} onClick={t.onClick} />
+                </Tooltip>
               ))}
             </span>
           ) : null}

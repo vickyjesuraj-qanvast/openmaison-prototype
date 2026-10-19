@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_SECURE, PATH_HEADER, REMEMBER_DAYS, SEEN_COOKIE, SEEN_DAYS, SESSION_COOKIE, SIGN_IN_PATH, SIGN_UP_PATH, STUDIO_VISIT_COOKIE, cookieState, isPublicPath, safeStudioNext, signInHref } from '@/lib/auth/paths'
-import { oldQueryTarget } from '@/lib/links/old-addresses'
+import { oldQueryTarget, oldToolTarget } from '@/lib/links/old-addresses'
 import { devPreviewsOpen } from '@/lib/services/dev-previews'
+import { trialEnabled } from '@/lib/visualizer/trial/policy'   // (S46A — D3) the website's AI Visualizer trial — on or off
+import { toolsTrialEnabled } from '@/lib/trial/policy'   // (S46A — D3) …and its Upload a quote · Quote X-Ray
+import { PLAN_INTENT_KEYS } from '@/lib/credits/plan-intent'   // (S46D — D4) the plan a visitor picked rides past the sign-up guard
 
 /*
  * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/proxy.ts) Before any studio route runs:
@@ -30,6 +33,14 @@ export function proxy(req: NextRequest) {
   const state = cookieState(raw, req.cookies.get(SEEN_COOKIE)?.value)
   const page = (req.method === 'GET' || req.method === 'HEAD') && !req.headers.has('next-action')
     && (req.headers.has('rsc') || (req.headers.get('accept') ?? '').includes('text/html'))
+  /* (S46A — the findability audit's D3) plg's three tools that a visitor with no account could open (its ads land there): a member goes to the
+     tool, a visitor — a browser that never signed in here, or signed out — to the website's free try of it while that is on (old-addresses.ts
+     `oldToolTarget`); the query rides along (a campaign's tags). A lapsed session is a member's: the tool's page asks them to sign in. */
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    const visitor = state.kind === 'none' || (state.kind === 'out' && state.reason === 'out')
+    const tool = oldToolTarget(pathname, visitor, { visualizer: trialEnabled(), tools: toolsTrialEnabled() })
+    if (tool) return NextResponse.redirect(new URL(`${tool}${search}`, req.url))
+  }
   if ((state.kind === 'out' || state.kind === 'none') && !isPublicPath(pathname, searchParams.has('t'))) {
     if (page) return NextResponse.redirect(new URL(signInHref({ next: `${pathname}${search}`, reason: state.kind === 'out' && state.reason === 'ended' ? 'ended' : null }), req.url))
     return NextResponse.json({ error: 'Sign in again to carry on' }, { status: 401, headers: { 'Cache-Control': 'no-store' } })
@@ -39,6 +50,13 @@ export function proxy(req: NextRequest) {
      and the Qanvast line's "session expired" asks to sign in again over a live session (1.0's escape). */
   /* (pending modules S31) …and so is signing up: someone signed in already has a studio — signing up is for a browser that signed out */
   if ((pathname === SIGN_IN_PATH || pathname === SIGN_UP_PATH) && page && (state.kind === 'standing' || state.kind === 'session') && !searchParams.has('reason')) {
+    /* (S46D — D4, joined at the landing) a plan picked on the website's Pricing rides along: someone signed in already has a studio, so the
+       plan opens Plans there (`/upgrade?plan=` honours it), never a bare home */
+    if (pathname === SIGN_UP_PATH && searchParams.has('plan')) {
+      const carry = new URLSearchParams()
+      for (const k of PLAN_INTENT_KEYS) { const v = searchParams.get(k); if (v) carry.set(k, v) }
+      return NextResponse.redirect(new URL(`/upgrade?${carry}`, req.url))
+    }
     return NextResponse.redirect(new URL(safeStudioNext(searchParams.get('next')) ?? '/', req.url))
   }
   const headers = new Headers(req.headers)

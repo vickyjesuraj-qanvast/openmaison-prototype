@@ -75,10 +75,10 @@ export async function issuesAnswer(c: Ctx): Promise<MaisonAnswer> {
   const week = rows.filter((t) => t.at.getTime() >= since)
   const open = rows.filter((t) => t.status === 'open' || t.status === 'in_progress')
   const list = week.length ? week : open
-  if (!list.length) return { title: 'No issue reported in the last 7 days', text: 'Nothing raised in the last 7 days, and none is open.', link: { label: 'Open Tickets', href: go(c, '/projects/tickets') } }
+  if (!list.length) return { title: 'No issue reported in the last 7 days', text: 'Nothing raised in the last 7 days, and none is open.', link: { label: 'Open Tickets', href: go(c, '/tickets') } }
   return { title: week.length ? `${plural(week.length, 'issue')} reported in the last 7 days` : `None in the last 7 days — ${plural(open.length, 'issue')} still open`, text: 'Open one to answer it or mark it resolved.',
     rows: list.slice(0, 10).map((t) => row(c, t.id, `${t.number} · ${t.subject}`, `${t.project} · ${t.kind === 'client' ? `by ${t.by}` : 'raised by the studio'} · ${displayDayMonth(t.at)} · ${t.status.replace('_', ' ')}`, `/projects/${t.projectId}/tickets?open=${encodeURIComponent(t.id)}`)),
-    link: { label: 'Open Tickets', href: go(c, '/projects/tickets') } }
+    link: { label: 'Open Tickets', href: go(c, '/tickets') } }
 }
 
 /** (Qanvast Ops › Studios) OpenMaison's side: which studios' clients use the portal — the prototype runs one studio. */

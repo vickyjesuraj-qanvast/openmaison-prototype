@@ -136,6 +136,8 @@ export const SIGN_UP = {
   studioLabel: { studio: 'Studio name', solo: 'Business name' },
   soloHelper: 'Your own name works too — change it any time on Company › Profile.',
   plan: 'You start on Free: 150 AI credits to try the tools, then 30 a month. Upgrade any time.',
+  /** (S46D — D4) a plan picked on the website's Pricing: where it went *(invented copy)* */
+  planPicked: (name: string) => `You start on Free, and Plans opens on ${name} as soon as your studio is ready.`,
   codeTitle: 'Enter your code',
   go: 'Start my studio',
   going: 'Starting your studio…',

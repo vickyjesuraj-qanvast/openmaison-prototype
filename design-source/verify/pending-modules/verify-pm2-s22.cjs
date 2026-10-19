@@ -217,7 +217,8 @@ const num = (s) => Number(String(s ?? '').replace(/[^0-9.]/g, '') || NaN)
     const tiles = await tileLabels(p)
     /* (pending modules S45A, a deliberate change of this rule) Reports › Leads' Sales and Response time join the Owner's tiles after Leads (H-UHD-3) */
     /* (pending modules S45B, a deliberate change of this rule) the Workload view's Contractors after Open projects for Owners, Admins and Managers (H-UHD-2) */
-    ok(JSON.stringify(tiles.map((x) => x.toUpperCase())) === JSON.stringify(['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH']), `an Owner’s tiles (${tiles.join(' · ')})`)
+    /* (pending modules S46B, a deliberate change of this rule) Projects › Tickets' figure after the projects' own, for whoever opens projects (M1) */
+    ok(JSON.stringify(tiles.map((x) => x.toUpperCase())) === JSON.stringify(['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH']), `an Owner’s tiles (${tiles.join(' · ')})`)
     ok(await p.locator('[data-testid="stands-tiles"] [data-grade]').count() === 0, 'no tile is red — red is only for what is late and ours')
     const tileValue = async (key) => (await p.getByTestId(`tile-${key}`).locator('[class*="__value"]').innerText()).trim()
     ok(num(await tileValue('leads')) === Number(sql(`select count(*) from leads where deleted_at is null and direct = 0`)), 'Leads is the listing’s own count')
@@ -260,10 +261,11 @@ const num = (s) => Number(String(s ?? '').replace(/[^0-9.]/g, '') || NaN)
     const ROLES = [
       /* (pending modules S45A, a deliberate change of this rule) Sales and Response time after Leads for Owners and Admins (H-UHD-3) */
       /* (pending modules S45B, a deliberate change of this rule) Contractors after Open projects for Owners, Admins and Managers (H-UHD-2) */
-      ['dane', ['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH'], true],
-      ['huimin', ['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH'], true],
-      ['james', ['LEADS', 'OPEN PROJECTS', 'CONTRACTORS', 'MESSAGES'], true],
-      ['germaine', ['MY LEADS', 'MY PROJECTS', 'MESSAGES'], false],
+      /* (pending modules S46B, a deliberate change of this rule) Tickets after the projects' own for every role that opens projects (M1) */
+      ['dane', ['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH'], true],
+      ['huimin', ['LEADS', 'SALES', 'RESPONSE TIME', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES', 'OWED TO YOU', 'PROFIT THIS MONTH'], true],
+      ['james', ['LEADS', 'OPEN PROJECTS', 'CONTRACTORS', 'TICKETS', 'MESSAGES'], true],
+      ['germaine', ['MY LEADS', 'MY PROJECTS', 'TICKETS', 'MESSAGES'], false],
       ['priya', ['OWED TO YOU', 'YOU OWE', 'PROFIT THIS MONTH'], false],
     ]
     const WIDTHS = [[1440, 1024, false], [1024, 900, false], [768, 1024, true], [390, 844, true], [320, 700, true]]
@@ -280,7 +282,7 @@ const num = (s) => Number(String(s ?? '').replace(/[^0-9.]/g, '') || NaN)
           if (who === 'james') ok(await q.getByTestId('tile-owed').count() === 0 && await needs(q).getByTestId('need-finance').count() === 0, 'james: a Manager sees no studio money')
           if (who === 'priya') {
             ok(await needs(q).getByTestId('need-finance').count() === 1 && await q.locator('[data-card="article"], [data-card="updates"], [data-card="team"]').count() === 0, 'priya: Accounting’s Needs you is Finance’s To do; no workspace cards')
-            ok(await rail(q).locator('a[href="/dashboard"]').count() === 1 && await rail(q).locator('a[href="/leads"]').count() === 0, 'priya: the Dashboard is on Accounting’s rail, the Leads pipeline is not')
+            ok(await rail(q).locator('a[href="/dashboard"]').count() === 1 && await rail(q).locator('a[href^="/leads"]').count() === 0, 'priya: the Dashboard is on Accounting’s rail, the Leads pipeline is not')   // (S46C — H2) Leads may carry ?scope=unseen while it counts
             await q.goto(BASE + '/', { waitUntil: 'networkidle' }); await settle(q, 1200)
             ok(/\/company\/finance/.test(new URL(q.url()).pathname), 'priya: `/` still lands Accounting on Finance › To do (FR-040)')
             await go(q, '/dashboard', 1500)

@@ -8,6 +8,7 @@ import { anchoredSurface } from '@/lib/motion'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { Tooltip } from '@/components/om/tooltip'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './tools-popover.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
@@ -17,17 +18,20 @@ import { useCredits } from '@/components/credits/credits-client'
 import { ProTag } from '@/components/credits/pro-tag'
 import type { ProFeature } from '@/lib/credits/features'
 
-/** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413). */
-export const TOOLS: { key: string; icon: string; label: string; href?: string; /** (pending modules S19) a Pro feature: the Pro tag on Free */ pro?: ProFeature }[] = [
-  { key: 'quotes', icon: 'request_quote', label: 'Quotes', href: '/quotes' },
-  { key: 'xray', icon: 'scan', label: 'Quote X-Ray', href: '/quote-x-ray', pro: 'quote_xray' },
-  { key: 'contracts', icon: 'contract', label: 'Contracts', href: '/contracts' },   /* (REG-534) Tools › Contracts — every contract in the studio */   /* (REG-529) */
-  { key: 'visualizer', icon: 'wand_shine', label: 'AI Visualizer', href: '/visualizer' },   /* (REG-673) live — every design, a lead's or personal */
-  { key: 'isometric', icon: 'view_in_ar', label: 'Floorplan to 3D Isometric', href: '/planner?view=iso&photo=1' },   /* (parity map, TD-098) live — the 3D Space Planner, every layout opening in its isometric view; (pending modules S28) it opens on Make a 3D picture, 1.0's tool's first step */
-  { key: 'insights', icon: 'trending_up', label: 'Market Insights', href: '/market-insights' },   /* (pending modules S25) live — the articles OpenMaison's editors publish */
-  { key: 'compliance', icon: 'verified_user', label: 'Compliance Navigator', href: '/compliance' },   /* (gaps build I, I-Q12) live — the studio's own steps and Singapore's rules by home */
-  { key: 'planner', icon: 'space_dashboard', label: '3D Space Planner', href: '/planner' },   /* (gaps build J) live — every layout, a project's or personal */
-  { key: 'copilot', icon: 'analytics', label: 'Meeting Copilot', href: '/meetings' },   /* (pending modules S23) live — every meeting in the studio, and the co-pilot in each */
+/** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413).
+    (S46A — the findability audit's T-1 · M4, her "fix everything" 2026-10-19) `help` — what a tile holds, said on hover and keyboard focus (the
+    house tooltip): the Quotes tile names Upload a quote, 1.0's Quote Digitizer, which no tile is called any more. *(invented copy — the lines
+    are ⌘K's own subs for the same pages)* */
+export const TOOLS: { key: string; icon: string; label: string; href?: string; /** (pending modules S19) a Pro feature: the Pro tag on Free */ pro?: ProFeature; help?: string }[] = [
+  { key: 'quotes', icon: 'request_quote', label: 'Quotes', href: '/quotes', help: 'Every quote in the studio — create one, or upload an existing quote' },
+  { key: 'xray', icon: 'scan', label: 'Quote X-Ray', href: '/quote-x-ray', pro: 'quote_xray', help: 'Compare a quote with another studio’s' },
+  { key: 'contracts', icon: 'contract', label: 'Contracts', href: '/contracts', help: 'Every contract in the studio' },   /* (REG-534) Tools › Contracts — every contract in the studio */   /* (REG-529) */
+  { key: 'visualizer', icon: 'wand_shine', label: 'AI Visualizer', href: '/visualizer', help: 'Every design — start from a room photo' },   /* (REG-673) live — every design, a lead's or personal */
+  { key: 'isometric', icon: 'view_in_ar', label: 'Floorplan to 3D Isometric', href: '/planner?view=iso&photo=1', help: 'A 3D picture from a floor-plan photo' },   /* (parity map, TD-098) live — the 3D Space Planner, every layout opening in its isometric view; (pending modules S28) it opens on Make a 3D picture, 1.0's tool's first step */
+  { key: 'insights', icon: 'trending_up', label: 'Market Insights', href: '/market-insights', help: 'Articles from OpenMaison’s editors' },   /* (pending modules S25) live — the articles OpenMaison's editors publish */
+  { key: 'compliance', icon: 'verified_user', label: 'Compliance Navigator', href: '/compliance', help: 'The studio’s registrations and Singapore’s rules by home' },   /* (gaps build I, I-Q12) live — the studio's own steps and Singapore's rules by home */
+  { key: 'planner', icon: 'space_dashboard', label: '3D Space Planner', href: '/planner', help: 'Every 3D layout' },   /* (gaps build J) live — every layout, a project's or personal */
+  { key: 'copilot', icon: 'analytics', label: 'Meeting Copilot', href: '/meetings', help: 'Every meeting, and the co-pilot in each' },   /* (pending modules S23) live — every meeting in the studio, and the co-pilot in each */
 ]
 
 /** (UX audit V7) A page that belongs to Tools — its list or anything opened from it — lights the rail's Tools item, as Company lights on /company. */
@@ -60,15 +64,18 @@ export function ToolsPopover({ open, anchor, onClose, counts = {} }: { open: boo
   const tiles = (
     <div className={styles.grid} role="group" aria-label="Tools">
       {TOOLS.map((t) => (
-        /* (UX audit V6) a tool that isn't built wears the Company panel's "Soon" tag and says so in its name; its press still answers "Coming soon" */
-        <button key={t.key} type="button" role="menuitem" className={styles.tile} onClick={() => pick(t)} data-on={on === t.key || undefined} aria-current={on === t.key ? 'page' : undefined}
-                aria-label={!t.href ? `${t.label}, coming soon` : isPro(t) ? `${t.label}, Pro feature` : counts[t.key] ? `${t.label} (${counts[t.key]} waiting for your approval)` : t.label} data-soon={t.href ? undefined : ''} data-pro={isPro(t) || undefined}>
-          {counts[t.key] ? <span className={styles.count} aria-hidden>{badgeCount(counts[t.key] ?? 0)}</span> : null}
-          <Icon name={t.icon} size={24} weight={300} fill={on === t.key} />
-          <span className={styles.label}>{t.label}</span>
-          {t.href ? null : <span className={styles.soon} aria-hidden>Soon</span>}
-          {isPro(t) ? <ProTag className={styles.pro} /> : null}
-        </button>
+        /* (UX audit V6) a tool that isn't built wears the Company panel's "Soon" tag and says so in its name; its press still answers "Coming soon"
+           (S46A) its help on hover and keyboard focus — a phone's sheet shows none (no hover), its ⌘K finds the same words */
+        <Tooltip key={t.key} label={t.help ?? t.label} disabled={!t.help || sheet}>
+          <button type="button" role="menuitem" className={styles.tile} onClick={() => pick(t)} data-on={on === t.key || undefined} aria-current={on === t.key ? 'page' : undefined}
+                  aria-label={!t.href ? `${t.label}, coming soon` : isPro(t) ? `${t.label}, Pro feature` : counts[t.key] ? `${t.label} (${counts[t.key]} waiting for your approval)` : t.label} data-soon={t.href ? undefined : ''} data-pro={isPro(t) || undefined}>
+            {counts[t.key] ? <span className={styles.count} aria-hidden>{badgeCount(counts[t.key] ?? 0)}</span> : null}
+            <Icon name={t.icon} size={24} weight={300} fill={on === t.key} />
+            <span className={styles.label}>{t.label}</span>
+            {t.href ? null : <span className={styles.soon} aria-hidden>Soon</span>}
+            {isPro(t) ? <ProTag className={styles.pro} /> : null}
+          </button>
+        </Tooltip>
       ))}
     </div>
   )

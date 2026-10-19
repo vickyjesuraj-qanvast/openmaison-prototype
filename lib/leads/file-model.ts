@@ -27,6 +27,10 @@ export type FileRow = LeadFile & {
 
 /* ── (S42 audit C-03, call C·4 as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review) A money
       paper stays with its record ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+/** (pending modules S06) Accounting reads a project's files — every change is the team's (app/leads/files-actions.ts); (S46D) said by the contract
+    import too, when a file of Files is asked to become a contract *(invented copy — S06)* */
+export const FILES_READ_RULE = 'Accounting reads a project’s files — its team uploads and changes them'
+
 /** What a money paper's entry is, from its page's address (`/projects/<id>/<kind>/<id>`) — the words its rule says. */
 export function paperKindOf(paper: string): string {
   const k = paper.split('?')[0]!.split('/')[3]

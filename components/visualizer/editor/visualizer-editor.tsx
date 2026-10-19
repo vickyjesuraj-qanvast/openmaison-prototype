@@ -1175,7 +1175,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
 
   return (
     <div ref={rootRef} className={styles.editor} data-card={(!!notesFor || pinCardOpen) || undefined} data-narrow={narrow || undefined} data-tray={(narrow && tray) || undefined} data-tray-leaving={(narrow && trayLeaving && !tray) || undefined} data-rail={hasRail || undefined} data-short={short || undefined} data-testid="viz-editor">
-      <EditorTopbar backLabel={backLabel} onBack={() => { void leave(back) }} title={title} chip={designKindLabel(data.design.kind, data.lead?.stage)} rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} roomId={roomId} onRoom={(id) => setRoomPick(id)}
+      <EditorTopbar backLabel={backLabel} onBack={() => { void leave(back) }} title={title} chip={designKindLabel(data.design.kind, data.lead?.stage, data.lead?.projectNumber)} rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} roomId={roomId} onRoom={(id) => setRoomPick(id)}
                     onRoomMenu={openRoomMenu} roomMenuOpen={menu?.kind === 'room'} onAddRoom={() => setAddRoomOpen(true)}
                     saving={!conflict && !ed.save.error && (ed.save.saving || ed.dirty)} savedLabel={savedLabel} savedTone={conflict || ed.save.error ? 'warn' : 'ok'}
                     canUndo={ed.canUndo(roomId)} canRedo={ed.canRedo(roomId)} onUndo={() => { if (roomId) ed.undo(roomId) }} onRedo={() => { if (roomId) ed.redo(roomId) }}

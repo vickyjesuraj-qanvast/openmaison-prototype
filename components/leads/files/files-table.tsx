@@ -14,6 +14,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { displayDate, fileSize } from '@/lib/format'
 import { fileGlyph, fileHeadWords, fileTypeLabel, isFileSortKey, isFolder, type FileHeadSort, type FileRow, type FileSortKey } from '@/lib/leads/file-model'
 import { FileMenu, FolderMenu, type FileAction, type FolderAction } from './files-grid'
+import type { SignRow } from '@/lib/contracts/file-signing'
 import styles from './files-table.module.css'
 
 export type FilesTableProps = {
@@ -36,6 +37,8 @@ export type FilesTableProps = {
   visualizeLabel?: (f: FileRow) => string | null
   /** (pending modules S28) whether a file reads as a floor plan — its menu offers Make a 3D picture */
   floorPlan?: (f: FileRow) => boolean
+  /** (S46D — D2) as FilesGrid's */
+  signRow?: (f: FileRow) => SignRow
   /** (pending modules S05) The head's own order (Title · Updated · File size), held by the tab. */
   sort?: FileHeadSort
   onSort?: (key: FileSortKey) => void
@@ -68,7 +71,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
  * hover pattern (.actions/.float) with the kebab only (build plan, logged). Title, Updated and File size sort (pending modules S05).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel, floorPlan, sort = null, onSort, readOnly = false }: FilesTableProps) {
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel, floorPlan, signRow, sort = null, onSort, readOnly = false }: FilesTableProps) {
   const [menuRow, setMenuRow] = useState<string | null>(null)
 
   const ids = rows.map((r) => r.id)
@@ -139,7 +142,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           onMenuToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))}
           onMenuClose={() => setMenuRow(null)}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
-          place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null} readOnly={readOnly} picture3d={!!floorPlan?.(row)}
+          place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null} readOnly={readOnly} picture3d={!!floorPlan?.(row)} sign={signRow?.(row) ?? null}
         />
       ))}
     </div>
@@ -151,7 +154,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose,
-  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize, readOnly, picture3d,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize, readOnly, picture3d, sign,
 }: {
   row: FileRow
   isSelected: boolean
@@ -168,6 +171,8 @@ function FileRowView({
   visualize: string | null
   readOnly: boolean
   picture3d: boolean
+  /** (S46D — D2) the row's Send for signature */
+  sign: SignRow
 }) {
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
@@ -257,7 +262,7 @@ function FileRowView({
           </span>
           {folder
             ? <FolderMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} locked={row.system ?? null} readOnly={readOnly} />
-            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} share={!!row.share} shown={!!row.shownToClientAt} readOnly={readOnly} picture3d={picture3d} paper={!!row.paper} />}
+            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} share={!!row.share} shown={!!row.shownToClientAt} readOnly={readOnly} picture3d={picture3d} paper={!!row.paper} sign={sign} />}
         </span>
         </span>
       </span>

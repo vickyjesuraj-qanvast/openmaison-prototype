@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { cache } from 'react'
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadFileRenders, leadFiles, leadReturns, leads, libraryFolders, members, priceBookItems, projectRooms, quoteItems, quotes, renderAnnotations, renderConsultationRequests, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom, type RenderJob, type RenderShareLink, type VisualizerDesign } from '@/lib/db/schema'
+import { leadFileRenders, leadFiles, leadReturns, leads, libraryFolders, members, priceBookItems, projectRooms, projects, quoteItems, quotes, renderAnnotations, renderConsultationRequests, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom, type RenderJob, type RenderShareLink, type VisualizerDesign } from '@/lib/db/schema'
 import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { fetchBrand } from '@/lib/templates/queries'
 import { folderChangeBlockFor, type Folder } from '@/lib/company/folder-libraries'
@@ -102,21 +102,28 @@ export type DesignCard = {
   createdAt: Date; updatedAt: Date; deletedAt: Date | null; createdBy: string; author: string | null; authorColor: string | null; mayChange: string | null
   /** (verify round 1, F131) who made the design — Deleted Designs' *Made by*; `author` is whoever made its newest version. */
   maker: string | null; makerColor: string | null
+  /** (pending modules S46B, M8) a lead's design whose lead is won into a live project — the Kind pill's Projects, "Project · P-…" */
+  projectId: string | null; projectName: string | null; projectNumber: string | null
 }
-export type VisualizerHome = { designs: DesignCard[]; deleted: DesignCard[]; folders: Folder[]; leads: { id: string; name: string; stage: string; propertyType: string | null; style: string | null; hasDesign: string | null; /** (pending modules S10) Maison AI's newest lead */ createdAt?: number }[]; viewer: { id: string; role: string }; now: number }
+/** (pending modules S46B, M8 — 1.0's start strip's From a project) the projects whose lead the viewer sees: New ▾ › For a project… opens the
+    project's lead's design, as the project's Design › Designs does (`openLeadDesign`). Running ones first, the newest number first. */
+export type VisualizerProject = { id: string; name: string; number: string; leadId: string; stage: string; hasDesign: string | null }
+export type VisualizerHome = { designs: DesignCard[]; deleted: DesignCard[]; folders: Folder[]; leads: { id: string; name: string; stage: string; propertyType: string | null; style: string | null; hasDesign: string | null; /** (pending modules S10) Maison AI's newest lead */ createdAt?: number }[]; projects: VisualizerProject[]; viewer: { id: string; role: string }; now: number }
 
 export async function fetchVisualizerHome(): Promise<VisualizerHome> {
   const viewer = await fetchViewer()
   const visible = await visibleLeadIds(viewer)
-  const [designs, rooms, jobs, team, leadRows, folderRows] = await Promise.all([
+  const [designs, rooms, jobs, team, leadRows, folderRows, projectRows] = await Promise.all([
     db.select().from(visualizerDesigns).orderBy(desc(visualizerDesigns.updatedAt)),
     db.select().from(projectRooms).where(isNull(projectRooms.deletedAt)).orderBy(asc(projectRooms.position), asc(projectRooms.createdAt)),
     db.select({ id: renderJobs.id, roomId: renderJobs.roomId, kind: renderJobs.kind, createdAt: renderJobs.createdAt, createdBy: renderJobs.createdBy, variantsJson: renderJobs.variantsJson }).from(renderJobs),
     db.select({ id: members.id, name: members.name, color: members.color }).from(members),
     db.select({ id: leads.id, name: leads.name, stage: leads.stage, propertyType: leads.propertyType, style: leads.style, createdAt: leads.createdAt }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
     db.select().from(libraryFolders).where(and(eq(libraryFolders.library, 'visualizer'), isNull(libraryFolders.deletedAt))),
+    db.select({ id: projects.id, name: projects.name, number: projects.number, leadId: projects.leadId, stage: projects.stage }).from(projects).where(isNull(projects.deletedAt)),   // (S46B, M8)
   ])
   const leadById = new Map(leadRows.map((l) => [l.id, l]))
+  const projectByLead = new Map(projectRows.map((p) => [p.leadId, p]))   // (S46B, M8) one live project per lead (projects.lead_id is unique)
   const byMember = new Map(team.map((m) => [m.id, m]))
   const card = (d: VisualizerDesign): DesignCard => {
     const rs = rooms.filter((r) => r.designId === d.id)
@@ -139,7 +146,8 @@ export async function fetchVisualizerHome(): Promise<VisualizerHome> {
     const maker = byMember.get(d.createdBy)
     return { id: d.id, kind: d.kind === 'lead' ? 'lead' : 'personal', name: lead?.name ?? d.name, leadId: d.leadId, leadName: lead?.name ?? null, leadStage: lead?.stage ?? null, folderId: d.kind === 'personal' ? d.folderId : null,
       rooms: rs.length, renders, covers, roomNames: rs.map((r) => r.name), createdAt: d.createdAt, updatedAt: new Date(latest), deletedAt: d.deletedAt, createdBy: d.createdBy, author: author?.name ?? null, authorColor: author?.color ?? null,
-      mayChange: designChangeBlock(viewer, d.createdBy, maker?.name, d.kind === 'lead'), maker: maker?.name ?? null, makerColor: maker?.color ?? null }
+      mayChange: designChangeBlock(viewer, d.createdBy, maker?.name, d.kind === 'lead'), maker: maker?.name ?? null, makerColor: maker?.color ?? null,
+      ...(() => { const pr = d.kind === 'lead' && d.leadId ? projectByLead.get(d.leadId) ?? null : null; return { projectId: pr?.id ?? null, projectName: pr?.name ?? null, projectNumber: pr?.number ?? null } })() }
   }
   /* a lead's design shows once it has a room (1.0 A B-01), and only to whoever may see the lead; (F115) a personal copy of a lead's design
      only to whoever may see the lead it came from */
@@ -151,6 +159,9 @@ export async function fetchVisualizerHome(): Promise<VisualizerHome> {
     deleted: cards.filter((c) => c.deletedAt),
     folders: folderRows.map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, library: 'visualizer' as const, createdAt: f.createdAt.getTime(), updatedAt: f.updatedAt.getTime(), createdBy: f.createdBy ?? null, mayChange: folderChangeBlockFor('visualizer', viewer, f.createdBy, f.createdBy ? byMember.get(f.createdBy)?.name : null) })),
     leads: leadRows.filter((l) => !visible || visible.has(l.id)).map((l) => ({ ...l, createdAt: l.createdAt.getTime(), hasDesign: byLead.get(l.id) ?? null })),
+    projects: projectRows.filter((p) => leadById.has(p.leadId) && (!visible || visible.has(p.leadId)))
+      .map((p) => ({ ...p, hasDesign: byLead.get(p.leadId) ?? null }))
+      .sort((a, b) => Number(a.stage === 'completed') - Number(b.stage === 'completed') || b.number.localeCompare(a.number, undefined, { numeric: true })),
     viewer: { id: viewer.id, role: viewer.role }, now: Date.now(),
   }
 }
@@ -190,7 +201,7 @@ export type VisualizerEditorData = {
     /** (wave E, files-9) the lead is in the leads' trash — the editor says so (`leadDeletedNote`) and greys Save to Files, Add to a quote…
         and Share with client (`LEAD_DELETED_ROW`); the actions refuse with the same words. */
     leadDeleted: boolean }
-  lead: { id: string; name: string; style: string | null; phone: string | null; stage: string; propertyType: string | null } | null
+  lead: { id: string; name: string; style: string | null; phone: string | null; stage: string; propertyType: string | null; /** (S46B, M8) its live project's number, a lead's design only */ projectNumber?: string | null } | null
   /** (verify round 1, critic §4) = `design.leadClosed`, where the editor reads it. */
   leadClosed: boolean
   /** (wave E, files-9) = `design.leadDeleted`. */
@@ -230,7 +241,8 @@ async function fetchVisualizerEditorUncached(designId: string): Promise<Visualiz
   const [rooms, team, lead, library, brand, book] = await Promise.all([
     db.select().from(projectRooms).where(and(eq(projectRooms.designId, d.id), isNull(projectRooms.deletedAt))).orderBy(asc(projectRooms.position), asc(projectRooms.createdAt)),
     db.select({ id: members.id, name: members.name, role: members.role }).from(members),
-    d.leadId ? db.select({ id: leads.id, name: leads.name, style: leads.style, phone: leads.phone, stage: leads.stage, propertyType: leads.propertyType, deletedAt: leads.deletedAt }).from(leads).where(eq(leads.id, d.leadId)).then((r) => r[0] ?? null) : Promise.resolve(null),
+    d.leadId ? db.select({ id: leads.id, name: leads.name, style: leads.style, phone: leads.phone, stage: leads.stage, propertyType: leads.propertyType, deletedAt: leads.deletedAt, projectNumber: projects.number }).from(leads)
+      .leftJoin(projects, and(eq(projects.leadId, leads.id), isNull(projects.deletedAt))).where(eq(leads.id, d.leadId)).then((r) => r[0] ?? null) : Promise.resolve(null),   // (S46B, M8) its live project's number — the chip's "Project · P-…"
     db.select().from(studioMaterials).where(and(isNull(studioMaterials.deletedAt), eq(studioMaterials.isActive, true))).orderBy(asc(studioMaterials.name)),
     fetchBrand(),
     d.leadId ? db.select({ id: priceBookItems.id, name: priceBookItems.name, unit: priceBookItems.unit }).from(priceBookItems).where(and(isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live'))) : Promise.resolve([]),
@@ -264,7 +276,7 @@ async function fetchVisualizerEditorUncached(designId: string): Promise<Visualiz
   return {
     design: { id: d.id, kind: d.kind === 'lead' ? 'lead' : 'personal', name: lead?.name ?? d.name, leadId: d.leadId, folderId: d.folderId, own: own.map((s) => ({ ...s, imageUrl: ownImage(d.id, s) })), createdBy: d.createdBy,
       mayChange: designChangeBlock(viewer, d.createdBy, team.find((m) => m.id === d.createdBy)?.name, d.kind === 'lead'), deletedAt: d.deletedAt?.getTime() ?? null, createdAt: d.createdAt.getTime(), updatedAt: d.updatedAt.getTime(), leadClosed: closed, leadDeleted, maker: team.find((m) => m.id === d.createdBy)?.name ?? null },
-    lead: lead ? { id: lead.id, name: lead.name, style: lead.style, phone: lead.phone, stage: lead.stage, propertyType: lead.propertyType } : null,
+    lead: lead ? { id: lead.id, name: lead.name, style: lead.style, phone: lead.phone, stage: lead.stage, propertyType: lead.propertyType, projectNumber: d.kind === 'lead' ? lead.projectNumber ?? null : null } : null,
     leadClosed: closed,
     leadDeleted,
     rooms: rooms.map((r) => ({ id: r.id, name: r.name, imageUrl: roomImage(r), sampleKey: r.sampleKey, sourceFileId: r.sourceFileId, detection: parseDetection(r.detectionJson, r), pending: readPending(parseJson<unknown>(r.stateJson, null)), position: r.position, updatedAt: r.updatedAt.getTime(), hasRenders: (versions[r.id] ?? []).some((v) => !v.deleted),

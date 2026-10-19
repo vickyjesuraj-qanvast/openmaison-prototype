@@ -370,7 +370,14 @@ const DESIGN = 'b46000d1-1638-4c7c-af20-bebbcc3b9744'   // Kevin Ng's design (R6
         await d.getByTestId('viz-running').waitFor({ timeout: 8000 }).catch(() => {})
         named = named || (await stop.count() === 1 && await d.getByTestId('viz-running').getByRole('button', { name: 'Cancel' }).count() === 0)
         pressed = await stop.click({ timeout: 3000 }).then(() => true, () => false)
-        if (!pressed) await settle(d, 2500)
+        if (!pressed) {
+          /* (S46 closing regression, 2026-10-19) a run that finished first used up its change, so Generate rests disabled: pick the style again
+             from the original before the second try */
+          await settle(d, 2500)
+          await d.getByTestId('viz-version').first().click(); await settle(d, 600)
+          await d.getByTestId('viz-mode-style').click(); await settle(d, 400)
+          await d.getByTestId('viz-style-card').filter({ hasText: 'Japandi' }).first().click(); await settle(d, 400)
+        }
       }
       ok(named, 'D-16 · the running card’s press is “Stop”')
       /* the result is read as it arrives — it stacks under the credits hint and leaves after a few seconds */

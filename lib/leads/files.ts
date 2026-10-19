@@ -11,6 +11,7 @@ import { hiddenMoneyFiles } from '@/lib/projects/money-visibility'
 import { rawAddress } from './file-store'
 import { canOpenLead, fetchViewer } from './visibility'
 import { isAccounting, opensWorkspace } from '@/lib/settings/roles'
+import { contractsKeeping } from '@/lib/contracts/files'   // (S46D — D2)
 
 /* Lead Details › Files (931-39056) — loaders for the tab and the viewer. */
 
@@ -33,6 +34,11 @@ export type LeadFilesData = {
   /** (S45C) the viewer opens the studio's tools — a picture's Open in AI Visualizer and a floor plan's Make a 3D picture are offered only then
       (Marketing and Accounting open neither; their actions refuse them) */
   tools: boolean
+  /** (S46D — D2) the viewer may send one of these PDFs for signature (Files › ⋮ › Send for signature → Import a contract): the contract editors'
+      rule — never Marketing (lib/quotes/desk.ts), never Accounting (Files read-only) */
+  signs: boolean
+  /** (S46D — D2) the live contract that keeps a file (its PDF or its signed copy), by file id → the contract's title: its row says so instead */
+  contracts: Record<string, string>
 }
 /** (fix-C, C-25) The lead's files on a published update (the client reads them on the portal) → that update's title. */
 async function publishedUpdateUses(leadId: string): Promise<Record<string, string>> {
@@ -113,7 +119,14 @@ export async function fetchLeadFiles(leadId: string): Promise<LeadFilesData> {
   const renders = byFile(await renderOrigins(rows.filter((f) => f.kind === 'image').map((f) => f.id)))
   const role = (await fetchViewer()).role
   return { files: rows.filter((f) => !f.deletedAt), trashed: rows.filter((f) => !!f.deletedAt), team, now: Date.now(), renders, lead: { name: lead?.name ?? '', phone: lead?.phone ?? null }, onUpdates: await publishedUpdateUses(leadId),
-    readOnly: isAccounting(role), tools: opensWorkspace(role) }
+    readOnly: isAccounting(role), tools: opensWorkspace(role), signs: opensWorkspace(role), contracts: await contractTitles(rows.filter((f) => !f.deletedAt && f.kind !== 'folder').map((f) => f.id)) }
+}
+
+/** (S46D — D2) The live contracts keeping these files, by file id → the contract's title (the first that keeps it). */
+async function contractTitles(fileIds: string[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {}
+  for (const k of await contractsKeeping(fileIds)) out[k.fileId] ??= k.title
+  return out
 }
 
 export type FileViewData = {
@@ -144,6 +157,10 @@ export type FileViewData = {
   readOnly: boolean
   /** (S45C) as `LeadFilesData.tools` */
   tools: boolean
+  /** (S46D — D2) as `LeadFilesData.signs` */
+  signs: boolean
+  /** (S46D — D2) the live contract that keeps this file, by its title — else null */
+  contract: string | null
 }
 
 async function fetchFileViewUncached(leadId: string, fileId: string): Promise<FileViewData | null> {
@@ -162,7 +179,7 @@ async function fetchFileViewUncached(leadId: string, fileId: string): Promise<Fi
   /* (fix-C, C-05 → gaps build E, item 1) the kept bytes of any file — /files/raw/<id> plays (ranges), opens and downloads them, for every lead */
   const bytes = file.bytes ? rawAddress(file.id) : null
   return { lead, file, folder, siblings, files: rows.filter((f) => !f.deletedAt), comments: cs.map((c) => ({ ...c, author: byMember.get(c.authorId) ?? null })), team, me, now: Date.now(), render: renders[file.id] ?? null, renders, bytes, onUpdate: (await publishedUpdateUses(leadId))[file.id] ?? null,
-    readOnly: isAccounting((await fetchViewer()).role), tools: opensWorkspace((await fetchViewer()).role) }
+    readOnly: isAccounting((await fetchViewer()).role), tools: opensWorkspace((await fetchViewer()).role), signs: opensWorkspace((await fetchViewer()).role), contract: (await contractTitles([file.id]))[file.id] ?? null }
 }
 
 /** Per-request memo (audit 2026-08-30): `generateMetadata` and the page both call this, which ran every query twice. */

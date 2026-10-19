@@ -690,3 +690,46 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   · n*). Fixed as REG-2477: the shell's seed `fin.contractors` (`lib/ghost-shapes.server.ts`) + `?show=contractors`, read by `finance-ghost.tsx`.
   Rebuilt: pm2-s17 130/130 · pm2-s45b 72/72. **A page that gains a chip, a tile or a band gains it in its ghost too** — and a chip that shows only
   while the records hold something needs a seed in `fetchFirstRunShapes`, keyed by the page's own rule.
+- **After S46A (lane A, 2026-10-19) — findability: search, old addresses, keys (REG-2478…2489):** ⌘K knows 1.0's names (words on every row +
+  three word maps for the Company / Templates / Settings rows; new rows Tickets · Lost leads · Deleted Leads · Completed projects · Deleted Projects ·
+  Complete handover · Choices · Usage + the 8 Settings cards REG-812 missed), single letters / "and" / "the" ignored, Finance pages win a tie
+  ("invoices" → Money in), Create rows Upload a quote (`/quotes?upload=1`, `CreateQuoteModal opensOn="upload"`) · New ticket
+  (`/projects/tickets?new=1`) · Start a meeting; the empty Quotes lists offer Upload a quote; Tools tiles carry a help tooltip; every plg / UHD
+  old address lands (each keeps its role gate), plg's personal `?section=` → Your profile's cards; plg's ad links land a signed-out visitor
+  on the trial (`proxy.ts`); G then I → Messages, G then E → Tickets (quiet aliases). Probe pm2-s46a 118/118 on main.
+- **After S46D (lane E, 2026-10-19) — file signing and Pricing (REG-2490…2502):** a PDF's ⋮ in Files (grid · list · phone sheet · viewer, lead and
+  project) → *Send for signature* opens Import a contract with that file (kept in Contract & VOs, never uploaded again) → the editor's Send
+  for digital signature; a picture's / document's row is refused with "Save it as a PDF first" (no PDF writer in the deps); Marketing and
+  Accounting refused, on the server too. `/sign/document/<token>` → `/sign/<token>` when a contract or set carries the token, else the
+  house notice. `/site/pricing` from the one price source (`plans.ts` + the schedule + `pricing-data.ts`), linked from the site's header,
+  footer, phone Platform sheet and "See pricing" on Home / the hub / every module page; a plan's button → `/sign-up?plan=&period=` →
+  Plans opens on it (`lib/credits/plan-intent.ts`, read by CreditsHost; the first-visit welcome waits); `/upgrade?plan=` the same; joined
+  at landing: a signed-in visitor's `/sign-up?plan=` → `/upgrade?…` (`proxy.ts`, `PLAN_INTENT_KEYS`). The shared plan comparison table no
+  longer claims limits 2.0 doesn't enforce (visible in the in-app Plans dialog too). Probe pm2-s46d 72/72 on main.
+- **After S46C (lane C, 2026-10-19) — Settings, Tasks, the Leads count, Deleted Leads (REG-2503…2512):** every Settings module head ends
+  with "Your own details, signature and notifications:" + Your profile (`?from=`); `/tasks` says "n approvals wait for you on the Dashboard"
+  (`fetchDashboard`'s count, 0 = no line); the rail / dock Leads reads "n new" (unseen New leads the viewer sees → `/leads?scope=unseen`;
+  opening a lead anywhere clears it); District in the listing's search; the lead's email a mail link; Tasks' *Upcoming* chip (My Tasks ·
+  Unassigned); Deleted Leads' 30 days made true (`purgeExpiredLeads`, sweep job `deleted-leads` + on read, Delete Forever's rules) with
+  **R176** moving the demo's deleted leads inside the 30 days — run on the owner's local.db BEFORE the code landed so no first read could
+  purge them; `lib/port/archived-leads.ts` lands 1.0's archived leads in Lost ("Archived in 1.0"), map 02's row corrected. Probe pm2-s46c
+  103/103 on main.
+- **After S46B (lane B, 2026-10-19) — Tickets, the project's doors (REG-2513…2521):** Projects › Tickets has New ticket (header, or the empty
+  card) → pick the project → the project's own compose; `?new=1` opens the picker, `&project=` the form; Tickets stays in the Projects ⋮
+  (her REG-1425). A Dashboard *Tickets* tile (the ⋮ row's count, one shared count) → `/projects/tickets?from=/dashboard` for Owners, Admins,
+  Managers, Designers; Back names the Dashboard. The project ⋮: *Complete handover* before Delete (the Stage menu's own Completed row — same
+  sheet, same refusals; the Stage menu doesn't refuse a project on hold, so neither does the row) and *See it as {client}* beside Invite to
+  Portal. A client conversation's People and files: the client's number with Call (dials on touch; at a desk copies, REG-746) and Copy.
+  Meeting Copilot: an Insights door → Reports › Meetings (Owners, Admins). AI Visualizer: New ▾ *For a project…* and a Projects kind.
+  Ghosts match (Meetings' first-run chips seeded). Probe pm2-s46b 81/81 on main. Joined at landing: verify-pm-a's PDF due day (17 Oct)
+  read by its rule, not its date.
+- **S46's closing regression (2026-10-19):** harness 73 + package probes 108 on one main build, base anchored to 19 Oct.
+  - **Six probes were stale or racy, not the app:**
+    - pb-r4 read before Set category's save landed;
+    - folder-crumbs pressed "Choose a template", which reads "Change" since S44Q (R173); it also failed on 17 Oct, and S45's tally missed the
+      exit code, so **a tally now reads exit codes too**;
+    - pm2-s42c / pm2-s22 expected `/leads`, but the Leads count lands on `?scope=unseen`;
+    - pm2-s42d and pm2-s20 raced a restyle that finishes before Stop; the retry now re-picks the style.
+  - **One app fix:** REG-2523, `termsOf` reads "3-d" as "3d" (REG-1841 kept).
+  - Rebuilt and re-ran every touched probe: all green.
+  - **Lesson for the next builds:** a probe that waits on a snackbar must wait for the record too when an earlier same-worded snackbar can still be up.

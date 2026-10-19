@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import {
   contractTemplates, contracts, leadFiles, leadTasks, leads, libraryFolders, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates,
   quoteTextTemplates, quotes, studioMaterials, taskTemplates, visualizerDesigns, projects, marketplaceBanners, marketplaceBrands, marketInsights, members,
-  commissionRequests, vendors,
+  commissionRequests, vendors, projectTickets,
 } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { isAccounting, isMarketing, runsStudio, seesBooks } from '@/lib/settings/roles'
@@ -14,11 +14,15 @@ import { seesSiteUpdates, seesTeam } from '@/lib/dashboard/model'
 import { recentSiteUpdates } from '@/lib/dashboard/updates'
 import { myOpenTasks } from '@/lib/dashboard/queries'   // (S42 audit A-16)
 import { listingShape } from '@/lib/qanvast-listing/queries'   // (pending modules S37)
+import { ticketRaise } from '@/lib/projects/tickets'   // (pending modules S46B) Projects › Tickets' New ticket
+import { meetingRows } from '@/lib/meetings/queries'   // (pending modules S46B) Tools › Meeting Copilot's first screen
+import { standingOf } from '@/lib/meetings/model'
 import { qanvastAccountIsStandIn } from '@/lib/qanvast-account/service'   // (S42E, E-07)
 import { commissionAsksShape } from '@/lib/finance/sections'   // (S43D, F2-01)
 import { fetchLeadRows } from '@/lib/leads/queries'   // (S44Z) the lead header's seed
 import { fetchStageMovement } from '@/lib/settings/queries'
 import { headHasPrimary } from '@/lib/leads/stage-policy'
+import { railBadges } from '@/lib/leads/tasks'   // (pending modules S46C · M3) read once per request — the shell already asked for it
 
 /**
  * (UX audit build · REG-817) Which pages open on their FIRST RUN right now — told to the ghosts by the app shell, so even a browser's first
@@ -102,6 +106,10 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
     'tools.quotes': !quoteRows.some((q) => sees(q.leadId)),
     'tools.contracts': !contractRows.some((c) => sees(c.leadId)),
     tasks: !taskRows.some((t) => sees(t.leadId)),
+    /* (pending modules S46C · M3) the Tasks page's approvals line, for a browser's first visit: the approvals the rail already counts (the
+       Dashboard's Needs your OK rows for quotes, templates, the Price book, AI credits and Finance's To approve); a project's own OK asks are the
+       page's to add — the browser remembers what the page drew from then on */
+    'tasks.approvals': await railBadges().then((b) => ['tools', 'company:templates', 'company:price-book', 'company:plan', 'company:finance'].some((k) => (b[k] ?? 0) > 0)).catch(() => false),
     'lib.quote-templates': empty(qt, 'quotes'),
     'lib.contract-templates': empty(ct, 'contracts'),
     'lib.task-templates': empty(tt, 'tasks'),
@@ -126,6 +134,14 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
     'qanvast.standIn': qanvastAccountIsStandIn(),
     /* (S43D, F2-01 — S17's "left as data") Finance › Commission draws its asks for another rate under the tiles while one is open */
     ...(await commissionAsksSeed(viewer).catch(() => ({}))),
+    /* (pending modules S46B, M1) Projects › Tickets: its first run (no ticket on a project this member sees — the empty card) and its header's
+       New ticket (some project this member may raise one on) — the page's own rules (`fetchStudioTickets`, `ticketRaise`) */
+    'studio-tickets': !(await db.select({ leadId: projects.leadId }).from(projectTickets).innerJoin(projects, eq(projects.id, projectTickets.projectId))
+      .innerJoin(leads, eq(leads.id, projects.leadId)).where(and(isNull(projects.deletedAt), isNull(leads.deletedAt))).catch(() => [])).some((t) => sees(t.leadId)),
+    'tickets.new': !!(await ticketRaise(viewer).catch(() => null)),
+    /* (pending modules S46B) Tools › Meeting Copilot for a browser that hasn't seen it: its first run and the to-do chips it opens with (Briefs to
+       save · Notes to write up) — `fetchStudioMeetings`' rows and lead-meetings.tsx's counts, under the keys the page remembers (S42 C-19) */
+    ...(await studioMeetingsSeed(sees).catch(() => ({}))),
     /* (S45B · H-UHD-2) Finance › Vendors shows its *Contractors* chip while an active vendor works on site — the ghost draws the same four */
     'fin.contractors': await db.select({ n: sql<number>`count(*)` }).from(vendors)
       .where(and(eq(vendors.isContractor, true), eq(vendors.isActive, true), isNull(vendors.mergedInto)))
@@ -141,6 +157,14 @@ async function commissionAsksSeed(viewer: { id: string; role: string }): Promise
   const open = notInArray(commissionRequests.status, ['approved', 'declined', 'withdrawn'])   // `askRecord`: anything else reads as open
   const rows = await db.select({ n: sql<number>`count(*)` }).from(commissionRequests).where(runs ? open : and(open, eq(commissionRequests.memberId, viewer.id)))
   return { [commissionAsksShape(runs)]: Number(rows[0]?.n ?? 0) > 0 }
+}
+
+async function studioMeetingsSeed(sees: (leadId: string | null) => boolean): Promise<Record<string, boolean>> {
+  const ids = (await db.select({ id: leads.id }).from(leads).where(isNull(leads.deletedAt))).map((l) => l.id).filter((id) => sees(id))
+  const rows = await meetingRows(ids)
+  const now = Date.now()
+  const waits = rows.map((r) => standingOf(r, now).waits)
+  return { meetings: rows.length === 0, 'meetings.save': waits.includes('save'), 'meetings.write': waits.includes('write') }
 }
 
 async function marketplaceShape(): Promise<Record<string, boolean>> {

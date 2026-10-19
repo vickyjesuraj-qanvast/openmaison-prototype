@@ -78,7 +78,7 @@ export const onPurchasePage = (path: string): boolean => PURCHASE_PATHS.some((p)
 
 export type NudgeTool = 'visualizer' | 'reader' | 'copilot'
 /** 2.0's names for 1.0's AI Visualizer · Quote Digitizer · Meeting Copilot. */
-export const TOOL_WORDS: Record<NudgeTool, string> = { visualizer: 'the AI Visualizer', reader: 'reading quotes', copilot: 'the Meeting Co-Pilot' }
+export const TOOL_WORDS: Record<NudgeTool, string> = { visualizer: 'the AI Visualizer', reader: 'reading quotes', copilot: 'the Meeting Copilot' }
 /** `render_repair` is the automatic repair of a render already kept — never a new success (1.0's D17). */
 export function toolFor(actionKey: string): NudgeTool | null {
   if (actionKey === 'render_repair') return null

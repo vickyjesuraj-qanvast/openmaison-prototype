@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { fetchProjectRows } from '@/lib/projects/queries'
 import { deletedProjectFor } from '@/lib/projects/handover'
 import { ProjectsWorkspace } from '@/components/projects/projects-workspace'
-import { countTicketsToAnswer } from '@/lib/projects/tickets'   // (gaps build H)
 import { refusesPath } from '@/lib/leads/visibility'
 import { AccessGate } from '@/components/shell/access-gate'
 
@@ -20,6 +19,5 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   if (await refusesPath('/projects')) return <AccessGate section="Projects" />   // (parity map, PR-022) Accounting reaches a project through Finance's rows, never the listing
   const [data, sp] = await Promise.all([fetchProjectRows(), searchParams])
   const deleted = await deletedProjectFor(one(sp.deleted))
-  const tickets = await countTicketsToAnswer()
-  return <ProjectsWorkspace tickets={tickets} data={data} url={{ scope: one(sp.scope), q: one(sp.q), sort: one(sp.sort), type: one(sp.type), team: one(sp.team), col: one(sp.col), dir: one(sp.dir), new: one(sp.new), deleted, view: one(sp.view), of: one(sp.of) }} />
+  return <ProjectsWorkspace data={data} url={{ scope: one(sp.scope), q: one(sp.q), sort: one(sp.sort), type: one(sp.type), team: one(sp.team), col: one(sp.col), dir: one(sp.dir), new: one(sp.new), deleted, view: one(sp.view), of: one(sp.of) }} />
 }

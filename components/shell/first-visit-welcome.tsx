@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Dialog, DialogMessage } from '@/components/om/dialog'
@@ -9,6 +9,8 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { withFrom } from '@/lib/nav'
 import type { Welcome } from '@/lib/studio-setup/model'
 import { markWelcomed } from '@/app/welcome-actions'
+import { usePlansOpen } from '@/components/credits/credits-client'
+import { readPlanIntent } from '@/lib/credits/plan-intent'
 
 /* who has closed theirs in this tab — a layout the router kept from before the close never opens it twice (the record decides on a reload) */
 const closed = new Set<string>()
@@ -22,10 +24,23 @@ const closed = new Set<string>()
 export function FirstVisitWelcome({ welcome, memberId }: { welcome: Welcome; memberId: string }) {
   const router = useRouter()
   const pathname = usePathname()
-  const search = useSearchParams().toString()
+  const params = useSearchParams()
+  const search = params.toString()
   const snackbar = useSnackbar()
   const [open, setOpen] = useState(() => !closed.has(memberId))
   const [busy, setBusy] = useState(false)
+  /* (S46D — D4) a studio that arrives with a plan picked on the website (`?plan=`) sees Plans first: the welcome waits while Plans opens on it,
+     and comes once Plans closes — or at once if Plans never opens for this member */
+  const plansOpen = usePlansOpen()
+  const [waiting, setWaiting] = useState(() => !!readPlanIntent(params))
+  const [sawPlans, setSawPlans] = useState(false)
+  if (waiting && plansOpen && !sawPlans) setSawPlans(true)   // render-phase adjust
+  if (waiting && sawPlans && !plansOpen) setWaiting(false)
+  useEffect(() => {
+    if (!waiting || sawPlans) return
+    const t = window.setTimeout(() => setWaiting(false), 3000)
+    return () => window.clearTimeout(t)
+  }, [waiting, sawPlans])
   const [address, hash] = welcome.action.href.split('#')
   const current = search ? `${pathname}?${search}` : pathname
   /* already where the button goes — the leads, Finance, Settings › Studio: it only closes */
@@ -45,7 +60,7 @@ export function FirstVisitWelcome({ welcome, memberId }: { welcome: Welcome; mem
   }
 
   return (
-    <Dialog open={open} onClose={() => { void finish(false) }} title={welcome.title} width={400} closeOnScrim={false}
+    <Dialog open={open && !waiting} onClose={() => { void finish(false) }} title={welcome.title} width={400} closeOnScrim={false}
             footer={<>
               <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void finish(false) }} data-testid="welcome-later">Not now</Button>
               <Button isDisabled={busy} onPress={() => { void finish(true) }} data-testid="welcome-go">{welcome.action.label}</Button>

@@ -5,7 +5,7 @@ import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { openProjectCommission } from '@/components/finance/books/project-commission-dialog'   // (parity map, FB-042 · FB-043) P-C's dialog
 import { openDuplicateProject } from './ending/use-project-ending'   // (parity map, PR-058)
 import type { ProjectStage } from '@/lib/projects/model'
-import { RUNS_RULE, TEAM_RULE } from './stage-menu'
+import { RUNS_RULE, TEAM_RULE, stageRow } from './stage-menu'
 
 /**
  * (REG-925) A project's menu — the same items wherever the project appears (the listing's row, its phone card, the project page's kebab),
@@ -22,6 +22,11 @@ import { RUNS_RULE, TEAM_RULE } from './stage-menu'
  * (parity map, PR-058 · FB-042 · FB-043 — her "build everything that's in 1.0" 2026-10-10) after Invite to Portal: **Commission** (the project's
  * team, Owners and Admins — P-C's dialog) and **Duplicate project** (any member) — each opens its own dialog, wherever the project's id is known
  * (the project page reads it from its address); no "…", as every row here.
+ * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M6 · M7) Two doors a 1.0 member looked for here:
+ * **See it as {client}** beside Invite to Portal (1.0's *Preview as Homeowner*; the panel's own press, where the host knows the portal — the
+ * project page), and **Complete handover** just before Delete (1.0's *Close project*, beside Delete project) — the Stage menu's Completed row
+ * itself (`stageRow`): the same sheet, the same refusals in the row, Review the handover while one waits for this viewer, gone once completed.
+ * Stage ▾ keeps every stage row (P-08 stands); this partly reverses P-08's menu, on her "fix everything".
  */
 export type ProjectMenuAction = 'edit' | 'lead' | 'quote' | 'contract' | 'copy'
   | 'access'   // (Projects r4a) the Invite to Portal panel (board 8; "Client access" until one-home N-15)
@@ -29,13 +34,17 @@ export type ProjectMenuAction = 'edit' | 'lead' | 'quote' | 'contract' | 'copy'
   | 'visualizer' | 'planner'   // (parity P-03) on a phone only — the Create strip's two doors the hidden strip can't offer
   /* (parity map, PR-058 · FB-042) the rows open their own dialogs (the ending's host, P-C's commission dialog) — the host only closes its menu */
   | 'duplicate' | 'commission'
+  /* (S46B, M6) Complete handover — the host opens the Hand over sheet (Review the handover while one waits for an Owner or an Admin) */
+  | 'complete'
+  /* (S46B, M7) See it as {client} — the host opens the client's portal as them in a new tab, on the press */
+  | 'preview'
   /* (parity P-08 · P-11) no longer offered by this menu — the stage menu and Edit details run them; kept so a host's switch still reads */
-  | 'rename' | 'complete' | 'reopen' | 'hold' | 'resume'
+  | 'rename' | 'reopen' | 'hold' | 'resume'
 
 /** (parity P-11) One width for the project's menu wherever it opens — the house standard, as the lead's ⋮. */
 export const PROJECT_MENU_WIDTH = MENU_WIDTH.standard
 
-export function ProjectMenuItems({ project, onPick, canRename = true, ends, edit = false, phone = false }: {
+export function ProjectMenuItems({ project, onPick, canRename = true, ends, edit = false, phone = false, seeAs }: {
   project: { direct: boolean; quoteId: string | null; contractId: string | null; stage?: ProjectStage; /** (gaps build, package A) on hold — "Since 2 Oct ’26 — …" */ hold?: string | null
     /** (parity map, PR-058 · FB-042) the project's id — Duplicate project and Commission open for it; on the project page it is read from the
         address, so a host that knows it (the listing's row) may pass it to offer them there too */
@@ -49,10 +58,16 @@ export function ProjectMenuItems({ project, onPick, canRename = true, ends, edit
   edit?: boolean
   /** (parity P-03) ≤767, where the Create strip is hidden: its AI Visualizer and 3D Space Planner ride in the sheet. */
   phone?: boolean
+  /** (S46B, M7) See it as {client}: the client's first name and why this viewer can't (null when they can) — a host that knows the portal passes it. */
+  seeAs?: { first: string; why: string | null }
 }) {
   const pathname = usePathname()
   const params = useParams<{ id?: string | string[] }>()
   const id = project.id ?? (pathname?.startsWith('/projects/') && typeof params?.id === 'string' ? params.id : null)
+  /* (S46B, M6) shown while the project isn't completed — the Stage menu's own answer for its Completed row (`stageRow`), never a second rule */
+  const handover = ends && project.stage && project.stage !== 'completed'
+    ? stageRow('completed', { stage: project.stage, held: !!project.hold, startedAt: null, mayChange: canRename, mayHandover: ends.mayHandover, runs: ends.runs, requested: !!ends.requested })
+    : null
   return (
     <>
       {edit ? <DropdownItem onSelect={() => onPick('edit')} shortcut="edit" disabled={!canRename} title={canRename ? undefined : TEAM_RULE}>Edit details</DropdownItem> : null}
@@ -68,11 +83,15 @@ export function ProjectMenuItems({ project, onPick, canRename = true, ends, edit
       ) : null}
       {/* (Projects r4a) the client's portal: who can open it, invite, See it as the client, withdraw — (one-home N-15) the panel's one name */}
       <DropdownItem onSelect={() => onPick('access')}>Invite to Portal</DropdownItem>
+      {/* (S46B, M7 — 1.0's Preview as Homeowner) the Invite to Portal panel's own See it as, on its own row: refused in the row as the panel's rule */}
+      {seeAs ? <DropdownItem onSelect={() => onPick('preview')} disabled={!!seeAs.why} title={seeAs.why ?? undefined}>{`See it as ${seeAs.first}`}</DropdownItem> : null}
       {/* (parity map, FB-042 · FB-043) the project's commission — Owners, Admins and its team (a Designer reads the rule and asks for another) */}
       {id && canRename ? <DropdownItem onSelect={() => { onPick('commission'); openProjectCommission(id) }}>Commission</DropdownItem> : null}
       {/* (parity map, PR-058) a new project from this one — for the same client, another or a new one; its schedule and a draft of its quote */}
       {id ? <DropdownItem onSelect={() => { onPick('duplicate'); openDuplicateProject(id) }}>Duplicate project</DropdownItem> : null}
       <DropdownItem onSelect={() => onPick('copy')}>Copy Link</DropdownItem>
+      {/* (S46B, M6 — 1.0's Close project, just above Delete) the Stage menu's Completed row: its move, its words, its refusal in the row */}
+      {handover ? <DropdownItem onSelect={() => onPick('complete')} disabled={!!handover.why} title={handover.why ?? undefined}>{handover.move === 'review' ? 'Review the handover' : 'Complete handover'}</DropdownItem> : null}
       {ends ? <DropdownItem onSelect={() => onPick('delete')} tone="danger" disabled={!ends.runs} title={ends.runs ? undefined : RUNS_RULE}>Delete</DropdownItem> : null}
     </>
   )

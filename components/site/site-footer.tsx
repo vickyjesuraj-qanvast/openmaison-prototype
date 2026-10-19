@@ -8,7 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
-import { COMPANY, COMPANY_LINKS, FOOTER_BOTTOM, FOOTER_LINE, FOOTER_SECURITY, LEGAL_LINKS, site, type NavLink } from '@/lib/site/model'
+import { COMPANY, COMPANY_LINKS, FOOTER_BOTTOM, FOOTER_LINE, FOOTER_SECURITY, LEGAL_LINKS, PRICING_PATH, site, type NavLink } from '@/lib/site/model'
 import { MODULES } from '@/lib/site/platform'
 import { checkNewsletter } from '@/lib/site/forms'
 import { subscribeNewsletter } from '@/app/site/actions'
@@ -20,7 +20,7 @@ import s from './site-footer.module.css'
  * market it serves and the social links. 1.0's market flags named four countries; 2.0 serves Singapore (her hold, 2026-10-12).
  */
 
-const PLATFORM_LINKS: NavLink[] = [...MODULES.map((m) => ({ label: m.name, href: m.href })), { label: 'Platform overview', href: site('/platform') }]
+const PLATFORM_LINKS: NavLink[] = [...MODULES.map((m) => ({ label: m.name, href: m.href })), { label: 'Platform overview', href: site('/platform') }, { label: 'Pricing', href: PRICING_PATH }]   // (S46D — D4)
 
 function Column({ title, links }: { title: string; links: readonly NavLink[] }) {
   return (

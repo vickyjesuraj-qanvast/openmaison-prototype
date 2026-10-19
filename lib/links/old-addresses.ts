@@ -9,12 +9,17 @@
  * Pure and free of imports — next.config.ts and proxy.ts both read it. Who answers each address:
  *   · a FIXED landing (`to`) — next.config.ts `redirects()` (307 while the prototype's addresses may still move; the developers make them
  *     permanent), before any route runs;
- *   · a landing that depends on the address's QUERY (`/leads?leadId=` · `/projects/<id>?tab=` · `/accounts?tab=` · `/inbox?…`) — proxy.ts,
- *     through `oldQueryTarget` below (pure rules: nothing is read);
+ *   · a landing that depends on the address's QUERY (`/leads?leadId=` · `/projects/<id>?tab=` · `/accounts?tab=` · `/inbox?…` · plg's personal
+ *     `/settings?section=`) — proxy.ts, through `oldQueryTarget` below (pure rules: nothing is read);
+ *   · (S46A) a landing that depends on WHO opens it — plg's three tools open to a visitor with no account (`/tools/ai-visualizer` · `/tools/
+ *     quote-xray` · `/tools/quote-digitizer`, its ads' landings): proxy.ts, through `oldToolTarget` below, with the browser's sign-in state;
  *   · a landing that needs its RECORD looked up (which project an invoice is on, a ticket's 2.0 id) — a small route under the old address
  *     (`by: 'route'`), through lib/links/old-links.ts: it asks the visitor's permission first and, for a record they may not see or that 2.0
  *     does not hold, lands where that kind of thing lives — the same answer either way, so no address reveals a record.
  * Every landing page keeps its own permission: a redirect only ever names an id the old address already carried, or one the route checked.
+ * (S46A — the findability audit's D1, her "fix everything" 2026-10-19) The list was first read from 1.0's Qanvast line; 1.0's other two live
+ * lines — `deployment/plg` (the self-serve product, its Company pages and personal Settings) and `urbanhomedemo` (UHD's Contractors) — printed
+ * addresses of their own, and those are here too.
  * An address on none of these answers the app-wide "page not found" (app/not-found.tsx), never Next's bare page.
  */
 
@@ -34,7 +39,7 @@ type Row = Omit<OldAddress, 'kind'>
 const rows = (kind: OldAddress['kind'], list: Row[]): OldAddress[] => list.map((a) => ({ ...a, kind }))
 
 /* ── 1.0's website (S35) — its addresses at the domain's root land on the same page of the site here ─────────────────────────────── */
-/* 1.0's own redirects ride along (/about → Story, /products and /ai-agents → Platform, /pricing → home while pricing is hidden). None of these
+/* 1.0's own redirects ride along (/about → Story, /products and /ai-agents → Platform; (S46D) /pricing → the site's Pricing). None of these
    paths is one of the app's. NOT here: /uae-get-started (her hold on countries beyond Singapore, 2026-10-12). (pending modules S36) 1.0's trial
    addresses land on the trial: /try-visualizer and its six tool pages, and 1.0's older /try. */
 const SITE: OldAddress[] = rows('site', [
@@ -51,8 +56,7 @@ const SITE: OldAddress[] = rows('site', [
   { from: '/about', to: '/site/story' },
   { from: '/products', to: '/site/platform' },
   { from: '/ai-agents', to: '/site/platform' },
-  { from: '/pricing', to: '/site' },
-  { from: '/site/pricing', to: '/site' },        // 1.0's pricing page, hidden before launch: home (the plans live inside the app)
+  { from: '/pricing', to: '/site/pricing' },   // (S46D — D4) 1.0's plg Pricing, public since 22 Sep: the site's own Pricing page (/site/pricing is now that page)
   { from: '/trust', to: '/site/trust' },
   { from: '/blog', to: '/site/blog' },
   { from: '/blog/:slug', to: '/site/blog/:slug' },
@@ -69,7 +73,8 @@ const SITE: OldAddress[] = rows('site', [
 
 /* ── 1.0's studio app — every page under src/app/(main) that 2.0 serves elsewhere (the sweep's §1, "home exists · old address 404") ─────── */
 /* Same address in 2.0, nothing to do: /dashboard · /leads · /projects · /projects/<id> · /tasks · /marketplace · /marketplace/<id> · /settings
-   (1.0's personal settings: Your profile now — its #anchors land there from the Settings page, app/settings/settings-view.tsx).
+   (1.0's personal settings: Your profile now — its #anchors land there from the Settings page, app/settings/settings-view.tsx; (S46A) plg's
+   `?section=<id>` the same way, through oldQueryTarget — `OLD_PERSONAL_SECTIONS`).
    Already landing: /login · /onboarding · /verify · /finance/<pipeline · commissions · reports · vendors> (app/finance/[tab]).
    (pending modules S41b-5) Same address too: 1.0's Qanvast line's /qanvast-ops/credits[/transactions|/contracts] and /qanvast-ops/reviews[/feedback]. */
 const APP: OldAddress[] = rows('app', [
@@ -77,8 +82,9 @@ const APP: OldAddress[] = rows('app', [
   { from: '/inbox', by: 'proxy', lands: 'Messages (/chat); ?newChat=…&leadId=<id> → the lead’s conversation' },
   { from: '/inbox/:chat', by: 'proxy', lands: 'Messages (/chat) — 1.0 copied this as a chat’s link, though no 1.0 page served it' },
   /* Escalations → Projects › Tickets */
-  { from: '/escalations', to: '/projects/tickets' },
-  { from: '/escalations/new', to: '/projects/tickets' },   // a ticket is raised on its project's Tickets
+  { from: '/projects/tickets', to: '/tickets' },   // (S46 — REG-2524) 2.0's own earlier address for the studio's tickets (gaps build H → S46)
+  { from: '/escalations', to: '/tickets' },   // (S46 — REG-2524) Tickets is a rail place now, as Escalations was in 1.0
+  { from: '/escalations/new', to: '/tickets?new=1' },   // (S46A — M1) Projects › Tickets' own New ticket (S46B's `?new=1`), as 1.0's page was
   { from: '/escalations/:ticket', by: 'route', lands: 'Projects › Tickets with the ticket open (1.0 named it by its number, T-2026-…), else Projects › Tickets — app/escalations/[ticket]' },
   /* Finance › Operations → Company › Finance (To do · Money in · Money out), a project's Money, an invoice */
   { from: '/finance/operations', by: 'route', lands: 'Finance › To do; ?tab= its 2.0 tab; &project= that project’s Money; ?invoiceId= the invoice on its project’s Money — app/finance/operations' },
@@ -91,6 +97,19 @@ const APP: OldAddress[] = rows('app', [
   { from: '/accounts/usage', by: 'proxy', lands: 'Company › Reports › Studio health (S39)' },
   { from: '/accounts/milestone-templates', by: 'proxy', lands: 'Company › Templates › Schedules' },
   { from: '/settings/notifications', to: '/settings?section=notifications' },
+  /* (S46A — D1, raw N-2 · L-3 · P-4 · T-5) plg's own studio addresses: its credits page (in every credit alert and bell row plg sent, and its
+     payment provider's return), its Tools › Quotes, its new interface's Company › Settings and Leads › Settings, its brand kit, a task template
+     and the Visualizer's materials, the checkout's return — and UHD's Contractors. Each lands on its 2.0 home, which keeps its own gate. */
+  { from: '/settings/usage', to: '/company/plan' },   // Plan & AI credits › Usage
+  { from: '/tools/quotes', to: '/quotes' },
+  { from: '/company/settings', to: '/settings?section=studio' },
+  { from: '/company/settings/quotes', to: '/settings?section=quotes' },
+  { from: '/leads/settings', to: '/settings?section=leads' },   // before /leads/<id> — a lead is never called "settings"
+  { from: '/company/profile/brand-kit', to: '/company/templates/brand' },
+  { from: '/company/templates/tasks/:id', to: '/templates/tasks/:id' },   // the task template's editor (2.0's library keeps 1.0's ids)
+  { from: '/visualizer/materials', to: '/company/materials' },   // before /visualizer/<design>
+  { from: '/billing/return', to: '/company/plan/billing' },   // the checkout's way back — Plan & billing says what the payment did (the payments seam)
+  { from: '/contractors', to: '/projects?view=workload&of=contractors' },   // UHD's rail item — Projects › Workload › Contractors (S45B), its own gate
   { from: '/upgrade', to: '/company/plan/billing' },   // 1.0 sent it to its Settings; the plans live on Plan & billing
   { from: '/studio-setup', to: '/settings?section=studio' },   // the forced wizard → Set up your studio, at the top of Roles & access (S08)
   /* the new-record pages → the listing's own form */
@@ -101,10 +120,11 @@ const APP: OldAddress[] = rows('app', [
   { from: '/leads', by: 'proxy', lands: 'with ?leadId= / ?openLead= the lead (/leads/<id>); with ?quoteId= the quote (/quotes/<id>)' },
   { from: '/leads/:id/quote-preview-popout', by: 'proxy', lands: 'the quote’s Preview (?quoteId=), else the lead’s Quotes' },
   { from: '/projects/:id', by: 'proxy', lands: 'with ?tab= (+ sub · designSubTab · financeSubTab · milestone · focus) the 2.0 view of the project it named' },
-  /* Tools → their 2.0 homes; ?planId= and ?sessionId= look their record up */
-  { from: '/tools/quote-digitizer', to: '/quotes' },
-  { from: '/tools/quote-xray', to: '/quote-x-ray' },
-  { from: '/tools/ai-visualizer', to: '/visualizer' },
+  /* Tools → their 2.0 homes; ?planId= and ?sessionId= look their record up — (S46A — D3) plg opened three of them to a visitor with no account
+     (its ads land there): a member goes to the tool, a visitor to the website's free try (`oldToolTarget`) */
+  { from: '/tools/quote-digitizer', by: 'proxy', lands: 'Tools › Quotes; a visitor who never signed in here (or signed out) → the website’s Upload a quote trial, while it is on' },
+  { from: '/tools/quote-xray', by: 'proxy', lands: 'Quote X-Ray; a visitor → the website’s Quote X-Ray trial, while it is on' },
+  { from: '/tools/ai-visualizer', by: 'proxy', lands: 'the AI Visualizer; a visitor → the website’s AI Visualizer trial (/site/try), while it is on' },
   { from: '/tools/floorplan-3d-isometric', to: '/planner?view=iso&photo=1' },
   { from: '/tools/market-insights', to: '/market-insights' },
   { from: '/tools/market-insights/:id', to: '/market-insights/mi-:id' },   // S25: an article's 2.0 id is `mi-<1.0's id>`
@@ -152,6 +172,7 @@ const CLIENT: OldAddress[] = rows('client', [
   { from: '/quote-preview/:token', by: 'route', lands: '/quote/<token>' },
   { from: '/floor-plan/view/:token', by: 'route', lands: '/space/<token>' },
   { from: '/sign/quote-xray/:token', by: 'route', lands: 'the studio’s notice (X-Ray has no client link)' },
+  { from: '/sign/document/:token', by: 'route', lands: '1.0’s “sign this file” link (Qanvast line): /sign/<token> when a contract or set carries the token (the port keeps it), else the studio’s notice — app/sign/document/[token] (S46D)' },   // (S46A — D2's address; FROM §9 #3)
   { from: '/copilot/share/:id', by: 'route', lands: '/meeting/<token>, else the studio’s notice' },
   { from: '/hangouts/:eventId', by: 'route', lands: '/hangout/<token>, else the studio’s notice' },
 ])
@@ -180,6 +201,7 @@ export const OLD_ACCOUNTS_TABS: Readonly<Record<string, string>> = {
   team: '/company/members',
   'legal-entities': '/company/profile#entities',
   roles: '/settings?section=studio#studio-roles',
+  'cost-visibility': '/settings?section=studio#cost-visibility',   // (S46A — L-3) 1.0's Cost & Margin Visibility: its card, not only the module
   usage: '/company/reports/health',
   /* Lead Management */
   'lead-experience': '/settings?section=leads',          // Journey excluded (LM-01)
@@ -300,6 +322,38 @@ export function oldInboxTarget(q: Query): string {
 }
 
 /**
+ * (S46A — the findability audit's D1 · L-3) plg's personal Settings opened by `?section=<id>` (its ALL_SECTIONS — Add Lead › Link to Email opened
+ * `?section=email`) → where each lives in 2.0, as 1.0's `#anchors` land (app/settings/settings-view.tsx `OLD_PERSONAL_ANCHORS`): Your profile's
+ * cards, Usage & credits on Plan & AI credits, Email Lead Sources on Company › Integrations' Gmail card; its parked and retired sections on Your
+ * profile. Never one of 2.0's own modules (studio · leads · meetings · projects · quotes · finance · notifications): plg's `notifications` is
+ * that name too, so it stays 2.0's Settings › Notifications — whose first card links to Your notifications.
+ */
+export const OLD_PERSONAL_SECTIONS: Readonly<Record<string, string>> = {
+  profile: '/profile#details', 'lead-preferences': '/profile', 'my-signature': '/profile#signature',
+  'usage-credits': '/company/plan', email: '/company/integrations#gmail',
+  region: '/profile', ads: '/profile', 'ai-buddy': '/profile', 'home-layout': '/profile', appearance: '/profile', interface: '/profile', skins: '/profile', 'guided-tours': '/profile',
+}
+
+/**
+ * (S46A — the findability audit's D3 · T-3, her "fix everything" 2026-10-19) plg opened three tools to a visitor with no account — its paid
+ * campaign landed on the AI Visualizer — and 2.0 sent those addresses to studio pages that ask a stranger to sign in. A member still goes to
+ * the tool; a VISITOR — a browser that never signed in here, or one that signed out — goes to the website's free try of the same tool, while
+ * that trial is switched on (TRIAL_VISUALIZER_ENABLED · TRIAL_TOOLS_ENABLED); with it off they go where a member does, whose page then asks
+ * them to sign in, as before. A browser whose session lapsed is a member's: sign-in, then the tool. plg's other open pages — /leads and
+ * /dashboard — stay the studio's own addresses (every member's bookmark: a signed-out visit signs in), as the audit recommends.
+ */
+export const OLD_OPEN_TOOLS: Readonly<Record<string, { member: string; trial: string; family: 'visualizer' | 'tools' }>> = {
+  '/tools/ai-visualizer': { member: '/visualizer', trial: '/site/try', family: 'visualizer' },
+  '/tools/quote-xray': { member: '/quote-x-ray', trial: '/site/try/quote-x-ray', family: 'tools' },
+  '/tools/quote-digitizer': { member: '/quotes', trial: '/site/try/upload-a-quote', family: 'tools' },
+}
+export function oldToolTarget(pathname: string, visitor: boolean, trialOn: { visualizer: boolean; tools: boolean }): string | null {
+  const t = OLD_OPEN_TOOLS[pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname]
+  if (!t) return null
+  return visitor && trialOn[t.family] ? t.trial : t.member
+}
+
+/**
  * The one entry proxy.ts calls: where an address that 1.0 printed, and that only its query can place, lands — or null (not an old address;
  * the request goes on as it is). Pure.
  */
@@ -313,6 +367,8 @@ export function oldQueryTarget(pathname: string, q: Query): string | null {
   if (seg[0] === 'projects' && seg.length === 2) return oldProjectTarget(decodeURIComponent(seg[1]!), q)
   if (seg[0] === 'inbox' && seg.length <= 2) return oldInboxTarget(q)
   if (seg[0] === 'accounts' && seg.length <= 2) return oldAccountsTarget(seg[1] ?? null, q)
+  /* (S46A — D1) plg's personal Settings by its `?section=`; 2.0's own modules (and a bare /settings) are left as they are */
+  if (seg[0] === 'settings' && seg.length === 1) { return OLD_PERSONAL_SECTIONS[(q.get('section') ?? '').trim().toLowerCase()] ?? null }   // (plg's links carried no `from`; a card's #anchor ends the address)
   return null
 }
 

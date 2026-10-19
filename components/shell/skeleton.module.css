@@ -159,3 +159,10 @@
 .selSlot { position: absolute; left: calc(var(--om-spacing-4) + 3px); top: 50%; transform: translateY(-50%); }
 @media (min-width: 1025px) { .selCol { position: relative; } }
 @media (hover: none) and (max-width: 1024px) { .selCol { padding-left: 40px; } }
+
+/* (S46A) An empty card whose buttons stack full-width on a phone (quotes-empty · contracts-empty ≤767, REG-377) — its ghost stacks its
+   bones the same way, never a row wider than the phone (the empty Quotes list's three ways in) */
+@media (max-width: 767px) {
+  .stackButtons { flex-direction: column; align-items: stretch; width: 100%; }
+  .stackButtons > * { width: 100% !important; }
+}

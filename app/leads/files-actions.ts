@@ -9,7 +9,7 @@ import { fileComments, leadFileRenders, leadFiles, leads, members, type LeadFile
 import { sessionMemberId } from '@/lib/db/session'
 import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds } from '@/lib/notifications/queries'
-import { FILE_UPLOAD_MAX, descendantIds, fileKindOf, mimeFor, paperRule, systemFolderReason, systemFolderRule, tooBigLine } from '@/lib/leads/file-model'
+import { FILES_READ_RULE, FILE_UPLOAD_MAX, descendantIds, fileKindOf, mimeFor, paperRule, systemFolderReason, systemFolderRule, tooBigLine } from '@/lib/leads/file-model'
 import { moneyPapersOf } from '@/lib/leads/files'   // (S42 audit C-03)
 import { DATA_URL, PICTURE_URL, copyStored, dataUrlSize, imageAddress, keepBytes, keepThumb, thumbAddress } from '@/lib/leads/file-store'
 import { contractsKeeping } from '@/lib/contracts/files'
@@ -67,7 +67,6 @@ const isRefusal = (r: unknown): r is Refusal => !!r && typeof r === 'object' && 
 /* (pending modules S06 — the Accounting role's open question 3, as recommended: the card's "a bookkeeper can delete project files") Accounting
    opens a project's Files to read a proof, an invoice or a bill — read-only: every change here (upload, folders, rename, move, duplicate,
    delete, restore, comments) is the team's. The Files tab draws no control that would be refused (`LeadFilesData.readOnly`). */
-const FILES_READ_RULE = 'Accounting reads a project’s files — its team uploads and changes them'   // invented copy (pending modules S06)
 async function readsOnly(): Promise<Refusal | null> { return isAccounting((await fetchViewer()).role) ? { error: FILES_READ_RULE } : null }
 
 /** (fix-A, A-19) A project files its receipts, update photos and choice pictures into its own root folders, found by name — so those keep

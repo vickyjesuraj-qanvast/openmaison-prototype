@@ -36,6 +36,7 @@ follow-through (REG-634) · **R5** this map (REG-635).
 | `member_signatures` | `members.signature_*` | QE D-111; the studio signature a contract printed is frozen with it (`signed_studio_signature`) | R1 |
 | 1.0 stored no sender / marker / deleter | `contracts.sent_by · marked_by · deleted_by` | the port stamps the covered quote's sender, else the lead's first member (D-216) | R4 |
 | — | `lead_tasks.contract_id` | 2.0 only: Automation's follow-up and thank-you tasks | R4 |
+| `lead_document_signature_requests` (qanvast only, migration 426: a lead's file sent for signature, its `token` in `/sign/document/<token>`) | `contracts` ×1 — `source 'uploaded'`, `file_id` the lead's file (its frozen `source_path` copy kept in Files › Contract & VOs), **`sign_token` = the request's `token`** | (S46D, 2026-10-19) the token rides over so the links clients already hold land: `app/sign/document/[token]` sends a token a contract carries to `/sign/<token>`, else the "no longer active" notice. `pending`/`viewed` unexpired → `Sent to Client` (`sign_expires_at` = `expires_at`), `signed` → `Signed` with `signed_pdf_path` as the signed copy (`signed_file_id`) and the signer fields as above; `cancelled`/`expired` → not ported (the link then reads "no longer active"). 2.0 signs a PDF only: a PNG / JPEG request ports Signed (its signed PDF) or not at all. In 2.0 the studio's door is Files › ⋮ › *Send for signature* (REG-S46D.1) | S46D |
 
 ## 2. Rules and where they live
 

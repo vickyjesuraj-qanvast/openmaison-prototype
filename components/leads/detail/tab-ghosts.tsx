@@ -251,10 +251,10 @@ function MeetingsFirstGhost() {
 
 /** (UX audit build · REG-737) A list tab with nothing in it: its toolbar's title and ⋮ only (the create twin, search and Filters step back),
     then the tab's empty card — what the tab opens on while it holds nothing (lib/ghost-shape.tsx says which). */
-const FIRST: Record<string, { words: string; buttons: number[] }> = {
+const FIRST: Record<string, { words: string; buttons: number[]; /** the card's buttons stack on a phone */ stack?: boolean }> = {
   tasks: { words: 'All Tasks', buttons: [132, 170] },
-  quotes: { words: 'All Quotes', buttons: [124, 132] },
-  contracts: { words: 'All Contracts', buttons: [210, 132] },
+  quotes: { words: 'All Quotes', buttons: [122, 132, 118], stack: true },   // (S46A — M4) From Scratch · From Template · Upload a quote
+  contracts: { words: 'All Contracts', buttons: [210, 132], stack: true },
   files: { words: 'All Files', buttons: [150, 140] },
 }
 export const FIRST_RUN_TABS = Object.keys(FIRST)
@@ -264,7 +264,7 @@ export function FirstRunTabGhost({ tab, title }: { tab: string; title?: ReactNod
   return (
     <>
       <Bar bar={tab === 'files' ? filesBar.bar : tasksBar.bar} title={tab === 'files' ? filesBar.title : tasksBar.title} words={f.words} head={title}><Slot kind="icon" /></Bar>
-      <EmptyCardGhost art={[180, 160]} buttons={f.buttons} />
+      <EmptyCardGhost art={[180, 160]} buttons={f.buttons} stack={f.stack} />
     </>
   )
 }

@@ -8,7 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { Sheet } from '@/components/om/sheet'
 import { SnackbarProvider } from '@/components/om/snackbar'
 import { PILLARS, PILLAR_ORDER, modulesByPillar } from '@/lib/site/platform'
-import { PRIMARY_LINKS, SIGN_IN, site } from '@/lib/site/model'
+import { PRICING_PATH, PRIMARY_LINKS, SIGN_IN, site } from '@/lib/site/model'
 import { siteMotion } from '@/lib/site/motion'
 import { BookDemoProvider, useBookDemo } from './book-demo'
 import { Tile } from './primitives'
@@ -199,6 +199,8 @@ function PhoneBar() {
             </div>
           ))}
           <Link href={site('/platform')} className={s.sheetAll}>See the whole platform<Icon name="arrow_forward" size={16} /></Link>
+          {/* (S46D — D4) the bar's Pricing, for a phone: its bottom bar has no room, so the Platform sheet carries it */}
+          <Link href={PRICING_PATH} className={s.sheetAll} data-testid="site-sheet-pricing">See pricing<Icon name="arrow_forward" size={16} /></Link>
         </div>
       </Sheet>
     </>

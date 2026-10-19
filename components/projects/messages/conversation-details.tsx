@@ -8,6 +8,8 @@ import { Chips } from '@/components/om/chips'
 import { Dialog } from '@/components/om/dialog'
 import { Drawer, DrawerRule } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Line } from '@/components/shell/ghost-kit'
@@ -16,6 +18,8 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { addToGroupChat, conversationShared, leaveGroupChat, removeFromGroupChat, renameGroupChat, undoRemoveFromGroupChat, undoRenameGroupChat, type Shared, type SharedItem } from '@/app/chat/actions'
 import { GROUP_NAME_MAX } from '@/lib/projects/messages-model'
 import { withFrom } from '@/lib/nav'
+import { copyText } from '@/lib/clipboard'
+import { phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
 import type { ConversationData } from '@/lib/projects/messages'
 import styles from './messages.module.css'
 
@@ -79,6 +83,18 @@ export function ConversationDetails({ open, onClose, data, onChanged, onLeft, on
 
   const list = shared ? shared[tab] : []
   const people = chat ? chat.people : null
+  /* (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, H3; 1.0's chat header had the client's number) the
+     client's number in their row, in the info column's grammar: Call — on a touch screen it dials; at a desk the number is copied and the
+     snackbar says to call from a phone (REG-1566's Call {client}) — and Copy (REG-287's one copy format) */
+  const phone = (data.kind === 'client' || data.kind === 'lead') && phoneDigits(data.people.phone) ? data.people.phone : null
+  const clientFirst = data.people.client.split(/\s+/)[0] || data.people.client
+  const call = () => {
+    if (!phone) return
+    if (window.matchMedia('(hover: none)').matches) { window.location.assign(`tel:+65${phoneDigits(phone)}`); return }
+    const number = phoneDisplay(phone)
+    void copyText(number).then(() => snackbar({ message: `${clientFirst}’s number, ${number}, is copied — call from your phone` }), () => snackbar({ message: `Call ${clientFirst} on ${number}` }))
+  }
+  const copyPhone = () => { if (phone) void copyText(phoneDisplay(phone)).then(() => snackbar({ message: 'Copied to clipboard' }), () => snackbar({ message: 'Couldn’t copy — please try again' })) }
   const first = (n: string) => n.trim()   // (S42 audit C-13) a member as the studio stored them
   return (
     <>
@@ -101,7 +117,12 @@ export function ConversationDetails({ open, onClose, data, onChanged, onLeft, on
             )) : (<>
               {data.kind === 'client' || data.kind === 'lead' ? [data.people.client, ...data.people.household].map((n, i) => (
                 <div key={`c-${n}-${i}`} className={styles.dRow} data-testid="details-person"><Avatar name={n} color="var(--om-color-on-surface-secondary)" size={36} tooltip={false} />
-                  <span className={styles.dText}><span className={styles.dName}>{n}</span><span className={styles.dMeta}>{i === 0 ? 'Client' : 'Household'}</span></span></div>
+                  <span className={styles.dText}><span className={styles.dName}>{n}</span><span className={styles.dMeta} data-testid={i === 0 ? 'details-client-meta' : undefined}>{i === 0 && phone ? `Client · ${phoneLocal(phone)}` : i === 0 ? 'Client' : 'Household'}</span></span>
+                  {i === 0 && phone ? (<>
+                    <Tooltip label={`Call ${clientFirst}`}><IconButton icon="call" label={`Call ${clientFirst}`} variant="bare" onClick={call} data-testid="details-call" /></Tooltip>
+                    <Tooltip label="Copy phone number"><IconButton icon="content_copy" label="Copy phone number" variant="bare" onClick={copyPhone} data-testid="details-copy-phone" /></Tooltip>
+                  </>) : null}
+                </div>
               )) : null}
               {data.people.team.map((t) => (
                 <div key={t.id} className={styles.dRow} data-testid="details-person" data-member={t.id}><Avatar name={t.name} color={t.color} size={36} tooltip={false} />

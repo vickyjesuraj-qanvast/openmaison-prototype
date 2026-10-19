@@ -28,6 +28,7 @@ const STATIC: Record<string, string> = {
   changelog: 'Everything we’ve shipped lately.',
   careers: 'Come build software that studios actually use.',
   contact: 'Let’s talk.',
+  pricing: 'Start free. Upgrade when you’re ready.',   // (S46D — D4)
   privacy: 'Privacy Policy', terms: 'Terms of Service', cookies: 'Cookie Policy',
 }
 

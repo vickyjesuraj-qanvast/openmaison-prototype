@@ -5,8 +5,10 @@ import { db } from '@/lib/db'
 import { contracts, leadFiles } from '@/lib/db/schema'
 import { sessionMemberId } from '@/lib/db/session'
 import { CONTRACT_FOLDERS, QUOTE_FOLDERS } from '@/lib/leads/file-model'
-import { DATA_URL, PICTURE_URL, dataUrlSize, keepBytes, keepThumb, thumbAddress } from '@/lib/leads/file-store'
+import { DATA_URL, PICTURE_URL, dataUrlSize, keepBytes, keepThumb, storedBytes, storedThumb, thumbAddress } from '@/lib/leads/file-store'
+import { hiddenMoneyFiles } from '@/lib/projects/money-visibility'
 import { checkPickedPdf, pdfNameOf, type PickedPdf } from './pdf'
+import { SIGN_NO_BYTES, SIGN_NOT_PDF, inContractFolder, signKeptLine } from './file-signing'
 
 /*
  * (pending modules S03 — the card's "Import from File, Mark as signed and the Won upload keep only a name, not the PDF"; 1.0 filed the
@@ -75,6 +77,33 @@ export async function quoteFolderOf(w: W, leadId: string, at: Date, by?: string)
 }
 
 export { signedFileOf } from './pdf'
+
+/**
+ * (S46D — D2: Files › ⋮ › Send for signature, lib/contracts/file-signing.ts) One of the lead's own PDFs in Files as a new contract's PDF — no
+ * upload: its kept bytes are read here. A file already in the contract folder (Files › Contract & VOs) is the contract's PDF as it is; one from
+ * anywhere else is copied there, the way every contract's PDF is kept (the original stays free to move, rename or delete). Refused, with the
+ * rule, for: a file that isn't the lead's (or is gone), one of the project's money files the member may not see, a file that isn't a PDF, a PDF
+ * whose bytes weren't kept, and a PDF a live contract keeps already (it is sent from Contracts — never a second contract over one file).
+ */
+export async function contractPdfFromFile(leadId: string, fileId: string, at: Date, by?: string): Promise<{ fileId: string; name: string } | { error: string }> {
+  const [f] = typeof fileId === 'string' && fileId ? await db.select().from(leadFiles).where(and(eq(leadFiles.id, fileId), eq(leadFiles.leadId, leadId), isNull(leadFiles.deletedAt))).limit(1) : []
+  if (!f || f.kind === 'folder') return { error: 'That file isn’t there any more' }
+  if ((await hiddenMoneyFiles(leadId)).has(f.id)) return { error: 'That file is part of the project’s money — only whoever sees its money can change it' }
+  if (!(f.kind === 'pdf' || f.mime === 'application/pdf')) return { error: SIGN_NOT_PDF }
+  const [keeping] = await contractsKeeping([f.id])
+  if (keeping) return { error: signKeptLine(keeping.title) }
+  const raw = await storedBytes(f.id)
+  if (!raw || !/^data:[^,]*;base64,/.test(raw)) return { error: SIGN_NO_BYTES }
+  const picked: PickedPdf = { name: f.name, data: raw.replace(/^data:[^,]*;base64,/, 'data:application/pdf;base64,'), thumb: await storedThumb(f.id) }
+  const why = checkPickedPdf(picked, dataUrlSize); if (why) return { error: why }
+  /* where it sits: the trail of folders from the top of Files */
+  const folders = await db.select({ id: leadFiles.id, name: leadFiles.name, parentId: leadFiles.parentId }).from(leadFiles).where(and(eq(leadFiles.leadId, leadId), eq(leadFiles.kind, 'folder'), isNull(leadFiles.deletedAt)))
+  const trail: { name: string }[] = []
+  for (let cur = folders.find((x) => x.id === f.parentId), n = 0; cur && n < 64; cur = cur.parentId ? folders.find((x) => x.id === cur!.parentId) : undefined, n++) trail.unshift(cur)
+  if (inContractFolder(trail)) return { fileId: f.id, name: pdfNameOf(f.name) }
+  const kept = await keepContractPdf(db, leadId, picked, at, by)
+  return typeof kept === 'string' ? { fileId: kept, name: pdfNameOf(f.name) } : kept
+}
 
 /** The live contracts that keep any of these files — Files' trash says so instead of taking a contract's PDF away. */
 export async function contractsKeeping(fileIds: string[]): Promise<{ fileId: string; title: string; signed: boolean }[]> {

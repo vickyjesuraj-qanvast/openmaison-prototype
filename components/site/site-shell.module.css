@@ -94,6 +94,7 @@
 .sheetGroup { margin-bottom: var(--om-spacing-5); }
 .sheetItem { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 48px; padding: 6px 0; text-decoration: none; }
 .sheetAll { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border: var(--om-border-1) solid var(--site-hairline-strong); border-radius: var(--om-radius-1); color: var(--site-accent); font: var(--site-type-button); text-decoration: none; }
+.sheetAll + .sheetAll { margin-top: var(--om-spacing-2); }   /* (S46D) See pricing under See the whole platform */
 
 /* ── Back to top ── */
 .top { position: fixed; right: 32px; bottom: 32px; z-index: 40; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: var(--om-border-1) solid var(--site-hairline-strong); border-radius: var(--om-radius-full); background: var(--site-surface); color: var(--site-ink); box-shadow: var(--site-shadow); cursor: pointer; }

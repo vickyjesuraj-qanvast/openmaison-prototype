@@ -188,10 +188,10 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     console.log('5 · Projects › Tickets and the search')
     await go(d, '/projects')
     /* (parity P-21 · Q-06, a deliberate change of this rule) Tickets left the header for ⋮, its count in the row; the header's outlined slot is Insights */
-    await d.locator('[data-testid="projects-kebab"]').click(); await settle(d, 400)
-    const ticketsRow = d.getByRole('menuitem', { name: /^Tickets/ })
-    ok(await ticketsRow.count() === 1 && await d.locator('[data-testid="open-tickets"]').count() === 0, 'Projects ⋮ offers Tickets (no longer a header button)')
-    await ticketsRow.click(); await d.waitForURL(/\/projects\/tickets/); await settle(d, 1200)
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+    const railTickets = d.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
+    ok(await railTickets.count() === 1 && await d.locator('[data-testid="open-tickets"]').count() === 0, 'the rail offers Tickets (no longer a header button or a ⋮ row)')
+    await railTickets.click(); await d.waitForURL(/\/tickets/); await settle(d, 1200)
     ok(await d.locator('[data-testid="ticket-card"]').count() >= 3 && /HDB 5-Room/.test(await d.locator('[data-testid="ticket-list"]').innerText()), 'Projects › Tickets lists every ticket the member sees, the project named')
     await d.getByRole('searchbox', { name: 'Search tickets' }).fill('grout').catch(async () => { await d.getByLabel('Search tickets').fill('grout') }); await settle(d, 600)
     ok(await d.locator('[data-testid="ticket-card"]').count() === 1, 'its search narrows to the grout ticket')

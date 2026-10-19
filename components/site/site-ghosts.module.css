@@ -9,3 +9,7 @@
 .updated { display: block; margin-top: var(--om-spacing-5); }
 /* (pending modules S36) a sample room's tile on the AI Visualizer trial's start: its 3:2 picture and its name row */
 .tile { display: block; aspect-ratio: 3 / 2.3; }
+/* (S46D) a plan's card on Pricing — the cards' own height at each width (the page's are content-tall: 1440 three across, ≤1024 stacked). Read
+   through a variable: a bone's height crosses to the client as a string (an `undefined` one is dropped on the way, and the bone's 16 stays). */
+.plan { display: block; --ghost-plan-h: 752px; }
+@media (max-width: 1024px) { .plan { --ghost-plan-h: 640px; } }

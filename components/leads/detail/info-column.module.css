@@ -37,6 +37,11 @@
 .whatsapp { display: block; width: 14px; height: 14px; }
 /* (UX audit 2026-09-30, L11) The tap-to-call number on a touch screen: the link ink, so it reads as something to press. */
 .callLink { color: var(--om-color-primary-default); text-decoration: none; }
+/* (pending modules S46C · H4) The email writes to the client at every width (1.0's mailto): the call link's ink, and — for the desk's pointer —
+   the house link's hover ink and focus ring (components/om/text-link.module.css). */
+.mailLink { composes: callLink; border-radius: var(--om-radius-1); transition: color var(--motion-hover); }
+.mailLink:hover { color: var(--om-color-primary-hover); }
+.mailLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* Bare icon controls (edit · copy · WhatsApp · directions · chevron · more_vert): 20 box (16 for the copy icons), on-surface.
    Hover = "Link icon 20px" row of context/interaction-states.md: bg rgba(0,0,0,.08), radius 4. */

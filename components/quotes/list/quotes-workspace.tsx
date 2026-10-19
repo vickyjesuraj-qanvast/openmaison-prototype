@@ -3,8 +3,8 @@
 import { usePlanLock } from '@/components/credits/credits-client'
 import { useRememberShape } from '@/lib/ghost-shape'
 import { copyText } from '@/lib/clipboard'
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
@@ -95,6 +95,19 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
      template with the Client field waiting; ?template=<id> lists the quotes on a template ("Used by n quotes"). */
   const [createOpen, setCreateOpen] = useState(!!newTemplateId)
   const [preselect, setPreselect] = useState<string | null>(newTemplateId ?? null)
+  /* (S46A — the findability audit's T-1 · M4, 1.0's Quote Digitizer) ⌘K's Create › Upload a quote lands as `?upload=1`, and the empty list's Upload a
+     quote asks the same: Create Quote opens on Upload a quote. Read from the address each time it asks (a second ask on this page too), then the
+     address drops the ask (render-phase adjust; the members' landing's way). */
+  const [createStart, setCreateStart] = useState<'upload' | null>(null)
+  const askUpload = useSearchParams().get('upload') === '1'
+  const [askedUpload, setAskedUpload] = useState(false)
+  if (askUpload !== askedUpload) { setAskedUpload(askUpload); if (askUpload) { setPreselect(null); setCreateStart('upload'); setCreateOpen(true) } }
+  useEffect(() => {
+    if (!askUpload) return
+    /* `null`, never the router's own state: Next syncs useSearchParams only with a replaceState it didn't make — a second ask then reads as new */
+    try { const u = new URL(window.location.href); u.searchParams.delete('upload'); window.history.replaceState(null, '', u.toString()) } catch { /* the address is a convenience */ }
+  }, [askUpload])
+  const openUpload = () => { setPreselect(null); setCreateStart('upload'); setCreateOpen(true) }
   const startQuote = (templateId: string | null, clientId: string | null) => {
     if (!clientId) return
     return run('create the quote', async () => { const id = await createQuote(clientId, templateId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, undefined, { guard: 'create' })
@@ -147,7 +160,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
             </div>
           ) : null}
           {quotes.length === 0 ? (
-            <QuotesEmpty onFromScratch={() => setCreateOpen(true)} onFromTemplate={() => setCreateOpen(true)} />
+            <QuotesEmpty onFromScratch={() => setCreateOpen(true)} onFromTemplate={() => setCreateOpen(true)} onUpload={openUpload} />
           ) : templateFilter && visible.length === 0 && !nothingMatches ? (
             /* (sweep S1) no quote prints through this template — say so, with the way back to every quote */
             <TabSearchEmpty noun="quotes" searching={false} onClearAll={() => router.replace('/quotes')} />
@@ -172,8 +185,8 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={setFilters}   /* (REG-464) live — the modal closes on Done */ onClose={() => setFiltersOpen(false)}
                             headSort={headSort ? ({ status: 'Status', total: 'Total', due: 'Due', created: 'Created', sent: 'Sent to client', valid: 'Valid until', updated: 'Updated', approval: 'Approval Date' } as const)[headSort.key] : null} onClearHead={() => setHeadSort(null)} />
-        <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null) }}
-                          render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect}
+        <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null); setCreateStart(null) }}
+                          render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect} opensOn={createStart}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
                           defaultBlock={templateDefaultBlock(data.viewer)}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */

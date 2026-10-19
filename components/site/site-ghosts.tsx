@@ -5,6 +5,8 @@ import s from './site.module.css'
 import p from './pages.module.css'
 import h from './home.module.css'
 import g from './site-ghosts.module.css'
+import pr from './pricing.module.css'
+import { PRICING_WORDS } from '@/lib/site/pricing'
 
 /*
  * (pending modules S35 — 1.0's page-skeleton.tsx, per route) The website's ghosts (REG-708): each page's first screen drawn with the house ghost
@@ -52,7 +54,8 @@ export function PageGhost({ label, title, lede, eyebrow, center = false, size = 
   )
 }
 
-/** A module page: the crumb, the hero's heading, line and two buttons beside its 4:3 picture. */
+/** A module page: the crumb, the hero's heading, line and two buttons beside its 4:3 picture. (S46D) A picture bone's height is `'auto'` — the
+    class's aspect-ratio draws it; an `undefined` height is dropped on its way to the client and the bone's 16 px stayed. */
 export function ModuleGhost() {
   return (
     <Sheet label="Loading the module">
@@ -65,7 +68,7 @@ export function ModuleGhost() {
               <div className={cx(g.lines, p.mt24)}><Bone w="100%" h={14} /><Bone w="94%" h={14} /><Bone w="64%" h={14} /></div>
               <div className={cx(s.buttons, p.mt32)}><Bone w={152} h={48} r={4} className={g.button} /><Bone w={120} h={48} r={4} className={g.button} /></div>
             </div>
-            <Bone w="100%" r={8} style={{ height: undefined }} className={g.picture} />
+            <Bone w="100%" r={8} style={{ height: 'auto' }} className={g.picture} />
           </div>
         </div>
       </section>
@@ -85,7 +88,7 @@ export function ArticleGhost() {
           <div className={p.byline}><Bone w={140} h={16} /><Bone w={110} h={16} /></div>
         </div>
       </section>
-      <div className={s.container}><Bone w="100%" r={16} style={{ height: undefined }} className={g.cover} /></div>
+      <div className={s.container}><Bone w="100%" r={16} style={{ height: 'auto' }} className={g.cover} /></div>
     </Sheet>
   )
 }
@@ -101,6 +104,27 @@ export function LegalGhost({ title }: { title: string }) {
           <Bone w={180} h={12} className={g.updated} />
           <hr className={cx(s.rule, p.mt48)} />
           <div className={p.legalBody}><div><Bone w={220} h={24} /><div className={cx(g.lines, p.mt20)}><Bone w="100%" h={14} /><Bone w="96%" h={14} /><Bone w="88%" h={14} /><Bone w="52%" h={14} /></div></div></div>
+        </div>
+      </section>
+    </Sheet>
+  )
+}
+
+/** (S46D — D4) Pricing's first screen: the eyebrow, the title and its line in their own words, the period switch, and the three plans' cards. */
+export function PricingGhost() {
+  return (
+    <Sheet label="Loading pricing">
+      <section className={cx(s.section, s.pageTop, p.heroBand)}>
+        <div className={cx(s.container, s.narrow, s.center)}>
+          <Words className={cx(s.eyebrow, s.eyebrowCenter)}>Pricing</Words>
+          <Words as="h2" className={cx(s.displayXl, p.mt24, p.max18, s.centerBlock)}>{PRICING_WORDS.title}</Words>
+          <Words as="p" className={cx(s.lede, p.mt24, s.centerBlock)}>{PRICING_WORDS.lede}</Words>
+          <div className={pr.period}><Bone w={262} h={36} r={4} /></div>
+        </div>
+      </section>
+      <section className={cx(s.compact, pr.plansBand)}>
+        <div className={s.container}>
+          <div className={pr.plans}>{[0, 1, 2].map((i) => <Bone key={i} w="100%" r={16} className={g.plan} style={{ height: 'var(--ghost-plan-h)' }} />)}</div>
         </div>
       </section>
     </Sheet>

@@ -35,10 +35,10 @@ export function TrialGhost({ tool = false }: { /** a tool's page — one title w
                 {only ? <Words as="p" className={cx(s.fine, p.mt12)}>{only}</Words> : null}
                 <div className={p.mt32}>
                   <Words as="p" className={t.samplesHead}>{sketch ? START.sketchSample : START.samples}</Words>
-                  <div className={t.samples}>{Array.from({ length: sketch ? 1 : 3 }, (_, i) => <Bone key={i} w="100%" r={8} style={{ height: undefined }} className={g.tile} />)}</div>
+                  <div className={t.samples}>{Array.from({ length: sketch ? 1 : 3 }, (_, i) => <Bone key={i} w="100%" r={8} style={{ height: 'auto' }} className={g.tile} />)}</div>
                 </div>
               </div>
-              {!tool ? <Bone w="100%" r={12} style={{ height: undefined }} className={t.compareGhost} /> : null}
+              {!tool ? <Bone w="100%" r={12} style={{ height: 'auto' }} className={t.compareGhost} /> : null}
             </div>
           </div>
         </section>

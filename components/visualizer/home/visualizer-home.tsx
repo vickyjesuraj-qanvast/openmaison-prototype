@@ -41,6 +41,10 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
  * member may see — a lead's (one each, named after the lead) or a personal one — as covers, with the Kind pill, search, folders for
  * personal designs, the list view, rename · move · duplicate · delete with Undo and the Deleted sheet. New ▾ starts a blank design, a
  * lead's design or one from a sample room; the intro card says what the tool does until it is dismissed.
+ * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M8; 1.0's start strip had From a project and its
+ * landing grouped Projects · Leads; audit 16's VL-03 "projects Later" closed) New ▾ › **For a project…** — pick a project, its lead's design
+ * opens, as the project's Design › Designs opens it — and the Kind pill's **Projects**: a lead's design whose lead is won into a live project
+ * ("Project · P-…"), Leads keeping the ones still leads — the 3D Space Planner's home is the model (Projects · Leads · Personal).
  */
 export function VisualizerHome({ data }: { data: HomeData }) {
   const router = useRouter()
@@ -49,6 +53,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   const [introHidden, setIntroHidden] = useFlagPref(INTRO_PREF, false)
   /* (F118 · F214) the pickers keep where New ▾ was pressed — the open folder a new design lands in */
   const [leadPick, setLeadPick] = useState<LibraryPlace | null>(null)
+  const [projectPick, setProjectPick] = useState<LibraryPlace | null>(null)   // (S46B, M8)
   const [samplePick, setSamplePick] = useState<LibraryPlace | null>(null)
   const [busy, setBusy] = useState(false)
   /* (F118) this page as it stands (its folder, its search) — where the editor's Back returns */
@@ -163,6 +168,11 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   /* (F130) the picker says which leads already have a design — the one the landing shows (a lead's design shows once it has a room) */
   const shownIds = new Set(data.designs.map((d) => d.id))
   const loadLeads = useCallback(async () => data.leads.map((l) => ({ id: l.id, label: l.name, sub: [l.stage, l.propertyType, l.hasDesign && shownIds.has(l.hasDesign) ? 'Has a design' : null].filter(Boolean).join(' · ') })), [data.leads, data.designs])   // eslint-disable-line react-hooks/exhaustive-deps
+  /* (S46B, M8) the projects, as the leads' picker says them — its number, and whether its design is already on the landing */
+  const loadProjects = useCallback(async () => data.projects.map((p) => ({ id: p.id, label: p.name, sub: [p.number, p.hasDesign && shownIds.has(p.hasDesign) ? 'Has a design' : null].filter(Boolean).join(' · ') })), [data.projects, data.designs])   // eslint-disable-line react-hooks/exhaustive-deps
+  /* (S46B, M8) the Kind pill offers Projects once a design is a project's (the planner's Templates rule: shown when it applies) */
+  const hasProjects = data.designs.some((d) => d.projectId) || data.deleted.some((d) => d.projectId)
+  const kindOf = (d: DesignCard) => designKindLabel(d.kind, d.leadStage, d.projectNumber)
 
   return (
     <>
@@ -185,13 +195,17 @@ export function VisualizerHome({ data }: { data: HomeData }) {
           <>
             <DropdownItem onSelect={() => { close(); void blank(place) }}><span className={styles.menuRow}><Icon name="add_photo_alternate" size={20} weight={300} />Blank design</span></DropdownItem>
             <DropdownItem onSelect={() => { close(); setLeadPick(place) }}><span className={styles.menuRow}><Icon name="person" size={20} weight={300} />For a lead…</span></DropdownItem>
+            {/* (S46B, M8) the 3D Space Planner's own row (planner-home.tsx): its glyph, its words */}
+            <DropdownItem onSelect={() => { close(); setProjectPick(place) }}><span className={styles.menuRow}><Icon name="business_center" size={20} weight={300} />For a project…</span></DropdownItem>
             <DropdownDivider />
             <DropdownItem onSelect={() => { close(); setSamplePick(place) }}><span className={styles.menuRow}><Icon name="photo" size={20} weight={300} />From a sample room…</span></DropdownItem>
           </>
         )}
-        filters={[{ key: 'lead', label: 'Leads', test: (t) => t.d.kind === 'lead' }, { key: 'personal', label: 'Personal', test: (t) => t.d.kind === 'personal' }]}
+        /* (S46B, M8) Projects · Leads · Personal — the 3D Space Planner's order; a won lead's design is its project's, never both */
+        filters={[...(hasProjects ? [{ key: 'project', label: 'Projects', test: (t: Item) => t.d.kind === 'lead' && !!t.d.projectId }] : []),
+          { key: 'lead', label: 'Leads', test: (t) => t.d.kind === 'lead' && !t.d.projectId }, { key: 'personal', label: 'Personal', test: (t) => t.d.kind === 'personal' }]}
         filterLabel="Kind"
-        searchText={(t) => `${t.d.leadName ?? ''} ${t.d.roomNames.join(' ')}`}
+        searchText={(t) => `${t.d.leadName ?? ''} ${t.d.projectName ?? ''} ${t.d.projectNumber ?? ''} ${t.d.roomNames.join(' ')}`}
         thumb={(t) => <DesignCover covers={t.d.covers} name={t.title} />}
         glyph={(t) => (
           /* (F133) the list and the Deleted sheet show the design's own cover, as the card does; the wand only while it has no photo */
@@ -202,18 +216,19 @@ export function VisualizerHome({ data }: { data: HomeData }) {
            name's width, at any card size */
         meta={(t, at) => [
           /* (wave E, phone-5) under Kind: Personal the pill already says it — the line keeps its room for the counts; under Leads the stage stays */
-          at.filter === 'all' ? designKindLabel(t.d.kind, t.d.leadStage) : at.filter === 'lead' ? t.d.leadStage : null,
+          at.filter === 'all' ? kindOf(t.d) : at.filter === 'lead' ? t.d.leadStage : at.filter === 'project' ? t.d.projectNumber : null,   // (S46B) under Projects, its number
           count(t.d.rooms, 'room', 'rooms'), count(t.d.renders, 'render', 'renders')].filter(Boolean).join(' · ')}
         usage={(t) => (t.d.roomNames.length ? t.d.roomNames.slice(0, 3).join(', ') + (t.d.roomNames.length > 3 ? ` +${t.d.roomNames.length - 3}` : '') : 'No rooms yet')}
         columns={[
-          { key: 'kind', label: 'Kind', track: '140px', cell: (t) => designKindLabel(t.d.kind, t.d.leadStage), sortable: (t) => t.d.kind },
+          { key: 'kind', label: 'Kind', track: '140px', cell: (t) => kindOf(t.d), sortable: (t) => kindOf(t.d) },
           { key: 'rooms', label: 'Rooms', track: '100px', cell: (t) => String(t.d.rooms), sortable: (t) => t.d.rooms },
           { key: 'renders', label: 'Renders', track: '110px', cell: (t) => String(t.d.renders), sortable: (t) => t.d.renders },
         ]}
         tableKey="viz-designs"
         onOpen={(t) => open(t.id)}
         /* (F084) the lead's Back returns here — this folder, this search */
-        kebab={(t) => (t.d.leadId ? [{ label: 'Open the lead', onSelect: () => router.push(withFrom(`/leads/${t.d.leadId}`, here)) }]
+        kebab={(t) => (t.d.projectId ? [{ label: 'Open the project', onSelect: () => router.push(withFrom(`/projects/${t.d.projectId}`, here)) }]   // (S46B, M8) the planner's row — a won lead's work lives on its project
+          : t.d.leadId ? [{ label: 'Open the lead', onSelect: () => router.push(withFrom(`/leads/${t.d.leadId}`, here)) }]
           : [{ label: 'Link to a lead…', onSelect: () => setLinkFor(t), disabled: !!t.d.mayChange, title: t.d.mayChange ?? undefined }])}   /* (UX audit V2) */
         /* (verify round 1, F129) a refusal throws the server's words (Refused), so the snackbar says why rather than "please try again" */
         onDuplicate={async (t) => { const r = await duplicateDesign(t.id); if ('error' in r) throw new Refused(r.error); snackbar({ message: 'Duplicated as a personal copy', actionLabel: 'Open', onAction: () => open(r.id) }) }}   /* one line at 344 whatever the name (the Open action rides it) */
@@ -245,7 +260,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         deletedMeta={{ label: 'Rooms', value: (t) => count(t.d.rooms, 'room', 'rooms') }}
         usageWord={(t) => count(t.d.renders, 'render', 'renders')}
         deletedUsageLabel="Renders"
-        empty={{ title: 'No designs yet', help: 'Start with a room photo — a blank design, a lead’s site photos or one of the sample rooms. New ▾ has all three.',
+        empty={{ title: 'No designs yet', help: 'Start with a room photo — a blank design, a lead’s or a project’s site photos, or one of the sample rooms. New ▾ has them all.',
           /* (REG-735) the studio's first visit: one welcome in place of the intro card, the empty state and the toolbar */
           welcome: <VisualizerWelcome busy={busy} onUpload={(fs) => { void upload(fs) }} onLead={() => setLeadPick({ folderId: null, here })}
                                       onSample={(key) => { void run('start the design', () => fromSample(key, false, { folderId: null, here })) }} /> }}
@@ -253,6 +268,9 @@ export function VisualizerHome({ data }: { data: HomeData }) {
       />
       <PickOneDialog open={!!linkFor} onClose={() => setLinkFor(null)} title="Link to a lead" label="Lead" load={loadLinkable} confirmLabel="Link" onPick={(id) => { if (linkFor) void linkTo(linkFor, id) }} empty="No leads to link to yet" />
       <PickOneDialog open={!!leadPick} onClose={() => setLeadPick(null)} title="Design for a lead" label="Lead" load={loadLeads} confirmLabel="Open design" onPick={(id) => { const at = leadPick ?? { folderId: null, here }; void forLead(id, at) }} empty="No leads to design for yet" />
+      {/* (S46B, M8) a project's design is its lead's — opened (or made on first open) by the lead's own step, as the project's Design › Designs */}
+      <PickOneDialog open={!!projectPick} onClose={() => setProjectPick(null)} title="Design for a project" label="Project" load={loadProjects} confirmLabel="Open design"
+                     onPick={(id) => { const pr = data.projects.find((x) => x.id === id); const at = projectPick ?? { folderId: null, here }; setProjectPick(null); if (pr) void forLead(pr.leadId, at) }} empty="No projects to design for yet" />
       <Dialog open={!!samplePick} onClose={() => setSamplePick(null)} title="Start from a sample room" subtitle="A furnished photo to try every tool on — or a sketch to render." size="modal" width={600}
               footer={<Button variant="secondary" appearance="outlined" onPress={() => setSamplePick(null)}>Cancel</Button>}>
         <div className={styles.samples} role="list" data-testid="viz-samples">

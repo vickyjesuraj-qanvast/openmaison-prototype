@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { leadAssignees, leads, members, projectTickets, projects, settings, ticketReplies, type ProjectTicket, type TicketReply } from '@/lib/db/schema'
 import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { pickable } from '@/lib/leads/assign-policy'
-import { mayChangeProject } from '@/lib/projects/policy'
+import { CHANGE_RULE, mayChangeProject } from '@/lib/projects/policy'
 import { titleCaseName } from '@/lib/format'
 import { imageAddress } from '@/lib/leads/file-store'
 import { asksOf } from './client-asks'   // (simplify S-22)
@@ -158,20 +158,51 @@ export async function fetchProjectTickets(projectId: string): Promise<ProjectTic
   }
 }
 
-export type StudioTicketsData = { tickets: TicketRow[]; categories: string[]; now: number; me: { id: string } }
-/** Every ticket on the projects the viewer sees, live ones first (the studio-wide list, /projects/tickets). */
+/** (pending modules S46B, M1) A project the studio-wide list can raise a ticket on: its client and team for the project tab's own New ticket
+    compose, and why this viewer can't (the server's rule, `createTicket`'s) — null when they can. */
+export type TicketProject = { id: string; name: string; number: string; client: string; stage: string; teamIds: string[]; blocked: string | null }
+/** (S46B, M1) New ticket on the studio-wide list: the projects the viewer sees (the ones they may change first), the studio's live categories
+    and its members — each project's compose reads its own team out of them, as the tab's `teamFor` does. Null while no project can take one. */
+export type TicketRaise = { projects: TicketProject[]; categories: string[]; members: TicketTeamMember[] }
+export type StudioTicketsData = { tickets: TicketRow[]; categories: string[]; now: number; me: { id: string }; raise: TicketRaise | null }
+/** Every ticket on the projects the viewer sees, live ones first (the studio-wide list, /tickets — a rail place since S46, REG-2524). */
 export async function fetchStudioTickets(): Promise<StudioTicketsData> {
   const viewer = await fetchViewer()
-  const [rows, seen, categories] = await Promise.all([
+  const [rows, seen, categories, raise] = await Promise.all([
     db.select({ t: projectTickets, p: { id: projects.id, name: projects.name, number: projects.number, leadId: projects.leadId }, client: leads.name }).from(projectTickets)
       .innerJoin(projects, eq(projects.id, projectTickets.projectId)).innerJoin(leads, eq(leads.id, projects.leadId))
       .where(and(isNull(projects.deletedAt), isNull(leads.deletedAt))),
     visibleLeadIds(viewer),
     fetchTicketCategories(),
+    ticketRaise(viewer),
   ])
   const mine = rows.filter((r) => !seen || seen.has(r.p.leadId))
   const tickets = (await rowsOf(mine.map((r) => ({ t: r.t, p: r.p, client: titleCaseName(r.client) })))).sort(order)
-  return { tickets, categories: categories.map((c) => c.name), now: Date.now(), me: { id: viewer.id } }
+  return { tickets, categories: categories.map((c) => c.name), now: Date.now(), me: { id: viewer.id }, raise }
+}
+
+/** (S46B, M1) Which projects this viewer may raise a ticket on from the studio-wide list — `createTicket`'s own rule (`mayChangeProject` over
+    the project's team; a completed project's tickets carry on, a defect after handover is what they are for), over the projects they see.
+    Null when none can take one: the list then offers no New ticket. Also the ghost's seed (`tickets.new`). */
+export async function ticketRaise(viewer?: Awaited<ReturnType<typeof fetchViewer>>): Promise<TicketRaise | null> {
+  const v = viewer ?? await fetchViewer()
+  const [rows, seen, team, all, cats] = await Promise.all([
+    db.select({ id: projects.id, name: projects.name, number: projects.number, stage: projects.stage, leadId: projects.leadId, client: leads.name }).from(projects)
+      .innerJoin(leads, eq(leads.id, projects.leadId)).where(and(isNull(projects.deletedAt), isNull(leads.deletedAt))),
+    visibleLeadIds(v),
+    db.select({ leadId: leadAssignees.leadId, id: leadAssignees.memberId }).from(leadAssignees),
+    db.select({ id: members.id, name: members.name, role: members.role, color: members.color, isActive: members.isActive }).from(members),
+    fetchTicketCategories(),
+  ])
+  const list: TicketProject[] = rows.filter((r) => !seen || seen.has(r.leadId)).map((r) => {
+    const teamIds = team.filter((t) => t.leadId === r.leadId).map((t) => t.id)
+    return { id: r.id, name: r.name, number: r.number, client: titleCaseName(r.client), stage: r.stage, teamIds, blocked: mayChangeProject(v, teamIds) ? null : CHANGE_RULE }
+  })
+  if (!list.some((x) => !x.blocked)) return null
+  /* the ones this viewer may raise on first; inside, the running ones before the completed, the newest number first */
+  const rank = (x: TicketProject) => (x.blocked ? 2 : 0) + (x.stage === 'completed' ? 1 : 0)
+  list.sort((a, b) => rank(a) - rank(b) || b.number.localeCompare(a.number, undefined, { numeric: true }))
+  return { projects: list, categories: liveCategories(cats), members: pickable(all).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, onTeam: false })) }
 }
 
 /** One ticket's thread for the studio — the studio-wide list opens it in the drawer. Null when the viewer may not see its project. */
@@ -211,15 +242,26 @@ export async function ticketsToAnswer(projectId: string): Promise<number> {
   const rows = await db.select().from(projectTickets).where(and(eq(projectTickets.projectId, projectId), inArray(projectTickets.status, ['open', 'in_progress'])))
   return rows.filter((t) => turnOf({ status: t.status, lastClientAt: t.lastClientAt?.getTime() ?? null, lastStudioAt: t.lastStudioAt?.getTime() ?? null, createdAt: t.createdAt.getTime() }) === 'studio').length
 }
-/** Live tickets on the projects the viewer sees whose turn is the studio's — the Projects header's Tickets button. */
+/** Live tickets on the projects the viewer sees whose turn is the studio's — the rail's Tickets badge (S46, REG-2524; it was the Projects ⋮'s
+    row, REG-1425) and (S46B, M1) the Dashboard's Tickets tile: one count, read here. */
 export async function countTicketsToAnswer(): Promise<number> {
+  return (await ticketTally()).toAnswer
+}
+/** (pending modules S46B, M1 — 1.0's "Escalations (3)") The studio's live tickets on the projects the viewer sees: how many wait on the studio
+    (the ⋮ row's count — `countTicketsToAnswer`), how many are open in all, how many are escalated. */
+export async function ticketTally(): Promise<{ toAnswer: number; open: number; escalated: number }> {
   const viewer = await fetchViewer()
   const [rows, seen] = await Promise.all([
     db.select({ t: projectTickets, leadId: projects.leadId }).from(projectTickets).innerJoin(projects, eq(projects.id, projectTickets.projectId))
       .where(and(isNull(projects.deletedAt), inArray(projectTickets.status, ['open', 'in_progress']))),
     visibleLeadIds(viewer),
   ])
-  return rows.filter((r) => (!seen || seen.has(r.leadId)) && turnOf({ status: r.t.status, lastClientAt: r.t.lastClientAt?.getTime() ?? null, lastStudioAt: r.t.lastStudioAt?.getTime() ?? null, createdAt: r.t.createdAt.getTime() }) === 'studio').length
+  const mine = rows.filter((r) => !seen || seen.has(r.leadId))
+  return {
+    toAnswer: mine.filter((r) => turnOf({ status: r.t.status, lastClientAt: r.t.lastClientAt?.getTime() ?? null, lastStudioAt: r.t.lastStudioAt?.getTime() ?? null, createdAt: r.t.createdAt.getTime() }) === 'studio').length,
+    open: mine.length,
+    escalated: mine.filter((r) => !!r.t.escalatedAt).length,
+  }
 }
 
 /** Whether a file is a photo the client may open through the portal: on one of the lead's tickets, or a reply to the client (never a note's). */

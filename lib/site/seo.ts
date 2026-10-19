@@ -95,6 +95,7 @@ export function sitePages(blog: { slug: string; publishedAt: string; updatedAt?:
     { path: '/site', priority: 1, changeFrequency: 'weekly' },
     { path: '/site/platform', priority: 0.9, changeFrequency: 'monthly' },
     ...MODULES.map((m) => ({ path: m.href, priority: 0.8, changeFrequency: 'monthly' as const })),
+    { path: '/site/pricing', priority: 0.8, changeFrequency: 'monthly' },   // (S46D — D4) 1.0's plg sitemap listed /pricing
     { path: '/site/story', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/site/trust', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/site/blog', priority: 0.7, changeFrequency: 'weekly' },

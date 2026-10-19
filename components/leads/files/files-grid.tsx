@@ -10,12 +10,14 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { fileGlyph, type FileRow } from '@/lib/leads/file-model'
+import { SEND_FOR_SIGNATURE, SIGN_HELP, type SignRow } from '@/lib/contracts/file-signing'
 import styles from './files-grid.module.css'
 
 /** File tile kebab (931:40131, 200×226): Open · Move · Duplicate · Download · Rename · Delete. */
 export type FileAction = 'open' | 'move' | 'duplicate' | 'download' | 'rename' | 'delete' | 'visualize' | 'copyLink' | 'whatsapp'
   | 'shown'   // (Projects r4a) Show to client / Stop showing to client
   | 'picture3d'   // (pending modules S28) a floor plan's Make a 3D picture
+  | 'sign'   // (S46D — D2) a PDF's Send for signature
 /** Folder card kebab (931:40130, 200×154): Open · Move · Rename · Delete. */
 export type FolderAction = 'open' | 'move' | 'rename' | 'delete'
 
@@ -42,6 +44,8 @@ export type FilesGridProps = {
   readOnly?: boolean
   /** (pending modules S28) whether the file reads as a floor plan — its menu offers Make a 3D picture */
   floorPlan?: (f: FileRow) => boolean
+  /** (S46D — D2) a file's Send for signature row: null hides it; `why` says why it can't be pressed (lib/contracts/file-signing.ts) */
+  signRow?: (f: FileRow) => SignRow
 }
 
 /** The tile's kind glyph: "image" 20/Regular red, "picture_as_pdf" for a PDF (931:39125 caption). (REG-950) an update's document and video
@@ -83,7 +87,7 @@ function FileName({ name }: { name: string }) {
   )
 }
 
-export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf, visualizeLabel, readOnly = false, floorPlan }: FilesGridProps) {
+export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf, visualizeLabel, readOnly = false, floorPlan, signRow }: FilesGridProps) {
   /* (REG-728) The tile's menu opens through the body portal, anchored to the pressed kebab, as the folder card's (REG-664) — an
      inline menu hung inside the tile's row. One menu at a time, so one instance serves every tile. */
   const [menu, setMenu] = useState<string | null>(null)
@@ -131,7 +135,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
         </FolderGroup>
       ) : null}
       <FolderMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} name={menuFolder?.name ?? ''} onPick={pickFolder} locked={menuFolder?.system ?? null} />
-      <FileMenu open={!!menuFile} anchor={fileAnchor} onClose={() => setMenu(null)} name={menuFile?.name} visualize={menuFile ? visualizeLabel?.(menuFile) ?? null : null} share={!!menuFile?.share} shown={menuFile ? !!menuFile.shownToClientAt : null} onPick={pickFile} readOnly={readOnly} picture3d={!!menuFile && !!floorPlan?.(menuFile)} paper={!!menuFile?.paper} />
+      <FileMenu open={!!menuFile} anchor={fileAnchor} onClose={() => setMenu(null)} name={menuFile?.name} visualize={menuFile ? visualizeLabel?.(menuFile) ?? null : null} share={!!menuFile?.share} shown={menuFile ? !!menuFile.shownToClientAt : null} onPick={pickFile} readOnly={readOnly} picture3d={!!menuFile && !!floorPlan?.(menuFile)} paper={!!menuFile?.paper} sign={menuFile ? signRow?.(menuFile) ?? null : null} />
 
       {groups.map((g) => {
         const ids = g.files.map((f) => f.id)
@@ -240,7 +244,7 @@ export function FolderMenu({ open, anchor, onClose, onPick, name, locked = null,
 
 /** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared by the grid's tiles and the list's file rows.
  *  (REG-728) Through the body portal, anchored to the kebab (`anchor` must hold it, so a second press on it toggles). */
-export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null, share = false, shown = null, readOnly = false, picture3d = false, paper = false }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FileAction) => void; name?: string
+export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null, share = false, shown = null, readOnly = false, picture3d = false, paper = false, sign = null }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FileAction) => void; name?: string
   /** (REG-675, AI Visualizer Q-31) the item's words: a photo opens as a room of the lead's design, a filed render as its own version (F095); null hides it */
   visualize?: string | null
   /** (UX audit 2026-09-30, T9) the file has a client link — Copy link · Send on WhatsApp after Download */
@@ -253,7 +257,9 @@ export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null
   picture3d?: boolean
   /** (S42 audit C-03, call C·4) a money paper's entry — an invoice, a receipt, a credit note: Open · Download · Copy link · Send on WhatsApp · Show
       to client only — it stays as it was filed (lib/leads/file-model.ts `paperRule`; the server refuses the rest too) */
-  paper?: boolean }) {
+  paper?: boolean
+  /** (S46D — D2) Send for signature: null hides it; a `why` reads the row disabled with its reason in it (REG-656) */
+  sign?: SignRow }) {
   if (readOnly) return (
     <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name || 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
@@ -270,9 +276,16 @@ export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null
       <DropdownItem onSelect={() => onPick('download')}>Download</DropdownItem>
       {share ? <DropdownItem onSelect={() => onPick('copyLink')}>Copy link</DropdownItem> : null}
       {share ? <DropdownItem onSelect={() => onPick('whatsapp')}>Send on WhatsApp</DropdownItem> : null}
+      <SignItem sign={sign} onPick={() => onPick('sign')} />
       {shown !== null ? <DropdownItem onSelect={() => onPick('shown')} help={shown ? 'It leaves the client’s portal' : 'It appears in the client’s portal'}>{shown ? 'Stop showing to client' : 'Show to client'}</DropdownItem> : null}
       {paper ? null : <DropdownItem onSelect={() => onPick('rename')}>Rename</DropdownItem>}
       {paper ? null : <DropdownItem tone="danger" onSelect={() => onPick('delete')}>Delete</DropdownItem>}
     </PortalMenu>
   )
+}
+
+/** (S46D — D2) "Send for signature" — the file's ⋮ (grid, list and the viewer): its line says where it goes, or why it can't. */
+export function SignItem({ sign, onPick }: { sign: SignRow; onPick: () => void }) {
+  if (!sign) return null
+  return <DropdownItem onSelect={onPick} disabled={!!sign.why} title={sign.why ?? undefined} help={sign.why ? undefined : SIGN_HELP}>{SEND_FOR_SIGNATURE}</DropdownItem>
 }

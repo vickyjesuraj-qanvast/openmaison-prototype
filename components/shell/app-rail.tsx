@@ -35,6 +35,7 @@ import styles from './app-rail.module.css'
 const TOP_ITEMS = [
   { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },   /* (pending modules S22) live — the studio's front door (1.0's /dashboard), what needs you · what's next · where it stands */
   { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the studio's tasks, second after Dashboard as 1.0 had it; task_alt has no filled state in Material Symbols — the owner chose to leave it */
+  { icon: 'handyman', label: 'Tickets', href: '/tickets' },   /* (S46 — REG-2524, her ask 2026-10-19: "in 1.0 the escalations is like the tasks on the sidebar and i want the same in 2.0") every ticket on the projects you see, after Tasks as 1.0's Escalations sat; its badge the tickets waiting on the studio */
   { icon: 'business_center', label: 'Projects', href: '/projects' },   /* (REG-919, Projects round 1) a destination now; its badge = the projects that need attention */
   { icon: 'people_alt', label: 'Leads', href: '/leads' },
   { icon: 'storefront', label: 'Marketplace', href: '/marketplace' },   /* (pending modules S24) live: Qanvast's partner brands and their deals — 1.0's rail item; Accounting's rail leaves it out (opensPath) */
@@ -51,20 +52,26 @@ const BOTTOM_ITEMS = [
  *  `team`: the studio's members for Demo Studio › View as (REG-667).
  *  `credits`: the studio's plan and AI credits for the Upgrade slot (REG-701) — Upgrade on Free, the balance on a paid plan. */
 /** (REG-715) The rail's places the G then … keys go to (`lib/keys/registry.ts` GO). */
-const GO_BY_HREF: Record<string, string> = { '/dashboard': 'go.dashboard', '/tasks': 'go.tasks', '/projects': 'go.projects', '/leads': 'go.leads', '/chat': 'go.messages', '/settings': 'go.settings' }   // (pending modules S16) Messages takes G M (1.0's G I)   // (REG-1360) G F still goes to Finance, now in Company — no rail item to light
+const GO_BY_HREF: Record<string, string> = { '/dashboard': 'go.dashboard', '/tasks': 'go.tasks', '/projects': 'go.projects', '/leads': 'go.leads', '/chat': 'go.messages', '/tickets': 'go.tickets', '/settings': 'go.settings' }   // (pending modules S16) Messages takes G M (1.0's G I)   // (REG-1360) G F still goes to Finance, now in Company — no rail item to light
 /** (UX audit V6) The rail's dead ends say so where they are pointed at — the tooltip, the name a screen reader reads — as the Company panel's
     "Soon" does; the press still answers "Coming soon in OpenMaison 2.0". */
 export const SOON = ' · coming soon'
-/** (UX audit 2026-09-30, T5) Where an item lands while it wears its badge: Tasks' red number is the viewer's own overdue tasks, so it opens them. */
-const BADGE_LANDING: Record<string, string> = { '/tasks': '/tasks?scope=mine&due=overdue', '/projects': '/projects?scope=attention' }   /* (REG-919) the Needs attention tile it counts */
-/** (REG-919) What an item's count says to a screen reader — the Tasks item's overdue tasks, the Projects item's projects that need attention. */
-const BADGE_WORDS: Record<string, string> = { '/tasks': 'overdue', '/projects': 'need attention', '/chat': 'unread' }   // (gaps build H)
+/** (UX audit 2026-09-30, T5) Where an item lands while it wears its badge: Tasks' red number is the viewer's own overdue tasks, so it opens them.
+    (pending modules S46C · H2) Leads' number is the leads nobody has opened yet, so it opens the listing's Unseen scope — the band it counts. */
+const BADGE_LANDING: Record<string, string> = { '/tasks': '/tasks?scope=mine&due=overdue', '/projects': '/projects?scope=attention', '/leads': '/leads?scope=unseen' }   /* (REG-919) the Needs attention tile it counts */
+/** (REG-919) What an item's count says to a screen reader — the Tasks item's overdue tasks, the Projects item's projects that need attention,
+    (S46C · H2) the Leads item's new leads ("Leads (2 new)"). */
+const BADGE_WORDS: Record<string, string> = { '/tasks': 'overdue', '/tickets': 'waiting', '/projects': 'need attention', '/chat': 'unread', '/leads': 'new' }   // (gaps build H)
 /** (parity map, PR-022 · FR-040) The rail's items this member opens: every one for the studio's roles; for Accounting the places their
     work is — Tasks, Company (its panel lists Finance and Reports), the bell and Settings — never a dead end, never the workspace. */
 export const railItemOpens = (role: string | null | undefined, it: { label: string; href?: string; panel?: string }) =>
   opensWorkspace(role) || it.label === 'Notifications' || !!it.panel || (!!it.href && opensPath(role, it.href))
 /** (fix-A, A-38) "1 needs attention", "2 need attention". */
 const badgeWords = (href: string, n: number) => (href === '/projects' && n === 1 ? 'needs attention' : BADGE_WORDS[href] ?? 'overdue')
+/** (pending modules S46C · H2) The rail's badge rule, shared with the phone's dock and More sheet so one count reads and lands alike everywhere:
+    where an item goes while it wears its count, and the name it says ("Leads (2 new)", "Tasks (3 overdue)"). */
+export const badgeHref = (href: string, n: number): string => (n > 0 ? BADGE_LANDING[href] ?? href : href)
+export const badgeLabel = (label: string, href: string, n: number): string | undefined => (n > 0 ? `${label} (${n} ${badgeWords(href, n)})` : undefined)
 
 export function AppRail({ badges, team = [], credits = null, studio = DEMO_CHROME }: { badges?: Record<string, number>; team?: SessionMember[]; credits?: CreditsChrome | null
   /** (pending modules S31) the studio this prototype has open — the block's name, its second line, its picture, the Studios group */
@@ -151,7 +158,7 @@ export function AppRail({ badges, team = [], credits = null, studio = DEMO_CHROM
     return (
       <Tooltip key={it.label} label={soon ? `${it.label}${SOON}` : it.label} side="right" disabled={expanded && !shortcut && !soon} shortcut={shortcut}>
         {it.href ? (
-          <Link href={badges?.[it.href] ? BADGE_LANDING[it.href] ?? it.href : it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} ${badgeWords(it.href, badges[it.href] ?? 0)})` : it.label}
+          <Link href={badgeHref(it.href, badges?.[it.href] ?? 0)} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badgeLabel(it.label, it.href, badges?.[it.href] ?? 0) ?? it.label}
                 aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>

@@ -470,7 +470,8 @@ async function held(b, opts, url, fn, arg) {
       const C = await context(opts()); const d = await page(C, 'rail')
       await go(d, `/meetings/${KM}?from=${encodeURIComponent(`/leads/${KEVIN}/meetings`)}`, 1800)
       const current = await d.locator('nav [aria-current="page"], [class*="app-rail"] [aria-current="page"]').allInnerTexts().catch(() => [])
-      const leadsOn = await d.locator('[class*="app-rail-module__"] a[href="/leads"][aria-current="page"]').count()
+      /* (S46C — H2, a deliberate change of this rule) while Leads wears its count of unseen new leads it lands on `/leads?scope=unseen` */
+      const leadsOn = await d.locator('[class*="app-rail-module__"] a[href^="/leads"][aria-current="page"]').count()
       const toolsOn = await d.locator('[class*="app-rail-module__"] button[aria-label^="Tools"][aria-current="page"]').count()
       ok(leadsOn === 1 && toolsOn === 0, 'C-24: a meeting opened from its lead lights Leads, not Tools', JSON.stringify(current))
       await go(d, `/meetings/${KM}?from=${encodeURIComponent('/meetings')}`, 1800)

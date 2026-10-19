@@ -2,7 +2,7 @@
 // keys public:marketing-website · onboarding:book-a-demo). Each item asserted as the rule it builds, never another round's count:
 //  - every page of OpenMaison's site opens SIGNED OUT under /site (the studio app's front door unchanged: `/` is sign-in signed out, the
 //    Dashboard signed in), with its own title, canonical, link preview (/card/site/<page>, OpenMaison's card) and structured data
-//  - 1.0's old addresses land on the new pages; pricing is hidden (home); an unknown site address is the site's own 404, in the site's frame
+//  - 1.0's old addresses land on the new pages; (S46D) /pricing on the site's Pricing; an unknown site address is the site's own 404, in the site's frame
 //  - the SEO layer: robots (the site only; AI training crawlers blocked everywhere), the sitemap (the site's pages only, each one opens),
 //    llms.txt in 2.0's names; the card picture draws
 //  - 2.0's names everywhere (no Quote Digitizer, mAIson, Co-Pilot, Visualiser as a module), none of the claims 2.0 doesn't make
@@ -108,14 +108,14 @@ const WATCHED = ['beta_signups', 'contact_messages', 'newsletter_subscribers', '
       await c2.close()
     }
 
-    console.log('\n§2 1.0\'s addresses, pricing hidden, the site\'s own 404')
+    console.log('\n§2 1.0\'s addresses, /pricing on Pricing, the site\'s own 404')
     {
       const ctx = await signedOut(); const p = await page(ctx, '§2')
       for (const [from, to] of [['/story', '/site/story'], ['/about', '/site/story'], ['/products', '/site/platform'], ['/ai-agents', '/site/platform'], ['/platform', '/site/platform'],
         ['/platform/quote-digitizer', '/site/platform/upload-a-quote'], ['/platform/co-pilot', '/site/platform/meeting-copilot'], ['/platform/maison-bot', '/site/platform/maison-ai'],
         ['/platform/visualiser', '/site/platform/visualizer'], ['/blog/open-maison-vs-houzz-pro', '/site/blog/open-maison-vs-houzz-pro'], ['/changelog', '/site/changelog'],
         ['/careers', '/site/careers'], ['/contact', '/site/contact'], ['/privacy', '/site/privacy'], ['/terms', '/site/terms'], ['/cookies', '/site/cookies'], ['/trust', '/site/trust'],
-        ['/pricing', '/site'], ['/site/pricing', '/site']]) {
+        ['/pricing', '/site/pricing']]) {   // (S46D — D4, a deliberate change of this rule) 1.0's plg Pricing is public: /pricing lands on /site/pricing, now a page of its own
         await p.goto(BASE + from, { waitUntil: 'domcontentloaded' })
         ok(new URL(p.url()).pathname === to, `${from} → ${to}`)
       }

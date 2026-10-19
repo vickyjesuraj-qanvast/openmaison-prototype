@@ -104,6 +104,7 @@
    Studio module's cards — the team by role, the issuing entities and Who may do what on the event table. */
 .moduleLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--om-spacing-1); margin-top: var(--om-spacing-1); }
 .moduleLinks > span:first-child { margin-right: var(--om-spacing-1); }
+.moduleLinks + .moduleLinks { margin-top: 0; }   /* (pending modules S46C · M2) Your profile's line right under the Kept in Company links */
 .settingHeadRow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); }
 .settingHeadRow > .settingHead { flex: 1 1 320px; min-width: 0; }
 /* (one-home N-06) Settings › Studio's Team list and Issuing entities table left with their cards — Company › Members and Profile hold them. */

@@ -25,6 +25,7 @@ import { site } from '@/lib/site/model'
 import { carryTrialRoom, hasTrialRoom, takeTrialRoom, TRIAL_LANDING } from '@/lib/visualizer/trial/carry'
 import { carrySnackbar, useSnackbar } from '@/components/om/snackbar'
 import { anyWork, carriedLine, landedLine, roomLandedLine, type WorkCount } from '@/lib/trial/policy'
+import { intentPlanName, withPlanIntent, type PlanIntent } from '@/lib/credits/plan-intent'   // (S46D — D4)
 import signIn from './sign-in.module.css'
 import styles from './sign-up.module.css'
 
@@ -52,14 +53,15 @@ type Step = 'who' | 'member' | 'details' | 'code'
  * mobile, then the 6-digit code — and the studio opens, signed in as its Owner, with the welcome and Set up your studio waiting (S08). The
  * stand-in says plainly that no text is sent; on this prototype the studio opens in a database of its own and the demo stays as it is.
  */
-export function StudioSignUp({ paused, demo, canStart, trial = null }: { paused: boolean; /** the stand-in provider — the page says so */ demo: boolean; /** a studio can be made on this server */ canStart: boolean
-  /** (pending modules S41b-3) what this browser made in the website's free trial — it moves into the studio made here */ trial?: WorkCount | null }) {
+export function StudioSignUp({ paused, demo, canStart, trial = null, intent = null }: { paused: boolean; /** the stand-in provider — the page says so */ demo: boolean; /** a studio can be made on this server */ canStart: boolean
+  /** (pending modules S41b-3) what this browser made in the website's free trial — it moves into the studio made here */ trial?: WorkCount | null
+  /** (S46D — D4) the plan picked on the website's Pricing — the new studio opens Plans on it (Freelance starts as a studio of one) */ intent?: PlanIntent | null }) {
   const snackbar = useSnackbar()
   const handed = useSyncExternalStore(noStore, readHanded, () => NOTHING)
   /* (pending modules S36) a room photo brought from the website's AI Visualizer trial — it goes into the studio made here */
   const carried = useSyncExternalStore(noStore, hasTrialRoom, () => false)
   const [step, setStep] = useState<Step>('who')
-  const [kind, setKind] = useState<SignUpKind>('studio')
+  const [kind, setKind] = useState<SignUpKind>(intent?.plan === 'pro_freelance' ? 'solo' : 'studio')   // (S46D — D4) Freelance is a business of one
   const [studioName, setStudioName] = useState('')
   const [ownerName, setOwnerName] = useState('')
   const [phoneOwn, setPhone] = useState<string | null>(null)
@@ -138,7 +140,7 @@ export function StudioSignUp({ paused, demo, canStart, trial = null }: { paused:
       if (room) carryTrialRoom({ ...room, ...(c && anyWork(c) ? { landed: roomLandedLine(c) } : {}) })
       const to = room ? TRIAL_LANDING : c && (c.leads || c.quote) ? '/leads' : c?.reading ? '/quote-x-ray' : r.to
       if (c && !room) carrySnackbar(to, landedLine(c))
-      window.location.assign(to)
+      window.location.assign(withPlanIntent(to, intent))   // (S46D — D4) wherever it lands, Plans opens on the plan picked on the website
     } catch { snackbar({ message: SIGN_UP.couldnt }) }
     finally { if (!landed) setBusy(false) }
   }
@@ -202,7 +204,7 @@ export function StudioSignUp({ paused, demo, canStart, trial = null }: { paused:
               {taken ? <p className={portal.line} data-testid="sign-up-taken"><Link className={portal.link} href={SIGN_IN_PATH}>Sign in</Link> with it instead.</p> : null}
               {formError ? <p className={portal.error} role="alert" data-testid="sign-up-error">{formError}</p> : null}
               <button type="submit" className={portal.go} disabled={busy} data-testid="sign-up-send">{busy ? 'Sending…' : 'Send me a code'}</button>
-              <p className={portal.line} data-testid="sign-up-plan">{SIGN_UP.plan}</p>
+              <p className={portal.line} data-testid="sign-up-plan">{intent ? SIGN_UP.planPicked(intentPlanName(intent.plan)) : SIGN_UP.plan}</p>
             </form>
           ) : null}
 

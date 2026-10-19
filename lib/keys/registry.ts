@@ -52,7 +52,8 @@ export const KEYS: KeyDef[] = [
   { id: 'go.projects', keys: 'g p', label: 'Go to Projects', area: 'everywhere' },   // (REG-923, Projects Q-28) Projects takes G P
   { id: 'go.pricebook', keys: 'g b', label: 'Go to Price book', area: 'everywhere' },   // (REG-923) …and the Price book moves to G B
   { id: 'go.finance', keys: 'g f', label: 'Go to Finance', area: 'everywhere' },   // (gaps build F1) money out's lists
-  { id: 'go.messages', keys: 'g m', label: 'Go to Messages', area: 'everywhere' },   // (pending modules S16 — 1.0's G then I, its Inbox) the rail's Messages, the one rail place that had no key
+  { id: 'go.messages', keys: 'g m', label: 'Go to Messages', area: 'everywhere' },
+  { id: 'go.tickets', keys: 'g e', label: 'Go to Tickets', area: 'everywhere' },   // (S46 — REG-2524) the rail's Tickets — 1.0's G then E (Escalations)   // (pending modules S16 — 1.0's G then I, its Inbox) the rail's Messages, the one rail place that had no key
   { id: 'go.notifications', keys: 'g n', label: 'Open notifications', area: 'everywhere' },
   { id: 'go.settings', keys: 'g s', label: 'Go to Settings', area: 'everywhere' },
   { id: 'undo', keys: 'mod+z', label: 'Undo, while a message offers it', area: 'everywhere' },
@@ -145,10 +146,23 @@ export const GO: { key: string; id: string; label: string; href?: string }[] = [
   { key: 'v', id: 'go.visualizer', label: 'AI Visualizer', href: '/visualizer' },
   { key: 'b', id: 'go.pricebook', label: 'Price book', href: '/company/price-book' },   // (REG-923) was P
   { key: 'f', id: 'go.finance', label: 'Finance', href: '/company/finance' },   // (gaps build F1) · (REG-1360) Company › Finance
+  { key: 'e', id: 'go.tickets', label: 'Tickets', href: '/tickets' },   // (S46 — REG-2524) a rail place now, so its key is listed (1.0's G then E)
   { key: 'm', id: 'go.messages', label: 'Messages', href: '/chat' },   // (pending modules S16) 1.0's G then I (Inbox) — the word is Messages here (one-home N-08)
   { key: 'n', id: 'go.notifications', label: 'Notifications' },
   { key: 's', id: 'go.settings', label: 'Settings', href: '/settings' },
 ]
+
+/**
+ * (S46A — the findability audit's N-5 · H1, her "fix everything" 2026-10-19) 1.0's G then I (its Inbox) and G then E (its Escalations), kept as
+ * quiet aliases: each goes where the place lives now — Messages, and Projects › Tickets — and neither is listed in the ? panel or the G hint,
+ * which teach 2.0's keys (G then M). REG-1830 had left both out; the audit found two keys a 1.0 hand still presses, so they answer now.
+ * (S46 — REG-2524) Tickets became a rail place, so G then E is a listed key in GO; only G then I stays a quiet alias.
+ */
+export const GO_ALIASES: { key: string; id: string; label: string; href: string }[] = [
+  { key: 'i', id: 'go.messages', label: 'Messages', href: '/chat' },
+]
+/** The place G then `key` goes to — the listed keys first, then the quiet aliases. */
+export const goFor = (key: string) => GO.find((g) => g.key === key) ?? GO_ALIASES.find((g) => g.key === key)
 
 /** The page keys a marked control answers, by its `data-kb` value. */
 export const MARKED = ['create', 'filters', 'view', 'delete', 'clear', 'move-stage', 'assign', 'edit', 'back', 'preview'] as const

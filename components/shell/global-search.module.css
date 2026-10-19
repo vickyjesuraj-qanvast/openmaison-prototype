@@ -77,6 +77,9 @@
 .sheetInner { display: flex; flex-direction: column; min-height: 70dvh; }
 .sheetInner .field { min-height: 52px; }
 .sheetInner .list { overflow: visible; }
+/* (S46A, bug fix) the chip rail's own `flex: 1` (chip-rail.module.css .wrap) made the scope chips' band grow with a short answer — a few rows or
+   "Nothing matches" left 150px of blank band under the chips; the list takes the sheet's room, the band keeps its height */
+.sheetInner .scopes { flex-grow: 0; }
 
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 /* where there is no keyboard, no key hints */

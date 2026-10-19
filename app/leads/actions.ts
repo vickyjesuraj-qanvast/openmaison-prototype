@@ -24,7 +24,7 @@ import { keepQuoteSentUpload, recordWonUpload, splitStageFiles } from '@/lib/con
 import { ensureProjectForLead } from '@/lib/projects/create'
 import { LEAD_HAS_PROJECT, leadHasProjectNamed, leadsHaveProjects } from '@/lib/projects/handover-model'   // (Projects round 7, Q-27)
 import { isActiveStage, projectHoldsWon, roleStageBlock } from '@/lib/leads/stage-policy'   // (fix-E, A-01) · (S42F) a lead past New needs a member
-import { purgeLeads, type KeptLead } from '@/lib/leads/purge'   // (fix-E, E-01 · E-09)
+import { purgeLeads, splitKept, type KeptLead } from '@/lib/leads/purge'   // (fix-E, E-01 · E-09) · (pending modules S46C · R1) the shared rule
 import { adjustedPhrase, countChanges, readAmount, readArea, readDate, readDistrict, readImportRecord, readPropertyType, readSource, readStage, type AdjustedCount, type ImportAdjustment } from '@/lib/leads/import-values'
 import { projects as projectRows } from '@/lib/db/schema'   // (fix-A, A-05 · A-21) a lead's project, for the words and the address
 import { isProjectStage, TEAM_NEEDED, type ProjectStage } from '@/lib/projects/model'
@@ -549,17 +549,8 @@ export async function restoreLeads(leadIds: string[]): Promise<number> {
  * (`projects.lead_id` cascades, so purging the lead took the project with it, unseen). Those stay, and the answer names them; the rest go.
  */
 async function purgeListed(leadIds: string[]): Promise<{ removed: number; kept: KeptLead[] }> {
-  const { projects } = await import('@/lib/db/schema')
-  const listed = leadIds.length ? await db.select({ id: leads.id, name: leads.name }).from(leads).where(and(inArray(leads.id, leadIds), isNotNull(leads.deletedAt), eq(leads.direct, false))) : []
-  if (!listed.length) return { removed: 0, kept: [] }
-  const projs = await db.select({ id: projects.id, leadId: projects.leadId, number: projects.number, deletedAt: projects.deletedAt }).from(projects).where(inArray(projects.leadId, listed.map((l) => l.id)))
-  const kept: KeptLead[] = []
-  const free: string[] = []
-  for (const l of listed) {
-    const p = projs.find((x) => x.leadId === l.id)
-    if (p) kept.push({ name: titleCaseName(l.name), projectId: p.id, number: p.number, deleted: !!p.deletedAt })
-    else free.push(l.id)
-  }
+  const { free, kept } = await splitKept(leadIds)   // (pending modules S46C · R1) the rule, shared with the 30-day purge (lib/leads/purge.ts)
+  if (!free.length && !kept.length) return { removed: 0, kept: [] }
   const removed = await purgeLeads(free)
   revalidateEveryLead()   // (REG-286)
   return { removed, kept }

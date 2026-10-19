@@ -63,15 +63,24 @@ const bulkPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); con
 const BULK = '__bulk__'
 const ADD = '__add__'
 const posFor = (taskId: string, el: HTMLElement) => (taskId === BULK ? bulkPos(el) : assignPos(el))
-/** (UX audit 2026-09-30, T5 · T4) The rail page's to-do chips: what waits, in the scope on screen — shown only while it holds something. */
-type Todo = 'overdue' | 'today' | 'unassigned'
+/** (UX audit 2026-09-30, T5 · T4) The rail page's to-do chips: what waits, in the scope on screen — shown only while it holds something.
+    (pending modules S46C · H4 — her "fix everything" 2026-10-19, findability L-7; 1.0's Tasks › Due › Upcoming, `plannedDate > today`) *Upcoming*
+    — the open tasks due after today — beside Overdue · Due today, so the three days of 1.0's Due filter are one press each. It takes the place
+    Unassigned leaves: My Tasks (1.0's own default, where Upcoming was a member's plan) and Unassigned show Overdue · Due today · Upcoming; All
+    Tasks and Studio Tasks keep Overdue · Due today · Unassigned — never four chips in one row (`chipShown`). */
+type Todo = 'overdue' | 'today' | 'upcoming' | 'unassigned'
 const TODO_TEST: Record<Todo, (t: TaskRow, now: number) => boolean> = {
   overdue: (t, now) => !t.done && isOverdue(t.dueAt, now),
   today: (t, now) => !t.done && isDueToday(t.dueAt, now),
+  upcoming: (t, now) => !t.done && !!t.dueAt && !isOverdue(t.dueAt, now) && !isDueToday(t.dueAt, now),   // a day after today; undated tasks are no one's upcoming
   unassigned: (t) => !t.done && isUnassigned(t),   // (gaps build, package C — M-03) an outside person on it is someone
 }
-const TODO_LABEL: Record<Todo, string> = { overdue: 'Overdue', today: 'Due today', unassigned: 'Unassigned' }
-const TODO_ICON: Record<Todo, string> = { overdue: 'schedule', today: 'today', unassigned: 'person_add' }
+const TODO_LABEL: Record<Todo, string> = { overdue: 'Overdue', today: 'Due today', upcoming: 'Upcoming', unassigned: 'Unassigned' }
+const TODO_ICON: Record<Todo, string> = { overdue: 'schedule', today: 'today', upcoming: 'event', unassigned: 'person_add' }
+/** (S46C · H4) The days a link may open the page on (`?due=`) — the rail's overdue badge's, and the other two of 1.0's Due filter. */
+const DUE_LANDINGS: readonly Todo[] = ['overdue', 'today', 'upcoming']
+/** Which to-do chips a scope shows: Unassigned on the team's lists (All · Studio Tasks), Upcoming where it isn't (My Tasks · Unassigned). */
+const chipShown = (k: Todo, scope: TaskScope) => (k === 'unassigned' ? scope === 'all' || scope === 'studio' : k === 'upcoming' ? scope === 'mine' || scope === 'unassigned' : true)
 /** Tag picker (tag-picker.module.css): 352 wide · 48 field + the list (8/8 padding, 36 per row capped at 288) + 1 rule + 44 foot. */
 const tagsPos = (el: HTMLElement, tagCount: number) => anchorRect(el, 352, 48 + 16 + Math.min(tagCount * 36, 288) + 1 + 44)
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
@@ -101,11 +110,13 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
  * tooltips, coming-soon on inert affordances, picker-only dates, unseen band). Specs: design-source/context/lead-tasks/.
  */
 /** `leadId` null = the rail's Tasks page (REG-466): every lead's tasks and the studio's own, with a Lead column, a scope chip and Lead / Stage filters. */
-export function LeadTasks({ leadId, data, header, base: baseProp, views }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[]; projectLeads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode
+export function LeadTasks({ leadId, data, header, base: baseProp, views, notice }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[]; projectLeads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode
   /** (REG-913) Whose page the tab sits on — `/projects/<id>` when a project carries the lead's tasks on; the lead's own page by default. */
   base?: string
   /** (simplify S-03 · S-06) On a project: the Tasks group's view switch in the toolbar's title place; the lead's own tab passes none. */
-  views?: ReactNode }) {
+  views?: ReactNode
+  /** (pending modules S46C · M3) The rail page's line above the toolbar — the approvals that wait on the Dashboard; nothing when none. */
+  notice?: ReactNode }) {
   const studio = leadId === null
   const base = baseProp ?? `/leads/${leadId}`
   const router = useRouter()
@@ -121,8 +132,8 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views }: { lea
   const [query, setQuery] = useState('')
   /* (REG-466) the rail page's chip; 'all' on a lead's tab. (UX audit 2026-09-30, T5) the rail's badge lands with `?scope=mine&due=overdue`:
      My Tasks, Overdue on — the list the red number counted. */
-  const [scope, setScope] = useState<TaskScope>(() => { const v = params.get('scope'); return studio && v && v in TASK_SCOPE_LABEL ? (v as TaskScope) : 'all' })
-  const [todo, setTodo] = useState<Todo | null>(() => { const v = params.get('due'); return studio && (v === 'overdue' || v === 'today') ? v : null })
+  const [scope, setScope] = useState<TaskScope>(() => { const v = params.get('scope'); return studio && v && v in TASK_SCOPE_LABEL ? (v as TaskScope) : studio && params.get('due') === 'upcoming' ? 'mine' : 'all' })   // (S46C · H4) Upcoming is My Tasks' chip
+  const [todo, setTodo] = useState<Todo | null>(() => { const v = params.get('due'); const s = params.get('scope') ?? (v === 'upcoming' ? 'mine' : 'all'); return studio && v && (DUE_LANDINGS as readonly string[]).includes(v) && s in TASK_SCOPE_LABEL && chipShown(v as Todo, s as TaskScope) ? (v as Todo) : null })
   const [addLead, setAddLead] = useState<string | null>(null)   // (REG-466) the add row's lead on the rail page — null = Studio
   /* (gaps build, package C — 16) the rail page: whose tasks (?source=), and grouped by project (per browser) */
   const signedRole = useSignedInRole()
@@ -371,9 +382,10 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views }: { lea
     {/* (REG-735) with no task yet the header's Add Task steps back too — the empty card carries both ways in */}
     {header ? header({ add: tasks.length === 0 && !adding ? null : <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} group={studio ? { on: grouped, onToggle: () => setGrouped(!grouped) } : undefined} /> }) : null}
     <div className={styles.tab} data-open={openId ? '' : undefined} data-studio={studio || undefined}>
+      {notice}
       <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         scope={studio ? { value: scope, onChange: (v) => { setScope(v); setTodo(null) }, count: openCount } : undefined}
-        todos={studio ? (Object.keys(TODO_TEST) as Todo[]).filter((k) => todoCounts[k] > 0 && !(k === 'unassigned' && scope !== 'all' && scope !== 'studio')).map((k) => ({
+        todos={studio ? (Object.keys(TODO_TEST) as Todo[]).filter((k) => todoCounts[k] > 0 && chipShown(k, scope)).map((k) => ({
           key: k, label: `${TODO_LABEL[k]} · ${todoCounts[k]}`, short: String(todoCounts[k]), icon: TODO_ICON[k], selected: todo === k, onClick: () => setTodo((t) => (t === k ? null : k)),
         })) : undefined}
         searchPlaceholder={studio ? 'Search title, lead, member, tag…' : undefined}

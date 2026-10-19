@@ -10,6 +10,7 @@ import { raiseDueRepeats } from '@/lib/finance/repeats-server'
 import { ensurePeriod } from '@/lib/credits/ledger'
 import { accountingIsStandIn, autoPushXero, fetchXeroSettings } from '@/lib/finance/xero-server'
 import { feedsAreStandIn, pullFeeds } from './feeds'
+import { purgeExpiredLeads } from '@/lib/leads/purge'   // (pending modules S46C · R1)
 
 /*
  * (pending modules S34 — card api:message-delivery-providers, "The production five-minute sweep that runs deliverDerived and
@@ -35,12 +36,15 @@ import { feedsAreStandIn, pullFeeds } from './feeds'
  *   trial-files — daily (1.0's anon-storage-gc, 08:00): the room the deleted workspaces left is given back (1.0 reclaimed the anonymous
  *                files whose workspace was gone; the prototype's trial keeps no file — the photo and the quotes are read in the browser — so
  *                what is left is the store's own freed space).
+ *   deleted-leads — daily (pending modules S46C · R1, 03:00): Deleted Leads keeps its promise — a lead deleted more than 30 days ago is
+ *                removed for good by Delete Forever's own rule (lib/leads/purge.ts `purgeExpiredLeads`: never a lead a project keeps, never a
+ *                direct project's client record). Also run whenever Deleted Leads is read, so the prototype keeps it with no scheduler.
  * PRODUCTION: call `/api/cron/run` every five minutes with `Authorization: Bearer <CRON_SECRET>` — the jobs whose turn it is not yet answer
  * fast (each is a read when there is nothing to do) — or call each job's own address on its own rhythm (`CRON_ROUTES`).
  */
 
-export type JobKey = 'messages' | 'summaries' | 'repeats' | 'credits' | 'feeds' | 'accounting' | 'trial-sweep' | 'trial-files'
-export const JOB_KEYS: readonly JobKey[] = ['messages', 'summaries', 'repeats', 'credits', 'feeds', 'accounting', 'trial-sweep', 'trial-files']
+export type JobKey = 'messages' | 'summaries' | 'repeats' | 'credits' | 'feeds' | 'accounting' | 'trial-sweep' | 'trial-files' | 'deleted-leads'
+export const JOB_KEYS: readonly JobKey[] = ['messages', 'summaries', 'repeats', 'credits', 'feeds', 'accounting', 'trial-sweep', 'trial-files', 'deleted-leads']
 export type JobResult = { ran: number } | { skipped: string } | { error: string }
 export type SweepReport = { at: number; jobs: Partial<Record<JobKey, JobResult>> }
 
@@ -55,6 +59,8 @@ export const CRON_ROUTES: Record<string, { jobs: readonly JobKey[]; every: strin
   /* (pending modules S41b-3) 1.0's two daily jobs for the website's no-account workspaces, at 1.0's hours */
   'anon-sweep': { jobs: ['trial-sweep'], every: '0 6 * * *' },
   'anon-storage-gc': { jobs: ['trial-files'], every: '0 8 * * *' },
+  /* (pending modules S46C · R1) Deleted Leads' 30 days — 2.0's own; 1.0 had none and dropped its promise for it */
+  'deleted-leads': { jobs: ['deleted-leads'], every: '0 3 * * *' },
 }
 
 async function messagesJob(now: Date): Promise<JobResult> {
@@ -108,6 +114,7 @@ const RUN: Record<JobKey, (now: Date) => Promise<JobResult>> = {
   accounting: async () => accountingJob(),
   'trial-sweep': trialSweepJob,
   'trial-files': async () => trialFilesJob(),
+  'deleted-leads': async (now) => ({ ran: await purgeExpiredLeads(now.getTime()) }),   // (pending modules S46C · R1)
 }
 
 /* one run at a time in this server — a scheduler that fires again while a slow run is still going waits for it (each job is idempotent across

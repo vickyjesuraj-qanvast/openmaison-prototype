@@ -85,13 +85,14 @@ const SHEET_CARDS = 6
  */
 /** (UX audit build · REG-729's empty card) A list's empty card as a ghost, on the card's own classes: the art, the title, the line, the buttons
     — what the lead tabs, Tools › Quotes · Contracts, the Tasks page and the listing open on while they hold nothing (REG-737). */
-export function EmptyCardGhost({ art = [180, 137], buttons = [132, 150], lines = 1 }: { art?: [number, number]; buttons?: number[]; lines?: number }) {
+export function EmptyCardGhost({ art = [180, 137], buttons = [132, 150], lines = 1, stack = false }: { art?: [number, number]; buttons?: number[]; lines?: number
+  /** (S46A) the card's buttons stack full-width on a phone (quotes-empty · contracts-empty ≤767, REG-377) — its ghost stacks them too */ stack?: boolean }) {
   return (
     <div className={emptyCard.card} aria-hidden>
       <div className={emptyCard.inner}>
         <Bone w={art[0]} h={art[1]} r={8} />
         <div className={emptyCard.texts}><Bone w={200} h={20} />{Array.from({ length: lines }, (_, i) => <Bone key={i} w={i ? 220 : 320} h={12} style={{ maxWidth: '80vw' }} />)}</div>
-        <div className={emptyCard.buttons}>{buttons.map((w, i) => <Bone key={i} w={w} h={36} r="var(--om-radius-1)" />)}</div>
+        <div className={stack ? `${emptyCard.buttons} ${styles.stackButtons}` : emptyCard.buttons}>{buttons.map((w, i) => <Bone key={i} w={w} h={36} r="var(--om-radius-1)" />)}</div>
       </div>
     </div>
   )

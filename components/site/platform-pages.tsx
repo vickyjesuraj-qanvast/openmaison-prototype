@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Fragment } from 'react'
 import { Icon } from '@/components/om/icon'
-import { site } from '@/lib/site/model'
+import { PRICING_PATH, site } from '@/lib/site/model'
 import { HUB_CARD_COPY, HUB_INTEGRATIONS, HUB_MATRIX, HUB_PILLAR_COPY, HUB_PILLAR_ORDER, HUB_SUPPORT, PILLARS, getModule, modulesByPillar, showsPictures, type PlatformModule } from '@/lib/site/platform'
 import { BookDemoButton } from './book-demo'
 import { trialEnabled, trialHref } from '@/lib/visualizer/trial/policy'
@@ -51,7 +51,7 @@ export function ModulePage({ mod }: { mod: PlatformModule }) {
               <Lede className={p.mt24}>{mod.subcopy}</Lede>
               <div className={cx(s.buttons, p.mt32)}>
                 {tryNow && tryHref ? <ButtonLink href={tryHref} icon={mod.icon} testId="module-try">Try now</ButtonLink> : <BookDemoButton testId="module-book-demo" />}
-                <ButtonLink href={site('/contact')} variant="ghost">Talk to us</ButtonLink>
+                <ButtonLink href={PRICING_PATH} variant="ghost" testId="module-pricing">See pricing</ButtonLink>   {/* (S46D — D4) plg's "See pricing" where the hero had Talk to us (Contact stays in the footer and the closing band) */}
               </div>
             </div>
             <Reveal delay={120}>{mod.slug === 'visualizer' ? <BeforeAfter /> : <ModuleVisual slug={mod.slug} />}</Reveal>
@@ -226,7 +226,7 @@ export function PlatformHub() {
             <Display size="l" className={s.centerBlock}>See OpenMaison in action.</Display>
             <div className={cx(s.buttons, s.buttonsCenter, p.mt32)}>
               <BookDemoButton testId="hub-closing-book-demo" />
-              <ButtonLink href={site('/contact')} variant="ghost">Talk to us</ButtonLink>
+              <ButtonLink href={PRICING_PATH} variant="ghost" testId="hub-closing-pricing">See pricing</ButtonLink>   {/* (S46D — D4) plg's "See pricing" */}
             </div>
             <Footnote testId="hub-closing" />   {/* (S42E, E-18) the house footnote — one sentence for one thing */}
           </Reveal>

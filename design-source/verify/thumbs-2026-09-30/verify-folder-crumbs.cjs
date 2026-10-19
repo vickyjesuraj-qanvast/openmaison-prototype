@@ -26,7 +26,9 @@ const measure = (p) => p.evaluate(() => {
   await check('price-book-kitchen', openBook, 'Kitchen')
   await check('price-book-sections', async () => { await openBook(); await p.waitForTimeout(500); await dlg().getByRole('radio', { name: /My Sections/ }).or(dlg().getByRole('button', { name: /My Sections/ })).first().click() }, 'Bathrooms')
   await check('terms-templates', async () => { await p.getByRole('button', { name: 'My Templates' }).first().click() }, 'HDB')
-  await check('quote-template-picker', async () => { await p.getByRole('button', { name: 'Choose a template' }).first().click() }, 'HDB')
+  /* (S46 closing regression, 2026-10-19) since S44Q a Draft quote is pinned to Blank Quote (R173), so the Template card's button reads "Change";
+     "Choose a template" only on a quote with none — either opens the same picker */
+  await check('quote-template-picker', async () => { await p.getByTestId('template-card').getByRole('button', { name: /^(Choose a template|Change)$/ }).first().click() }, 'HDB')
   await p.goto(`${BASE}/leads/${L}/tasks`, { waitUntil: 'networkidle' }); await p.waitForTimeout(800)
   await check('task-templates', async () => { await p.locator('[data-kb="create"]').first().click(); await p.getByRole('menuitem', { name: 'Use Template' }).click() }, 'Lead follow-up')
   await p.goto(`${BASE}/leads/${L}/contracts`, { waitUntil: 'networkidle' }); await p.waitForTimeout(800)

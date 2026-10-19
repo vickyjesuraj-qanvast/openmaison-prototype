@@ -26,6 +26,9 @@ import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
 import { PhotoDialog } from '@/components/planner/photo/photo-dialog'   // (pending modules S28)
 import { looksLikeFloorPlan } from '@/lib/planner/photo'
 import { NameDialog } from './name-dialog'
+import { SignItem } from './files-grid'
+import { useSendForSignature } from './use-send-for-signature'   // (S46D — D2)
+import { signRowFor } from '@/lib/contracts/file-signing'
 import { TrashDialog } from './trash-dialog'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { addFileComment, createFolder, deleteFileComment, duplicateFiles, editFileComment, moveFiles, renameFile, restoreFiles, trashFiles } from '@/app/leads/files-actions'
@@ -118,6 +121,9 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
   /* (pending modules S28) a floor plan here offers Make a 3D picture — the file as it is in Files, for this lead (its project's, once won) */
   const isPlan = data.tools && (file.kind === 'image' || file.kind === 'pdf') && looksLikeFloorPlan(file.name, folderPath(files, file.parentId ?? null).map((p) => p.name))
   const [picture3d, setPicture3d] = useState(false)
+  /* (S46D — D2, finding D2) the same Send for signature as the Files tab's ⋮ — Import a contract with this file already in it */
+  const sign = signRowFor(file, { signs: data.signs, contract: data.contract })
+  const signing = useSendForSignature({ leadId: lead.id, files, here })
   const viewerProject = base.startsWith('/projects/') ? base.slice('/projects/'.length).split('/')[0] ?? null : null
   const openInVisualizer = async () => {
     /* (F095) a filed render opens its own version — the room, the version selected — never a new room made of the render */
@@ -225,6 +231,7 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
                 {/* (UX audit 2026-09-30, T9) a drawing goes back to the client as a link — no Download and a manual message */}
                 {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.copyLink(file) }}>Copy link</DropdownItem> : null}
                 {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.sendWhatsApp(file) }}>Send on WhatsApp</DropdownItem> : null}
+                <SignItem sign={sign} onPick={() => { setKebabOpen(false); signing.open(file) }} />   {/* (S46D — D2) */}
                 {/* (Projects r4a) the same item as the Files tab's menu: the client's portal shows the file, or no longer does */}
                 <DropdownItem onSelect={() => {
                   setKebabOpen(false)
@@ -407,6 +414,7 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
         onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteFileComment(id), 'Comment deleted') }}
       />
 
+      {signing.dialog}
       {isPlan && !readOnly ? <PhotoDialog open={picture3d} onClose={() => setPicture3d(false)} target={viewerProject ? { kind: 'project', id: viewerProject } : { kind: 'lead', id: lead.id }}
                                            from={{ kind: 'file', fileId: file.id, name: file.name }} /> : null}   {/* (pending modules S28) */}
       {/* Generic shell: Maison AI FAB + sheet (no lead brief here — the viewer carries no stage, so the sheet offers only its base controls). */}

@@ -1,0 +1,9 @@
+/* (pending modules S46C · M3) The Tasks page's approvals line: the read-only line's tinted strip (read-only-note.module.css .note) with its door
+   at the end; on a narrow screen the words take the room and the door keeps its line's end. */
+.line { flex-wrap: wrap; row-gap: 0; }
+.text { flex: 1 1 200px; min-width: 0; }
+.door { flex-shrink: 0; margin-left: auto; }
+/* Touch (REG-273): the door takes a 44px box on the phone and on touch tablets, as the quote editor's banner actions do. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .door { min-height: 44px; }
+}

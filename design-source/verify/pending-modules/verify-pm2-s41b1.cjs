@@ -430,7 +430,8 @@ const carries = (t, key, val) => new RegExp(`${key}\\\\?":${val}\\b`).test(t)
         /* (pending modules S45A, a deliberate change of this rule) an Admin's tiles are now six without Profit: Leads · Sales · Response time · Open
            projects · Messages · Owed to you (H-UHD-3 put Reports › Leads' two after Leads) */
         /* (pending modules S45B, a deliberate change of this rule) seven without Profit: S45B's Contractors after Open projects (H-UHD-2) */
-        ok(n.p === 7 && n.g === n.p, `${w} an Admin switched off · the Dashboard: the ghost draws the page’s seven tiles (no Profit this month)`, JSON.stringify(n))
+        /* (pending modules S46B, a deliberate change of this rule) eight without Profit: Projects › Tickets' figure after Contractors (M1) */
+        ok(n.p === 8 && n.g === n.p, `${w} an Admin switched off · the Dashboard: the ghost draws the page’s eight tiles (no Profit this month)`, JSON.stringify(n))
         await c.close()
       }
     }

@@ -42,6 +42,9 @@ export function calendlyHref(o: { name?: string; email?: string } = {}): string 
   return `${CALENDLY_URL}?${q.toString().replace(/\+/g, '%20')}`
 }
 
+/** (S46D — D4) The public Pricing page (components/site/pricing.tsx) — its address, read by the bar, the footer and every "See pricing". */
+export const PRICING_PATH = site('/pricing')
+
 /** The studio app's own doors (S30 · S31). */
 export const SIGN_IN = '/sign-in'
 export const SIGN_UP = '/sign-up'
@@ -50,6 +53,7 @@ export type NavLink = { label: string; href: string }
 
 /** The top bar's links beside Platform ▾ (1.0's PRIMARY_LINKS). */
 export const PRIMARY_LINKS: readonly NavLink[] = [
+  { label: 'Pricing', href: PRICING_PATH },   // (S46D — D4) 1.0's plg bar: Pricing first
   { label: 'Story', href: site('/story') },
   { label: 'Resources', href: site('/blog') },
 ]

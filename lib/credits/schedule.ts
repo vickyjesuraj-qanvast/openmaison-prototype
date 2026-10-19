@@ -23,7 +23,7 @@ export const CREDIT_SCHEDULE: Record<ActionKey, ScheduleEntry> = {
   render_photorealistic: { credits: 15, label: 'Photorealistic render', label1: 'Photorealistic render' },
   render_pro: { credits: 20, label: 'Pro render · High', label1: 'Pro render' },
   render_repair: { credits: 2, label: 'Render repair', label1: 'Drift repair' },              // (pending modules S20) the drift guard's repair, one per version lined up
-  copilot_block: { credits: 25, label: 'Meeting Co-Pilot · 10 min', label1: 'Co-Pilot (10 min)' },   // later (Q-45)
+  copilot_block: { credits: 25, label: 'Meeting Copilot · 10 min', label1: 'Co-Pilot (10 min)' },   // later (Q-45)
 }
 
 export const isActionKey = (k: string): k is ActionKey => k in CREDIT_SCHEDULE

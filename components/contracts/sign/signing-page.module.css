@@ -39,6 +39,8 @@
 /* (REG-631, contracts parity Q-07) A link that does not sign — not sent yet, or no longer active: the letterhead bar and one notice, no document. */
 .notice { width: 560px; max-width: 100%; margin: var(--om-spacing-10, 40px) auto 0; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-8) var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }
 .noticeTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+/* (S46D) on a phone the notice keeps the house 16px gutter — alone on the page (a link no longer active, 1.0's old links) it ran edge to edge */
+@media (max-width: 767px) { .notice { max-width: calc(100% - 2 * var(--om-spacing-4)); box-sizing: border-box; } }
 /* (REG-633, contracts parity Q-15 · Q-20) The stage as a column (the paper, its end, the record); the gates and the quote link in the card. */
 .column { flex-direction: column; align-items: center; }
 .paperEnd { width: 1px; height: 1px; }

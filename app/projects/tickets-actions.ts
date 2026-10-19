@@ -52,7 +52,7 @@ async function forTicket(ticketId: string): Promise<(Ctx & { t: ProjectTicket })
   const c = await forProject(t.projectId)
   return isRefusal(c) ? c : { ...c, t }
 }
-const touch = (projectId: string) => { revalidatePath(`/projects/${projectId}/tickets`); revalidatePath('/projects/tickets'); revalidatePath(`/projects/${projectId}`) }
+const touch = (projectId: string) => { revalidatePath(`/projects/${projectId}/tickets`); revalidatePath('/tickets'); revalidatePath(`/projects/${projectId}`) }
 const log = (c: Ctx, kind: ProjectEventKind, detail: Record<string, string | undefined>) => logProjectEvent(db, c.p.leadId, c.p.id, kind, { name: c.p.name, number: c.p.number, ...detail })
 const hrefOf = (c: { p: { id: string } }, ticketId: string) => `/projects/${c.p.id}/tickets?open=${encodeURIComponent(ticketId)}`
 const clean = (s: unknown, max: number) => (typeof s === 'string' ? s.replace(/\r\n/g, '\n').trim().slice(0, max) : '')
@@ -231,7 +231,7 @@ export async function renameTicketCategory(input: { from: string; to: string; po
   const next = [...rest.slice(0, pos), entry, ...rest.slice(pos)]
   await writeCategories(next)
   if (input.from !== to) await db.update(projectTickets).set({ category: to }).where(eq(projectTickets.category, input.from))
-  revalidatePath('/projects/tickets')
+  revalidatePath('/tickets')
   return { list: next }
 }
 /** How many tickets hold each category — a used one is retired, not removed. */

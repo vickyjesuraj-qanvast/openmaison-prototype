@@ -258,11 +258,22 @@ const ledgerSum = () => n(`select coalesce(sum(case when reason = 'shadow_spend'
       await editor(p, 'Kitchen'); await original(p)
       await p.getByTestId('viz-mode-style').click(); await settle(p, 400)
       await p.getByTestId('viz-style-card').filter({ hasText: 'Scandinavian' }).click(); await settle(p, 400)
-      const bal2 = balance()
-      await p.getByTestId('viz-generate').click()
-      await p.getByTestId('viz-running').waitFor({ timeout: 6000 })
-      await p.getByTestId('viz-running').getByRole('button', { name: /Cancel|Stop/ }).click(); await settle(p, 2500)
-      ok(balance() === bal2 && /Stopped — nothing was kept or charged/.test(await snackText(p)), 'Stop: nothing kept, every charge given back')
+      /* (S46 closing regression, 2026-10-19) the engine's restyle can finish before Stop is pressed (S42D's probe met the same): Stop is pressed
+         the moment it shows, and a run that finished first is tried once more from the original with the style picked again */
+      let bal2 = balance(), pressed = false
+      for (let tries = 0; tries < 3 && !pressed; tries++) {
+        bal2 = balance()
+        await p.getByTestId('viz-generate').click()
+        await p.getByTestId('viz-running').waitFor({ timeout: 6000 }).catch(() => {})
+        pressed = await p.getByTestId('viz-running').getByRole('button', { name: /Cancel|Stop/ }).click({ timeout: 3000 }).then(() => true, () => false)
+        if (!pressed) {
+          await settle(p, 2500); await original(p)
+          await p.getByTestId('viz-mode-style').click(); await settle(p, 400)
+          await p.getByTestId('viz-style-card').filter({ hasText: 'Scandinavian' }).click(); await settle(p, 400)
+        }
+      }
+      await settle(p, 2500)
+      ok(pressed && balance() === bal2 && /Stopped — nothing was kept or charged/.test(await snackText(p)), 'Stop: nothing kept, every charge given back')
     }
 
     // ── 4 · Maison AI: Suggest finishes picks them, behind Undo ──────────────────────────────────────────────────────────────────

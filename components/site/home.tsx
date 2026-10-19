@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AnimatePresence, motion, useInView } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { PILLARS, PILLAR_ORDER, modulesByPillar } from '@/lib/site/platform'
-import { site } from '@/lib/site/model'
+import { PRICING_PATH, site } from '@/lib/site/model'
 import { HERO_CYCLE_MS, SITE_EASE, siteMotion } from '@/lib/site/motion'
 import { BookDemoButton } from './book-demo'
 import { ButtonLink, Container, Display, Eyebrow, Footnote, Lede, MarginChip, Section, Snapshot, Tile } from './primitives'
@@ -429,8 +429,10 @@ function Proof() {
   )
 }
 
-/** 1.0's closing band, with 2.0's own door for a studio that would rather start on its own (S31's sign-up). */
-export function ClosingCta({ heading, description, secondary = { label: 'Talk to us', href: site('/contact') }, testId = 'closing' }: { heading: string; description?: string; secondary?: { label: string; href: string }; testId?: string }) {
+/** 1.0's closing band, with 2.0's own door for a studio that would rather start on its own (S31's sign-up). (S46D — D4) `primary` — a page whose
+    next step is a link (Pricing's Start for free) leads with it, and Book a demo steps back to the ghost beside it; `footnote` false drops the
+    closing footnote where the button already says it. */
+export function ClosingCta({ heading, description, secondary = { label: 'Talk to us', href: site('/contact') }, primary, footnote = true, testId = 'closing' }: { heading: string; description?: string; secondary?: { label: string; href: string }; primary?: { label: string; href: string; fine?: string }; footnote?: boolean; testId?: string }) {
   return (
     <Section spacing="major" className={h.closing} label="Get started">
       <div className={h.closingGlow} aria-hidden />
@@ -439,10 +441,12 @@ export function ClosingCta({ heading, description, secondary = { label: 'Talk to
           <Display size="l" className={`${s.centerBlock} ${h.max20}`}>{heading}</Display>
           {description ? <Lede className={`${s.centerBlock} ${h.mt20}`}>{description}</Lede> : null}
           <div className={`${s.buttons} ${s.buttonsCenter} ${h.mt36}`}>
+            {primary ? <><ButtonLink href={primary.href} testId={`${testId}-start`}>{primary.label}</ButtonLink><BookDemoButton variant="ghost" testId={`${testId}-book-demo`} /></> : <>
             <BookDemoButton testId={`${testId}-book-demo`} />
-            <ButtonLink href={secondary.href} variant="ghost">{secondary.label}</ButtonLink>
+            <ButtonLink href={secondary.href} variant="ghost" testId={`${testId}-secondary`}>{secondary.label}</ButtonLink>
+            </>}
           </div>
-          <Footnote testId={testId} />
+          {primary?.fine ? <p className={`${s.fine} ${s.footnote}`} data-testid={`${testId}-fine`}>{primary.fine}</p> : footnote ? <Footnote testId={testId} /> : null}
         </Reveal>
       </Container>
     </Section>
@@ -460,7 +464,7 @@ export function HomeView() {
       <OnePlatform />
       <Security />
       <Proof />
-      <ClosingCta heading="Grow your studio. Not the chaos." description="Whether you’re upgrading from spreadsheets or replacing multiple tools, OpenMaison brings your team, projects and finances together in one platform, so you can grow with confidence." testId="home-closing" />
+      <ClosingCta heading="Grow your studio. Not the chaos." description="Whether you’re upgrading from spreadsheets or replacing multiple tools, OpenMaison brings your team, projects and finances together in one platform, so you can grow with confidence." secondary={{ label: 'See pricing', href: PRICING_PATH }} testId="home-closing" />   {/* (S46D — D4) plg's "See pricing" beside the band's Book a demo */}
     </>
   )
 }

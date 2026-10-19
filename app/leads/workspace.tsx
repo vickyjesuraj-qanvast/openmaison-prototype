@@ -299,6 +299,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     return filterByQuery(base, query, (r) => ({
       fields: [
         r.name, r.stage, r.source, r.propertyType, r.email, r.propertyAddress,
+        r.area,   /* (pending modules S46C · H4 — 1.0's "Search name, area, phone, email") the District, as the District column (REG-607) prints it */
         r.budgetMinor > 0 ? money(r.budgetMinor) : null, displayDate(r.createdAt),   /* (UX audit L8) an unknown budget shows "--", so "0" finds nothing */
         r.onHoldFollowUp ? displayDateLong(new Date(r.onHoldFollowUp)) : null,   /* (Dane UAT 5.13) as the row prints it, with its day */
         ...r.tasks.map((t) => t.title),

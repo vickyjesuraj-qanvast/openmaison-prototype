@@ -23,3 +23,7 @@
   .pill[data-short] .short { display: inline; }
   .pill[data-short] { padding-left: var(--om-spacing-3); }
 }
+/* (pending modules S46C · H4) …and at any width where the bar holding it measured that the full words don't fit (`compact`). */
+.pill[data-compact] .label { display: none; }
+.pill[data-compact] .short { display: inline; }
+.pill[data-compact] { padding-left: var(--om-spacing-3); }

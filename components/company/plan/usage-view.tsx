@@ -47,7 +47,7 @@ const PAGE = 20
 const plural = (n: number, one: string, many = `${one}s`) => `${fmtCredits(n)} ${n === 1 ? one : many}`
 const amountWords = (n: number | null) => (n == null ? 'No limit' : `${fmtCredits(n)} a month`)
 /* (pending modules S23 · S19, joined at the lanes' merge) a meeting's co-pilot time counts in the words as it does in the number — 10 minutes a block */
-const workLine = (r: { renders: number; quotes: number; copilot: number }) => [r.renders ? plural(r.renders, 'render') : null, r.quotes ? plural(r.quotes, 'quote read', 'quotes read') : null, r.copilot ? `${fmtCredits(r.copilot * 10)} min of Co-Pilot` : null].filter(Boolean).join(' · ') || 'Nothing yet'
+const workLine = (r: { renders: number; quotes: number; copilot: number }) => [r.renders ? plural(r.renders, 'render') : null, r.quotes ? plural(r.quotes, 'quote read', 'quotes read') : null, r.copilot ? `${fmtCredits(r.copilot * 10)} min of the Meeting Copilot` : null].filter(Boolean).join(' · ') || 'Nothing yet'
 
 const MEMBER_DEFS = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },

@@ -1,0 +1,132 @@
+0 · The pure rules (pm2-s46a-pure.mts)
+  ✓ the pure probe ran: 181 checks of 1.0’s words, the fillers, the old addresses and the keys, none failing
+1 · ⌘K finds 1.0’s words, per member (1440)
+  ✓ Dane: “escalations” → Go to › Tickets
+  ✓ Dane: “quote digitizer” → Create › Upload a quote
+  ✓ Dane: “usage & credits” → Go to › Usage
+  ✓ Dane: “invoices” → Go to › Money in
+  ✓ Dane: “accounts setup” → Go to › Roles & access
+  ✓ Dane: “operations” → Go to › Finance
+  ✓ Dane: “homeowner portal” → Go to › Client portal
+  ✓ Dane: “3-d space planner” → Go to › 3D Space Planner
+  ✓ Dane: “reviews & rankings” → Go to › Reviews
+  ✓ Dane: “my settings” → Go to › Your profile
+  ✓ Dane: “approvals” → Go to › Dashboard
+  ✓ Dane: “ticket categories” → Go to › Ticket categories
+  ✓ Dane: “messages to clients” → Go to › Messages to clients
+  ✓ Dane: “close project” → Go to › Complete handover
+  ✓ Dane: “selections” → Go to › Choices
+  ✓ Dane: “deleted projects” → Go to › Deleted Projects
+  ✓ Dane: “new ticket” → Create › New ticket
+  ✓ Dane: “start a meeting” → Create › Start a meeting
+  ✓ Dane: “xray” → Go to › Quote X-Ray
+  ✓ Dane: “visualiser” → Go to › AI Visualizer
+  ✓ “upload a quote” leads with Create › Upload a quote, not Your signature (“Upload a quote”)
+  ✓ …and the lone “a” is never marked
+  ✓ Germaine (Designer): “escalations” → Go to › Tickets
+  ✓ Germaine (Designer): “settings” → Go to › Your profile
+  ✓ Germaine (Designer): “upload a quote” → Create › Upload a quote
+  ✓ Germaine (Designer): “new meeting” → Create › Start a meeting
+  ✓ Germaine (Designer): “log ticket” → Create › New ticket
+  ✓ Germaine (Designer): “lead preferences” → Go to › Open to new leads
+  ✓ Priya (Accounting): “invoices” → Go to › Money in
+  ✓ Priya (Accounting): “receipts” → Go to › Money in
+  ✓ Priya (Accounting): “my settings” → Go to › Your profile
+  ✓ Priya: “escalations” offers none of the studio’s project, quote or meeting rows (nothing)
+  ✓ Priya: “upload a quote” offers none of the studio’s project, quote or meeting rows (Your signature)
+  ✓ Priya: “start a meeting” offers none of the studio’s project, quote or meeting rows (nothing)
+  ✓ Priya: “close project” offers none of the studio’s project, quote or meeting rows (nothing)
+  ✓ Nurul (Marketing): “archived leads” → Go to › Lost leads
+  ✓ Nurul (Marketing): “approvals” → Go to › Dashboard
+  ✓ Nurul (Marketing): “deleted leads” → Go to › Deleted Leads
+  ✓ Nurul: “escalations” offers no page Marketing doesn’t open (nothing)
+  ✓ Nurul: “quote digitizer” offers no page Marketing doesn’t open (nothing)
+  ✓ Nurul: “usage” offers no page Marketing doesn’t open (nothing)
+2 · Create › Upload a quote · New ticket · Start a meeting
+  ✓ it lands on Tools › Quotes with Create Quote open on Upload a quote
+  ✓ …titled Upload a quote
+  ✓ the address drops the ask
+  ✓ …the drop box, saying what it reads and its 5 AI credits, as the row’s chip does
+  ✓ a press with no client asks for the client first (no file chooser, no credits)
+  ✓ Back leads to every way to start
+  ✓ …and a second ask on the same page opens it again
+  ✓ Create › New ticket lands on Projects › Tickets (its ?new=1 is S46B’s New ticket) — /projects/tickets?new=1
+  ✓ Create › Start a meeting lands on Meetings with New Meeting ▾ › Start a meeting now pressed — its lead picker open
+  ✓ Go to › Tickets opens Projects › Tickets
+3 · The empty Quotes list (a lead with none)
+  ✓ three ways in: From Scratch · From Template · Upload a quote
+  ✓ one filled button on the card (1)
+  ✓ Upload a quote opens Create Quote on it, for Cheryl Lim
+  ✓ a file chosen is read into lines, Create the quote ready (the same read as the row’s)
+4 · Tools › Quotes names Upload a quote
+  ✓ the Quotes tile’s help: “Every quote in the studio — create one, or upload an existing quote”
+  ✓ still nine tiles — no second Quotes tile
+5 · G then I · G then E
+  ✓ the G hint lists 2.0’s places — not the quiet aliases
+  ✓ G then I (1.0’s Inbox) → Messages
+  ✓ G then E (1.0’s Escalations) → Projects › Tickets
+  ✓ the ? panel lists G then M, and no Tickets key
+6 · plg’s and UHD’s addresses land (signed in)
+  ✓ /settings/usage → /company/plan · 307 → 200
+  ✓ /settings/usage?status=succeeded → /company/plan?status=succeeded · 307 → 200
+  ✓ /tools/quotes → /quotes · 307 → 200
+  ✓ /company/settings → /settings?section=studio · 307 → 200
+  ✓ /company/settings/quotes → /settings?section=quotes · 307 → 200
+  ✓ /leads/settings → /settings?section=leads · 307 → 200
+  ✓ /company/profile/brand-kit → /company/templates/brand · 307 → 200
+  ✓ /company/templates/tasks/a7a7581e-4b45-4a64-ab90-7b3f118d8798 → /templates/tasks/a7a7581e-4b45-4a64-ab90-7b3f118d8798 · 307 → 200
+  ✓ /visualizer/materials → /company/materials · 307 → 200
+  ✓ /billing/return → /company/plan/billing · 307 → 200
+  ✓ /contractors → /projects?view=workload&of=contractors · 307 → 200
+  ✓ /escalations/new → /projects/tickets?new=1 · 307 → 200
+  ✓ /settings?section=email → /company/integrations#gmail · 307 → 200
+  ✓ /settings?section=profile → /profile#details · 307 → 200
+  ✓ /settings?section=my-signature → /profile#signature · 307 → 200
+  ✓ /settings?section=usage-credits → /company/plan · 307 → 200
+  ✓ /settings?section=interface → /profile · 307 → 200
+  ✓ /settings?section=lead-preferences → /profile · 307 → 200
+  ✓ /accounts?tab=cost-visibility → /settings?section=studio#cost-visibility · 307 → 200
+  ✓ /tools/quote-digitizer → /quotes · 307 → 200
+  ✓ /tools/quote-xray → /quote-x-ray · 307 → 200
+  ✓ /tools/ai-visualizer → /visualizer · 307 → 200
+  ✓ /settings?section=notifications is 2.0’s own address: answered as it is
+  ✓ /settings?section=leads is 2.0’s own address: answered as it is
+  ✓ /settings is 2.0’s own address: answered as it is
+  ✓ /sign/document/<token> answers (404) — S46D’s notice once merged, never a 500
+  ✓ Priya: /contractors → /projects?view=workload&of=contractors, its page’s own gate for Accounting
+  ✓ Priya: /settings/usage → /company/plan, its page’s own gate for Accounting
+  ✓ Priya: /tools/quotes → /quotes, its page’s own gate for Accounting
+  ✓ /settings?section=email: the gmail card in view (/company/integrations#gmail)
+  ✓ /accounts?tab=cost-visibility: the cost-visibility card in view (/settings?section=studio#cost-visibility)
+7 · plg’s open tools: a visitor goes to the free try, a member to the tool
+  ✓ signed out: /tools/ai-visualizer → /site/try (200)
+  ✓ a member: /tools/ai-visualizer → /visualizer
+  ✓ a lapsed session: /tools/ai-visualizer → sign-in, back to /visualizer
+  ✓ signed out: /tools/quote-xray → /site/try/quote-x-ray (200)
+  ✓ a member: /tools/quote-xray → /quote-x-ray
+  ✓ a lapsed session: /tools/quote-xray → sign-in, back to /quote-x-ray
+  ✓ signed out: /tools/quote-digitizer?utm_source=ads → /site/try/upload-a-quote?utm_source=ads (200)
+  ✓ a member: /tools/quote-digitizer?utm_source=ads → /quotes?utm_source=ads
+  ✓ a lapsed session: /tools/quote-digitizer?utm_source=ads → sign-in, back to /quotes?utm_source=ads
+  ✓ signed out: plg’s open /leads stays the studio’s own — sign-in (as the audit recommends)
+  ✓ signed out: plg’s open /dashboard stays the studio’s own — sign-in (as the audit recommends)
+  ✓ in a browser: a visitor at /tools/ai-visualizer sees the free try (/site/try)
+8 · 390 touch and 320
+  ✓ 390: the sheet finds Tickets by “escalations”
+  ✓ 390: …and Create › Upload a quote by “quote digitizer”
+  ✓ 390: Create Quote opens on Upload a quote, as a sheet
+  ✓ 390: no sideways scroll with the sheet open (0)
+  ✓ 390: the empty list’s Upload a quote, stacked with the other two
+  ✓ 390: no sideways scroll on the empty list (0)
+  ✓ 320: the sheet finds Tickets by “escalations”
+  ✓ 320: …and Create › Upload a quote by “quote digitizer”
+  ✓ 320: Create Quote opens on Upload a quote, as a sheet
+  ✓ 320: no sideways scroll with the sheet open (0)
+  ✓ 320: the empty list’s Upload a quote, stacked with the other two
+  ✓ 320: no sideways scroll on the empty list (0)
+9 · the page error log
+  ✓ no page errors
+
+put back: credit_ledger, studio_credit_balances
+
+118 passed, 0 failed

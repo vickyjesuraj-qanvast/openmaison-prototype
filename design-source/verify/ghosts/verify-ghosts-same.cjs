@@ -28,6 +28,7 @@ const ROUTES = [
   ['hangouts', '/qanvast-ops/hangouts'], ...['plan', 'meetings'].map((v) => [`hangout-${v}`, `/qanvast-ops/hangouts/hge-qh-2026-marina?view=${v}`]), ['hangout-results', '/qanvast-ops/hangouts/hge-qh-2026-suntec?view=results'],
   ['hangout-open', '/qanvast-ops/hangouts/hge-qh-2026-onenorth'], ['hangout-page', '/hangout/ETk9nlpkLinRS1JDm-_J9SK8'], ['hangout-own', '/hangout/ETk9nlpkLinRS1JDm-_J9SK8/CmIkVpC6P0ozfYuMPPm-hga4'], ['public-profile', '/company/members/germaine/profile'],
   ['dashboard', '/dashboard'],   /* (pending modules S22) the Dashboard — its loader and its reveal draw the viewer's one ghost */
+  ['tickets', '/tickets'], ['meetings', '/meetings'],   /* (pending modules S46B) Projects › Tickets' New ticket, Meeting Copilot's Insights */
   /* (pending modules S41b-5) Qanvast Ops › Lead credits (Overview · Transactions · Contracts) and Reviews (Reviews · Ranking · Feedback) */
   ['qo-credits', '/qanvast-ops/credits'], ['qo-credits-tx', '/qanvast-ops/credits/transactions'], ['qo-credits-contracts', '/qanvast-ops/credits/contracts'],
   ['qo-reviews', '/qanvast-ops/reviews'], ['qo-reviews-ranking', '/qanvast-ops/reviews/ranking'], ['qo-reviews-feedback', '/qanvast-ops/reviews/feedback'],

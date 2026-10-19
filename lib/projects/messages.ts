@@ -77,16 +77,18 @@ export async function setReadMark(kind: 'member' | 'client', readerId: string, p
     .onConflictDoUpdate({ target: [chatReads.readerKind, chatReads.readerId, chatReads.projectId], set: { readAt: at } })
 }
 
-/** Who is in the conversation: the client, the household people invited, the team. */
-export type ChatPeople = { client: string; household: string[]; team: { id: string; name: string; color: string }[]; invited: boolean }
+/** Who is in the conversation: the client, the household people invited, the team. (pending modules S46B, H3 — 1.0's chat header had the
+    client's number) `phone`: the client's, as the lead holds it — Details' Call and Copy (studio members only; no client page reads this). */
+export type ChatPeople = { client: string; household: string[]; team: { id: string; name: string; color: string }[]; invited: boolean; phone: string | null }
 async function peopleOf(leadId: string, client: string): Promise<ChatPeople> {
-  const [link, house, team] = await Promise.all([
+  const [link, house, team, lead] = await Promise.all([
     db.select({ invitedAt: homeownerLeadLinks.invitedAt, withdrawnAt: homeownerLeadLinks.withdrawnAt }).from(homeownerLeadLinks).where(eq(homeownerLeadLinks.leadId, leadId)).limit(1),
     db.select({ name: homeownerProfiles.name }).from(homeownerHouseholdLinks).innerJoin(homeownerProfiles, eq(homeownerProfiles.id, homeownerHouseholdLinks.homeownerId))
       .where(and(eq(homeownerHouseholdLinks.leadId, leadId), isNull(homeownerHouseholdLinks.removedAt), isNull(homeownerHouseholdLinks.withdrawnAt))),
     db.select({ id: members.id, name: members.name, color: members.color }).from(leadAssignees).innerJoin(members, eq(members.id, leadAssignees.memberId)).where(eq(leadAssignees.leadId, leadId)),
+    db.select({ phone: leads.phone }).from(leads).where(eq(leads.id, leadId)).limit(1),
   ])
-  return { client, household: house.map((h) => titleCaseName(h.name)), team, invited: !!link[0]?.invitedAt && !link[0]?.withdrawnAt }
+  return { client, household: house.map((h) => titleCaseName(h.name)), team, invited: !!link[0]?.invitedAt && !link[0]?.withdrawnAt, phone: lead[0]?.phone?.trim() || null }
 }
 
 /** (pending modules S26) A members' conversation — who is in it, and what this member may do there. */
@@ -219,7 +221,7 @@ async function fetchChatConversation(id: string): Promise<ConversationData | nul
     key, kind: 'chat', project: null, lead: null,
     title: chatTitle(row, people, viewer.id, shortStudioName(studio.name), everyone, row.pairKey),
     lines, more, readAt,
-    people: { client: '', household: [], team: people.map((x) => ({ id: x.id, name: x.name, color: x.color })), invited: false },
+    people: { client: '', household: [], team: people.map((x) => ({ id: x.id, name: x.name, color: x.color })), invited: false, phone: null },
     me: { id: viewer.id, name: me?.name ?? 'You', color: me?.color ?? '#5B7FD7' },
     mayWrite: type !== 'direct' || !!other?.active, asks: {}, now: Date.now(),
     prefs: prefs.get(key) ?? { pinned: false, muted: false }, place: null, contacts,
