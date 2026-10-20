@@ -5,7 +5,7 @@ import { CORNER_NAMES, type Quad } from '@/lib/planner/corners'
 import styles from './corner-editor.module.css'
 
 /**
- * (S42 D·1 — S41's proposal, built as recommended: her "build all of them" 2026-10-11, listed in s42/calls-for-vicky.md) The four corners of a
+ * (S42 D·1 — S41's proposal, built as recommended: his "build all of them" 2026-10-11, listed in s42/calls-for-vicky.md) The four corners of a
  * sheet of paper on a photo, placed by hand — 1.0's floor-plan bench's corner editor ("Adjust paper corners"), first built on the developers'
  * bench (S41's Plan corners) and now one piece for both: Make a 3D picture's *Square it by its corners* and the bench. Each corner is a named
  * 44px button: drag it (a finger too — `touch-action: none` on the frame), or Tab to it and move it with the arrow keys (Shift for bigger

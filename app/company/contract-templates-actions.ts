@@ -41,7 +41,7 @@ export async function setDefaultContractTemplate(id: string): Promise<void | Ref
   touch(id)
 }
 
-/** (S44R — UAT row 359, call C9, as recommended — her UAT ask 2026-10-15) *Use at handover*: the Hand over sheet offers this template as the
+/** (S44R — UAT row 359, call C9, as recommended — his UAT ask 2026-10-15) *Use at handover*: the Hand over sheet offers this template as the
     completion & warranty letter, filled from the project. One at most, as the default; Owners and Admins (the default's rule). A standard PDF
     can't be filled from the project, so it can't be it. (invented copy) */
 export async function setHandoverContractTemplate(id: string, on: boolean): Promise<void | Refusal> {

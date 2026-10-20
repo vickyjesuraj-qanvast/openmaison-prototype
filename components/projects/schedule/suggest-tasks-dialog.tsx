@@ -14,7 +14,7 @@ import m from './moment.module.css'
 import s from './suggest-tasks.module.css'
 
 /**
- * (parity map, SC-056 · TD-023 — her "build everything that's in 1.0" 2026-10-10; 1.0's "Suggest from quote", E-188) A milestone's suggested
+ * (parity map, SC-056 · TD-023 — his "build everything that's in 1.0" 2026-10-10; 1.0's "Suggest from quote", E-188) A milestone's suggested
  * tasks: the house Dialog (nested over the milestone panel) with a tick list — the signed quote's lines for its phase first, then what the
  * phase usually needs on a Singapore home (lib/projects/task-suggestions.ts, BY RULE — a stand-in for 1.0's AI, no credits). Nothing is ticked
  * until you tick it (1.0 added its suggestions unticked); **Add n tasks** makes them ordinary tasks inside the milestone, one sentence and one

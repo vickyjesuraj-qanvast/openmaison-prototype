@@ -1,4 +1,4 @@
-// Pending modules, package S43C · The owner's new sample rooms in the AI Visualizer (her "fix all the pending things", 2026-10-15; the pending
+// Pending modules, package S43C · The owner's new sample rooms in the AI Visualizer (his "fix all the pending things", 2026-10-15; the pending
 // ledger's F1-05). Each item asserted as the rule it builds, never another round's count:
 //  - the three sample photos and the kitchen sketch are 1.0's 4a51f3522, byte for byte, on disk and as the server serves them
 //  - every picture made from the old photos is made again from the new ones: the five looks a room, the bedroom's relit picture, the living

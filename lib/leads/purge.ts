@@ -54,7 +54,7 @@ export async function splitKept(leadIds: string[]): Promise<{ free: string[]; ke
 }
 
 /**
- * (pending modules S46C · R1 — her "fix everything" 2026-10-19 after the findability audit, finding L-1) How long Deleted Leads keeps a lead.
+ * (pending modules S46C · R1 — his "fix everything" 2026-10-19 after the findability audit, finding L-1) How long Deleted Leads keeps a lead.
  * The mock's words promise it — the delete dialog's "will be permanently deleted in 30 days" (779:26316's family) and the sheet's "Deleted leads
  * are permanently removed after 30 days" — and until now nothing removed them (1.0 dropped the same promise for the same reason).
  */

@@ -11,7 +11,7 @@ import type { IssuingEntity, StudioDetails } from '@/lib/templates/model'
 import { depositAmount, depositWhy, type DepositOption, type DepositView } from './deposit-model'
 
 /*
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) The deposit an agreement asks for, read from the records: the quote it
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) The deposit an agreement asks for, read from the records: the quote it
  * names, that quote's Payment Schedule (its first stage), the issuing entity that bills it (the contract's own, else the quote's) and — once the
  * signature started the project — the project's own invoice for that stage.
  */

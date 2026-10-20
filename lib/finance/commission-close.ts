@@ -13,7 +13,7 @@ import { inForce, ruleFor } from './commission'
  * every Owner gets ONE task "Set commission for {project}" — on the project (the lead's Tasks, which the project's Tasks shows), assigned to each
  * Owner, due today, with a bell row that opens the project's Commission dialog (`/projects/{id}?commission=1`, ProjectCommissionDialog).
  *
- * "Nothing decides it" (her ask: think better than 1.0, which nudged even when the studio's rule already paid): the studio's rule pays no
+ * "Nothing decides it" (his ask: think better than 1.0, which nudged even when the studio's rule already paid): the studio's rule pays no
  * commission (none set, or *No commission*), the project has no rule of its own (a project's rate, its *No commission* — an explicit choice —,
  * or a member's rate on it), and nobody on its team has a rate of their own that applies today. A studio that pays commission by default never
  * gets the task: its rule applies, as it always did. Idempotent — an open task with the same title on the project is left as it is; a re-opened

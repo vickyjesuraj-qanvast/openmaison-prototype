@@ -1,6 +1,6 @@
 # S41b · Nothing left behind — every 1.0 API route, timed job and table → its 2.0 home
 
-Her words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This sweep looks past the 41 cards: it maps **every API route,
+His words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This sweep looks past the 41 cards: it maps **every API route,
 every timed job and every table 1.0 has** to 2.0. Read-only, 2026-10-13. Each 2.0 home was confirmed by opening the 2.0 file it names (the
 server actions' exports, `lib/db/schema.ts`, `lib/services/registry.ts`, the read functions in `lib/**`), and each decision by the audit or
 outcome it cites. Siblings: `ledger.md` (the cards' pending lines) and `sweep-pages.md` (pages and menus).
@@ -15,13 +15,13 @@ outcome it cites. Siblings: `ledger.md` (the cards' pending lines) and `sweep-pa
 - **2.0** = this repo: `CLAUDE.md` › Map, `lib/db/schema.ts` (158 tables), the 106 `app/**/*actions.ts` files, the 40 route handlers
   (`app/api/**` + the file / picture / card routes), `lib/services/registry.ts` (every stand-in seam), the parity maps `parity/*migration-map*.md`,
   map 28's rows, and the pending-modules steps / outcomes / `services.md` / the surveys.
-- **Excluded by her:** Platform admin (staff-only routes and tables). **Parked by her:** dark mode / themes / guided tours, Languages, countries
+- **Excluded by him:** Platform admin (staff-only routes and tables). **Parked by him:** dark mode / themes / guided tours, Languages, countries
   beyond Singapore. **Dev / test endpoints** are named where they sit.
 
 **Statuses:** **Built** — 2.0 does the job (its home named) · **Built in another form** — the job is done another way, said in the row ·
 **Seam (stand-in)** — a stand-in a developer swaps through `lib/services/registry.ts` (its key named) · **Rule (stand-in)** — 1.0 asked a model,
 2.0 answers from the records by rule (a registry `rule` entry) · **Decided** — a recorded call not to port it (cited) · **Dead in 1.0** — nothing
-in 1.0 calls or reads it · **Parked by her** · **Excluded** — Platform admin, OpenMaison's own operations, or dev / test · **Card queued** — on
+in 1.0 calls or reads it · **Parked by him** · **Excluded** — Platform admin, OpenMaison's own operations, or dev / test · **Card queued** — on
 a card whose step is not built yet (S39 Studio Health, S41 the AI sandboxes) · **MISSING** — no 2.0 home, no card, no decision (§3).
 
 ## Counts
@@ -34,7 +34,7 @@ a card whose step is not built yet (S39 Studio Health, S41 the AI sandboxes) · 
 | Rule (stand-in) | 51 | 3 | 0 | 0 |
 | Decided | 46 | 0 | 16 | 0 |
 | Dead in 1.0 | 16 | 3 | 13 | 0 |
-| Parked by her | 2 | 0 | 1 | 0 |
+| Parked by him | 2 | 0 | 1 | 0 |
 | Excluded | 53 | 3 | 8 | 0 |
 | Card queued | 5 | 0 | 3 | 0 |
 | MISSING | 0 | 11 | 0 | 2 |
@@ -62,7 +62,7 @@ MISSING**: every one of its 628 routes and 177 tables has a 2.0 home, a stand-in
 | `copilot-analytics` | all · weekly | Co-pilot analytics + coaching snapshots | Company › Reports › Meetings, computed on read | Built (S23) |
 | `notification-scheduled` | all · every 5 min | Send due scheduled notifications | Job `messages` (held mail, retries, derived reminders, payments due today) | Built (S34) |
 | `notification-digest` | all · hourly | Daily digests by each studio's timezone | Job `summaries` (`sendDueSummaries`, 8 AM server time — run with `TZ=Asia/Singapore`) | Built (S18 · S34) |
-| `fx-rates` | all · daily | Refresh FX rates | — | Parked by her (countries beyond Singapore) |
+| `fx-rates` | all · daily | Refresh FX rates | — | Parked by him (countries beyond Singapore) |
 | `price-drift` | all · monthly | Flag price-book items ±15 % off market rates | — | Decided — the platform's (price book Q-16) |
 | `aggregate-rates` | all · monthly | Aggregate crowd rate signals into market rates | — | Decided — the platform's (Q-16) |
 | `usage-rollup` | all · daily | Roll usage events up per studio | — (a studio's own view = card S39) | Excluded (fleet) · Card queued (S39) |
@@ -690,7 +690,7 @@ Grouped by the route's first segment; sibling routes with one 2.0 home share a r
 | `studio-config/features` GET·PUT | Per-studio switches: lock quote actions until approved, lock the project at handover, CaseTrust step, Journey mode, Canva editor, duplicate detection, manager hierarchy, fee-first stages, price-book subcategory in quotes | Quote approval (`quote_approval`), `project_handover`, CaseTrust (`contracts.casetrust_at`), the template editor, `findDuplicateLead`, `members.manager_id`, `quote_payments.fixed_minor`; Journey out; subcategory not ported | Built / Decided (DEF-04 · price book Q-08) |
 | `studio-config/funnel` GET·PUT<br>`studio-config/workflow` GET·PUT | The lead funnel; workflow rules (approvals) | Settings › Lead management › Lead stages (`lead_stage_rules`, `stage_movement`) · Who may do what | Built (S05 · REG-643) |
 | `studio-config/journey` GET·PUT | Journey mode settings (inactivation reasons, overrides) | Reasons → `lead_reasons`; Journey itself out | Decided — DEF-04 (reasons built, REG-607) |
-| `studio-config/member-overrides` PATCH<br>`studio-config/role-permissions` GET<br>`studio-config/roles` GET·POST<br>`studio-config/roles/[id]` DELETE·PATCH | Custom roles, role permissions, per-member overrides | Five fixed roles + Who may do what (`lib/settings/permissions.ts`, read-only) | Decided — roles editor held (Leads Q-40; her hold) |
+| `studio-config/member-overrides` PATCH<br>`studio-config/role-permissions` GET<br>`studio-config/roles` GET·POST<br>`studio-config/roles/[id]` DELETE·PATCH | Custom roles, role permissions, per-member overrides | Five fixed roles + Who may do what (`lib/settings/permissions.ts`, read-only) | Decided — roles editor held (Leads Q-40; his hold) |
 | `studio-config/next-document-suffix` GET<br>`studio-config/numbering` GET | Document numbering per type / entity | Settings › Finance › Document numbers (`app/settings/document-numbers-actions.ts`) | Built (REG-1521) |
 | `studio-config/platform-market-rates` GET | OpenMaison's market rates (read-only) | — | Decided — the platform's (price book Q-16) |
 | `studio-config/portfolio` GET<br>`studio-config/portfolio/[id]` GET·POST | The studio's portfolio projects (Qanvast Ops › Portfolio; read by the co-pilot) | Members › Public profile › Their work (`member_portfolio_*`) + the studio's own completed projects in Past projects | Built (S16 · S27) |
@@ -951,7 +951,7 @@ Every column of these tables is mapped in the module's migration map; the groups
 | `projects` · `satisfaction_*` · `commission_*` · `notes` · `closure_summary` · `ai_plan_metadata` · `country_code` | the port log; notes → one lead note; commission → `commission_rules` / shares (F2); the closing summary (REG-1174) | Decided — map 24 D-13 |
 | `quotes` · 33 columns (`is_primary` · `doc_sections` · `preview_token*` · `parsed_doc_metadata` · `rejection_comment`) | `quotes` (+ `view_token*` · `confirm_token` · `review_note` · `prepared_json`); `is_primary` superseded; `parsed_doc_metadata` not ported | Built / Decided (map 06 · Q-03 · D-200) |
 | `studios` · `name` · `owner_id` · `plan_id` · `portal_slug` · `logo_url` · `verification_status` · `chat_identity_*` · `lead_sources` · `setup_completed_at` | `settings.studio` · `subscriptions` · `portal_addresses` · `settings.brand` · `studio_verifications` · `settings.lead_sources` · `studio_setup` | Built (maps 12 · 24 · S08 · S37) |
-| `studios` · `country_code` · `currency_code` · `locale` · `timezone` · `supported_countries` | — (Singapore, S$, en) | Parked by her (S33 · S38) |
+| `studios` · `country_code` · `currency_code` · `locale` · `timezone` · `supported_countries` | — (Singapore, S$, en) | Parked by him (S33 · S38) |
 | `studios.settings` · `branding` · `features` · `workflow` · `journey` · `client_portal` / `portal` · `numbering` · `bank_details` · `taxRate` · `aboutUs` · `aboutTeam` · `invoiceApproval` · `poSettings` · `proactiveAlerts` · `notifications_paused` · `page_visibility` · `enabledAccreditationIds` · `quoteDocumentTemplates` · `visualizerWorkspace` · `defaultPaymentSchedule` · `setup_last_step` | `brand` · the switches' homes (row `studio-config/features`) · `stage_movement` / `lead_stage_rules` / `quote_approval` · `lead_reasons` · `portal` / `portal_sections` / `portal_welcome` · numbering keys · entities · `studio.gstPct` · `studio_about` + `studio_pictures` · `project_invoices` · `cost_rules` · REG-1222's lead time (Proactive Alerts' tab itself was dead, H-Q27) · Qanvast Ops › Studios (`platform`) · brand kit badges · `quote_templates` · `visualizer_designs` · `payment_templates` default · `studio_setup` | Built / Decided (page visibility = Platform admin) |
 | `studios.settings.cost_visibility` (qanvast) | — | **MISSING** (M-03) |
 | `studio_members` · `tags` · `role_id` · `permission_overrides` · `workflow_overrides` | `members.role` (five fixed roles); overrides superseded | Built / Decided — Q-40 |
@@ -962,7 +962,7 @@ Every column of these tables is mapped in the module's migration map; the groups
 ## 3. Missing
 
 Four things, every one from 1.0's newer deployment branches, which no card read for these (the 41 cards' surveys read `integ/security-non-qanvast`; S19 and S21 read plg for their own modules only).
-Each is in Vicky's lane (it shows on screen): it needs her call before anyone builds it.
+Each is in Vicky's lane (it shows on screen): it needs his call before anyone builds it.
 
 ### M-01 · Try the tools without an account, and keep the work at sign-up (plg)
 
@@ -981,7 +981,7 @@ Each is in Vicky's lane (it shows on screen): it needs her call before anyone bu
   (`lib/studios/create.ts`); a visitor table (or the trial's signed cookie, extended) and the two sweeps as `lib/services/sweep.ts` jobs.
 - **Would a studio lose anything if it is never ported?** No studio data — it is acquisition (what a visitor did before they had a studio). The
   earlier scoping (AI credits audit §0.2, "the anonymous visitor tools and sign-up gates — excluded", from the Visualizer audit's Q-27) predates
-  S35 / S36 building the website and the trial, so it needs her fresh call.
+  S35 / S36 building the website and the trial, so it needs his fresh call.
 - **Rough size.** L (Leads and X-Ray / quote read for a visitor, the account gate, the claim; the Visualizer part exists).
 
 ### M-02 · The Free plan's upgrade nudges (plg)
@@ -996,7 +996,7 @@ Each is in Vicky's lane (it shows on screen): it needs her call before anyone bu
   Nothing offers an upgrade before a wall is hit.
 - **Its 2.0 home.** The credits store and host (`components/credits/credits-client.ts`, `credits-host.tsx`, the Plans dialog), triggers read
   from records 2.0 already keeps (`credit_ledger`, `members`, the plan); per-member state as a table or `members` columns.
-- **Would a studio lose anything?** No data; it is OpenMaison's conversion work. Her call whether 2.0 should nudge at all.
+- **Would a studio lose anything?** No data; it is OpenMaison's conversion work. His call whether 2.0 should nudge at all.
 - **Rough size.** M.
 
 ### M-03 · Cost & Margin Visibility per role (qanvast)
@@ -1030,7 +1030,7 @@ Each is in Vicky's lane (it shows on screen): it needs her call before anyone bu
 - **Its 2.0 home.** Those two tabs (`components/qanvast/qanvast-tabs.ts`), fed through the `qanvast` / `feeds` seams (`lib/services/feeds.ts`
   `setFeedSource`); Request reviews beside Company › Profile › Reviews' link (S14).
 - **Would a studio lose anything?** A Qanvast-line studio loses the view of its credits and reviews inside OpenMaison; the records stay at
-  Qanvast. Needs mocks (or her direction to build on house pieces).
+  Qanvast. Needs mocks (or his direction to build on house pieces).
 - **Rough size.** L (two pages, a feed contract per page).
 
 ## 4. Notes
@@ -1044,7 +1044,7 @@ Each is in Vicky's lane (it shows on screen): it needs her call before anyone bu
    Qanvast Trusted, Qanvast Supertrust) that a studio switches on. 2.0's kit badges are the studio's own uploads, and the templates audit's Q-15
    decided the port copies each studio's **enabled** badges' images into its kit (nothing a ported studio shows is lost). A new 2.0 studio
    can't pick from ready badges, and Company › Profile's Registrations list CaseTrust, HDB, bizSAFE Enterprise, BCA and ACRA — not SDIDA,
-   CaseTrust + RCMA, bizSAFE Star / L4 or Qanvast's two. Offering the eight as picks in the kit would be a small add (S) if she wants it.
+   CaseTrust + RCMA, bizSAFE Star / L4 or Qanvast's two. Offering the eight as picks in the kit would be a small add (S) if he wants it.
 3. **S16's premise.** See M-04 — the Qanvast line keeps Qanvast Ops' Credits, Leads and Reviews pages and the `api/qanvast/*` proxy.
 4. **Sign any lead file (qanvast) is covered in another form.** The Qanvast line lets a studio send any PDF / PNG / JPEG in a lead's Files for
    signature (`lead_document_signature_requests`, `/sign/document/<token>`, an appended certificate page, never moving the stage). In 2.0 the

@@ -1,5 +1,5 @@
 /**
- * (S44T — call C2's print side, UAT rows 326 · 327 · 298 · 307; her UAT ask 2026-10-15, as recommended) A line's words may carry the brand
+ * (S44T — call C2's print side, UAT rows 326 · 327 · 298 · 307; his UAT ask 2026-10-15, as recommended) A line's words may carry the brand
  * kit's colours — never a free hex (REG-556's kit-only rule; 1.0 made the same call, 4dd60bc56). The editor marks a coloured run as
  * `<span data-kit="accent">…</span>` (a kit colour's key, kept by the house allowlist, `lib/contracts/sanitize.ts`), so the words follow the
  * kit when the studio changes its Accent. The print resolves each mark to the kit's colour here, and an underline or a strike drawn round a

@@ -1,5 +1,5 @@
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Settings › Projects › *When a project starts*: which signature moves a
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Settings › Projects › *When a project starts*: which signature moves a
  * lead to Won (and Won makes the project — REG-911). Pure and client-safe; the server reads it through `lib/projects/start-rule-server.ts`.
  *
  * - **The quote is signed** (the default — today's): the studio moves the lead to Won once its quote is signed; the Won step asks for the

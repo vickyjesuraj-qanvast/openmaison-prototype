@@ -13,7 +13,7 @@ import { claimTrialWork } from '@/lib/trial/claim'   // (pending modules S41b-3)
 import type { WorkCount } from '@/lib/trial/policy'
 
 /*
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's admin studios POST, its onboarding tour's
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's admin studios POST, its onboarding tour's
  * phone + code step) A new studio signs itself up, on the server. Step one checks the details and sends a 6-digit code to the mobile; step two
  * checks the code, makes the studio and its Owner in one go (lib/studios/create.ts — on this prototype a database of its own), opens it and
  * signs this browser in as its Owner. A number or email that already has an account is refused with the way in (1.0's admin route refused a

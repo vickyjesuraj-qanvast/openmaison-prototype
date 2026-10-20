@@ -37,7 +37,7 @@ There is no audit file for this package: the carried note is one item, and readi
 - **The project's Client › Meetings** — a lead on its project: `fileHeld` answers `project`, no offer (unchanged).
 
 ## Calls fixed as recommended
-None in this package's area (`s42/calls-for-vicky.md` has none for it). One judgement taken and recorded for her review in REG-S42G.2: a meeting
+None in this package's area (`s42/calls-for-vicky.md` has none for it). One judgement taken and recorded for his review in REG-S42G.2: a meeting
 held with a lead on hold offers **Resume at Met** (the rule allows a parked lead to resume anywhere, REG-132; the press keeps the "Resume at
 Met?" confirm) rather than dropping the offer — S42E's `heldMeetingStep` answered null for every parked lead.
 

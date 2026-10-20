@@ -20,7 +20,7 @@ import pageStyles from '@/app/leads/leads.module.css'
  * Meetings tab unpinned (the rail's Tasks page's shape, REG-466 — the L1 header carrying New Meeting ▾, the toolbar its search and Column
  * settings), with a Lead column and Start's lead picker. 1.0's Analytics and Objections are Company › Reports › Meetings (one home, REG-1361);
  * its Gallery is each meeting's "From this meeting" and the AI Visualizer's own home.
- * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M5; 1.0's Copilot landing had a Meeting Insights card)
+ * (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M5; 1.0's Copilot landing had a Meeting Insights card)
  * The Leads and Projects listings' **Insights** door after the primary — outlined, `bar_chart_4_bars`, its square on a phone — into Company ›
  * Reports › Meetings with the way back, for whoever reads that report (Owners and Admins, its tab's gate); not before a first meeting, as the
  * Projects listing's (nothing to read yet).

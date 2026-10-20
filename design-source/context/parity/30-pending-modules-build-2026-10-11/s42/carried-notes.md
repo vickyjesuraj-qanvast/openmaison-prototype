@@ -24,7 +24,7 @@
 123-- **The orchestrator / CLAUDE.md's Map:** *Real services (pending modules S34)* — `lib/services/{slots,registry,install,sweep,feeds,pdf,
 
 ## outcome-S39.md
-110-- **S41b:** Studio Health's card is answered (built, three lines kept with her reason); nothing in 1.0's usage folders is left without a home.
+110-- **S41b:** Studio Health's card is answered (built, three lines kept with his reason); nothing in 1.0's usage folders is left without a home.
 111:- **S42:** the demo's ageing moments — Studio health counts what happened *in the range*, so as the demo's history ages, Last 30 days thins
 112:  (today 6 of 8 active); the restore's day-shift (S42's note) would move these too if it shifts the demo's recent acts. The Members page's crumb
 113-  from a profile ("Public profile / Company / Members") is the house's L2 crumb, unchanged — worth a look in the UX audit.
@@ -144,4 +144,4 @@
   picked file (S42F); every Projects chapter step that creates a project must pick a member (S42F's TEAM_NEEDED). Check the other S42 changes'
   steps too (sign-in / join land on the Dashboard — S42A; End the chat offers Contacted — S42E; signing waits while a quote is revised — S42B).
 - **The website's changelog** still claims "AI reads the screenshot" (S42F; S42E rewrote the rest of the site's claims) — say what 2.0 does.
-- **Auto Fill** (REG-319, the Move stage window's contact log) is still a scripted stand-in — her call; listed in calls-for-vicky.md.
+- **Auto Fill** (REG-319, the Move stage window's contact log) is still a scripted stand-in — his call; listed in calls-for-vicky.md.

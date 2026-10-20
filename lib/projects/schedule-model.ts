@@ -478,7 +478,7 @@ export type PaymentOption = { ref: string; name: string; pct: number
   fixedMinor?: number | null
 }
 export const pctWord = (pct: number) => `${Number.isInteger(pct) ? pct : pct.toFixed(1)}%`
-/** (S44O — UAT row 297, her UAT ask 2026-10-15) What a payment stage is worth in a line of words: its share — or, for a fixed fee first, its
+/** (S44O — UAT row 297, his UAT ask 2026-10-15) What a payment stage is worth in a line of words: its share — or, for a fixed fee first, its
     amount ("S$3,000"), never "0%". The Start sheet, the timeline's chip, the phone's row, the milestone's payment picker and the next payment. */
 export const payShareWord = (p: { pct: number; fixedMinor?: number | null }) =>
   typeof p.fixedMinor === 'number' && p.fixedMinor > 0 ? `S$${Math.round(p.fixedMinor / 100).toLocaleString('en-SG')}` : pctWord(p.pct)

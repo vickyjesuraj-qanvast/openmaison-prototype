@@ -1,7 +1,7 @@
 # S43A · One signed-in member per browser — outcome (2026-10-15, lane A)
 
 The S42 audit's call **A·1** (`s42/audit-A.md` › Calls for Vicky 1, `s42/calls-for-vicky.md` › A·1), which S42A could not build and covered
-with a fallback line. Built as recommended on her "fix all the pending things" (2026-10-15). Register rows: `steps/reg-S43A.md`
+with a fallback line. Built as recommended on his "fix all the pending things" (2026-10-15). Register rows: `steps/reg-S43A.md`
 (REG-S43A.1…6). Probe: `design-source/verify/pending-modules/verify-pm2-s43a.cjs` (**43 / 43**); shots in
 `design-source/verify/pending-modules/pm2-s43a/`. **No migration, no repair** (the flag's column keeps its name; nothing in the base changes).
 
@@ -84,7 +84,7 @@ now the per-browser rule and "never read `is_you` yourself"; UAT step 1.10 (`des
 fallback line — **rebuild the workbook** (`build_uat.py`); the testers' sheet tabs are Vicky's. `s42/calls-for-vicky.md` › A·1 says
 "built as recommended (S43A)".
 
-## Decisions taken (as recommended — her "fix all the pending things" 2026-10-15)
+## Decisions taken (as recommended — his "fix all the pending things" 2026-10-15)
 1. **The prompt's shape, not the audit's first sketch:** the audit suggested a cookie that pins a standing browser to the member it first
    opened as; the call as set for this step keeps the standing browser on the flag (View as still moves every standing window, REG-667) and
    makes a code-signed browser its own member — no new cookie, and the demo's View as works exactly as before.

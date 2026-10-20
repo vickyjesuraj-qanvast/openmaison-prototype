@@ -89,7 +89,7 @@ back from the baseline.
 - **S36 · the Sketch page's ghost draws three tiles where the page shows one** — confirmed → **E-13**.
 - **S41b-3 · the Visualizer landing's floating "Try it free" pill (1.0)** — closed, not built. *Try now* already sits at the top and the
   close of `/site/platform/visualizer`, and the phone's bar raises *Demo*. A floating pill would be a second filled press riding over the
-  content, against "one filled button" and Principle 10. Listed in Calls in case she wants 1.0's.
+  content, against "one filled button" and Principle 10. Listed in Calls in case he wants 1.0's.
 - **S41b-3 · the site's claims check now also covers the three tools** — the trial pages' own words are true ("3 of 3 free leads left",
   "Read in your browser", "1 free comparison"), with one exception, the Upload page's PDF read → **E-05**.
 - **S41b-5 (landing) · `/qanvast-ops/portfolio` · `/complaints` · `/promote` unmapped** — confirmed (404) → **E-15**, with where each

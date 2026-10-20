@@ -3,7 +3,7 @@ M = os.path.dirname(os.path.abspath(__file__))
 src = {}
 for f in ['studio', 'onboarding', 'api', 'public', 'held']:
     for m in json.load(open(f'{M}/{f}.json'))['modules']: src[f'{f}:{m["key"]}'] = m
-REC = {'build': 'build', 'build with a stand-in': 'stand', "developers' lane": 'dev', 'needs her mocks / decision': 'mocks', 'skip': 'skip'}
+REC = {'build': 'build', 'build with a stand-in': 'stand', "developers' lane": 'dev', 'needs his mocks / decision': 'mocks', 'skip': 'skip'}
 def card(key, name, sources, rec, effort, why, group, extra_q=None, status=None, in2=None, drop_pending=False, held=None):
     ss = [src[s] for s in sources]
     p = ss[0]
@@ -152,15 +152,17 @@ out['method'] = [('Who read it', 'Six readers, each one group of 1.0: the studio
   ('What a card is', 'One module or capability a person would name, merged where two readers found the same thing. 1.0 sandboxes and dead code are called out, not counted as losses.'),
   ('Who decided what', 'Each held line says whether it was your call, taken “as recommended” under one of your build-everything instructions, or a build package’s own call — so you can see which holds are really yours.'),
   ('Already settled', 'Your standing holds (Dashboard, Meetings, roles editor, regions) are shown, not argued; where a hold’s reason has since ended, the card says so.')]
-YOU = [("her call", "your call"), ("her mocks", "your mocks"), ("her answer", "your answer"), ("her pick", "your pick"), ("her mark", "your mark"),
-       ("her decision", "your decision"), ("her design", "your design"), ("her 'not now'", "your 'not now'"), ("her sign-off", "your sign-off"),
-       ("her rule", "your rule"), ("flagged for her", "flagged for you"), ("tell her", "tell you"), ("back to her", "back to you"), ("her data call", "your data call"),
-       ("her open call", "your open call"), ("hers to switch on", "yours to switch on"), ("waits on her", "waits on you"), ("needs her ", "needs your "),
-       ("her Dashboard call", "your Dashboard call"), ("her 'go ahead", "your 'go ahead"), ("her 'build", "your 'build"), ("her 'hold", "your 'hold"),
-       ("her 'actually", "your 'actually"), ("her 'the list", "your 'the list"), ("her ", "your "), ("waiting on her", "waiting on you"), ("on her.", "on you."), ("asked her", "asked you"), ("ask her", "ask you")]
+YOU = [("his call", "your call"), ("his mocks", "your mocks"), ("his answer", "your answer"), ("his pick", "your pick"), ("his mark", "your mark"),
+       ("his decision", "your decision"), ("his design", "your design"), ("his 'not now'", "your 'not now'"), ("his sign-off", "your sign-off"),
+       ("his rule", "your rule"), ("flagged for him", "flagged for you"), ("tell him", "tell you"), ("back to him", "back to you"), ("his data call", "your data call"),
+       ("his open call", "your open call"), ("his to switch on", "yours to switch on"), ("waits on him", "waits on you"), ("needs his ", "needs your "),
+       ("his Dashboard call", "your Dashboard call"), ("his 'go ahead", "your 'go ahead"), ("his 'build", "your 'build"), ("his 'hold", "your 'hold"),
+       ("his 'actually", "your 'actually"), ("his 'the list", "your 'the list"), ("waiting on him", "waiting on you"), ("on him.", "on you."), ("asked him", "asked you"),
+       ("ask him", "ask you"), ("His ", "Your "), ("his ", "your ")]
 def you(x):
     if not isinstance(x, str): return x
-    for a, b in YOU: x = x.replace(a, b)
+    # whole words only, so "this" and "neither" stay as they are
+    for a, b in YOU: x = re.sub(r'(?<![A-Za-z])' + re.escape(a), b, x)
     return x
 def frag(x):
     seen, keep = set(), []

@@ -54,7 +54,7 @@ function lineOf(r: InboxRow): string {
  * before Won (a Lead chip — the lead invited to the portal wrote from their page; once Won it carries on in the project's). Pinned ones
  * first (a pin glyph), a muted one says so and leaves the rail's count. `?open=` takes a conversation's key (`project:` · `team:` · `lead:`)
  * or a bare project id; `&at=<message>` lands on a line (⌘K's Messages).
- * (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) …and the studio's own: a lead's
+ * (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) …and the studio's own: a lead's
  * Team conversation before Won (Team), two members' (Direct), a named group (Group), the studio's room every member reads (Studio) — one list,
  * one composer, never a second chat app. The page header's New message ▾ (C) starts one: A member › · A new group · A client (any lead or
  * project the viewer sees — invited to their page or not). The list's filters: 1.0's All · Unread, and who it is with — Clients · Team

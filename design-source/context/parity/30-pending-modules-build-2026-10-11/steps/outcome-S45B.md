@@ -1,7 +1,7 @@
 # S45B · H-UHD-2 Contractors — outcome (2026-10-17, lane B, port 3170)
 
-Her ask (2026-10-17 00:15): "can you go ahead and build everything and complete it" — the leftovers of the 15 Oct report and **Urban Home
-Design's three dashboards, built as features every studio gets** (her call settles UHD's exclusivity ask, `s45/plan-2026-10-17.md`). This
+His ask (2026-10-17 00:15): "can you go ahead and build everything and complete it" — the leftovers of the 15 Oct report and **Urban Home
+Design's three dashboards, built as features every studio gets** (his call settles UHD's exclusivity ask, `s45/plan-2026-10-17.md`). This
 package is row **H-UHD-2** of `s42/sweep-newer-branches-2026-10-15.md` §2.1. 1.0 read through git only (`/Users/vicky/Documents/GitHub/qanvast-id-tool`,
 `urbanhomedemo` @ 4da810229 — `docs/features/contractor-dashboard/spec.md`, `.claude/rules/contractors.md`, `src/lib/contractors/{allocation,trades}.ts`,
 migrations 497 · 498, `src/app/api/projects/[id]/contractors/**`, `src/components/projects/project-contractors-card.tsx`, `src/app/(main)/contractors/page.tsx`);
@@ -41,7 +41,7 @@ its working tree never checked out, :3001 never opened. Register rows: `steps/re
 | 7 | 1.0's `get_contractor_availability` mAIson tool (Phase 4, deferred in 1.0) | **Built by rule** | the listing's Maison AI "Which contractors are free this week?" |
 | 8 | 1.0's nav alias "Contractors" (om rail + classic sidebar) | **Built in another form** — no rail item (REG-1360's rule): ⌘K's **Contractors** page, the Vendors view's Contractors, the doors `?from=` |
 | 9 | CSV/XLSX import of the contractor list; Excel export of By site; `contractor.assigned` WhatsApp | **Not built — 1.0 deferred them too** (its spec §4.4 / Phase 4: "after demo", never built); a contractor is added in Finance › Vendors or in place from the dialog; Message on WhatsApp is on every crew row |
-| 10 | BETA chip on every contractor surface (1.0 round 2) | **Not carried** — 2.0 ships it as a feature of every studio (her call), no beta marking exists in 2.0 |
+| 10 | BETA chip on every contractor surface (1.0 round 2) | **Not carried** — 2.0 ships it as a feature of every studio (his call), no beta marking exists in 2.0 |
 | 11 | `vendors.is_demo`, demo clean-up route, hard delete (1.0 migration 499) | **Excluded** (the sweep's own call — demo scaffolding; 2.0 deactivates and merges vendors) |
 | 12 | Rendering a gap for a site the viewer doesn't see; 1.0 scoped ID members to their sites | **Built** | Who sees leads: a site not seen keeps its contractor busy, reads "Another project", its milestones' names never leave the server (`fetchCrewBoard`) |
 
@@ -50,7 +50,7 @@ its working tree never checked out, :3001 never opened. Register rows: `steps/re
 - 1.0 never freed a contractor whose milestone was deleted or whose project paused — 2.0 does (on hold, handed over, a deleted milestone).
 - 1.0's `Sample data` mode (`mock-contractors.ts` when the tables are missing) — not needed (the demo's records are real, R148).
 
-## Calls taken (as recommended — her ask 2026-10-17)
+## Calls taken (as recommended — his ask 2026-10-17)
 1. **The page's home is Projects › Workload** (`?view=workload&of=contractors`): staffing is project work (the Workload view already answers "who has room"); Finance › Vendors keeps the record (one home each); no rail item. Designers see Contractors (1.0: owner · admin · id), the Members half stays the Owners', Admins' and Managers' — a Designer meets the toggle only once the studio keeps a contractor.
 2. **Trades are the studio's one list** (Settings › Quotes & pricing › Trades), not 1.0's separate `contractor_trades` — a milestone reads as a trade by the trade's own words.
 3. **One window per row** — the milestone's dates (followed at read time) or its own; no override.

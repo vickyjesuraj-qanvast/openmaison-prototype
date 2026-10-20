@@ -16,7 +16,7 @@ import s from './settings.module.css'
 import d from './document-numbers.module.css'
 
 /**
- * (simplify S-15 — P3 §6.7 · F1 §6.8, her "build everything" 2026-10-09) Settings › Finance › **Document numbers**: a row per document —
+ * (simplify S-15 — P3 §6.7 · F1 §6.8, his "build everything" 2026-10-09) Settings › Finance › **Document numbers**: a row per document —
  * Invoices · Receipts · Credit notes · Purchase orders — each with the numbering card's fields (prefix, next number, digits), the year switch
  * and the live "Next:" example, and ONE Discard · Save (the leave guard asks before the page is left with edits). It replaces the four
  * numbering blocks the Invoices, Client payments, Credit notes and Costs cards each carried with their own Save; from a second issuing entity

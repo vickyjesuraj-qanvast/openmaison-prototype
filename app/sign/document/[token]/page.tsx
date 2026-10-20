@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * (S46D — D2, her "fix everything" 2026-10-19; finding D2 · raw P-1; FROM-1.0-TO-2.0.md §9 #3) 1.0's link for signing a file of a lead
+ * (S46D — D2, his "fix everything" 2026-10-19; finding D2 · raw P-1; FROM-1.0-TO-2.0.md §9 #3) 1.0's link for signing a file of a lead
  * (qanvast only — `lead_document_signature_requests`, `/sign/document/<token>`), already in clients' WhatsApp chats. The port carries each
  * request's token into its contract's `sign_token` (design-source/context/parity/08-contracts-migration-map-2026-09-25.md §1), so a link
  * whose contract (or set of documents) is here lands on 2.0's signing page at `/sign/<token>` — which answers it as every signing link: open,

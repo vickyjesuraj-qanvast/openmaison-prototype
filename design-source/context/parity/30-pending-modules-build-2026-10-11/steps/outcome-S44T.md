@@ -1,9 +1,9 @@
 # S44T · the template editor and the printed quote — outcome (2026-10-15)
 
-Her ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments based on
+His ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments based on
 our 2.0 experience without any overlaps nor any issues without losing what we have already built … If you have any questions please go ahead
 based on your recommendations." Package S44T = area T of the triage (`design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md`
-§2, §7, §10, §11, §12) plus call C1 and C2's print side. Every call taken **as recommended — her UAT ask 2026-10-15**. Built in lane A
+§2, §7, §10, §11, §12) plus call C1 and C2's print side. Every call taken **as recommended — his UAT ask 2026-10-15**. Built in lane A
 (port 3160; the prompt's ":3185" is lane E's port — not used). Register rows: `steps/reg-S44T.md` (REG-S44T.1…21).
 
 ## Ledger — every row S44T owns

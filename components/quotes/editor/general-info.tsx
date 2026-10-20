@@ -93,7 +93,7 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra, vari
       ) : (
         <div className={styles.pair}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></div>
       )}
-      {/* (S44T — UAT row 321, her UAT ask 2026-10-15) the quote's own remarks — printed wherever its template places the Remarks field */}
+      {/* (S44T — UAT row 321, his UAT ask 2026-10-15) the quote's own remarks — printed wherever its template places the Remarks field */}
       <TextField label="Remarks" value={value.remarks} onChange={(v) => onChange({ remarks: v })} maxLength={500} helper="Prints where the quote’s template has the Remarks field" />
       {/* (parity map, SC-094 — 1.0's VO "timeline impact days") a variation order says how many days it adds to the schedule */}
       {variation ? <div className={styles.pair}><VariationDaysField /><span /></div> : null}

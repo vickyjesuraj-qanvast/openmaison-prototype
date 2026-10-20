@@ -2,7 +2,7 @@ import type { SampleRoom } from '../samples'
 import type { RoomLight } from '../lighting'
 import { base, looks, oval, pts } from './shape'
 
-/* (pending modules S43C) The kitchen: the owner's photo and her line drawing of it (`sketch` — 1.0's 4a51f3522, 2026-10-08). A one-wall
+/* (pending modules S43C) The kitchen: the owner's photo and his line drawing of it (`sketch` — 1.0's 4a51f3522, 2026-10-08). A one-wall
    kitchen: open oak shelves, two black-framed glass cabinets and flat oak uppers over a beige stone backsplash, a pale quartz worktop on
    cream handleless lower cabinets, a tall steel fridge in an oak housing on the right and a window with a roman blind on the left. Traced on
    the photo at full size (900 × 603); every hull follows the structure, every cut its piece. A plant's outline reaches each of its parts and

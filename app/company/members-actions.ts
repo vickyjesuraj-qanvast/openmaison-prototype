@@ -138,7 +138,7 @@ export async function setMemberPayNow(memberId: string, input: { paynow: string 
   return { ok: true, before: m.paynow ?? null, paynow: next || null }
 }
 
-/* ── (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile and PATCH /api/identity/profile) A member's name,
+/* ── (pending modules S01 — his "build all of them" 2026-10-11; 1.0's Settings › Your Profile and PATCH /api/identity/profile) A member's name,
    email, phone and photo: their own on Your profile, anyone's (an Owner's by an Owner) on Company › Members › Edit details ─────────────── */
 
 /** What a details save carries — one object, so a picture travels inside it. `photo`: absent keeps it · `null` takes it off · a data URL is a
@@ -313,7 +313,7 @@ export async function reactivateMember(memberId: string, restore?: Released): Pr
   return { ok: true }
 }
 
-/* ── (pending modules S09 — the card `onboarding:team-invitations`, her "build all of them" 2026-10-11; 1.0's `/api/invitations/[token]`
+/* ── (pending modules S09 — the card `onboarding:team-invitations`, his "build all of them" 2026-10-11; 1.0's `/api/invitations/[token]`
    PATCH (resend) and DELETE (cancel)) A member still to come in: send their invitation again, cancel it, invite them again ──────────────── */
 
 type InviteResult = { ok: true; channels: InviteChannel[] } | { error: string }

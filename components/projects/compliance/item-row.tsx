@@ -90,7 +90,7 @@ export function ItemRow({ item, answer, task, open, fresh, onToggle, onDone, onM
 }
 
 /**
- * (simplify round 2 — her "fix all the pending things" 2026-10-09; the card table's anatomy, REG-727) The head of a project's group of items:
+ * (simplify round 2 — his "fix all the pending things" 2026-10-09; the card table's anatomy, REG-727) The head of a project's group of items:
  * the card table's 40 head on the grey fill, naming its columns — the item, then its two action columns (Mark done · ⋮) named for a screen
  * reader and drawn as nothing (Settings' rule, the handover checklist's). Gone on a phone, where the row stacks (compliance.module.css).
  */

@@ -4,8 +4,8 @@
 
 So every open call in the audit (`22-projects-1.0-to-2.0-audit-2026-10-05.md`, the report doc
 https://claude.ai/code/artifact/8b0dca0c-5d28-4cff-8307-c9bb22d0869b) is built **As recommended — set on the owner's
-instruction of 2026-10-05**, with her three marks (Q-04 a project may exist with no lead · Q-09 / Q-10 the schedule
-proposal) and her later acceptances (the schedule proposal as drawn, Q-34…Q-36, the client portal, the set-up side).
+instruction of 2026-10-05**, with his three marks (Q-04 a project may exist with no lead · Q-09 / Q-10 the schedule
+proposal) and his later acceptances (the schedule proposal as drawn, Q-34…Q-36, the client portal, the set-up side).
 The owner can override any row. Every round is logged in `design-source/REGISTER.md` as user-directed; copy that no mock
 carries is flagged *invented copy* there.
 
@@ -389,7 +389,7 @@ Home · Schedule · Updates · (Money goes here) · Choices · Files; the repair
   the CLAUDE.md Map entry rewritten. **Left for the owner:** two queries still read variation orders where only quotes belong — the
   quote a new contract names (`createContractDoc` in `app/contracts/actions.ts`) and the Contracts tab's "next quote" line
   (`lib/leads/contracts.ts`); the fix is `eq(quotes.kind, 'quote')` in both, not applied because the regression runner's edit was refused
-  by the session's permission check — it waits for her go-ahead. Kevin Ng's demo share link (R61) has read expired since 1 Oct.
+  by the session's permission check — it waits for his go-ahead. Kevin Ng's demo share link (R61) has read expired since 1 Oct.
   Nothing is committed.
 - 2026-10-06 → 07 — **the owner's "go through in depth and fix everything".** Seven read-only auditors walked the live build
   (`25-projects-bug-audit-2026-10-06/A…G-*.md`, 305 findings: 1 Blocker · 63 Major), then seven fix packages in worktrees fixed them
@@ -407,7 +407,7 @@ Home · Schedule · Updates · (Money goes here) · Choices · Files; the repair
   plus one merge catch in the app: the completed bar had lost "agreed" when E-24's sentence replaced D-11's (REG-1162). The Status card's head
   keeps A-14's "Completed on {date}" over E-19's "Took n days". `npm run db:repair` all checks pass (nothing to write); baseline rebuilt
   (85 tables, 1,024 rows, demoDay 2026-10-07). Shots of the re-run probes banked over each round's folder. Nothing committed.
-- 2026-10-07 — **the owner's calls on the fix phase's open items, and the full regression.** Her "go" on my recommendations: built
+- 2026-10-07 — **the owner's calls on the fix phase's open items, and the full regression.** His "go" on my recommendations: built
   REG-1163 (a completed project's Status head "Took n days"), REG-1164 (the sign-in code step says "your designer"; `requestCode` returns
   no name — F-37), REG-1165 ("With your designer" grey — F-27); kept as they are: D-14 (overpayment = owed amount + a note, until credit
   notes), B-61 (the client pane wears the portal's brand), F-32 (the studio's own stage names), D-23 (C = New variation order), the

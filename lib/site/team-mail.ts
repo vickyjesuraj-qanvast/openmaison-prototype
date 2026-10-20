@@ -4,7 +4,7 @@ import { COMPANY } from './model'
  * (pending modules S35) What OpenMaison's team hears from its website — through the house outbox (lib/notifications/delivery.ts), the one way an
  * email leaves OpenMaison, so it is recorded in Settings › Notifications › Sent messages with the rest. 1.0 emailed the contact form to
  * hello@openmaison.ai (Resend, the visitor as reply-to — api/contact/route.ts); a demo request it kept for staff's Beta sign-ups list (Platform
- * admin, excluded by her), so here it reaches the team the same way as the contact form — the stand-in for that list. A newsletter address is a
+ * admin, excluded by him), so here it reaches the team the same way as the contact form — the stand-in for that list. A newsletter address is a
  * list row only (1.0 sent nothing). PRODUCTION: these go to the platform's own outbox, never a studio's (one database is the demo's here).
  * Pure and client-safe.
  */

@@ -1,4 +1,4 @@
-// S44T · the template editor and the printed quote — the UAT comments, rows 246–364 (her UAT ask 2026-10-15; triage
+// S44T · the template editor and the printed quote — the UAT comments, rows 246–364 (his UAT ask 2026-10-15; triage
 // design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md, area T). Each build asserted as the rule it makes:
 //  - M1 the table's spacing (rows 252 · 257 · 265 · 266 · 267 · 303) and the heading band's own height; unset = as before
 //  - M2 the sub-totals' own style; the Totals and the payment schedule print money as their Currency says

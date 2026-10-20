@@ -25,7 +25,7 @@ export type FileRow = LeadFile & {
   paper?: string | null
 }
 
-/* ── (S42 audit C-03, call C·4 as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review) A money
+/* ── (S42 audit C-03, call C·4 as recommended — his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review) A money
       paper stays with its record ─────────────────────────────────────────────────────────────────────────────────────────────────── */
 /** (pending modules S06) Accounting reads a project's files — every change is the team's (app/leads/files-actions.ts); (S46D) said by the contract
     import too, when a file of Files is asked to become a contract *(invented copy — S06)* */

@@ -9,7 +9,7 @@ import { parseTradeNotes, tradeKey } from '@/lib/settings/types'
 import { TRADES_FULL, TRADES_MAX, TRADES_RULE, listedAs, sameName, type TradeMergeUndo, type TradeUsage } from '@/lib/settings/trades'
 import { setTrades } from './actions'
 
-/* (S44P — her UAT ask 2026-10-15, rows 319 · 340; triage M14) The trades' own writes beyond the list setter: a trade added from the Price
+/* (S44P — his UAT ask 2026-10-15, rows 319 · 340; triage M14) The trades' own writes beyond the list setter: a trade added from the Price
    book's item dialog, and two trades merged into one — with its Undo. Owners and Admins, as every Settings setter (REG-624); a refusal
    answers its rule as `{ error }` (the house rule, wave E · E7). Rename's rule holds: a record carries its trade in whatever case it was
    typed (REG-651), so a merge gathers every spelling of the merged trade. */

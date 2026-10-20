@@ -1,5 +1,5 @@
 /**
- * (S42F — her "nothing buggy", 2026-10-12; the audit's E-05 family: REG-609's *Fill from a document* filled one fixed sample lead whatever file
+ * (S42F — his "nothing buggy", 2026-10-12; the audit's E-05 family: REG-609's *Fill from a document* filled one fixed sample lead whatever file
  * was picked) The lead form's document read, by rule, in the browser the moment a file is picked — nothing leaves it while it reads. 1.0 read
  * an enquiry with a model (`lead_email_parse` · `lead_screenshot_parse`, 0 credits); 2.0 reads the file's OWN words:
  *   · a PDF's text (`lib/pdf-text.ts`, the import wizard's and Upload a quote's reader) · a spreadsheet's cells (XLSX · CSV) · a text file;

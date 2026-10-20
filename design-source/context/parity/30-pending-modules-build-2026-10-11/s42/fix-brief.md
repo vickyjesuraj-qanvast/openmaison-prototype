@@ -1,6 +1,6 @@
 # S42 · Fix packages — the brief every fixer follows (2026-10-14)
 
-Her words (2026-10-12): "it will be good to build rest of the things like, bug fixes, intuitiveness, world-class ux" · "i don't want anything
+His words (2026-10-12): "it will be good to build rest of the things like, bug fixes, intuitiveness, world-class ux" · "i don't want anything
 to be missed and absolutely bug free build and remember our core design principles and super good world-class user experience". The read-only
 audit (`s42/audit-brief.md`) walked everything the programme built, in five areas; each area's findings are in `s42/audit-<area>.md`. You
 fix ONE area's findings (your prompt names it: package **S42<area>**) in ONE lane.
@@ -8,13 +8,13 @@ fix ONE area's findings (your prompt names it: package **S42<area>**) in ONE lan
 ## Read first
 1. `s42/audit-<area>.md` — every finding, its evidence, its recommended fix; its *Carried notes* and *Calls for Vicky*.
 2. `s42/calls-for-vicky.md` — the calls in your area are **fixed as recommended** (the programme's rule: take the recommendation, record it
-   "as recommended — her 'build all of them' 2026-10-11; listed in s42/calls-for-vicky.md for her review"). She may overturn them later.
+   "as recommended — his 'build all of them' 2026-10-11; listed in s42/calls-for-vicky.md for his review"). He may overturn them later.
 3. `brief.md` in this folder (every rule, incl. "How to add a missing thing" and the Lanes section), `DESIGN-PRINCIPLES.md`, `AGENTS.md`'s
    house-piece rules, `design-source/context/page-checklist.md`, CLAUDE.md's Map, and each step's `steps/outcome-SNN.md` for what you touch.
 
 ## What to do
 - **Every finding in your file gets an answer**: fixed (the smallest change in 2.0's shape, on the house pieces), or not fixed with the reason
-  (e.g. it is another area's — name the area; it needs her taste beyond the recommendation; it is wrong on a closer look — show why). A Blocker or
+  (e.g. it is another area's — name the area; it needs his taste beyond the recommendation; it is wrong on a closer look — show why). A Blocker or
   Major is never left without a fix unless it is wrong. Read the code before trusting a finding's `file:line`; fix the cause, not the symptom,
   and look for the same fault in its siblings (the same rule in another page / action / role) — fix those too and say so.
 - **A finding that crosses areas** (another area's files): fix only your side; name the other side in the outcome under "For other packages".

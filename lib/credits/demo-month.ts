@@ -39,7 +39,7 @@ export const DEMO_CREDIT_TIMES: { table: string; key: string; times: readonly st
 ]
 
 /**
- * (S43B · F1-10 — her "fix all the pending things" 2026-10-15, as recommended; S42A's probe found the balance ~1.5 h ahead of now after a restore)
+ * (S43B · F1-10 — his "fix all the pending things" 2026-10-15, as recommended; S42A's probe found the balance ~1.5 h ahead of now after a restore)
  * The credits story's bookkeeping stamps — when the balance, the plan or a member's cap was last written. The repairs touch them on the demo day,
  * so they can sit later in that day than anything the story tells (the ledger's newest charge): a whole-day move capped by the story then lands
  * them a few hours past now. No page reads them, and moving the whole story a day less for them would part Kevin Ng's renders from his lead, so

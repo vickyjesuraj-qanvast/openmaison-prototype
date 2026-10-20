@@ -3,7 +3,7 @@
  * WhatsApp messages Maison AI drafts from a lead's record, by rule — pure and client-safe, ONE copy: the lead page's brief buttons
  * (components/leads/detail/use-lead-maison.ts) and the Ask box's "Draft a follow-up for …" (lib/maison-ai/answer.ts) read the same words. A
  * draft only opens in WhatsApp on the press; the studio reads it there and sends it. The words are the briefs' voice (lib/leads/briefs.ts,
- * REG-169 — her sign-off owed). *(invented copy)*
+ * REG-169 — his sign-off owed). *(invented copy)*
  */
 import { displayDayMonth } from '@/lib/format'
 

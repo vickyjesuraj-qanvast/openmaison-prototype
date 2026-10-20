@@ -1,5 +1,5 @@
 /**
- * (pending modules S23 — Meetings and the Meeting Co-Pilot; her "build all of them" 2026-10-11, REG-552's hold lifted for this card; survey keys
+ * (pending modules S23 — Meetings and the Meeting Co-Pilot; his "build all of them" 2026-10-11, REG-552's hold lifted for this card; survey keys
  * studio:meetings-copilot · held:meetings · api:copilot-objections-competitors) A meeting with a lead's client, and the co-pilot that sits beside
  * the studio in it — pure and client-safe: the words, the kinds, the record's working shapes. 1.0 ran a live transcript (Deepgram), a model pass
  * every 25 s and a model-written brief; here nothing listens or calls a model — the studio types what is said (or pastes a transcript, or its
@@ -116,7 +116,7 @@ export const TRANSCRIBE_STAND_IN = 'Turning a recording into words isn’t conne
     recording without notes and drops the stand-in's line. Inlined at build time; off on the prototype. */
 export const TRANSCRIBES = process.env.NEXT_PUBLIC_TRANSCRIPTION === '1'
 
-/* ── AI credits — the credits audit's Q-45 (her answer, "as recommended"): 25 for each 10 minutes of the live co-pilot, a check-in at each
+/* ── AI credits — the credits audit's Q-45 (his answer, "as recommended"): 25 for each 10 minutes of the live co-pilot, a check-in at each
       block, the block running out finishing, a receipt; Free's one 30-minute meeting (1.0's plg branch: three free blocks, never refreshed).
       Writing a meeting up from notes or a recording is not metered. ── */
 export const BLOCK_MS = 10 * 60_000

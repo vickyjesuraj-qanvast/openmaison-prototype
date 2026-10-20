@@ -26,7 +26,7 @@ const FRESH = Object.fromEntries(BLOCK_KINDS.map((k) => [k, defaultBlock(k)])) a
 const FRESH_PAGE_NO = (() => { const e = defaultElement('pageno'); return e.kind === 'pageno' ? e.format : '' })()
 
 const ALIGN_OPTS: { value: Align; label: string; icon: string }[] = [{ value: 'left', label: 'Left', icon: 'format_align_left' }, { value: 'center', label: 'Centre', icon: 'format_align_center' }, { value: 'right', label: 'Right', icon: 'format_align_right' }]
-/* (S44T — her UAT ask 2026-10-15) the new choices' words */
+/* (S44T — his UAT ask 2026-10-15) the new choices' words */
 const KV_LINES: { value: KvLines; label: string }[] = [{ value: 'none', label: 'None' }, { value: 'under', label: 'A line under each value' }, { value: 'boxed', label: 'Boxed' }]
 const CURRENCIES: { value: Currency; label: string }[] = [{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ with a space' }, { value: 'none', label: 'Figures only' }]
 const PCT_AT: { value: 'inline' | 'column' | 'none'; label: string }[] = [{ value: 'inline', label: 'Before the words' }, { value: 'column', label: 'In its own column' }, { value: 'none', label: 'Not printed' }]

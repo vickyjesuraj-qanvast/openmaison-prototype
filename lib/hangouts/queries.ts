@@ -145,7 +145,7 @@ export async function fetchHangout(eventId: string, now = Date.now()): Promise<H
     leadIds.length ? db.select({ leadId: leadAssignees.leadId, memberId: leadAssignees.memberId }).from(leadAssignees).where(inArray(leadAssignees.leadId, leadIds)) : Promise.resolve([]),
     leadIds.length ? db.select({ leadId: stageLogs.leadId, fromStage: stageLogs.fromStage, toStage: stageLogs.toStage }).from(stageLogs).where(inArray(stageLogs.leadId, leadIds)).orderBy(asc(stageLogs.createdAt)) : Promise.resolve([]),
   ])
-  /* (S42E, call E·3) the stage rule's answer for each chat's lead. (S43B · F1-06 — her "fix all the pending things" 2026-10-15, as recommended)
+  /* (S42E, call E·3) the stage rule's answer for each chat's lead. (S43B · F1-06 — his "fix all the pending things" 2026-10-15, as recommended)
      It asks with the lead's own members and, for a parked lead, the stage it left — so a lead on hold is offered "Resume at Met" here exactly as
      its meeting page offers it (S42G, `heldMeetingStep`); it used to be asked with no members and no resume stage, and End offered nothing. */
   const stepFor = (l: { id: string; stage: string }) => {

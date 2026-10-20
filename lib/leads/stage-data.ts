@@ -190,7 +190,7 @@ const FIELD_WORD: Record<string, string> = {
   wonContract: 'the signed contract', milestones: 'the payment split', projectType: 'Project type',
 }
 /**
- * (S43B · F1-07 — her "fix all the pending things" 2026-10-15, as recommended; S05's note for the developers) The server's answer to a stage's
+ * (S43B · F1-07 — his "fix all the pending things" 2026-10-15, as recommended; S05's note for the developers) The server's answer to a stage's
  * fields that `validateStage` refuses — the window's own message, named by its field, in the house's refusal shape: "The Contacted step isn’t
  * complete — Log 1’s Contacted via: choose an option". Null when the step is complete. (invented copy, reg-S43B)
  */

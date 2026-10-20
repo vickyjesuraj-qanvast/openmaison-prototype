@@ -73,13 +73,13 @@ are A·3's).
   that flips per request, which races when two browsers act at once (a write stamped with the other member). That is the production session
   (S30: "`sessionMemberId()` becomes the real session's member, and the flag goes"), not a fix. So the call's fallback: the sign-in and
   invitation code steps say *"This prototype has one signed-in member at a time — every open window follows whoever signs in last."*
-  (REG-S42A.18). For Vicky: if she wants the pin, it is the developers' real session (`readStudioSession` already knows each browser's own).
+  (REG-S42A.18). For Vicky: if he wants the pin, it is the developers' real session (`readStudioSession` already knows each browser's own).
 - **A·2 — a Free studio's set-up list:** as recommended (A-01).
 - **A·3 — the front door opening on a loss:** the words as recommended (REG-S42A.19: "Credit notes S$905.50 more than invoiced this month",
   never "Revenue −S$…"). The dates: A-03 holds every recency rule; October's P&L is a calendar month — its credit notes (2 and 3 Oct) and late-
   September invoices are R84's / R72's dated story, and moving the invoices would drag their payments, reminders, overdue rows, portal reads and
-  client opens with them. Left honest, with the plain words; if she wants the demo's October in profit, that is a curation call (a new invoice
-  in the month), listed for her.
+  client opens with them. Left honest, with the plain words; if he wants the demo's October in profit, that is a curation call (a new invoice
+  in the month), listed for him.
 - **A·4 — the rail's Projects badge vs a Designer's tile:** kept, as recommended (different scopes, each door lands on its list). No change.
 
 ## For other packages (lane B / the orchestrator)
@@ -93,7 +93,7 @@ are A·3's).
 - **The orchestrator:** after this lands, `after-step` repairs `pbuild/base.db` (R125 moves it once) and re-takes the fixture; `pj-r4a` and
   `pj-fix-F` then pass on base copies. CLAUDE.md's Map: the base-state line gains `lib/db/demo-day.ts` · `lib/db/time-columns.ts` · R125; the
   REG-341 rule now reads "every moment rides".
-- **Vicky's local.db:** the next after-step repair runs R125 there too (her floor plan / Benjamin's newest updates move only if they have aged).
+- **Vicky's local.db:** the next after-step repair runs R125 there too (his floor plan / Benjamin's newest updates move only if they have aged).
 - **The AI credits story (S08b / S19's):** in today's base `studio_credit_balances.updated_at` sits about an hour and a half ahead of now (R111
   moved it with the story by whole days; `reanchorDays` caps the move by the ledger's newest stamp, not this one). No page reads it, so nothing
   shows; found by this probe's "nothing that happened is after now" check, which leaves the credits story to its own probe (pm2-s08b). If it

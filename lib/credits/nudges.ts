@@ -15,7 +15,7 @@ import {
  * (pending modules S41b-4 — the S41b data sweep's M-02; 1.0's `deployment/plg` `src/lib/nudges/{eligibility,facts,state,service}.ts` and its
  * two routes, `POST /api/nudges/evaluate` · `/claim`) The Free plan's upgrade offers on the server — read from records 2.0 already keeps, never
  * from a new success hook (1.0's rule): the AI credits ledger (a spend with no refund is a success, by its action key), the balance, the
- * invitations accepted, and the doer's own records for the days they worked (Studio health's `ACT_SOURCES`, S39 — 2.0 has no page views, her
+ * invitations accepted, and the doer's own records for the days they worked (Studio health's `ACT_SOURCES`, S39 — 2.0 has no page views, his
  * Q-16). One look = 1.0's evaluate and claim in one compare-and-set write: the browser asks only at a safe moment
  * (components/credits/upgrade-offers.tsx), so the offer it earns is written there and then, as one quiet row in the Owner's bell.
  *

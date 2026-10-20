@@ -1,6 +1,6 @@
 # S31 · A new studio joins — outcome (2026-10-13, lane A)
 
-Card: `onboarding:studio-sign-up` (recommendation "needs her mocks / decision"; its two questions taken as recommended — *Decisions*). Built
+Card: `onboarding:studio-sign-up` (recommendation "needs his mocks / decision"; its two questions taken as recommended — *Decisions*). Built
 in full on an **honest stand-in for the developers' tenancy**: a studio signs itself up from sign-in's page and is made — its Owner, its
 records, its plan — **in a database of its own beside the demo's**, opened at once by the server; **the demo's database is never written**
 (the probe proves it table by table). Carried notes taken: **S08** (an EMPTY brand row, the Owner owed the welcome), **S11** (no fonts),
@@ -21,7 +21,7 @@ Probe: `design-source/verify/pending-modules/verify-pm2-s31.cjs` (**103 / 103** 
 | --- | --- | --- |
 | "Create a new studio and its owner in one go (staff do it in 1.0; nobody can in 2.0, which is one demo studio)" | **built** — self-serve (the card's question, as recommended): `/sign-up` (how you work → the studio's name, yours, your mobile → the 6-digit code) makes the studio and its Owner in one go through `createStudio` — the Owner (role Owner, owed the welcome), the studio's record, an empty brand kit and details, Free with 1.0's 150 welcome AI credits + 30 a month, 1.0's plan rows, OpenMaison's feeds, the record of its making (`studio_origin`); all or nothing. **Stand-in, said plainly:** on this prototype the studio is a database of its own beside the demo's, one studio open at a time (every tab follows; a restart opens the demo; signing in with a studio's number opens it again); the code is never sent (any six digits, the page says so). **The seam:** `setStudioProvisioner` (the developers' tenancy makes the tenant and the same records) | `app/sign-up/*`, `components/auth/studio-sign-up.tsx`, `lib/studios/{model,create,registry,chrome}.ts`, `lib/db/index.ts` |
 | "A new studio starts with starter lists: 11 lead sources, 6 project types, 8 issue categories, the roles and the standard pipeline" | **built** — as 2.0's house defaults, which a studio reads until it changes them (no rows needed — the "defaults need no set-up" rule): lead sources = 1.0's eleven + the five REG-607 added (Settings › Lead management says "Not set yet — these are the defaults."); ticket categories = 1.0's eight escalation categories in 2.0's words; the seven stages and their rules; the four roles. **Project types: kept** — 2.0's three (Whole-home renovation · Partial renovation · Commercial fit-out) are the Projects build's fixed list, each with its schedule rule; 1.0's per-studio Project Types editor is on no card (*Found in 1.0*) | `lib/settings/types.ts` `DEFAULT_LEAD_SOURCES`, `lib/projects/tickets-model.ts` `DEFAULT_CATEGORIES`, `lib/projects/model.ts` `PROJECT_TYPES` |
-| "Pause sign-ups for the whole platform ('Contact support for account setup')" | **built (the behaviour) · stand-in (the switch)** — 1.0's switch lives in Platform admin › Settings, excluded by her: here it is an environment setting (`OPENMAISON_SIGN_UPS_PAUSED=1`) until the developers' Platform side keeps it. Paused: sign-in shows no door until a number has no account, then "New to OpenMaison? Contact support for account setup." (1.0's words); sign-up's first step says "Sign-ups are paused. Contact support for account setup." and asks nothing; both actions refuse (probe §12 on a paused server) | `lib/studios/create.ts` `signUpsPaused`, `components/auth/studio-sign-{in,up}.tsx`, `app/sign-up/actions.ts` |
+| "Pause sign-ups for the whole platform ('Contact support for account setup')" | **built (the behaviour) · stand-in (the switch)** — 1.0's switch lives in Platform admin › Settings, excluded by him: here it is an environment setting (`OPENMAISON_SIGN_UPS_PAUSED=1`) until the developers' Platform side keeps it. Paused: sign-in shows no door until a number has no account, then "New to OpenMaison? Contact support for account setup." (1.0's words); sign-up's first step says "Sign-ups are paused. Contact support for account setup." and asks nothing; both actions refuse (probe §12 on a paused server) | `lib/studios/create.ts` `signUpsPaused`, `components/auth/studio-sign-{in,up}.tsx`, `app/sign-up/actions.ts` |
 | "The public sign-up tour with a role choice (Owner / in-studio designer / freelancer) — a sandbox in 1.0 that saves nothing" | **built, in 2.0's shape** — the role choice is the first step and now decides: *I run a studio* (picked to begin with) → the studio; *I work in a studio* → nothing made, "Ask your studio to add you" (S09's invitation) + Go to sign in; *I work on my own* → a studio of one (the card's question, as recommended — no kind of its own; no Your team step). 1.0's two feature-pitch screens (Get started · Your unified workspace) are the website's — the marketing site is S35 | `components/auth/studio-sign-up.tsx`, `lib/studios/model.ts` `SIGN_UP_KINDS` |
 | *(S08's note)* a new studio starts with an EMPTY `brand` row and its owner with `welcome_due = 1` | **built** — `emptyBrandSetting(name)` (no logo, no details, no bank; the own entity named); Set up your studio opens "0 of 7 done" with every step open; the welcome waits ("Welcome, {name}" · Set up your studio) | `lib/studios/model.ts`, `lib/studios/create.ts` |
 | *(S11's note)* a new studio starts with no fonts of its own | **built** — nothing copied; `studio_fonts` empty (probe §4) | — |
@@ -35,16 +35,16 @@ Probe: `design-source/verify/pending-modules/verify-pm2-s31.cjs` (**103 / 103** 
 ## How it lands — the honest shape (the prompt's "decide the honest shape by the card")
 - **A studio is made at once**, not "waiting for OpenMaison": the card's own question was self-serve vs staff-made; self-serve is the
   recommended, 2.0-like answer (Plans, the set-up list, invitations and the first-run pages already exist for it), and staff-made is Platform
-  admin (excluded by her).
+  admin (excluded by him).
 - **Its own database, one studio open at a time** (2.0 is one studio per database, REG-667): `<DATABASE_URL's file>.studios/<key>.db`
-  (`local.db.studios/` on her machine — git-ignored), migrated to the build's schema when made or opened. The server process opens one;
+  (`local.db.studios/` on his machine — git-ignored), migrated to the build's schema when made or opened. The server process opens one;
   `lib/db/index.ts`'s client sends every query to it. The demo's file is only *read* (the feeds' copies, the sign-in lookup).
 - **Getting between them:** the studio block's **Studios · demo only** group (the demo's and each one started here, the open one ticked) —
   or Sign out and sign in with the other studio's number or email. **Reset prototype to base** opens the demo and clears the studios started
   here. A restart opens the demo; a browser signed in to another studio is told its session ended and signs in again.
 - **PRODUCTION:** the developers' tenancy replaces the switch (`setStudioProvisioner`; the session names the studio) — nothing else reads it.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 1. **Self-serve sign-up on Free** (question 1). **A freelancer is a studio of one** (question 2) — no kind of its own; its set-up list drops
    Your team, its welcome speaks of no team; Plans already suggests Pro — Freelance for one person.
 2. **"I work in a studio" makes nothing** — the Owner adds them (S09's invitation).
@@ -66,14 +66,14 @@ Probe: `design-source/verify/pending-modules/verify-pm2-s31.cjs` (**103 / 103** 
 
 ## Found in 1.0, not on a card
 - **The admin form's password** (Supabase auth) — 2.0 signs in by a code only (S30); nothing to build.
-- **A studio's region** (`country_code`, currency, timezone, locale) — Countries beyond Singapore, **on hold by her** (S33); a new studio is a
+- **A studio's region** (`country_code`, currency, timezone, locale) — Countries beyond Singapore, **on hold by him** (S33); a new studio is a
   Singapore studio (+65, S$, GST).
 - **`verification_status: 'not_submitted'`** on a new studio — the Qanvast listing's verification is its own card (S35…S41).
-- **A studio's `status` (active / suspended), Beta sign-ups, the 45–60-minute staff interview** — Platform admin's and staff's, excluded by her;
+- **A studio's `status` (active / suspended), Beta sign-ups, the 45–60-minute staff interview** — Platform admin's and staff's, excluded by him;
   the interview's settings all have 2.0 homes (Settings, Set up your studio) except **`settings.workflow.leadAssignment` (auto / round-robin /
   manual)**, which is in the interview doc only, never in 1.0's code — **for S41b**.
 - **1.0's per-studio Project Types editor** (Accounts › Project Types, `studio_taxonomies` type `project_type`) — 2.0's types are fixed by the
-  Projects build; on no card — **for S41b** (her call whether studios edit them).
+  Projects build; on no card — **for S41b** (his call whether studios edit them).
 - **`chat_identity_name`** (the studio's name in chats) — 2.0's Messages use the studio's name; nothing to build.
 
 ## What to check in the browser

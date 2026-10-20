@@ -156,7 +156,7 @@ an Owner unless noted. ⌘K shows **4** page rows under All (`components/shell/g
   (`lib/projects/handover-model.ts:265`). ⌘K "close project" finds nothing.
 - **Why it matters:** An Owner tidying up an old project opens ⋮ out of habit. The only ending there is Delete.
 - **Recommendation:** Give ⋮ a *Complete handover* row that opens the same sheet, or a help line under Delete naming Stage ▾, plus the
-  ⌘K words. This is Vicky's lane, and it reverses part of her P-08 pick, so it needs her call.
+  ⌘K words. This is Vicky's lane, and it reverses part of his P-08 pick, so it needs his call.
 - **Size:** S
 
 ### P-6 · Preview as Homeowner now sits behind "Invite to Portal"
@@ -182,5 +182,5 @@ an Owner unless noted. ⌘K shows **4** page rows under All (`components/shell/g
   This is Vicky's lane.
 - **Size:** S
 
-Not raised as findings, because each is recorded as her call: Pipeline's collection stages (REG-1362), Archived (Q-25), the phone's Log
+Not raised as findings, because each is recorded as his call: Pipeline's collection stages (REG-1362), Archived (Q-25), the phone's Log
 expense (REG-1468), portal to-dos (M-03), pay by card (F-15), G then I → G then M (REG-1830). Escalations is in rows 3, 5 and 6 only.

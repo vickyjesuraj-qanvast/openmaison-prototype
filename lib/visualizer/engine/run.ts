@@ -943,7 +943,7 @@ async function editPass(ctx: Ctx, count: number, extra?: NoteExtra, kind: PassKi
   const them = stayNames.length > 1 || /s$/.test(stayNames[0] ?? '') ? 'them' : 'it'
   const staysLine = stays.length ? `Kept: the ${stayNames.join(', the ')} — this photo can’t take ${them} out` : null
   for (const [id, f] of picks) { const need = pickNeeds(f, pieces.get(id)!); if (need) return fail(need) }
-  /* (pending modules S20 — Q-21 as she answered) a Replace is never rendered as a recolour here: the prototype can't draw a new piece in, and
+  /* (pending modules S20 — Q-21 as he answered) a Replace is never rendered as a recolour here: the prototype can't draw a new piece in, and
      says so (the Generate bar says it first; this is the backstop) */
   for (const [id, f] of picks) if (f.action === 'replace') return fail(replaceHeld(pieces.get(id)!.label))
   /* (D3) a finish that names a part the photo doesn't mark (a planter on a plant nobody traced) is refused — never the leaves, the canvas

@@ -23,7 +23,7 @@ import { draftVariationForPick, projectOwnMember } from '@/lib/projects/draft-va
  * of its own. The update is conditional on the choice still waiting, so two presses — or the client and the studio at once — make one pick.
  * The team hears it on the bell (`choice_made`), Activity files the pick's summary card (`project_choice_chosen`, by the client).
  * (Round 6) A pick with a price difference is where a variation order's draft starts: `pickPriceDifference` (lib/projects/choices.ts).
- * (simplify S-21, her "build everything" 2026-10-09) The client's priced pick drafts it at once — money's own draft (since round 2, R2-A, the
+ * (simplify S-21, his "build everything" 2026-10-09) The client's priced pick drafts it at once — money's own draft (since round 2, R2-A, the
  * server-only `draftVariationForPick` as the project's own member, so it drafts whoever "you" are in View as), linked to
  * the choice (`quotes.selection_id`) and titled "{choice} — {option}", so Money's Needs you can say "{client} chose {option} · Send VO-n"
  * (lib/projects/pick-variation.ts `fetchPickVariations`). A Draft never reaches the client: sending it stays the studio's press.

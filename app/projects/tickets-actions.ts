@@ -242,7 +242,7 @@ export async function ticketCategoryCounts(): Promise<Record<string, number>> {
   return out
 }
 
-/* ── (simplify S-22, her "build everything" 2026-10-09) a ticket → a task · a variation order, the client's words carried over ─────────── */
+/* ── (simplify S-22, his "build everything" 2026-10-09) a ticket → a task · a variation order, the client's words carried over ─────────── */
 
 const askOf = (c: Ctx & { t: ProjectTicket }) => ({
   leadId: c.p.leadId, projectId: c.p.id, source: 'ticket' as const, ref: c.t.id, words: c.t.subject, detail: c.t.body || null,

@@ -175,7 +175,7 @@ export function searchQuotes<T extends QuoteListRow>(quotes: T[], query: string)
   }))
 }
 
-/* ── (pending modules S04 — card held:quotes, "Sort on the Quotes table heads (Valid until sorts) — Coming soon · her call (REG-468) · revisit")
+/* ── (pending modules S04 — card held:quotes, "Sort on the Quotes table heads (Valid until sorts) — Coming soon · his call (REG-468) · revisit")
    a column's own order — the Contracts heads' model (S03, the projects table's): a head cycles A→Z → Z→A → off, and ONE sort holds at a time —
    a head's sort sets Filters' Sort back to Newest first, an order picked in Filters takes the head's off. Title and Creator stay unsorted
    (REG-468: names); Client too, as Contracts' Lead. Status reads the journey's order; an empty cell (no date) always last. ── */

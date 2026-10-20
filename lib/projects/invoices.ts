@@ -133,7 +133,7 @@ export async function onVariationApproved(quoteId: string, o: { by: string; via:
   if (!vp) return null
   const { quote: q, project: p } = vp
   const raisedAt = Date.now()
-  /* (S44O — UAT row 360, her UAT ask 2026-10-15) Settings › Finance › *Variation orders are billed: On their own, up front* — the order gets its
+  /* (S44O — UAT row 360, his UAT ask 2026-10-15) Settings › Finance › *Variation orders are billed: On their own, up front* — the order gets its
      own Draft first (`draftVariationInvoice`), so the rebalance leaves the stages' shares as they were; Spread (the default) re-sizes them */
   const own = (await fetchInvoiceRulesStored()).voBilling === 'own' ? await draftVariationInvoice(q, p, { actorId: o.actorId, at: new Date(o.at.getTime() + 500) }) : null
   const r = await applyRebalance(p.id)

@@ -1,9 +1,9 @@
 # S23 · Meetings and the Meeting Co-Pilot — outcome (2026-10-12, lane B)
 
-Cards: `studio:meetings-copilot` (recommendation *needs her mocks / decision*, effort XL; its questions "The Meetings tab first … or both
+Cards: `studio:meetings-copilot` (recommendation *needs his mocks / decision*, effort XL; its questions "The Meetings tab first … or both
 together?", "A first cut on house pieces, as Projects was built, or wait for mocks?"), `held:meetings` (held by REG-552; "Draw Meetings first,
 or build a first cut on house pieces?") and `api:copilot-objections-competitors` (effort S; "should the studio's competitor list also feed the
-Lost dialog's competitor field?"). Her "build all of them" 2026-10-11 lifts REG-552 for this card; every question taken as recommended: **both
+Lost dialog's competitor field?"). His "build all of them" 2026-10-11 lifts REG-552 for this card; every question taken as recommended: **both
 together, a first cut on house pieces, and yes — the competitor list feeds the Lost dialog**. Carried notes taken: **S02** (the old
 `/copilot/share/<id>` lands on the new link with a link card — a new `kind` + its loader; the chat fetchers never stamp Viewed), **S14**
 (Calendar and the Co-pilot settings — one home in Settings; Google Calendar "Notify me" waited for this step), **S16** (Tools › Meeting Copilot's
@@ -29,14 +29,14 @@ back every table it touches, whole, and checks the leads' stages and stage logs 
 | Upload a recording for a brief | **Built, transcription a stand-in.** The recording kept in the lead's Files with its bytes and its consent; its transcript or notes pasted; the brief made the same way; never charged | `components/meetings/write-up-dialog.tsx`, `writeUpMeeting` |
 | Share a brief by link | **Built.** The client's link `/meeting/<token>`: the invitation before, the notes after (summary + next steps; boards; the estimate only when ticked; never the concerns, competitors or score), Stop sharing with Undo; the window runs 30 days from the meeting or the sharing; 1.0's 24-hour `/copilot/share/<id>` redirects or shows the studio's notice | `lib/meetings/client.ts`, `components/meetings/client/**`, `app/meeting/**`, `app/copilot/share/[shareId]` |
 | History, Gallery, Analytics with coaching, Objections report | **Built.** History = Tools › Meeting Copilot (every meeting the viewer may see); Gallery = each brief's *From this meeting* + the AI Visualizer's own home (one home for pictures); **Company › Reports › Meetings** = Analytics (tiles, by member, coaching, deal-score check) + the Objections report, Owners and Admins | `components/meetings/meetings-workspace.tsx`, `components/company/reports/meetings-report.tsx`, `lib/meetings/{reports,report-model}.ts` |
-| Project › Meeting Summary card | **Built as the With {client} card's *Last met* row** (its next step and deal score, a press from the brief); planned meetings in Coming up; the Client tab's count. No new card on the simplified Overview (S-01) — flag for her if she wants 1.0's card back | `lib/projects/queries.ts`, `components/projects/overview/with-client-card.tsx` |
-| **held:meetings** — The Meetings tab and the Meeting quick link on a lead (held · her call · keep until mocks) | **Built — the hold is lifted by her "build all of them".** The tab restored where 858:24784 drew it, the quick link after Contact Log | `lib/leads/stage-policy.ts`, `components/leads/detail/quick-links.tsx` |
+| Project › Meeting Summary card | **Built as the With {client} card's *Last met* row** (its next step and deal score, a press from the brief); planned meetings in Coming up; the Client tab's count. No new card on the simplified Overview (S-01) — flag for him if he wants 1.0's card back | `lib/projects/queries.ts`, `components/projects/overview/with-client-card.tsx` |
+| **held:meetings** — The Meetings tab and the Meeting quick link on a lead (held · his call · keep until mocks) | **Built — the hold is lifted by his "build all of them".** The tab restored where 858:24784 drew it, the quick link after Contact Log | `lib/leads/stage-policy.ts`, `components/leads/detail/quick-links.tsx` |
 | Live co-pilot from a lead or project (consent, transcript, brief) and uploading a recording | **Built** (above; transcript a stand-in) | — |
 | Save a brief's facts to the lead with a follow-up task; who sees briefs; filing to a project | **Built.** Save to the lead; Who sees leads decides who sees a lead's meetings (every page, list, ⌘K, action); a meeting on a project's lead files on the project (its `project_id`, Client › Meetings, its pictures on the lead's designs the project carries) | `lib/meetings/queries.ts`, `app/meetings/actions.ts` |
 | Meeting Summary card on the project; weekly analytics; Co-Pilot renders and moodboards | **Built** — Last met row; Reports › Meetings' ranges (30 · 90 days · 12 months · All) stand for 1.0's weekly view; renders and boards above | — |
 | What waits on it elsewhere: quote lines from a brief | **Built** (Make a draft quote) | — |
 | … X-Ray's competitor analyser | **Built** — *Their quote* opens Quote X-Ray on the lead; its readings in the meeting's window are listed on the brief ("Compared with {studio}") | `fetchMeetingRoom` |
-| … Co-Pilot metering (25 credits / 10 min) | **Built — her Q-45**: price before Start, block 1 at Start, a check-in at each block, the pause, the refund when not started, Free's three blocks once, the receipt; write-ups free. **Flag:** 1.0 published the price but never charged (its meter had no caller); the brief said "price only if 1.0 charged" — her own Q-45 decision is what's built | `takeBlock` · `startMeeting` · `takeMeetingBlock` · `stopEarly`, `components/credits/*` |
+| … Co-Pilot metering (25 credits / 10 min) | **Built — his Q-45**: price before Start, block 1 at Start, a check-in at each block, the pause, the refund when not started, Free's three blocks once, the receipt; write-ups free. **Flag:** 1.0 published the price but never charged (its meter had no caller); the brief said "price only if 1.0 charged" — his own Q-45 decision is what's built | `takeBlock` · `startMeeting` · `takeMeetingBlock` · `stopEarly`, `components/credits/*` |
 | … Google Calendar invites | **Built without an account**: the .ics file and Google Calendar's own filled-in page on the client's link; Company › Integrations says so. A two-way sync with the studio's Google Calendar (1.0's unmerged branch) is the developers' (S34) | `lib/meetings/calendar.ts`, `app/meeting/[token]/invite.ics`, `integrations-view.tsx` |
 | … the AI & Copilot settings | **Built — Settings › Meetings** (its own module after Lead management) | `app/settings/meetings-settings.tsx` · `meetings-actions.ts` |
 | … the client's meeting email | **Built** — *Send by email* through the client messages' outbox (event *A meeting is booked*, its words and switch in Settings › Notifications); a real provider is the developers' (`setDeliveryAdapter`) | `lib/portal/client-messages.ts`, `inviteClient` |
@@ -45,7 +45,7 @@ back every table it touches, whole, and checks the leads' stages and stage logs 
 | The co-pilot's objection log and Objections report | **Built** — `copilot_objection_log` written with each brief; Reports › Meetings › Objections | `makeBrief`, `meetings-report.tsx` |
 | Note: in 1.0 nothing reads either list | **Fixed** — both are read in the meeting: the studio's answer shows on the tip and on the brief's concerns; a named competitor raises its tip | `engine.ts` `readMeeting` |
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **The card's three questions**: the tab and the live co-pilot together; a first cut on house pieces (no mock); the competitor list feeds the Lost dialog.
 - **One home**: a meeting lives on its lead — the lead's tab, the project's Client › Meetings (the lead's component given the base), Tools ›
   Meeting Copilot (the tab unpinned); 1.0's Analytics / Objections are Company › Reports (REG-1361), its settings are Settings › Meetings (S14),
@@ -56,7 +56,7 @@ back every table it touches, whole, and checks the leads' stages and stage logs 
   a contact log plans one.
 - **By rule, never a model**: the co-pilot's tips, checklist, score, estimate, tags and the brief are rules over the words (the seam a model
   takes later, `readMeeting`); listening, transcription and image generation are stand-ins said on the page.
-- **Credits**: her Q-45 (25 per 10 minutes, the check-in, Free's one 30-minute meeting) for the live co-pilot only; write-ups free — flagged
+- **Credits**: his Q-45 (25 per 10 minutes, the check-in, Free's one 30-minute meeting) for the live co-pilot only; write-ups free — flagged
   above against the brief's "only if 1.0 charged".
 - **The client's link**: the token is the permission; one projection reads only what the client may see; competitors and doubts never reach
   them; the link's 30 days run from the later of the meeting and the sharing.

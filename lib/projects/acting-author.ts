@@ -2,7 +2,7 @@ import 'server-only'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 /*
- * (simplify round 2 — R2-C, her "fix all the pending things" 2026-10-09; S-18) Whose update it is when an approval runs someone else's ask. Under
+ * (simplify round 2 — R2-C, his "fix all the pending things" 2026-10-09; S-18) Whose update it is when an approval runs someone else's ask. Under
  * Settings › Projects › Milestone completion needs approval, a Designer's Mark done keeps its ticks on the record (`done_ask_json`) and they run
  * when an Owner or an Admin approves it — the photos' update then is the Designer's, the way an approved update keeps its author: written as
  * the one who asked (`done_asked_by`), published by the approver. The author is set on the server only, around the approval's own call to

@@ -20,10 +20,10 @@
         "Repeated attempts slowed down; staff can set a temporary test code for demos",
         "Sign in with a Qanvast account: studio and member created on first sign-in, the role taken from Qanvast; 'Your Qanvast session expired' when that link times out"
       ],
-      "depends_on": "An SMS code provider (1.0 uses Twilio Verify) or Qanvast's sign-in API; a real session store; her sign-in screen",
+      "depends_on": "An SMS code provider (1.0 uses Twilio Verify) or Qanvast's sign-in API; a real session store; his sign-in screen",
       "held_by": "AGENTS.md — authentication is the developers' lane",
       "recommendation": "developers' lane",
-      "why": "Nothing is real without it, but it is plumbing; only the one screen (number → code) needs her design, and the client portal's sign-in is the pattern to reuse. View as can stay for demos.",
+      "why": "Nothing is real without it, but it is plumbing; only the one screen (number → code) needs his design, and the client portal's sign-in is the pattern to reuse. View as can stay for demos.",
       "effort": "M",
       "questions": [
         "Do 2.0 studios sign in through their Qanvast account (as 20 of 22 1.0 studios do), with their own number, or both?",
@@ -48,9 +48,9 @@
         "Pause sign-ups for the whole platform ('Contact support for account setup')",
         "The public sign-up tour with a role choice (Owner / in-studio designer / freelancer) — a sandbox in 1.0 that saves nothing"
       ],
-      "depends_on": "Sign-in; her call on self-serve vs staff-made studios; plans and payment if self-serve (Plans already exist in 2.0)",
+      "depends_on": "Sign-in; his call on self-serve vs staff-made studios; plans and payment if self-serve (Plans already exist in 2.0)",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "1.0 never let a studio sign itself up — it sells through a demo call and staff set the studio up — so the real question is whether 2.0 becomes self-serve. With neither path, 2.0 cannot start a second, empty studio.",
       "effort": "L",
       "questions": [
@@ -103,9 +103,9 @@
         "One-time tips on the first visit to a page (12 pages in 1.0), by role",
         "Reset all tips"
       ],
-      "depends_on": "Sign-in (a first sign-in to detect); her design",
+      "depends_on": "Sign-in (a first sign-in to detect); his design",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "2.0's empty states already say what to do on an empty page, so page tips add little. The moment 2.0 has nothing for is an invited designer's first sign-in: 'you've joined X — here are your leads'.",
       "effort": "S",
       "questions": [
@@ -182,9 +182,9 @@
         "Compliance checklists for Malaysia, UAE, India and Egypt; floor-plan templates for Malaysia, UAE and India",
         "Each country's lead-email senders for lead capture, news sources for market insights and a sample client for template previews"
       ],
-      "depends_on": "Her decision (DEF-30); local rules checked by someone in each market",
+      "depends_on": "His decision (DEF-30); local rules checked by someone in each market",
       "held_by": "DEF-30",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Held. 1.0's own regional support is thin outside sign-in, so porting it would copy a half-done job; if a market comes next, do that one country end to end.",
       "effort": "XL",
       "questions": [

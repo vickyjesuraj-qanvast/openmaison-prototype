@@ -1,5 +1,5 @@
 /**
- * (pending modules S46C · R1 — her "fix everything" 2026-10-19 after the findability audit, finding L-1; her open call taken as recommended:
+ * (pending modules S46C · R1 — his "fix everything" 2026-10-19 after the findability audit, finding L-1; his open call taken as recommended:
  * "1.0's archived leads land in Lost with the reason 'Archived in 1.0'") THE PORT OF 1.0's ARCHIVED LEADS. Pure: no database, no clock — a
  * port script reads 1.0's rows, calls this, and writes what it answers.
  *

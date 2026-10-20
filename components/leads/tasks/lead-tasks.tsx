@@ -64,7 +64,7 @@ const BULK = '__bulk__'
 const ADD = '__add__'
 const posFor = (taskId: string, el: HTMLElement) => (taskId === BULK ? bulkPos(el) : assignPos(el))
 /** (UX audit 2026-09-30, T5 · T4) The rail page's to-do chips: what waits, in the scope on screen — shown only while it holds something.
-    (pending modules S46C · H4 — her "fix everything" 2026-10-19, findability L-7; 1.0's Tasks › Due › Upcoming, `plannedDate > today`) *Upcoming*
+    (pending modules S46C · H4 — his "fix everything" 2026-10-19, findability L-7; 1.0's Tasks › Due › Upcoming, `plannedDate > today`) *Upcoming*
     — the open tasks due after today — beside Overdue · Due today, so the three days of 1.0's Due filter are one press each. It takes the place
     Unassigned leaves: My Tasks (1.0's own default, where Upcoming was a member's plan) and Unassigned show Overdue · Due today · Upcoming; All
     Tasks and Studio Tasks keep Overdue · Due today · Unassigned — never four chips in one row (`chipShown`). */

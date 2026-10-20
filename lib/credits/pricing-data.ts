@@ -16,7 +16,7 @@ export type CompareRow = { label: string; free: CompareCell; pro: CompareCell; m
 /** A row's three cells — a gated row's from the plans' own flags (Free · Pro — Studio · Max), so the table and the locks never disagree. */
 export const compareCells = (r: CompareRow): [CompareCell, CompareCell, CompareCell] =>
   r.flag ? [planRow('free').featureFlags[r.flag], planRow('pro_studio').featureFlags[r.flag], planRow('max').featureFlags[r.flag]] : [r.free, r.pro, r.max]
-/* (S46D — D4, her "fix everything" 2026-10-19: the website shows pricing, from this one source) The table says only what 2.0 does, on the site
+/* (S46D — D4, his "fix everything" 2026-10-19: the website shows pricing, from this one source) The table says only what 2.0 does, on the site
    and in Plans alike: a row that held something back 2.0 gives every plan now gives it to every plan — webhooks, turning off "Powered by
    OpenMaison", task templates, invoice paper, purchase orders and Xero are not locked on any plan (lib/credits/features.ts: the seven Pro
    features are the only locks); MYOB and Zoho Books are not 2.0's; Free has no seat limit (Company › Members never checks one); the names are

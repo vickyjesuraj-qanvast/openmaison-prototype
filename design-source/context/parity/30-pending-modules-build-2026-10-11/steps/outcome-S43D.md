@@ -1,10 +1,10 @@
 # S43D · F2 — ghosts, house notes and the 1.0 checks nobody ran — outcome (2026-10-15)
 
-Her ask (2026-10-15): "fix all the pending things apart from Still parked (dark mode, languages, themes and guided tours, countries beyond
+His ask (2026-10-15): "fix all the pending things apart from Still parked (dark mode, languages, themes and guided tours, countries beyond
 Singapore)" — asleep, my recommendation on every question. Package S43D = the six items **F2-01…F2-06** of `s42/pending-ledger.md`. Built in
 **lane B** (`scratchpad/lanes/B`, port 3170). Register rows: `steps/reg-S43D.md` (REG-S43D.1…5). The sweep: `s42/sweep-newer-branches-2026-10-15.md`.
-Every call **as recommended — her ask 2026-10-15**; none reverses an earlier decision (the two money / GST fixes bring code in line with REG-593 and
-REG-555; the UHD hold is a new call that is hers).
+Every call **as recommended — his ask 2026-10-15**; none reverses an earlier decision (the two money / GST fixes bring code in line with REG-593 and
+REG-555; the UHD hold is a new call that is his).
 
 ## Ledger — every item this package owns
 
@@ -13,7 +13,7 @@ REG-555; the UHD hold is a new call that is hers).
 | **F2-01** Commission's ghost has no *Asks for another rate* band | **Fixed** | `lib/ghost-shapes.server.ts` seeds `finance.commissions.asks` (whoever sees the books: every open ask) or `finance.commissions.my-asks` (a member: their own) — key from `commissionAsksShape` in `lib/finance/sections.ts`; `components/finance/books/books-ghost.tsx` draws the asks table's bones (the page's six columns, a phone card at the page's height) between the tiles and By member / Your projects; the page's reveal is told (`BooksWorkspace` → `FinanceFrame asks` → `FinanceGhost` → `BooksGhost`); the page remembers it per browser (`useRememberShape` in `commissions-view.tsx`). Measured: By member at 460 in the ghost and the page at 1440 (was ~260 vs 460); at 390 within 16 px (the tiles' own pre-existing offset). REG-S43D.1 |
 | **F2-02** Chips read '' as no pick, undocumented | **Fixed** (comment) | `components/om/chips.tsx` `Single.value`: "`null` and `''` both read as no pick — so give an *All* chip a real value (e.g. `'all'`), never `''`". The rule itself unchanged (every group reads it). |
 | **F2-03** Stale "scripted" comments on Fill from a document | **Fixed** (comments) | `components/leads/lead-form.tsx` — both now say it reads the picked file by rule (`lib/leads/document-fill.ts`). |
-| **F2-04** Six newer 1.0 branches never swept | **Swept** + **2 built** + **8 rows routed** + **3 held for her** | `s42/sweep-newer-branches-2026-10-15.md`. Built here: *Apply defaults* keeps GST off under an unregistered entity (REG-S43D.3, `app/leads/quotes-actions.ts`); each bill splits out its own quote's GST (REG-S43D.4, `lib/projects/money.ts` `billGstRate`, `money-queries.ts` `ownGstRate`, `invoices.ts`, `app/projects/money-actions.ts`, `lib/finance/books.ts`, three money components). Rows NB-01…NB-08 → "For other packages". Held: UHD's Sales reports, Contractors, projects list (their exclusivity ask — HER ACTION). Excluded: crm-client-link-sarthak, billing-app (Platform admin), white-label. fpto3d: specs only. |
+| **F2-04** Six newer 1.0 branches never swept | **Swept** + **2 built** + **8 rows routed** + **3 held for him** | `s42/sweep-newer-branches-2026-10-15.md`. Built here: *Apply defaults* keeps GST off under an unregistered entity (REG-S43D.3, `app/leads/quotes-actions.ts`); each bill splits out its own quote's GST (REG-S43D.4, `lib/projects/money.ts` `billGstRate`, `money-queries.ts` `ownGstRate`, `invoices.ts`, `app/projects/money-actions.ts`, `lib/finance/books.ts`, three money components). Rows NB-01…NB-08 → "For other packages". Held: UHD's Sales reports, Contractors, projects list (their exclusivity ask — HIS ACTION). Excluded: crm-client-link-sarthak, billing-app (Platform admin), white-label. fpto3d: specs only. |
 | **F2-05** 1.0's quote document editor's other parts never compared | **Compared** — no build; one gap → **row NB-08** | Table below. S44T finished during this package; its files land after this lane's sync, and the one gap's editor (the house rich editor) is in S44I's hands for C2 — so the gap is a precise row, not a build on older copies. REG-S43D.5 |
 | **F2-06** 1.0's quote-canvas overridability never checked | **Compared** — no lock to build | Table below: 1.0's 🔒 gated per-quote overrides nothing a studio could press ever wrote (dead in 1.0); 2.0's rule (REG-616 Q-02) stands. REG-S43D.5 |
 
@@ -99,7 +99,7 @@ on every quote types them into the template.
   per-line prices the client view doesn't print (privacy); NB-04 a hand-confirmed regular quote records who marked it.
 - **A template-editor follow-up (after S44I settles the rich editor for C2):** NB-08 the Text block's formatting.
 - **Developers (map 14):** 1.0's `price_book_vendor_prices` → each vendor's own Price book entry.
-- **Vicky (HER ACTION, new):** UHD's three dashboards (H-UHD-1 Sales reports · H-UHD-2 Contractors · H-UHD-3 their projects list) wait on
+- **Vicky (HIS ACTION, new):** UHD's three dashboards (H-UHD-1 Sales reports · H-UHD-2 Contractors · H-UHD-3 their projects list) wait on
   whether UHD's exclusivity ask holds; each is a row ready to build (sweep §2.1).
 - **Orchestrator:** no migration, no repair (R148…R159 unused). `design-lint` unchanged (inline-style 42 / 42 allowed — not raised). CLAUDE.md's
   Map: `lib/projects/money.ts` `billGstRate` is the one GST-of-a-bill rule.

@@ -26,7 +26,7 @@ import styles from './account.module.css'
 
 /**
  * (pending modules S41b-5 — 1.0's `deployment/qanvast` Qanvast Ops › Credits: credits/page.tsx · contracts · transactions · leads; the S41b sweep's
- * M-04; her "build all of them" 2026-10-11) **Qanvast Ops › Lead credits**, Owners only (1.0's rule). Three views, each at 1.0's own address:
+ * M-04; his "build all of them" 2026-10-11) **Qanvast Ops › Lead credits**, Owners only (1.0's rule). Three views, each at 1.0's own address:
  *   · **Overview** — what is left (1.0's "Lead Credits Balance"), this month's use, a refund Qanvast approved and hasn't credited yet (the studio's
  *     own return); 1.0's "Need more credits? Contact your BD" as the balance's help; Leads received · Credits used by month as two small charts
  *     (1.0 drew one chart on two axes — the house chart has one axis, so two charts side by side); 1.0's Monthly Overview table; Closures in the

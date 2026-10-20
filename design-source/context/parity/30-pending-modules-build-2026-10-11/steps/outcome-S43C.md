@@ -1,6 +1,6 @@
 # S43C · The owner's new sample rooms in the AI Visualizer — outcome (2026-10-15, lane C)
 
-Package S43C: the pending ledger's **F1-05** (`s42/pending-ledger.md`), on her "fix all the pending things" 2026-10-15 — every call taken
+Package S43C: the pending ledger's **F1-05** (`s42/pending-ledger.md`), on his "fix all the pending things" 2026-10-15 — every call taken
 as recommended. Built in lane C (port 3175). Repair **R162** (R163…R169 unused). No migration. Register rows `steps/reg-S43C.md`
 (REG-S43C.1…10). Probe `design-source/verify/pending-modules/verify-pm2-s43c.cjs` (**42 / 42**, no page errors); shots, region sheets and
 side-by-sides in `design-source/verify/pending-modules/pm2-s43c/`.
@@ -47,7 +47,7 @@ side-by-sides in `design-source/verify/pending-modules/pm2-s43c/`.
   first. Also "pothos" / "canvas" keep their s, and stainless · steel · cast · iron · undermount are finish words — so the kitchen's captions
   read "Fridge", "Pothos plant", "Casserole", "Sink".
 
-## Calls taken as recommended (her "fix all the pending things" 2026-10-15)
+## Calls taken as recommended (his "fix all the pending things" 2026-10-15)
 - **No 1.0 renders exist for the new photos → the engine makes the looks, the relit picture and the plate** (never the old renders over the new
   photos, never a model). Recorded in REG-S43C.3 / .5.
 - **The drift guard's repair is no longer seen in the demo** — no sample look moves the camera now. Not staged with a look moved on purpose

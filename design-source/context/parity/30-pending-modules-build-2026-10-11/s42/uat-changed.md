@@ -40,7 +40,7 @@ ch18–21 are "…" or a gap on purpose (since S42 A-03 every demo date moves wi
 - **VIZ:** VE-04 · VE-06 · VL-01 · VL-02 · VL-03 · VN-03 · VO-06 · VO-07 · VO-08 · VR-03 · VW-01 · VW-03 · VX-04 · VX-06 · VX-07 · VX-11
 - **XRAY:** DEF-02 · XF-05 · XP-05 · XR-01 · XR-03 · XR-06 · XZ-02 · XZ-03 · XZ-04 · XZ-05
 
-## Left for her
+## Left for him
 - LEADS D-42 — moving a lead’s quotes to another entity: the sweep could not settle it (a product call).
 - QED QC-06 Dead → Built (the CaseTrust tick on the signing pages), QA-11 · QR-03 → "Not built — by design" (Accounting never approves
   quotes), XRAY XZ-03 → Built (Maison AI’s "Compare to past quotes"), VIZ VX-04 → Built (the portal’s Designs) — the sweep’s readings.
@@ -48,7 +48,7 @@ ch18–21 are "…" or a gap on purpose (since S42 A-03 every demo date moves wi
 ## 2026-10-15 (evening) · S43E — F3-07: steps for the pending-modules surfaces, S44I and S44O
 
 The workbook is rebuilt: **489 steps** (+42) · 1,181 checklist rows (unchanged). Testers have typed into the shared sheet, so these go into its
-`UAT · …` tabs **by hand** (HER ACTION H-02): copy each new step from the rebuilt workbook, after the last step of its chapter; the four new
+`UAT · …` tabs **by hand** (HIS ACTION H-02): copy each new step from the rebuilt workbook, after the last step of its chapter; the four new
 chapters go at the end. No existing step's words changed.
 
 ### New steps — 42

@@ -5,13 +5,13 @@ import type { BrandSetting } from '@/lib/templates/brand'
 import { SIGN_IN } from '@/lib/auth/model'
 
 /*
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's src/app/onboarding/page.tsx (the tour that
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's src/app/onboarding/page.tsx (the tour that
  * saved nothing), src/app/api/admin/studios/route.ts POST (Platform admin › Studios › Add Studio), src/lib/studio-default-taxonomies.ts, the
  * Qanvast line's auto-provision in api/auth/verify) A NEW STUDIO JOINS — what it is and the words it says, pure and client-safe.
  *
- * The card's two questions, taken as recommended (her "build all of them"): (1) **self-serve** — a studio signs itself up from the sign-in
+ * The card's two questions, taken as recommended (his "build all of them"): (1) **self-serve** — a studio signs itself up from the sign-in
  * page and starts on Free (2.0 already sells the plans inside the app, S19); OpenMaison's staff making studios is Platform admin, excluded by
- * her. (2) **A freelancer is a studio of one** — not a kind of its own: "I work on my own" makes the same studio, named for their business,
+ * him. (2) **A freelancer is a studio of one** — not a kind of its own: "I work on my own" makes the same studio, named for their business,
  * whose Set up your studio never asks for a team. "I work in a studio" makes nothing: the studio's Owner adds them (S09's invitation).
  *
  * What a new studio starts with (1.0's admin route + `seedDefaultStudioTaxonomies`, in 2.0's shape — the house defaults every studio reads

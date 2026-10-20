@@ -3,7 +3,7 @@
 //  A-03  the demo rides the demo day: a restore moves EVERY stamp of every table by the same whole days (and the moments written inside text),
 //        so every gap is kept; repair R125 brought today's recent moments back (the floor plan shown inside the portal's 7 days, the newest site
 //        update inside the Dashboard's fortnight, each Activity line on its record's moment) and moves nothing once they are back
-//  A-01  on Free the set-up list's Quote template step is done by the default (her call A·2)
+//  A-01  on Free the set-up list's Quote template step is done by the default (his call A·2)
 //  A-02  a landline is no way to send an invitation (WhatsApp goes to a mobile only); the Phone helper says what a mobile is for
 //  A-04  the first page after a sign-in is the front door (the Dashboard); Reset lands there too
 //  A-05  the Dashboard greets with the name as the studio wrote it ("Hui Min"); A-06 an empty MY TASKS is one quiet row with a text "Add a task"

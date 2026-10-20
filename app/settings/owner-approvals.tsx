@@ -67,7 +67,7 @@ function RuleRow({ id, testId, icon, label, help, on, canManage, write, words, s
 }
 
 /**
- * (simplify S-20 — P2 §6.7, her "build everything" 2026-10-09) Settings › Projects › **What waits for an Owner or an Admin** — one card at the
+ * (simplify S-20 — P2 §6.7, his "build everything" 2026-10-09) Settings › Projects › **What waits for an Owner or an Admin** — one card at the
  * top of the module with every approval a project can wait for, together: updates (and who reviews them), invoices, a milestone's Done,
  * schedule changes, the handover — and a link to Finance's PO and expense rules, which stay with the costs' limit and terms. Each switch
  * writes the setting it wrote on its own card (`setUpdateReview` · `setInvoiceRules` · `setScheduleRules` · `setHandoverReview`), in the

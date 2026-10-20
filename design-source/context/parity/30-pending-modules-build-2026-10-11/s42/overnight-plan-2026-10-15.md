@@ -1,6 +1,6 @@
 # Overnight plan — 2026-10-15 (the owner asleep: "you take care of everything … if the session runs out of credits then … continue by yourself")
 
-Her asks, in order: (1) fix all the pending things except the four parked holds (dark mode, languages, themes + guided tours, countries beyond
+His asks, in order: (1) fix all the pending things except the four parked holds (dark mode, languages, themes + guided tours, countries beyond
 Singapore) — `s42/pending-ledger.md`; (2) then fix every UAT comment from row 246 of the sheet's "UAT comments" tab — 
 `design-source/context/feedback/05-uat-comments-rows-246-364-2026-10-15.csv`; (3) build the team's Items-sections prototype —
 `design-source/context/quote-editor/04-sections-prototype-2026-10-15.md`; take my recommendation on every question; one report at the end.
@@ -31,15 +31,15 @@ note → `sync` the lane → launch the next package in it.
 | 10 | Closing regression (`reg-s42/go.sh`, `pbuild/run-env.sh`; pm2-s41 needs OPENMAISON_DEV_PREVIEWS=1 + BENCH=on), baseline, CLAUDE.md Map + memory, the report | — | — | last |
 
 The final report (for the morning): per package what was fixed / built, the regression result, anything left and why, every call taken as
-recommended (s42/calls-for-vicky.md + the UAT triage's calls + the prototype delta's calls), her actions (commit · the shared sheet's tabs ·
-branch protection · GST wording · a real Homematch sheet · her local.db's Free plan).
+recommended (s42/calls-for-vicky.md + the UAT triage's calls + the prototype delta's calls), his actions (commit · the shared sheet's tabs ·
+branch protection · GST wording · a real Homematch sheet · his local.db's Free plan).
 Lane D (if made): port 3195, repairs R180–R189; lanes for the queue: whichever of A/B/C/E frees first (re-sync before reuse).
 - 04:56 — usage limit 01:30 → 04:50 stopped S43A · S43B · S43C · S44Q; all four resumed at 04:56 by SendMessage.
 - 09:51 — usage limit 05:56 → 09:50 stopped S43B · S43C · S44Q · S44T; all four resumed at 09:51 by SendMessage.
 - 14:50 — usage limit ~11:55 → 14:50 stopped S44I · S44R · S44O · S44F; all four resumed at 14:50 by SendMessage.
 - 16:53 — THE MACHINE REBOOTED: /private/tmp was wiped — every lane (A S44R built-not-landed · B S43E partial · E S44G partial), the old driver's tooling (e5dd05f7 scratchpad: land.sh, merge.py, after-step.sh, run-env.sh, pbuild/base.db, reg-s42/go.sh) and this session's scratchpad (prompts). Main is intact through S44O (REG-2398, migration 0112). 17:00 — rebuilding the tooling in session 30f9243f's scratchpad: lanes/{setup.sh,merge.py,land.sh} · pbuild/{run.sh,run-env.sh,after-step.sh,base.db} · fixmerge/join.py; then re-make lanes A · B · E and resume S44R · S43E · S44G (their transcripts hold their edits). The owner (17:00): the session may hit its limit — keep checking, it resets in ~2 h; a one-shot check at 19:04 added beside the 20-min heartbeat.
 - 17:45 → 19:50 — usage limit stopped S44R (rebuilt in lane A, its checks ran on unattended: regression green bar ct-r2 1) · S43E · S44G; all three resumed at 19:56. S44O verified on main (pm2-s44o 56/56 with dev previews on; s19 · s22 · pm-i · pj-gap-f1 · pj-r1 · qe-r1/r2/r4 · st-r1/r2 · view-as · pb-r2 green).
-- 20:55 → 21:16 — S44Z and S43E stopped on an ACCOUNT error (not a limit): "Your organization has disabled Claude subscription access for Claude Code" (oauth_org_not_allowed, 403). Not worked around. At 21:16 a test resume of S44Z ran (its server came back on 3160 by 21:35), so the block lifted; S43E resumed 21:36. Note for her report: the account's org access blinked off once.
+- 20:55 → 21:16 — S44Z and S43E stopped on an ACCOUNT error (not a limit): "Your organization has disabled Claude subscription access for Claude Code" (oauth_org_not_allowed, 403). Not worked around. At 21:16 a test resume of S44Z ran (its server came back on 3160 by 21:35), so the block lifted; S43E resumed 21:36. Note for his report: the account's org access blinked off once.
 - 22:01 — every package LANDED (S43A…E, S44Q · T · I · P · O · R · F · G · Z). Closing regression running detached: `reg-final/go.sh` (session 30f9243f's scratchpad; one build, harness 73 ids on 3161 · 3162, every pm2 / pm / pj / ks probe on 3163 · 3164, s41 + s44o on a dev-previews server 3165).
 - 22:57 — the first closing run was void: a failed launch at 22:01 didn't stop (empty probe list) and ran beside the relaunch, both on ports 3163 · 3164 — servers collided (EADDRINUSE) and probes met dead servers. Both stopped; the runners now wait for a port to free (`freeport`), go.sh refuses an empty list. Its harness half still found two real regressions (CSS order · next/navigation in lib/db/session.ts), fixed in main. Clean single run started 22:57 into `reg-final2/` (rebuild included).
 - 16 Oct 12:20 — closing regression DONE: harness 73/73, the 101 package / Projects probes green (pj-r2 · pj-r4b on their 14 Oct anchor), four real regressions fixed in main (CSS order · next/navigation in lib/db/session.ts · Accounting past Tickets' gate · the Xero card hidden from Designers). Report filled; heartbeat deleted.

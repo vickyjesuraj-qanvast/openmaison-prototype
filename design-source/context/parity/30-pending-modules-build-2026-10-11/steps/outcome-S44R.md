@@ -3,7 +3,7 @@
 Vicky's ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments based
 on our 2.0 experience without any overlaps nor any issues without losing what we have already built … If you have any questions please go ahead
 based on your recommendations." Source: the triage `design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md` (§6 rows 358 ·
-359 · 361, §9, §10 calls C7 · C8 · C9). Every call taken **as recommended — her ask 2026-10-15**. Register rows: `steps/reg-S44R.md`
+359 · 361, §9, §10 calls C7 · C8 · C9). Every call taken **as recommended — his ask 2026-10-15**. Register rows: `steps/reg-S44R.md`
 (REG-S44R.1…13). Probe: `design-source/verify/pending-modules/verify-pm2-s44r.cjs`. Shots: `design-source/verify/pending-modules/pm2-s44r/`.
 Migration **`s44r_agreements_bills`** (0113 on today's main — additive, schema-only: `contracts.ask_deposit · purpose · to_read · defects_months`,
 `contract_templates.use_at_handover`, `supplier_bills.approval_why · approved_by · approved_at`). Repairs **R127 · R128 · R129** (+ six checks).
@@ -62,7 +62,7 @@ code: the Settings page's Projects data (S44O's `desk` guard) and `app/leads/act
   Money out — 10% to start), waits under **To approve** for an Owner's or an Admin's OK before anyone can pay it; Accounting sees it waiting and
   why. Every other bill is paid as before.
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 
 - **C8 (REVERSES F1-Q10 "bills: no approval")** — approval only where it earns its place: over the PO approval limit on no PO, or over its PO by
   more than the tolerance. Read further: "an Owner's OK" is the house's approvers — **Owners and Admins**, as POs and expenses (one system); "differs

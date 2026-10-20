@@ -303,7 +303,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       </div>
       {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{noNumber ? <Tooltip label={NO_NUMBER_WHY[noNumber]}><span className={styles.muted} aria-label="No number" tabIndex={0}>–</span></Tooltip> : number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
-        {/* (S44I, B11 — call C1 as recommended, her ask 2026-10-15; REVERSES REG-457 / REG-440's child half) a section keeps its 4px bar and its
+        {/* (S44I, B11 — call C1 as recommended, his ask 2026-10-15; REVERSES REG-457 / REG-440's child half) a section keeps its 4px bar and its
             band; its lines sit on white and the tree's guides say whose they are */}
         {isGroup ? <span className={styles.groupBar} aria-hidden /> : null}
         {tree ? <Guides tree={tree} /> : null}

@@ -1,5 +1,5 @@
 /*
- * (pending modules S41b-5 — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b data sweep's M-04) QANVAST'S OWN
+ * (pending modules S41b-5 — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b data sweep's M-04) QANVAST'S OWN
  * ANSWERS about a studio's account — the shapes 1.0's Qanvast line read through its proxy `api/qanvast/[...path]` (1.0's
  * `deployment/qanvast` branch: src/types/credits-api.ts, src/app/(main)/qanvast-ops/{credits,reviews}/_api.ts). Kept as 1.0 typed them, field
  * for field, so a developer's adapter (lib/qanvast-account/service.ts) hands Qanvast's JSON straight through and the one mapper

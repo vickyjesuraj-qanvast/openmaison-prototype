@@ -245,7 +245,7 @@ export function keptText(html: string, blank: boolean): { text: string; html: st
   return { text: htmlToPlain(html), html: marks || shaped ? html : null }
 }
 
-/* ── (S44I — call C2 as recommended, her ask 2026-10-15; UAT rows 327 · 326 · 298 · 307; REVERSES REG-557's "no colour inside text") ──
+/* ── (S44I — call C2 as recommended, his ask 2026-10-15; UAT rows 327 · 326 · 298 · 307; REVERSES REG-557's "no colour inside text") ──
    A line's name may carry bold, italic, underline, strike and line breaks, and a run in a brand-kit colour (`<span data-kit="KEY">`, a kit
    key — never a free hex; REG-556's kit-only rule kept). It passes the house allowlist (lib/rich-html.ts, S44Q) and is then narrowed to
    those marks; the plain name stays the line's `name` for search, the X-Ray and exports. */

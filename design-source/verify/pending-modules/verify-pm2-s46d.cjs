@@ -1,4 +1,4 @@
-// Step S46D · what a 1.0 user can't find, fixed — D2 (signing a file, 1.0's file-signing links) and D4 (Pricing on the website). Her "Please go
+// Step S46D · what a 1.0 user can't find, fixed — D2 (signing a file, 1.0's file-signing links) and D4 (Pricing on the website). His "Please go
 // ahead and fix everything" (2026-10-19) after the findability audit (design-source/context/parity/31-findability-audit-2026-10-19/). Each item
 // asserted as the rule it builds, never another round's count:
 //  D2 · Files › ⋮ › Send for signature: a PDF's row opens Import a contract with the file already in it (no upload); Import makes the contract

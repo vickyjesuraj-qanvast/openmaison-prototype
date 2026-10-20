@@ -1,9 +1,9 @@
 /**
  * (gaps build H — calls H-Q17…H-Q19; Q-41's "automatic SMS / email later" is now) The messages that reach the client by themselves — pure and
  * client-safe. Seven events, each an email and a WhatsApp in the studio's own words with fields the sender fills, switched in Settings ›
- * Notifications › Messages to clients. (simplify Q-13, her "build everything" 2026-10-09) Four more — a choice to make, the work paused, the
+ * Notifications › Messages to clients. (simplify Q-13, his "build everything" 2026-10-09) Four more — a choice to make, the work paused, the
  * work running again, the home handed over — and the team's messages emailed by default (H-Q18 had them off; the one-an-hour guard stays). They leave through E's delivery layer (lib/notifications/delivery.ts `deliver`, the outbox, Sent
- * messages); the sender is lib/portal/client-messages-send.ts. (simplify round 2 — P3 §6.8's option, her "fix all the pending things"
+ * messages); the sender is lib/portal/client-messages-send.ts. (simplify round 2 — P3 §6.8's option, his "fix all the pending things"
  * 2026-10-09) A twelfth, off until the studio switches it on: a payment due today — once per invoice, on its due day, while some of it is still to
  * pay (lib/portal/payment-due.ts, run when the studio's bell is read, as its derived reminders are). 1.0 emailed the client on an invoice sent, a signature requested, a contract
  * sent, a timeline published and an escalation resolved (6-portal "Things the inventory missed").
@@ -14,7 +14,7 @@ import type { SectionKey } from './sections'
 export type ClientEvent = 'client_invoice_sent' | 'client_receipt' | 'client_to_answer' | 'client_schedule_shared' | 'client_update' | 'client_issue_answered' | 'client_message'
   /* (simplify Q-13) a choice shared · a hold · a resume · the handover — each its own row and its own words */
   | 'client_choice' | 'client_paused' | 'client_resumed' | 'client_handed_over'
-  /* (simplify round 2 — P3 §6.8's option, her "fix all the pending things" 2026-10-09) the invoice's due day — off until the studio switches it on */
+  /* (simplify round 2 — P3 §6.8's option, his "fix all the pending things" 2026-10-09) the invoice's due day — off until the studio switches it on */
   | 'client_payment_due'
   /* (parity map 2026-10-10 — CP-118 · FR-095 · CP-110 · TD-049 · UC-094 · TD-067 · UC-113) 1.0's client emails 2.0 had no event for: a signature
      confirmed, questions to answer, a floor plan shared, the studio asking for theirs */

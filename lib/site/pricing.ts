@@ -4,7 +4,7 @@ import { buysFor, COMPARE, compareCells, copilotLabel, FAQ, type CompareCell } f
 import { PRICING_PATH, SIGN_UP } from './model'
 
 /*
- * (S46D — D4, her "fix everything" 2026-10-19 after the findability audit, finding D4 · raw T-2; her open call taken as recommended: the 2.0 site
+ * (S46D — D4, his "fix everything" 2026-10-19 after the findability audit, finding D4 · raw T-2; his open call taken as recommended: the 2.0 site
  * shows pricing) OpenMaison's public Pricing — 1.0's plg page (`(marketing)/pricing/page.tsx` + `pricing-data.ts`, live since 22 Sep: "what is on
  * screen is what checkout charges"), in its content shape: the three plans with what each includes, the billing period, what the AI credits pay
  * for and what a month buys, top-ups, the whole comparison and the questions. Every price, allowance, seat, trial day and per-action cost is

@@ -42,7 +42,7 @@ Changed: `lib/db/schema.ts`, the client pages' metadata (named above), `app/f/[t
 `components/leads/questionnaire/ask-client-dialog.tsx`, `scripts/repair-demo-data.ts` (R104). Removed: `components/leads/return/invite-portal-modal.tsx` (+ css).
 For CLAUDE.md's Map (the orchestrator's): the `invitePortal` named in *Parity round 3* is gone; the Client access panel's `inviteClient` is the invite.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **The card carries the studio's name and logo** (link-previews' question), the `/renders` way; never the platform's. Drawn in Inter (Latin subset, OFL).
 - **A read-only "just look" link is wanted** (client-links' question) — built as 1.0 had it, from the quote editor's ⋮ (the quote's one home), never
   through Send (a look is not a send: the status never moves). Live like 1.0 (an ask every 10 s while the page is in front). Ungated like 1.0's

@@ -25,7 +25,7 @@ async function demoHint(): Promise<string | null> {
 }
 
 /**
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's /login) Sign in to the studio's app. Already
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's /login) Sign in to the studio's app. Already
  * signed in, it is never shown: you go where you asked to go, else home (1.0's `getDefaultRoute` — Accounting's is Finance). `?next=` is the
  * studio page a signed-out visit asked for; `?reason=` says why the page is showing (signed out · the session ended · deactivated · the
  * Qanvast connection timed out).

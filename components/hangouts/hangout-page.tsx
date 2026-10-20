@@ -28,7 +28,7 @@ import styles from './hangouts.module.css'
 const LABEL: Record<View, string> = { plan: 'Plan', meetings: 'Chats', results: 'How it went' }
 
 /**
- * (pending modules S27 — public:hangouts; her "build all of them" 2026-10-11) A Hangout's page — 1.0's studio page's Plan · Dashboard · Your
+ * (pending modules S27 — public:hangouts; his "build all of them" 2026-10-11) A Hangout's page — 1.0's studio page's Plan · Dashboard · Your
  * meetings for one event (src/app/(main)/qanvast-ops/hangouts/page.tsx), in 2.0's shape: the L2 header (Qanvast Ops / Hangouts, Back where you
  * came from), the event's facts, and three views as the house tabs — **Plan** (who sits at the tables on each shift, their shares, who the
  * studio would like to meet, sent to Qanvast), **Chats** (the day: each homeowner's chat at the tables — Start, End with its outcome, walk-ins)

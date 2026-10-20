@@ -31,7 +31,7 @@ Files:
 - `components/company/company-ghosts.tsx` › `ProfileGhost` — the Registrations card's table (5 rows).
 
 Left as they were (on purpose): the **HDB licence** number stays a Company details field (it prints through `{studio_licence}`; moving it into
-the registrations card would put a Save-changes field inside a card whose switches save at once — Vicky's call if she wants it moved); the
+the registrations card would put a Save-changes field inside a card whose switches save at once — Vicky's call if he wants it moved); the
 Brand kit's badges stay pictures in the kit.
 
 ## N-13 — the studio's own issuing entity
@@ -105,10 +105,10 @@ Production build on a scratch DB; as Dane (Owner) unless said.
 - **K3 (⌘K)**: the *Registrations & accreditations* row (`/company/profile#registrations`) you added matches the card's id and title. Please
   also let "capacity" / "projects at once" find **Company › Members** (e.g. the Team row's words, or a row "Project capacity — Members · how
   many projects each person runs at once" → `/company/members`); the Workload rows can stay.
-- **Vicky's files (for her)**: UAT `design-source/uat/story/ch2.json` (the GST step, "Under "GST" check "Registered for GST" is on") now
+- **Vicky's files (for him)**: UAT `design-source/uat/story/ch2.json` (the GST step, "Under "GST" check "Registered for GST" is on") now
   happens on Company › Profile's studio entity. The demo's brand kit carries a CaseTrust badge and its About page a "CaseTrust accredited"
   award while the registrations record has CaseTrust not done — the same as before (the old switch was off too); turning it on would put the
-  disclosure on every demo signing page, so it's left for her.
+  disclosure on every demo signing page, so it's left for him.
 
 ## Repair block (for `scripts/repair-demo-data.ts`; insert after R89, number as the orchestrator likes)
 

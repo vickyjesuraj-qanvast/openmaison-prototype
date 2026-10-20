@@ -1,7 +1,7 @@
 # S42C · projects, money and the client — outcome (2026-10-14, lane B)
 
 The closing audit's package C: `s42/audit-C.md` (27 findings, C-01…C-27 — Major 3 · Minor 20 · Polish 4) and audit C's calls C·1…C·5
-(`s42/calls-for-vicky.md`), each call fixed **as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her
+(`s42/calls-for-vicky.md`), each call fixed **as recommended — his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his
 review**. Register rows: `steps/reg-S42C.md` (REG-S42C.1…24). Probe: `design-source/verify/pending-modules/verify-pm2-s42c.cjs` — see *Probes run*.
 Shots: `design-source/verify/pending-modules/pm2-s42c/`. No migration, no repair rule (R147…R159 unused — nothing here needed data).
 
@@ -96,7 +96,7 @@ Not run: `projects/verify-pj-r4a.cjs` and `verify-pj-fix-F.cjs` (their one known
 
 ## Principles check (DESIGN-PRINCIPLES.md)
 1. **The mock wins, exceptions written down** — no mock draws these surfaces; every visible change is a register row (REG-S42C.1…24) with its
-   invented words flagged and the five calls marked as recommended for her review.
+   invented words flagged and the five calls marked as recommended for his review.
 2. **One system, no one-offs** — house pieces only: `PageHeaderL2` for Messages' Back, `EmptyState`'s classes for the ghost's card, the ghost
    kit, `FileMenu` / `PortalMenu`, the house outlined primary for Add people, `couldnt` for the paper rule; the ghost-kit fix is one rule for every
    table ghost, not a patch per ghost. `design:lint` holds.

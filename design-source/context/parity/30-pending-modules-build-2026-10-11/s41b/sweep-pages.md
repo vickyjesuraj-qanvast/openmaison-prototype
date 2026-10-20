@@ -1,6 +1,6 @@
 # S41b · Nothing left behind — every 1.0 page and menu entry → its 2.0 home
 
-Her words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This sweep covers 1.0's pages and menus, beyond the 41
+His words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This sweep covers 1.0's pages and menus, beyond the 41
 cards. It was read-only, done 2026-10-13. Each 2.0 home was confirmed by opening the 2.0 file named in its row, not by its name alone.
 
 - **1.0** = `qanvast-id-tool`: all 128 `page.tsx` under `src/app/**`, the special route files, and every menu. The menus are the sidebar
@@ -21,7 +21,7 @@ cards. It was read-only, done 2026-10-13. Each 2.0 home was confirmed by opening
 - **Card Sxx (queued)**: on a card whose step is not built yet.
 - **Decided**: a recorded call not to port it, and where that call is.
 - **Dead in 1.0**: nothing in 1.0 reaches it, or nothing reads it.
-- **Parked by her**: her parks are dark mode, themes, guided tours, Languages, countries beyond Singapore and the UAE page.
+- **Parked by him**: his parks are dark mode, themes, guided tours, Languages, countries beyond Singapore and the UAE page.
 - **Excluded (admin / dev)**: Platform admin and the AI model sandboxes.
 - **MISSING**: no home in 2.0, no card and no recorded decision.
 
@@ -37,7 +37,7 @@ cards. It was read-only, done 2026-10-13. Each 2.0 home was confirmed by opening
 | Home exists · old address 404 (→ **M1**) | 27 | 1 | — | — | **28** |
 | Card queued (S39 Studio Health 1 · S41 sandboxes 7) | 8 | — | — | — | **8** |
 | Dead in 1.0 | 1 | — | — | — | **1** |
-| Parked by her (UAE) | — | — | 1 | — | **1** |
+| Parked by him (UAE) | — | — | 1 | — | **1** |
 | Excluded (Platform admin; the sandboxes are also dev pages) | — | — | — | 28 | **28** |
 | **MISSING** | 0 | 0 | 0 | — | **0** |
 
@@ -48,7 +48,7 @@ the sidebar's targets. They also leave out the website's page links, which repea
 |---|---|---|---|---|---|---|---|---|---|---|
 | Mapped to a live 2.0 place | 25 | 10 | 5 | 10 | 6 | 35 | 5 | 7 | 5 | **108** |
 | Decided, not ported | 4 | 1 | — | 1 | 2 | 8 | 2 | — | — | **18** |
-| Parked by her | 1 | — | — | — | 1 | — | 5 | — | 1 | **8** |
+| Parked by him | 1 | — | — | — | 1 | — | 5 | — | 1 | **8** |
 | Card queued (S39) | — | — | — | — | 1 | 1 | — | — | — | **2** |
 | Dead in 1.0 | — | — | — | — | — | — | — | 4 | — | **4** |
 | **MISSING** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
@@ -91,7 +91,7 @@ the sidebar's targets. They also leave out the website's page links, which repea
 | `/settings` | Personal settings (§8) | `/profile` (S01). 2.0's `/settings` holds the studio's rules | Same address, different job · `app/profile/page.tsx`, `app/settings/page.tsx` |
 | `/settings/notifications` | Owner-only studio notification rules | Settings › Notifications | Home exists · old address 404 · `app/settings/notifications-settings.tsx` |
 | `/accounts` (`?tab=`) | Accounts Setup, 44 tabs (§7) | Settings' modules + Company's sections | Home exists · old address 404 · `lib/settings/modules.ts`, `lib/company/sections.ts` |
-| `/accounts/roles` | In 1.0, a redirect to `/accounts?tab=roles` | Settings › Roles & access › Who may do what (read-only); the editor is held by her (Q-40, S14) | Home exists · old address 404 · `app/settings/studio-settings.tsx` |
+| `/accounts/roles` | In 1.0, a redirect to `/accounts?tab=roles` | Settings › Roles & access › Who may do what (read-only); the editor is held by him (Q-40, S14) | Home exists · old address 404 · `app/settings/studio-settings.tsx` |
 | `/accounts/usage` | Studio Health | — | Card S39 (queued; nothing in `app/`, `lib/`) · old address 404 |
 | `/accounts/milestone-templates` | Milestone template library (rename · delete) | Company › Templates › Schedules | Home exists · old address 404 · `app/company/templates/(libraries)/schedules/page.tsx` |
 | `/upgrade` | In 1.0, a redirect to `/settings` | Plans dialog + Company › Plan & AI credits › Plan & billing | Home exists · old address 404 · `components/credits/plans-dialog.tsx`, `app/company/plan/billing/page.tsx` |
@@ -157,11 +157,11 @@ the sidebar's targets. They also leave out the website's page links, which repea
 | `/trust` · `/blog` · `/blog/[slug]` · `/changelog` · `/careers` · `/contact` · `/privacy` · `/terms` · `/cookies` (9) | `/site/*` | Redirects · `lib/site/model.ts:107-115`; pages `app/site/{trust,blog,changelog,careers,contact,privacy,terms,cookies}` |
 | `/try` (older demo) | `/site/try` | Redirects · `lib/site/model.ts:116` |
 | `/try-visualizer` + 6 tools (`style`, `materials`, `lighting`, `furniture`, `defurnish`, `sketch`) | `/site/try`, `/site/try/<tool>` (S36) | Redirects · `lib/site/model.ts:117-118`, `app/site/try/[tool]/page.tsx` |
-| `/uae-get-started` | — | Parked by her (S33 countries; S35 "UAE page held") |
+| `/uae-get-started` | — | Parked by him (S33 countries; S35 "UAE page held") |
 
 Pages counted: `/` 1 · platform 2 · story/about 2 · products/ai-agents 2 · pricing 1 · 9 · try 1 · try-visualizer 7 · UAE 1 = 26.
 
-## 4 · Platform admin (28) — excluded by her
+## 4 · Platform admin (28) — excluded by him
 
 `/admin` · `/admin/login` · `accreditations` · `activity` · `agreements` · `analytics` · `analytics/features` · `analytics/funnels` ·
 `analytics/studios` · `analytics/studios/[studioId]` · `beta-signups` · `billing` · `brand-dossiers` · `complaints` · `hangouts` ·
@@ -196,7 +196,7 @@ above: accreditations → the brand kit, beta sign-ups → S35's table, Hangouts
 |---|---|---|
 | Studio › Team Members | Company › Members (+ Invite, S09) | Mapped · `app/company/members/(list)/page.tsx` |
 | Studio › Legal Entities | Company › Profile › issuing entities | Mapped · `components/company/profile-view.tsx` |
-| Studio › Roles & Permissions | Settings › Roles & access › Who may do what (read-only) | Mapped; the editor is held by her (Q-40, S14 REG-1824) · `app/settings/studio-settings.tsx` |
+| Studio › Roles & Permissions | Settings › Roles & access › Who may do what (read-only) | Mapped; the editor is held by him (Q-40, S14 REG-1824) · `app/settings/studio-settings.tsx` |
 | Studio › Studio Health | — | Card S39 (queued) |
 | Lead Management › Lead Experience | — | Decided: Journey excluded (LM-01, DEF-04) |
 | Lead Management › Lead Funnel | Settings › Lead management › Lead stages | Mapped (S05; editing the funnel stays held) · `app/settings/lead-stages-card.tsx` |
@@ -216,7 +216,7 @@ above: accreditations → the brand kit, beta sign-ups → S35's table, Hangouts
 | Workflow › Feature Flags (lock quote sharing · lock project on handover · CaseTrust step · carry sub-categories) | A client sees only an approved quote (S02) · handover always locks · `lib/contracts/casetrust.ts` · sub-categories: no (Q-18) | Mapped / decided · `lib/contracts/casetrust.ts` |
 | Workflow › Proactive Alerts | Settings › Projects › Schedule: the alerts' lead time 1–30 days | Mapped (gaps C) · `components/projects/schedule/schedule-settings.tsx:24`, `lib/projects/schedule-rules.ts` |
 | Workflow › AI Assignment Logic | — | Decided: dead in 1.0 (LM-11, Q-17) |
-| Projects › Project Types | 2.0's three fixed types | Decided: Leads Q-34, "stays the Won step's three". S31 flagged the editor as "her call" (see §10) |
+| Projects › Project Types | 2.0's three fixed types | Decided: Leads Q-34, "stays the Won step's three". S31 flagged the editor as "his call" (see §10) |
 | Projects › Timeline Templates | Company › Templates › Schedules | Mapped · `app/company/templates/(libraries)/schedules/page.tsx` |
 | Projects › Pipeline Stages (legacy) | — | Decided: dead in 1.0 (LM-12) |
 | Projects › Material Catalog | Company › Materials | Mapped · `app/company/materials/page.tsx` |
@@ -233,7 +233,7 @@ above: accreditations → the brand kit, beta sign-ups → S35's table, Hangouts
 | Branding & Comms › Accreditations | Brand kit › Badges (any picture) + Profile › Registrations & accreditations | Mapped · `components/company/templates/brand-kit-view.tsx:154-167`, `components/company/profile-view.tsx:187` — the check S37 asked for is in §10 |
 | Branding & Comms › Chat Identity | — | Decided: nothing to build (S31: Messages use the studio's name) |
 | Branding & Comms › Review Link | Company › Profile › Reviews (S14) | Mapped · `components/company/profile-view.tsx:176` |
-| HomeOwner Portal › HomeOwner Portal (features · branding · layout · scope · team · about) | Company › Client portal; Questionnaire; members' portal fields; About. Portal themes were dropped by her | Mapped · `app/company/portal/(setup)/page.tsx` |
+| HomeOwner Portal › HomeOwner Portal (features · branding · layout · scope · team · about) | Company › Client portal; Questionnaire; members' portal fields; About. Portal themes were dropped by him | Mapped · `app/company/portal/(setup)/page.tsx` |
 | AI & Copilot › Copilot Tuning · Objection Responses · Meeting Checklists · Competitor List (4) | Settings › Meetings (S23) | Mapped · `app/settings/meetings-settings.tsx`, `lib/settings/copy.ts:50-54` |
 
 ## 8 · Personal Settings' sections — 12 (`settings/page.tsx:34-47`)
@@ -242,16 +242,16 @@ above: accreditations → the brand kit, beta sign-ups → S35's table, Hangouts
 |---|---|---|
 | Your Profile | Your profile `/profile` | Mapped (S01) · `app/profile/page.tsx` |
 | Lead Preferences (designers) | Company › Members › a member's preferences, linked from Your profile | Mapped · `components/profile/your-profile-view.tsx:213-217`, `components/company/members-view.tsx:452` |
-| Studio Region | — | Parked by her (S33, DEF-30) |
+| Studio Region | — | Parked by him (S33, DEF-30) |
 | My Signature | Your profile (consent-gated, S03) | Mapped (S01) · `app/profile/page.tsx` |
 | Ads & Promotions | — | Decided: dead (nothing reads it; ST-16; S14 "personal prefs") |
 | ID Buddy AI | — | Decided: dead (same) |
-| Home Screen (chat-first · classic) | — | Parked by her (card `studio:personal-settings`, S32 parked whole) |
-| Appearance (light · dark) | — | Parked by her (S32) |
-| Theme Skins | — | Parked by her (S32) |
+| Home Screen (chat-first · classic) | — | Parked by him (card `studio:personal-settings`, S32 parked whole) |
+| Appearance (light · dark) | — | Parked by him (S32) |
+| Theme Skins | — | Parked by him (S32) |
 | Notifications | Your profile › Your notifications (S18) + Settings › Notifications | Mapped · `components/profile/your-notifications.tsx`, `app/settings/notifications-settings.tsx` |
 | Email Lead Sources | Company › Integrations › Email (Gmail) | Mapped · `components/company/integrations-view.tsx` |
-| Guided Tours | — | Parked by her (S32) |
+| Guided Tours | — | Parked by him (S32) |
 
 ## 9 · The shell's menus
 
@@ -327,7 +327,7 @@ and WhatsApp messages already sent. The `actionUrl` patterns in `src/lib/**` and
 `/projects/<id>?tab=management…` ×8, `/accounts` ×3, `/finance/operations?tab=invoices&project=<id>` ×2,
 `/projects/<id>?tab=finance&financeSubTab=contract`, `/finance/commissions`. S02 redirected 1.0's *client* links (D-11). S35 redirected
 the website's old addresses. Nothing redirects the studio app's own addresses: S25 recorded this ("no 1.0 studio page … redirects either.
-For S41b's sweep of 1.0's routes, if she wants studio bookmarks carried"). No card covers it and nothing was decided. 2.0 has no
+For S41b's sweep of 1.0's routes, if he wants studio bookmarks carried"). No card covers it and nothing was decided. 2.0 has no
 `app/not-found.tsx` (M2), so all of these land on Next's unstyled 404.
 
 **Today in 2.0** (each confirmed in §1 and §2):
@@ -359,7 +359,7 @@ For S41b's sweep of 1.0's routes, if she wants studio bookmarks carried"). No ca
 **Proposed 2.0 home.** One `OLD_APP_ADDRESSES` list beside `OLD_SITE_ADDRESSES`, served by `next.config.ts` `redirects()` (307 until the
 developers make it permanent). It would use `has: [{ type: 'query', key: 'tab', value: … }]` for `/accounts?tab=` and `/leads?leadId=`.
 Three addresses need a small server route each, because they look up a record: the invoice and PO previews (which project?) and
-`/finance/operations?invoiceId=`. **Nothing visible changes**: these are redirects, but they are her call because they change where a link
+`/finance/operations?invoiceId=`. **Nothing visible changes**: these are redirects, but they are his call because they change where a link
 lands. **Size: S.** About 40 entries, 3 lookup routes, and a probe that requests each 1.0 address and checks the 2.0 page it lands on.
 
 ### M2 · 2.0 has no app-wide "page not found"
@@ -376,7 +376,7 @@ only the website's 404.
 
 **Proposed 2.0 home.** `app/not-found.tsx` on the house pieces, the same family as `components/shell/record-not-found.tsx` (REG-1166): the
 shell when signed in, the plain auth frame when signed out, one filled button (Back, named by its origin, else Dashboard), and its own ghost.
-**Visible, so it needs her approval and her words** (the sentences would be invented copy). **Size: XS–S.** One file, one probe at 1440 and
+**Visible, so it needs his approval and his words** (the sentences would be invented copy). **Size: XS–S.** One file, one probe at 1440 and
 390.
 
 ---
@@ -390,7 +390,7 @@ shell when signed in, the plain auth frame when signed out, one filled button (B
   placed on a template's strip. Profile › Registrations & accreditations records CaseTrust, HDB, bizSAFE, BCA and ACRA once. The demo ships
   stand-ins (`lib/templates/assets.ts` `DEMO_BADGES`). **The strip is covered.** The one difference: 2.0 offers no ready-made badge
   pictures to switch on. The curation is Platform admin's (excluded), so nothing is built for it.
-- **Project Types editor.** S31 left it for S41b as "her call whether studios edit them". It is decided by Leads Q-34: "Project type stays
+- **Project Types editor.** S31 left it for S41b as "his call whether studios edit them". It is decided by Leads Q-34: "Project type stays
   the Won step's three? Yes; the devs map 1.0's six". It is not MISSING, but an editor was never asked for by name. Each type drives its
   schedule rule (`lib/projects/model.ts` `PROJECT_TYPES`).
 - **The web manifest and the app icon** (§5). S35 recorded them for the developers and Vicky. 2.0 has no installable-app manifest and no
@@ -402,7 +402,7 @@ shell when signed in, the plain auth frame when signed out, one filled button (B
 - **Studio Health (S39) and the AI sandboxes (S41)** are still queued. Their rows above turn green once those steps land. `/accounts/usage`'s
   redirect (M1) should point at S39's home.
 - **1.0's `/settings` bookmarks with an anchor** (`#profile`, `#my-signature`, …) open 2.0's studio Settings, not Your profile. An anchor never
-  reaches the server, so no redirect can catch it. Settings' module head could say "Looking for your profile?" if she wants it; this is a
+  reaches the server, so no redirect can catch it. Settings' module head could say "Looking for your profile?" if he wants it; this is a
   visible change.
 
 ## 11 · Seen while sweeping, outside pages and menus (for the other S41b sweeps)

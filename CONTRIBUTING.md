@@ -44,7 +44,7 @@ questions still open. Read it before you port anything. Its §13 lists the per-m
 
 **Your lane** — the data layer, server actions' internals, the port of 1.0's data, integrations with 1.0 services,
 authentication, production infrastructure, performance, tests, CI. Vicky still sees every pull request (`CODEOWNERS`),
-and a change here that reaches the screen — a new error, a new wait, a changed rule — needs her approval.
+and a change here that reaches the screen — a new error, a new wait, a changed rule — needs his approval.
 
 **Vicky's lane** — anything a user can see or feel: layout, spacing, colour, type, icons, copy, motion, interactions,
 flows, empty / loading / error states, who may do what and how a refusal reads, and any new screen. Propose it; don't
@@ -137,14 +137,14 @@ data, so change the data to fit the screen:
 
 1. Branch from `main`; `main` takes changes only through pull requests.
 2. Fill in the pull-request template, including screenshots for anything visible.
-3. `CODEOWNERS` requests Vicky's review. Anything in her lane needs her approval before it merges.
-4. Keep `design-source/REGISTER.md` to Vicky — propose an entry in the pull request and she adds it.
+3. `CODEOWNERS` requests Vicky's review. Anything in his lane needs his approval before it merges.
+4. Keep `design-source/REGISTER.md` to Vicky — propose an entry in the pull request and he adds it.
 
 ## 9 · Working with an AI assistant
 
 `AGENTS.md` and `CLAUDE.md` are read by coding assistants (Claude Code, Cursor, Codex and others). They tell the assistant
 the same rule as this guide, so it will stop and ask before changing anything visible — let it. `CLAUDE.md` is Vicky's
-working context for her own design sessions: read it, don't edit it. Put developer notes in this guide or in your pull
+working context for his own design sessions: read it, don't edit it. Put developer notes in this guide or in your pull
 request.
 
 Next.js 16 appends a short block of agent rules to `AGENTS.md` whenever `npm run dev` starts. The block is already

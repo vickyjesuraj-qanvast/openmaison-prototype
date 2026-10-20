@@ -46,7 +46,7 @@ export function addBlock(actor: Actor, role: Role): string | null {
   return null
 }
 
-/** (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile) Why `actor` may not change `target`'s name, email,
+/** (pending modules S01 — his "build all of them" 2026-10-11; 1.0's Settings › Your Profile) Why `actor` may not change `target`'s name, email,
     phone and photo, else null: everyone changes their own (Your profile); Owners and Admins change anyone's on Company › Members — but an Owner's
     only an Owner (the Owner rules above; a phone is how a member will sign in). */
 export function detailsBlock(actor: Actor, target: { id: string; role: string }): string | null {

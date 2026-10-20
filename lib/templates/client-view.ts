@@ -57,7 +57,7 @@ export function clientViewDiff(view: ClientView, base: ClientView): string[] {
   return out
 }
 
-/* ── (S44Q — row 352, her UAT ask 2026-10-15) One quote's view is kept ─────────────────────────────────────────────────────────────────────
+/* ── (S44Q — row 352, his UAT ask 2026-10-15) One quote's view is kept ─────────────────────────────────────────────────────────────────────
    A quote stored its whole view, so a later change to its template never reached the switches it hadn't touched — and re-picking or changing
    the template wiped its choices (Spaces Studio: "removed the Unit price column … came back after reopening"). A quote now keeps only what IT
    changed, and carries those choices to another template or version wherever they still apply. Terms and Notes are the quote's own switches

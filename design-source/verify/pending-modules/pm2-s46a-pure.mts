@@ -70,7 +70,7 @@ ok(pageHits('approvals', FLAGS.owner)[0]?.id === 'dashboard', '“approvals” �
 ok(pageHits('tickets', FLAGS.owner)[0]?.id === 'tickets', '“tickets” → Projects › Tickets first')
 ok(createHits('', FLAGS.owner).length === 5 && !createHits('', FLAGS.owner).some((h) => ['create-upload-quote', 'create-ticket', 'create-meeting'].includes(h.id)), 'the empty search’s Create keeps its five rows — the new three wait for a typed word')
 ok(createHits('upload a quote', FLAGS.owner)[0]?.id === 'create-upload-quote' && CREATE.find((c) => c.id === 'create-upload-quote')?.href === '/quotes?upload=1', 'Create › Upload a quote leads, opening Tools › Quotes on Upload a quote (?upload=1)')
-/* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place at /tickets, as Tasks is — her ask 2026-10-19) */
+/* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place at /tickets, as Tasks is — his ask 2026-10-19) */
 ok(CREATE.find((c) => c.id === 'create-ticket')?.href === '/tickets?new=1', 'Create › New ticket opens Tickets’ New ticket (?new=1)')
 ok(CREATE.find((c) => c.id === 'create-meeting')?.pick === 'Start a meeting now' && CREATE.find((c) => c.id === 'create-meeting')?.href === '/meetings', 'Create › Start a meeting presses New Meeting ▾ › Start a meeting now on Meetings')
 
@@ -106,7 +106,7 @@ ok(oldToolTarget('/tools/ai-visualizer', false, on) === '/visualizer' && oldTool
 ok(oldToolTarget('/tools/ai-visualizer', true, off) === '/visualizer' && oldToolTarget('/tools/quote-digitizer', true, { visualizer: true, tools: false }) === '/quotes', 'a trial switched off sends the visitor where a member goes (its page asks them to sign in)')
 ok(oldToolTarget('/tools/ai-visualizer/', true, on) === '/site/try' && oldToolTarget('/tools/floor-plan', true, on) === null && oldToolTarget('/leads', true, on) === null, 'a trailing slash is the same address; the other tools and /leads are not this rule’s')
 
-/* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place at /tickets, as Tasks is — her ask 2026-10-19): G then E is a listed key now; G then I stays the one quiet alias */
+/* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place at /tickets, as Tasks is — his ask 2026-10-19): G then E is a listed key now; G then I stays the one quiet alias */
 console.log('Keys (H1): G then I quiet, G then E listed')
 ok(goFor('i')?.href === '/chat' && goFor('e')?.href === '/tickets', 'G then I → Messages; G then E → Tickets')
 ok(!GO.some((g) => g.key === 'i') && !KEYS.some((k) => k.keys === 'g i') && GO.some((g) => g.key === 'e' && g.href === '/tickets') && KEYS.some((k) => k.keys === 'g e' && k.id === 'go.tickets'), '…G then I is listed neither in the G hint nor in the ? panel; G then E is in both')

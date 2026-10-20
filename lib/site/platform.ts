@@ -64,7 +64,7 @@ export const PILLAR_ORDER: PillarId[] = ['operations', 'margin', 'design']
 const WHY = { heading: 'Fits into your workflow. Makes it better.', body: 'No lengthy setup or complicated migration. OpenMaison fits the way your studio already works, so your team starts seeing results from day one.' }
 const CTA = { heading: 'Grow your studio. Not the admin.', description: 'See how OpenMaison helps your team win more projects, protect profit and deliver a better client experience.' }
 const RELATED = 'Complete your workflow'
-/* (S43B · F1-03 — her "fix all the pending things" 2026-10-15, as recommended) Every capability picture is now a capture of 2.0's own screens,
+/* (S43B · F1-03 — his "fix all the pending things" 2026-10-15, as recommended) Every capability picture is now a capture of 2.0's own screens,
    taken from the production build on the demo's records (design-source/verify/pending-modules/capture-site-pictures-s43b.cjs re-takes them) —
    1.0's illustrations showed what 2.0 doesn't do (an "AI suggestion" box, a 6-second plan in weeks, "Lead moved to Quote Created", a "client
    hub", 4K renders). The lines beside them say what each screen does. */

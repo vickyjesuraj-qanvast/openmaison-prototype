@@ -2,7 +2,7 @@
 
 **Goal.** The owner (Vicky, product designer) wants one exact map from every feature and rule of OpenMaison **1.0**'s Projects and
 Finance to where it is in **2.0 today**, so that nothing 1.0 does gets ignored. You map ONE area (your prompt names it). Your rows
-become rows of a review page she reads line by line, so each one must be precise, checked against code, and written in plain words.
+become rows of a review page he reads line by line, so each one must be precise, checked against code, and written in plain words.
 
 **Read only. Never edit, create or delete a file in either repo.** Write only your one output file (path in your prompt).
 

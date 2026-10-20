@@ -51,7 +51,7 @@
       "depends_on": "an image model (or 2.0's curated engine with its sample rooms); bot protection and rate limits; a sign-up flow to land in",
       "held_by": "AI Visualizer audit Q-27 (marketing trial excluded); AI credits audit §0.2 (anonymous visitor tools excluded)",
       "recommendation": "skip",
-      "why": "It belongs to the website's sign-up funnel. 2.0 has no sign-up to send visitors to, and she has already left it out (Q-27). If it returns, 2.0's Visualizer, its sample rooms and its welcome screen are the natural base.",
+      "why": "It belongs to the website's sign-up funnel. 2.0 has no sign-up to send visitors to, and he has already left it out (Q-27). If it returns, 2.0's Visualizer, its sample rooms and its welcome screen are the natural base.",
       "effort": "M",
       "questions": [
         "Once 2.0 has sign-up, should the website's trial return, built on 2.0's Visualizer and its sample rooms?"
@@ -75,9 +75,9 @@
         "AI meeting transcripts and the homeowner's insights (Gemini, from audio). Nothing in current 1.0 records the audio.",
         "Two bell events: a homeowner registered, a meeting assigned"
       ],
-      "depends_on": "SMS codes; a team running live events; Qanvast's homeowner traffic; an LLM for meeting audio; her mocks (only the tab's name is mocked)",
+      "depends_on": "SMS codes; a team running live events; Qanvast's homeowner traffic; an LLM for meeting audio; his mocks (only the tab's name is mocked)",
       "held_by": "Leads audit DEF-33 · D-51 (Hangouts: Later); Qanvast Ops › Hangouts tab Coming soon (REG-193, REG-1372); meeting recordings and AI notes sit with Meetings (REG-552)",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "This is Qanvast's marketplace event product, not a studio workflow. Only the studio's part (sign up for an event, see your designers' meetings, receive the leads) belongs in the studio app, and that is exactly the part 1.0 no longer shows. The homeowner page and the staff console belong with Qanvast's platform admin.",
       "effort": "L",
       "questions": [
@@ -97,16 +97,16 @@
       "status_in_2": "partial",
       "in_2": "Almost all of it. Signing: /sign/[id], /sign/bundle/[id], /sign/[id]/quote. The quote's confirmation: /confirm/[quoteId]. Money: /invoice/[token], /receipt/[token]. Purchase orders: /po/[token]. Designs: /renders/[token]. 3-D layouts: /space/[token]. Shared files: /f/[token]. The client portal /my/[slug] covers Home, Schedule, Updates, Money (invoice and receipt), Choices, Designs, Floor plan, Issues, Messages and About.",
       "pending": [
-        "Links from 1.0 already in clients' WhatsApp threads have nowhere to land in 2.0. The projects migration map's D-11 (send /pay/…, /pay/inv/…, /pay/receipt/… and /my/{slug}/p/… to the portal's sign-in) is waiting on her.",
+        "Links from 1.0 already in clients' WhatsApp threads have nowhere to land in 2.0. The projects migration map's D-11 (send /pay/…, /pay/inv/…, /pay/receipt/… and /my/{slug}/p/… to the portal's sign-in) is waiting on him.",
         "A read-only 'have a look' quote link: 1.0's /quote-preview/[token] (from the Quote Digitizer's Share) updates live as the studio edits. In 2.0 the client gets the quote only through Send for confirmation (/confirm) or the signing link.",
         "A real SMS code before a client link opens. 1.0's old payment portal never actually sends its code, and the quote link's code screen has no generator mounted. 2.0's portal accepts any six digits (a stand-in). This is developers' work.",
         "A picture card when the link is pasted into WhatsApp. 2.0's design link has one. Its signing, confirm, invoice, receipt and PO links show their title only, where 1.0 showed the website's card. Small.",
         "The meeting brief link /copilot/share/[shareId] is held with Meetings (REG-552). The X-Ray's public link was decided no (X-Ray audit Q-24)."
       ],
-      "depends_on": "an SMS provider for real codes; her D-11 call on old links",
-      "held_by": "projects map D-11 (her call); REG-552 for the meeting brief link; X-Ray Q-24 (no public link)",
+      "depends_on": "an SMS provider for real codes; his D-11 call on old links",
+      "held_by": "projects map D-11 (his call); REG-552 for the meeting brief link; X-Ray Q-24 (no public link)",
       "recommendation": "developers' lane",
-      "why": "Everything a client sees is already built in 2.0, often more fully than in 1.0. What is left is porting work: old links landing somewhere sensible (her D-11 call first) and real SMS codes.",
+      "why": "Everything a client sees is already built in 2.0, often more fully than in 1.0. What is left is porting work: old links landing somewhere sensible (his D-11 call first) and real SMS codes.",
       "effort": "S",
       "questions": [
         "D-11: should 1.0's old client links (/pay/…, /my/{slug}/p/…) send people to the studio's portal sign-in?",
@@ -130,8 +130,8 @@
       ],
       "depends_on": "RSS feeds per region; the Dashboard",
       "held_by": "Dashboard (held — 'we will build it later')",
-      "recommendation": "needs her mocks / decision",
-      "why": "It only makes sense as a card on the Dashboard, which she has held. Decide it with the Dashboard.",
+      "recommendation": "needs his mocks / decision",
+      "why": "It only makes sense as a card on the Dashboard, which he has held. Decide it with the Dashboard.",
       "effort": "S",
       "questions": []
     }

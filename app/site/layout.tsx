@@ -6,7 +6,7 @@ import { organizationJsonLd, softwareApplicationJsonLd, webSiteJsonLd } from '@/
 import './site-tokens.css'
 
 /**
- * (pending modules S35 — her "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo; 1.0's (marketing)/layout.tsx)
+ * (pending modules S35 — his "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo; 1.0's (marketing)/layout.tsx)
  * OpenMaison's own website, under /site — open to anyone (lib/auth/paths.ts PUBLIC_PATHS), light only, its own frame (components/site/site-shell.tsx)
  * and token sheet (./site-tokens.css). The studio app's front door is unchanged: `/` is the Dashboard for a signed-in member, sign-in for a
  * signed-out browser. The company's structured data (Organization · WebSite · SoftwareApplication) rides on every page, as 1.0's did.

@@ -1,7 +1,7 @@
 # S42E · Outside the studio and Qanvast — the fixes for audit E — outcome (2026-10-14, lane E)
 
 Fixed in lane E (`…/scratchpad/lanes/E`, port 3185) from `s42/audit-E.md` (21 findings) and audit E's calls in `s42/calls-for-vicky.md` (E·1…E·5,
-taken **as recommended** — her "build all of them" 2026-10-11; each listed there for her review). Register rows: `steps/reg-S42E.md`
+taken **as recommended** — his "build all of them" 2026-10-11; each listed there for his review). Register rows: `steps/reg-S42E.md`
 (REG-S42E.1…24). Probe: `design-source/verify/pending-modules/verify-pm2-s42e.cjs` (shots in `pm2-s42e/`). **No migration. Repairs R170 · R171**
 (R172…R179 unused).
 
@@ -142,7 +142,7 @@ new breaks a house rule (baseline unchanged).
 ## Principles check (DESIGN-PRINCIPLES.md)
 
 1. **The mock wins, every exception written down** — no mock covers these surfaces; every new sentence and the logo are in `reg-S42E.md` as invented
-   copy, each call taken as recommended and listed for her.
+   copy, each call taken as recommended and listed for him.
 2. **One system, no one-offs** — house pieces only: `Checkbox` + the tick-and-help pair composed from `outside-person.module.css`, the client portal
    panel's initials composed (doubled for load order, REG-422's rule), the house snackbar's carry, `ConfirmDialog`-free flows reuse the Move stage
    window and the Lost dialog; design:lint unchanged.

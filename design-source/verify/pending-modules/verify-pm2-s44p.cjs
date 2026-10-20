@@ -1,4 +1,4 @@
-// S44P · the Price book and Trades — her UAT ask 2026-10-15 ("fix every UAT comment from row 246 … based on our 2.0 experience"), triage
+// S44P · the Price book and Trades — his UAT ask 2026-10-15 ("fix every UAT comment from row 246 … based on our 2.0 experience"), triage
 // design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md §5 area P. Each row asserted as the rule it builds:
 //  1. M8 (rows 346 · 347) — the item dialog takes Cost · Markup · Unit price in the quote grid's order: a unit price of S$0 is a price (the
 //     markup goes below zero, "Below cost by …"), a markup never takes the price under S$0, a cost keeps the markup (the grid's rule)

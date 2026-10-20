@@ -1,6 +1,6 @@
 /**
- * (pending modules S39 — card studio:studio-health, 1.0's Accounts › Studio Health; her "build all of them" 2026-10-11, in its right form: the
- * studio's own records only, no page-view tracking and no nightly rollup — her Q-16 "No" declined the platform's telemetry, not the studio's
+ * (pending modules S39 — card studio:studio-health, 1.0's Accounts › Studio Health; his "build all of them" 2026-10-11, in its right form: the
+ * studio's own records only, no page-view tracking and no nightly rollup — his Q-16 "No" declined the platform's telemetry, not the studio's
  * own story) What counts as a member having USED OpenMaison: every record that names a member as the one who did something, and when.
  * 1.0 counted its `usage_events` (fire-and-forget events written beside each action) and `auth_sessions`; 2.0 already keeps the doer on the
  * record itself — the stage log's mover, the note's author, the task's creator, the quote's maker, the file's uploader, the message's writer,

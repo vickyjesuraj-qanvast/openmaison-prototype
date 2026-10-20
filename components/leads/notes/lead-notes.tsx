@@ -344,7 +344,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
   }
 
   /* ── Auto Fill → Add tasks (plan › Rules) ── */
-  /* (S43B · F1-01 — her "fix all the pending things" 2026-10-15, as recommended) The picked file is READ by rule (lib/leads/contact-fill.ts,
+  /* (S43B · F1-01 — his "fix all the pending things" 2026-10-15, as recommended) The picked file is READ by rule (lib/leads/contact-fill.ts,
      the Move stage window's reader): what it plainly says lands only where the log is still empty; the file is uploaded to the lead's Files and
      attached to the log — a picture too, filling nothing; the line at the top of the log says what happened. A read that filled something offers
      Add tasks, its Auto added row the next step the file named (REG-319) — none named, no Auto added row. */

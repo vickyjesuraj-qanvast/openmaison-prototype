@@ -31,7 +31,7 @@ async function cameFrom(path: string | null): Promise<string | null> {
 }
 
 /**
- * (pending modules S41b-2 — her "nothing left behind" 2026-10-12; the S41b pages sweep's M2; 1.0's src/app/not-found.tsx) The app-wide "page
+ * (pending modules S41b-2 — his "nothing left behind" 2026-10-12; the S41b pages sweep's M2; 1.0's src/app/not-found.tsx) The app-wide "page
  * not found": every address no route answers, and every `notFound()` no closer not-found page catches — on the house pieces, never Next's bare
  * page, and with its 404 status (Next answers an address no route matches with 404 and noindex). Which frame is the address's:
  *   · a studio address — the shell (the rail, the bell, ⌘K), the part of OpenMaison it named, and one way on: back to the page that linked

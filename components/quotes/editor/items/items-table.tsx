@@ -392,7 +392,7 @@ export function ItemsTable({
     const all = shown.flatMap((d) => (d.kind === 'row' ? [d.item.id] : []))
     return (col: string) => (col === 'room' || col === 'category' || col === 'section' ? all : lines)
   }, [shown])
-  /* (S45C — S43D's NB-07 (c); as recommended — her ask 2026-10-17) A RUN: cells selected down one column — Shift+click a cell of the column
+  /* (S45C — S43D's NB-07 (c); as recommended — his ask 2026-10-17) A RUN: cells selected down one column — Shift+click a cell of the column
      the focus is in, or Shift+↓ / Shift+↑ from it (Excel's own two ways). The run wears the selected tint; its corner square sits on its last
      cell, and dragging it continues the run's series (numbers by their step, anything else in turn — lib/quotes/fill-series.ts); one cell
      still copies. ⌘D fills the run's first cell into the rest, as Excel's Ctrl+D does. Any other press, key or a move out of the table lets

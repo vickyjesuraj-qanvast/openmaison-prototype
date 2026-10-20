@@ -56,7 +56,7 @@ export type PriceBookItemInput = { name: string; description?: string | null; ki
 
 /* (REG-653, Q-08) A formatted description goes through the house allowlist (the contracts' one); plain paragraphs need no HTML.
    A photo is the picture itself, downscaled in the browser (the brand kit's rule) — a data URL of an image, or a path the app serves. */
-/* (S44P — her UAT ask 2026-10-15; S44Q's note for this package, M3) the words keep the shape the editor sent — paragraphs, blank lines and
+/* (S44P — his UAT ask 2026-10-15; S44Q's note for this package, M3) the words keep the shape the editor sent — paragraphs, blank lines and
    alignment too, not only lists and marks (the editor's own rule, `keptText`, decides what it sends) — through the one allowlist (S44Q,
    lib/rich-html.ts: capped before it is read, null when nothing is left) */
 const cleanHtml = (v: string | null | undefined) => cleanRichHtml(v)

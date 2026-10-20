@@ -1,8 +1,8 @@
 # S24 · Marketplace — outcome (2026-10-12, lane B)
 
-Card: `studio:marketplace` (recommendation *needs her mocks / decision*, effort M; its questions "Keep the Marketplace for every studio, only
+Card: `studio:marketplace` (recommendation *needs his mocks / decision*, effort M; its questions "Keep the Marketplace for every studio, only
 for Qanvast-listed ones, or drop the rail item?" and "Should a brand link to Finance › Vendors or the Price book?"; the report's "Is the
-Marketplace part of 2.0, and who supplies its brands and deals?"). Her "build all of them" 2026-10-11 decides the first: **it is built, for
+Marketplace part of 2.0, and who supplies its brands and deals?"). His "build all of them" 2026-10-11 decides the first: **it is built, for
 every studio** (as the rail already offered it). The second, as recommended: **each to its own home** — a brand to Finance › Vendors, its
 products to the Price book's My Items. Who supplies the brands and deals: **Qanvast's feed** — built as the studio's copy of it behind one
 mapper, filled for the demo by an invented catalogue through that same mapper (an honest stand-in; a real feed is the developers').
@@ -26,7 +26,7 @@ every table it touches, whole, and checks the leads' stages and stage logs are a
 | Deals view and the deal dialog (terms, how to redeem, Get Deal) | **Built.** The Deals chip lists every live deal (flash first, then the soonest to end); the dialog (picture, when it runs, Terms and conditions, How to redeem, who asked before) with one filled **Get deal** — the deal's own page (1.0's ctaUrl/ctaText), else WhatsApp, else email, opened on the press — **stand-in, honest:** nothing is bought; the press is recorded (`marketplace_deal_asks`) and the brand answers the studio | `components/marketplace/{deal-dialog,use-market}.tsx`, `app/marketplace/actions.ts` `askForDeal` |
 | Brand page: gallery, services, links, socials, FAQs, its deals, WhatsApp the brand | **Built.** `/marketplace/<brand>`: the L2 header (Add to my vendors · **WhatsApp** — Email when no WhatsApp), the pictures (main + four, Previous · Next, "n / m"; a strip on a phone), About · Contact (WhatsApp, email, business addresses) · Web links (sites, Instagram, Facebook, YouTube) · Services · Deals · **Products** · Questions | `app/marketplace/[brandId]/*`, `components/marketplace/{brand-page,brand-ghost,add-product-dialog,brand-not-found}.tsx` |
 | Banners at the top (fixed pictures) | **Built.** The feed's banners in their window, words over the picture, the house edge pagers + "1 / 3" at a desk, a peek on a phone; each opens a deal, a brand or the brand's site. **Decision:** they don't turn on their own (1.0: every 4 s) — flagged for Vicky | `components/marketplace/banners.tsx` |
-| (question) Keep the Marketplace for every studio, only for Qanvast-listed ones, or drop the rail item? | **Every studio** — her "build all of them"; 2.0 has no "listed on Qanvast" record (S31's note) | `components/shell/{app-rail,mobile-nav}.tsx` |
+| (question) Keep the Marketplace for every studio, only for Qanvast-listed ones, or drop the rail item? | **Every studio** — his "build all of them"; 2.0 has no "listed on Qanvast" record (S31's note) | `components/shell/{app-rail,mobile-nav}.tsx` |
 | (question) Should a brand link to Finance › Vendors or the Price book? | **Both, each its own kind:** Add to my vendors (Finance › Vendors, linked both ways, never doubled) · Add to Price book (My Items, the book's rule) — and from My Items a client's Choices (From the Price book) | `app/marketplace/actions.ts`, `components/finance/vendor-panel.tsx` |
 | (report) Is the Marketplace part of 2.0, and who supplies its brands and deals? | **Yes; Qanvast's feed** — the copy and the seam are built (`lib/marketplace/feed.ts`); the demo's catalogue is invented, through the same mapper — **stand-in** until the developers fetch Qanvast's payload | `lib/marketplace/{feed,demo}.ts`, repair R141 |
 
@@ -40,12 +40,12 @@ every table it touches, whole, and checks the leads' stages and stage logs are a
 - **`isUpsizePromo` / `upsizeId`, `dealsRedeemedCount`** — no meaning in 1.0's screens; not carried (the feed's lead count is popularity).
 - **Category pictures** (from the API) — not drawn; the house chips carry words.
 - **`components/marketplace/vendor-card.tsx`** (a rating and a Get Deal that did nothing) — unused mock, not brought.
-- **Platform admin › Settings › Marketplace Categories and the `marketplace` feature flag** — Platform admin (excluded by her); the categories
+- **Platform admin › Settings › Marketplace Categories and the `marketplace` feature flag** — Platform admin (excluded by him); the categories
   come with the feed. For S41b: nothing else.
 - **1.0's PO dialog "Add new vendors in Marketplace." and its dead `/marketplace?view=vendors` links** — the intent built: Add to my vendors.
 - **The breadcrumb override with the brand's name** — the L2 crumb · title.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **One home per kind**: vendors in Finance › Vendors, products in the Price book; the Marketplace never keeps a list of either. A product
   reaches a client's Choices through the Price book (a choice's price is a difference against the quote, which the Choices dialog asks — a
   direct door would have to ask it too).
@@ -98,7 +98,7 @@ every table it touches, whole, and checks the leads' stages and stage logs are a
 - **S25 (Market Insights)**: Tools › Market Insights is the last Soon tile (pm2-s16 asserts it by name); the Marketplace's banner strip
   (`components/marketplace/banners.tsx`) is a ready shape if insights want a featured row.
 - **S22 (Dashboard)**: a "deals ending soon" or "new on the Marketplace" tile can read `fetchMarketplace()` (`lib/marketplace/queries.ts`).
-- **S31 (a new studio)**: a "listed on Qanvast" record would let the rail hide the Marketplace for a studio that isn't, if she wants 1.0's
+- **S31 (a new studio)**: a "listed on Qanvast" record would let the rail hide the Marketplace for a studio that isn't, if he wants 1.0's
   feature-flag behaviour back.
 - **S34 (real services)**: Qanvast's brand feed plugs into `feedStatements(rowsFromFeed(payload), now)` (the 1.0 API shapes are typed in
   `lib/marketplace/feed.ts`); the asks (`marketplace_deal_asks`) are what the feed would report back as 1.0's lead count; a CDN picture's size

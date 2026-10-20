@@ -1,5 +1,5 @@
 /*
- * (pending modules S34 — her "build all of them" 2026-10-11; card api:message-delivery-providers, "the adapters' seams and their admin, for the
+ * (pending modules S34 — his "build all of them" 2026-10-11; card api:message-delivery-providers, "the adapters' seams and their admin, for the
  * developers") THE SLOT EVERY REAL SERVICE PLUGS INTO. Pure and free of imports — the server, a route, a script and the browser can all read it.
  *
  * Each service the prototype stands in for (message delivery, sign-in codes, a studio's tenancy, payments, PDF files, file storage, calendars,

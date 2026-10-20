@@ -29,10 +29,10 @@ whole. (3) A PO line ordering more than the quote counted the extra as the clien
 both read the quoted quantity now. (4) 1.0's matcher would have filled a Lot line with a cost a square foot (a 44,900 % "gap" on the demo's
 Dyel quote) — another unit never matches in 2.0.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Waste % on the item, or on the order?** On the item (where a studio knows each tile's wastage once), **applied on the order** — the PO from
   the quote orders it; the quote, its quantities and its total never change (1.0's multiplied client amount printed a quantity × rate that didn't
-  add up). Open for Vicky if she wants the quote's estimated cost (margin) to carry the waste too.
+  add up). Open for Vicky if he wants the quote's estimated cost (margin) to carry the waste too.
 - **Matching runs by rule, never a model**; an upload fills only *sure* matches by itself (1.0's high tier); everything else waits for the
   member's tick in one review. A close match far off in price starts unticked (1.0 ticked every match it found).
 - **New-item suggestions** live in the same review (1.0's separate modal after a parse), unticked by default, one per name and vendor; a
@@ -83,7 +83,7 @@ Dyel quote) — another unit never matches in 2.0.
   a fact a card could read (`planBookMatches`). Any flow that navigates from the shell into an editor and wants a snackbar must use
   `carrySnackbar(path, message)` — the shell's host unmounts.
 
-## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock for any of it; each joins a surface she approved (the Add Item row's links beside
+## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock for any of it; each joins a surface he approved (the Add Item row's links beside
    *Price book*, the item dialog, the house list dialog the Order from the quote already uses, the Maison AI sheet, the Upload a quote reading);
    every new word is flagged invented copy in `reg-S12.md`; the phone list's wrap is logged as a bug fix (it changes the Price book modal and the
    three other lists on a phone).
@@ -95,7 +95,7 @@ Dyel quote) — another unit never matches in 2.0.
    "Not in My Items yet", "1,037 sqft · 987 on the quote +5% waste", "A PO from the quote orders 105 sqft for every 100 quoted".
 4. **Nothing is lost** — Apply is one step: ⌘Z and the snackbar's Undo put the lines back, the Undo takes the new entries out again (one another
    line took stays, and is said); the waste is in History (Bring back works on it), in the export and back through the import; the quote's
-   quantities and price never move; every 1.0 job on the card is mapped above (the kept three by her own calls).
+   quantities and price never move; every 1.0 job on the card is mapped above (the kept three by his own calls).
 5. **Say why** — a close match far off in price says how far and waits unticked; below cost reads red; "Up to 50%" under the field; "Those lines
    have changed since — open Match lines again"; the upload's reading says what a match will do before the press; a Designer's review says hers
    are proposed; a line already on a PO reads as it was quoted.
@@ -116,7 +116,7 @@ Dyel quote) — another unit never matches in 2.0.
   a line matches, Waste only on a Purchase item or one carrying it, the waste words only on a line that has it); one filled button per dialog
   (Match …); defaults that need no set-up (a book without waste orders as before; a quote that never opens the review is untouched; an upload
   fills only what is sure)..md)
-1. **The mock wins, every exception written down** — no mock for any of it; each joins a surface she approved (the Add Item row's links beside
+1. **The mock wins, every exception written down** — no mock for any of it; each joins a surface he approved (the Add Item row's links beside
    *Price book*, the item dialog, the house list dialog the Order from the quote already uses, the Maison AI sheet, the Upload a quote reading);
    every new word is flagged invented copy in `reg-S12.md`; the phone list's wrap is logged as a bug fix (it changes the Price book modal and the
    three other lists on a phone).
@@ -128,7 +128,7 @@ Dyel quote) — another unit never matches in 2.0.
    "Not in My Items yet", "1,037 sqft · 987 on the quote +5% waste", "A PO from the quote orders 105 sqft for every 100 quoted".
 4. **Nothing is lost** — Apply is one step: ⌘Z and the snackbar's Undo put the lines back, the Undo takes the new entries out again (one another
    line took stays, and is said); the waste is in History (Bring back works on it), in the export and back through the import; the quote's
-   quantities and price never move; every 1.0 job on the card is mapped above (the kept three by her own calls).
+   quantities and price never move; every 1.0 job on the card is mapped above (the kept three by his own calls).
 5. **Say why** — a close match far off in price says how far and waits unticked; below cost reads red; "Up to 50%" under the field; "Those lines
    have changed since — open Match lines again"; the upload's reading says what a match will do before the press; a Designer's review says hers
    are proposed; a line already on a PO reads as it was quoted.

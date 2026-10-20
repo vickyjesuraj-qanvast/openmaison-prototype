@@ -4,7 +4,7 @@
  * (lib/finance/books.ts); none recomputes a total its own way (1.0's reports each had their own queries). Revenue and costs are before GST
  * (the GST is the government's); a period picks what happened in it. Every report is a few tiles and one or more tables, and exports as
  * those tables (the house Export).
- * (simplify S-13, her "build everything" 2026-10-09 — F1 §6.7, P3) One set of numbers: a PO with bills is aged by its bills' days in You owe and
+ * (simplify S-13, his "build everything" 2026-10-09 — F1 §6.7, P3) One set of numbers: a PO with bills is aged by its bills' days in You owe and
  * Cash flow (as `costsOf` does — S$1,400 overdue, never the PO's own day as well); a project whose profit is not graded yet (no costs, or an early
  * estimate — `profitGrade`, lib/finance/profit.ts) stays out of Profitability's weighted margin and its by-type and by-designer margins ("--"); the
  * two margins are named apart (*Margin on what was invoiced* · *Margin on contracts*); and a row's tone colours the one figure that carries it.
@@ -19,7 +19,7 @@ import type { VendorRecord } from './model'
 import { ruleWords, type CommissionAsk, type CommissionPayoutRecord, type CommissionRuleRecord, type CommissionSummary } from './commission'
 import { marginCell, profitGrade, tierOf, TIER_LABEL, type ProfitView } from './profit'
 
-/* (parity map, FB-065 · FB-076 — her "build everything that's in 1.0" 2026-10-10) GST and Expenses join the reports: GST reverses REG-1307's
+/* (parity map, FB-065 · FB-076 — his "build everything that's in 1.0" 2026-10-10) GST and Expenses join the reports: GST reverses REG-1307's
    "Tax report dropped"; Expenses is 1.0's expenses-only report. Each sits beside its kin — GST after Cash flow, Expenses after Vendor spend. */
 export type ReportKey = 'pl' | 'ar' | 'ap' | 'profitability' | 'cashflow' | 'gst' | 'vendors' | 'expenses' | 'commissions' | 'statement'
 export const REPORTS: { key: ReportKey; label: string; help: string }[] = [

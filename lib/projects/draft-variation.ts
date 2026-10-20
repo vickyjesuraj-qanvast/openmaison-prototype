@@ -16,7 +16,7 @@ import { variationOfChoice } from './payments'
 import { newShareToken } from './invoices-token'
 
 /*
- * (simplify round 2, R2-A — her "fix all the pending things" 2026-10-09; the leftover K-M named: "the sturdier system path for a client's pick")
+ * (simplify round 2, R2-A — his "fix all the pending things" 2026-10-09; the leftover K-M named: "the sturdier system path for a client's pick")
  * Drafting a variation order, on the server only, AS a named member. The two server actions that draft one keep their own gate and pass their
  * viewer: Money's New ▾ › Variation order (`createVariationOrder`, app/projects/money-actions.ts) and Choices' *Draft a variation order*
  * (`draftVariationFromPick`, app/projects/payment-actions.ts). The client's priced pick on their portal (app/portal/choices-actions.ts) is not a

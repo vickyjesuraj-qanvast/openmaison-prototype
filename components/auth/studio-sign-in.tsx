@@ -36,7 +36,7 @@ const readHint = () => { try { return localStorage.getItem(HINT_KEY) ?? BASE_HIN
 const typingNumber = (raw: string) => /^[\d\s]+$/.test(raw)
 
 /**
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's /login) Signing in to the studio's app:
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's /login) Signing in to the studio's app:
  * the mobile number or the work email, then the 6-digit code sent to it — resend after 30 seconds, paste the code, Keep me signed in for 30
  * days (1.0's, ticked by default). The client portal's sign-in is the pattern (its page, its boxes, its words); this one wears OpenMaison's
  * mark. A number nobody in the studio has says so with who to ask; the stand-in says plainly that no message is sent and any six digits work.

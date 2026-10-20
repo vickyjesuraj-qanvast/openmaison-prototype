@@ -37,7 +37,7 @@ export type EventKey = 'new_lead' | 'assigned' | 'untouched' | 'quote_approval' 
   | 'commission_asked' | 'commission_answered' | 'commission_paid' | 'credit_issued' | 'xero_failed'   // (gaps build F2) the books
   | 'ticket_raised' | 'ticket_client' | 'ticket_assigned' | 'ticket_escalated' | 'chat_message'   // (gaps build H, H-Q10 · H-Q15) tickets and the client's messages
   | 'layout_viewed'   // (gaps build J, J-Q17) a client opens a shared 3D layout — the first open of each share
-  /* (parity map 2026-10-10 — her "build everything that's in 1.0 to 2.0") 1.0's notices 2.0 had no event for: a schedule shared directly
+  /* (parity map 2026-10-10 — his "build everything that's in 1.0 to 2.0") 1.0's notices 2.0 had no event for: a schedule shared directly
      (SC-084 · UC-084), an invoice sent (UC-098), an invoice still unpaid after its third reminder (MI-068), a PO's delivery late (MO-094), a
      member's ask to add an outside person (TD-019), a message to a client that could not be sent (UC-083), a large send held (UC-082), the
      team's own conversation on a project (UC-064) */
@@ -154,7 +154,7 @@ export const EVENTS: EventDef[] = [
   { key: 'expense_review', label: 'An expense needs approval', help: 'Logged by a designer while Settings › Finance › Costs asks for approval.', who: 'Owners and Admins', icon: 'approval' },
   { key: 'expense_answered', label: 'Your expense is answered', help: 'Approved, or sent back with a note.', who: 'Whoever logged it', icon: 'verified' },
   { key: 'claim_paid', label: 'Your claim is paid back', help: 'An Owner or an Admin recorded the payment.', who: 'Whoever claimed it', icon: 'payments' },
-  /* (S44R — UAT row 361, call C8, as recommended — her UAT ask 2026-10-15) invented copy */
+  /* (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15) invented copy */
   { key: 'bill_review', label: 'A supplier bill needs your OK', help: 'Over the PO approval limit with no PO, or more than its PO by over the tolerance in Settings › Finance › Money out — it waits before anyone pays it.', who: 'Owners and Admins', icon: 'approval' },
   { key: 'bill_approved', label: 'A bill you recorded is approved', help: 'An Owner or an Admin approved a bill that waited — it can be paid now.', who: 'Whoever recorded it', icon: 'verified' },
   { key: 'bill_due', label: 'A supplier bill falls due', help: 'Three days before its due day, and once it is overdue and not paid.', who: 'Owners, Admins and Accounting', icon: 'receipt_long' },   // (parity map, MO-098)
@@ -186,11 +186,11 @@ export const EVENTS: EventDef[] = [
   /* (pending modules S26) a lead's Team conversation before Won rings it too — the words say both */
   { key: 'team_message', label: 'A teammate writes in a team chat', help: 'In a lead’s or a project’s Team conversation — the client never sees it.', who: 'The lead’s or the project’s members', icon: 'comment' },
   { key: 'chat_message', label: 'A client sends a message', help: 'In Messages — once in 15 minutes per conversation while it waits unread.', who: 'The project’s members', icon: 'comment' },
-  /* (pending modules S09 — her "build all of them" 2026-10-11) 1.0's invitations had no word back; the studio now hears its new member arrive (invented copy) */
+  /* (pending modules S09 — his "build all of them" 2026-10-11) 1.0's invitations had no word back; the studio now hears its new member arrive (invented copy) */
   { key: 'member_joined', label: 'Someone you invited joins the studio', help: 'Their first visit, after Company › Members sent them an invitation.', who: 'Whoever invited them, else the Owners', icon: 'person_add' },
   /* (pending modules S23 — 1.0's unmerged meetings branch kept the client's RSVP) (invented copy) */
   { key: 'meeting_answered', label: 'A client answers a meeting invitation', help: 'They’re coming, or the time doesn’t suit — on the invitation’s link.', who: 'The meeting’s people', icon: 'event' },
-  /* (pending modules S26 — her "build all of them" 2026-10-11; card studio:team-chats) 1.0's chats between members (invented copy) */
+  /* (pending modules S26 — his "build all of them" 2026-10-11; card studio:team-chats) 1.0's chats between members (invented copy) */
   { key: 'member_message', label: 'A teammate messages you', help: 'In Messages — to you, a group you’re in or everyone at the studio; once in 15 minutes per conversation while it waits unread.', who: 'The people in the conversation', icon: 'comment' },
   /* (pending modules S27 — 1.0's hangout.homeowner_registered · hangout.meeting_assigned) (invented copy) */
   { key: 'hangout_registered', label: 'Someone books a chat at a Hangout', help: 'On your Hangout page or at your table — they arrive as a lead, source Hangout.', who: 'The designer who meets them, Owners and Admins', icon: 'group' },

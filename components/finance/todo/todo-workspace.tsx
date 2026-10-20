@@ -47,7 +47,7 @@ import fin from '../finance.module.css'
 import t from './todo.module.css'
 
 /**
- * (simplify S-10 · Q-07 · S-14, her "build everything" 2026-10-09 — F1 §6.3, the report's concept screen 07) Company › Finance › **To do**, where
+ * (simplify S-10 · Q-07 · S-14, his "build everything" 2026-10-09 — F1 §6.3, the report's concept screen 07) Company › Finance › **To do**, where
  * Finance lands: what the money needs from you, grouped by what you do — To approve · To pay · To collect · Stuck for Owners and Admins; a member's
  * own drafts, what was sent back to them, vendors who answered and their claims — each group a house table (the listing's model, a card per row
  * on a phone) with its sum in its head line, each row's action on the row and the rest in its ⋮. Every action is the one the record's own list

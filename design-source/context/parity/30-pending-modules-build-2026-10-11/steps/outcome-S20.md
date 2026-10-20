@@ -1,8 +1,8 @@
 # S20 · AI Visualizer — outcome (2026-10-12, lane A)
 
 Card: `held:ai-visualizer` ("Left in the AI Visualizer", recommendation "developers' lane"; questions "Accept recolour as Replace (Q-21
-changed during the build)?" · "Port the drift guard, and is its repair free or refunded?"). Built on her "build all of them" (2026-10-11) as
-the prompt set it: HEIC photos, Replace as she answered, the drift guard, the Maison AI suggestions, every other line as the card
+changed during the build)?" · "Port the drift guard, and is its repair free or refunded?"). Built on his "build all of them" (2026-10-11) as
+the prompt set it: HEIC photos, Replace as he answered, the drift guard, the Maison AI suggestions, every other line as the card
 recommended. The image model stays the developers' — the curated engine (`lib/visualizer/engine/*`) renders; nothing calls a model.
 Carried notes taken: **S10** (the editor's "Suggest {style} finishes" now applies its picks behind the editor's Undo — REG-S20.6), **S19**
 (the render drift repair is built as its own `render_repair` charge — REG-S20.4 · .5; no new Visualizer table, so `PAID_WORK_TIMES` needs no
@@ -23,7 +23,7 @@ Register rows: `steps/reg-S20.md` (REG-S20.1…7). Probe: `design-source/verify/
 | Card line (word for word) | Status | Where |
 | --- | --- | --- |
 | "A real image model for every pass (render, detect any photo, lasso re-detect, empty, remove, furnish, sketch to photo, restyle in 25 looks, relight, style transfer, the finishing note, Fast vs High) — stand-ins · as recommended (audit 16) · developers' lane" | **stand-in** (the developers') — the curated engine renders every pass in the browser, as before; this step adds two more seams for the model: the drift guard's report (`coerceDriftReport`, 1.0's reader for the model's JSON) and its repair (`guardRender`) | `lib/visualizer/engine/run.ts` (`runPass` · `guardRender`), `lib/visualizer/drift.ts`, `lib/visualizer/note.ts` (`readNote`) |
-| "Replace a piece with a new one — the build changed her answer from 'say it can't' to recolour (Q-21) and never put it back to her · tell her" | **built — as she answered** (Q-21 / VF-02: "the engine answers Replace honestly"): the picker stays; the panel and the Generate bar say the prototype can't draw a new piece in; **Recolour it to match** turns the pick into a Customize in one step with Undo; no version says "Swapped for" any more. **Told her** (flag below) | REG-S20.3; `lib/visualizer/model.ts` (`replaceHeld` · `replaceHeldLead` · `recolourPick` · `nearestColourChip`; `changeList`'s needs), `components/visualizer/editor/panels/furniture-panel.tsx`, `components/visualizer/editor/visualizer-editor.tsx` (`recolourToMatch`, the reason link), `lib/visualizer/engine/run.ts` (the backstop; the recolour-as-swap code gone) |
+| "Replace a piece with a new one — the build changed his answer from 'say it can't' to recolour (Q-21) and never put it back to him · tell him" | **built — as he answered** (Q-21 / VF-02: "the engine answers Replace honestly"): the picker stays; the panel and the Generate bar say the prototype can't draw a new piece in; **Recolour it to match** turns the pick into a Customize in one step with Undo; no version says "Swapped for" any more. **Told him** (flag below) | REG-S20.3; `lib/visualizer/model.ts` (`replaceHeld` · `replaceHeldLead` · `recolourPick` · `nearestColourChip`; `changeList`'s needs), `components/visualizer/editor/panels/furniture-panel.tsx`, `components/visualizer/editor/visualizer-editor.tsx` (`recolourToMatch`, the reason link), `lib/visualizer/engine/run.ts` (the backstop; the recolour-as-swap code gone) |
 | "Drift guard (check and repair; Drift repair priced at 2 credits) — held as recommended ('not needed') · revisit for production: a real model drifts" | **built** — checked after every edit, restyle, transfer, Auto furnish and note; the camera's framing read by rule and lined up again by one corrective pass, kept only when better; charged as its own Render repair (2 AI credits a version, 1.0's price and refs), said before the press and after; non-fatal; Stop gives every charge back. The other five kinds of fault are the model's (types, words and reader ported) | REG-S20.4 · .5; `lib/visualizer/drift.ts`, `lib/visualizer/engine/drift.ts`, `lib/visualizer/engine/run.ts` `guardRender`, `components/visualizer/editor/{visualizer-editor,rail}.tsx`, `components/visualizer/editor/dialogs/present-dialog.tsx`, `app/visualizer/actions.ts` (`keepRender` stamps the ledger's cost), `components/credits/credits-client.ts` (`chargeAIQuietly`), `app/credits/actions.ts` (REF), `lib/credits/{schedule,queries,model}.ts`; harness `scripts/viz/drift-test.mts` |
 | "HEIC photos — partial (only where the browser opens them) · revisit: the iPhone default; a small converter (1.0: normalize-image.ts)" | **built** — every browser: 1.0's converter (`heic-to` 1.5.2, pinned, loaded only when a HEIC lands) after the platform's own decode; every Visualizer picture pick, Company › Materials' swatch, and a HEIC kept in a lead's Files now wears a drawn picture (so it shows and opens in the Visualizer); an honest refusal where neither can | REG-S20.1 · .2; `lib/heic.ts`, `components/visualizer/editor/{visualizer-editor,editor-model}.tsx`, `components/visualizer/editor/dialogs/add-room.tsx`, `components/company/materials/material-dialog.tsx`, `components/leads/files/upload-picture.ts`, `package.json` + `package-lock.json` |
 | "Maison AI on the Visualizer home and in the editor — every suggestion answers Coming soon · as recommended · revisit: Maison AI acts elsewhere since gaps build I" | **built** — S10 made every suggestion act; the one S10 left half-done (Suggest {style} finishes only opened Surfaces) now proposes its picks and applies them as one step with Undo | REG-S20.6; `components/visualizer/editor/visualizer-editor.tsx` (`aiSuggestions`) |
@@ -39,9 +39,9 @@ Register rows: `steps/reg-S20.md` (REG-S20.1…7). Probe: `design-source/verify/
 - **`/api/render/photorealistic`** (15 credits, `render_photorealistic`) — 1.0 uses it for the floor plan's photo render and Render Tour; **for S28** (floor-plan photo → 3D picture).
 - **1.0's port spec V17** ("A drift repair can add 2 credits after a Generate. The button's price is the render's") — built as stated, with the repair's price said under Generate's *Change* line (REG-S20.4).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
-- **Replace: her answer back** (Q-21 as she answered on 2026-09-25: the engine answers honestly) — the recolour the build made silent is one
-  named press, never a claimed swap. **Flag for Vicky:** if she'd rather keep the build's recolour-as-Replace, it's one rule to put back.
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
+- **Replace: his answer back** (Q-21 as he answered on 2026-09-25: the engine answers honestly) — the recolour the build made silent is one
+  named press, never a claimed swap. **Flag for Vicky:** if he'd rather keep the build's recolour-as-Replace, it's one rule to put back.
 - **The drift repair is charged, 2 AI credits a version** — 1.0's credits line does exactly that (its own debit, refunded when no picture
   comes, one attempt); the card's "free or refunded?" is answered by 1.0: charged, refunded on failure and on Stop. A repair never counts as a
   render. Said before the press (Change) and after (the ready line, Present, Usage).
@@ -109,8 +109,8 @@ guard) is kept as it was made.
 - **The orchestrator:** UAT 13.07 ("Oak Coffee Table › Replace, pick any Quick pick … new table") now meets the honest line — add "then
   *Recolour it to match*" and expect "Customize · …" for the table; a new step could restyle the kitchen as Scandinavian (the repair).
 
-## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock: the jobs are 1.0's (normalize-image, the drift guard and its price) and her
-   own answer (Q-21); every new word is flagged *(invented copy)* in `reg-S20.md`; the Replace answer and the repair's price are flagged for her.
+## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock: the jobs are 1.0's (normalize-image, the drift guard and its price) and his
+   own answer (Q-21); every new word is flagged *(invented copy)* in `reg-S20.md`; the Replace answer and the repair's price are flagged for him.
 2. **One system, no one-offs** — no new component, stylesheet or token: the panel's own hint line and outlined DS Button, the rail's reason
    link and options line, Present's hint line, the house snackbar with Undo, the Maison AI proposal, the credits ledger and Usage table;
    one HEIC helper for every picker (`lib/heic.ts`), one quiet charge beside `chargeAI`.
@@ -138,8 +138,8 @@ guard) is kept as it was made.
 existing pickers) — no page, no rail item; shown only when it applies (the Replace line only on Replace, the repair line only for checked
 passes and only once a repair happened, the HEIC note only after half a second); **one filled button** (Generate stays the only one; Recolour
 is outlined); defaults need no set-up (nothing to switch on); AI honest (nothing calls a model; the stand-in says so)..md)
-1. **The mock wins, every exception written down** — no mock: the jobs are 1.0's (normalize-image, the drift guard and its price) and her
-   own answer (Q-21); every new word is flagged *(invented copy)* in `reg-S20.md`; the Replace answer and the repair's price are flagged for her.
+1. **The mock wins, every exception written down** — no mock: the jobs are 1.0's (normalize-image, the drift guard and its price) and his
+   own answer (Q-21); every new word is flagged *(invented copy)* in `reg-S20.md`; the Replace answer and the repair's price are flagged for him.
 2. **One system, no one-offs** — no new component, stylesheet or token: the panel's own hint line and outlined DS Button, the rail's reason
    link and options line, Present's hint line, the house snackbar with Undo, the Maison AI proposal, the credits ledger and Usage table;
    one HEIC helper for every picker (`lib/heic.ts`), one quiet charge beside `chargeAI`.

@@ -213,7 +213,7 @@ export async function setContractAutomation(contractId: string, patch: { reminde
 }
 
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Send for digital signature's *Ask for the deposit*: saved as it is
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Send for digital signature's *Ask for the deposit*: saved as it is
  * ticked (every way the link goes out — Send, Copy link, Send together — then carries it). The signing page ends on "Pay the deposit": the named
  * quote's first payment stage, to its issuing entity's PayNow. A signed contract stays as it was signed; the deposit needs a quote with a first
  * payment and somewhere to pay it.

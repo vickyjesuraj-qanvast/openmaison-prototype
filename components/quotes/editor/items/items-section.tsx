@@ -638,7 +638,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       default: return null
     }
   }
-  /* (S45C — S43D's NB-07 (c); as recommended — her ask 2026-10-17) A run of two or more cells continues as Excel's fill handle does: numbers
+  /* (S45C — S43D's NB-07 (c); as recommended — his ask 2026-10-17) A run of two or more cells continues as Excel's fill handle does: numbers
      go on by their step (1, 2 → 3, 4 …; above the run, back the other way), anything else repeats in turn (lib/quotes/fill-series.ts). Each
      column reads and writes in its own unit and keeps its own bounds — what typing in the cell allows. */
   const runValue = (col: string, i: QuoteItem): FillValue => {
@@ -1029,7 +1029,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     vendors: [...new Set([...(vendorDir.list ?? []).map((v) => v.name), ...items.map((i) => i.vendor).filter((x): x is string => !!x && !findVendor(vendorDir.list ?? [], x))])],
     tradeNotes: seed.tradeNotes,
   }), [items, labels, seed.trades, seed.tradeNotes, seed.units, seed.studio.gstPct, vendorDir.list])
-  /* (S44I — M14, UAT rows 249 · 264 · 340 · 341; as recommended, her ask 2026-10-15) One name per label on a quote: a label added that matches
+  /* (S44I — M14, UAT rows 249 · 264 · 340 · 341; as recommended, his ask 2026-10-15) One name per label on a quote: a label added that matches
      one already here (the studio's trades included) in any case is that one — "carpentry" picks "Carpentry" — and the menus list each once.
      Returns the spelling the line takes. */
   const addLabel = (kind: 'room' | 'category' | 'section' | 'vendor', name: string): string => {

@@ -14,7 +14,7 @@ import { isCategory, parseWords, type ChecklistCategory } from '@/lib/meetings/c
 import { SG_DEFAULTS, answersFrom, defaultKey, isObjectionKind, type ObjectionAnswer } from '@/lib/meetings/objections'
 
 /*
- * (pending modules S23 — Meetings and the Meeting Co-Pilot; her "build all of them" 2026-10-11) Settings › Meetings — the co-pilot's playbook,
+ * (pending modules S23 — Meetings and the Meeting Co-Pilot; his "build all of them" 2026-10-11) Settings › Meetings — the co-pilot's playbook,
  * 1.0's Accounts › AI & Copilot group (Copilot Tuning · Objection Responses · Meeting Checklists · Competitor List) and its nine session
  * switches, as one Settings module. 1.0 kept the switches in one browser's storage and its engine never read the answers, the competitors or the
  * studio's own checklist items; here they are the studio's records and every meeting reads them (lib/meetings/engine.ts). Owners and Admins

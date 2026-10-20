@@ -1,5 +1,5 @@
 /*
- * (pending modules S35 — her "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo; 1.0's src/app/(marketing)/**,
+ * (pending modules S35 — his "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo; 1.0's src/app/(marketing)/**,
  * src/components/landing/**) OpenMaison's own website — the company's pages, not a studio's. Served by this app under one prefix (`/site`), open to
  * anyone (lib/auth/paths.ts `PUBLIC_PATHS`); the studio app's front door is unchanged (`/` = the Dashboard, else sign-in). Pure: the addresses,
  * the navigation, the company's contact facts and 1.0's old addresses. Every word is 1.0's published copy unless the step's register rows say

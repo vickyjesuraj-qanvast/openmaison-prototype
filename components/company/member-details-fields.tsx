@@ -24,7 +24,7 @@ export const detailsErrors = (d: DetailsDraft): { name?: string; email?: string;
 export const hasErrors = (e: ReturnType<typeof detailsErrors>) => !!(e.name || e.email || e.phone)
 
 /**
- * (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile) A member's photo, name, email and phone: Your profile's
+ * (pending modules S01 — his "build all of them" 2026-10-11; 1.0's Settings › Your Profile) A member's photo, name, email and phone: Your profile's
  * Your details card (`layout="page"`, the Company details' two columns) and Company › Members › Edit details (`layout="dialog"`, Add member's
  * column). The fields are Add member's own — the phone grouped as typed and kept as its 8 digits, the email as their quotes print it.
  */

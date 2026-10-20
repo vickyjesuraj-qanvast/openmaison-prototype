@@ -27,7 +27,7 @@
    from the checkbox to TOTAL wears the bar's own blue family, its sums bold, so the block reads as a tinted header over plain,
    indented lines. Selection still wins (the rules below); the hover wash is an overlay, so it works on the band too. */
 /* Group colour (owner 2026-09-16, REG-457 as revised the same day): one blue. The group row keeps the DS tertiary-blue band
-   (variant2) and its 4px bar. (S44I, B11 — call C1 as recommended, her ask 2026-10-15; REVERSES REG-457 / REG-440's child half) Its CHILDREN
+   (variant2) and its 4px bar. (S44I, B11 — call C1 as recommended, his ask 2026-10-15; REVERSES REG-457 / REG-440's child half) Its CHILDREN
    sit on white now: the tree's guide lines (`.guides` below) say whose they are, and the next section's band stands out more. Selection and
    hover still win (the rules below / the REG-449 wash). */
 .row[data-group] { background: var(--om-color-tertiary-blue-variant2); }

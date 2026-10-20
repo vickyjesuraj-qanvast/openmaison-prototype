@@ -35,7 +35,7 @@ import styles from './account.module.css'
 
 /**
  * (pending modules S41b-5 — 1.0's `deployment/qanvast` Qanvast Ops › Reviews & Rankings: reviews/page.tsx (Reviews · Rankings) and
- * reviews/feedback/page.tsx; the S41b sweep's M-04; her "build all of them" 2026-10-11) **Qanvast Ops › Reviews**, Owners and Admins (S42E, call E·2 — 1.0 had the Owner only).
+ * reviews/feedback/page.tsx; the S41b sweep's M-04; his "build all of them" 2026-10-11) **Qanvast Ops › Reviews**, Owners and Admins (S42E, call E·2 — 1.0 had the Owner only).
  *   · **Reviews** — every review with its stars, words (Read more past 200 letters), photos (a viewer, ← →), who wrote it, when the project was
  *     finished and its designer; the studio's reply under it, or **Reply** (1.0's "Respond…", up to 5,000 letters, Write with AI) and **Edit**;
  *     Show: All · Waiting for a reply · Replied (1.0's Responded / Unresponded sorts), a star filter and a sort (1.0's four), twelve at a time.

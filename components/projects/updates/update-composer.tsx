@@ -74,7 +74,7 @@ function capturePoster(file: File): Promise<string | null> {
  * draft; Save changes for one in review, published or withdrawn; Save · Resubmit for one sent back. Closing with something typed asks first;
  * uploads that never made it onto an update go again. The dialog closes only once its save lands.
  *
- * (simplify S-23, her "build everything" 2026-10-09) On a phone (≤767) the post is the site's: the photos come first — the media well above the
+ * (simplify S-23, his "build everything" 2026-10-09) On a phone (≤767) the post is the site's: the photos come first — the media well above the
  * title — and a new post starts on the running milestone: picked, and the title filled "Carpentry fabrication — Fri 9 Oct" (editable, still
  * required). Opened with `camera=1` (contract C — the phone site bar's Photos) it takes the photos picked on that press (site-photos.ts), else
  * opens the picker at once. A desk keeps today's order and an empty title.

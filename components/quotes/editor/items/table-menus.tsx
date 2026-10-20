@@ -34,7 +34,7 @@ export function useLevelFocus(level: unknown) {
 }
 
 /** Unit picker (1271:40890 "Add Unit Type"): the studio's unit types; "Clear unit" removes.
-    (S44I — M9, UAT rows 350 · 325; as recommended, her ask 2026-10-15) The studio's OWN units (Settings › Quotes & pricing › Units, seeded with
+    (S44I — M9, UAT rows 350 · 325; as recommended, his ask 2026-10-15) The studio's OWN units (Settings › Quotes & pricing › Units, seeded with
     the seven it always had) and the units this quote's lines already carry. The menu opens on every unit and narrows as you type (the vendor
     menu's search box); a unit nobody listed is *Use “…”* — this line takes it, as a pasted unit always could. ↓ from the box steps into the
     rows, Enter takes the first match. */

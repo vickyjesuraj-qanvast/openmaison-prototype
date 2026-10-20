@@ -123,7 +123,7 @@ export async function fetchPortalBell(visitor: PortalVisitor, slug: string, look
   if (!look.hidden.includes('designs')) await Promise.all(homes.map(async (h) => { h.layouts = (await fetchPortalLayouts([h.leadId])).map((x) => ({ id: x.id, name: x.name, at: x.sharedAt, sender: x.sender, opened: x.seen })) }))
   const bell: BellFacts = { slug, studio: look.studio, now, homes }
   const all = bellRows(bell, look.hidden, new Set(reads.map((r) => r.key)))
-  /* (S43B · F1-08 — her "fix all the pending things" 2026-10-15, as recommended) the studio's own addresses (a quote's or a contract's preview)
+  /* (S43B · F1-08 — his "fix all the pending things" 2026-10-15, as recommended) the studio's own addresses (a quote's or a contract's preview)
      ride only to a studio preview — never to a client's browser, where nothing reads them */
   const rows = visitor.preview ? all : all.map((r) => { const c = { ...r }; delete c.previewHref; return c })
   return { rows, unread: unreadOf(rows) }

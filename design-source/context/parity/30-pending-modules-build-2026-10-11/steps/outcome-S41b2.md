@@ -1,6 +1,6 @@
 # S41b-2 · Old addresses and an app-wide not found — outcome (2026-10-13, lane A)
 
-Package of S41b · Nothing left behind (her "please make sure nothing left behind from 1.0 to 2.0", 2026-10-12), found by the S41b pages
+Package of S41b · Nothing left behind (his "please make sure nothing left behind from 1.0 to 2.0", 2026-10-12), found by the S41b pages
 sweep (`s41b/sweep-pages.md` M1 · M2 · §10 · §11) and the ledger's "still open" table (`s41b/ledger.md`). **Every address 1.0 printed now
 lands in 2.0** — its studio app's (bookmarks, and the links its notifications already sent in bell rows, emails and WhatsApp), on **one list**
 beside the website's and the client links' (`lib/links/old-addresses.ts`), each landing carrying its record and asking the visitor's permission
@@ -67,7 +67,7 @@ hold, lands on — the same answer either way.
 
 Same address in 1.0 and 2.0, nothing to do (sweep §1): `/dashboard` · `/leads` · `/projects` · `/projects/<id>` · `/tasks` · `/marketplace` ·
 `/marketplace/<id>` · `/settings` (1.0's personal settings; its anchors land, above). Left out on purpose (as the sweep): `/qanvast-ops/*`
-(1.0 has no page there either) and `/admin/*` (Platform admin, her exclusion).
+(1.0 has no page there either) and `/admin/*` (Platform admin, his exclusion).
 
 ## The package's lines
 
@@ -81,7 +81,7 @@ Same address in 1.0 and 2.0, nothing to do (sweep §1): `/dashboard` · `/leads`
 | M2 · "one `app/not-found.tsx` on the house pieces (the shell when signed in, the plain frame when not …), plain words and one way on, its ghost if it has one, never a 200 status" | **built** — the shell + `PageNotFound` (the record-not-found look, REG-1166's width; one filled button: the page that linked here / `?from=`, else Go to the Dashboard; every role alike); a client's address → the client's calm notice (`PortalNotice` kind `not-found`), a portal address → its own notice in its studio's look; signed out, sign-in (the shell's own rule). **No ghost**: the root has no loader and the page reads nothing to wait for. 404 on every address no route matches; the tab layouts' 404 too | `app/not-found.tsx`, `components/shell/page-not-found.{tsx,module.css}`, `components/portal/portal-notice.tsx`, `components/shell/{app-shell,access-gate}.tsx` |
 | M2 · "Invented copy, flagged for Vicky" | **flagged** — REG-S41b2.11 · .12 · .14 | — |
 | Ledger · "the web manifest + favicon (S35 recorded them — 1.0's manifest, the house icon)" | **built** — 1.0's marks in `public/brand/` (favicon SVG + 32 px, home-screen 180 px, 192 · 512 · maskable 512, the app-icon SVG), `public/manifest.json` (1.0's, without its claim), linked from the root layout; a client's page carries neither | `public/brand/*`, `public/manifest.json`, `app/layout.tsx`, `lib/links/client-page.ts`, the eleven client layouts (+ `app/space/layout.tsx`, new) |
-| Ledger · "any other item in the 'still open' table that is a missing address or a missing page-frame piece" | **built**: 1.0's studio bookmarks (S25's row — every one, above) and 1.0's `/settings#…` anchors (sweep §10's last note — the landing, no words added). **Not this package's (features, other packages or her calls)**: the quote document editor's parts (S29 → S11), the Project Types editor, auto / round-robin assignment (never in 1.0's code), the site's module FAQs, the accreditation catalogue (Platform admin), the platform crons, a studio-wide digest switch, flat issuance / seat refusal / a count on Leads, the planner's AI plan reading (the developers') — each stays where the ledger put it | — |
+| Ledger · "any other item in the 'still open' table that is a missing address or a missing page-frame piece" | **built**: 1.0's studio bookmarks (S25's row — every one, above) and 1.0's `/settings#…` anchors (sweep §10's last note — the landing, no words added). **Not this package's (features, other packages or his calls)**: the quote document editor's parts (S29 → S11), the Project Types editor, auto / round-robin assignment (never in 1.0's code), the site's module FAQs, the accreditation catalogue (Platform admin), the platform crons, a studio-wide digest switch, flat issuance / seat refusal / a count on Leads, the planner's AI plan reading (the developers') — each stays where the ledger put it | — |
 
 ## Found in 1.0, not on a card
 - **`/inbox/<chatId>`** — 1.0's "copy chat link" (`components/inbox/{context-panel,conversation-header}.tsx`) built this address though no 1.0
@@ -95,7 +95,7 @@ Same address in 1.0 and 2.0, nothing to do (sweep §1): `/dashboard` · `/leads`
   (`?view=insights` goes there).
 Nothing else in `src/app/(main)/**`, its menus or its notification links goes without a landing.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11 and "nothing left behind" 2026-10-12)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11 and "nothing left behind" 2026-10-12)
 - **The sweep's proposed home**, one list beside the website's — but served three ways, because next.config can't read a query cleanly (it
   passes the query through) nor a record: fixed → next.config; query-placed → proxy (pure, before the sign-in check, so a signed-out visit
   is sent to sign-in carrying the 2.0 address); record-placed → small routes (no loader above them, so each answers a plain 307).

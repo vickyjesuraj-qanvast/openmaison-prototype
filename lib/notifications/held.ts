@@ -1,5 +1,5 @@
 /*
- * (simplify round 2 — R2-C, her "fix all the pending things" 2026-10-09; P2 §6.0 rule 5 · §6.8 · §6.9) Held client emails — pure and
+ * (simplify round 2 — R2-C, his "fix all the pending things" 2026-10-09; P2 §6.0 rule 5 · §6.8 · §6.9) Held client emails — pure and
  * client-safe. An action that answers with Undo and tells the client by itself (a hold's "The works are paused", a resume's "running again",
  * a handover's "handed over", and whatever the Start sheet or the Mark done sheet sends — the share's, the invoice's, the photos' update) writes
  * its messages to the outbox HELD for as long as its Undo is offered (`status = 'held'`, `send_after`); the Undo deletes the ones still held, so

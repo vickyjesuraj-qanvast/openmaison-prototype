@@ -35,7 +35,7 @@ import { commissionAsksShape } from '@/lib/finance/sections'
  * (Approve — perhaps at another rate — or Decline), what each member earned, was paid and is owed, each project's lines (Pay · the shares · a rate on
  * that project) and the payments (Reverse). A member: their own — their rate on each project, earned, paid, owed, their asks and their payments —
  * never another member's, never a project's profit. Every figure is `commissionsOf`'s, worked out on the server.
- * (simplify S-12 · S-13, her "build everything" 2026-10-09 — F1 §6.5) Four stacked tables became one: the tiles say their period (All time — the
+ * (simplify S-12 · S-13, his "build everything" 2026-10-09 — F1 §6.5) Four stacked tables became one: the tiles say their period (All time — the
  * word Reports uses — and Owed as it stands today); the asks show only while one is open (an answered ask folds into its line's rate, the row's
  * history); and **one table grouped by member** — a member's row (earned · paid · owed, **Pay {member} S$x**, which pays their owed lines oldest
  * first, one payment per project) opens to their project rows with today's columns and ⋮ (Pay on a line, their rate on it, the shares). The

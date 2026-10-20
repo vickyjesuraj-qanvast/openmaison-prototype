@@ -882,7 +882,7 @@ export async function updateStageDetails(input: { leadId: string; stage: string;
 }
 
 /**
- * (S43B · F1-07 — her "fix all the pending things" 2026-10-15, as recommended; S05's note for the developers: the server took the window's
+ * (S43B · F1-07 — his "fix all the pending things" 2026-10-15, as recommended; S05's note for the developers: the server took the window's
  * payload as sent) A stage's fields checked on the server with the window's own `validateStage` and the studio's two asks (Settings › Lead
  * management › Lead stages) — the same rule the window applies: the next call or meeting is asked for only on the way INTO Contacted, never on a
  * correction of a stage passed long ago; the signed contract on every Won save. On Hold and Lost carry their own reason, not a step's fields.

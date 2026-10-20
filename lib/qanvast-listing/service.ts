@@ -3,9 +3,9 @@ import { serviceSlot } from '@/lib/services/slots'
 import type { ListingKind, ListingOutcome, ProofKind } from './model'
 
 /*
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) QANVAST'S
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) QANVAST'S
  * LISTING API, plugged in at one slot (lib/services/slots.ts `qanvast`; the registry's `qanvast-listing`). Verifying a studio and listing it is
- * Qanvast's staff's work — 1.0's Platform admin › Verification, out of this build by her word — so 2.0 builds the studio's half and this seam:
+ * Qanvast's staff's work — 1.0's Platform admin › Verification, out of this build by his word — so 2.0 builds the studio's half and this seam:
  *   · submitListingApplication(payload) — the studio sends its application (or its changes) for review; the adapter answers Qanvast's id for it;
  *   · withdrawListingApplication(ref) — the studio takes a waiting one back;
  *   · readListingWebhook(raw) — Qanvast's answer, read off POST /api/webhooks/qanvast-listing (app/api/webhooks/qanvast-listing/route.ts):

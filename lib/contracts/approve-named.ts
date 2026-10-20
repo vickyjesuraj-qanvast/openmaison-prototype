@@ -8,7 +8,7 @@ import { fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
 import { notify } from '@/lib/notifications/emit'
 
 /**
- * (S44Q — row 334, her UAT ask 2026-10-15, as recommended) An approver's Send is the approval, wherever they press it. Their own quote's Send
+ * (S44Q — row 334, his UAT ask 2026-10-15, as recommended) An approver's Send is the approval, wherever they press it. Their own quote's Send
  * already went past Sent for Approval (REG-624, `sendQuote` · `sendQuoteForConfirmation`); Send for signature made the agreement and then
  * refused it — "… is still a Draft — approve and send it first" — with no Approve on a Draft anywhere. Now a contract an approver sends (Send,
  * Copy link, Send together, a list's status menu) approves the quote it names, on the record as theirs, as `sendQuote` stamps it; the send

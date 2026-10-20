@@ -1,10 +1,10 @@
 # S44G · a template's Text block takes formatting (row NB-08) — outcome (2026-10-15)
 
-Her ask (2026-10-15): "fix all the pending things apart from Still parked" and the UAT comments from row 246 "without any overlaps nor any issues
+His ask (2026-10-15): "fix all the pending things apart from Still parked" and the UAT comments from row 246 "without any overlaps nor any issues
 without losing what we have already built … If you have any questions please go ahead based on your recommendations." Package S44G = row
 **NB-08** of `s42/sweep-newer-branches-2026-10-15.md` §5 — S43D's F2-05 one gap: 1.0's rich-text sections held bold, italic, underline, lists
 and links; 2.0's quote template **Text block** was plain paragraphs (`htmlToText` / `textToHtml` in `inspector.tsx`). Every call taken **as
-recommended — her ask 2026-10-15**. Built in lane E (port 3185) — begun in the first lane E, re-applied after the 16:53 reboot onto the fresh
+recommended — his ask 2026-10-15**. Built in lane E (port 3185) — begun in the first lane E, re-applied after the 16:53 reboot onto the fresh
 lane (main as of 17:10, S44O landed: none of S44O's lines are in this package's files). Register rows: `steps/reg-S44G.md` (REG-S44G.1…7).
 **No migration, no repair** (R174…R179 unused) — the block's `html` already held HTML; nothing to seed: the 4-Room BTO's Text block (italic +
 bold) is the demo's record.
@@ -34,7 +34,7 @@ bold) is the demo's record.
   the quote; on the template editor's page it would navigate away from the editor. Now underlined, opens beside the quote, and on the editor's
   page only selects its block (`document.tsx` `onClickCapture` in interactive mode). REG-S44G.5
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 - **The tool set** = the row's list (b · i · u · bullets · numbers · link) + the kit's colour; **no strikethrough, no per-paragraph alignment**
   — the block's own Text style already aligns, sizes and weights it; two places for one setting is the load REG-542 took away.
 - **Dense form in the 320 pane** — the inspector's 36 tool boxes in one row; Insert a field and Write with AI under them (the house editor

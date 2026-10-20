@@ -12,7 +12,7 @@ import { parseStudio, shortStudioName } from '@/lib/settings/types'
 import { DEMO_KEY, ORIGIN_KEY, isStudioKey, parseOrigin, type StudioOrigin } from './model'
 
 /*
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up) The studios on THIS PROTOTYPE: the demo's database
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up) The studios on THIS PROTOTYPE: the demo's database
  * (DATABASE_URL) and the studios started here by signing up, each a database of its own in `<the demo's file>.studios/` (`<key>.db`) — so a
  * new studio never mixes with the demo's records and the demo's file is never written by one. One is open at a time (lib/db/index.ts):
  * signing up opens the new one, signing in with a studio's number opens that studio, the studio block's Studios group (demo only) switches,

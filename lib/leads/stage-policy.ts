@@ -30,7 +30,7 @@ export function projectHold(lead: { project?: { number: string } | null }, stage
   return stage === 'On Hold' || stage === 'Lost' ? projectHoldsWon(lead.project.number) : null
 }
 
-/** (S44O — call C6, her UAT ask 2026-10-15) Quote Sent and Won go with a quote — its amount, the signed one, the payment split — which
+/** (S44O — call C6, his UAT ask 2026-10-15) Quote Sent and Won go with a quote — its amount, the signed one, the payment split — which
     Marketing never reads: the lead's designer moves it there. One sentence for the stage menu's row, the kanban's spring-back, the LEAD STAGES
     rows and the server (`moveStage` · `quickMoveStage` · `updateStageDetails`). *(invented copy)* */
 export const MARKETING_STAGE_RULE = 'Quote Sent and Won go with a quote — the lead’s designer moves it there'
@@ -202,7 +202,7 @@ export const DETAIL_TABS = [
   { label: 'Contracts', slug: 'contracts' },
   { label: 'Files', slug: 'files' },
   { label: 'Notes & Logs', slug: 'notes' },   // (REG-550) the tab names the logs it holds (tester feedback 2026-09-15)
-  /* (pending modules S23 — her "build all of them" 2026-10-11 lifted REG-552's hold for this card) Meetings, where the mock drew it (858:24784),
+  /* (pending modules S23 — his "build all of them" 2026-10-11 lifted REG-552's hold for this card) Meetings, where the mock drew it (858:24784),
      with the Meeting quick link: a lead's meetings, its co-pilot and the briefs (components/meetings/lead-meetings.tsx). */
   { label: 'Meetings', slug: 'meetings' },
   { label: 'Questionnaire', slug: 'questionnaire' },

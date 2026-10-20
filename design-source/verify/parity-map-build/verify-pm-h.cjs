@@ -1,4 +1,4 @@
-// The parity-map build 2026-10-10 — package P-H: tasks, design, compliance & Maison AI (her "build everything that's in 1.0 to 2.0 without losing
+// The parity-map build 2026-10-10 — package P-H: tasks, design, compliance & Maison AI (his "build everything that's in 1.0 to 2.0 without losing
 // anything"; map rows TD-019 · TD-027 · TD-044 · TD-049 · TD-067 · TD-107 · TD-110 · UC-094 · UC-113 · PR-059 · SC-060 · FB-118). Each check asserts
 // a rule: the rail's Tasks add row offers the projects made with New project under Projects (1); an outside person's "Ask an Owner to add them" —
 // the Owners' task, the bell for Owners and Admins, one open ask per person, Undo, Members' Add member filled from ?add= (2); the client's no has

@@ -1,6 +1,6 @@
 # S29 · AI writing help on quote text — outcome (2026-10-13, lane A)
 
-Card: `api:ai-writing-help-quotes` (recommendation "needs her mocks / decision"; question "Do you want AI rewrite on Terms / Notes (and contracts)?
+Card: `api:ai-writing-help-quotes` (recommendation "needs his mocks / decision"; question "Do you want AI rewrite on Terms / Notes (and contracts)?
 If yes, at what credit price, or free?" — taken as recommended by the brief: yes, by rule, **free** as 1.0 was). Carried notes taken: **S10**
 (drafts stay `lib/maison-ai/drafts.ts`; the box writes no text — the writing help is a proposal behind its own seam, `proposeWriting`; the
 editors' Maison AI sheets open it), **S04** (client-safe: only words a client may read reach a proposal — `lib/writing/sources.ts`; never a
@@ -37,7 +37,7 @@ document editor lives: a quote's Layout tab; `aiExtracted`), `src/lib/credits/*`
 - The quote document editor's other parts (sections as blocks, conditional visibility, bulk delete / duplicate, page breaks) belong to the
   quote templates (S11's card) — **for S41b** to confirm against S11's outcome; nothing of them is on this card.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Yes, by rule, and free** (the card's question). 1.0's route spent no AI credits; its price list has no writing entry; so nothing is metered
   and no plan lock (S19's seven Pro features don't include it).
 - **A proposal, always** — 1.0 replaced the section at once; 2.0 shows the change marked word by word and puts it in only on Use these words,

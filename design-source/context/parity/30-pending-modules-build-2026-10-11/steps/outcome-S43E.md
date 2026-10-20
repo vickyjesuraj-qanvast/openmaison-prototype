@@ -1,7 +1,7 @@
 # S43E · F3 — walk what nobody walked, and the UAT — outcome (2026-10-15, lane B)
 
-Package S43E: `s42/pending-ledger.md` › **F3-01…F3-07**, on her "fix all the pending things apart from Still parked (dark mode, languages, themes
-and guided tours, countries beyond Singapore)" (2026-10-15) — asleep, every call taken **as recommended — her ask 2026-10-15**; none reverses an
+Package S43E: `s42/pending-ledger.md` › **F3-01…F3-07**, on his "fix all the pending things apart from Still parked (dark mode, languages, themes
+and guided tours, countries beyond Singapore)" (2026-10-15) — asleep, every call taken **as recommended — his ask 2026-10-15**; none reverses an
 earlier decision. Built in lane B (port 3170). **No migration, no repair** (R148…R159 unused). Register rows: `steps/reg-S43E.md`
 (REG-S43E.1…13). The walk's write-up: `s42/walk-F3-2026-10-15.md` (per item: who, what size, what was found → fixed / handed on). Probe:
 `design-source/verify/pending-modules/verify-pm2-s43e.cjs` (**45 / 45**); shots `design-source/verify/pending-modules/s43e/`.
@@ -23,18 +23,18 @@ surfaces, Nurul Huda (Marketing) included.
 | **F3-07** | UAT steps for the pending-modules surfaces | **Built** | — | 42 steps: chapters 22–25 + 2.38 · 6.44–6.49 · 10.17–10.18 · 16.14 · 20.24; `build_uat.py` updated; workbook rebuilt (489 steps); `s42/uat-changed.md` appended (REG-S43E.13) |
 | *S44I · S44O* (main moved on; the coordinator's ask) | the Items table, Units; Marketing (Nurul Huda), a landline on Add member, VO billing, the email logo | **Walked** | Nurul via View as 1440 / 390 (24 pages, the stage menu); Dane 1440 / 390 (Add member); Germaine 1440 and Dane 390 / 768 (Items); Germaine / Hui Min (Units) | W6-01 · W6-02 fixed (REG-S43E.11 · 12) |
 
-**Counts:** 13 findings — Major 3 (W2-01, W3-02, W4-01) · Minor 8 · Polish 1 — all fixed; 1 kept by her decision (W1-02 → P-29). Notes kept
+**Counts:** 13 findings — Major 3 (W2-01, W3-02, W4-01) · Minor 8 · Polish 1 — all fixed; 1 kept by his decision (W1-02 → P-29). Notes kept
 with reasons: Set vendor's list over the sheet's head at 390; the brand page ghost's thumbnail count; Add Lead ▾'s Integrations doors for a
 Designer.
 
-**Sheet rows:** none owned by this package (the UAT's new steps are listed for her sheet in `s42/uat-changed.md`).
+**Sheet rows:** none owned by this package (the UAT's new steps are listed for his sheet in `s42/uat-changed.md`).
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 
 - **W1-01's channel** — a refused control's reason on a tap goes to the house snackbar (REG-273 chose it for the stage menu and the Move stage
   rail), not a bubble; one key so a host that says it too never stacks two. *Not a reversal* — it extends REG-273 to every tooltip-only
   refusal.
-- **W1-02** — kept with her standing decision P-29 (the production session per Server Function is the developers'); no demo-only patch on one
+- **W1-02** — kept with his standing decision P-29 (the production session per Server Function is the developers'); no demo-only patch on one
   action, which would make two rules.
 - **W4-01's "wet works"** — read as masonry and tiling (the Singapore meaning) beside plumbing; exact trade names keep their one stage.
 - **W5-01** — no category guessed for a brand filed two ways, rather than a wrong one; the studio picks.

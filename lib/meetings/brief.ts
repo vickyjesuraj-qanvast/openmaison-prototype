@@ -2,7 +2,7 @@
  * (pending modules S23 — 1.0's brief/generate: a model's summary, customer profile, suggested actions, follow-up draft and upsells) The brief
  * after a meeting, made by rule from the co-pilot's reading (lib/meetings/engine.ts) — the same reading the meeting showed, so nothing in the
  * brief was not on the screen. Every line can be edited; a part the studio edited is kept when the brief is made again. Pure and client-safe.
- * The words are invented copy (her sign-off owed), in the briefs' voice (lib/maison-ai/drafts.ts).
+ * The words are invented copy (his sign-off owed), in the briefs' voice (lib/maison-ai/drafts.ts).
  */
 import { displayDayMonth, groupDigits, moneyCard, startOfDay } from '@/lib/format'
 import { aimLabel, firstOf, whereWords, type Features, type MeetingBrief } from './model'

@@ -205,7 +205,7 @@ export async function fetchPortalData(slug: string, look: PortalLook, visitor: P
     }
   })
   const needs = [...facts.values()].flatMap(needsOf).filter((n) => needShown(n.kind, look.hidden)).sort((a, b) => a.since - b.since).map(forVisitor)
-  /* (S43B · F1-08 — her "fix all the pending things" 2026-10-15, as recommended; S13's note for the developers) the studio's own addresses — a
+  /* (S43B · F1-08 — his "fix all the pending things" 2026-10-15, as recommended; S13's note for the developers) the studio's own addresses — a
      quote's or a contract's preview, a design in the Visualizer, a receipt's studio page — ride only to a studio preview (`visitor.preview`, the
      portal's own flag), never to a client's browser, where nothing reads them (as `clientSafe` keeps cost off a client's quote lines) */
   for (const h of homes) {

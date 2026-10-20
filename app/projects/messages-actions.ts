@@ -28,7 +28,7 @@ import { workspaceRefusal, offWorkspace } from '@/lib/settings/desk'   // (S45C)
  * writes from their page; the same rule decides who answers — the lead's members, their Managers, Owners and Admins). A message carries
  * files beyond photos (sent in pieces, up to 25 MB, filed in Files › Messages), a voice note, the site's place or a person's card. Pin and
  * Mute are each member's own; a muted conversation rings no bell for them.
- * (pending modules S26 — her "build all of them" 2026-10-11) Two more kinds through the same actions and the same composer: a lead's Team
+ * (pending modules S26 — his "build all of them" 2026-10-11) Two more kinds through the same actions and the same composer: a lead's Team
  * conversation before Won (`lead-team` — the lead's members hear `team_message`; its files go to the lead's Files › Messages; once Won the
  * project's Team conversation carries it on) and a conversation among the studio's members (`chat` — two people, a named group, the studio's
  * room; its people hear `member_message`; its files stay with it). Neither ever reaches a client: no client page reads their tables, and a
@@ -205,7 +205,7 @@ export async function restoreMessage(messageId: string): Promise<{ ok: true } | 
   return { ok: true }
 }
 
-/* ── (simplify S-22, her "build everything" 2026-10-09) a client's message → a task · a variation order, their words carried over ──────── */
+/* ── (simplify S-22, his "build everything" 2026-10-09) a client's message → a task · a variation order, their words carried over ──────── */
 
 async function forClientMessage(messageId: string) {
   const [m] = await db.select().from(projectMessages).where(eq(projectMessages.id, String(messageId ?? ''))).limit(1)

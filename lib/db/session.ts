@@ -9,7 +9,7 @@ import { PATH_HEADER, RENEW_MS, SESSION_COOKIE, isPublicPath, parseSessionCookie
 /**
  * WHO IS WRITING (REG-286) — the one place that says which member a request is, for every read and every write stamp.
  *
- * (pending modules S43A — the S42 audit's call A·1, built as recommended on her "fix all the pending things" 2026-10-15) ONE SIGNED-IN MEMBER
+ * (pending modules S43A — the S42 audit's call A·1, built as recommended on his "fix all the pending things" 2026-10-15) ONE SIGNED-IN MEMBER
  * PER BROWSER. A browser that signed in by a code (`/sign-in`, or Join on an invitation) is the member its own session record names
  * (`studio_sessions`, the cookie carries its id — lib/auth/session.ts starts and ends it) — on every page, every action and every stamp — and
  * only that browser. A browser that never signed in or out is the demo's STANDING session: the member `members.is_you` flags (Dane in the base

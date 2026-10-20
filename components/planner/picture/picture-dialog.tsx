@@ -44,7 +44,7 @@ export function PictureDialog({ open, onClose, plan, library, name, layoutId, cl
   const stage = useRef<HTMLDivElement>(null)
   const [look, setLook] = useState<Look>('dollhouse')
   const [saving, setSaving] = useState(false)
-  /* (S42 D·1 — S41's proposal "Download a turning clip", built as recommended — her "build all of them" 2026-10-11, listed in
+  /* (S42 D·1 — S41's proposal "Download a turning clip", built as recommended — his "build all of them" 2026-10-11, listed in
      s42/calls-for-vicky.md) the Dollhouse on a turntable, one whole turn, recorded in this browser from the planner's own drawing (the bench's
      Orbit clip, lib/visualizer/spatial/clip.ts) and downloaded — a short video to send a client on WhatsApp. Nothing is invented and nothing
      is charged; a browser that can't record says so in the row. */

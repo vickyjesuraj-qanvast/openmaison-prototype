@@ -7,7 +7,7 @@ import { financeTabsFor } from '@/lib/finance/sections'
 import { FinanceGhost } from './finance-ghost'
 
 /**
- * (simplify S-10 · S-11, her "build everything" 2026-10-09) Finance's frame, once for its five tabs: Company's L1 header with the door to the
+ * (simplify S-10 · S-11, his "build everything" 2026-10-09) Finance's frame, once for its five tabs: Company's L1 header with the door to the
  * numbers (*Reports ›*, Owners and Admins — Reports is the one home for numbers, REG-1361, so Finance repeats none: F1 §6.3 ①), and the strip —
  * To do · Money out · Vendors · Commission · Xero (a member's: To do · Money out · Vendors · My commission) — To do carrying what waits on you
  * (S-04's count rule). The page's own ghost rides with it (REG-708).

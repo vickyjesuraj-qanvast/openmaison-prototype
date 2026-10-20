@@ -10,7 +10,7 @@ import type { VoDayAsk } from '@/lib/projects/schedule'
 import m from './moment.module.css'
 
 /**
- * (parity map, SC-094 — her "build everything that's in 1.0" 2026-10-10; 1.0's VO "timeline impact days", E-253) An approved variation order's
+ * (parity map, SC-094 — his "build everything that's in 1.0" 2026-10-10; 1.0's VO "timeline impact days", E-253) An approved variation order's
  * extra days — "VO-3 adds 3 days — move what follows?": the house Dialog over one choice, the milestone the days go on (the running one first,
  * then a paused one, else the next to start), with what the move does said before the press. **Move the schedule** makes it that many days longer and the move
  * carries what follows (the Schedule's own rule); a Designer's or a Manager's press on a stage under way asks an Owner or an Admin for the days

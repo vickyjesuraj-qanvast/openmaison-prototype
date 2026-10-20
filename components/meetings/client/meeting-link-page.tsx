@@ -18,7 +18,7 @@ import sign from '@/components/contracts/sign/signing-page.module.css'
 import styles from './meeting-link-page.module.css'
 
 /**
- * (pending modules S23 — Meetings and the Meeting Co-Pilot; her "build all of them" 2026-10-11; the held card's "the client's meeting email",
+ * (pending modules S23 — Meetings and the Meeting Co-Pilot; his "build all of them" 2026-10-11; the held card's "the client's meeting email",
  * 1.0's unmerged Google Calendar branch's RSVP page and its 24-hour share links) The client's meeting link, as they open it from WhatsApp or the
  * studio's email: the client links' letterhead bar (the studio's name, never the platform's) and one column.
  *   Before the meeting — "Your {aim} with {studio}", the day and time, where (an address opens Google Maps, a call's link opens the call),

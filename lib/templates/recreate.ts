@@ -41,7 +41,7 @@ export type Reading = {
     so nothing is claimed — the studio picks the design that looks closest). (S43B · F1-02) A file's NAME is never read. */
 export type Match = { key: PresetKey; confidence: 'high' | 'good' | 'fair'; reasons: string[]; reading?: Reading; by?: 'words' | 'picture' }
 
-/** (S43B · F1-02 — her "fix all the pending things" 2026-10-15, as recommended; E-05's family) Nothing to read: the studio picks. The most
+/** (S43B · F1-02 — his "fix all the pending things" 2026-10-15, as recommended; E-05's family) Nothing to read: the studio picks. The most
     common shape (Letter) is offered first, and the reasons say only what is true — never a reference quote's lines it never saw. */
 export function unreadMatch(why: string): Match {
   return { key: 'letter', confidence: 'fair', by: 'picture', reasons: [why] }

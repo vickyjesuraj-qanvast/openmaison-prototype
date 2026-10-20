@@ -53,7 +53,7 @@ every figure is read from records the demo already holds).
 - **For S41b:** the older lines' `/qanvast-ops/portfolio` (S27's public profiles cover the job — no redirect added here), `/complaints` and `/promote`
   (S16: not drawn) still answer the app-wide page not found.
 
-## Decisions taken (as recommended — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12 · "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12 · "build all of them" 2026-10-11)
 
 1. **Read live, keep no copy** — 1.0 kept no table; a balance and a reply must be current, and a reply is a write: one service slot (S37's
    pattern), not the feeds' hourly copy (S24 · S27). No migration.

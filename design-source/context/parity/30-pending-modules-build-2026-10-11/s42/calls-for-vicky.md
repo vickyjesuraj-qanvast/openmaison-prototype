@@ -1,7 +1,7 @@
 # S42 · Calls for Vicky (collected from the five audits, 2026-10-14)
 
 Each call is fixed **as recommended** in S42's fix packages (the programme's rule: "take the recommendation … record it as 'as recommended'"),
-and listed here so she can overturn any of them in one place. Source = the audit file and its call number.
+and listed here so he can overturn any of them in one place. Source = the audit file and its call number.
 
 ## From audit A (front door, people and settings)
 - **A·1 — The demo's standing session follows a sign-in on another browser.** Joining by an invitation in a second browser turns the Owner's own
@@ -79,12 +79,12 @@ and listed here so she can overturn any of them in one place. Source = the audit
   gone from both code steps (`steps/outcome-S43A.md`).
 - **October's money dates were not moved by the demo-day shift** (S42A, A-03): "this month" is a calendar month, and moving the invoices would
   drag their payments, reminders and portal reads with them; the Dashboard's month tile reads "Credit notes S$… more than invoiced" (A·3) when
-  the month is below zero. *Her call:* curate October's demo money (one invoice sent this month) if the front door should open on a positive month.
+  the month is below zero. *His call:* curate October's demo money (one invoice sent this month) if the front door should open on a positive month.
 - **E·3 as built** (S42E): under the default one-stage-at-a-time rule a New lead can't jump to Met, so *End the chat* offers **Contacted** (the
   chat as its first contact log), Dropped offers Lost with the reason — the recommendation said "Move to Met".
 - **Auto Fill in the Move stage window (REG-319) is still a scripted stand-in** (found by S42F while making Fill from a document read the real
   file): it fills a sample contact log whatever is uploaded. *Recommended:* the same honest treatment — read the uploaded chat screenshot's text
-  by rule where it can, else say plainly it can't read pictures yet — but it is the mocked Contacted journey, so it waits for her word.
+  by rule where it can, else say plainly it can't read pictures yet — but it is the mocked Contacted journey, so it waits for his word.
 - **S42G — an On Hold lead after a held meeting** (REG-S42G.2, numbered at landing): `heldMeetingStep` now answers *Resume at Met* (through the
   house's "Resume at Met?" confirm) for a lead on hold whose meeting was held; a lost lead is offered nothing. A judgement call — say if a held
   meeting should leave an On Hold lead where it is instead.

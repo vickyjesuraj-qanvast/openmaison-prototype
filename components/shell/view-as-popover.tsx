@@ -84,7 +84,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
   const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'bottom' })   // (REG-728) the rail's popovers open one way
 
   const current = team.find((m) => m.isYou) ?? null
-  /* (pending modules S16 — her "build all of them" 2026-10-11; 1.0's top bar: "Open" / "Closed" to new leads, one press, for the member
+  /* (pending modules S16 — his "build all of them" 2026-10-11; 1.0's top bar: "Open" / "Closed" to new leads, one press, for the member
      themself) your own Open to new leads, under Your profile — the record Company › Members' switch writes (REG-612). Optimistic: the switch
      moves on the press and goes back if the save is refused; the server's answer takes over once the page has refreshed. */
   const serverOpen = current?.acceptingLeads ?? true
@@ -132,7 +132,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
     snackbar({ message: n.message, ...(back ? { actionLabel: `Back to ${back.name}`, onAction: () => become(back, null) } : {}) })
   }, [team, snackbar, become])
   const pick = (m: SessionMember) => { onClose(); if (!m.isYou) become(m, current) }
-  /* (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in, S16's note: Log out's place; 1.0's profile menu
+  /* (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in, S16's note: Log out's place; 1.0's profile menu
      ended with Sign out) Sign out: unsaved edits ask first (the leave guard), the session ends on the server, this browser forgets what it
      kept for you, and sign-in opens — a full load, so nothing of the studio stays in the page */
   const [leaving, setLeaving] = useState(false)
@@ -173,7 +173,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
     </div>
   )
 
-  /* (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up) the studios on this prototype, demo only as View
+  /* (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up) the studios on this prototype, demo only as View
      as is: one is open at a time; picking another opens it as its own session (lib/studios/registry.ts) — a full load, so nothing of the one
      before stays in the page; the sentence follows to the new shell */
   const [switching, setSwitching] = useState<string | null>(null)
@@ -226,7 +226,7 @@ export function ViewAsPopover({ open, anchor, onClose, onBack, team, profile = f
       <p className={styles.help}>See the prototype as another member of the studio — the leads they see and what they may do.</p>
     </>
   )
-  /* (pending modules S01 — her "build all of them" 2026-10-11; 1.0's profile menu › Your Profile) who you are, and the way to your profile */
+  /* (pending modules S01 — his "build all of them" 2026-10-11; 1.0's profile menu › Your Profile) who you are, and the way to your profile */
   const you = profile && current ? (
     <>
       <div className={panel.group} role="group" aria-label="You" data-testid="you-group">

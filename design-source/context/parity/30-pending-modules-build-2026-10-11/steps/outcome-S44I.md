@@ -1,11 +1,11 @@
 # S44I · the Items table — outcome (2026-10-15)
 
-Her ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments based on
+His ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments based on
 our 2.0 experience without any overlaps nor any issues without losing what we have already built", the team's sections prototype, and "If you
 have any questions please go ahead based on your recommendations." Package S44I = the prototype's delta B1…B12
 (`design-source/context/quote-editor/04-sections-prototype-2026-10-15.md`) with its calls C1–C5, area I of the triage
 (`design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md` §3, §8, §12 items 3 · 5 · 6 · 14), call C2's editor side,
-the hand-offs from S44Q / S44T, and S43D's NB-05 · NB-06 · NB-07. Every call taken **as recommended — her ask 2026-10-15**. Built in lane E
+the hand-offs from S44Q / S44T, and S43D's NB-05 · NB-06 · NB-07. Every call taken **as recommended — his ask 2026-10-15**. Built in lane E
 (port 3185). Register rows: `steps/reg-S44I.md` (REG-S44I.1…27). **No migration, no repair** (S44T's 0111 columns carry everything; R174…R179
 unused).
 

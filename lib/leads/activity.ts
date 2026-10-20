@@ -388,7 +388,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     const parts = [n.photo ? word(n.photo, 'photo', 'photos') : null, n.video ? word(n.video, 'video', 'videos') : null, n.doc ? word(n.doc, 'document', 'documents') : null].filter((x): x is string => !!x)
     return parts.length ? ` with ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0]}` : ''
   }
-  /* (simplify round 2, S-22 — her "fix all the pending things" 2026-10-09) The client asks: a task or a variation order made from a client's
+  /* (simplify round 2, S-22 — his "fix all the pending things" 2026-10-09) The client asks: a task or a variation order made from a client's
      message or ticket. Its line names whose message, or which ticket — read off the message / ticket the press came from (the line keeps its
      `ref`). */
   /* (simplify round 2) a variation order raised from a client's ask: its ask line says it under All — the order's own line keeps the Money chip */
@@ -734,7 +734,7 @@ export async function fetchLeadActivity(leadId: string, opts: { projectId?: stri
     /* end P-H */
     /* region P-J (the planner) */
     /* end P-J */
-    /* region S45B (contractors on site — H-UHD-2, her "build everything and complete it" 2026-10-17; invented copy) a contractor put on the
+    /* region S45B (contractors on site — H-UHD-2, his "build everything and complete it" 2026-10-17; invented copy) a contractor put on the
        project, moved to another milestone or dates, marked planned / on site / done, Leader checked (and the check taken off), taken off it
        (app/projects/contractor-actions.ts). Each opens the project's Schedule with its Contractors open. */
     if (e.kind.startsWith('project_contractor_')) {

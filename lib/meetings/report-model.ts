@@ -1,5 +1,5 @@
 /**
- * (pending modules S23 — card studio:meetings-copilot, "for Owners and Admins Analytics with coaching and an Objections report"; her "build all of
+ * (pending modules S23 — card studio:meetings-copilot, "for Owners and Admins Analytics with coaching and an Objections report"; his "build all of
  * them" 2026-10-11) Company › Reports › **Meetings** — 1.0's Meeting Insights › Analytics (its KPIs, ID Performance, coaching suggestions, deal
  * score calibration) and its Objections report, in one Reports tab, on the house Reports pattern (lib/leads/tat.ts, lib/projects/insights-model.ts):
  * the loader hands over each held meeting's facts once (lib/meetings/reports.ts) and every figure derives per range in the browser. Pure and

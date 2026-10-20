@@ -284,8 +284,8 @@ export function pickNeeds(f: FurniturePick, target: { label: string; category: s
 /** A finish with no colour of its own (Velvet, Chenille) keeps the piece's colour and changes its sheen. */
 export const finishHasColour = (finish: string | null | undefined) => !!finish && !!FINISH_HEX[finish]
 
-/* ── (pending modules S20 — card held:ai-visualizer, "Replace a piece with a new one — the build changed her answer from 'say it can't' to
-   recolour (Q-21) and never put it back to her") Replace as she answered (audit 16, VF-02 / Q-21 as recommended on 2026-09-25: "Same picker;
+/* ── (pending modules S20 — card held:ai-visualizer, "Replace a piece with a new one — the build changed his answer from 'say it can't' to
+   recolour (Q-21) and never put it back to him") Replace as he answered (audit 16, VF-02 / Q-21 as recommended on 2026-09-25: "Same picker;
    the engine answers Replace honestly"). The picker stays — 1.0's Quick picks, the words, a photo of the new piece: the record an image model
    reads — and the prototype says it can't draw a new piece into the photo, never a recolour passed off as a swap ("Swapped for …", the
    build's change). The recolour the build had made silent is one press, named for what it is: *Recolour it to match* turns the pick into a
@@ -378,7 +378,7 @@ export function changeList(p: Pending, o: { reading: Detection | null; resolve: 
     for (const [fid, f] of Object.entries(p.furniture)) {
       const d = reading.furniture.find((x) => x.id === fid); if (!d || f.action === 'keep') continue
       const k = `${normFurnitureKey(d.label)}|${f.action}`, hit = byPiece.get(k)
-      /* (pending modules S20) a Replace with its pick waits too — the prototype can't draw a new piece in (Q-21 as she answered) */
+      /* (pending modules S20) a Replace with its pick waits too — the prototype can't draw a new piece in (Q-21 as he answered) */
       const needs = pickNeeds(f, d) ?? (f.action === 'replace' ? replaceHeld(d.label) : null)
       if (hit) { hit.ids.push(fid); hit.needs ??= needs }
       else byPiece.set(k, { label: `${titleCaseLabel(normFurnitureKey(d.label))} · ${f.action === 'remove' ? 'Remove' : f.action === 'replace' ? 'Replace' : 'Customize'}`, ids: [fid], needs })

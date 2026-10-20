@@ -2,7 +2,7 @@ import { runsStudio } from '@/lib/settings/roles'
 import { htmlToPlain } from '@/lib/quotes/items-model'
 
 /**
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) THE STUDIO'S
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) THE STUDIO'S
  * LISTING ON QANVAST — pure and client-safe.
  *
  * 1.0 had a form at /verify (no menu reached it) asking for the studio's name, its registration ID, a description, what makes it different, the
@@ -13,7 +13,7 @@ import { htmlToPlain } from '@/lib/quotes/items-model'
  * the description, what makes it different, and its proof files (real bytes). Its one home is Company › Profile's card **Listed on Qanvast**:
  * Not applied · Waiting for Qanvast · Needs changes (with Qanvast's note) · Listed. Only Owners and Admins apply (1.0: the owner alone).
  *
- * Qanvast's answer is Qanvast's (verifying a studio is its staff's work — Platform admin, out of this build by her word): it arrives through the
+ * Qanvast's answer is Qanvast's (verifying a studio is its staff's work — Platform admin, out of this build by his word): it arrives through the
  * seam (lib/qanvast-listing/service.ts, the registry's `qanvast-listing` · `qanvast-listing-webhook`) as 1.0's two answers — `verified` (Listed)
  * or `rejected` with a note (Needs changes: 1.0's rejection asked the studio to "review the feedback below and resubmit"). While the stand-in
  * answers, the card says so and lets an Owner or an Admin play either answer — labelled "(demo)", recorded as `answered_via = 'demo'`, never

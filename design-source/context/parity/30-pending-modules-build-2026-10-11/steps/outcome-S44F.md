@@ -1,11 +1,11 @@
 # S44F · the quote follow-ups from 1.0's newer branches — outcome (2026-10-15, lane B)
 
-Her ask (2026-10-15): "fix all the pending things apart from Still parked … If you have any questions please go ahead based on your
+His ask (2026-10-15): "fix all the pending things apart from Still parked … If you have any questions please go ahead based on your
 recommendations" — asleep, my recommendation on every call. Package S44F = rows **NB-01…NB-04** of `s42/sweep-newer-branches-2026-10-15.md` §5,
 built in the order the brief gave (NB-03 → NB-04 → NB-01 → NB-02 (a) (b) (c)) on top of S44Q's client projection and allowlist and S44T's print.
 Built in **lane B** (`scratchpad/lanes/B`, port 3170). Register rows: `steps/reg-S44F.md` (REG-S44F.1…9). Probe:
 `design-source/verify/pending-modules/verify-pm2-s44f.cjs` (101 checks). Shots: `design-source/verify/pending-modules/pm2-s44f/`.
-Every call **as recommended — her ask 2026-10-15**; none reverses an earlier decision (REG-595's "Since the last version" stays the default and
+Every call **as recommended — his ask 2026-10-15**; none reverses an earlier decision (REG-595's "Since the last version" stays the default and
 prints exactly as before). **No migration. No repair** (R148…R159 unused) — every new state is computed from records that already exist
 (`quote_versions` snapshots, `quotes.confirmed_via` · `confirmed_marked_by`, which a variation order already wrote).
 
@@ -24,7 +24,7 @@ prints exactly as before). **No migration. No repair** (R148…R159 unused) — 
 
 **Sheet rows:** none owned by this package.
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 - **NB-03 — what "the view never prints" means:** a line's price travels only when that line's price prints (the rule in `pricedLineIds`); column switches are not part of it (with *A price on every line* the unit price follows from the total ÷ quantity anyway). The confirmation's own optional-works pick list keeps each offered work's price with GST (REG-626 — a client can't pick a work without its price): it is the page's separate disclosure, not the print's.
 - **NB-03 — page totals** print only with a price on every line (REG-S44F.2) — the alternative (sending per-page sums) can't work: the page breaks are the browser's.
 - **NB-01 — colours:** the brand kit's own (accent, red, grey in turn), never a fixed palette outside the kit; each mark names its version, so a colour reused from version 5 on still reads. The choice sits only where it applies (a third version exists, changes shown).

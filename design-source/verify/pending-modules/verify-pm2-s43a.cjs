@@ -1,4 +1,4 @@
-// Pending modules, step S43A · One signed-in member per browser (the S42 audit's call A·1, built as recommended on her "fix all the pending
+// Pending modules, step S43A · One signed-in member per browser (the S42 audit's call A·1, built as recommended on his "fix all the pending
 // things" 2026-10-15). Each item asserted as the rule it builds, never another round's count:
 //  - the guard: no write stamp reads the standing session's flag (`sessionMemberSql` is gone; `members.is_you` is read for the app in
 //    lib/db/session.ts alone and written by View as alone)

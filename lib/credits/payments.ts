@@ -2,7 +2,7 @@ import 'server-only'
 import { serviceSlot } from '@/lib/services/slots'
 
 /*
- * (pending modules S34 — her "build all of them" 2026-10-11; the steps' note after S19: "a real payment provider replaces `completeCheckout`
+ * (pending modules S34 — his "build all of them" 2026-10-11; the steps' note after S19: "a real payment provider replaces `completeCheckout`
  * for every kind — topup · plan · auto_topup · seats' invoice; auto top-up then charges the card on file") THE ONE SEAM FOR THE STUDIO'S
  * PAYMENTS to OpenMaison — plans, AI-credit top-ups, auto top-ups and added seats (1.0: Dodo Payments' overlay, its webhook and the card on
  * file; integration Q-14 · B-20 · B-29).

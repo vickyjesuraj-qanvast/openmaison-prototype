@@ -15,7 +15,7 @@ import {
 } from './paths'
 
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/lib/session.ts `signSession` ·
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/lib/session.ts `signSession` ·
  * `verifySession`, api/auth/{verify,me,logout}) The studio's session on the server: who is signed in on this browser, starting one, ending
  * one. The record is `studio_sessions`; the cookie carries its id. (pending modules S43A) The record's member IS this browser's member — every
  * read and every write stamp follows it (lib/db/session.ts `sessionMemberId()`), and only on this browser: signing in no longer moves

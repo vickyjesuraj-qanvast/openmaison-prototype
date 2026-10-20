@@ -164,7 +164,7 @@ export const tradeKey = (name: string) => name.trim().toLowerCase()
 export type RoundStep = 0 | 1 | 5 | 10
 export const ROUND_STEP_OPTIONS: { key: RoundStep; label: string }[] = [{ key: 0, label: 'Not rounded' }, { key: 1, label: 'The nearest S$1' }, { key: 5, label: 'The nearest S$5' }, { key: 10, label: 'The nearest S$10' }]
 export type QuoteRules = { roundStep: RoundStep; paymentLock: boolean; backupApproverId: string | null; /** (REG-618, parity Q-25) what `{prepared_by}` prints */ preparedBy: PreparedByMode
-  /** (S44Q — row 357, her UAT ask 2026-10-15) the confirmation link lets the client tick the optional works they want (on — as it always has);
+  /** (S44Q — row 357, his UAT ask 2026-10-15) the confirmation link lets the client tick the optional works they want (on — as it always has);
       off, the link lists them with their prices, read-only, and the client asks the designer to add one */
   clientPicksOptional: boolean }
 /** (REG-590) Who approves a quote or publishes a template under approval: an Owner, an Admin, or the backup approver. Pure — `isApprover` and Settings' roles table read it. */

@@ -1,5 +1,5 @@
 /**
- * (pending modules S06 — card `held:finance`, her "build all of them" 2026-10-11) **An expense that repeats.** 1.0 had a *Recurring expense*
+ * (pending modules S06 — card `held:finance`, his "build all of them" 2026-10-11) **An expense that repeats.** 1.0 had a *Recurring expense*
  * tick on an expense (`expenses.is_recurring`) that only drew an icon in the list — nothing ever logged the next one. 2.0 makes it do the job:
  * an expense says how often it repeats (every week, month, three months or year) and the next one is logged by rule when its day comes — the
  * same amount, category, vendor, who paid and what it was for; never its receipts (each one has its own). Pure and client-safe: the dialog's

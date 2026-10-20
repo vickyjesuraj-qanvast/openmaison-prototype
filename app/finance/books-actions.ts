@@ -296,7 +296,7 @@ export async function undoCommissionPayout(u: { id: string; eventId: string }): 
   return { ok: true }
 }
 /**
- * (simplify S-12, her "build everything" 2026-10-09) **Pay {member}** — what a member is owed across their projects, in one press: the amount pays
+ * (simplify S-12, his "build everything" 2026-10-09) **Pay {member}** — what a member is owed across their projects, in one press: the amount pays
  * their owed lines oldest first (`owedOldestFirst` · `splitOldestFirst`, lib/finance/commission.ts), never more than a line is owed, one payout row
  * per project — each with its Activity line and the member's bell row, as `payCommission` writes them. Every project is checked before anything
  * is written. Undo takes the whole payment back (`undoMemberCommission`).

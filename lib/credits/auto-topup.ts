@@ -1,5 +1,5 @@
 /**
- * (pending modules S19 — card held:ai-credits "Auto top-up with a monthly ceiling … held by the build although her mark said build (Q-36)";
+ * (pending modules S19 — card held:ai-credits "Auto top-up with a monthly ceiling … held by the build although his mark said build (Q-36)";
  * built as the audit recommended, enhancement E-12) The studio's auto top-up, pure and client-safe — the rule the server runs after every
  * charge (lib/credits/ledger.ts `autoTopUp`) and the words Plan & billing says it in.
  *

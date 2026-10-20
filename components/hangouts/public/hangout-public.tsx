@@ -51,7 +51,7 @@ function EventFacts({ e }: { e: Open['event'] | Own['event'] & { tablesLine?: st
 }
 
 /**
- * (pending modules S27 — public:hangouts: 1.0's /hangouts/[eventId], the homeowner's page, built as the STUDIO's page — her prompt: "the public
+ * (pending modules S27 — public:hangouts: 1.0's /hangouts/[eventId], the homeowner's page, built as the STUDIO's page — his prompt: "the public
  * page carries the studio's brand, never OpenMaison's, and nothing pretends a homeowner network exists") The studio's page for a Qanvast
  * Hangout, as a homeowner opens it from the studio's WhatsApp or its table's sign: the studio's letterhead; the event — when, where, which
  * tables; **Book a chat** — their name and mobile, when they'll come (the shifts the studio's people are there), their home (1.0's

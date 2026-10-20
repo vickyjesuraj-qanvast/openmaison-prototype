@@ -1,4 +1,4 @@
-// The parity-map build, package P-B · Money out (her "build everything that's in 1.0", 2026-10-10 — map rows MO-009 · MO-011 · MO-027 · MO-038 ·
+// The parity-map build, package P-B · Money out (his "build everything that's in 1.0", 2026-10-10 — map rows MO-009 · MO-011 · MO-027 · MO-038 ·
 // MO-058 · MO-074 · MO-079 · MO-084 · MO-087 · MO-094, FB-009 · FB-031 · FB-097 · FB-105's lists, PR-089). Each item asserted as the rule it
 // builds, never another round's count:
 //  Where costs go on a project's Costs (Owners and Admins only; none for a Designer) · a late delivery: the neutral Needs you row, Mark delivered

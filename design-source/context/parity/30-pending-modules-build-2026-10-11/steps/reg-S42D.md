@@ -1,7 +1,7 @@
 # S42D · AI and design tools — register rows (staged, unnumbered; the orchestrator numbers them into REGISTER.md)
 
 Audit D's findings (`s42/audit-D.md`) and calls D·1 · D·3 · D·4 (`s42/calls-for-vicky.md`), fixed in lane B. Every call is **as recommended —
-her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review**. D-08 and D·2 are S42B's (the PDF quote reader).
+his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review**. D-08 and D·2 are S42B's (the PDF quote reader).
 
 | ID | Area | Decision | Source |
 | --- | --- | --- | --- |

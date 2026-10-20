@@ -320,7 +320,7 @@ export function ProjectsWorkspace({ data, url }: { data: ProjectsListData; url: 
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Projects">
                 <DropdownItem onSelect={() => { setKebabOpen(false); setExportSel([]) }}>Export all as…</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setTrashOpen(true) }}>Deleted Projects</DropdownItem>   {/* (Projects round 7, Q-26) */}
-                {/* (S46 — REG-2524) Tickets left this menu for the rail, a place of its own as Tasks is (her ask 2026-10-19) */}
+                {/* (S46 — REG-2524) Tickets left this menu for the rail, a place of its own as Tasks is (his ask 2026-10-19) */}
                 <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=projects', here())) }}>Projects Settings</DropdownItem>
               </Dropdown>
             </div>

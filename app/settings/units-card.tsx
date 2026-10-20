@@ -17,7 +17,7 @@ import styles from './settings.module.css'
 const LOCKED_Q = 'Only Owners and Admins change the quote settings'
 
 /**
- * (S44I — M9, UAT rows 350 · 325; as recommended, her ask 2026-10-15) Settings › Quotes & pricing › Units — the Trades card's twin (REG-561 /
+ * (S44I — M9, UAT rows 350 · 325; as recommended, his ask 2026-10-15) Settings › Quotes & pricing › Units — the Trades card's twin (REG-561 /
  * REG-647): the units every unit picker offers, as tokens. Press one to rename it (the quote lines and the Price book follow) or move it;
  * ✕ removes it (lines already using it keep it) with Undo; Add puts one at the end. A unit already in the list in any case is named, not added
  * twice (M14's rule, S44P's words — `listedAs`) and its token lights up as it is typed; a full list says so (`UNITS_FULL`), as Trades does. Unset, the seven a quote always offered — said under the title.

@@ -92,7 +92,7 @@ const billCols = (i: BillInput) => ({
   linesJson: i.lines.length ? JSON.stringify(i.lines.slice(0, 60).map((l, k) => ({ id: l.id || `l${k}`, description: (l.description ?? '').slice(0, DESCRIPTION_MAX), qty: Number(l.qty) || 0, unitMinor: Math.round(Number(l.unitMinor) || 0) }))) : null,
   note: words(i.note, NOTE_MAX), readFrom: words(i.readFrom, 160), readFields: i.readFields.length ? JSON.stringify(i.readFields.slice(0, 20)) : null,
 })
-/* ── (S44R — UAT row 361, call C8, as recommended — her UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A bill's OK ──────────────
+/* ── (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A bill's OK ──────────────
    A bill recorded or changed by someone who approves nothing waits for an Owner's or an Admin's OK when it is over the PO approval limit on no PO,
    or takes its PO's bills over the PO by more than the studio's tolerance (lib/finance/rules.ts `billWaitWhy`). The approvers hear it in their
    bell and find it in Finance › To do › To approve; nobody pays it until it is approved (`recordPayout`). */

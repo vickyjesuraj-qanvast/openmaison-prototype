@@ -1,7 +1,7 @@
 import type { Mode } from '@/components/visualizer/editor/rail'
 
 /*
- * (pending modules S36 — her "build all of them" 2026-10-11; cards public:try-it-visualizer · onboarding:try-visualizer-public; 1.0's
+ * (pending modules S36 — his "build all of them" 2026-10-11; cards public:try-it-visualizer · onboarding:try-visualizer-public; 1.0's
  * src/lib/render/trial-gate.ts · trial-quota.ts, src/app/api/demo/visualizer/*, src/components/trial-visualizer/trial-types.ts) THE RULES OF
  * TRYING THE AI VISUALIZER WITHOUT AN ACCOUNT. Pure, client-safe: the page, the server's actions and the probe read the same figures.
  *
@@ -27,7 +27,7 @@ export const TRIAL_PATH = '/site/try'
 /**
  * Whether the trial is open (1.0's `trialEnabled`: "Safe-by-default … production requires an explicit flag — flipped on once Turnstile + a
  * durable rate-limit store exist"). `TRIAL_VISUALIZER_ENABLED` is 1.0's own switch: `true` opens it, `false` closes it. With neither, the
- * prototype's demo shows it (`TRIAL_IN_DEMO`, her "so it can be shown"), as a developer's `next dev` always did in 1.0; a real build sets
+ * prototype's demo shows it (`TRIAL_IN_DEMO`, his "so it can be shown"), as a developer's `next dev` always did in 1.0; a real build sets
  * TRIAL_IN_DEMO false and the trial is off until the switch says so. Closed, every trial address is the site's own 404 (1.0's notFound()).
  * The Visualizer's page on the site reads it when the site is built (its Try now) — set it for the build and the server alike.
  */

@@ -1,5 +1,5 @@
 /**
- * (S44Q — the UAT comments' triage §12.1, her UAT ask 2026-10-15) One allowlist for every piece of rich text a client or a member reads.
+ * (S44Q — the UAT comments' triage §12.1, his UAT ask 2026-10-15) One allowlist for every piece of rich text a client or a member reads.
  * A quote line's or a section's description, the quote's Terms and Notes, the T&Cs & Notes library, a template's Text block, the Price book's
  * saved words and a lead's note were stored as the browser sent them and drawn as raw HTML — on the client's own pages too (`/quote/<token>`,
  * `/confirm/<token>`, the quote an agreement signs). They now pass the house allowlist — the contracts' one (`lib/contracts/sanitize.ts`, REG-631),

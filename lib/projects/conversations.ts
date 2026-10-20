@@ -6,7 +6,7 @@ import { titleCaseName } from '@/lib/format'
 import { conversationKey, firstWords } from './messages-model'
 
 /*
- * (parity map 2026-10-10 — her "build everything that's in 1.0", UC-064 · UC-067 · UC-069 · UC-070) What a conversation needs beyond its
+ * (parity map 2026-10-10 — his "build everything that's in 1.0", UC-064 · UC-067 · UC-069 · UC-070) What a conversation needs beyond its
  * lines (lib/projects/messages.ts): each member's own place for it (Pin to top, Mute — `conversation_prefs`, kept on the server so a mute
  * holds on every device and the bell honours it), the cards "A contact" shares (the studio's members and its vendors), and ⌘K's Messages
  * scope (a message by its words, opening its conversation at it). This module never reads messages.ts (that one reads this).

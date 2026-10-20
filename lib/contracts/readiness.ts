@@ -17,7 +17,7 @@ export type QuoteForSend = { number: string; status: string }
  */
 export function quoteIssue(q: QuoteForSend | null | undefined, approvalRequired: boolean, /** (S44Q — row 334) the sender approves quotes */ approver = false): ContractIssue | null {
   if (!q) return null
-  /* (S44Q — row 334, her UAT ask 2026-10-15) An approver's send approves it (lib/contracts/approve-named.ts) — said before it goes, never a dead end */
+  /* (S44Q — row 334, his UAT ask 2026-10-15) An approver's send approves it (lib/contracts/approve-named.ts) — said before it goes, never a dead end */
   if (approvalRequired && approver && (q.status === 'Draft' || q.status === 'Sent for Approval')) return { label: `${q.number} is ${q.status === 'Draft' ? 'still a Draft' : 'waiting for approval'} — sending this approves it`, blocking: false, fix: 'open-quote' }
   if (q.status === 'Draft') return { label: approvalRequired ? `${q.number} is still a Draft — approve and send it first` : `${q.number} is still a Draft — send it first`, blocking: approvalRequired, fix: 'open-quote' }
   if (q.status === 'Sent for Approval' && approvalRequired) return { label: `${q.number} is waiting for approval — approve it first`, blocking: true, fix: 'open-quote' }

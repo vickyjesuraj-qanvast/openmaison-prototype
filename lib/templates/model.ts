@@ -257,7 +257,7 @@ export type ItemsBlock = BlockBase & {
   optionalSection: boolean
   optionalTitle: string
   style: TextStyle
-  /* ── (S44T — her UAT ask 2026-10-15) Every option below is unset on a stored template, and unset prints exactly as before. ── */
+  /* ── (S44T — his UAT ask 2026-10-15) Every option below is unset on a stored template, and unset prints exactly as before. ── */
   /** (UAT rows 252 · 257 · 265 · 266 · 267 · 303 — M1) Space inside the table, in mm: before a section (not the first), under a section's
       heading, under a section's note, before a sub-section or room (none straight after its section's heading or note), between two lines. */
   spacing?: Partial<Record<ItemsSpaceKey, number>>

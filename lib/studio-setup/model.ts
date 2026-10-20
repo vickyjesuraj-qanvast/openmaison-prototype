@@ -1,5 +1,5 @@
 /**
- * (pending modules S08 — the cards `onboarding:studio-setup-wizard` · `onboarding:welcome-and-tips`, her "build all of them" 2026-10-11)
+ * (pending modules S08 — the cards `onboarding:studio-setup-wizard` · `onboarding:welcome-and-tips`, his "build all of them" 2026-10-11)
  * **Set up your studio** — 1.0's seven-step wizard (src/app/studio-setup/page.tsx, forced on an owner until finished) built as 2.0's job: one
  * checklist over the pages that already keep each answer. Every step is DONE BY ITS OWN RECORD — a logo in the brand kit, the studio's bank on
  * Company › Profile, a second member, a published quote template, an item in the Price book, a way leads come in — never a tick set by hand;

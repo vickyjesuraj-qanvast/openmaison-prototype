@@ -10,7 +10,7 @@ import { withFrom } from '@/lib/nav'
 import styles from './settings.module.css'
 
 /**
- * (pending modules S46C · M2 — her "fix everything" 2026-10-19 after the findability audit, findings N-3 · L-6) 1.0's Settings was each
+ * (pending modules S46C · M2 — his "fix everything" 2026-10-19 after the findability audit, findings N-3 · L-6) 1.0's Settings was each
  * member's own page (profile, signature, notifications); 2.0's Settings is the studio's rules and 1.0's page is Your profile. Every module's head
  * says where a member's own settings are, in the *Kept in Company:* grammar — the words, then the door — for every role, with the way back here.
  * INVENTED COPY (logged REG-S46C.1): "Your own details, signature and notifications:".

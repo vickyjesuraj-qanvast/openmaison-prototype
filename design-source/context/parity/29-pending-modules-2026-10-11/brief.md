@@ -1,10 +1,10 @@
 # Brief — what is still pending from 1.0 (module level, read-only)
 
 **Goal.** The owner (Vicky, product designer) has brought most of OpenMaison 1.0 into 2.0, module by module (Leads, quotes, contracts, X-Ray,
-settings, price book, AI Visualizer, AI credits, Projects + Finance + the client portal, the 3-D planner, compliance, tickets, chat). She now asks:
+settings, price book, AI Visualizer, AI credits, Projects + Finance + the client portal, the 3-D planner, compliance, tickets, chat). He now asks:
 "check the pending modules from 1.0 to 2.0 … go through all the modules in 1.0 … report it to me first on all the pending modules". You survey
 ONE group of 1.0 (your prompt names it) and report every module or feature set in it that 2.0 does not have yet, or has only in part. Your report
-becomes cards on a page she decides from (Build / Later / Skip), so be exact, short and plain.
+becomes cards on a page he decides from (Build / Later / Skip), so be exact, short and plain.
 
 **Read only. Never edit, create or delete a file in either repo.** Write only your output file (path in your prompt).
 
@@ -14,7 +14,7 @@ becomes cards on a page she decides from (Build / Later / Skip), so be exact, sh
 - **2.0** = `/Users/vicky/Documents/GitHub/openmaison-prototype`. Start from `CLAUDE.md` › *Map* (what exists), `design-source/REGISTER.md`
   (decisions — grep it), and the parity audits `design-source/context/parity/*.md` (every module already audited: what was built, held or
   dropped and why). Confirm in 2.0's code before you say something is or isn't there.
-- **Her standing decisions (don't re-litigate, but list what they hold back):** the Dashboard is held ("we will build it later"); Meetings / the
+- **His standing decisions (don't re-litigate, but list what they hold back):** the Dashboard is held ("we will build it later"); Meetings / the
   meeting co-pilot wait for mocks (REG-552); regions beyond Singapore are not built (DEF-30); the roles editor, the daily digest and "who hears each
   notice" are held (Leads Q-40 · Q-42 · Q-43); authentication, infrastructure and real integrations are the developers' lane (AGENTS.md).
 
@@ -41,12 +41,12 @@ never linked is a sandbox: say so.
       "status_in_2": "none | partial | built",
       "in_2": "<where 2.0 has any of it, or ''>",
       "pending": ["<feature 1.0 has that 2.0 lacks, one line each>"],
-      "depends_on": "<real services, data, mocks or decisions it needs — e.g. 'a payment gateway', 'an LLM', 'video recording', 'her mocks', ''>",
-      "held_by": "<her decision that holds it, if any (Dashboard, REG-552, DEF-30, Q-40…), else ''>",
-      "recommendation": "build | build with a stand-in | developers' lane | needs her mocks / decision | skip",
+      "depends_on": "<real services, data, mocks or decisions it needs — e.g. 'a payment gateway', 'an LLM', 'video recording', 'his mocks', ''>",
+      "held_by": "<his decision that holds it, if any (Dashboard, REG-552, DEF-30, Q-40…), else ''>",
+      "recommendation": "build | build with a stand-in | developers' lane | needs his mocks / decision | skip",
       "why": "<one or two sentences — the UX / product reason>",
       "effort": "S | M | L | XL",
-      "questions": ["<what only she can decide, if anything>"]
+      "questions": ["<what only he can decide, if anything>"]
     }
   ],
   "already_in_2": ["<1.0 module → where it is in 2.0, one line each>"],

@@ -26,7 +26,7 @@ banked in `design-source/verify/pending-modules/pm2-s08/`.
 Also: ⌘K's **Set up your studio** (Owners and Admins) shows the list as it stands even when hidden or finished (`Show here again`); the Settings
 ghost draws the list for whom it shows; a ⌘K bug fixed on the way (a card not on the page now opens the page instead of only moving the hash).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **A checklist, not a forced wizard** (set-up Q1) — dismissable, never blocking; a studio that never opens it loses nothing.
 - **Its one home is Settings › Studio** (set-up Q2) — not the Company panel (a navigation popover with no page of its own, REG-484), not the
   first-run empty states (one per page — no single home), not a new page: Settings › Studio is where 1.0's "Start Setup" went (Accounts =

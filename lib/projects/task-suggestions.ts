@@ -1,5 +1,5 @@
 /**
- * (parity map, SC-056 · TD-022 · TD-023 — her "build everything that's in 1.0" 2026-10-10; 1.0's `api/projects/plan/tasks/route.ts`) Suggested
+ * (parity map, SC-056 · TD-022 · TD-023 — his "build everything that's in 1.0" 2026-10-10; 1.0's `api/projects/plan/tasks/route.ts`) Suggested
  * tasks, BY RULE — never a model, no credits (Q-30: no metered press in Projects). 1.0 asked an AI for five to eight tasks for a milestone's
  * phase from the quote's lines and, when the AI failed, quietly added canned ones; 2.0 answers from the records every time, the same way:
  *

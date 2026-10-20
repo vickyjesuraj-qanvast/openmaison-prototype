@@ -4,14 +4,14 @@ Claude Code, Cursor, Codex, Copilot and any other assistant: read this before yo
 
 ## Who you are working with
 
-OpenMaison 2.0's design belongs to **Vicky**, the product designer. Unless the person you are working with tells you they
+OpenMaison 2.0's design belongs to **Vicky** (he/him), the product designer and the repo's owner. Unless the person you are working with tells you they
 are Vicky, assume they are a developer integrating OpenMaison 1.0 into this prototype. Everything below is for work with
-a developer. When you work with Vicky, her own rules in `CLAUDE.md` › *How we work* apply instead.
+a developer. When you work with Vicky, his own rules in `CLAUDE.md` › *How we work* apply instead.
 
 ## The rule: nothing a user can see changes without Vicky
 
 Every screen, word, state and motion here was designed on purpose and logged in `design-source/REGISTER.md`.
-Before you change anything in **Vicky's lane**, stop and tell the person that it needs Vicky's approval. Her lane covers:
+Before you change anything in **Vicky's lane**, stop and tell the person that it needs Vicky's approval. His lane covers:
 
 - **What renders:** pages, components, CSS modules, tokens, icons and loading ghosts.
 - **What users read:** labels, messages, snackbars, errors, empty states, tooltips and formats.

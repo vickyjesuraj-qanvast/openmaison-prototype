@@ -193,7 +193,7 @@ async function railBadgesUncached(): Promise<Record<string, number>> {
   }
 }
 /**
- * (pending modules S46C · H2 — her "fix everything" 2026-10-19 after the findability audit, finding N-6; 1.0's rail and dock counted the leads in
+ * (pending modules S46C · H2 — his "fix everything" 2026-10-19 after the findability audit, finding N-6; 1.0's rail and dock counted the leads in
  * the first stage) The Leads item's count: the leads nobody has opened yet — `seen_at` null, the listing's primary band and its Unseen scope, ONE
  * rule — that this member may see (Who sees leads, REG-601). The listing's own rows: never a lead in the trash, never a direct project's client
  * record (REG-911). Opening the lead clears it (`markLeadSeen`); a press on the counted item lands on that scope (the rail's badge-landing rule,
@@ -208,7 +208,7 @@ async function countUnseenLeads(): Promise<number> {
 }
 
 /**
- * (pending modules S46C · M3 — her "fix everything" 2026-10-19 after the findability audit, finding L-2; 1.0's Tasks › Approvals chip) How many
+ * (pending modules S46C · M3 — his "fix everything" 2026-10-19 after the findability audit, finding L-2; 1.0's Tasks › Approvals chip) How many
  * approvals wait for the signed-in member: the Dashboard's own *Needs your OK* rows, read through the Dashboard itself (`fetchDashboard`) — one
  * rule and one number, the count its group label shows, so the Tasks page's line never says another figure than the place it opens. Read once
  * per request; a Dashboard that can't be read shows no line, never a failed page.

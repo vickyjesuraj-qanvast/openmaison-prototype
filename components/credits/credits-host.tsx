@@ -86,7 +86,7 @@ export function CreditsHost({ chrome }: { chrome: CreditsChrome | null }) {
 }
 
 /**
- * (S46D — D4, her "fix everything" 2026-10-19; finding D4) An address that carries a plan picked before — the website's Pricing through sign-up
+ * (S46D — D4, his "fix everything" 2026-10-19; finding D4) An address that carries a plan picked before — the website's Pricing through sign-up
  * (`?plan=…&period=…`), 1.0's `/upgrade?plan=` landing on Plan & billing — opens Plans on it once, on whichever studio page it lands, and the
  * address is tidied (the plan keys out, the rest kept). Free carries none.
  */

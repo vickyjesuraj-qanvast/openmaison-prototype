@@ -21,7 +21,7 @@ import { lookUnder } from '@/lib/company/member-photo'
 import { titleCaseName } from '@/lib/format'
 
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's api/auth/login · verify · logout) Signing in
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's api/auth/login · verify · logout) Signing in
  * to the studio, on the server. Step one asks for a code for a mobile number or an email; step two checks it and starts the session. 1.0's
  * refusals, in 2.0's words: a number nobody in the studio has ("No account found…"), a deactivated member, an invitation that ran out (an open
  * one joins the team on this sign-in — 1.0's verify route accepted every pending invitation for that number); and five tries a minute.

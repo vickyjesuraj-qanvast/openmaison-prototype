@@ -1,7 +1,7 @@
 # S28 · Floor-plan photo to a 3D picture — outcome (2026-10-13, lane A)
 
-Card: `studio:floorplan-isometric-ai` ("Floor-plan photo to a 3D picture", recommendation "needs her mocks / decision"; question "Is the
-planner's isometric view enough, or should a photo also make an AI picture, priced in credits?"). Built on her "build all of them"
+Card: `studio:floorplan-isometric-ai` ("Floor-plan photo to a 3D picture", recommendation "needs his mocks / decision"; question "Is the
+planner's isometric view enough, or should a photo also make an AI picture, priced in credits?"). Built on his "build all of them"
 (2026-10-11) as the prompt set it: **nothing calls an image model** — the photo is straightened by 1.0's own zero-AI maths, its rooms are
 placed on it by the studio in the 3-D Space Planner, and the planner draws the picture (1.0's Dollhouse and Top-down) from them. The
 question is answered **both, and no credits**: the planner's isometric view stays the home, and a photo now makes the picture through it;
@@ -48,13 +48,13 @@ Register rows: `steps/reg-S28.md` (REG-S28.1…11). Probe: `design-source/verify
 - **1.0's spec "Share to portal"** for the picture — 2.0's ways: *Save to Files* (then Files' own *Show to client*) or the planner's *Share
   with client*; no new portal path.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **The planner is the home; no new page, no rail item.** Tools › Floorplan to 3D Isometric opens the planner's isometric gallery *on* Make a
   3D picture (`/planner?view=iso&photo=1`) — 1.0's tool started on its upload. A deliberate change of REG-1656 (it only opened the gallery);
   `verify-pm-j.cjs` changed with a comment saying so.
 - **No credits.** 1.0's tool charged none; 1.0's `render_photorealistic` (15) priced the planner's *photo* render. 2.0 reaches a photographic
   look through *Render in AI Visualizer*, where the Visualizer's own render price applies — so `render_photorealistic` stays unused in the
-  schedule (it was before). **Flag for Vicky:** if she wants a priced one-press photographic picture here, it is the Visualizer's pass
+  schedule (it was before). **Flag for Vicky:** if he wants a priced one-press photographic picture here, it is the Visualizer's pass
   behind one press at 15.
 - **One record for the photo** (REG-S28.5): on a project, a plan of its Floor plan tab (G's own writer); on a lead, its Files › Floor plans
   original + `floor_plan_photos` (the straightened picture); carried at Won with the same id and the same address
@@ -173,7 +173,7 @@ Changed: `drizzle/meta/_journal.json`, `lib/db/schema.ts`, `lib/db/baseline.ts`,
 
 ## Principles check (DESIGN-PRINCIPLES.md)
 1. **The mock wins, every exception written down** — no mock: the job is 1.0's tool (its steps, its two looks, its download, no charge);
-   every new word flagged *(invented copy)* in `reg-S28.md`; the calls that change her earlier decisions (REG-1656's tile, the 768 bar) and the
+   every new word flagged *(invented copy)* in `reg-S28.md`; the calls that change his earlier decisions (REG-1656's tile, the 768 bar) and the
    credits answer are flagged.
 2. **One system, no one-offs** — the house Dialog (sheet on a phone), Dropzone, TextField, Chips, MetaChip, Switch `sm`, PortalMenu +
    DropdownItem, the snackbar with Undo, G's `PlanCanvas` scale tool, Files' own upload, the planner's ThreeView / presets / Arrange; no new

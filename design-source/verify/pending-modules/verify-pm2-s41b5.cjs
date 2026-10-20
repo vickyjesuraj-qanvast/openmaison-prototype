@@ -1,4 +1,4 @@
-// Pending modules, step S41b-5 · Qanvast Ops › Lead credits and Reviews & Rankings (her "please make sure nothing left behind from 1.0 to 2.0",
+// Pending modules, step S41b-5 · Qanvast Ops › Lead credits and Reviews & Rankings (his "please make sure nothing left behind from 1.0 to 2.0",
 // 2026-10-12; the S41b data sweep's M-04 — 1.0's `deployment/qanvast` qanvast-ops/credits · credits/{contracts,transactions,leads} ·
 // reviews · reviews/feedback). Each item asserted as the rule it builds, every figure checked against the demo's records:
 //  - the seam, in one process (pm2-s41b5-seam.mts on a copy of this DB): a stub answering 1.0's JSON through the loaders, the reply through it,

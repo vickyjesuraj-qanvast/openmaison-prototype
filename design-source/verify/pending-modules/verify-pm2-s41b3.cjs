@@ -1,4 +1,4 @@
-// Pending modules, S41b-3 · Try the tools without an account, kept at sign-up (her "please make sure nothing left behind from 1.0 to 2.0",
+// Pending modules, S41b-3 · Try the tools without an account, kept at sign-up (his "please make sure nothing left behind from 1.0 to 2.0",
 // 2026-10-12; the S41b data sweep's M-01 — 1.0's deployment/plg anonymous workspace). Each item asserted as the rule it builds:
 //  - the rules in one Node process (pm2-s41b3-pure.mts on a copy of this DB): the switch, the signed workspace name, what the server keeps of
 //    a visitor's input, the store (made only by a workspace, compare-and-set, 1.0's one-update spend under a race, expiry, the sweep's list,

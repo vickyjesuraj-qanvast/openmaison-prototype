@@ -1,5 +1,5 @@
 /**
- * (S45C — S43D's NB-07 (c), 1.0's newer branches; as recommended — her ask 2026-10-17) Drag-fill continues a series, as Excel's fill handle
+ * (S45C — S43D's NB-07 (c), 1.0's newer branches; as recommended — his ask 2026-10-17) Drag-fill continues a series, as Excel's fill handle
  * does over a selected run (the Excel benchmark's rule: copy the job, not Excel's chrome — REG-475…477).
  *
  *   · one cell copies, as before (REG-477) — this module is only asked about a run of two or more;

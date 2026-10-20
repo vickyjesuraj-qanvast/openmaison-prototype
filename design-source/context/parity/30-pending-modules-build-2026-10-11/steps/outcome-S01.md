@@ -33,7 +33,7 @@ New: `app/profile/{layout,page,loading,error}.tsx`, `components/profile/{your-pr
 `lib/settings/{permissions,roles}.ts`, `lib/global-search/model.ts`, `lib/nav.ts`, `lib/portal/{about,threads}.ts`, `lib/projects/messages.ts`,
 `app/portal/messages-actions.ts`, `scripts/repair-demo-data.ts` (R103).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - Where "My account" lives (api card's question): **behind the studio block's menu and the phone's avatar, as its own page** — not a Settings
   module (Settings is the studio's rules). ⌘K finds it.
 - Whether an Owner or an Admin may correct another member's details (both cards' question): **yes, on Company › Members › Edit details**;

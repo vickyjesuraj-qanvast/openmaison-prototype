@@ -1,13 +1,13 @@
 # S35 · OpenMaison's website and Book a demo — outcome (2026-10-13, lane A)
 
-Cards: `public:marketing-website` and `onboarding:book-a-demo` (both "skip" in the survey; built on her "build all of them" 2026-10-11, the
+Cards: `public:marketing-website` and `onboarding:book-a-demo` (both "skip" in the survey; built on his "build all of them" 2026-10-11, the
 card's two questions taken as recommended — *Decisions*). **OpenMaison's own website, ported from 1.0, lives in this app at `/site`** — every
 page 1.0 published (its pages, components, art direction, real copy and the Journal's articles), in **2.0's names and with no claim 2.0
 doesn't make** (each changed sentence below); open to anyone; the studio app's front door unchanged. **Book a demo** keeps 1.0's form and its
 record (`beta_signups`), tells OpenMaison's team through the house outbox, then opens **Calendly — 1.0's real booking page — prefilled**.
 The contact form and the footer's newsletter keep 1.0's records. 1.0's SEO layer is whole (titles, structured data, sitemap, robots with the
 AI training crawlers blocked, `llms.txt`, the branded link-preview picture through S02's card route). The UAE campaign page stays **held**
-(her word, 2026-10-12); staff's Beta sign-ups list is Platform admin (excluded) — the records are kept for it.
+(his word, 2026-10-12); staff's Beta sign-ups list is Platform admin (excluded) — the records are kept for it.
 
 1.0 read: `src/app/(marketing)/**` (layout, home, platform hub + `[module]`, story, trust, blog + `[slug]`, changelog, careers, contact,
 privacy, terms, cookies, not-found, loading, the hidden pricing page, the about / products / ai-agents redirects, `try`), `src/components/landing/v2/**`
@@ -27,15 +27,15 @@ trust banner, story / trust / changelog views and data, faq accordion, page skel
 | "Contact form (saved, and emailed to the team), the footer's newsletter sign-up, 'Book a demo' form → Calendly" | **built · the email a stand-in** — contact → `contact_messages` + the team's email in the outbox (1.0's subject); newsletter → `newsletter_subscribers` (one row an address, no enumeration, no email — 1.0's); Book a demo → `beta_signups` + the team's email + Calendly (1.0's real page, prefilled, in the house dialog; the link as the way round). The outbox records the emails (Sent messages) until the developers plug in a provider (`setDeliveryAdapter`) | `app/site/actions.ts`, `components/site/{book-demo,contact,site-footer}.tsx`, `lib/site/{forms,team-mail}.ts` |
 | "Privacy, Terms, Cookies pages" | **built** — Privacy and Terms are 1.0's text verbatim (23 March 2026); **Cookies rewritten to the cookies 2.0 sets** (the probe reads the app's code and checks the policy names every one) | `components/site/legal.tsx` |
 | "SEO layer: metadata, structured data, sitemap, robots (blocks AI training crawlers), the branded link-preview picture" | **built** — 1.0's title template, descriptions, canonicals, Open Graph / Twitter; Organization · WebSite · SoftwareApplication · BreadcrumbList · Article JSON-LD; `/sitemap.xml` (the site only, What's New added); `/robots.txt` (the site and what draws it; GPTBot · Google-Extended · Bytespider · CCBot blocked; ChatGPT-User · PerplexityBot allowed on the site); `/llms.txt`; the card at `/card/site/<page>` (S02's route, a `site` branch) | `lib/site/seo.ts`, `lib/site/card.tsx`, `app/{sitemap,robots}.ts`, `public/llms.txt`, `app/card/[kind]/[key]/route.ts` |
-| "UAE free-trial landing page /uae-get-started (regions beyond Singapore are held, DEF-30)" | **parked — her hold** (2026-10-12, REG-1854): no page, no redirect; 1.0's address answers the app's own 404 | — |
+| "UAE free-trial landing page /uae-get-started (regions beyond Singapore are held, DEF-30)" | **parked — his hold** (2026-10-12, REG-1854): no page, no redirect; 1.0's address answers the app's own 404 | — |
 | "The site's words describe 1.0's modules and names (Quote Digitizer, Meeting Co-pilot, mAIson bot) — they will need updating to 2.0's (Quote X-Ray / Upload a quote, Maison AI) when 2.0 ships" | **built** — every page, the metadata, `llms.txt`, the changelog and the Journal in 2.0's names; claims 2.0 doesn't make taken out (lists below); 1.0's module addresses redirect to 2.0's names | `lib/site/**`, `components/site/**`, `next.config.ts` |
 | (book-a-demo) "Book a demo form → beta sign-up list + Calendly" | **built** (the list itself is Platform admin's — excluded; the rows are 1.0's for it) | as above |
-| (book-a-demo) "The UAE campaign landing page" | **parked — her hold** | — |
+| (book-a-demo) "The UAE campaign landing page" | **parked — his hold** | — |
 | *(S30's note)* "by proceeding you agree to the terms & conditions" under sign-in — OpenMaison's terms come with the site | **built** — "By continuing you agree to OpenMaison’s Terms of Service and Privacy Policy." closes sign-in's and sign-up's foot (and their ghosts); the mark opens the site | `components/auth/terms-line.tsx`, `studio-sign-{in,up}.tsx` |
 | *(S31's note)* the site's "Start free" goes to `/sign-up`; 1.0's feature-pitch screens belong on the site | **built** — every footnote "Free to start · No card needed." carries *Start your studio* → `/sign-up`; 1.0's tour lines are the site's module pages already (lead inbox, chat, quote reading, project tracking) — its "AI Lead Prioritizer (Hot / Warm / Cold)" and "geo check-ins" are not 2.0's and stay out | `components/site/primitives.tsx` (`Footnote`) |
 | *(S25's note)* does the pricing page show the latest Market Insights articles? | **kept hidden, so no** — 1.0's pricing page was hidden before launch and redirected home; it stays so (`/pricing`, `/site/pricing` → Home); Market Insights stays the studios' feed in the app, the Journal the site's (one home each) | `lib/site/model.ts` `OLD_SITE_ADDRESSES` |
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 1. **The site lives in this repo, at `/site`** (card question 1): one home that keeps 2.0's names, claims and doors true; the developers may
    publish it at the domain's root (`PUBLISHED_SITE` = `NEXT_PUBLIC_SITE_URL`, default `https://openmaison.ai`, is every canonical address).
 2. **Sign-ups land in 1.0's own three tables** (card question 2), and a demo request and a message also reach the team as an email through the
@@ -111,7 +111,7 @@ rates." → "Upload a quote, backed by your own Price book of managed rates.", "
 assistant." → "Draft an entire quote by describing the scope to Maison AI.", "…with a pinch-to-zoom preview." → "…with a preview that fits
 your screen."; *Approvals, permissions and beautiful emails* — "Set roles and permissions, and route quotes and tasks through approval…" →
 "Set each member’s role, and route quotes through approval…", "Fine-tune permissions for individual team members." → out (the roles editor
-is her hold); *A faster, richer quote editor* —
+is his hold); *A faster, richer quote editor* —
 "…from your Price Book." → "…from your Price book."; the "Meeting Copilot, rebuilt" release's title (was "mAIson Live, rebuilt").
 
 **Book a demo** — "We’ll send you a confirmation email. No spam, ever." → "Calendly sends your confirmation once you pick a time. No spam,
@@ -138,7 +138,7 @@ document reader — the app's own chip says XLSX · CSV until then, S04).
 
 | Article file | 1.0 said | The site says | Why |
 | --- | --- | --- | --- |
-| `articles.ts` | It's designed for studios in Singapore, Dubai, and other growing markets. The difference is AI: 20+ tools including a meeting co-pilot, quote digitiser, and room visuali… | It's designed for studios in Singapore. The difference is AI: 20+ tools including the Meeting Copilot, Upload a quote and the AI Visualizer, plus a finance module that h… | 2.0's names; markets beyond Singapore are on hold (her word 2026-10-12) |
+| `articles.ts` | It's designed for studios in Singapore, Dubai, and other growing markets. The difference is AI: 20+ tools including a meeting co-pilot, quote digitiser, and room visuali… | It's designed for studios in Singapore. The difference is AI: 20+ tools including the Meeting Copilot, Upload a quote and the AI Visualizer, plus a finance module that h… | 2.0's names; markets beyond Singapore are on hold (his word 2026-10-12) |
 | `articles-batch-3.ts` | the AI co-pilot and automated lead follow-ups | the Meeting Copilot and automated lead follow-ups | 2.0's name |
 | `articles-batch-5.ts` | { label: "OpenMaison markets", value: "SG · MY · AE · IN", source: "openmaison.ai" }, | *(removed)* | markets beyond Singapore on hold |
 | `articles-batch-5.ts` | It's a studio operating system built for markets like Singapore, Dubai, and Malaysia. The core difference is AI: the platform includes over 20 AI-powered tools, from a m… | It's a studio operating system built for Singapore's studios. The core difference is AI: the platform includes over 20 AI-powered tools, from the Meeting Copilot that li… | 2.0's names; Singapore only |
@@ -199,7 +199,7 @@ document reader — the app's own chip says XLSX · CSV until then, S04).
 - **1.0's web manifest** (`src/app/manifest.ts`: name, icons, theme colour) — an install surface for the studio app, not the site — **for the
   developers / Vicky** (2.0 has no app icon set yet).
 - **1.0's Arabic pages** (`messages/ar.json`, right-to-left) — Languages, parked (S38).
-- **The UAE page's own FAQ, AED / VAT pitch and free-trial form** — her hold (with the page).
+- **The UAE page's own FAQ, AED / VAT pitch and free-trial form** — his hold (with the page).
 - **1.0's `/try`** (the Visualizer without an account) — **S36**; the Visualizer page's calls are Book a demo until then.
 - **1.0's older landing parts** (hero particles, aurora, the v1 visualizer demo) — unused by 1.0's live site; not ported.
 - **The articles' image-generation prompts** (1.0 kept them beside the articles) — not shipped; the covers are converted pictures.
@@ -299,7 +299,7 @@ document reader — the app's own chip says XLSX · CSV until then, S04).
   *Try now*; 1.0's `/try` joins `OLD_SITE_ADDRESSES` (and `PUBLIC_PATHS`).
 - **S39 (Studio Health):** the What's New line "A new owner dashboard: see how the team uses OpenMaison…" (removed here) can return to its
   release (`lib/site/changelog.ts` `faster-app-analytics`).
-- **S41b:** 1.0's web manifest; the module FAQs (data in `lib/site/platform.ts` `MODULE_FAQS`, with `faqJsonLd`) if she wants them drawn.
+- **S41b:** 1.0's web manifest; the module FAQs (data in `lib/site/platform.ts` `MODULE_FAQS`, with `faqJsonLd`) if he wants them drawn.
 - **The developers:** publish the site at the root (`NEXT_PUBLIC_SITE_URL`), make the redirects permanent, plug in the email provider
   (`setDeliveryAdapter`; set reply-to from `contact_messages.email`), give the platform its own outbox and the Beta sign-ups list, put a shared
   limiter in front of the forms, confirm Privacy §5's hosting facts.

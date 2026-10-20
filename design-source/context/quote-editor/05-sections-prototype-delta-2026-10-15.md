@@ -4,7 +4,7 @@ The spec read: `04-sections-prototype-2026-10-15.md` (the team's HTML prototype,
 `components/quotes/editor/quote-editor.tsx`, `app/quotes/items-actions.ts`, `lib/quotes/{math,clipboard,items-model}.ts`. The decisions read: REG-405…422,
 426…483, 527, 532, 555…576, 621…628, 662, 820…906, the Items UX audit (`03-items-table-ux-audit-2026-09-23.md`) and the memory notes on the Excel
 benchmark and the Items UX. The owner's word on 2026-10-15 was "do those changes as well … take your recommendation". This file gives every
-behaviour one verdict. It then gives the build list in the order to build, and the few calls where the prototype runs against a decision she made.
+behaviour one verdict. It then gives the build list in the order to build, and the few calls where the prototype runs against a decision he made.
 
 **Verdicts.** **Already**: 2.0 does it now (file:line). **Keep 2.0**: 2.0 does it another way and its way is better, or it is the mock's or an
 owner's call. **Build**: missing, so build it in 2.0's shape. **Conflict**: the prototype goes against a logged decision. These are listed under

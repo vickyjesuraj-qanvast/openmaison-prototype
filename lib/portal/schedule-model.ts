@@ -70,7 +70,7 @@ export type PortalStage = {
 export type StagePayment = { name: string; amountMinor: number; pct: number; state: 'paid' | 'due' | 'to_confirm' | 'planned'; invoiceId: string | null; dueAt: number | null }
 
 /**
- * (simplify S-25, her "build everything" 2026-10-09) A stage the client reads as **Paused**: Blocked in the studio, live (a block is never a
+ * (simplify S-25, his "build everything" 2026-10-09) A stage the client reads as **Paused**: Blocked in the studio, live (a block is never a
  * share), and not done on their copy. The one rule for every place the client's schedule shows — the Schedule page's rows, the home's "Where
  * the work stands" (`summaryOf`) and the studio's own look at it (the Schedule tab's client pane): the snapshot alone says "under way" for a
  * Blocked stage, which is why the home and the studio's pane said "Under way" while the client's Schedule said "Paused".

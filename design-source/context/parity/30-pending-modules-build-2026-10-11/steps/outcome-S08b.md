@@ -45,7 +45,7 @@ Before / after on the harness:
 - **After:** each waits and lands. A lock held for 7 s fails that one write after 5.4 s, and the next write lands. sqlite3 gets the file
   within 3 s after every case.
 
-## Decisions taken (as recommended — the card; her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — the card; his "build all of them" 2026-10-11)
 - **Whole days, not whole months, on restore.** It is the same shift as open tasks, and it keeps the story's shape exactly relative to today.
   A whole-month shift would put this month's charges after today on any restore before the month's anchor day. For example, on 11 Oct
   shifting R63's story one month puts the Pro render on 14 Oct.
@@ -57,14 +57,14 @@ Before / after on the harness:
 - **The renders keep their own day; only their charges ride.** This is REG-341's rule (only open tasks ride, every other stamp stays). One
   consequence for Vicky to know: Usage › Activity can show a charge (e.g. "Pro render · High — Kitchen sketch — 27 Sep") later than that
   version's own day in the Visualizer (14 Sep). Moving the renders too would cascade into the Visualizer's versions, files, bell rows and
-  client links. If she'd rather the charge and its render always share a day, that is a call for S19 / S20.
+  client links. If he'd rather the charge and its render always share a day, that is a call for S19 / S20.
 - **R111's guard: only R63's own shape ever moves, never a studio's real history.**
   - The current plan must be the one R63 wrote, recognised by its deterministic id `sid('credits','sub-pro')`. A studio's own plan, the
     app's plan change and View as › Studio plan · demo only all get random ids.
   - The balance's month must be that plan's period.
   - The month must have ended without the app rolling it. Any read rolls it, so an ended month means nobody has read it since.
   Otherwise R111 logs "the month ended on a plan that is not the demo’s — the app rolls it on its next read". Probe §5 checks this.
-  **local.db** is on View as's Free plan (its own id, month 9 Oct → 9 Nov, current), so the orchestrator's after-step repair leaves her
+  **local.db** is on View as's Free plan (its own id, month 9 Oct → 9 Nov, current), so the orchestrator's after-step repair leaves his
   credits as they are.
 - **The busy wait is 5 s** (better-sqlite3's default). libsql waits synchronously, so a server stalls only while another process holds the
   lock. Before this fix, the same moment was an instant failure that poisoned the connection.
@@ -125,7 +125,7 @@ No existing assertion needed changing.
 - **Residual, rare:** a statement inside a write transaction that meets a reader holding the file for more than 5 s mid-transaction (only on
   a page-cache spill) could still leave a SHARED lock until GC.
 - **S19 (AI credits):** the "demo credits month riding the demo day" line is done. Plan locks, auto top-up and one price for digitizing
-  remain. The charge vs render day question above is S19 / S20's to raise with Vicky if she wants it.
+  remain. The charge vs render day question above is S19 / S20's to raise with Vicky if he wants it.
 - **CLAUDE.md's Map (the orchestrator's):**
   - the AI credits entry gains `lib/credits/demo-month.ts`, R111 and `restoreBaseline`'s `creditShiftDays`;
   - `lib/db/local-file.ts` (`guardLocalFile` · `BUSY_WAIT_MS`) is the local-file rule;

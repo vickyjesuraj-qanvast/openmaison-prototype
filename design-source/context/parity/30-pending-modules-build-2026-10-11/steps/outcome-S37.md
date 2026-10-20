@@ -1,6 +1,6 @@
 # S37 · Verify for a Qanvast listing — outcome (2026-10-13, lane B)
 
-Cards: `onboarding:qanvast-listing-verification` and `studio:verify-listing` (both "skip" — 1.0's form was a mock that saved nothing; her
+Cards: `onboarding:qanvast-listing-verification` and `studio:verify-listing` (both "skip" — 1.0's form was a mock that saved nothing; his
 "build all of them" 2026-10-11 and the step's brief: build it **in its right form**). 1.0 read in full: `src/app/(main)/verify/page.tsx` (the
 form: Studio Name\*, Registration ID\*, Studio Description\*, Differentiator / USP, No. of Projects Delivered, Proof of Delivered Projects,
 Proof of Testimonials, "PDF, JPG, PNG up to 10MB"; its three banners — submitted "within 3–5 business days … notified via email and in-app",
@@ -19,9 +19,9 @@ Register rows: `steps/reg-S37.md` (REG-S37.1…9). Probe: `design-source/verify/
 
 | Card line (word for word) | Status | Where |
 | --- | --- | --- |
-| *onboarding:* "A studio's application to be listed on Qanvast, reviewed by staff" | **built** (the application, kept as a record, from the studio's records + its words and proof) · **stand-in** (the staff's review is Qanvast's: its answer arrives through the new seam and webhook; on the prototype an Owner or an Admin plays it, labelled "(demo)", recorded `answered_via = 'demo'`, the card and the bell say so) · the staff's own screen **parked by her** (Platform admin, excluded) | `lib/qanvast-listing/{model,service,queries}.ts`, `app/company/listing-actions.ts`, `components/company/qanvast-listing-{card,dialog}.tsx`, `app/api/webhooks/qanvast-listing/route.ts`, `studio_verifications` |
+| *onboarding:* "A studio's application to be listed on Qanvast, reviewed by staff" | **built** (the application, kept as a record, from the studio's records + its words and proof) · **stand-in** (the staff's review is Qanvast's: its answer arrives through the new seam and webhook; on the prototype an Owner or an Admin plays it, labelled "(demo)", recorded `answered_via = 'demo'`, the card and the bell say so) · the staff's own screen **parked by him** (Platform admin, excluded) | `lib/qanvast-listing/{model,service,queries}.ts`, `app/company/listing-actions.ts`, `components/company/qanvast-listing-{card,dialog}.tsx`, `app/api/webhooks/qanvast-listing/route.ts`, `studio_verifications` |
 | *studio:* "Apply to be listed on Qanvast, with documents" | **built** — Company › Profile › Listed on Qanvast: Apply to be listed · Update your listing · Fix and send again; the documents are the records shown (name, UEN, registrations, completed projects counted, About photos / year / awards, review link, website) and the proof files (real bytes, two lists, PDF/JPG/PNG ≤ 8 MB, Undo) | the same + `studio_verification_files`, `app/company/listing-file/[id]/route.ts` |
-| *studio:* "A staff queue to verify or reject an application with a note" | **parked by her** — the queue is Qanvast's staff's (Platform admin, excluded by her word); **built on the studio's side**: the queue's two answers (verify · reject with a note) land through `applyListingAnswer` from Qanvast's webhook (`POST /api/webhooks/qanvast-listing`, 1.0's words `verified` · `rejected` + `note`), the note shown on the card, the dashboard and the bell; **stand-in**: the demo's two plays | `lib/qanvast-listing/queries.ts` `applyListingAnswer`, the route, `lib/services/registry.ts` (`qanvast-listing` · `qanvast-listing-webhook`) |
+| *studio:* "A staff queue to verify or reject an application with a note" | **parked by him** — the queue is Qanvast's staff's (Platform admin, excluded by his word); **built on the studio's side**: the queue's two answers (verify · reject with a note) land through `applyListingAnswer` from Qanvast's webhook (`POST /api/webhooks/qanvast-listing`, 1.0's words `verified` · `rejected` + `note`), the note shown on the card, the dashboard and the bell; **stand-in**: the demo's two plays | `lib/qanvast-listing/queries.ts` `applyListingAnswer`, the route, `lib/services/registry.ts` (`qanvast-listing` · `qanvast-listing-webhook`) |
 
 ## Found in 1.0, not on a card
 - **`studios.verification_status`** (1.0's column, seeded `verified` for its demo, read only by Platform admin) — **built** as the record's
@@ -35,7 +35,7 @@ Register rows: `steps/reg-S37.md` (REG-S37.1…9). Probe: `design-source/verify/
   the enabled set). 2.0 keeps the studio's own badge pictures in the brand kit and its registrations on Profile — S41b should confirm the
   strip is covered by the brand kit's badges (the catalogue itself is Platform admin).
 
-## Decisions (as recommended — her "build all of them" 2026-10-11)
+## Decisions (as recommended — his "build all of them" 2026-10-11)
 1. **One home: Company › Profile**, a card after Registrations & accreditations — the studio's public standing (who vouches for it). Not a
    page (it is one record), not Settings (a record, not a rule), not Qanvast Ops (that is the leads Qanvast sends).
 2. **The demo is Listed** — honest data (REG-343): its Qanvast leads, Qanvast Ops and Hangouts all say so, and 1.0 seeded `verified`. The

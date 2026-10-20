@@ -3,7 +3,7 @@
 Vicky's ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments
 based on our 2.0 experience without any overlaps nor any issues without losing what we have already built … If you have any questions please go
 ahead based on your recommendations." Source: the triage `design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md` (area Q,
-§12). Every call taken **as recommended — her UAT ask 2026-10-15**. Register rows: `steps/reg-S44Q.md` (REG-S44Q.1…11). Probe:
+§12). Every call taken **as recommended — his UAT ask 2026-10-15**. Register rows: `steps/reg-S44Q.md` (REG-S44Q.1…11). Probe:
 `design-source/verify/pending-modules/verify-pm2-s44q.cjs` (52 checks). Shots: `design-source/verify/pending-modules/pm2-s44q/`.
 No migration. Repairs **R172 · R173**.
 

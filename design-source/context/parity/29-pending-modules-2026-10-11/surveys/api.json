@@ -28,9 +28,9 @@
         "Lead scoring, quote benchmarking and a render made from the chat",
         "The chat-first Home screen (it goes with the Dashboard)"
       ],
-      "depends_on": "an LLM (OpenRouter / Gemini) and a credits rule for chat; her mocks for a chat thread inside the sheet; a decision on which writes need a confirm card",
+      "depends_on": "an LLM (OpenRouter / Gemini) and a credits rule for chat; his mocks for a chat thread inside the sheet; a decision on which writes need a confirm card",
       "held_by": "Dashboard (the chat-first home); REG-552 (the co-pilot's Q&A)",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "This was 1.0's broadest AI feature, and 2.0 only imitates it with rules. A real version needs a model and a clear rule for what the assistant may change on its own. Until then, the rule-based Ask box is a safe demo.",
       "effort": "XL",
       "questions": [
@@ -61,7 +61,7 @@
       ],
       "depends_on": "an LLM; a credits price",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "This saves studios time on the wordiest part of a quote, and the button is small. It is AI, though, so it needs a model, a price in credits and a place in the rich editor's toolbar.",
       "effort": "S",
       "questions": [
@@ -93,7 +93,7 @@
       ],
       "depends_on": "the meeting co-pilot (live audio, transcription, an LLM)",
       "held_by": "REG-552 (Meetings / co-pilot wait for mocks)",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "These only mean something inside the meeting co-pilot, which is held. Build them with it, and make the saved answers actually appear in the meeting, which 1.0 never did.",
       "effort": "S",
       "questions": [
@@ -180,7 +180,7 @@
       ],
       "depends_on": "authentication (email / phone changes and password are the developers' lane)",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Every member expects to fix their own name or photo. In 2.0, nobody can change a member's name, email or phone once the member is added. It is small, but it is a new screen.",
       "effort": "S",
       "questions": [
@@ -211,7 +211,7 @@
       ],
       "depends_on": "",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Studios send almost every link on WhatsApp, and a branded card with the studio's name and logo looks trustworthy where a bare URL looks like spam. It is cheap, but the card is a visible design.",
       "effort": "S",
       "questions": [
@@ -245,7 +245,7 @@
       "depends_on": "an email service, a WhatsApp Business provider with approved templates, a scheduler",
       "held_by": "",
       "recommendation": "developers' lane",
-      "why": "This is the plumbing that makes every notice actually reach people, and 2.0 already has the seams for it. Two parts would show on screen and need her: the read receipts on Sent messages, and the look of the branded email.",
+      "why": "This is the plumbing that makes every notice actually reach people, and 2.0 already has the seams for it. Two parts would show on screen and need him: the read receipts on Sent messages, and the look of the branded email.",
       "effort": "L",
       "questions": [
         "Should Sent messages show Delivered / Read for WhatsApp once a real provider reports it?",
@@ -280,7 +280,7 @@
       "depends_on": "a product-analytics service or warehouse; how customers are deployed (one platform or forks)",
       "held_by": "Accounts Setup Q-16 (Studio Health dropped)",
       "recommendation": "developers' lane",
-      "why": "It is OpenMaison's own telemetry, not something a studio uses. The developers should pick an analytics tool rather than port these jobs. If the platform admin dashboards are wanted, they need her design.",
+      "why": "It is OpenMaison's own telemetry, not something a studio uses. The developers should pick an analytics tool rather than port these jobs. If the platform admin dashboards are wanted, they need his design.",
       "effort": "L",
       "questions": [
         "Does OpenMaison staff need the Admin › Analytics dashboards in 2.0, or will an off-the-shelf analytics tool do?"

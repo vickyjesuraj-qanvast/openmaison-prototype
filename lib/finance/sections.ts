@@ -4,7 +4,7 @@
  * Finance item is gone. The old `/finance/<tab>` addresses redirect (app/finance), and `/finance/doc/<id>` still serves a cost's file.
  * Client-safe. `runners` = a tab only Owners and Admins see.
  *
- * (simplify S-10 · S-11, her "build everything" 2026-10-09) Eight tabs by record type become five by job: **To do** (where Finance lands, for
+ * (simplify S-10 · S-11, his "build everything" 2026-10-09) Eight tabs by record type become five by job: **To do** (where Finance lands, for
  * everyone — what the money needs from you, the action on each row) · **Money out** (Purchase orders · Bills · Expenses · Paid behind one kind
  * switch — today's tables unchanged) · **Vendors** · **Commission** (a member's own: *My commission*) · **Xero** (the Accounting tab renamed — its
  * address keeps working). Members see four: no Xero. The old tabs' addresses each have their own redirect route (app/company/finance/<old>/),

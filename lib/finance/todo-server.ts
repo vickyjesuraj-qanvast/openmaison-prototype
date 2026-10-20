@@ -14,7 +14,7 @@ import { RECENT_MAX, todoInputOf, todoRows, type RecentRow, type TodoData, type 
 import type { BookProject } from './books'
 
 /*
- * (simplify S-10 · Q-07 · S-16, her "build everything" 2026-10-09) Finance › To do on the server: it hands the screen the summaries the rest of
+ * (simplify S-10 · Q-07 · S-16, his "build everything" 2026-10-09) Finance › To do on the server: it hands the screen the summaries the rest of
  * 2.0 already builds — `fetchFinance` (costsOf, the viewer's own scope), and for Owners and Admins `fetchBooks` (every project's moneyOf and
  * commissionsOf) and the Xero pushes that failed — plus the two facts a row's action needs that no summary carries: the client payments waiting
  * for the confirmer, and the client's phone and portal page for the reminder. Nothing is added up here (lib/finance/todo.ts reads the rows).

@@ -6,7 +6,7 @@ import { digitsOnly, isSgPhone } from '@/lib/format'
  * same way in the browser and on the server (1.0's api/{beta-signup,contact,newsletter}/route.ts). The messages are the house's (lib/forms.ts
  * MSG) — one list for every field in OpenMaison. Pure.
  *
- * The phone: 1.0 offered fourteen country codes; 2.0 is Singapore's for now (her hold on countries beyond Singapore, 2026-10-12) — +65 and the
+ * The phone: 1.0 offered fourteen country codes; 2.0 is Singapore's for now (his hold on countries beyond Singapore, 2026-10-12) — +65 and the
  * eight digits, 6 / 8 / 9 first, as every phone box in 2.0 (REG-547).
  */
 

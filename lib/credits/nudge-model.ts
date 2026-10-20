@@ -1,6 +1,6 @@
 /**
  * (pending modules S41b-4 — the S41b data sweep's M-02; 1.0's `deployment/plg` upgrade nudges: `docs/rules/upgrade-nudges.md`, the spec
- * 2026-09-25 and `src/lib/nudges/{catalogue,decide,copy}.ts`; her "build all of them" 2026-10-11, her "nothing left behind" 2026-10-12)
+ * 2026-09-25 and `src/lib/nudges/{catalogue,decide,copy}.ts`; his "build all of them" 2026-10-11, his "nothing left behind" 2026-10-12)
  * **The Free plan's upgrade offers** — pure and client-safe: the catalogue, the decision and the words, so the server, the bell and the probe
  * read one set of rules.
  *
@@ -12,7 +12,7 @@
  *    of AI credits: the out-of-credits sheet, Buy and carry on or Ask the Owner), T5 (dropped by 1.0 itself: X-Ray became Pro — its press is
  *    T6 / T17), and T8 when it happens on a press (the sheet says it, once) — never two prompts for one moment; the Owner's blocking moments
  *    still restart the 10-minute gap (1.0's D4), so an offer never follows a lock or a refusal;
- *  · **kept** — T1 (five active minutes): counting a member's active minutes is the telemetry her Q-16 declined (S39: "nothing in 2.0 records
+ *  · **kept** — T1 (five active minutes): counting a member's active minutes is the telemetry his Q-16 declined (S39: "nothing in 2.0 records
  *    what a member opens"); `nudge_state.active_seconds` is ported and stays 0.
  *
  * 1.0's rules, as they are (`docs/rules/upgrade-nudges.md`): only on Free (no live paid plan or trial — R1), only to who can buy (the Owner, 1.0's

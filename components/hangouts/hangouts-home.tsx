@@ -30,7 +30,7 @@ import leadsStyles from '@/components/qanvast/qanvast-leads.module.css'
 import styles from './hangouts.module.css'
 
 /**
- * (pending modules S27 — public:hangouts; her "build all of them" 2026-10-11; S16's note: Qanvast Ops › Hangouts made live) Qanvast's
+ * (pending modules S27 — public:hangouts; his "build all of them" 2026-10-11; S16's note: Qanvast Ops › Hangouts made live) Qanvast's
  * Hangouts as the studio sees them — 1.0's studio page's Events tab (src/app/(main)/qanvast-ops/hangouts/page.tsx OwnerEventsTab): each
  * event a card with its days, hours, venue and what a place costs; where the studio stands (open to apply · applied · taking part · today ·
  * ended); one press — Apply (Owners and Admins, while places are left), the event's page once the studio takes part. Its scopes are 1.0's

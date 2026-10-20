@@ -1,11 +1,11 @@
 // Pending modules, step S20 · AI Visualizer (the owner's "build all of them but one after the other", 2026-10-11; survey key
-// held:ai-visualizer — HEIC photos, Replace as she answered, the drift guard, the Maison AI suggestions, every other line as the card
+// held:ai-visualizer — HEIC photos, Replace as he answered, the drift guard, the Maison AI suggestions, every other line as the card
 // recommended). Each item asserted as the rule it builds, never a count from another round:
 //  - HEIC on every browser: a phone's HEIC photo becomes a room (stored as a JPEG), a HEIC swatch opens in the swatch dialog and in Company ›
 //    Materials, and a file with no type that isn't a picture is refused in plain words — Chromium draws no HEIC itself, so this walks 1.0's
 //    converter (heic-to), loaded only when a HEIC lands; a HEIC uploaded to the lead's Files keeps its bytes, wears a drawn picture and opens
 //    in the AI Visualizer as a room
-//  - Replace as she answered (Q-21): the picker stays; the panel says the prototype can't draw a new piece in; Generate waits with the same
+//  - Replace as he answered (Q-21): the picker stays; the panel says the prototype can't draw a new piece in; Generate waits with the same
 //    words and one link; "Recolour it to match" turns the pick into a Customize in one step (Undo and ⌘Z take it back); no version ever says
 //    "Swapped for"
 //  - the drift guard: a whole-room look whose camera moved (1.0's own kitchen in Scandinavian) is checked ("Checking the room’s shape"), lined
@@ -162,7 +162,7 @@ const ledgerSum = () => n(`select coalesce(sum(case when reason = 'shadow_spend'
       if (f) sql(`delete from lead_file_images where file_id = '${f.id}'; delete from lead_file_thumbs where file_id = '${f.id}'; delete from lead_files where id = '${f.id}'`)
     }
 
-    // ── 2 · Replace as she answered ─────────────────────────────────────────────────────────────────────────────────────────────
+    // ── 2 · Replace as he answered ─────────────────────────────────────────────────────────────────────────────────────────────
     if (want(2)) {
       console.log('2 · Replace — the picker stays, the prototype says it can’t draw a new piece, one press recolours')
       await editor(p, 'Living room'); await original(p)

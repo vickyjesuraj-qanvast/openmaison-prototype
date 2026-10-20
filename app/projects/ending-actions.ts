@@ -523,7 +523,7 @@ export async function setHandoverReview(o: { on: boolean }): Promise<{ on: boole
   return { on: o?.on === true }
 }
 
-/** (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Settings › Projects › *When a project starts*: the quote is signed
+/** (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Settings › Projects › *When a project starts*: the quote is signed
     (today's) · the agreement is signed (a signed agreement moves its lead to Won through the Won step's rules — lib/leads/won-on-signing.ts). */
 export async function setProjectStart(o: { startsWhen: string }): Promise<ProjectStartRule | Refusal> {
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read

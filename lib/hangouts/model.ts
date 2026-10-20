@@ -1,5 +1,5 @@
 /**
- * (pending modules S27 — Hangouts; her "build all of them" 2026-10-11; survey key public:hangouts) Qanvast Hangouts are Qanvast's in-person
+ * (pending modules S27 — Hangouts; his "build all of them" 2026-10-11; survey key public:hangouts) Qanvast Hangouts are Qanvast's in-person
  * events where homeowners meet interior designers at tables in one venue. This is the studio's side of them, pure and client-safe: the words,
  * the preferences both sides give, 1.0's 0–100 match score (src/lib/hangouts/match-score.ts, kept as it was), who takes a new chat, where an
  * event stands, what a meeting's outcome asks next. Every word below is invented copy unless it names 1.0's (1.0's vocabulary:

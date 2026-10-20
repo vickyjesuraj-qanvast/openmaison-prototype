@@ -9,7 +9,7 @@ import { PROJECT_START_WORDS as W, type ProjectStartsWhen } from '@/lib/projects
 import st from '@/app/settings/settings.module.css'
 
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Settings › Projects › *When a project starts* — the house card with
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Settings › Projects › *When a project starts* — the house card with
  * the two answers as choice cards, each saying what it does (the Lead stages card's "How leads move" pattern): The quote is signed (today's, the
  * default) · The agreement is signed. Saved as it is pressed, with Undo (the portal's section switches' way, REG-1014); a refusal puts it back
  * and says why. Owners and Admins change it; anyone else is told the rule. (invented copy — lib/projects/start-rule.ts)

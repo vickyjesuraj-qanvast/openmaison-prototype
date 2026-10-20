@@ -1,8 +1,8 @@
 # S41b · The ledger — every pending line on the 41 cards (2026-10-13)
 
-Her words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This is part (1) of S41b: every `pending` line on all 41 cards
+His words, 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". This is part (1) of S41b: every `pending` line on all 41 cards
 of the pending-modules report (`design-source/context/parity/29-pending-modules-2026-10-11/`) against what the steps did
-(`30-pending-modules-build-2026-10-11/steps/outcome-S*.md`). Platform admin was out from the start, on her word.
+(`30-pending-modules-build-2026-10-11/steps/outcome-S*.md`). Platform admin was out from the start, on his word.
 
 **How to read it.** The cards come in the report's order (its five groups). Each line is quoted word for word from the survey files as
 `compile.py` merges them into the card. The report itself swaps "her" for "your", which garbles a few words ("neither" → "neityour"), so
@@ -13,7 +13,7 @@ the survey's own wording is used here. Each line has one status:
 - **kept** — not built, on purpose. *Where* gives the reason and whose call it was.
 - **stand-in** — the line's core is a service or model the prototype simulates. *Where* says what is honest about it and where the real
   one plugs in.
-- **parked by her** — her explicit holds of 2026-10-12 (S32 themes / dark / tours, S33 countries, S38 Languages, the UAE page) and her
+- **parked by him** — his explicit holds of 2026-10-12 (S32 themes / dark / tours, S33 countries, S38 Languages, the UAE page) and his
   "you can ignore admin" (Platform admin).
 - **in progress** — S39 (Studio Health) and S41 (AI sandboxes) are still being built; their outcome files are not there yet.
 - **NOT ANSWERED** — no outcome says what happened to the line.
@@ -25,7 +25,7 @@ the survey's own wording is used here. Each line has one status:
 | built | 206 |
 | kept | 47 |
 | stand-in | 34 |
-| parked by her | 22 |
+| parked by him | 22 |
 | in progress | 5 |
 | NOT ANSWERED | 0 |
 | **All** | **314** |
@@ -94,7 +94,7 @@ Step: S22 (lane B) — `outcome-S22.md`. Survey keys: `studio:dashboard`, `held:
 | 1.8 | Recent site updates across every project (Owners) | **built** | Site updates card (`lib/dashboard/updates.ts`), Owners and Admins. |
 | 1.9 | Classic mode's margin alerts, One-Click Profit and compliance alerts (held: N-02, TD-106) | **built** | Profit this month + Owed to you from Reports' own reports; margin alerts as the projects' money rows; compliance as Needs you rows. Classic's sample figures not carried. |
 | 1.10 | Settings › Home Screen: chat-first or classic | **kept** | Decided in S22 (as recommended): one page carries the box and the cards, so there is no choice to make (1.0 kept it per browser). |
-| 1.11 | The whole page (lead KPIs, Studio Pulse, team workload, upcoming, priority feed) — held · her call (L7 'waits on frames'; REG-1560 kept it held) · revisit: it is the rail's first item and the first thing a demo client presses | **built** | Her hold lifted by "build all of them" (2026-10-11); built on house pieces, no mock — flagged (REG-S22.1…12). |
+| 1.11 | The whole page (lead KPIs, Studio Pulse, team workload, upcoming, priority feed) — held · his call (L7 'waits on frames'; REG-1560 kept it held) · revisit: it is the rail's first item and the first thing a demo client presses | **built** | His hold lifted by "build all of them" (2026-10-11); built on house pieces, no mock — flagged (REG-S22.1…12). |
 | 1.12 | Project widgets, compliance alerts, recent updates, the 'Site Update' chip (PR-030 · FR-108 · TD-106 · UC-026 · UC-027) — held (Dashboard) | **built** | Open projects tile, each project's Needs you, compliance rows, Site updates, *Draft a site update*. |
 | 1.13 | Margin alerts, the One-Click Profit card, a revenue KPI — held (N-02) · 1.0's revenue tile showed fixed sample figures | **built** | Profit this month (revenue in its help line) and Owed to you; no sample figure. |
 | 1.14 | The Industry News card and its RSS feed reader | **stand-in** | Same reader as 1.7 — built; the fetch is the developers'. |
@@ -126,7 +126,7 @@ Step: S10 — `outcome-S10.md` (2.17 finished by S22). Survey keys: `studio:mais
 | 2.18 | A model-backed assistant for free questions, drafting and acting — stand-in (lib/maison-ai/intents.ts, no model) · package (P-H) under 'AI stays honest' · developers' lane | **stand-in** | The seam is `readQuestion` (`lib/maison-ai/answer.ts`); every proposal runs a house action that re-checks its own rule. |
 | 2.19 | Words-only suggestions that answer Coming soon: the Leads listing's three, the Visualizer and Planner homes and editors, Company › Client portal set-up, Plan & AI credits, the AI brief's 'Attach a client review' and 'Add to newsletter list' · REG-14 · REG-507 · REG-1339 · revisit: make each act or drop it | **built** | Each acts (listing, Visualizer and Planner homes and editors, Client portal set-up, Plan pages, Qanvast Ops, the brief's two in `lib/leads/briefs.ts`); no "Coming soon" left in Maison AI (checked: comments only). |
 | 2.20 | Eight editors open an empty Maison AI sheet (quote, contract, contract template, quote template, T&Cs, payment, task, schedule) — package (UI sweep) · revisit | **built** | All ten editor sheets (EDITOR_LIST in `outcome-S10.md`; checked `useMaisonAi` / `MaisonAiSheet` in the quote, contract, contract template, quote template, T&Cs, payment, task and schedule template editors). |
-| 2.21 | The lead brief's copy was never signed off (REG-169) — her sign-off owed | **kept** | Her sign-off is still owed (REG-169); S10 changed two button words, flagged as invented copy. |
+| 2.21 | The lead brief's copy was never signed off (REG-169) — his sign-off owed | **kept** | His sign-off is still owed (REG-169); S10 changed two button words, flagged as invented copy. |
 
 ### 3 · `meetings` — Meetings and the Meeting Co-Pilot
 
@@ -144,11 +144,11 @@ Step: S23 (lane B) — `outcome-S23.md`. Survey keys: `studio:meetings-copilot`,
 | 3.8 | Share a brief by link | **built** | `/meeting/<token>` (30-day window, Stop sharing with Undo); 1.0's `/copilot/share/<id>` redirects. |
 | 3.9 | History, Gallery, Analytics with coaching, Objections report | **built** | History = Tools › Meeting Copilot; Gallery = From this meeting + the Visualizer's home; Company › Reports › Meetings = Analytics + Objections. |
 | 3.10 | Project › Meeting Summary card | **built** | As the With {client} card's *Last met* row — no new card on the simplified Overview (flagged). |
-| 3.11 | The Meetings tab and the Meeting quick link on a lead — held · her call ('actually lets hide the meetings tab', REG-552) · keep until mocks | **built** | REG-552's hold lifted by "build all of them": the tab where 858:24784 drew it, the quick link after Contact Log. |
+| 3.11 | The Meetings tab and the Meeting quick link on a lead — held · his call ('actually lets hide the meetings tab', REG-552) · keep until mocks | **built** | REG-552's hold lifted by "build all of them": the tab where 858:24784 drew it, the quick link after Contact Log. |
 | 3.12 | Live co-pilot from a lead or project (consent, transcript, brief) and uploading a recording — held (REG-552) | **built** | As 3.1 and 3.7 (the transcript a stand-in). |
 | 3.13 | Save a brief's facts to the lead with a follow-up task; who sees briefs; filing to a project — held (REG-552) | **built** | Save to the lead; Who sees leads governs a lead's meetings everywhere; a project's lead's meeting files on the project. |
 | 3.14 | Meeting Summary card on the project; weekly analytics; Co-Pilot renders and moodboards — held (REG-552) | **built** | Last met row; Reports › Meetings' ranges; boards and renders listed on the brief. |
-| 3.15 | What waits on it elsewhere: quote lines from a brief, X-Ray's competitor analyser, Co-Pilot metering (25 credits / 10 min), Google Calendar invites, the AI & Copilot settings, the client's meeting email | **built** | Quote lines (draft quote) · X-Ray (Their quote) · metering at her Q-45 price (flag: 1.0 never charged it) · Calendar (.ics + Google's filled-in page; a two-way sync is the developers', `setCalendarSync`) · Settings › Meetings · the client's email through the outbox. |
+| 3.15 | What waits on it elsewhere: quote lines from a brief, X-Ray's competitor analyser, Co-Pilot metering (25 credits / 10 min), Google Calendar invites, the AI & Copilot settings, the client's meeting email | **built** | Quote lines (draft quote) · X-Ray (Their quote) · metering at his Q-45 price (flag: 1.0 never charged it) · Calendar (.ics + Google's filled-in page; a two-way sync is the developers', `setCalendarSync`) · Settings › Meetings · the client's email through the outbox. |
 | 3.16 | The Objection Responses library (ten kinds, platform defaults, edit, on / off) | **built** | `lib/meetings/objections.ts`: 1.0's 26 answers in ten kinds — edit, switch, reset. |
 | 3.17 | The Competitor List | **built** | Settings › Meetings; feeds the tips and the Lost dialog's competitor chips. |
 | 3.18 | The co-pilot's objection log and Objections report | **built** | `copilot_objection_log`; Reports › Meetings › Objections. |
@@ -173,7 +173,7 @@ Step: S25 (lane B) — `outcome-S25.md`. Survey keys: `studio:market-insights`.
 | --- | --- | --- | --- |
 | 5.1 | Article list: a featured article, category chips, search | **built** | `/market-insights` (`components/market-insights/insights-home.tsx`): featured, category chips with counts, search, 24 at a time. |
 | 5.2 | Article page with its text and charts | **built** | `/market-insights/<id>`: the Markdown body, 1.0's five chart kinds, Show the numbers. |
-| 5.3 | Writing and publishing the articles (Platform admin, not the studio) | **parked by her** | Platform admin (her "you can ignore admin"). The studio side is built: the feed's seam (`lib/market-insights/feed.ts`) and six labelled sample articles (repair R142). |
+| 5.3 | Writing and publishing the articles (Platform admin, not the studio) | **parked by him** | Platform admin (his "you can ignore admin"). The studio side is built: the feed's seam (`lib/market-insights/feed.ts`) and six labelled sample articles (repair R142). |
 
 ### 6 · `studio-chats` — Team and group chats beyond a project
 
@@ -199,7 +199,7 @@ Step: S27 (lane B) — `outcome-S27.md`. Survey keys: `public:hangouts`.
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
 | 7.1 | The homeowner's event page: SMS sign-in, preferences, 'we're matching' wait, the day's meetings with designer profiles and portfolios, AI insights after each meeting, voucher progress | **built** | `/hangout/[token]` in the studio's brand + the homeowner's own page. Stand-ins: SMS sign-in (the private link), the matching wait (the rule picks at booking), AI insights (S23's brief by rule). Voucher progress kept (Qanvast's rewards). |
-| 7.2 | Staff console: events, shifts, studios and designers taking part, homeowner registration, preference matching (0–100 score), the live table board, outcomes, analytics, recordings and transcripts | **parked by her** | The staff console is Qanvast's platform admin (excluded by her). The studio's share is built on Qanvast Ops › Hangouts: the feed, the Plan, walk-ins, the 0–100 score, live Chats, outcomes, How it went. |
+| 7.2 | Staff console: events, shifts, studios and designers taking part, homeowner registration, preference matching (0–100 score), the live table board, outcomes, analytics, recordings and transcripts | **parked by him** | The staff console is Qanvast's platform admin (excluded by him). The studio's share is built on Qanvast Ops › Hangouts: the feed, the Plan, walk-ins, the 0–100 score, live Chats, outcomes, How it went. |
 | 7.3 | The studio's side (apply to an event, plan which designers attend, a designer's own meetings, upload a recording, turn a meeting into a lead): its hooks and routes exist in 1.0, but no screen uses them today | **built** | Apply / Take back, the Plan, a designer's own meetings, a recording through S23's write-up; every booking is a lead. |
 | 7.4 | AI meeting transcripts and the homeowner's insights (Gemini, from audio). Nothing in current 1.0 records the audio. | **stand-in** | Notes typed or pasted make S23's brief by rule; no model reads audio (as in 1.0 today). |
 | 7.5 | Two bell events: a homeowner registered, a meeting assigned | **built** | `hangout_registered` · `hangout_meeting_assigned` (+ the client message `client_hangout`). |
@@ -234,7 +234,7 @@ Step: S30 (lane A) — `outcome-S30.md`. Survey keys: `onboarding:studio-sign-in
 | 10.2 | Keep me signed in for 30 days (else 24 hours), renewed on each visit; Sign out | **built** | 30 days renewed / 24 hours (`lib/auth/session.ts`, `studio_sessions`); Sign out is the You group's last row. |
 | 10.3 | Already signed in → straight to your home; signed out → every page goes to sign-in | **built** | `proxy.ts` + `PUBLIC_PATHS`: signed out → sign-in with `?next=`, files and pictures 401; the demo's standing session keeps the demo working. |
 | 10.4 | Unknown number: 'No account found' with Sign Up — or 'Contact support for account setup' while sign-ups are paused; a pending invitation says so | **built** | "No account found…"; an open invitation joins on sign-in, an expired one is refused; the Sign Up door (S31); sign-ups paused built in S31 as an environment switch. |
-| 10.5 | Repeated attempts slowed down; staff can set a temporary test code for demos | **built** | Five tries a minute per number / email (`lib/auth/limit.ts`). The staff test code is Platform admin (parked by her); the stand-in's any six digits is the demo's code. |
+| 10.5 | Repeated attempts slowed down; staff can set a temporary test code for demos | **built** | Five tries a minute per number / email (`lib/auth/limit.ts`). The staff test code is Platform admin (parked by him); the stand-in's any six digits is the demo's code. |
 | 10.6 | Sign in with a Qanvast account: studio and member created on first sign-in, the role taken from Qanvast; 'Your Qanvast session expired' when that link times out | **stand-in** | Qanvast as a provider behind `setSignInProvider` (`provision`, `roleFromQanvast`); the "session expired" notice is built; nothing talks to Qanvast. |
 
 ### 11 · `sign-up` — A new studio joins
@@ -258,10 +258,10 @@ Step: S08 — `outcome-S08.md`. Survey keys: `onboarding:studio-setup-wizard`, `
 | 12.2 | Skip a step, with the default it falls back to on the button ('Skip, defaults INV / PO / T used') | **built** | 2.0's shape: nothing is forced; each open step says what happens until it is done; defaults named in the foot; Hide (with Undo) for "Skip entire setup". |
 | 12.3 | Resume where you left off ('Welcome back! Picking up where you left off.') | **built** | Read from the records every time, so it always resumes ("3 of 7 done"). |
 | 12.4 | 'Your studio is live' with next steps, adding 'Set up your branding' only when it was skipped | **built** | "Your studio is set up · 7 of 7 done" once, with Add your first lead. |
-| 12.5 | Country chosen on the first step (held by DEF-30) | **parked by her** | Countries are S33, on hold by her (2026-10-12). |
+| 12.5 | Country chosen on the first step (held by DEF-30) | **parked by him** | Countries are S33, on hold by him (2026-10-12). |
 | 12.6 | A welcome on first sign-in, one for an owner and one for an invited member | **built** | `components/shell/first-visit-welcome.tsx`, `members.welcome_due · welcomed_at`, by role; the invited member's words came with S09. |
-| 12.7 | One-time tips on the first visit to a page (12 pages in 1.0), by role | **parked by her** | Page tips are guided tours — S32, parked whole by her (REG-1837). S08 had kept them for S32. |
-| 12.8 | Reset all tips | **parked by her** | Reset / Restart tours — S32, parked whole. |
+| 12.7 | One-time tips on the first visit to a page (12 pages in 1.0), by role | **parked by him** | Page tips are guided tours — S32, parked whole by him (REG-1837). S08 had kept them for S32. |
+| 12.8 | Reset all tips | **parked by him** | Reset / Restart tours — S32, parked whole. |
 
 ### 13 · `team-invitations` — Inviting your team
 
@@ -287,29 +287,29 @@ Step: S01 — `outcome-S01.md`. Survey keys: `onboarding:my-profile`, `api:my-ac
 
 ### 15 · `appearance` — Dark mode, guided tours and theme skins
 
-Step: S32 — **parked whole by her** (REG-1836 · REG-1837, no outcome file); three lines were answered by S01, S16 and S22. Survey keys: `studio:personal-settings`.
+Step: S32 — **parked whole by him** (REG-1836 · REG-1837, no outcome file); three lines were answered by S01, S16 and S22. Survey keys: `studio:personal-settings`.
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
 | 15.1 | A member changes their own name, email, phone and photo | **built** | Built by S01 (Your profile) — the line repeats my-profile's; the rest of this card is S32's. |
-| 15.2 | Dark mode (the design system already has dark colours) | **parked by her** | Dark mode parked (REG-1836: "ignore the dark and languages completely for now"). |
-| 15.3 | A welcome window and page tips, with Restart tours | **parked by her** | Guided tours, page tips and Restart tours parked (REG-1837). The first-visit welcome window itself was built by S08. |
+| 15.2 | Dark mode (the design system already has dark colours) | **parked by him** | Dark mode parked (REG-1836: "ignore the dark and languages completely for now"). |
+| 15.3 | A welcome window and page tips, with Restart tours | **parked by him** | Guided tours, page tips and Restart tours parked (REG-1837). The first-visit welcome window itself was built by S08. |
 | 15.4 | Home Screen choice (comes with the Dashboard) | **kept** | Decided in S22: one Dashboard carries the box and the cards, so there is no home screen to choose. |
-| 15.5 | Theme skins and mascots | **parked by her** | Theme skins parked (REG-1837). |
+| 15.5 | Theme skins and mascots | **parked by him** | Theme skins parked (REG-1837). |
 | 15.6 | Open / Closed to new leads in the top bar | **built** | S16: Open to new leads in the studio block's menu and the phone's You sheet (`setMyAccepting`) — flagged as a second control beside Members' switch. |
 
 ### 16 · `regions` — Countries beyond Singapore
 
-Step: S33 — **on hold by her** ("holdon to countries beyond singapore for now", 2026-10-12; DEF-30 stands; no outcome file). Survey keys: `onboarding:regions-beyond-singapore`.
+Step: S33 — **on hold by him** ("holdon to countries beyond singapore for now", 2026-10-12; DEF-30 stands; no outcome file). Survey keys: `onboarding:regions-beyond-singapore`.
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 16.1 | Pick the studio's country; currency, tax name and rate, time zone and date format follow | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
-| 16.2 | Phone rules per country at sign-in and in every phone box (+60 9–10 digits, +971 9, +91 10, +20) | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
-| 16.3 | One studio serving several countries; each lead's own country; re-tag leads between countries | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
-| 16.4 | Each country's lists: property types, areas, budget ranges, property status, key collection, design styles; its registration label (UEN · SSM · Trade licence · GSTIN) | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
-| 16.5 | Compliance checklists for Malaysia, UAE, India and Egypt; floor-plan templates for Malaysia, UAE and India | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
-| 16.6 | Each country's lead-email senders for lead capture, news sources for market insights and a sample client for template previews | **parked by her** | S33 on hold (her words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.1 | Pick the studio's country; currency, tax name and rate, time zone and date format follow | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.2 | Phone rules per country at sign-in and in every phone box (+60 9–10 digits, +971 9, +91 10, +20) | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.3 | One studio serving several countries; each lead's own country; re-tag leads between countries | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.4 | Each country's lists: property types, areas, budget ranges, property status, key collection, design styles; its registration label (UEN · SSM · Trade licence · GSTIN) | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.5 | Compliance checklists for Malaysia, UAE, India and Egypt; floor-plan templates for Malaysia, UAE and India | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
+| 16.6 | Each country's lead-email senders for lead capture, news sources for market insights and a sample client for template previews | **parked by him** | S33 on hold (his words 2026-10-12; DEF-30 stands). Nothing built. |
 
 ## Left inside the modules already built
 
@@ -319,24 +319,24 @@ Step: S05 — `outcome-S05.md` (17.14 by S07). Survey keys: `held:leads`.
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 17.1 | Edit the lead funnel (Manage Stages) — held · her call (Leads Q-02 'hold') · keep the hold, but the stage chip's 'Manage Stages ›' row still answers Coming soon: hide it as Meetings was (1.0: Accounts › Pipeline Stages, 391 lines) | **kept** | Her hold (Leads Q-02) kept — adding / renaming / reordering stages not built. The row now opens Settings › Lead management › Lead stages (stages, live counts, 1.0's two per-stage flags, Linear / Flexible) instead of being hidden — flagged for Vicky (the card said hide it). |
-| 17.2 | Testers' L-2…L-5 (change status after Won, company + UEN on the lead, co-owner on the lead, kanban card density) — held since 2026-09-23 · her call ('hold back the other module changes') · revisit L-3 and L-4: Commercial fit-out and the portal's household now need them | **built** | L-3 company + UEN and L-4 co-owner built (`lead-form.tsx`, `client_company` · `client_uen`, the second client on quotes and the household). L-2 (move after Won) and L-5 (kanban density) kept — her hold. |
+| 17.1 | Edit the lead funnel (Manage Stages) — held · his call (Leads Q-02 'hold') · keep the hold, but the stage chip's 'Manage Stages ›' row still answers Coming soon: hide it as Meetings was (1.0: Accounts › Pipeline Stages, 391 lines) | **kept** | His hold (Leads Q-02) kept — adding / renaming / reordering stages not built. The row now opens Settings › Lead management › Lead stages (stages, live counts, 1.0's two per-stage flags, Linear / Flexible) instead of being hidden — flagged for Vicky (the card said hide it). |
+| 17.2 | Testers' L-2…L-5 (change status after Won, company + UEN on the lead, co-owner on the lead, kanban card density) — held since 2026-09-23 · his call ('hold back the other module changes') · revisit L-3 and L-4: Commercial fit-out and the portal's household now need them | **built** | L-3 company + UEN and L-4 co-owner built (`lead-form.tsx`, `client_company` · `client_uen`, the second client on quotes and the household). L-2 (move after Won) and L-5 (kanban density) kept — his hold. |
 | 17.3 | Maison AI creates or updates a lead and moves its stage — later · package call (Leads audit §0.2) · revisit: it already does this for projects (REG-1645) | **built** | Ask box intents `add_lead` · `move_lead` · `edit_lead`, through the form / Move stage window; it never writes on its own. |
-| 17.4 | Fill a new lead from a document; Auto Fill from a chat screenshot — stand-in (scripted values) · her call (Q-28) · keep until developers wire an AI read; carry the testers' date rule L-6 | **stand-in** | The document / screenshot read stays scripted (her Q-28; the developers' AI read). L-6 built: dated now, next step 3 days on at 7 PM, the screenshot kept as the log's file. |
+| 17.4 | Fill a new lead from a document; Auto Fill from a chat screenshot — stand-in (scripted values) · his call (Q-28) · keep until developers wire an AI read; carry the testers' date rule L-6 | **stand-in** | The document / screenshot read stays scripted (his Q-28; the developers' AI read). L-6 built: dated now, next step 3 days on at 7 PM, the screenshot kept as the log's file. |
 | 17.5 | Lead-sheet PDF import — stand-in fitted to a guessed Homematch layout · package call (the sample never arrived) · revisit: get a real sheet before developers wire it | **stand-in** | Kept as the guessed-layout stand-in — the real sample sheet never arrived (the developers, with a real sheet). |
-| 17.6 | Move stage Quote Sent / Won upload keeps only the file's name — stand-in · her call (REG-149, the mock) · revisit: every other upload keeps its bytes since gaps build E | **built** | Quote Sent's PDF in Files › Quotes & BOQ, Won's signed quote with its bytes (`keepQuoteSentUpload`, `fileWonQuote`). |
+| 17.6 | Move stage Quote Sent / Won upload keeps only the file's name — stand-in · his call (REG-149, the mock) · revisit: every other upload keeps its bytes since gaps build E | **built** | Quote Sent's PDF in Files › Quotes & BOQ, Won's signed quote with its bytes (`keepQuoteSentUpload`, `fileWonQuote`). |
 | 17.7 | Export: Quote status and Project type columns — dropped · package call ('no lead-side value') · revisit: a Won lead has a project and each quote has a status | **built** | `lib/leads/export.ts`: + Quote status, Project type, Company, UEN, Second client. |
-| 17.8 | Lead capture (webhook receiver, Gmail OAuth + poll, website form, Meta Lead Ads) — stand-ins (Simulate a POST, Sync now) · her call (Q-36) · developers' lane | **stand-in** | The developers' lane (her Q-36). Since S34 the webhook receiver is real (`POST /api/webhooks/leads/<token>`, 1.0's HMAC); Gmail OAuth / poll and Meta stay stand-ins (the `lead-gmail` seam). |
-| 17.9 | Return a lead: Appeal a rejected return (the 'here' link and the Returned card's banner), the policy behind the info icon, Tips › View all, deleting evidence — Coming soon · her call (REG-193) / package (D-39) · revisit: a rejected return's only way forward is a dead link (1.0 had none of these; it only submitted) | **built** | Appeal on a rejected return, the return policy dialog, View all / Show fewer, a file off a return with Undo (`app/leads/return-actions.ts`). |
+| 17.8 | Lead capture (webhook receiver, Gmail OAuth + poll, website form, Meta Lead Ads) — stand-ins (Simulate a POST, Sync now) · his call (Q-36) · developers' lane | **stand-in** | The developers' lane (his Q-36). Since S34 the webhook receiver is real (`POST /api/webhooks/leads/<token>`, 1.0's HMAC); Gmail OAuth / poll and Meta stay stand-ins (the `lead-gmail` seam). |
+| 17.9 | Return a lead: Appeal a rejected return (the 'here' link and the Returned card's banner), the policy behind the info icon, Tips › View all, deleting evidence — Coming soon · his call (REG-193) / package (D-39) · revisit: a rejected return's only way forward is a dead link (1.0 had none of these; it only submitted) | **built** | Appeal on a rejected return, the return policy dialog, View all / Show fewer, a file off a return with Undo (`app/leads/return-actions.ts`). |
 | 17.10 | Coming soon presses whose target now exists: the Overview FILES card's Create Folder / Upload (the Files tab does both), Move stage › From System quote 'View' (1.0 opened the quote), Imports › Filters (1.0 had none) · old mock / package calls · revisit: build or hide | **built** | FILES card Create Folder / Upload built; From System › View built; Imports › Filters removed. |
-| 17.11 | Coming soon sort on the Tasks and Files table heads (1.0 sorted tasks; it had no sortable file list) · her call (REG-468) · revisit: the listing and galleries sort | **built** | Tasks: Due date · Status; Files: Title · Last updated · Size; one sort with Filters'. |
-| 17.12 | Attach files dialog: type chip, Sort, list view, select all, folder ⋮ answer Coming soon · her call (REG-173) · revisit: the Files tab has real filters, list view and folders (1.0 had nothing comparable) | **built** | `attach-files-modal.tsx`: File Type, Sort, Grid / List, folders with the crumb, the folder ⋮. |
+| 17.11 | Coming soon sort on the Tasks and Files table heads (1.0 sorted tasks; it had no sortable file list) · his call (REG-468) · revisit: the listing and galleries sort | **built** | Tasks: Due date · Status; Files: Title · Last updated · Size; one sort with Filters'. |
+| 17.12 | Attach files dialog: type chip, Sort, list view, select all, folder ⋮ answer Coming soon · his call (REG-173) · revisit: the Files tab has real filters, list view and folders (1.0 had nothing comparable) | **built** | `attach-files-modal.tsx`: File Type, Sort, Grid / List, folders with the crumb, the folder ⋮. |
 | 17.13 | Files › New ▾ › From Company Files · From Google Drive — Coming soon · package call · keep Drive for developers (OAuth); 'Company Files' names a home that does not exist | **built** | From Company Files removed (checked: `files-toolbar.tsx`, comments only); From Google Drive kept for the developers (OAuth). |
 | 17.14 | Files: Download on a file with no stored copy (seeded PDFs, invoice and receipt entries) — Coming soon · as recommended (REG-1229) · revisit: the invoice page already has Download PDF | **built** | S07: a money paper's entry opens its paper with `?print=1` (`FileRow.paper`, `moneyPapersOf`). |
-| 17.15 | Notes › AI chip › Refine — Coming soon · her call (REG-185) · keep without a model | **built** | By rule with Undo (`lib/leads/note-refine.ts`); no model, nothing metered. |
-| 17.16 | Tasks hub phase 3 (View by Lead · Due · Member bands) — later · her call (REG-466) · keep | **kept** | Her call (REG-466). |
+| 17.15 | Notes › AI chip › Refine — Coming soon · his call (REG-185) · keep without a model | **built** | By rule with Undo (`lib/leads/note-refine.ts`); no model, nothing metered. |
+| 17.16 | Tasks hub phase 3 (View by Lead · Due · Member bands) — later · his call (REG-466) · keep | **kept** | His call (REG-466). |
 | 17.17 | Small 1.0 conveniences dropped by package calls (bulk Unassign, Scope preference, live response-time clock, kanban column collapse, back-to-top, swipe stage tabs, drawer autosave, coach mark, phones starting with 7) · keep | **kept** | Package calls; the card says keep. |
-| 17.18 | On Hold phone line clips at the 240 Lead Name floor (REG-891) — flagged for her · needs her pick | **built** | The day on its own line under the phone (`components/leads/table.tsx`). |
+| 17.18 | On Hold phone line clips at the 240 Lead Name floor (REG-891) — flagged for him · needs his pick | **built** | The day on its own line under the phone (`components/leads/table.tsx`). |
 
 ### 18 · `quotes` — Left in Quotes and the quote editor
 
@@ -347,20 +347,20 @@ Step: S04 — `outcome-S04.md` (18.18 by S23). Survey keys: `held:quotes`.
 | 18.1 | Draft with Maison AI (a brief becomes a quote) — Coming soon in Create Quote › More ways to start · as recommended (quote editor Q-17 hold) · revisit: a rule-built draft from the price book by property type would replace the dead row | **built** | Rule-built (`lib/quotes/draft.ts` `draftPlan` — the model seam): My Sections, My Items by trade, 1.0's baseline at S$0. |
 | 18.2 | Upload a quote reads spreadsheets for real, but a PDF or photo only if it is one of the three reference quotes — stand-in · as recommended (Q-16, REG-627) · developers' lane; but its chip says 'PDF · XLS · JPG' on a 5-credit press, so fix the words | **built** | The chip says "XLSX · CSV · 5 AI credits" (checked). Reading a PDF / photo stays the developers' (only the three reference quotes read). |
 | 18.3 | AI help in the editor (insights, margin warnings, set a global margin) — the editor's Maison AI sheet is empty · as recommended · revisit: below-cost and low-margin hints can be worked out by rule | **built** | By rule: below cost · under 10 % · no price yet, one markup through Set a value (`lib/quotes/hints.ts`, `useQuoteMaison`). Under-market / upsell not built (need market data or a model). |
-| 18.4 | Starter Quote (1.0's quote rules add lines by project type) — held · her call (templates Q-07) · keep: My Sections with property-type tags cover it | **kept** | Her call (templates Q-07): My Sections with property-type tags cover it, and Draft with Maison AI reads them. |
-| 18.5 | Prices that include GST — held · her call ('Hold — ask the studios first') · keep | **kept** | Her hold ("ask the studios first"). |
+| 18.4 | Starter Quote (1.0's quote rules add lines by project type) — held · his call (templates Q-07) · keep: My Sections with property-type tags cover it | **kept** | His call (templates Q-07): My Sections with property-type tags cover it, and Draft with Maison AI reads them. |
+| 18.5 | Prices that include GST — held · his call ('Hold — ask the studios first') · keep | **kept** | His hold ("ask the studios first"). |
 | 18.6 | The client's link with a token, a 7-day expiry and an SMS code — stand-in (keyed on the quote id) · as recommended (Q-33 'the platform's') · developers must land it before real clients use it | **built** | Token built (`/confirm/<token>`, `quotes.confirm_token`). Expiry kept: the quote's Valid until is its window (REG-625). SMS code a stand-in (Q-33). |
 | 18.7 | 'Viewed' on the quote link — missing · package call (never asked; contracts record it) · revisit: 'they opened it' is the follow-up cue | **built** | `stampQuoteSeen` (`app/quotes/seen-actions.ts`): first · last · count, never a chat fetch. |
 | 18.8 | A stored PDF with its render hash; quote emails really sent — stand-ins · developers' lane | **stand-in** | Preview prints; `printPaper()` + `setPdfRenderer` are plug-ready (S34); quote emails = the outbox. |
-| 18.9 | Sort the Items table by a column head — held · her call (REG-483, 'creating some confusion') · keep | **kept** | Her call (REG-483). |
+| 18.9 | Sort the Items table by a column head — held · his call (REG-483, 'creating some confusion') · keep | **kept** | His call (REG-483). |
 | 18.10 | SKU and Add New Column; eight column switches refused — Coming soon · as recommended · revisit: hide the switches (1.0's SKU was real but always blank; its custom columns were unreachable) | **built** | Removed: Column settings lists only what the table draws; no Add New Column (checked). |
 | 18.11 | Items › row thumbnail › Upload Logo and the Create strip's Brand Catalog tile — Coming soon · 1.0 had neither · revisit: drop or define; a photo upload still stamps a canned thumbnail (REG-415) | **built** | Upload Logo and Brand Catalog dropped (checked); Upload Image keeps the picked picture. |
 | 18.12 | Quote Files › Download of a non-image — Coming soon · package call · revisit: a lead's Files now download any kind | **built** | Any kind downloads (`components/quotes/editor/files/files-section.tsx`). |
-| 18.13 | Sort on the Quotes table heads (Valid until sorts) — Coming soon · her call (REG-468) · revisit | **built** | Eight heads (`sortQuotesByHead`). |
+| 18.13 | Sort on the Quotes table heads (Valid until sorts) — Coming soon · his call (REG-468) · revisit | **built** | Eight heads (`sortQuotesByHead`). |
 | 18.14 | Round-2 testers' asks (a priced add-on under a line, four photos per line, a bundle price per part) — held · package (the design lead's Later list, never asked) · keep | **kept** | The design lead's Later list. |
 | 18.15 | A line's status (Pending · Approved · Declined) is a record with no screen (REG-435) — held · revisit: decide or drop | **built** | Decided: dropped (no screen, no writer, 1.0 had none); R106 turned the demo's Declined line into a declined optional. |
-| 18.16 | Accounting approves quotes — kept with Owners and Admins · package call flagged for her (REG-1660) · needs her answer | **kept** | Decided no (1.0's owner-only rule); open for Vicky. |
-| 18.17 | Word labels on the Items toolbar (D5) and muted section prompts (D7) — held · her 'not now' · keep | **kept** | Her "not now". |
+| 18.16 | Accounting approves quotes — kept with Owners and Admins · package call flagged for him (REG-1660) · needs his answer | **kept** | Decided no (1.0's owner-only rule); open for Vicky. |
+| 18.17 | Word labels on the Items toolbar (D5) and muted section prompts (D7) — held · his 'not now' · keep | **kept** | His "not now". |
 | 18.18 | Quote lines from a meeting brief — held (REG-552) · see Meetings | **built** | S23: Make a draft quote from the meeting's estimate. |
 
 ### 19 · `quote-templates` — Left in Quote templates
@@ -369,12 +369,12 @@ Step: S11 — `outcome-S11.md` (19.8 by S10). Survey keys: `held:quote-templates
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 19.1 | The Outfit font and fonts a studio uploads — held · her call ('the list first, uploads later') · revisit before porting 1.0 designs: they will print in a fallback | **built** | Outfit + self-hosted faces (`public/fonts/doc/`); Brand kit › Fonts › Your own fonts (`studio_fonts`, `/files/font/<id>`); the licence tick is an honest stand-in. |
+| 19.1 | The Outfit font and fonts a studio uploads — held · his call ('the list first, uploads later') · revisit before porting 1.0 designs: they will print in a fallback | **built** | Outfit + self-hosted faces (`public/fonts/doc/`); Brand kit › Fonts › Your own fonts (`studio_fonts`, `/files/font/<id>`); the licence tick is an honest stand-in. |
 | 19.2 | An issuing entity's tagline, accent colour, contacts and footer on its quotes — partial · package call (REG-618 built logo, address, UEN and GST only) · revisit: a quote under entity B prints the studio's tagline while its invoice prints B's | **built** | `docLetterhead` + the `{studio_footer}` field (checked `lib/templates/fields.ts`). |
-| 19.3 | Recreate a template from an uploaded quote — stand-in (three curated PDFs) · her call (REG-491 'a later build') · developers' lane | **built** | By rule for a PDF with words (`lib/templates/recreate.ts` `readLayout` — the model seam); a photo or picture-only PDF is matched by its name and says so. |
+| 19.3 | Recreate a template from an uploaded quote — stand-in (three curated PDFs) · his call (REG-491 'a later build') · developers' lane | **built** | By rule for a PDF with words (`lib/templates/recreate.ts` `readLayout` — the model seam); a photo or picture-only PDF is matched by its name and says so. |
 | 19.4 | 1.0's five cover-page presets — partial (only the Presentation style has a cover) · package call · revisit (low) | **built** | `lib/templates/covers.ts`, under the cover's More options. |
 | 19.5 | Header / footer on chosen pages only — held · package call · keep (1.0 had the same three choices) | **kept** | The card's call (1.0 had the same three choices). |
-| 19.6 | Template comments — held, no button left (REG-485) · her call · keep | **kept** | Her call (REG-485). |
+| 19.6 | Template comments — held, no button left (REG-485) · his call · keep | **kept** | His call (REG-485). |
 | 19.7 | A fixed-amount row in a Payments template — partial · package call (REG-1563) · keep: the fee lives on the quote | **kept** | The fee lives on the quote (REG-1563). |
 | 19.8 | Maison AI in the template, Tasks, T&Cs, Payments and Schedules editors opens an empty sheet — package call (UI sweep) · revisit: the shell's Ask box answers from the records now | **built** | S10: each editor's own suggestions on the shared sheet. |
 | 19.9 | Invoice and PO paper live in Settings › Finance, not Templates — package call (one-home K2a) · revisit against the one-home rule | **kept** | Kept in Settings › Finance (one home with its numbers and preview), with a door from the Brand kit. |
@@ -388,12 +388,12 @@ Step: S03 — `outcome-S03.md`. Survey keys: `held:contracts`.
 | 20.1 | Standard PDF documents added to every signing — held · as recommended (Contracts Q-26: '2.0 keeps no file bytes') · revisit: that reason ended with gaps build E | **built** | PDF templates (`contract_templates` kind `pdf` + `contract_template_files`), offered by Send together. |
 | 20.2 | Import from File, Mark as signed and the Won upload keep only a name, not the PDF — stand-in · as recommended · revisit: the signed copy is the file a studio most needs to open again | **built** | The PDF kept in the lead's Files › Contract & VOs (`keepContractPdf`); Files refuses to trash it. |
 | 20.3 | Signing link with a token, a 7-day expiry, resend and cancel — stand-in (keyed on the contract id) · as recommended (Q-28) · revisit: every newer client link has a token | **built** | `/sign/<token>` (`contracts.sign_token`), the 7 / 14 / 30-day window, Stop = Draft + a fresh token with Undo, reminders renew. |
-| 20.4 | SMS code before signing — stand-in (any six digits) · her call (REG-534) · developers' lane | **stand-in** | Any six digits (her REG-534); a real SMS is the developers'. |
+| 20.4 | SMS code before signing — stand-in (any six digits) · his call (REG-534) · developers' lane | **stand-in** | Any six digits (his REG-534); a real SMS is the developers'. |
 | 20.5 | Server-rendered PDF and signing packet; the link sent by SMS / email — stand-ins · developers' lane | **stand-in** | A written contract prints from Preview through `printPaper()` (plug-ready, S34); a PDF contract downloads its own file; the link travels on WhatsApp / Copy link. |
 | 20.6 | A member's signature auto-applied only with their consent — dropped · package call (Accounts Setup) · revisit: 1.0 asked before stamping a signature | **built** | `members.signature_consent`, Your profile's switch, `appliedSignatureOf`; R105. |
 | 20.7 | Contract value moves when a Signed quote is edited (1.0 froze it at signing) — partial · revisit | **built** | `quotes.signed_amount_minor`; the banner says when an edit moved today's total. |
-| 20.8 | The 'Prepared with OpenMaison' footer stays on contracts but left invoices — package call flagged for her (REG-1120) | **built** | Removed (checked `contract-paper.tsx`). |
-| 20.9 | Coming soon: New Contract ▾ › Create with AI (1.0 had none), ⋮ › Contracts Settings (1.0: Accounts › Document Templates), sort on the table heads · her call (REG-178 mock copy) · revisit: drop Create with AI, point Settings at Settings › Quotes & pricing | **built** | Create with AI gone (checked), Contracts Settings → Settings › Quotes & pricing › Contracts, head sort. |
+| 20.8 | The 'Prepared with OpenMaison' footer stays on contracts but left invoices — package call flagged for him (REG-1120) | **built** | Removed (checked `contract-paper.tsx`). |
+| 20.9 | Coming soon: New Contract ▾ › Create with AI (1.0 had none), ⋮ › Contracts Settings (1.0: Accounts › Document Templates), sort on the table heads · his call (REG-178 mock copy) · revisit: drop Create with AI, point Settings at Settings › Quotes & pricing | **built** | Create with AI gone (checked), Contracts Settings → Settings › Quotes & pricing › Contracts, head sort. |
 
 ### 21 · `price-book` — Left in the Price book
 
@@ -417,14 +417,14 @@ Step: S07 — `outcome-S07.md` (with S02, S23, S34). Survey keys: `held:projects
 | 22.1 | AI-written schedule from the quote, a timeline from an uploaded PDF or photo, AI task suggestions — stand-ins (rules, no credits) · as recommended / package (I-Q13) · keep | **stand-in** | Rule-built, no credits (I-Q13) — kept as they are. |
 | 22.2 | Generate (replace) a milestone's tasks with approval — partial (suggestions only add) · package (P-E) · keep | **kept** | Suggestions only add (P-E). |
 | 22.3 | Hide modules a studio doesn't use — later · as recommended (simplify Q-11) · keep | **kept** | Later (simplify Q-11). |
-| 22.4 | A payment above what is owed goes to the note, not a credit — package call flagged for her (REG-1117, D-14) · revisit: credit notes exist now | **built** | Overpayment credit notes (`credit_notes.kind = 'overpayment'`, `holdOverpayment`, `applyCredit`). |
-| 22.5 | 1.0's old client links (/pay/…, /my/{studio}/p/{token}) do not redirect — waits on her (map 24 D-11) · decide before the port | **built** | S02 (`lib/links/old-links.ts`). |
+| 22.4 | A payment above what is owed goes to the note, not a credit — package call flagged for him (REG-1117, D-14) · revisit: credit notes exist now | **built** | Overpayment credit notes (`credit_notes.kind = 'overpayment'`, `holdOverpayment`, `applyCredit`). |
+| 22.5 | 1.0's old client links (/pay/…, /my/{studio}/p/{token}) do not redirect — waits on him (map 24 D-11) · decide before the port | **built** | S02 (`lib/links/old-links.ts`). |
 | 22.6 | Files: Download on an invoice or receipt entry answers Coming soon (REG-1229) · revisit | **built** | Download opens the paper with `?print=1`; a real PDF file needs a server renderer (`setPdfRenderer`, S34). |
 | 22.7 | A 3-D layout started on a lead before Won is not carried to its project — package (one-home N-10) · revisit | **built** | A lead's layouts (`space_layouts.lead_id`), carried at Won (`carryLeadLayouts`). |
 | 22.8 | Tickets: AI analysis and the Proactive Alerts tab; Messages: 'Show chat history' on invite, chat with any contact, groups — dropped by package (H-Q16 · H-Q27 · P-G) · keep | **kept** | Kept dropped (H-Q16 · H-Q27 · P-G): tickets' AI analysis and Proactive Alerts, Show chat history (its dead code removed in S02), chat with any contact. Groups were built later by S26. |
 | 22.9 | Floor plan live refresh — dropped by package (G-Q17) · keep | **kept** | G-Q17. |
 | 22.10 | Reconcile tasks, over-bill treatments, top-up invoices, a client rating at the close — not carried as recommended · keep | **kept** | Not carried, as recommended. |
-| 22.11 | Other countries' compliance lists and timelines — held (DEF-30) | **parked by her** | DEF-30 — S33 on hold. |
+| 22.11 | Other countries' compliance lists and timelines — held (DEF-30) | **parked by him** | DEF-30 — S33 on hold. |
 | 22.12 | Object storage and the five-minute reminder sweep — developers' lane | **stand-in** | Object storage stays the developers' (plug-ready `setFileStore`, S34). The sweep is built (S34: `/api/cron/<job>`, CRON_SECRET) — a scheduler has to call it. |
 | 22.13 | Meeting Summary, launching the Co-Pilot from a project — held (REG-552) · see Meetings | **built** | S23: the With {client} card's Last met row; Create › Meeting on the project. |
 
@@ -440,12 +440,12 @@ Step: S06 — `outcome-S06.md` (23.10 by S22). Survey keys: `held:finance`.
 | 23.4 | Recurring expenses — dropped · package (F1-Q11) · revisit: rent, software and retainers recur at every studio | **built** | `expenses.repeat_*`, `raiseDueRepeats` (lazy on read; S34's `repeats` job). |
 | 23.5 | Expense categories the studio edits — dropped · package · revisit: Reports group by category | **built** | Settings › Finance › Money out › Expense categories. |
 | 23.6 | Expense verification track, vendor kind and default markup, several profit readings, an AI PO-vs-quote compare, commission at creation — dropped · package · keep | **kept** | Package calls; the card says keep. |
-| 23.7 | The PO paper's acceptance block is off by default (1.0: on) — package flagged for her (REG-1580) | **built** | On by default (`DEFAULT_PO_PAPER`). |
-| 23.8 | Accounting role leftovers: approving invoices, POs and expenses (REG-1660), raising POs, read-only Files, Settings limited to Finance — package flagged for her (P-I questions 2·3·5·6) · revisit: a bookkeeper can delete project files | **built** | Accounting raises POs, reads Files only, sees Settings › Finance alone; approvals kept with Owners and Admins (her "go ahead" 2026-10-10). |
-| 23.9 | 'Where costs go' has no design-system category palette (REG-1577) — flagged for her | **built** | A house palette (`components/om/category-palette.module.css`, `lib/chart-palette.ts`) — a DS chart palette is Vicky's call. |
-| 23.10 | Margin alerts across projects, the One-Click Profit card, a revenue KPI — held (N-02, her call) · keep: Reports has the numbers | **built** | S06 kept it held (N-02); S22 then built it on the Dashboard — Profit this month · Owed to you from Reports, margin rows from the projects' money (checked in `components/dashboard`). |
+| 23.7 | The PO paper's acceptance block is off by default (1.0: on) — package flagged for him (REG-1580) | **built** | On by default (`DEFAULT_PO_PAPER`). |
+| 23.8 | Accounting role leftovers: approving invoices, POs and expenses (REG-1660), raising POs, read-only Files, Settings limited to Finance — package flagged for him (P-I questions 2·3·5·6) · revisit: a bookkeeper can delete project files | **built** | Accounting raises POs, reads Files only, sees Settings › Finance alone; approvals kept with Owners and Admins (his "go ahead" 2026-10-10). |
+| 23.9 | 'Where costs go' has no design-system category palette (REG-1577) — flagged for him | **built** | A house palette (`components/om/category-palette.module.css`, `lib/chart-palette.ts`) — a DS chart palette is Vicky's call. |
+| 23.10 | Margin alerts across projects, the One-Click Profit card, a revenue KPI — held (N-02, his call) · keep: Reports has the numbers | **built** | S06 kept it held (N-02); S22 then built it on the Dashboard — Profit this month · Owed to you from Reports, margin rows from the projects' money (checked in `components/dashboard`). |
 | 23.11 | Bank feed / matching transfers — stand-in · developers and OpenMaison ops | **stand-in** | The developers and OpenMaison ops. |
-| 23.12 | DuitNow, multi-currency, the FX job — held (DEF-30) | **parked by her** | DEF-30 — S33 on hold. |
+| 23.12 | DuitNow, multi-currency, the FX job — held (DEF-30) | **parked by him** | DEF-30 — S33 on hold. |
 
 ### 24 · `client-portal` — Left in the client portal
 
@@ -457,7 +457,7 @@ Step: S13 — `outcome-S13.md` (with S02, S34). Survey keys: `held:client-portal
 | 24.2 | Several studios on one platform (the /my studio picker) — stand-in · developers' lane | **stand-in** | One studio's portal; an unknown address gets its own notice (S13). |
 | 24.3 | Client emails and WhatsApp actually sent — stand-in (outbox) · developers' lane | **stand-in** | The outbox; S34's delivery slot. |
 | 24.4 | Footer Privacy · Terms · Contact links — dropped · package (H-Q27) · revisit: a portal that signs people in by phone needs a privacy notice (PDPA) | **built** | `components/portal/portal-foot.tsx`; Company › Client portal › Privacy and terms; Getting it live's fifth check. |
-| 24.5 | 1.0's portal and pay links do not redirect — waits on her (D-11) | **built** | S02. |
+| 24.5 | 1.0's portal and pay links do not redirect — waits on him (D-11) | **built** | S02. |
 | 24.6 | Themes, six sign-in layouts, card payments, client to-dos — dropped as recommended (Q-37 · Q-39 · Q-44 · F-15 · M-03) · keep | **kept** | Dropped as recommended. |
 
 ### 25 · `space-planner` — Left in the 3-D Space Planner
@@ -480,20 +480,20 @@ Step: S14 + S01 (profile lines) — `outcome-S14.md`, `outcome-S01.md` (with S09
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 26.1 | Roles & Permissions editor, custom roles — held · her call (Q-40 'recommendation (hold)') · keep: 1.0's matrix enforced almost nothing | **kept** | Her hold (Q-40), the card's recommendation; an editor first needs every rule to read a role table (the developers' auth). |
+| 26.1 | Roles & Permissions editor, custom roles — held · his call (Q-40 'recommendation (hold)') · keep: 1.0's matrix enforced almost nothing | **kept** | His hold (Q-40), the card's recommendation; an editor first needs every rule to read a role table (the developers' auth). |
 | 26.2 | Edit a member's name, email, phone, photo — dropped · package call (never asked) · revisit: nobody can fix a mistyped email that prints on quotes; the phone avatar answers Coming soon (1.0: profile popover › Your Profile) | **built** | S01: Company › Members › Edit details; Your profile. |
 | 26.3 | My signature as its own card — later as recommended, never taken up · revisit: a new designer has to open a quote to set it | **built** | S01: the Your signature card. |
 | 26.4 | Invite a member, sign-in, sessions, SSO — stand-ins (View as) · developers' lane | **built** | Invitations (S09), sign-in and sessions (S30, `studio_sessions`); SSO = the Qanvast provider seam (stand-in, S30). |
 | 26.5 | Review Link — later as recommended · revisit: 'Ask for a review' sends a WhatsApp with no link | **built** | Company › Profile › Reviews (`lib/company/review-link.ts`); Ask for a review carries it. |
 | 26.6 | Who sees leads sits in Lead management though it also governs projects, quotes and contracts — package · revisit | **built** | Moved to Settings › Roles & access; Qanvast Ops' list now follows it. |
 | 26.7 | 'Studio' names both a Settings module and a Company group — package (N-06) · revisit | **built** | The module renamed "Roles & access" (checked `lib/settings/modules.ts`); the Company group keeps "Studio" (REG-484). |
-| 26.8 | Qanvast Ops' home (the studio rail or Company › Integrations) — her open call (REG-1372) | **kept** | Decided as recommended: Qanvast Ops stays on the rail (REG-77); Integrations' Qanvast card is its door. |
+| 26.8 | Qanvast Ops' home (the studio rail or Company › Integrations) — his open call (REG-1372) | **kept** | Decided as recommended: Qanvast Ops stays on the rail (REG-77); Integrations' Qanvast card is its door. |
 | 26.9 | Google Calendar 'Notify me' — Coming soon · waits for Meetings | **built** | S23: Company › Integrations' Calendar invites card (.ics + Google's filled-in page) — no "Notify me" left on it (checked: "Notify me" is now only on Zoho Books); a two-way sync is the developers' (`setCalendarSync`). |
 | 26.10 | AI & Copilot settings (Copilot tuning, objection responses, meeting checklists) — held with Meetings (REG-552) | **built** | S23: Settings › Meetings. |
-| 26.11 | Journey mode, per-member overrides, Studio Health, lead categories, AI assignment prompt, quote approval thresholds, quote sharing, sub-categories, the competitor list, personal prefs — skipped as recommended or by her rule ('Journey and Archive are out') · keep: 1.0 saved most of them and read them nowhere | **kept** | Skipped as recommended / her rule ("Journey and Archive are out"). |
-| 26.12 | Demo shows a CaseTrust badge and award while the record says not done — package flagged · her data call | **built** | Repair R116: the record follows the badge; one switch on Profile reverses it. |
-| 26.13 | Branch protection on main so the design checks block — hers to switch on (REG-726) | **kept** | A GitHub setting, hers to switch on. |
-| 26.14 | Studio region, currency, an entity's own tax rate — held (DEF-30) | **parked by her** | DEF-30 — S33 on hold. |
+| 26.11 | Journey mode, per-member overrides, Studio Health, lead categories, AI assignment prompt, quote approval thresholds, quote sharing, sub-categories, the competitor list, personal prefs — skipped as recommended or by his rule ('Journey and Archive are out') · keep: 1.0 saved most of them and read them nowhere | **kept** | Skipped as recommended / his rule ("Journey and Archive are out"). |
+| 26.12 | Demo shows a CaseTrust badge and award while the record says not done — package flagged · his data call | **built** | Repair R116: the record follows the badge; one switch on Profile reverses it. |
+| 26.13 | Branch protection on main so the design checks block — his to switch on (REG-726) | **kept** | A GitHub setting, his to switch on. |
+| 26.14 | Studio region, currency, an entity's own tax rate — held (DEF-30) | **parked by him** | DEF-30 — S33 on hold. |
 
 ### 27 · `notifications` — Left in Notifications
 
@@ -504,7 +504,7 @@ Step: S18 (lane A) — `outcome-S18.md` (with S34). Survey keys: `held:notificat
 | 27.1 | Daily digest email — held · Q-42 left blank, so it fell to hold · revisit: per-event email is built; a once-a-day summary is the quiet option owners expect | **built** | Your profile › Your notifications › A daily summary (8 AM; `sendDueSummaries`). |
 | 27.2 | Choose who hears each notice — held · Q-43 left blank, so it fell to hold · revisit as a personal mute only (today an event can be switched off only for the whole studio) | **built** | A personal mute (`lib/notifications/personal.ts`; `emit.ts` honours it). |
 | 27.3 | Email and WhatsApp really sent; the timed reminders (T−30, the 09:00 hold ping) arrive only when the bell is opened — stand-ins · developers' lane | **stand-in** | Nothing leaves the machine (`setDeliveryAdapter`). S34 built the sweep (`/api/cron/run`) that sends the timed reminders once a scheduler calls it. |
-| 27.4 | The bell's 'Updates' group shares its name with a project's Updates tab — her open call (N-14) | **built** | The bell's group is "Notices" (flagged). |
+| 27.4 | The bell's 'Updates' group shares its name with a project's Updates tab — his open call (N-14) | **built** | The bell's group is "Notices" (flagged). |
 
 ### 28 · `ai-credits` — Left in AI credits and plans
 
@@ -512,16 +512,16 @@ Step: S19 (lane A) + S08b — `outcome-S19.md`, `outcome-S08b.md` (with S10, S23
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 28.1 | Dodo checkout, the webhook grant, refresh and lapse jobs, Manage billing, tax invoices — stand-ins · as recommended (her 'go ahead and build it perfectly') · developers' lane | **stand-in** | The demo checkout; S34 added `setPaymentProvider` and `/api/webhooks/payments`. |
+| 28.1 | Dodo checkout, the webhook grant, refresh and lapse jobs, Manage billing, tax invoices — stand-ins · as recommended (his 'go ahead and build it perfectly') · developers' lane | **stand-in** | The demo checkout; S34 added `setPaymentProvider` and `/api/webhooks/payments`. |
 | 28.2 | Plan feature locks — held as recommended (Q-40) · revisit: the in-app Plans table says Free lacks X-Ray, the template editor, approvals and 'Custom stage definitions' (2.0 has none), yet nothing locks; lock or soften it before demoing Free | **built** | `PRO_FEATURES` + `requirePlan` / `usePlanLock` / `ProLocked`; the Plans table reads the plans' flags. |
-| 28.3 | Auto top-up with a monthly ceiling — held by the build although her mark said build (Q-36) · tell her | **built** | `lib/credits/auto-topup.ts` (Owner, once per crossing, a monthly ceiling, off by default); told her. |
-| 28.4 | Seats checked against members; Accounting takes no seat (REG-1669) — held · a pricing call flagged for her | **kept** | Her hold: seats are said, never refused; Accounting takes none. Change seats built. |
+| 28.3 | Auto top-up with a monthly ceiling — held by the build although his mark said build (Q-36) · tell him | **built** | `lib/credits/auto-topup.ts` (Owner, once per crossing, a monthly ceiling, off by default); told him. |
+| 28.4 | Seats checked against members; Accounting takes no seat (REG-1669) — held · a pricing call flagged for him | **kept** | His hold: seats are said, never refused; Accounting takes none. Change seats built. |
 | 28.5 | Digitizing a contractor's quote into a variation order is free while Upload a quote costs 5 (REG-1200) — package call · revisit: one price table | **built** | Every quote read is 5 credits (`quote_digitize`), the VO and schedule uploads too. |
 | 28.6 | Packs of 2,000 / 5,000, a '+200 this month' raise, a blocked render that runs itself, rollover, Draft quality, a manager seeing team usage, PayNow at checkout — held as recommended (keep 1.0) · keep | **kept** | Keep 1.0 — which meant building 1.0's 100…5,000 picker (1.0 moved from packs). |
 | 28.7 | Maison AI on the Plan & AI credits pages — Coming soon · revisit: the answers are in the ledger | **built** | S10. |
 | 28.8 | GST line at checkout — built; finance must confirm the words before go-live | **kept** | Built; the words still wait on finance. |
-| 28.9 | Since 2026-10-10 every Reset to base rolls the demo's credits month (two 'credits renewed' rows, empty 'this month') — her call: shift the period with the demo day, or accept | **built** | S08b (`lib/credits/demo-month.ts`, R111); S19's R118 moves the paid work with its charges. |
-| 28.10 | Co-Pilot metering — waits for Meetings (REG-552) | **built** | S23: `copilot_block`, 25 a 10-minute block (her Q-45; flag: 1.0 never charged it). |
+| 28.9 | Since 2026-10-10 every Reset to base rolls the demo's credits month (two 'credits renewed' rows, empty 'this month') — his call: shift the period with the demo day, or accept | **built** | S08b (`lib/credits/demo-month.ts`, R111); S19's R118 moves the paid work with its charges. |
+| 28.10 | Co-Pilot metering — waits for Meetings (REG-552) | **built** | S23: `copilot_block`, 25 a 10-minute block (his Q-45; flag: 1.0 never charged it). |
 
 ### 29 · `ai-visualizer` — Left in the AI Visualizer
 
@@ -530,7 +530,7 @@ Step: S20 (lane A) — `outcome-S20.md` (with S23, S30). Survey keys: `held:ai-v
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
 | 29.1 | A real image model for every pass (render, detect any photo, lasso re-detect, empty, remove, furnish, sketch to photo, restyle in 25 looks, relight, style transfer, the finishing note, Fast vs High) — stand-ins · as recommended (audit 16) · developers' lane | **stand-in** | The curated engine; seams `runPass`, `coerceDriftReport`, `guardRender`. |
-| 29.2 | Replace a piece with a new one — the build changed her answer from 'say it can't' to recolour (Q-21) and never put it back to her · tell her | **built** | As she answered (Q-21): the picker stays and says it can't draw a new piece; Recolour it to match with Undo; told her. |
+| 29.2 | Replace a piece with a new one — the build changed his answer from 'say it can't' to recolour (Q-21) and never put it back to him · tell him | **built** | As he answered (Q-21): the picker stays and says it can't draw a new piece; Recolour it to match with Undo; told him. |
 | 29.3 | Drift guard (check and repair; Drift repair priced at 2 credits) — held as recommended ('not needed') · revisit for production: a real model drifts | **built** | `lib/visualizer/drift.ts`, `render_repair` 2 credits, kept only when better. |
 | 29.4 | HEIC photos — partial (only where the browser opens them) · revisit: the iPhone default; a small converter (1.0: normalize-image.ts) | **built** | `lib/heic.ts` (`heic-to` 1.5.2 pinned) in every picker and Files. |
 | 29.5 | Maison AI on the Visualizer home and in the editor — every suggestion answers Coming soon · as recommended · revisit: Maison AI acts elsewhere since gaps build I | **built** | Every suggestion acts; Suggest {style} finishes applies as one step with Undo. |
@@ -545,9 +545,9 @@ Step: S21 (lane A) — `outcome-S21.md` (with S23). Survey keys: `held:quote-x-r
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 30.1 | A model reading any PDF or photo of the other quote — stand-in (three curated quotes; spreadsheets are real) · her call (REG-529 'a curated engine, not a model') · developers' lane | **built** | Any PDF with words is read by rule (`lib/quotes/pdf-quote.ts` `readQuoteText`) with the adds-up check; a photo or scan is refused honestly — OCR / a model are the developers'. |
+| 30.1 | A model reading any PDF or photo of the other quote — stand-in (three curated quotes; spreadsheets are real) · his call (REG-529 'a curated engine, not a model') · developers' lane | **built** | Any PDF with words is read by rule (`lib/quotes/pdf-quote.ts` `readQuoteText`) with the adds-up check; a photo or scan is refused honestly — OCR / a model are the developers'. |
 | 30.2 | Brand reading with web dossiers, market-rate bands, their arithmetic slip — stand-ins · as recommended (Q-06 · Q-23) · keep | **kept** | Web brand dossiers and market-rate bands stay the platform's (Q-23 · Q-06). Their arithmetic slip is built ("Their numbers don't add up", `slipsOf`). |
-| 30.3 | Other currencies — held (DEF-30) | **parked by her** | Currencies wait with S33 (on hold); a non-S$ quote is refused at once (built). |
+| 30.3 | Other currencies — held (DEF-30) | **parked by him** | Currencies wait with S33 (on hold); a non-S$ quote is refused at once (built). |
 | 30.4 | Competitor-quote analyser in the Meeting Copilot — held (REG-552) | **built** | S23's Their quote + S21's Pro openers. |
 | 30.5 | Win / loss, X-Ray settings, a PDF or public link — declined as recommended (Q-22 · Q-24 · Q-25) · keep | **kept** | Declined (Q-22 · Q-24 · Q-25). |
 
@@ -557,10 +557,10 @@ Step: S16 + S01 — `outcome-S16.md`, `outcome-S01.md` (the Soon items made live
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 31.1 | Rail › Marketplace and the phone's More › Marketplace — Coming soon · her call (REG-808) · 1.0: a supplier brand directory with deals and brand pages | **built** | S24: Marketplace live in the rail and More (checked `TOP_ITEMS`). |
-| 31.2 | Tools › Market Insights — Coming soon · her call (REG-808) · 1.0: articles OpenMaison publishes (reports, case studies, news) | **built** | S25: the Tools tile has its `href` (checked). |
+| 31.1 | Rail › Marketplace and the phone's More › Marketplace — Coming soon · his call (REG-808) · 1.0: a supplier brand directory with deals and brand pages | **built** | S24: Marketplace live in the rail and More (checked `TOP_ITEMS`). |
+| 31.2 | Tools › Market Insights — Coming soon · his call (REG-808) · 1.0: articles OpenMaison publishes (reports, case studies, news) | **built** | S25: the Tools tile has its `href` (checked). |
 | 31.3 | Tools › Meeting Copilot — Coming soon · see Meetings | **built** | S23: Tools › Meeting Copilot → `/meetings` (checked). |
-| 31.4 | The quote editor's Brand Catalog tile — Coming soon · package · whether it is the Marketplace is still her call | **built** | S04 dropped the tile (1.0 had none); no Brand Catalog press left (checked). |
+| 31.4 | The quote editor's Brand Catalog tile — Coming soon · package · whether it is the Marketplace is still his call | **built** | S04 dropped the tile (1.0 had none); no Brand Catalog press left (checked). |
 | 31.5 | The phone top bar's avatar — Coming soon · revisit: open View as, as the rail's studio block does (1.0: profile menu with settings and sign-out) | **built** | S01: the phone avatar opens the You sheet (Your profile, View as; later Open to new leads, Sign out). |
 | 31.6 | The unsaved-edits guard misses the browser's own Back — package (REG-791) · keep: the App Router cannot hold Back | **kept** | The App Router can't hold Back; S16 made every scripted move ask the guard instead. |
 | 31.7 | Rail › Dashboard and Marketplace, Tools › Market Insights and Meeting Copilot still answer coming soon (each has its own card) | **built** | Dashboard (S22), Meeting Copilot (S23), Marketplace (S24), Market Insights (S25) — none answers coming soon now. |
@@ -584,7 +584,7 @@ Step: S02 — `outcome-S02.md` (33.5 with S23). Survey keys: `public:client-link
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 33.1 | Links from 1.0 already in clients' WhatsApp threads have nowhere to land in 2.0. The projects migration map's D-11 (send /pay/…, /pay/inv/…, /pay/receipt/… and /my/{slug}/p/… to the portal's sign-in) is waiting on her. | **built** | `lib/links/old-links.ts` redirects each (D-11 as recommended). |
+| 33.1 | Links from 1.0 already in clients' WhatsApp threads have nowhere to land in 2.0. The projects migration map's D-11 (send /pay/…, /pay/inv/…, /pay/receipt/… and /my/{slug}/p/… to the portal's sign-in) is waiting on him. | **built** | `lib/links/old-links.ts` redirects each (D-11 as recommended). |
 | 33.2 | A read-only 'have a look' quote link: 1.0's /quote-preview/[token] (from the Quote Digitizer's Share) updates live as the studio edits. In 2.0 the client gets the quote only through Send for confirmation (/confirm) or the signing link. | **built** | `/quote/<token>`, ⋮ › Share a view-only link. |
 | 33.3 | A real SMS code before a client link opens. 1.0's old payment portal never actually sends its code, and the quote link's code screen has no generator mounted. 2.0's portal accepts any six digits (a stand-in). This is developers' work. | **stand-in** | The developers'; nothing new claims a code. |
 | 33.4 | A picture card when the link is pasted into WhatsApp. 2.0's design link has one. Its signing, confirm, invoice, receipt and PO links show their title only, where 1.0 showed the website's card. Small. | **built** | The studio's card on every client link (`app/card/[kind]/[key]`). |
@@ -607,7 +607,7 @@ Step: S34 (lane B) — `outcome-S34.md`. Survey keys: `api:message-delivery-prov
 | 34.1 | A real email and WhatsApp provider behind setDeliveryAdapter (Resend · 360dialog or another) | **stand-in** | Plug-ready: the adapter contract, the `globalThis` slot, the allow-list, `not_in_plan` never handed over, a start-up warning. No provider here. |
 | 34.2 | The production five-minute sweep that runs deliverDerived and releaseHeldMessages for every member; today these run when someone opens the bell | **built** | `runJobs` behind `/api/cron/<job>` (CRON_SECRET, idempotent). |
 | 34.3 | Delivered and Read receipts from WhatsApp; 2.0's Sent messages knows only sent, failed, held and no address | **built** | `POST /api/webhooks/whatsapp`, `applyReceipts` → Delivered · Read in Sent messages. |
-| 34.4 | Branded HTML emails (the studio's logo and colours) in place of plain text | **built** | `emailHtml` — a first cut for Vicky (the look is hers). |
+| 34.4 | Branded HTML emails (the studio's logo and colours) in place of plain text | **built** | `emailHtml` — a first cut for Vicky (the look is his). |
 | 34.5 | What happens to a client's WhatsApp reply (1.0 only logged it) | **built** | `inbound_messages`, filed into the client conversation. |
 
 ## I’d skip
@@ -623,10 +623,10 @@ Step: S35 (lane A) — `outcome-S35.md`. Survey keys: `public:marketing-website`
 | 35.3 | Contact form (saved, and emailed to the team), the footer's newsletter sign-up, 'Book a demo' form → Calendly | **built** | `contact_messages`, `newsletter_subscribers`, `beta_signups` + Calendly; the team's emails go through the outbox (delivery a stand-in). |
 | 35.4 | Privacy, Terms, Cookies pages | **built** | Privacy and Terms verbatim; Cookies rewritten to the cookies 2.0 sets. |
 | 35.5 | SEO layer: metadata, structured data, sitemap, robots (blocks AI training crawlers), the branded link-preview picture | **built** | Titles, JSON-LD, sitemap, robots (AI training crawlers blocked), `llms.txt`, `/card/site/<page>`. |
-| 35.6 | UAE free-trial landing page /uae-get-started (regions beyond Singapore are held, DEF-30) | **parked by her** | Her hold (2026-10-12, REG-1854). |
+| 35.6 | UAE free-trial landing page /uae-get-started (regions beyond Singapore are held, DEF-30) | **parked by him** | His hold (2026-10-12, REG-1854). |
 | 35.7 | The site's words describe 1.0's modules and names (Quote Digitizer, Meeting Co-pilot, mAIson bot) — they will need updating to 2.0's (Quote X-Ray / Upload a quote, Maison AI) when 2.0 ships | **built** | Every page in 2.0's names; claims 2.0 doesn't make cut. S42 still checks the Home's results band (steps.md note). |
 | 35.8 | Book a demo form → beta sign-up list + Calendly | **built** | The list itself is Platform admin's (excluded); the rows are kept for it. |
-| 35.9 | The UAE campaign landing page | **parked by her** | Her hold. |
+| 35.9 | The UAE campaign landing page | **parked by him** | His hold. |
 
 ### 36 · `try-it` — Try the AI Visualizer without an account
 
@@ -647,16 +647,16 @@ Step: S37 (lane B) — `outcome-S37.md`. Survey keys: `studio:verify-listing`, `
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
 | 37.1 | Apply to be listed on Qanvast, with documents | **built** | Company › Profile › Listed on Qanvast (`components/company/qanvast-listing-card.tsx`, `studio_verifications` + files). |
-| 37.2 | A staff queue to verify or reject an application with a note | **parked by her** | The staff queue is Platform admin (excluded by her); its two answers land through `POST /api/webhooks/qanvast-listing`; the demo's "(demo)" answers stand in. |
+| 37.2 | A staff queue to verify or reject an application with a note | **parked by him** | The staff queue is Platform admin (excluded by him); its two answers land through `POST /api/webhooks/qanvast-listing`; the demo's "(demo)" answers stand in. |
 | 37.3 | A studio's application to be listed on Qanvast, reviewed by staff | **built** | The application is built; Qanvast's review is a stand-in (the seam + webhook; the demo's plays are labelled). |
 
 ### 38 · `languages` — Languages (Arabic)
 
-Step: S38 — **parked by her** (REG-1836; no outcome file). Survey keys: `onboarding:languages`.
+Step: S38 — **parked by him** (REG-1836; no outcome file). Survey keys: `onboarding:languages`.
 
 | # | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| 38.1 | Nothing working to port: an Arabic 'Book a demo' form nobody can switch to | **parked by her** | Languages parked by her (REG-1836). |
+| 38.1 | Nothing working to port: an Arabic 'Book a demo' form nobody can switch to | **parked by him** | Languages parked by him (REG-1836). |
 
 ### 39 · `studio-health` — Studio Health (app usage for the owner)
 
@@ -695,14 +695,14 @@ nothing is missed. **They are not in the counts above.**
 
 | Survey key | Pending line (verbatim) | Status | Where / why |
 | --- | --- | --- | --- |
-| `studio:roles-permissions-editor` | Custom roles | **kept** | Her hold (Q-40). S14 kept the editor held, as the settings-company card recommended (line 26.1): 2.0's *Who may do what* is computed from the rules the app enforces, and an editor would first need every rule to read a role table (the developers' auth work). |
+| `studio:roles-permissions-editor` | Custom roles | **kept** | His hold (Q-40). S14 kept the editor held, as the settings-company card recommended (line 26.1): 2.0's *Who may do what* is computed from the rules the app enforces, and an editor would first need every rule to read a role table (the developers' auth work). |
 | `studio:roles-permissions-editor` | Page access, data scope and action switches per role | **kept** | As above. |
 | `studio:roles-permissions-editor` | Overrides for one member | **kept** | As above; "per-member overrides" also kept skipped on line 26.11. |
 | `api:usage-analytics` | Event tracking across the app | **in progress** | Goes with Studio Health (S39, being built). S30 built the session record (`studio_sessions`) and left the usage events to S39. |
 | `api:usage-analytics` | Daily rollups per studio and per member | **in progress** | S39. S34 lists 1.0's `usage-rollup` cron for it. |
-| `api:usage-analytics` | Pulling totals from each customer's deployment | **parked by her** | 1.0's `fork-analytics-pull` is an OpenMaison platform job. S34's registry note files it under Platform admin, which she excluded. |
+| `api:usage-analytics` | Pulling totals from each customer's deployment | **parked by him** | 1.0's `fork-analytics-pull` is an OpenMaison platform job. S34's registry note files it under Platform admin, which he excluded. |
 | `api:usage-analytics` | 90-day retention | **in progress** | S39. S34 lists 1.0's `usage-retention` cron for it. |
-| `api:usage-analytics` | The platform's Admin › Analytics dashboards (no audit decides them; Studio Health for the owner was dropped, Accounts Setup Q-16) | **parked by her** | Platform admin ("you can ignore admin"). |
+| `api:usage-analytics` | The platform's Admin › Analytics dashboards (no audit decides them; Studio Health for the owner was dropped, Accounts Setup Q-16) | **parked by him** | Platform admin ("you can ignore admin"). |
 
 ## Not answered
 
@@ -720,7 +720,7 @@ Some lines were answered only indirectly, because no outcome quotes them by name
 - **17.8, 22.12, 23.10, 27.3.** An earlier step's answer was changed by a later step: S34 made the lead webhook and the sweep real, and S22
   built the One-Click Profit tiles. The ledger shows the later state.
 
-### Answered, but her call is still open
+### Answered, but his call is still open
 
 The steps built these as recommended and flagged them. Nothing is missing, but each one waits on Vicky:
 
@@ -731,8 +731,8 @@ The steps built these as recommended and flagged them. Nothing is missing, but e
 - **23.9** A DS chart palette (the house one is in use now).
 - **27.4** "Notices" as the bell's group name.
 - **28.8** The GST wording at checkout (finance).
-- **3.15 · 28.10** Co-pilot metering at her Q-45 price. 1.0 published the price but never charged it.
-- **29.2** Replace now recolours, as she answered; she was told.
+- **3.15 · 28.10** Co-pilot metering at his Q-45 price. 1.0 published the price but never charged it.
+- **29.2** Replace now recolours, as he answered; he was told.
 - **29.6** New sample-room photography.
 - **26.13** Branch protection on main.
 - **1.5** Workload without tasks per member.
@@ -758,7 +758,7 @@ ledgers. **Open** marks an item that no step built or decided; the next section 
 
 **S09 · Inviting your team**
 - Roles on the invite, and only an Owner invites an Owner: built.
-- `plans.max_members` (shown, never checked): said, never refused (kept; her seat hold, S19).
+- `plans.max_members` (shown, never checked): said, never refused (kept; his seat hold, S19).
 - "Request member addition" (an email to OpenMaison staff) and Pending requests: kept out (a 2.0 studio adds its own members, REG-646).
 - A Hangout's invitation (`hangout_event_id`): built in S27.
 - The login refusal "You have a pending invitation": built in S30 (an open invitation joins on sign-in; an expired one is refused).
@@ -787,7 +787,7 @@ ledgers. **Open** marks an item that no step built or decided; the next section 
 
 **S19 · AI credits**
 - **Flat issuance (extra seats buy access, not credits): flagged for Vicky, not built.**
-- **Seat enforcement (refusing a member past the seats, with Add a seat): flagged, not built** (her seat hold). Change seats is built.
+- **Seat enforcement (refusing a member past the seats, with Add a seat): flagged, not built** (his seat hold). Change seats is built.
 - Yearly plans granting twelve months at once: kept 2.0's monthly grant (credits Q-43).
 - Free running in 30-day cycles from sign-up: kept 2.0's period; noted for the port.
 - The seat picker as a select: the house stepper is used instead.
@@ -898,7 +898,7 @@ ledgers. **Open** marks an item that no step built or decided; the next section 
 - `verification_status`: built by S37.
 - Studio status, Beta sign-ups, the staff interview: Platform admin / staff.
 - **`settings.workflow.leadAssignment` (auto / round-robin / manual): open.** It appears only in 1.0's interview doc, never in its code.
-- **1.0's per-studio Project Types editor (Accounts › Project Types): open**, her call whether studios edit their project types.
+- **1.0's per-studio Project Types editor (Accounts › Project Types): open**, his call whether studios edit their project types.
 - `chat_identity_name`: nothing to build.
 
 **S34 · Real services**
@@ -913,11 +913,11 @@ ledgers. **Open** marks an item that no step built or decided; the next section 
 **S35 · The website**
 - **1.0's web manifest (`src/app/manifest.ts`): open**, for the developers / Vicky (2.0 has no app icon set yet).
 - The Arabic pages: Languages, parked.
-- The UAE page's FAQ and form: her hold.
+- The UAE page's FAQ and form: his hold.
 - `/try`: built by S36.
 - The older landing parts and the articles' image prompts: not ported.
 - Vercel analytics and the contact email's reply-to: the developers'.
-- **The module FAQs (`MODULE_FAQS`) drawn on the pages: open, her call.** 1.0 held them back too; they are kept as data.
+- **The module FAQs (`MODULE_FAQS`) drawn on the pages: open, his call.** 1.0 held them back too; they are kept as data.
 
 **S36 · Trial**
 - The older `/try` and `/api/demo/restyle`: superseded in 1.0; the old address opens the trial.
@@ -937,12 +937,12 @@ ledgers. **Open** marks an item that no step built or decided; the next section 
 
 | Item | Found by | What it would take |
 | --- | --- | --- |
-| 1.0's studio bookmarks (`/tools/market-insights[/<id>]`, `/tools/quote-xray`, `/tools/ai-visualizer` …) | S25 | A studio-route table beside `lib/links/old-links.ts` (or `next.config.ts` redirects) mapping each 1.0 path to its 2.0 home; an article id maps to `mi-<id>`. Server only, but where each lands is her call. |
+| 1.0's studio bookmarks (`/tools/market-insights[/<id>]`, `/tools/quote-xray`, `/tools/ai-visualizer` …) | S25 | A studio-route table beside `lib/links/old-links.ts` (or `next.config.ts` redirects) mapping each 1.0 path to its 2.0 home; an article id maps to `mi-<id>`. Server only, but where each lands is his call. |
 | The quote document editor's other parts | S29 | Read `outcome-S11.md` and the template editor against 1.0's `quote-document-editor.tsx` (blocks, conditional visibility, bulk delete / duplicate, page breaks); build any missing piece in the template editor, not the quote. |
-| A per-studio Project Types editor | S31 | A Settings › Projects list (the Trades card's grammar) behind `PROJECT_TYPES`, with a schedule rule per type; needs her yes. |
+| A per-studio Project Types editor | S31 | A Settings › Projects list (the Trades card's grammar) behind `PROJECT_TYPES`, with a schedule rule per type; needs his yes. |
 | Auto / round-robin lead assignment | S31 | It never existed in 1.0's code. If wanted, it is a Lead management rule on top of `suggestMember` (REG-612); otherwise record it as nothing to port. |
 | The web manifest | S35 | An app icon set (Vicky's design) and `app/manifest.ts`. |
-| The site's module FAQs drawn | S35 | `MODULE_FAQS` + `faqJsonLd` already exist; drawing them is her call. |
+| The site's module FAQs drawn | S35 | `MODULE_FAQS` + `faqJsonLd` already exist; drawing them is his call. |
 | The accreditation strip vs the brand kit's badges | S37 | Compare 1.0's `accreditations-tab.tsx` and its strip with `BrandKit.badges` and the badges block. The catalogue is Platform admin. |
 | Platform crons (`price-drift`, `aggregate-rates`, `brand-dossier-scan`) | S34 | Platform jobs over crowd rates and web dossiers (Q-23 kept 2.0's curated notes). Record them as platform; the usage crons go with S39. |
 | A studio-wide "everyone gets a digest" switch | S18 | A Settings › Notifications switch over `sendDueSummaries`. Not asked for. |

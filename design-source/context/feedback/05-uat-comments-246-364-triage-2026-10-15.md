@@ -2,7 +2,7 @@
 
 **The ask (Vicky, 2026-10-15).** Go through the "UAT comments" tab of `1nRylNpelEd8eo5gYXgE7YMI7kzL03qQm7OERjhw8I_k` (gid 434902554)
 from row 246 down. Fix every comment in 2.0's shape: no overlaps, no new issues, and nothing already built lost. Use my recommendation
-on every question; she reviews this report afterwards.
+on every question; he reviews this report afterwards.
 
 **Source.** `05-uat-comments-rows-246-364-2026-10-15.csv`, 119 rows: Dyel Design 43 · Spaces Studio 37 · IdesignerLab 28 · General 8 ·
 Dwellings 2 · Cite 1. Column H ("Done – Deployed" …) is **1.0's** team status, not 2.0's.

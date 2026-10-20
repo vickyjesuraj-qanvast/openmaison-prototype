@@ -278,7 +278,7 @@ const fileOf = (f) => path.join(HOME, f)
       ok(await studioBlock(c).locator('img').count() === 0 && await text(studioBlock(c).locator('[class*="__studioInitial"]')) === 'L', '…and its initial, until it has a logo')
       await welcome.getByRole('button', { name: 'Set up your studio' }).click(); await c.waitForURL(/\/settings/); await settle(c, 1500)
       const card = c.locator('#studio-setup')
-      /* (S42 audit A-01, a deliberate change of this rule — her call A·2) a new studio starts on Free, whose own templates are Pro's: the Quote
+      /* (S42 audit A-01, a deliberate change of this rule — his call A·2) a new studio starts on Free, whose own templates are Pro's: the Quote
          template step is done by the default, so six of the seven are open */
       ok(/1 of 7 done/.test(await text(card)) && /Your quotes print with the studio’s default — your own templates come with Pro/.test(await text(card)), `Set up your studio — six of its seven steps open; the Quote template step done by the default on Free (${(await text(card)).slice(0, 80)})`)
       ok(/Who sees which leads in Lim & Co Interiors/.test(await text(c.locator('main'))), 'Settings speaks of Lim & Co Interiors')

@@ -123,7 +123,7 @@ export function ExpenseDialog({ open, initial, fixedProject, projects, vendors, 
       ...(!initial ? { repeat: f.repeat === 'none' || !repeatsHere ? null : f.repeat } : f.repeat !== fresh().repeat ? { repeat: f.repeat === 'none' ? null : f.repeat } : {}),
     })
   }
-  /* (simplify S-14, her "build everything" 2026-10-09) On a phone the claim starts from the thing in your hand: the dialog opens on *Take a
+  /* (simplify S-14, his "build everything" 2026-10-09) On a phone the claim starts from the thing in your hand: the dialog opens on *Take a
      photo of the receipt*, then the amount, the project and what it was for (F1 J10 — the receipt was the last field). At a desk the order
      is as it was, the receipts at the end. */
   const project = !fixedProject && !initial ? (

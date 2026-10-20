@@ -5,7 +5,7 @@ import { runsStudio } from '@/lib/settings/roles'
  * src/lib/access-control.ts ROUTE_ACCESS: "qanvast-ops/credits" · "qanvast-ops/credits/contracts" · "qanvast-ops/credits/transactions" ·
  * "qanvast-ops/reviews" → ["owner"]; the seeded Admin role's pages leave both out, scripts/migrations/109; its phone bar hides Credits and
  * Reviews from Qanvast's Designer sub-role). Mapped onto 2.0's roles. Who sees leads still decides which of the studio's leads a row may open.
- * (S42E — call E·2 as recommended, her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review) **Lead credits stay the
+ * (S42E — call E·2 as recommended, his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review) **Lead credits stay the
  * Owner's** (money with Qanvast, as 1.0 had it); **Reviews are the Owner's and the Admins'** — they read them, reply and Request reviews, as they
  * run the studio day to day and a reply is the studio's voice (departs from 1.0's Owner-only Reviews). Manager, Designer and Accounting meet the
  * tabs' gate. Pure.

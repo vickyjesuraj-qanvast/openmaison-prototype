@@ -55,7 +55,7 @@ export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style,
   onAddLike: (label: string, category: string) => void
   onForget: (ids: string[]) => void
   onRefPhoto: (ids: string[]) => void
-  /** (pending modules S20 — Q-21 as she answered) Replace's pick as a Customize — the piece keeps its shape and takes the pick's colour. */
+  /** (pending modules S20 — Q-21 as he answered) Replace's pick as a Customize — the piece keeps its shape and takes the pick's colour. */
   onRecolour?: (ids: string[]) => void
   reshaped: boolean
 }) {
@@ -146,7 +146,7 @@ export function FurniturePanel({ furniture, picks, sel, onSelect, onPick, style,
                           ) : null}
                           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add_photo_alternate" size={20} weight={300} />} onPress={() => onRefPhoto(ids)}>{p.refImage ? 'Change the photo' : 'Add a photo of it'}</Button>
                         </span>
-                        {/* (pending modules S20 — Q-21 as she answered: the engine answers Replace honestly) the pick is kept — the live app's image
+                        {/* (pending modules S20 — Q-21 as he answered: the engine answers Replace honestly) the pick is kept — the live app's image
                             model draws it in; here the one way on is a recolour, named for what it is */}
                         <span className={styles.hint} data-testid="viz-replace-held">This is the prototype, so a new piece can’t be drawn into the photo — in the live app, the image model puts your pick in its place. For now, the {titleCaseLabel(key).toLowerCase()} can take its colour and finish.</span>
                         {onRecolour ? <span className={styles.actions}><Button variant="secondary" appearance="outlined" iconStart={<Icon name="palette" size={20} weight={300} />} isDisabled={!!unready} onPress={() => onRecolour(ids)} data-testid="viz-recolour">Recolour it to match</Button></span> : null}

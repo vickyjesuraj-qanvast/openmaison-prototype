@@ -17,7 +17,7 @@ import todo from './todo/todo.module.css'
  * (gaps build F1 — REG-708's rule) Finance's ghost, one per tab, each the tab's own shape: the L1 header and the tab strip (Company's frame), the
  * toolbar, then the tab's tables with their section heads — the same classes the page draws, so the hand-over from the route's loading.tsx to the
  * page's PageReveal is invisible. `tab` from the page; the loader reads it from the address.
- * (simplify S-10 · S-11, her "build everything" 2026-10-09) To do (the toolbar — search · the group chips · New ▾ — then To approve · To pay · To
+ * (simplify S-10 · S-11, his "build everything" 2026-10-09) To do (the toolbar — search · the group chips · New ▾ — then To approve · To pay · To
  * collect · Stuck, or a member's four) and Money out (search · the kind switch · the Status pill · New ▾, then the kind's table, `?kind=` read
  * from the address); Vendors as it was; Commission and Xero are the books' (books-ghost.tsx). A member's strip has four tabs — the page's own
  * reveal knows; the route's loader, which cannot ask who is signed in, draws the Owners' five.

@@ -1,5 +1,5 @@
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/proxy.ts · src/lib/session.ts) Signing in
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/proxy.ts · src/lib/session.ts) Signing in
  * to the studio's app: the cookies, the addresses anyone may open without signing in, and where sign-in sends you back to. Pure and free of
  * imports — proxy.ts (which runs before every route, apart from the app's modules) and the server both read it.
  *

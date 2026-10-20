@@ -5,7 +5,7 @@ import { StudioTickets } from '@/components/projects/tickets/studio-tickets'
 import { refusesPath } from '@/lib/leads/visibility'
 import { AccessGate } from '@/components/shell/access-gate'
 
-/** (gaps build H, H-Q2) Tickets — every ticket on the projects the viewer sees. (S46 — REG-2524) a rail place of its own at /tickets, as Tasks is (her ask 2026-10-19: "in 1.0 the escalations is like the tasks on the sidebar and i want the same in 2.0"); /projects/tickets redirects here. */
+/** (gaps build H, H-Q2) Tickets — every ticket on the projects the viewer sees. (S46 — REG-2524) a rail place of its own at /tickets, as Tasks is (his ask 2026-10-19: "in 1.0 the escalations is like the tasks on the sidebar and i want the same in 2.0"); /projects/tickets redirects here. */
 export const metadata: Metadata = { title: 'Tickets' }
 export const dynamic = 'force-dynamic'
 

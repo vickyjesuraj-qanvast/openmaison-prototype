@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ tab: stri
 /**
  * (gaps build F1 — F-01 · F-19 · F1-Q1; F2 — F2-Q1) One of Finance's tabs, on Company's frame (REG-1360). A tab only Owners and Admins see lands
  * anyone else on the first. The figures are worked out on the server for whoever may see them (Commission: a member reads their own).
- * (simplify S-10 · S-11, her "build everything" 2026-10-09) The tabs are To do · Money out · Vendors · Commission · Xero (`accounting` — the
+ * (simplify S-10 · S-11, his "build everything" 2026-10-09) The tabs are To do · Money out · Vendors · Commission · Xero (`accounting` — the
  * address kept). Every tab reads To do's rows once — the strip's count is what waits on you — and the tab that needs them reuses what that read.
  * The eight old tabs' addresses have their own redirect routes (app/company/finance/<old>/page.tsx — a 307, the query kept).
  */

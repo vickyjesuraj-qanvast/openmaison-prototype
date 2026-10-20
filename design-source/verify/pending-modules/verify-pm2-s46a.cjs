@@ -1,4 +1,4 @@
-// Pending modules, S46A · What a 1.0 user can't find, fixed — search, old addresses, keys and the Quote Digitizer's door (her "Please go ahead and
+// Pending modules, S46A · What a 1.0 user can't find, fixed — search, old addresses, keys and the Quote Digitizer's door (his "Please go ahead and
 // fix everything and make sure every pixel, feature and functionality is fixed", 2026-10-19, after the findability audit
 // design-source/context/parity/31-findability-audit-2026-10-19/). Each finding asserted as the rule it builds, never another round's count:
 //  - S1: ⌘K knows 1.0's names — the pure run over every word the four raw reports name, per role (pm2-s46a-pure.mts, counted here), then in
@@ -169,7 +169,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     await d.keyboard.press('Escape'); await settle(d, 600)
 
     await search(d, 'new ticket'); await row(d, 'Create', 'New ticket').click()
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19) */
     await d.waitForURL((u) => new URL(String(u)).pathname === '/tickets', { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(new URL(d.url()).pathname === '/tickets' && await d.getByTestId('studio-tickets').isVisible(), `Create › New ticket lands on Tickets (its ?new=1 is S46B’s New ticket) — ${rel(d.url())}`)
     await go(d, '/leads', 1500)
@@ -223,7 +223,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
     await d.keyboard.press('g'); await settle(d, 650)
     const hint = d.locator('[class*="chord"][role="status"]')
     const hintText = await hint.innerText().catch(() => '')
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19): G then E is a listed key now; only G then I stays quiet */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): G then E is a listed key now; only G then I stays quiet */
     ok(/Messages/.test(hintText) && /Tickets/.test(hintText) && !/Inbox/.test(hintText), 'the G hint lists 2.0’s places, Tickets among them — not the quiet alias')
     await d.keyboard.press('i'); await d.waitForURL(/\/chat/, { timeout: 10000 }).catch(() => {}); await settle(d, 1500)
     ok(new URL(d.url()).pathname === '/chat', 'G then I (1.0’s Inbox) → Messages')

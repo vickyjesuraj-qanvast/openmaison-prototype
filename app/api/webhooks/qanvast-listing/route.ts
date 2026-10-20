@@ -4,7 +4,7 @@ import { readListingWebhook } from '@/lib/qanvast-listing/service'
 import { applyListingAnswer } from '@/lib/qanvast-listing/queries'
 
 /*
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) QANVAST'S
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) QANVAST'S
  * ANSWER to the studio's listing application — the route Qanvast calls once its staff have checked the studio (1.0's Platform admin ›
  * Verification: Verify, or Reject with a note sent to the studio). The registry's `qanvast-listing-webhook`.
  *

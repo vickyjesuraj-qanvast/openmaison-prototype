@@ -1,5 +1,5 @@
 /*
- * (pending modules S18 — card held:notifications; Leads Q-42 · Q-43 opened as recommended, her "build all of them" 2026-10-11) What reaches ONE
+ * (pending modules S18 — card held:notifications; Leads Q-42 · Q-43 opened as recommended, his "build all of them" 2026-10-11) What reaches ONE
  * member, and how — pure and client-safe. The studio still chooses which notices go out at all and on which channels (Settings › Notifications,
  * lib/notifications/model.ts `NotificationRules`); here each member chooses for themselves, on Your profile › Your notifications:
  *  · **a personal mute** (1.0's "who hears each notice" was the studio's, per role and category — the card: "revisit as a personal mute only"):

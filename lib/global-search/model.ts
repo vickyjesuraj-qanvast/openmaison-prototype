@@ -104,7 +104,7 @@ const digits = (s: string) => s.replace(/\D/g, '')
 export function phoneQuery(q: string): string {
   return q.replace(/(?<!\d)(?:\+?\s*65[\s-]*)?(\d(?:[\s-]*\d){7})(?!\d)/g, (_m, num: string) => ` ${digits(num)} `).replace(/\s+/g, ' ').trim()
 }
-/** (S46A — the findability audit's T-1, her "fix everything" 2026-10-19) What carries no meaning of its own in a query: a single letter
+/** (S46A — the findability audit's T-1, his "fix everything" 2026-10-19) What carries no meaning of its own in a query: a single letter
     ("upload a quote" — the "a" matched almost every line, so Your signature answered it), a bare mark ("reviews & rankings") and the joining
     words "and" · "the" ("usage and credits", where the page says "&"). Each is let go while another word is left — a lone "a" still searches. */
 const FILLER = /^(?:[a-z]|[^\p{L}\p{N}]+|and|the)$/u
@@ -169,7 +169,7 @@ export type SearchPage = { id: string; title: string; sub: string; icon: string;
   /** (simplify S-14 · F1 §6.9.6) …except for a Manager or a Designer, whose weekly job on site it is: their empty search offers it too */ forMembers?: boolean
   /** (pending modules S08) a page only Owners and Admins have — a Manager's or a Designer's search leaves it out */ runners?: boolean
   /** (pending modules S41b-5) a page only the studio's Owner opens (1.0's rule for Qanvast Ops' Credits and Reviews) — everyone else's search leaves it out */ owners?: boolean }
-/* (S46A — the findability audit's S1 · N-4 · L-5 · P-3 · T-7, her "fix everything" 2026-10-19) 1.0's own names for the places a 1.0 user
+/* (S46A — the findability audit's S1 · N-4 · L-5 · P-3 · T-7, his "fix everything" 2026-10-19) 1.0's own names for the places a 1.0 user
    still looks for, on the rows the Company panel, the Templates strip and the Settings modules give — found, never shown. */
 const COMPANY_WORDS: Record<string, string> = {
   profile: 'company details studio profile',
@@ -316,7 +316,7 @@ export const PAGES: SearchPage[] = [
   /* (pending modules S25) (invented copy) Tools › Market Insights */
   { id: 'market-insights', title: 'Market Insights', sub: 'Tools · articles from OpenMaison’s editors', icon: 'trending_up', href: '/market-insights', words: 'articles article trends reports case studies industry news insights market reading' },
   { id: 'planner', title: '3D Space Planner', sub: 'Tools · every 3D layout', icon: 'space_dashboard', href: '/planner', words: '3d layout floor plan furniture room planner space 3d space planner isometric floorplan' },   // (gaps build J) · (S46A — N-4) 1.0's hyphenated "3D Space Planner" (read as 3d by `termsOf`)
-  /* (S46A — the findability audit's N-1 · M1, her "fix everything" 2026-10-19) (invented copy) 1.0's Escalations: Projects › Tickets, every
+  /* (S46A — the findability audit's N-1 · M1, his "fix everything" 2026-10-19) (invented copy) 1.0's Escalations: Projects › Tickets, every
      ticket on the projects you see — (S46 — REG-2524) a rail place of its own, /tickets, as Tasks is; here it is found by every word 1.0 called it */
   { id: 'tickets', title: 'Tickets', sub: 'Every ticket on the projects you see — defects and the clients’ issues', icon: 'handyman', href: '/tickets', words: 'escalations escalation escalate issues issue defects defect complaints complaint support support ticket tickets snag snags raise' },
   /* (S46A — L-1 · P-3) (invented copy) where 1.0's archived and deleted records are: a lead that ended (1.0's archived leads came in as Lost),

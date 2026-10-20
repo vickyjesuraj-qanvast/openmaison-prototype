@@ -1,6 +1,6 @@
 # S46A · what a 1.0 user can't find — search, old addresses, keys and the Quote Digitizer's door — outcome (2026-10-19, lane A)
 
-Her ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed", after the findability
+His ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed", after the findability
 audit `design-source/context/parity/31-findability-audit-2026-10-19/` (README + `raw/1…4`). The plan `s46/plan-2026-10-19.md` gave this
 package S1 · D1 · D3 · H1 · M4 · M9 (the word) and the ⌘K pieces of M1 · M2 · M3 · M5. Built in lane A (port 3160). Register rows:
 `steps/reg-S46A.md` (REG-S46A.1…12). Probe: `design-source/verify/pending-modules/verify-pm2-s46a.cjs` (118 checks) + its pure half

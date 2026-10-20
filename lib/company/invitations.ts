@@ -1,5 +1,5 @@
 /**
- * (pending modules S09 — the card `onboarding:team-invitations`, her "build all of them" 2026-10-11; 1.0's `studio_invitations`, its
+ * (pending modules S09 — the card `onboarding:team-invitations`, his "build all of them" 2026-10-11; 1.0's `studio_invitations`, its
  * `/api/invitations/{send,[token],accept}` and auth/verify's auto-accept) Inviting your team, as the screens and the server read it. Pure,
  * client-safe.
  *

@@ -16,7 +16,7 @@ import { dropStudioFile, madeStudioKeys, migrateStudio, studioUrlOf, studiosHome
 import { serviceSlot } from '@/lib/services/slots'   // (pending modules S34)
 
 /*
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's api/admin/studios POST + seedDefaultStudioTaxonomies,
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's api/admin/studios POST + seedDefaultStudioTaxonomies,
  * the Qanvast line's autoProvisionUser) MAKING A STUDIO AND ITS OWNER IN ONE GO — the one seam for the developers' tenancy.
  *
  * 1.0 made the owner's account, the studio, its membership (owner · admin · id) and the starter lists in one route, undoing each step when a
@@ -107,7 +107,7 @@ export function setStudioProvisioner(p: StudioProvisioner): void { slot.set(p) }
 /** Whether the prototype's own database-per-studio still makes them. */
 export const studiosAreStandIn = (): boolean => slot.standIn()
 
-/** (1.0's `platform_config.signup_paused`, set in Platform admin › Settings — excluded by her) Whether sign-ups are paused for the whole
+/** (1.0's `platform_config.signup_paused`, set in Platform admin › Settings — excluded by him) Whether sign-ups are paused for the whole
     platform: the environment's switch until the developers' Platform side keeps it (`OPENMAISON_SIGN_UPS_PAUSED=1`). Paused, signing up and
     sign-in's door say 1.0's "Contact support for account setup". */
 export const signUpsPaused = (): boolean => process.env.OPENMAISON_SIGN_UPS_PAUSED === '1'

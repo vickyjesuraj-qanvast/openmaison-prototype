@@ -127,7 +127,7 @@ export function useLeadMaison(o: LeadMaisonInput): (label: string) => MaisonSugg
       return rows
     }
 
-    /* (S44O — call C6, her UAT ask 2026-10-15) Marketing's lead page: a quote, a design or the project is the designer's — the button answers
+    /* (S44O — call C6, his UAT ask 2026-10-15) Marketing's lead page: a quote, a design or the project is the designer's — the button answers
        with the role's line in the card, never a door to a gate */
     if (desk && DESK_LABELS.includes(label)) return { label, answer: { title: 'The lead’s designer takes this one', text: ON_DESK } }
     switch (label) {

@@ -11,7 +11,7 @@ import { EVENTS, type EventKey } from '@/lib/notifications/model'
 import { isStandInProvider } from '@/lib/auth/provider'   // (pending modules S30)
 import { EVENT_PLACE, emailModeOf, mayReach, parseMuted, type EmailMode, type NoticeArea } from '@/lib/notifications/personal'
 
-/** (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile + My Signature) What Your profile shows: the
+/** (pending modules S01 — his "build all of them" 2026-10-11; 1.0's Settings › Your Profile + My Signature) What Your profile shows: the
     signed-in member's own row — never anyone else's — and the studio they are in. */
 export type YourProfile = {
   me: { id: string; name: string; email: string | null; phone: string | null; color: string; portalPhotoId: string | null; role: string }

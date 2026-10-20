@@ -3,7 +3,7 @@ import type { ModuleSlug } from './platform'
 /*
  * (pending modules S35) What's New — 1.0's src/components/landing/v2/changelog-data.ts: the curated record of releases, newest first, grouped by
  * month. 1.0's copy in 2.0's names; a highlight 2.0 doesn't do is out (and the release with nothing left of it — multi-currency reporting; the
- * markets beyond Singapore are her hold, 2026-10-12 — so that release keeps only its lead lines). Each change is listed in steps/outcome-S35.md.
+ * markets beyond Singapore are his hold, 2026-10-12 — so that release keeps only its lead lines). Each change is listed in steps/outcome-S35.md.
  * (S42E, E-01 · E-03 · E-04 — call E·1 as recommended) The co-pilot's listening lines, Maison AI's "anything" and the Visualizer's
  * "photorealistic" said as 2.0 does them today; each change is listed in steps/outcome-S42E.md.
  * Server-safe data.

@@ -8,7 +8,7 @@ Screenshots: the session scratchpad `lpaudit/shots/D/`, named `D<nn>-<what>-lead
 
 The standard is the lead's pattern (mocked, Lead Details 858:24784) unless the register shows the owner decided the difference. Projects was
 built "as recommended" under the owner's blanket instruction of 2026-10-05 (REG-911, build record `parity/23-…` §1) — a row there is a
-builder's call she accepted wholesale, not her own pick, so it is named in the finding rather than treated as settled.
+builder's call he accepted wholesale, not his own pick, so it is named in the finding rather than treated as settled.
 
 ## 1. Findings (most visible to a studio owner first)
 

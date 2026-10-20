@@ -16,7 +16,7 @@ export const INVOICE_NUMBERING_KEY = 'invoice_numbering'
 export type InvoiceRules = { approval: boolean; termsDays: number
   /** (gaps build B, item 13 — 1.0's `feeFirstMilestones`, off by default) a project's own split may open with a fixed-amount stage ("Design fees S$3,000") */
   feeFirst?: boolean
-  /** (S44O — UAT row 360, Spaces; her UAT ask 2026-10-15) how an approved variation order is billed: `spread` — its money joins the unsent stage
+  /** (S44O — UAT row 360, Spaces; his UAT ask 2026-10-15) how an approved variation order is billed: `spread` — its money joins the unsent stage
       invoices, as always — or `own` — its own invoice at once, a Draft for its whole amount, the stages keeping their shares (Money's *Bill VO-n
       on its own*, done for every order). Spread by default. */
   voBilling?: VoBilling }

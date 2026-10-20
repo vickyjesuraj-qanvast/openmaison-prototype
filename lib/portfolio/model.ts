@@ -1,5 +1,5 @@
 /**
- * (pending modules S27 — Designer portfolio profiles; survey key api:designer-portfolio-profiles; her "build all of them" 2026-10-11) A member's
+ * (pending modules S27 — Designer portfolio profiles; survey key api:designer-portfolio-profiles; his "build all of them" 2026-10-11) A member's
  * public card, as clients read it: their photo, job title, years in interior design, what they are known for, a line or two about them, and
  * their work — projects with pictures. 1.0 kept it in id_profiles · id_portfolio_projects · id_portfolio_images and showed it only on the
  * Hangout page; its editor (src/components/id-profile/profile-editor.tsx) was never mounted. Here it is one record with one editor (the member's

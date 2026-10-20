@@ -267,7 +267,7 @@ export const waitNamesChoice = (note: string | null | undefined, title: string) 
   return !n || n.includes(t) || t.includes(n)
 }
 
-/* ── (simplify S-21, her "build everything" 2026-10-09) sharing a choice starts its milestone's wait ─────────────────────────────── */
+/* ── (simplify S-21, his "build everything" 2026-10-09) sharing a choice starts its milestone's wait ─────────────────────────────── */
 
 /** The wait note a share writes — the choice's name (the panel's "What for" field holds 80). */
 export const SHARE_WAIT_NOTE_MAX = 80

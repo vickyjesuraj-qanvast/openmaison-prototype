@@ -32,7 +32,7 @@ closing"), `src/app/api/finance-documents/credit-notes/route.ts` (credit notes n
 | Object storage, the five-minute reminder sweep | **The developers'** | — |
 | Meeting Summary, the Co-Pilot from a project | **Held** with Meetings (REG-552) — S23's | — |
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **D-14: an overpayment becomes a credit note** (the card's words). Its own kind, not a credit note on the next invoice: a credit note lowers an
   invoice's price and its GST; an overpayment is the client's money, so it carries no GST, lowers nothing, counts as money in on its day, and is
   either taken off a later invoice (a payment from it — the record every reader of payments already understands) or refunded. The payment keeps

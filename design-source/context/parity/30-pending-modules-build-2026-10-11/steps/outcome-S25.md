@@ -2,8 +2,8 @@
 
 Card: `studio:market-insights` — "Market Insights (articles)": *a reading room of articles that OpenMaison staff publish from Platform admin:
 Trends, Reports, Case Studies, Industry News. A featured article, category chips and search; an article page with its text and charts. It is
-empty until staff publish.* (recommendation *needs her mocks / decision*, effort S; its question "Who writes the articles — and should this
-merge with the Dashboard's News?"). Her "build all of them" 2026-10-11 decides it is built. **What 1.0's Market Insights is:** not market data
+empty until staff publish.* (recommendation *needs his mocks / decision*, effort S; its question "Who writes the articles — and should this
+merge with the Dashboard's News?"). His "build all of them" 2026-10-11 decides it is built. **What 1.0's Market Insights is:** not market data
 the studio reads from a service, and not insights derived from the studio's records — it is **articles**, kept in one platform table that
 Platform admin's CMS writes and every studio reads. So the build is the reading room on house pieces, the studio's copy of the editors' feed
 behind one mapper (as S24's Marketplace feed), and an honest demo of sample articles through that mapper; nothing derives market facts and
@@ -29,7 +29,7 @@ every table it touches, whole, and checks the leads' stages and stage logs are a
 | --- | --- | --- |
 | Article list: a featured article, category chips, search | **Built.** 1.0's category chips (All · Trends · Reports · Case Studies · Industry News, each with its count from the records; a category with none left out) in a chip rail; 1.0's search ("Search articles" — title, first lines, tags; "/" reaches it); 1.0's featured article as one wide card on All with no search; every article newest first on the house gallery card (a reading list of rows on a phone); 24 at a time + Show more; the address keeps category · search · shown, so Back returns; the house "No results found" + Clear All; the empty card while the feed has nothing | `app/market-insights/(home)/*`, `components/market-insights/{insights-home,cards,insights-ghost}.tsx`, `market-insights.module.css`, `lib/market-insights/{model,queries}.ts` |
 | Article page with its text and charts | **Built.** `/market-insights/<id>`: L2 header (Market Insights / title, Featured; Back named by origin), the reading column (category, headline, first lines, byline, the sample note, the cover — its fallback when it won't load), the body read from the editors' Markdown into blocks rendered as React (headings, paragraphs, bold · italic · code, lists, quotes, rules, tables, pictures, links in place or out), 1.0's five ```chart kinds on the house palette with a crosshair readout and **Show the numbers**, tags that open the list searched, More from Market Insights; an article taken down (or a draft, or an old link) answers its own notice | `app/market-insights/[articleId]/*`, `components/market-insights/{article-page,article-body,article-chart,article-ghost,article-not-found,peek}.tsx`, `article.module.css`, `chart.module.css`, `lib/market-insights/markdown.ts` |
-| Writing and publishing the articles (Platform admin, not the studio) | **Parked by her** — "you can ignore admin" (the report left Platform admin out, `29-…/README.md`). What the studio needs from it is built: **the seam** `lib/market-insights/feed.ts` — 1.0's `market_insights` row typed, its published / featured flags honoured, an unpublished or deleted article marked removed in the studio's copy (never deleted, so its address can say so). **Stand-in, honest:** the demo's articles are six samples written for the demo (+ one draft that never arrives), through the same mapper (repair R142), each marked and saying so | `lib/market-insights/{feed,demo}.ts`, `scripts/repair-demo-data.ts` R142 |
+| Writing and publishing the articles (Platform admin, not the studio) | **Parked by him** — "you can ignore admin" (the report left Platform admin out, `29-…/README.md`). What the studio needs from it is built: **the seam** `lib/market-insights/feed.ts` — 1.0's `market_insights` row typed, its published / featured flags honoured, an unpublished or deleted article marked removed in the studio's copy (never deleted, so its address can say so). **Stand-in, honest:** the demo's articles are six samples written for the demo (+ one draft that never arrives), through the same mapper (repair R142), each marked and saying so | `lib/market-insights/{feed,demo}.ts`, `scripts/repair-demo-data.ts` R142 |
 | (question) Who writes the articles — and should this merge with the Dashboard's News? | **As recommended:** OpenMaison's editors (the platform's CMS, parked above). **One home for articles:** Industry News is one of Market Insights' own four categories; if the Dashboard (S22) shows news, it is a door into Market Insights (`fetchInsights()` / `liveArticles()`), never a second reader. 1.0's RSS headlines (`api:industry-news`, recommended *skip*) stay S22's call — if built, they come in through this mapper as Industry News | REG-S25.1; note for S22 below |
 
 ## Found in 1.0, not on a card
@@ -38,22 +38,22 @@ every table it touches, whole, and checks the leads' stages and stage logs are a
 - **1.0's seeded articles** (`152_seed_market_insights_articles.sql`: fifteen articles by "Qanvast Research", five per region, figures cited to
   cost guides, HDB, BCA, CASE and MAS) — **not carried**: their figures can't be checked and the prototype never presents a number as a market
   fact; the demo's own samples are written in their place, marked, with every chart's source reading "Illustrative figures for the demo".
-- **Region-scoped articles** (the seed tagged Singapore / Malaysia / Dubai) — the demo is Singapore's; regions are S33 (**on hold**, her word).
+- **Region-scoped articles** (the seed tagged Singapore / Malaysia / Dubai) — the demo is Singapore's; regions are S33 (**on hold**, his word).
 - **Platform admin › Market Insights CMS** (create · edit · publish · feature · delete, sort by created / published, its counts),
-  **Platform admin › Settings / Studios' `tools/market-insights` flag** — Platform admin (excluded by her). For S41b: nothing else.
-- **The role editor's `tools/market-insights` permission** — the roles editor stays held (her hold); 2.0's rule is 1.0's tag list (every role
+  **Platform admin › Settings / Studios' `tools/market-insights` flag** — Platform admin (excluded by him). For S41b: nothing else.
+- **The role editor's `tools/market-insights` permission** — the roles editor stays held (his hold); 2.0's rule is 1.0's tag list (every role
   but Accounting).
 - **1.0's proxy note "Shown on the marketing pricing surface"** — no code in the 1.0 repo reads the articles outside Tools; for **S35** (the
   marketing site) to decide whether its pricing page shows the latest articles.
 - **1.0's studio addresses `/tools/market-insights` and `/tools/market-insights/<id>`** — not redirected: S02 redirects the links 1.0 sent
   *clients*; no 1.0 studio page (`/tools/quote-xray`, `/tools/ai-visualizer` …) redirects either. For **S41b**'s sweep of 1.0's routes, if
-  she wants studio bookmarks carried (an article's 1.0 id maps to `mi-<id>` — `articleId` in `lib/market-insights/feed.ts`).
+  he wants studio bookmarks carried (an article's 1.0 id maps to `mi-<id>` — `articleId` in `lib/market-insights/feed.ts`).
 - **The breadcrumb override with the article's title** — the L2 crumb · title. **The cover's fallback** when a picture won't load (1.0's
   category gradient) — the category's glyph on the well. **1.0's chart y-axis label** (`yAxisLabel`) and **per-series colours** — not carried
   (the title names the unit; the house palette gives the hues). **The Compliance Navigator sending non-owners to Market Insights** — 2.0's
   Navigator has its own rule; nothing to carry.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **One home:** Tools › Market Insights, a module page (articles are not the studio's records — Reports keeps those). Doors: the Tools tile,
   ⌘K (an article kind + Go to), Maison AI; a future Dashboard card is a door, never a second reader.
 - **Who:** every studio role but Accounting (1.0: owner · admin · id); the house gate for Accounting, and ⌘K leaves articles out for them.

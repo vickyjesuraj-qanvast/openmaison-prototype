@@ -167,7 +167,7 @@ export function ConfirmPage({ token, data, extras }: { /** (pending modules S04)
                 : <p className={shell.cardText}>Hi {clientName.split(' ')[0]}, please read the quote. When you’re happy to go ahead, type your name and confirm — the agreement and the signature come after.</p>}
               <div className={styles.total}><span>{vo ? 'Change to the contract' : 'Total'}</span><strong>{vo && totals.totalMinor > 0 ? '+' : ''}{money2(totals.totalMinor)}</strong></div>
               {optional.length && !picking ? (
-                /* (S44Q — row 357, her UAT ask 2026-10-15) the studio keeps the picking: the works and their prices, read-only, and a press that asks the
+                /* (S44Q — row 357, his UAT ask 2026-10-15) the studio keeps the picking: the works and their prices, read-only, and a press that asks the
                    designer to add one (the Ask for a change dialog, the work named). *(invented copy)* */
                 <div className={styles.optional} data-testid="confirm-optional" data-readonly="">
                   <span className={shell.eyebrow}>Optional works</span>

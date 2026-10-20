@@ -4,7 +4,7 @@ import { serviceStates, serviceWarnings } from '@/lib/services/install'
 import { SERVICES } from '@/lib/services/registry'
 
 /*
- * (pending modules S34 — the card's "their admin", for the developers: Platform admin is out of this build by her word, so this is the
+ * (pending modules S34 — the card's "their admin", for the developers: Platform admin is out of this build by his word, so this is the
  * deployment's own report, not a screen) GET /api/services with `Authorization: Bearer <CRON_SECRET>` (the scheduler's secret, the same
  * guard, fails closed in production): every slot — stand-in or the adapter plugged in — which of 1.0's env names this server holds, the
  * warnings, and every seam of the registry with its one call. Names and states only — never a key's value.

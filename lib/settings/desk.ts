@@ -8,7 +8,7 @@ import { isMarketing, MARKETING, roleGate } from '@/lib/settings/roles'
 import { refuse, type Refusal } from '@/lib/company/template-rules'
 
 /**
- * (S45C — S44Z's note to the developers; as recommended — her ask 2026-10-17) THE WORKSPACE'S ROLE RULE ON THE SERVER, for every action a
+ * (S45C — S44Z's note to the developers; as recommended — his ask 2026-10-17) THE WORKSPACE'S ROLE RULE ON THE SERVER, for every action a
  * Marketing member must not run. Their pages answer Marketing with the house gate before a record is read (S44O · S44Z); the actions behind
  * those pages trusted that gate, so a call made by hand was refused only where an action happened to ask the role. Now each of them asks here,
  * as its first line, before anything is read or written:

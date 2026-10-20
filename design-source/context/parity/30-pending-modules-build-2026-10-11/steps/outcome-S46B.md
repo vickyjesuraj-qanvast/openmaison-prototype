@@ -1,8 +1,8 @@
 # S46B · what a 1.0 user can't find, made findable — outcome (2026-10-19, lane B, port 3170)
 
-Her ask (2026-10-19): **"Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed"**, after the findability
+His ask (2026-10-19): **"Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed"**, after the findability
 audit `design-source/context/parity/31-findability-audit-2026-10-19/` (README + raw N-1 · P-5 · P-6 · P-7 · T-4 · T-6). Plan
-`s46/plan-2026-10-19.md`, step **S46B** (M1's doors, count and New ticket · M5 · M6 · M7 · M8 · H3). Her recorded pick stands: **Tickets stays in the
+`s46/plan-2026-10-19.md`, step **S46B** (M1's doors, count and New ticket · M5 · M6 · M7 · M8 · H3). His recorded pick stands: **Tickets stays in the
 Projects ⋮** (REG-1425). 1.0 read through git only (`qanvast-id-tool`, `origin/deployment/qanvast`: `src/app/(main)/escalations/{page,new/page}.tsx`).
 Register rows `steps/reg-S46B.md` (REG-S46B.1…9). Probe `design-source/verify/pending-modules/verify-pm2-s46b.cjs`. **No migration, no repair.**
 
@@ -25,9 +25,9 @@ Register rows `steps/reg-S46B.md` (REG-S46B.1…9). Probe `design-source/verify/
 - 1.0's New Ticket form held **Priority** and **Assign To** beside Subject · Project · Category · Description. 2.0's compose keeps *Looked after by*;
   Priority stays the drawer's (Normal at start, Escalate → Urgent — gaps build H-Q4). Kept.
 - The AI Visualizer's first-visit welcome (canvas direction D, REG-735) offers *Use a lead's photos* but no project start; a project's lead is in
-  that picker, and New ▾ carries *For a project…* from the first design on. Kept as her approved canvas.
+  that picker, and New ▾ carries *For a project…* from the first design on. Kept as his approved canvas.
 
-## Calls taken (her "fix everything" — as recommended, each in the register)
+## Calls taken (his "fix everything" — as recommended, each in the register)
 1. **New ticket sits in the header** (REG-466's unpinned-tab shape: the Tasks page's Add Task, Meeting Copilot's New Meeting) and on the empty card,
    never both; a phone's L2 header puts it on the action line (REG-359's house layout, as Messages' + does).
 2. **The picker lists every project the member sees**, the ones they may change first, the others refused with the server's rule — the house
@@ -35,7 +35,7 @@ Register rows `steps/reg-S46B.md` (REG-S46B.1…9). Probe `design-source/verify/
 3. **The tile's figure = the ⋮ row's** (waiting on the studio), its line open · escalated; for every role that opens projects; no colour.
 4. **Complete handover in ⋮ mirrors the Stage menu exactly — including on hold (open).** The plan said "its refusals as the Stage menu's (e.g. On
    hold)"; the Stage menu does **not** refuse a held project (a hold ends with the project — `completeHandover` clears it), so adding a refusal
-   here would make the two doors disagree. **Flag for her:** if a held project should not be handed over, that is one change to `stageRow`, and
+   here would make the two doors disagree. **Flag for him:** if a held project should not be handed over, that is one change to `stageRow`, and
    both doors follow.
 5. **See it as stays on the project page**, where the portal is known (as Commission and Duplicate project); the listing's row keeps Invite to
    Portal, which holds the same press.

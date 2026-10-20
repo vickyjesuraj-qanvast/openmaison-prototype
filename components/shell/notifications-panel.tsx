@@ -123,7 +123,7 @@ export function NotificationsPanel() {
      the Updates the badge counts. The two groups and the badge stay REG-810's. */
   const late = (r: FeedRow) => r.kind !== 'task_due_soon' && r.kind !== 'invoice_ready' && (now || r.at) - r.at >= 60_000
   /* (pending modules S18 — card held:notifications, one-home N-14: the bell's "Updates" shared its word with a project's Updates tab — the
-     client's site updates; as recommended, her "build all of them" 2026-10-11) the notices are headed Notices — the word every line of this
+     client's site updates; as recommended, his "build all of them" 2026-10-11) the notices are headed Notices — the word every line of this
      file already uses for them; Due stays */
   const groups = [{ key: 'notices', label: 'Notices', list: notices }, { key: 'due', label: 'Due', list: due }]
   if (due.some(late)) groups.reverse()

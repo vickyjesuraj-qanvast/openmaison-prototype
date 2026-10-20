@@ -1,7 +1,7 @@
 import type { ServiceKey } from './slots'
 
 /*
- * (pending modules S34 — her "build all of them" 2026-10-11; card api:message-delivery-providers, "the adapters' seams and their admin, for
+ * (pending modules S34 — his "build all of them" 2026-10-11; card api:message-delivery-providers, "the adapters' seams and their admin, for
  * the developers") EVERY STAND-IN THE PROTOTYPE HAS, IN ONE LIST. Pure data, client-safe: the developers' document
  * (design-source/context/parity/30-pending-modules-build-2026-10-11/services.md) is written from it, the ops report (GET /api/services) answers
  * from it, Company › Integrations reads its studio-facing words from it, and the probe checks that every seam named here exists where it says.

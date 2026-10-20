@@ -38,7 +38,7 @@ Register rows: `steps/reg-S42B.md` (REG-S42B.1…28). Probe: `design-source/veri
 
 **Counts:** Blocker 2/2 fixed (B-01, E-05) · Major 3/3 fixed · Minor 15/15 fixed (B-05…B-18, D-08) · Polish 6/6 fixed. Nothing left unfixed in my area.
 
-## Calls — fixed as recommended (her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review)
+## Calls — fixed as recommended (his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review)
 - **B·1** — both: the server refuses while the quote is revised (the client sees "Not ready yet — … is updating the quote this agreement signs");
   the Revise dialog says so before the press.
 - **B·2** — S34's words, word for word, shown only while the SMS stand-in answers (`codeDemo` from `isStandInProvider()`).
@@ -46,7 +46,7 @@ Register rows: `steps/reg-S42B.md` (REG-S42B.1…28). Probe: `design-source/veri
 - **B·4 / D·2** — PDFs read by rule on every Upload a quote door. **The two calls disagree on credits** (B·4: "charge only when a model reads";
   D·2: "the same 5 AI credits, given back when nothing reads"). Taken: **D·2** — the brief's rule 5 ("priced through AI credits if 1.0
   charged") and S19's one price for every quote read; 1.0 charged its Digitize quote. Nothing reads by model in this build, so B·4's way
-  would make every read free; **for Vicky:** if she prefers B·4's, the change is one condition at each `chargeAI({ action: 'quote_digitize' … })`
+  would make every read free; **for Vicky:** if he prefers B·4's, the change is one condition at each `chargeAI({ action: 'quote_digitize' … })`
   (Create Quote, the VO dialog, the schedule's picker) and the chips' price.
 - **B·5** — "6 downlights" is 6.
 
@@ -62,7 +62,7 @@ Register rows: `steps/reg-S42B.md` (REG-S42B.1…28). Probe: `design-source/veri
   in the file name" is no longer needed. *Recreate from my quote* still matches a **photo** to a house style by its name — S11's declared stand-in,
   it picks a design, never a quote's lines; left.
 - **For Vicky (found, not on my list):** the lead form's *Fill from a document* (REG-609) fills the same sample lead whatever file is picked —
-  E-05's family; its 1.0 job (reading a lead sheet) exists by rule for imports (`lib/leads/homematch.ts`). Her call whether it reads the file.
+  E-05's family; its 1.0 job (reading a lead sheet) exists by rule for imports (`lib/leads/homematch.ts`). His call whether it reads the file.
 
 ## Shared pieces changed (the other lane must know)
 - `proxy.ts` + `lib/auth/paths.ts` (`STUDIO_VISIT_COOKIE`) — one more cookie set on studio pages; lane A changes sign-in / the standing session.

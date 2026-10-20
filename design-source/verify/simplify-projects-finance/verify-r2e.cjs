@@ -1,4 +1,4 @@
-// Projects & Finance, simplified — round 2, package R2-E (2026-10-09, her "fix all the pending things"): a member's PayNow on Company › Members
+// Projects & Finance, simplified — round 2, package R2-E (2026-10-09, his "fix all the pending things"): a member's PayNow on Company › Members
 // (Owners and Admins set anyone's, a member their own, nobody reads a colleague's), shown with its copy wherever the studio pays a member (a
 // claim's Pay back, Pay {member}); the bell's approval rows answer in the row (Approve · Send back — Decline for more time; a PO and an invoice
 // "Approve and send" open Money's send); ⌘K finds Document numbers and What waits for an Owner or an Admin.

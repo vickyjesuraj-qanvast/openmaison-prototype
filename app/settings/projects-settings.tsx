@@ -35,7 +35,7 @@ import styles from './settings.module.css'
  * (one-home N-11) Schedule defaults is no longer a card of its own: the studio default is the first row of the Schedule card's "Where a
  * schedule starts, by project type". (one-home N-12) The Credit notes card came here from Settings › Finance, after the invoice cards — the
  * money-in paperwork's numbers in one module.
- * (simplify S-15 · S-20 — her "build everything" 2026-10-09, a deliberate change) The module opens on **What waits for an Owner or an Admin**
+ * (simplify S-15 · S-20 — his "build everything" 2026-10-09, a deliberate change) The module opens on **What waits for an Owner or an Admin**
  * (owner-approvals.tsx): updates (and who reviews them), invoices, a milestone's Done, schedule changes, the handover, and the link to
  * Finance's PO and expense rules — every approval together, each switch set there only (the Updates card, whose one rule it was, is gone).
  * The money cards — Invoices · Invoice paper · Client payments · Credit notes — moved to Settings › Finance beside Costs and Commission (an

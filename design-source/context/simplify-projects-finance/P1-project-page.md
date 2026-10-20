@@ -382,7 +382,7 @@ At ≤767 the ⋮ sheet opens with a **Create** group: the strip's own seven, fr
 The sheet already carries 2 of the 7 (`project-menu.tsx:47-52`). *Contact Log* goes from 6–7 presses to 3 (⋮ → Contact Log → Save), and
 *Update* from 4 to 4 with no hunting for the tab.
 
-The lead's phone ⋮ should match (her call; see Q5).
+The lead's phone ⋮ should match (his call; see Q5).
 
 ### 6.6 Jobs after the change
 

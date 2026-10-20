@@ -5,7 +5,7 @@ import { room as livingRoom } from './sample-rooms/living-room'
 import { room as bedroom } from './sample-rooms/bedroom'
 import { room as kitchen } from './sample-rooms/kitchen'
 
-/* AI Visualizer (REG-673, audit §5.2) — the sample rooms: the owner's three room photos and her kitchen sketch (1.0's public/visualizer-samples
+/* AI Visualizer (REG-673, audit §5.2) — the sample rooms: the owner's three room photos and his kitchen sketch (1.0's public/visualizer-samples
    since 1.0's 4a51f3522, 2026-10-08 — copied to /visualizer/samples byte for byte; pending modules S43C) with their curated reading — what a
    detector would return, written once and checked by eye against the photos. One file a room (lib/visualizer/sample-rooms/*). Every surface
    and piece carries its dot and the seeds its region grows from. (audit 2026-09-26, F025 · F182 · F183 · F184 · F186) Outlines are traced to the

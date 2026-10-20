@@ -36,7 +36,7 @@ function Group({ id, label, children }: { id: string; label: string; children: R
  * (gaps build F1 — F1-Q1) Settings › Finance, live with money out (the module kept its place as an inert tab until it came): the Costs card —
  * the two approvals, the limit, when vendors are paid. Owners and Admins change it; everyone else reads it in the read-only scope. F2 added
  * Commission.
- * (simplify S-15 — P3 §6.7 · F1 §6.8, her "build everything" 2026-10-09) **One Settings home for money rules.** The module keeps its name and
+ * (simplify S-15 — P3 §6.7 · F1 §6.8, his "build everything" 2026-10-09) **One Settings home for money rules.** The module keeps its name and
  * gathers every money rule: the one **Document numbers** card first (INV · RCT · CN · PO, one Save — the house order, numbers first), then
  * *Money in* — Invoices · Invoice paper · Client payments · Credit notes, moved here from Settings › Projects (an old address to one of them
  * lands here, settings-view.tsx) — *Money out* — Costs — and *Commission*. The head's *Kept in Company:* links name where the records sit:

@@ -7,7 +7,7 @@ import type { DepositView } from '@/lib/contracts/deposit-model'
 import styles from './signing-page.module.css'
 
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) The signing page ends on "Pay the deposit" when the studio asked for
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) The signing page ends on "Pay the deposit" when the studio asked for
  * it on Send: the named quote's first payment stage, to the issuing entity — the money papers' own pay box (the PayNow QR with the amount and
  * the reference in it, Copy on each value, the bank). Paid in full on the project's invoice, it says so instead. (invented copy)
  */

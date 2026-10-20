@@ -1,6 +1,6 @@
 # S36 · Try the AI Visualizer without an account — outcome (2026-10-13, lane A)
 
-Cards: `public:try-it-visualizer` and `onboarding:try-visualizer-public` (both "skip" in the survey; built on her "build all of them"
+Cards: `public:try-it-visualizer` and `onboarding:try-visualizer-public` (both "skip" in the survey; built on his "build all of them"
 2026-10-11, the public card's question taken as recommended — *Decisions*). **The AI Visualizer, for someone with no account, on OpenMaison's
 website: `/site/try` and six landing pages.** A visitor uploads a room photo (HEIC on every browser) or opens a sample room, then works **in
 the studio's own editor** — the same canvas, markers, versions, five modes and panels, Describe a change and Generate, the same code (the
@@ -53,7 +53,7 @@ with the switch off); shots in `design-source/verify/pending-modules/pm2-s36/` (
 - **1.0's full-screen Before / after dialog** (the phone landed on it after a render) — 2.0's stage Compare and the ready line's *Compare* do
   the job, in the editor's own frame.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 1. **Build it** (the public card's question: "should the website's trial return, built on 2.0's Visualizer and its sample rooms?") — yes, on
    2.0's Visualizer, its sample rooms and its welcome's before / after.
 2. **Three renders, not one** — 1.0's code and tests (`TRIAL_LIMIT = 3`); the "one" was the superseded `/try` demo. Counted only when kept.
@@ -82,7 +82,7 @@ site's "… | OpenMaison" · "Try Now" → "Try now".
 | Start · line | The same AI visualiser our design studios use, open to try. … generate. Real renders, not filters. | The same AI Visualizer our design studios use, open to try. … generate. | the name; "Real renders, not filters" cut — the prototype's engine repaints the photo |
 | Start · fine print | JPG, PNG or HEIC · your photo is only used for this session and never stored. | JPG, PNG, WebP or HEIC · your photo stays in your browser — it is never uploaded or stored. | true of 2.0: the engine runs in the browser |
 | Lighting · line, SEO, description | Morning light to cozy evening | Daylight to cozy evening | 2.0's presets have no Morning |
-| Furniture · line | Remove, replace, or restyle individual pieces — sofa, bed, cabinets, anything. | Remove or recolour individual pieces — sofa, bed, cabinets, anything. | Replace draws no new piece in the prototype (Q-21 as she answered, S20); 1.0's own button word, Recolour |
+| Furniture · line | Remove, replace, or restyle individual pieces — sofa, bed, cabinets, anything. | Remove or recolour individual pieces — sofa, bed, cabinets, anything. | Replace draws no new piece in the prototype (Q-21 as he answered, S20); 1.0's own button word, Recolour |
 | Furniture · SEO | Furniture AI — Swap Furniture in Any Room / Upload a room photo and remove, replace, or restyle individual pieces — … | Furniture AI — Change Furniture in Any Room / Remove or recolour individual pieces of furniture — … | the same |
 | Furniture · headline | Swap furniture in any room in seconds | Change the furniture in any room in seconds | the same |
 | Furniture · description | Upload a room photo, tap a piece of furniture, and remove it, replace it, or restyle it — … | Tap a piece of furniture and remove it or recolour it — … | the same; an upload has no furniture read (you mark it) |

@@ -57,7 +57,7 @@ type Run = { title: string; step: number; steps: string[]; saving: boolean }
 type Menu = { kind: 'version'; key: string } | { kind: 'more' } | null
 
 /**
- * (pending modules S36 — her "build all of them" 2026-10-11; cards public:try-it-visualizer · onboarding:try-visualizer-public; 1.0's
+ * (pending modules S36 — his "build all of them" 2026-10-11; cards public:try-it-visualizer · onboarding:try-visualizer-public; 1.0's
  * trial-visualizer.tsx, "the UI is the REAL editor's … so a visitor's first impression is the product itself") THE AI VISUALIZER, FOR SOMEONE
  * WITH NO ACCOUNT. The studio's editor frame and pieces — the canvas with its markers and tools, the versions, the five modes and their
  * panels, the one Generate — composed around one room that lives in this page alone: no design, no autosave, no studio record; the curated

@@ -211,7 +211,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     const lets = [team.length ? `${listNames(team)} will report to nobody` : '', data.backupApproverId === m.id ? 'they stop being the backup approver for quotes' : ''].filter(Boolean).join(', and ')
     return `${m.name} leaves every picker and stops getting new leads. ${work ? `Their ${work} ${one ? 'stays' : 'stay'} with them — reassign ${one ? 'it' : 'them'} from the listing.` : 'Nothing open is on their name.'}${lets ? ` ${lets.charAt(0).toUpperCase()}${lets.slice(1)}; Undo gives ${team.length + (data.backupApproverId === m.id ? 1 : 0) === 1 ? 'it' : 'them'} back.` : ''} Their notes, tasks and history stay as they are; Reactivate brings them back.`
   }
-  /* (pending modules S01 — her "build all of them" 2026-10-11) Edit details: an Owner or an Admin fixes another member's name, email, phone and
+  /* (pending modules S01 — his "build all of them" 2026-10-11) Edit details: an Owner or an Admin fixes another member's name, email, phone and
      photo (an Owner's, only an Owner) — Add member's fields and checks, and (1.0) never another member's name, email or phone. Your own are on
      Your profile. The dialog closes once the save lands; Undo saves the details back as they were. */
   const [editing, setEditing] = useState<{ m: MemberRow; draft: DetailsDraft; tried: boolean } | null>(null)
@@ -277,7 +277,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
   /* (pending modules S14) the dialog is the house piece Your profile opens too (components/company/paynow-dialog.tsx) */
   const [payNowFor, setPayNowFor] = useState<MemberRow | null>(null)
   const openPayNow = (m: MemberRow) => setPayNowFor(m)
-  /* ── (pending modules S09 — her "build all of them" 2026-10-11; 1.0's Pending Invitations: Resend · Cancel) A member still to come in: their
+  /* ── (pending modules S09 — his "build all of them" 2026-10-11; 1.0's Pending Invitations: Resend · Cancel) A member still to come in: their
      row says who invited them, how it went and how long the link stays open; Send again · Copy link · Cancel the invitation (Undo). ── */
   const inviteOf = (m: MemberRow) => data.invites[m.id] ?? null
   const stateOf = (m: MemberRow): InviteState | null => inviteStateOf(inviteOf(m), m, data.now)

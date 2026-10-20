@@ -1,8 +1,8 @@
 # 1.0's newer branches — the sweep nobody ran (S43D · F2-04, 2026-10-15)
 
-Her ask (2026-10-15): "fix all the pending things apart from Still parked". Ledger item **F2-04**: *Six newer 1.0 branches were never swept* —
+His ask (2026-10-15): "fix all the pending things apart from Still parked". Ledger item **F2-04**: *Six newer 1.0 branches were never swept* —
 one read-only sweep, as S41b's: each studio-facing change → its 2.0 home (already built), or a row to build; Platform admin recorded as
-excluded. Every call below is **as recommended — her ask 2026-10-15** unless it says it is hers.
+excluded. Every call below is **as recommended — his ask 2026-10-15** unless it says it is his.
 
 **How it was read.** 1.0 is `/Users/vicky/Documents/GitHub/qanvast-id-tool`, read through git only (`git log`, `git show <rev>:<path>`,
 `git diff --stat a..b`, `git grep <term> <rev>`) — its working tree was never checked out, stashed or reset, and :3001 was never opened. Three
@@ -16,15 +16,15 @@ UAT triage's quote rows of these very branches (`design-source/context/feedback/
 | Branch (tip) | Lineage | Commits read | Who it is for | Verdict |
 |---|---|---|---|---|
 | `port/spaces-studio-2026-10-12` (`52b536355`, 12 Oct) | `deployment/qanvast` @ `40f8635e2` + 9 | the 9 past `deployment/qanvast` (its 1,452 older commits are `deployment/qanvast`'s lineage — S41b + triage §11) | Spaces Studio (a 1.0 studio) | All 9 are UAT rows, mapped in triage §11 and since built by S44T / S44Q (§1). §11's seven "noticed for the next parity pass" features of the same lineage get their homes here (§1.2). |
-| `port/urbanhome-ui-2026-10-13` (`cab95dfac`, 13 Oct) · `urbanhomedemo` (`f9571cf60`, 14 Oct) | `559f1dab4` (19 Aug, the plg / non-qanvast line) + 13 · + 17 | all 17 (the second branch contains the first) | Urban Home Design ("UHD", a 1.0 studio with its own deployment) — a sales demo build | 2.0's UI layered on 1.0, white-label mechanics, and UHD's B-requirements: Sales reports, a projects list in their layout, the **Contractor Dashboard**. The last three are **held for her** — UHD asked for them to be exclusive (§2.1). |
+| `port/urbanhome-ui-2026-10-13` (`cab95dfac`, 13 Oct) · `urbanhomedemo` (`f9571cf60`, 14 Oct) | `559f1dab4` (19 Aug, the plg / non-qanvast line) + 13 · + 17 | all 17 (the second branch contains the first) | Urban Home Design ("UHD", a 1.0 studio with its own deployment) — a sales demo build | 2.0's UI layered on 1.0, white-label mechanics, and UHD's B-requirements: Sales reports, a projects list in their layout, the **Contractor Dashboard**. The last three are **held for him** — UHD asked for them to be exclusive (§2.1). |
 | `quotes/port` (`6d74d8aec`, 9 Oct) | `deployment/plg` @ `4a51f3522` + 46 | all 46 + its docs (phase specs, decisions logs, master plan, Phase 9 GST spec) | Every studio — 1.0's port of 2.0's quote editor ("Quote Editor v2") + wave 9 | Mostly 2.0 by construction. Four real gaps found: two fixed here (§3.1), two handed on with rows (§5). |
 | `fpto3d` (`04041e6b2`, 12 Oct) | `3ea7e4168` + 1 | the one commit: 8 Markdown specs | Product planning | **Spec only** — nothing built in 1.0 on any branch (§4). |
-| `crm-client-link-sarthak` (`1a435a9f9`, 13 Oct) | `3251835a9` + 45 | all 45 | OpenMaison's sales staff (CRM) | **Excluded — Platform admin** (her word). No studio-facing path changes (§4). |
+| `crm-client-link-sarthak` (`1a435a9f9`, 13 Oct) | `3251835a9` + 45 | all 45 | OpenMaison's sales staff (CRM) | **Excluded — Platform admin** (his word). No studio-facing path changes (§4). |
 | `billing-app` (`352909d7a`, 13 Oct) | `3251835a9` + 54 | all 54 | OpenMaison's staff (CRM, admin, fork analytics, billing) | **Excluded — Platform admin.** Four commits touch files the studio app shares; none changes what a studio meets (§4). |
 
 Statuses: **Built** — 2.0 does the job (its home named) · **Built in another form** — the job done another way, said in the row · **Decided** —
-a recorded call not to (cited) · **Built here** — S43D built it (REG-S43D.n) · **Row** — handed to a named package (§5) · **Held for her** — a
-call only she can make · **Excluded** — Platform admin, deployment, infrastructure, tests, or a 1.0-only bug · **Spec only** — never built in 1.0.
+a recorded call not to (cited) · **Built here** — S43D built it (REG-S43D.n) · **Row** — handed to a named package (§5) · **Held for him** — a
+call only he can make · **Excluded** — Platform admin, deployment, infrastructure, tests, or a 1.0-only bug · **Spec only** — never built in 1.0.
 
 ---
 
@@ -53,7 +53,7 @@ call only she can make · **Excluded** — Platform admin, deployment, infrastru
 | d9d700c01 · 25a434746 | Lead-less "Quote Templates" with items | **Built in another form** — My Sections (REG-566) and a template's starter sections (REG-497) |
 | 91fbb81e9 | Images with alignment in section / sub-section descriptions | **Row NB-07 → S44I** (the section note's editor is the Items package's) |
 | eb1db49b8 | "Repeat on every page" for the Subtitle band | **Built in another form** — a band placed on the header canvas repeats with it (Every page · First page only · Every page after the first — audit 03 MM-12, REG-1800) |
-| 4ac53134e | Drag a row onto an item to make it a sub-item | **Decided** — her Q-5 hold on add-on options (sub-items) stands; the Items prototype (`04-sections-prototype-2026-10-15.md`) is S44I's |
+| 4ac53134e | Drag a row onto an item to make it a sub-item | **Decided** — his Q-5 hold on add-on options (sub-items) stands; the Items prototype (`04-sections-prototype-2026-10-15.md`) is S44I's |
 
 ---
 
@@ -77,13 +77,13 @@ call only she can make · **Excluded** — Platform admin, deployment, infrastru
 | 4da810229 (migrations 496, 499) | Hard-delete a vendor (refused while referenced), demo-vendor clean-up (`is_demo`), a wider margin column | **Excluded / decided** — demo scaffolding and a 1.0 column; 2.0 deactivates and merges vendors (`app/finance/vendor-actions.ts`) |
 | 0564cdaa5 · 47d4b2c78 · 8925f54eb · 9a3485e5e · 10e3b7663 · e0345cb6f · 41c8068d8 · cab95dfac | Plan gating off, tests, the vendored design system, the icon subset guard, classic-UI routing, row CSS | **Excluded** — infrastructure, tests, 1.0-only fixes (2.0's icon rule is CLAUDE.md › Icons) |
 
-### 2.1 Held for her — UHD's three dashboards (a contract question, not a design one)
+### 2.1 Held for him — UHD's three dashboards (a contract question, not a design one)
 
 1.0's own spec (`docs/features/contractor-dashboard/spec.md` §6, `urbanhomedemo`) records that **UHD's requirements ask for the Sales, Project and
 Contractor dashboards to be "exclusive to Urban Home Design and not rolled out to other studios"**, that the signed Annex A reads narrower (their
 formats, layouts, sample files and data stay theirs), and that the reading should be aligned with UHD first. Putting these three into 2.0 — the
-product every studio gets — is a commercial call only she (with the business) can make. Each is written below as a row **ready to build** in
-2.0's shape the day she says so; nothing was built. (UHD's other asks were already built generally — REG-585, REG-595 — they carried no such ask.)
+product every studio gets — is a commercial call only he (with the business) can make. Each is written below as a row **ready to build** in
+2.0's shape the day he says so; nothing was built. (UHD's other asks were already built generally — REG-585, REG-595 — they carried no such ask.)
 
 | Held | What 1.0 built for UHD | 2.0's shape, ready to build | Files it would touch |
 |---|---|---|---|
@@ -169,4 +169,4 @@ on top of their work rather than built here against older copies.
 | **NB-08** | a template-editor follow-up (S44T's `components/templates/editor/inspector.tsx`; after S44I settles `components/quotes/editor/text/rich-editor.tsx` for C2) | F2-05's one gap: a template's **Text block** is plain paragraphs; 1.0's rich-text sections held bold, italic, underline, lists and links. Write the block with the house rich editor (b · i · u · bullets · numbers · link; kit colours as C2 allows), Insert a field kept, the print already passes it through the allowlist (`parseDesign`, S44T). See `steps/outcome-S43D.md` › F2-05 | yes | Build |
 | — | developers (map 14) | `price_book_vendor_prices` → each vendor's own Price book entry (§1.2) | no | Port note |
 
-**Held for her** (§2.1): H-UHD-1 Sales reports · H-UHD-2 Contractors · H-UHD-3 the Projects list in UHD's layout — UHD's exclusivity ask.
+**Held for him** (§2.1): H-UHD-1 Sales reports · H-UHD-2 Contractors · H-UHD-3 the Projects list in UHD's layout — UHD's exclusivity ask.

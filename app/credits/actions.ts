@@ -322,7 +322,7 @@ export async function askForCredits(input: { kind: 'pool' | 'monthly'; needed: n
 
 export type DemoPlan = 'free' | 'trial' | 'pro' | 'low' | 'past_due' | 'not_counting'
 
-/** (S42 D-10 · D·4, as recommended — her "build all of them" 2026-10-11) What the switch keeps so that *Pro — Studio* puts the base back
+/** (S42 D-10 · D·4, as recommended — his "build all of them" 2026-10-11) What the switch keeps so that *Pro — Studio* puts the base back
     exactly — it is used live in pitches and its numbers are read aloud: the Pro — Studio it left for Free or the trial (its seats, its billing
     and credit months, the plan credits it had), and what *Almost out* took away from the plan's credits and from the top-ups (which never
     expire). Settings `demo_plan`; Reset to base forgets it with the rest of the settings. */

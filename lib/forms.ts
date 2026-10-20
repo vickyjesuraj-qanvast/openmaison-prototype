@@ -8,7 +8,7 @@ export const MSG = {
   dateTime: 'Choose a date and time',
   email: 'Enter a valid email address',
   phone: 'Enter a valid 8-digit Singapore number',   // (REG-547) 6 / 8 / 9 first
-  /* (S44O — UAT row 344, her UAT ask 2026-10-15) a member's phone that is their only sign-in key (no email): a landline takes no code */
+  /* (S44O — UAT row 344, his UAT ask 2026-10-15) a member's phone that is their only sign-in key (no email): a landline takes no code */
   mobile: 'Enter a mobile number (8 or 9 first) — the sign-in code goes there',
   amount: 'Enter an amount',
   number: 'Enter a number',

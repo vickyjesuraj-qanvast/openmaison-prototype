@@ -90,7 +90,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     const toAnswer = Number(sql(TO_ANSWER))
     const ctx = await desk(); await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE })
     const p = await page(ctx, 'desk')
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own, as Tasks is — her ask 2026-10-19): the ⋮ row is gone; the rail's Tickets wears the count */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own, as Tasks is — his ask 2026-10-19): the ⋮ row is gone; the rail's Tickets wears the count */
     await go(p, '/projects')
     await p.getByTestId('projects-kebab').click(); await settle(p, 400)
     const row = (await menuRows(p)).find((r) => r[0].startsWith('Tickets'))
@@ -150,7 +150,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await go(p, '/dashboard', 1800)
     const tile = p.getByTestId('tile-tickets')
     const tileVal = Number((await tile.locator('[class*="__value"]').innerText()).trim())
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19): the count the ⋮ row wore is the rail item's badge now */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): the count the ⋮ row wore is the rail item's badge now */
     const railTickets = p.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
     const rowCount2 = Number((((await railTickets.innerText().catch(() => '')) || '').match(/\d+/) ?? ['0'])[0])
     ok(tileVal === rowCount2 && tileVal === toAnswer2, `the tile is the rail’s Tickets count (${tileVal} = ${rowCount2} = DB ${toAnswer2})`)
@@ -160,7 +160,7 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     ok(toAnswer2 ? new RegExp(`^waiting on you( · ${open} open)?`).test(help) : new RegExp(`^Nothing waits on you · ${open} open`).test(help), `its line: whose turn and how many are open (${help})`)
     ok(await tile.getAttribute('data-grade') === null && await p.locator('[data-testid="stands-tiles"] [data-grade]').count() === 0, 'no colour on it — red is the project’s Needs you’s')
     await shot(p, 'm1-dashboard-1440', true)
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19): an L1 page, the rail's Tickets lit — no Back, as Tasks has none */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19): an L1 page, the rail's Tickets lit — no Back, as Tasks has none */
     await tile.click(); await p.waitForURL(/\/tickets/, { timeout: 10000 }).catch(() => {}); await settle(p, 1400)
     ok(new URL(p.url()).pathname === '/tickets' && await p.getByTestId('studio-tickets').isVisible(), 'the tile opens Tickets', p.url())
     ok(await p.locator('header a[data-kb="back"]').count() === 0 && await railTickets.getAttribute('aria-current') === 'page', 'Tickets is a rail place: no Back, the rail’s Tickets lit')

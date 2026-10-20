@@ -1,8 +1,8 @@
 # S46D · signing a file, 1.0's file-signing links, Pricing on the website — outcome (2026-10-19, lane E)
 
-Her ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed" — after the findability
+His ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed" — after the findability
 audit `design-source/context/parity/31-findability-audit-2026-10-19/` (README · raw P-1 · L-4 · T-2). Package S46D = **D2** (signing a file, and
-1.0's file-signing links) and **D4** (Pricing on the website); her open call on D4 taken as recommended (`s46/plan-2026-10-19.md`: the 2.0 site
+1.0's file-signing links) and **D4** (Pricing on the website); his open call on D4 taken as recommended (`s46/plan-2026-10-19.md`: the 2.0 site
 shows pricing). Built in lane E (port 3185). Register rows: `steps/reg-S46D.md` (REG-S46D.1…13). Probe:
 `design-source/verify/pending-modules/verify-pm2-s46d.cjs` (**72 / 72**). Shots: `design-source/verify/pending-modules/pm2-s46d/`.
 **No migration. No repair** — nothing in the demo needed a record (the probe puts a PDF on Kevin Ng's Files and takes it away).
@@ -38,7 +38,7 @@ shows pricing). Built in lane E (port 3185). Register rows: `steps/reg-S46D.md` 
 | "Note in your register row that S35's 'kept hidden' was read from deployment/qanvast, and plg's live page is the reason" | **built** | REG-S46D.6 |
 | GHOSTS "the site has its own loading pattern — follow it" | **built** | `PricingGhost` (`components/site/site-ghosts.tsx`): the hero in its own words, the period switch, the three cards — the probe's slow hop lands the heading within 0 px at 1440 and 390 touch. No studio page's first screen changed (Files gains a menu row; sign-up's first step is the same) |
 
-## Decisions taken (as recommended — her "fix everything" 2026-10-19)
+## Decisions taken (as recommended — his "fix everything" 2026-10-19)
 
 1. **A copy, unless the file is already in Contract & VOs.** The contract's PDF lives where every contract's does (the editor, the import dialog
    and the client portal's kinds all say "Files › Contract & VOs"); the original stays free to move, rename or delete, and the PDF the client

@@ -8,7 +8,7 @@ import { clientStageName } from './model'
 import { fetchClientMessageRules, tellClient } from './client-messages-send'
 
 /*
- * (simplify round 2 — P3 §6.8's option "a reminder on the due day", her "fix all the pending things" 2026-10-09) "A payment is due today": the
+ * (simplify round 2 — P3 §6.8's option "a reminder on the due day", his "fix all the pending things" 2026-10-09) "A payment is due today": the
  * client hears of an invoice on its due day, by itself — today only *Remind on WhatsApp* by hand. Off until the studio switches it on (Settings ›
  * Notifications › Messages to clients, `client_payment_due`). Derived, never stored, the way the bell's reminders are: it runs when the studio's
  * bell is read (app/notifications/actions.ts `fetchFeedAction`, beside `deliverDerived`; PRODUCTION: the same sweep that runs `deliverDerived`

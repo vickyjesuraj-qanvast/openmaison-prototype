@@ -28,7 +28,7 @@ import { ReportTable } from './report-table'
 import styles from './studio-health-report.module.css'
 
 /*
- * (pending modules S39 — card studio:studio-health: 1.0's Accounts › Studio › Studio Health, "how your team is using OpenMaison"; her "build all
+ * (pending modules S39 — card studio:studio-health: 1.0's Accounts › Studio › Studio Health, "how your team is using OpenMaison"; his "build all
  * of them" 2026-10-11, in its right form) Company › Reports › Studio health — built the way the other Reports tabs are (Leads ›
  * components/leads/insights/insights-view.tsx, Meetings › ./meetings-report.tsx): the house ranges, the house tile rows in four groups (1.0's
  * Engagement · Business outcomes · Team productivity · Homeowner engagement, in plain words), Over time on the house chart (Market Insights'

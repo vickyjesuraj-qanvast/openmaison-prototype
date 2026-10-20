@@ -1,11 +1,11 @@
 /**
- * (pending modules S39 — card studio:studio-health: 1.0's Accounts › Studio › Studio Health, "how your team is using OpenMaison"; her "build all
+ * (pending modules S39 — card studio:studio-health: 1.0's Accounts › Studio › Studio Health, "how your team is using OpenMaison"; his "build all
  * of them" 2026-10-11, in its right form) Company › Reports › **Studio health** — 1.0's page on the house Reports pattern (lib/leads/tat.ts,
  * lib/projects/insights-model.ts, lib/meetings/report-model.ts): the loader hands over each record's moment once (lib/studio-health/queries.ts)
  * and every figure derives per range in the browser. Pure and client-safe.
  *
  * 1.0 built it on page-view tracking, fire-and-forget usage events and a nightly rollup (`usage_events` · `usage_daily_rollup` · the 03:00
- * cron). Her Accounts Setup Q-16 answer declined that telemetry; 2.0's records already name who did what and when, so the page reads them and
+ * cron). His Accounts Setup Q-16 answer declined that telemetry; 2.0's records already name who did what and when, so the page reads them and
  * nothing new is tracked. **No number is worked out twice**: each figure is the same count another page shows —
  *   - **Active members** — members with at least one act in the range (lib/studio-health/sources.ts: every record that names its doer — a
  *     stage moved, a note, a task, a quote, a file, a message, an AI run, a sign-in…), of the studio's active members (Company › Members).
@@ -26,7 +26,7 @@
  *     sign-in that lasts 30 days says little week by week — they stay a tile and a column.)
  *   - **By team member** — each member's last act (any time), the days they did something, their sign-ins, AI runs, quotes sent (as Creator),
  *     tasks done and site updates written, in the range (sign-ins a column Column settings adds).
- * Kept out, with her reason (the platform's telemetry): page views, top pages, feature funnels (opened → succeeded), minutes per session.
+ * Kept out, with his reason (the platform's telemetry): page views, top pages, feature funnels (opened → succeeded), minutes per session.
  * *(invented copy: every title, help line and caption on the page — the tiles' labels keep 1.0's where 2.0 has the thing)*
  */
 import { insightsReport, RANGES, DEFAULT_RANGE, rangeLabel, readRange, rangeParam, type LeadFacts, type Range } from '@/lib/leads/tat'

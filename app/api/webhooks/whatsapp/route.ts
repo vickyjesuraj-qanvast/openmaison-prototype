@@ -4,7 +4,7 @@ import { fileInbound } from '@/lib/notifications/inbound'
 import { readMetaEnvelope, sameSecret, type WebhookRead } from '@/lib/notifications/webhook-read'
 
 /*
- * (pending modules S34 — her "build all of them" 2026-10-11; card api:message-delivery-providers; 1.0's POST /api/webhooks/whatsapp, the
+ * (pending modules S34 — his "build all of them" 2026-10-11; card api:message-delivery-providers; 1.0's POST /api/webhooks/whatsapp, the
  * same address and the same secret so the provider's setting ports as it is) The WhatsApp provider's webhook: how each message the studio
  * sent went (Delivered · Read · failed — `applyReceipts`, the outbox row found by the wamid its adapter answered) and the replies that came in
  * (`fileInbound` — into that client's conversation in Messages, or kept as they came).

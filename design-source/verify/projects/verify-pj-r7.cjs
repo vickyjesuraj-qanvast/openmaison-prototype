@@ -314,7 +314,7 @@ const ENDING_COLS = ['stage', 'completed_at', 'completed_by', 'complete_note', '
     await q.locator('button[aria-label^="More actions for"][aria-label*="Ryan"]').first().click(); await q.waitForTimeout(500)
     /* (parity P-08 · P-11, a deliberate change of this rule) the row's ⋮ is the record's menu — the record links, Invite to Portal, Copy Link,
        Delete; the stage moves live on the project's Stage ▾ */
-    /* (pending modules S46B, a deliberate change of this rule — her "fix everything" 2026-10-19, M6) Complete handover is back in ⋮, just
+    /* (pending modules S46B, a deliberate change of this rule — his "fix everything" 2026-10-19, M6) Complete handover is back in ⋮, just
        before Delete (1.0's Close project) — the Stage menu's Completed row; the other stage rows stay on Stage ▾ */
     const phoneRows = (await q.getByRole('menuitem').allInnerTexts()).map((x) => x.split('\n')[0].trim())
     ok(phoneRows.indexOf('Complete handover') === phoneRows.length - 2 && phoneRows[phoneRows.length - 1] === 'Delete' && !phoneRows.some((r) => /^(On hold|Reopen|Start the project)/.test(r)), 'the phone card’s menu: Complete handover just before Delete, no other stage rows')

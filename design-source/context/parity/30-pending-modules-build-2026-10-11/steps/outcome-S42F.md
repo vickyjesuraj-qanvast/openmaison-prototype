@@ -16,7 +16,7 @@ Package S42F: the four items in `s42/carried-notes.md` › "Found while landing 
 
 **Counts:** Major 3/3 fixed (items 1, 2, 4) · Minor 1/1 fixed (item 3) · siblings fixed: the server-side member rule on stage moves and member edits, Duplicate's fallback, Make the project again, the expired agreement step and its access-panel count. Nothing left unfixed in this package.
 
-## Calls fixed as recommended (her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review)
+## Calls fixed as recommended (his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review)
 - **Settled while fixing — Fill from a document** (calls-for-vicky.md): "read the picked file's own words by rule … and say plainly when nothing
   reads" — built as recommended. Pictures are not read (no OCR by rule; nothing calls a model) and are said so; the picker no longer offers them.
 - **S42B's note on the portal** ("the portal's Sign the agreement row could ask `quoteHoldsSigning`") — built, in the signing link's words (B·1).
@@ -39,7 +39,7 @@ Package S42F: the four items in `s42/carried-notes.md` › "Found while landing 
   view stamp (`stampShareView`, `stampLayoutLinkView`) and an import; nothing else in those files.
 - **For Vicky (found, not on my list)** — the Move stage window's and Notes' **Auto Fill** (REG-319, the mock's 780:… flow) still fills a contact
   log from a fixed script whatever screenshot is dropped. A chat screenshot has no words to read by rule (no OCR), so unlike Fill from a document it
-  can't be made real without a model; it stays a declared stand-in. Her call whether it should say so on the screen.
+  can't be made real without a model; it stays a declared stand-in. His call whether it should say so on the screen.
 
 ## Shared pieces changed (the other lanes must know)
 - `lib/projects/model.ts` — `TEAM_NEEDED` (one constant). `app/leads/actions.ts` — `teamNeededFor` (moveStage · quickMoveStage) and `keepsAMember`

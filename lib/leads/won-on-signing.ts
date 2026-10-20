@@ -13,7 +13,7 @@ import { ensureProjectForLead } from '@/lib/projects/create'
 import { fetchProjectStart } from '@/lib/projects/start-rule-server'
 
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15; PARTLY REVERSES REG-911's "signing the quote starts the project")
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15; PARTLY REVERSES REG-911's "signing the quote starts the project")
  * Settings › Projects › *When a project starts* = **The agreement is signed**: an agreement the client signs (online, in a set, or marked
  * signed by the studio) moves its lead to Won by itself — THROUGH the Won step's own rules, never around them:
  *   · the lead is in an active stage the studio's stage movement allows Won from (Linear: from Quote Sent only), with a member (REG-130) —

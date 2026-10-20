@@ -2,7 +2,7 @@ import { Ld } from '@/components/site/ld'
 import { PricingView } from '@/components/site/pricing'
 import { breadcrumbJsonLd, siteMetadata } from '@/lib/site/seo'
 
-/* (S46D — D4, her "fix everything" 2026-10-19; finding D4 · raw T-2) OpenMaison's public Pricing — 1.0's plg page (live since 22 Sep), its metadata
+/* (S46D — D4, his "fix everything" 2026-10-19; finding D4 · raw T-2) OpenMaison's public Pricing — 1.0's plg page (live since 22 Sep), its metadata
    in 2.0's words ("AI credits", never tokens). Every figure on it is the app's own (lib/site/pricing.ts). */
 export const metadata = siteMetadata({
   title: 'Pricing: Start free, upgrade when you’re ready',

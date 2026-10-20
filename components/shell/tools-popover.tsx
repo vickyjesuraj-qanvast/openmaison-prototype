@@ -19,7 +19,7 @@ import { ProTag } from '@/components/credits/pro-tag'
 import type { ProFeature } from '@/lib/credits/features'
 
 /** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413).
-    (S46A — the findability audit's T-1 · M4, her "fix everything" 2026-10-19) `help` — what a tile holds, said on hover and keyboard focus (the
+    (S46A — the findability audit's T-1 · M4, his "fix everything" 2026-10-19) `help` — what a tile holds, said on hover and keyboard focus (the
     house tooltip): the Quotes tile names Upload a quote, 1.0's Quote Digitizer, which no tile is called any more. *(invented copy — the lines
     are ⌘K's own subs for the same pages)* */
 export const TOOLS: { key: string; icon: string; label: string; href?: string; /** (pending modules S19) a Pro feature: the Pro tag on Free */ pro?: ProFeature; help?: string }[] = [

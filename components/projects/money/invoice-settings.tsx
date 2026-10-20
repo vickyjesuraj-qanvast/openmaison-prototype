@@ -43,7 +43,7 @@ export function InvoiceSettings({ rules, canManage, linkProjects = true }: { rul
     } catch (e) { setFeeFirst(!next); snackbar({ message: couldnt('change the rule', refusalOf(e)) }) }
     finally { setBusy(false) }
   }
-  /* (S44O — UAT row 360, her UAT ask 2026-10-15) how an approved variation order is billed — saved as it is picked, put back when refused */
+  /* (S44O — UAT row 360, his UAT ask 2026-10-15) how an approved variation order is billed — saved as it is picked, put back when refused */
   const [voBilling, setVoBilling] = useState<VoBilling>(rules.voBilling ?? 'spread')
   const pickVoBilling = async (v: string) => {
     if (busy || !isVoBilling(v) || v === voBilling) return

@@ -1,4 +1,4 @@
-// Pending modules, package S46C · what a 1.0 user can't find, fixed — her "fix everything" 2026-10-19 after the findability audit
+// Pending modules, package S46C · what a 1.0 user can't find, fixed — his "fix everything" 2026-10-19 after the findability audit
 // (design-source/context/parity/31-findability-audit-2026-10-19/, findings M2 · M3 · H2 · H4 · R1). Each item asserted as the rule it builds,
 // never a count another round can change:
 //  - M2: every Settings module's head, for every role (Dane Owner · Germaine Designer · Priya Accounting · Nurul Marketing), says where a

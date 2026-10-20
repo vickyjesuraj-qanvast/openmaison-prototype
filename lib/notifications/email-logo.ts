@@ -9,7 +9,7 @@ import { fitLogo, imageSize, type LogoSize } from './email-logo-model'
 
 /*
  * (S44O — UAT rows 314 · 337, IDL's "logo issue in emails" and Spaces' "lead notification emails arrive distorted"; M15, call C10 as
- * recommended — her UAT ask 2026-10-15) The developers' fix to the notification email: the studio's logo travels as a HOSTED PNG copy with
+ * recommended — his UAT ask 2026-10-15) The developers' fix to the notification email: the studio's logo travels as a HOSTED PNG copy with
  * its own width and height, so every mail app — Outlook above all, which ignores CSS sizes — draws it at the ratio it has, inside 160 × 48.
  *
  * The brand kit holds the logo as the studio gave it: an upload (a data URL — an email can't carry one), a file the app serves (Demo Studio's

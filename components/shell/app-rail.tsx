@@ -35,7 +35,7 @@ import styles from './app-rail.module.css'
 const TOP_ITEMS = [
   { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },   /* (pending modules S22) live — the studio's front door (1.0's /dashboard), what needs you · what's next · where it stands */
   { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the studio's tasks, second after Dashboard as 1.0 had it; task_alt has no filled state in Material Symbols — the owner chose to leave it */
-  { icon: 'handyman', label: 'Tickets', href: '/tickets' },   /* (S46 — REG-2524, her ask 2026-10-19: "in 1.0 the escalations is like the tasks on the sidebar and i want the same in 2.0") every ticket on the projects you see, after Tasks as 1.0's Escalations sat; its badge the tickets waiting on the studio */
+  { icon: 'handyman', label: 'Tickets', href: '/tickets' },   /* (S46 — REG-2524, his ask 2026-10-19: "in 1.0 the escalations is like the tasks on the sidebar and i want the same in 2.0") every ticket on the projects you see, after Tasks as 1.0's Escalations sat; its badge the tickets waiting on the studio */
   { icon: 'business_center', label: 'Projects', href: '/projects' },   /* (REG-919, Projects round 1) a destination now; its badge = the projects that need attention */
   { icon: 'people_alt', label: 'Leads', href: '/leads' },
   { icon: 'storefront', label: 'Marketplace', href: '/marketplace' },   /* (pending modules S24) live: Qanvast's partner brands and their deals — 1.0's rail item; Accounting's rail leaves it out (opensPath) */

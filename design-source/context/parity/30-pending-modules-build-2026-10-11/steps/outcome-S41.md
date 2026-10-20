@@ -44,7 +44,7 @@ VO-07 · VO-08 · VT-04. Register rows: `steps/reg-S41.md` (REG-S41.1…10). Pro
 - **For S41b:** the sandbox routes' own APIs (`detect-sandbox`, `floorplan-3d-sandbox`'s `manifest` · `vectorize` · `improve-prompt` actions,
   `outpaint` · `reangle` · `orbit-video` · `depth`) — all model calls; each is accounted for by its seam above (no route ported: 2.0 calls no model).
 
-## Decisions (as recommended — her "build all of them" 2026-10-11; the step's brief for the form)
+## Decisions (as recommended — his "build all of them" 2026-10-11; the step's brief for the form)
 1. **The form:** developer benches stay developers'. One page, `/dev/ai-bench`, in the shell; no rail item, Tools tile, Company section, ⌘K page,
    key or phone More row links it; a production build answers a real 404 unless `OPENMAISON_DEV_PREVIEWS=1` (S34's pattern, now one helper for
    both — `lib/services/dev-previews.ts`); never indexed; while shut its 404 carries no word of it (the gate is in the layout, the metadata says

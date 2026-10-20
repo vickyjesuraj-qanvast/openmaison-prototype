@@ -9,7 +9,7 @@ import { tellTeamOfClientMessage } from '@/lib/portal/client-message-bell'
 import type { Inbound } from '@/lib/notifications/webhook-read'
 
 /*
- * (pending modules S34 — her "build all of them" 2026-10-11; card api:message-delivery-providers, "What happens to a client's WhatsApp
+ * (pending modules S34 — his "build all of them" 2026-10-11; card api:message-delivery-providers, "What happens to a client's WhatsApp
  * reply (1.0 only logged it)" — the card's question, taken as the most 2.0-like answer: it arrives in Messages) A client's WhatsApp reply,
  * filed where the studio already answers that client.
  *

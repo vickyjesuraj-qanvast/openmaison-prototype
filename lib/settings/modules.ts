@@ -8,12 +8,12 @@
    and ⌘K's Go to. */
 export const SETTINGS_MODULES = [
   /* (pending modules S14 — card held:settings-company, "'Studio' names both a Settings module and a Company group", one-home N-06; as
-     recommended, her "build all of them" 2026-10-11) the module is named for what it holds — who sees which leads and what each role may do
-     (and, while a studio is new, Set up your studio). "Studio" stays the Company panel's group (REG-484, her pick) and the plan's name. The
+     recommended, his "build all of them" 2026-10-11) the module is named for what it holds — who sees which leads and what each role may do
+     (and, while a studio is new, Set up your studio). "Studio" stays the Company panel's group (REG-484, his pick) and the plan's name. The
      key and the address stay `studio`, so every link to it keeps working. */
   { key: 'studio', label: 'Roles & access', live: true },
   { key: 'leads', label: 'Lead management', live: true },
-  /* (pending modules S23 — Meetings and the Meeting Co-Pilot, her "build all of them" 2026-10-11) the co-pilot's playbook — 1.0's Accounts ›
+  /* (pending modules S23 — Meetings and the Meeting Co-Pilot, his "build all of them" 2026-10-11) the co-pilot's playbook — 1.0's Accounts ›
      AI & Copilot group (Copilot Tuning · Objection Responses · Meeting Checklists · Competitor List) and its session switches — right after the
      leads, whose meetings it runs in */
   { key: 'meetings', label: 'Meetings', live: true },

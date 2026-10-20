@@ -15,7 +15,7 @@ banked in `design-source/verify/pending-modules/pm2-s05/`.
 | Testers' L-2 (change status after Won) | **Kept** — nothing moves backwards (REG-111…); a Won lead's step is corrected through its Edit, as before | — |
 | Testers' L-3 (company + UEN on the lead) | **Built** — Commercial property types ask for Company name · UEN (NRIC hidden unless filled); the info column; template fields `client_company` · `client_uen`; contract chips `client.company` · `client.uen`; the export | `components/leads/lead-form.tsx` (+ css), `components/leads/detail/info-column.tsx`, `app/leads/actions.ts` (`LeadFormInput`), `lib/leads/{enums,events,activity,queries,export}.ts` (`isCommercialType`), `lib/templates/{data,fields,queries}.ts`, `lib/quotes/editor.ts`, `components/quotes/editor/quote-editor.tsx`, `lib/contracts/{tokens,snapshot,queries}.ts` |
 | Testers' L-4 (co-owner on the lead) | **Built** — Add a second client (name · NRIC / FIN · mobile, checked); the info column; every new quote starts with them (REG-588's second client); Client access offers them for the household (Co-owner, prefilled); NRIC masked in Activity; R107 | `components/leads/lead-form.tsx`, `components/leads/detail/info-column.tsx`, `app/leads/quotes-actions.ts` (`createQuote`), `lib/portal/access.ts` (`coOwner`), `components/portal/{household-rows,household-dialog}.tsx` (`prefill`), `lib/leads/{events,activity,export}.ts`, `scripts/repair-demo-data.ts` (R107) |
-| Testers' L-5 (kanban card density) | **Kept** (her "hold back the other module changes"; the card asked to revisit only L-3 and L-4) | — |
+| Testers' L-5 (kanban card density) | **Kept** (his "hold back the other module changes"; the card asked to revisit only L-3 and L-4) | — |
 | Maison AI creates or updates a lead and moves its stage | **Built, by rule, through the form or the window** — Ask box intents `add_lead` · `move_lead` · `edit_lead` (Create New Lead filled · the Move stage window at the step · On Hold / Lost's dialog · Edit Lead on the field); a number already on a lead offered first; Accounting refused; the listing's three words-only suggestions act. Never writes on its own; nothing metered | `lib/maison-ai/{intents,answer}.ts`, `app/leads/workspace.tsx` (`?new=1` landing, suggestions), `app/leads/[id]/overview.tsx` (`?edit=<field>`, `?move=on-hold|lost`), `lib/leads/move-link.ts` (`MoveStep` + on-hold · lost) |
 | Fill a new lead from a document; Auto Fill from a chat screenshot — stand-in; carry L-6 | **Stand-in kept** (the developers' AI read, Q-28). **L-6 built**: the contact is dated now and its next step 3 days on at 7:00 PM; Auto Fill keeps the picked screenshot as the log's file (uploaded with its bytes) | `components/leads/move-stage/{wizard,dialogs}.tsx`, `lib/leads/stage-data.ts` (`AUTO_FILL_DAYS` · `AUTO_FILL_HOUR`), `components/leads/notes/lead-notes.tsx` |
 | Lead-sheet PDF import fitted to a guessed layout | **Kept** — the sample sheet never arrived (developers, with a real sheet) | — |
@@ -29,7 +29,7 @@ banked in `design-source/verify/pending-modules/pm2-s05/`.
 | Files › New ▾ › From Company Files · From Google Drive | **Company Files removed; Drive kept** for the developers (OAuth) | `components/leads/files/files-toolbar.tsx`, `lead-files.tsx` |
 | Files: Download on a file with no stored copy (invoice / receipt entries) | **Left for S07** (its line: "Files' invoice / receipt Download") | — |
 | Notes › Refine | **Built, by rule** — no model, nothing metered; Undo | `lib/leads/note-refine.ts` (new, pure), `components/leads/notes/{lead-notes,pane-toolbar}.tsx` |
-| Tasks hub phase 3; the small 1.0 conveniences | **Kept** (her calls) | — |
+| Tasks hub phase 3; the small 1.0 conveniences | **Kept** (his calls) | — |
 | On Hold phone line clips at the 240 floor (REG-891) | **Built** — the day on its own line under the phone, "Till Sat, 31 Oct ’26", whole at the floor | `components/leads/table.tsx` (+ css) |
 | (found) An in-flight note save put its snapshot back over a newer edit | **Fixed** — the newer edit stays, the autosave writes it after; Refine's Undo lands | `components/leads/notes/lead-notes.tsx` (`save`, `change`) |
 | (found) A press in a folder's ⋮ menu also opened the folder | **Fixed** | `components/leads/tasks/attach-files-modal.tsx` |
@@ -43,18 +43,18 @@ inside it now) and `validateStage(stage, d, asks)`; a lead's company = `leads.co
 client = `leads.client2_*`; an appeal = `lead_returns.appeal_of`; the step uploads keep their bytes (`keepQuoteSentUpload` · `fileWonQuote`);
 Refine = `lib/leads/note-refine.ts`; the shared upload hook = `use-file-upload.tsx`; Maison AI's lead intents in `lib/maison-ai/intents.ts`.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Manage Stages: the hold on editing the funnel stays; the row opens what a studio can set.** The card recommended hiding the row; a hide
   would have left 1.0's two per-stage flags (*Follow-up required*, *Contract required*) and the stage counts with no home, and Settings already
   held the stages' movement rule — so the row opens one card that holds all three. Renaming, adding, recolouring and reordering stages is not
   built: 2.0's stage names are the journey's words in Activity, the bell, Reports, the portal, the port map and ~40 screens, and nothing
-  moves back (REG-111…). **For Vicky:** if she prefers the card's hide, drop `onManage` in `app/leads/workspace.tsx` (the card stays in Settings).
+  moves back (REG-111…). **For Vicky:** if he prefers the card's hide, drop `onManage` in `app/leads/workspace.tsx` (the card stays in Settings).
 - **L-3 and L-4 built; L-2 and L-5 kept** (the card's "revisit L-3 and L-4").
 - **Maison AI never writes a lead by itself** — 1.0's `create_lead` / `update_lead` wrote at once; 2.0's answers open the form or the window
   that would do it by hand, so the studio sees and confirms every change (the brief: "a chat home that shows and confirms any change").
 - **An appeal is a return again** — a new `lead_returns` row naming the rejected one, counted among the lead's returns (the policy says so);
   Qanvast's days to appeal are shown, never enforced (Q-44's display-only rules).
-- **The On Hold day takes its own line** (REG-891's "her pick"): the full words fit to the pixel only, so they would cut on a font change.
+- **The On Hold day takes its own line** (REG-891's "his pick"): the full words fit to the pixel only, so they would cut on a font change.
 - **Contract required stays on by default; Follow-up required stays off** — nothing changes for a studio that never opens the card.
 
 ## What to check in the browser (production build; View as switches roles)
@@ -83,7 +83,7 @@ Refine = `lib/leads/note-refine.ts`; the shared upload hook = `use-file-upload.t
   Files.
 - **Seen, not changed (for Vicky):** on a touch screen every Settings switch row (`<label class=switchRow>` around the DS Switch — Custom
   fields, Notifications, Projects' numbering, now Lead stages) is pulled 10–20 px left of its column by the global 44 px checkbox target rule
-  (`app/globals.css`, REG-273: `label:has(input[type=checkbox])` also matches a switch). House-wide and pre-existing — her call.
+  (`app/globals.css`, REG-273: `label:has(input[type=checkbox])` also matches a switch). House-wide and pre-existing — his call.
 
 ## Probes run
 Each on its own fresh copy of the repaired base (`pbuild/base.db` + migrate 0089 + repair R107) with `next start -p 3160`; :3160 stopped after.

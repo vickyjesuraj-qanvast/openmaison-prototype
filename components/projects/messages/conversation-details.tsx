@@ -24,7 +24,7 @@ import type { ConversationData } from '@/lib/projects/messages'
 import styles from './messages.module.css'
 
 /**
- * (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) A conversation's Details — 1.0's
+ * (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) A conversation's Details — 1.0's
  * context panel (src/components/inbox/context-panel.tsx) on the house Drawer: who is in it, and what it has shared as 1.0 grouped it, Docs ·
  * Media · Links. A group's people are kept here by hand (Add people · Take out · Leave the group — every remove with its Undo; 1.0's rule:
  * a Designer never takes an Owner or an Admin out) and its name (Rename). Two people's conversation offers a group with them; the studio's
@@ -83,7 +83,7 @@ export function ConversationDetails({ open, onClose, data, onChanged, onLeft, on
 
   const list = shared ? shared[tab] : []
   const people = chat ? chat.people : null
-  /* (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, H3; 1.0's chat header had the client's number) the
+  /* (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, H3; 1.0's chat header had the client's number) the
      client's number in their row, in the info column's grammar: Call — on a touch screen it dials; at a desk the number is copied and the
      snackbar says to call from a phone (REG-1566's Call {client}) — and Copy (REG-287's one copy format) */
   const phone = (data.kind === 'client' || data.kind === 'lead') && phoneDigits(data.people.phone) ? data.people.phone : null

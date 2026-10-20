@@ -1,5 +1,5 @@
 /**
- * (pending modules S06 — card `held:finance`, her "build all of them" 2026-10-11; 1.0's Accounts › Expense Categories) **The studio's own
+ * (pending modules S06 — card `held:finance`, his "build all of them" 2026-10-11; 1.0's Accounts › Expense Categories) **The studio's own
  * expense categories.** 2.0 shipped a fixed list (F1-Q11); a studio now keeps its own on Settings › Finance › Money out — add one, rename it
  * (the expenses logged under it follow, and its Xero account with them), move it, remove it (the expenses already logged keep it; new ones can't
  * pick it — 1.0's rule). Reports group by them; Xero maps each to an account. Pure and client-safe.

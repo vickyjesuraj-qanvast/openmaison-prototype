@@ -18,7 +18,7 @@ import money from '@/components/projects/money/money.module.css'
 import b from './books.module.css'
 
 /**
- * (parity map, FB-042 · FB-043 — her "build everything that's in 1.0" 2026-10-10; 1.0's New Project › Commission Structure and the payment
+ * (parity map, FB-042 · FB-043 — his "build everything that's in 1.0" 2026-10-10; 1.0's New Project › Commission Structure and the payment
  * stage's *Trigger commission*) **A project's commission, in one dialog** — opened from the project's ⋮ › Commission… (P-E's door), the
  * completed project's "Set commission for …" task's bell row (`?commission=1`, FB-055) and its Activity lines (FB-057):
  * - **Owners and Admins** pick one of three — *The studio's rule* (the default; its rate shown) · *A rate for this project* · *No commission* —

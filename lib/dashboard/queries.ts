@@ -298,7 +298,7 @@ export async function fetchDashboard(): Promise<DashboardData> {
       href: k.contractors ? '/projects?view=workload&of=contractors' : from('/company/finance/vendors'),
       aria: k.contractors ? `Contractors: ${k.freeNow} free this week — open the contractors` : 'Contractors: none yet — open Finance › Vendors' })
   }
-  /* (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M1; 1.0's rail "Escalations (3)" and Studio Pulse's
+  /* (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M1; 1.0's rail "Escalations (3)" and Studio Pulse's
      escalations) the studio's tickets in one figure, for whoever opens projects: the tickets waiting on the studio — the Projects ⋮'s Tickets
      row's own count (`countTicketsToAnswer` reads the same tally) — its line how many are open in all and escalated; the door is Projects ›
      Tickets with the way back. No colour: a ticket left waiting is red on its project's Needs you, where it is answered. */

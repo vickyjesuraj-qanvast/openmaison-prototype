@@ -1,5 +1,5 @@
 /**
- * (simplify S-15 — P3 §6.7 · F1 §6.8, her "build everything" 2026-10-09) Settings › Finance › **Document numbers**: the four money documents
+ * (simplify S-15 — P3 §6.7 · F1 §6.8, his "build everything" 2026-10-09) Settings › Finance › **Document numbers**: the four money documents
  * the studio numbers — Invoices INV · Receipts RCT · Credit notes CN · Purchase orders PO — on one card with ONE Save, where four numbering
  * blocks with four Saves sat on three cards (Invoices, Client payments and Credit notes on Settings › Projects, Costs on Settings › Finance).
  * Each keeps the settings key it was saved under (`invoice_numbering` · `receipt_numbering` · `credit_note_rules.numbering` ·

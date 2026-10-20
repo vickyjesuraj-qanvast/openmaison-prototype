@@ -590,8 +590,8 @@ These are the rule and scope changes here. Everything else keeps today's rules.
 | Q11 | **Share N changes** as a button on the Schedule toolbar; the line beside it keeps toggling the client pane? | A second door to share |
 | Q12 | **Words** (invented, candidates): *Before work starts* · *Mark {stage} done* · *Show it on his schedule as done* · *Tell {client}* · *Needs your OK* · *What waits for an Owner or an Admin* · *{client}'s page* (for the *Invite to Portal* drawer once invited) · *Ask to approve*. | Copy |
 | Q13 | Won and New project **open the project** after saving (today: stay, with *View*)? | Landing |
-| Q14 | The Won step's split shown **only for an uploaded quote** (it is ignored otherwise)? | Won step (mocked 780:92744 — the mock wins unless she says) |
-| Q15 | Fix the studio's client preview to say **Paused** for a Blocked stage, as the portal does? | Bug fix, if she agrees it is one |
+| Q14 | The Won step's split shown **only for an uploaded quote** (it is ignored otherwise)? | Won step (mocked 780:92744 — the mock wins unless he says) |
+| Q15 | Fix the studio's client preview to say **Paused** for a Blocked stage, as the portal does? | Bug fix, if he agrees it is one |
 
 ---
 

@@ -1,6 +1,6 @@
 # S42 · The read-only audit — the brief every auditor follows (2026-10-14)
 
-Her words (2026-10-12): "it will be good to build rest of the things like, bug fixes, intuitiveness, world-class ux" · "i don't want anything
+His words (2026-10-12): "it will be good to build rest of the things like, bug fixes, intuitiveness, world-class ux" · "i don't want anything
 to be missed and absolutely bug free build and remember our core design principles and super good world-class user experience" · (2026-10-11)
 "please make sure nothing is left buggy". S42 = a **read-only audit** of everything the pending-modules programme built (S01…S41b-5), then the
 fixes, then the full regression (`steps.md` › 42). You are ONE auditor and you audit ONE area (your prompt names it). You change nothing.
@@ -55,10 +55,10 @@ that would make an elderly studio owner hesitate. Don't report a call already lo
 ## Findings
 | ID | Sev | Step | Where (address · role · width) | What happens (steps) | Should (principle # / rule / REG) | Fix (smallest, in 2.0's shape; file:line if known) | Visible? |
 ## Carried notes — each S42 note in your area: confirmed (→ finding ID) or closed (why)
-## Calls for Vicky — only what needs her taste or a product decision, each with your recommendation
+## Calls for Vicky — only what needs his taste or a product decision, each with your recommendation
 ## Walked — every surface × role × width you covered, so the gaps are visible
 ```
 IDs `<area letter>-01`… Severity: **Blocker** (data lost or wrong, a flow that can't finish, a crash) · **Major** (a dead end, a wrong
 person / number, a broken phone layout, a second home) · **Minor** (words, a missing Undo / reason, a ghost off, a keyboard gap) · **Polish**.
-"Visible?" = yes when the fix changes what a user sees (it gets a register row for her). Shots go in your scratch dir — name them by ID and
+"Visible?" = yes when the fix changes what a user sees (it gets a register row for him). Shots go in your scratch dir — name them by ID and
 reference the path. Final message: 8 lines — counts by severity, the three worst, and the file path.

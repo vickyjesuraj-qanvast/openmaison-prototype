@@ -1,5 +1,5 @@
 /**
- * (S44I — M9, UAT rows 350 · 325; as recommended, her ask 2026-10-15) The studio's own units — Settings › Quotes & pricing › Units, kept like
+ * (S44I — M9, UAT rows 350 · 325; as recommended, his ask 2026-10-15) The studio's own units — Settings › Quotes & pricing › Units, kept like
  * the Trades (REG-561 / REG-647): add, rename (the lines and the Price book follow), move, remove (what already uses one keeps it). Unset, the
  * seven a quote always offered — a studio that never opens the card loses nothing. Every unit picker reads them: the Items table's cell menu
  * (type-ahead), the phone's sheet, Set a value, the paste mapping, the Price book's item and section dialogs, Choices and the Marketplace.

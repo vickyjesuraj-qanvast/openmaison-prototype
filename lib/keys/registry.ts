@@ -153,7 +153,7 @@ export const GO: { key: string; id: string; label: string; href?: string }[] = [
 ]
 
 /**
- * (S46A — the findability audit's N-5 · H1, her "fix everything" 2026-10-19) 1.0's G then I (its Inbox) and G then E (its Escalations), kept as
+ * (S46A — the findability audit's N-5 · H1, his "fix everything" 2026-10-19) 1.0's G then I (its Inbox) and G then E (its Escalations), kept as
  * quiet aliases: each goes where the place lives now — Messages, and Projects › Tickets — and neither is listed in the ? panel or the G hint,
  * which teach 2.0's keys (G then M). REG-1830 had left both out; the audit found two keys a 1.0 hand still presses, so they answer now.
  * (S46 — REG-2524) Tickets became a rail place, so G then E is a listed key in GO; only G then I stays a quiet alias.

@@ -1,5 +1,5 @@
 // Pending modules, step S41b-4 · The Free plan's upgrade offers (the S41b data sweep's M-02 — 1.0's `deployment/plg` upgrade nudges, 17
-// triggers, at most one offer at a safe moment, `nudge_state`; her "build all of them" 2026-10-11 and "nothing left behind" 2026-10-12).
+// triggers, at most one offer at a safe moment, `nudge_state`; his "build all of them" 2026-10-11 and "nothing left behind" 2026-10-12).
 // Each 1.0 rule asserted as the rule, never a count from another round:
 //  - never on Pro (nothing is looked at, nothing written); on Free the Owner's first quiet moment brings ONE offer — the highest of the
 //    moments that happened since the studio's start (the demo: "You're a pro at this", its 70 AI credits)

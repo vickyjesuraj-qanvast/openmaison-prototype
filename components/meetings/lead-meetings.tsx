@@ -35,7 +35,7 @@ import styles from './meetings.module.css'
 export type MeetingsLead = { id: string; name: string; phone: string; email: string | null; stage: string; propertyType: string; propertyAddress: string | null; reachedMet: boolean }
 
 /**
- * (pending modules S23 — her "build all of them" 2026-10-11; REG-552's hold lifted for this card) The meetings of a lead — its Meetings tab
+ * (pending modules S23 — his "build all of them" 2026-10-11; REG-552's hold lifted for this card) The meetings of a lead — its Meetings tab
  * (858:24784 drew the tab; REG-552 hid it, two lines restored), the project's Client › Meetings (the lead's own component given the project's
  * base, as Tasks and Files are) and, with `leadId` null, Tools › Meeting Copilot (`/meetings`): the tab unpinned from one lead, as Tasks in the
  * rail is (REG-466), with a Lead column and Start's lead picker. A meeting held on a lead IS its Met log: a Met log no meeting holds lists as

@@ -9,7 +9,7 @@ import type { AskLinks } from '@/lib/projects/client-asks-model'
 import styles from './thread.module.css'
 
 /**
- * (simplify S-22, her "build everything" 2026-10-09) The client asks — one piece for every client message, ticket and floor-plan mark: a ⋮
+ * (simplify S-22, his "build everything" 2026-10-09) The client asks — one piece for every client message, ticket and floor-plan mark: a ⋮
  * (the house menu, a bottom sheet on a phone) with **Reply** · **Make a task** · **Raise a variation order**. Made once, a row opens what it
  * made: *Open the task* · *Open VO-n*. The caller does the work (the client's words carried over, the source linked back — lib/projects/
  * client-asks.ts; the mark's own actions); a handler left out drops its row, and Raise a variation order is offered only to who sees the

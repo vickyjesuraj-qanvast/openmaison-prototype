@@ -346,7 +346,7 @@ export function ProjectValueDialog({ open, value, onClose, onSave }: { open: boo
   )
 }
 
-/* ── (parity map, PR-058 — her "build everything that's in 1.0" 2026-10-10; 1.0's CloneProjectDialog) Duplicate project ─────────────────── */
+/* ── (parity map, PR-058 — his "build everything that's in 1.0" 2026-10-10; 1.0's CloneProjectDialog) Duplicate project ─────────────────── */
 
 type DupFor = 'same' | 'lead' | 'new'
 /**

@@ -17,7 +17,7 @@ import toolbar from '@/components/om/tab-toolbar.module.css'
 import styles from './messages.module.css'
 
 /**
- * (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) Messages' New message ▾ — 1.0's
+ * (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) Messages' New message ▾ — 1.0's
  * New Chat · New Group (src/components/inbox/new-chat-panel.tsx) and the lead drawer's Chat, in the page header the house way (New Meeting ▾'s
  * shape, filled; C presses it): **A member ›** (the studio's members in place — one press opens the two of you), **A new group** (a name and
  * the people), **A client** (any lead or project the viewer sees — their home's conversation, invited to their page or not). 1.0's "Add New

@@ -133,7 +133,7 @@ function FieldItems({ onPick }: { onPick: (key: string) => void }) {
 }
 
 /**
- * (S44G — NB-08, F2-05; her ask 2026-10-15, as recommended) A Text block's words, formatted: the house rich editor (the quote's Terms and a line's
+ * (S44G — NB-08, F2-05; his ask 2026-10-15, as recommended) A Text block's words, formatted: the house rich editor (the quote's Terms and a line's
  * description use it) in its dense form for the 320 pane — Bold · Italic · Underline | Bulleted list · Numbered list | Text colour (the kit's
  * four, never a free colour: C2) | Link. Insert a field puts the field where the caret was; Write with AI works on the formatted words; "Prints as"
  * reads the fields under the box, as every plain box does (REG-569). The stored words are the editor's HTML: the allowlist cleans them on save

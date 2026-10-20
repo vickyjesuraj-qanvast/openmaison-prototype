@@ -45,7 +45,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 /*
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up) ONE STUDIO OPEN AT A TIME, ON THIS PROTOTYPE.
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up) ONE STUDIO OPEN AT A TIME, ON THIS PROTOTYPE.
  * 2.0 keeps one studio per database (no table carries a studio id — REG-667's model: each tester runs their own). A studio that signs up on
  * this prototype is made in a database of its own, beside the demo's (`<DATABASE_URL's file>.studios/<key>.db`, lib/studios/registry.ts),
  * and the server opens it: every read and write below goes to the open studio's database, the demo's file is never touched, and "Back to the

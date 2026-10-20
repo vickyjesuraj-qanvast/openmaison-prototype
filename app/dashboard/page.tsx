@@ -3,7 +3,7 @@ import { fetchDashboard } from '@/lib/dashboard/queries'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 
 /**
- * (pending modules S22 — cards studio:dashboard · held:dashboard · api:industry-news · public:industry-news-feed; her "build all of them"
+ * (pending modules S22 — cards studio:dashboard · held:dashboard · api:industry-news · public:industry-news-feed; his "build all of them"
  * 2026-10-11) The Dashboard: what needs you, what is next and where the studio stands, for whoever is signed in — every role, Accounting's
  * books included (1.0's dashboard was every role's but Accounting's; their 2.0 page is their money). The studio lands here (app/page.tsx).
  */

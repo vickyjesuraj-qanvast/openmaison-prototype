@@ -23,7 +23,7 @@ export type RecordDoor = { card: string; field?: string }
 const sizeOf = (url: string) => { const b64 = url.slice(url.indexOf(',') + 1); return Math.floor((b64.length * 3) / 4) }
 
 /**
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) The
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) The
  * application to be listed on Qanvast — 1.0's /verify form in 2.0's shape: **what the studio's records already say is shown, never typed**
  * (its name and UEN, the registrations it recorded, its completed projects counted, its About photos, year and awards, its review link and
  * website — each said with the card that keeps it, and a door to that card where one is missing), and **the studio types only what isn't on

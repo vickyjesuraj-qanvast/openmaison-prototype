@@ -18,7 +18,7 @@ import portal from '@/components/portal/portal.module.css'
 import styles from './join-page.module.css'
 
 /**
- * (pending modules S09 — the card `onboarding:team-invitations`, her "build all of them" 2026-10-11; 1.0's invitation, whose link went to
+ * (pending modules S09 — the card `onboarding:team-invitations`, his "build all of them" 2026-10-11; 1.0's invitation, whose link went to
  * /login) An invitation to the studio's team, as the person invited reads it: the studio's bar (the client links' letterhead bar) and one card
  * on the house notice — the studio, who invited them and as what, one filled button. Expired, cancelled or unknown links say so in the
  * studio's name, with who to ask (invented copy).

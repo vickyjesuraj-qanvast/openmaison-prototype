@@ -24,9 +24,9 @@
         "Classic mode's margin alerts, One-Click Profit and compliance alerts (held: N-02, TD-106)",
         "Settings › Home Screen: chat-first or classic"
       ],
-      "depends_on": "her mocks; an RSS reader for News; the assistant card for the chat box",
+      "depends_on": "his mocks; an RSS reader for News; the assistant card for the chat box",
       "held_by": "Dashboard",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "It is the first rail item and a dead end today. Most widgets are counts 2.0 already works out, so a first cut is cheap once it is drawn; Classic mode's sample figures should not come over.",
       "effort": "M",
       "questions": [
@@ -57,10 +57,10 @@
         "Voice input",
         "A conversation that carries from the home's chat box into the panel"
       ],
-      "depends_on": "an LLM with tool calls; AI credits pricing; her design for answers that change records",
+      "depends_on": "an LLM with tool calls; AI credits pricing; his design for answers that change records",
       "held_by": "",
       "recommendation": "build with a stand-in",
-      "why": "The rule-based Ask box is the right stand-in; widening it to the lead, task and quote questions studios ask most needs no model. The real model, and what it may change without asking, is the developers' lane plus her call.",
+      "why": "The rule-based Ask box is the right stand-in; widening it to the lead, task and quote questions studios ask most needs no model. The real model, and what it may change without asking, is the developers' lane plus his call.",
       "effort": "L",
       "questions": [
         "May the assistant change records itself, or only propose a change the member confirms?",
@@ -90,9 +90,9 @@
         "History, Gallery, Analytics with coaching, Objections report",
         "Project › Meeting Summary card"
       ],
-      "depends_on": "her mocks; live transcription; an LLM; recording-consent rules",
+      "depends_on": "his mocks; live transcription; an LLM; recording-consent rules",
       "held_by": "REG-552",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "1.0's largest feature not yet in 2.0, and all of it waits on the Meetings mocks. The Visualizer, X-Ray and quote pieces it would reuse already exist in 2.0.",
       "effort": "XL",
       "questions": [
@@ -117,9 +117,9 @@
         "Brand page: gallery, services, links, socials, FAQs, its deals, WhatsApp the brand",
         "Banners at the top (fixed pictures)"
       ],
-      "depends_on": "Qanvast's brands and deals API (not in either repo); her mocks",
+      "depends_on": "Qanvast's brands and deals API (not in either repo); his mocks",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Its content is Qanvast's, not the studio's; without the brand feed it is an empty page. Decide whether OpenMaison carries it before drawing it.",
       "effort": "M",
       "questions": [
@@ -143,9 +143,9 @@
         "Article page with its text and charts",
         "Writing and publishing the articles (Platform admin, not the studio)"
       ],
-      "depends_on": "someone at OpenMaison writing articles; her mocks",
+      "depends_on": "someone at OpenMaison writing articles; his mocks",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "A small reader, but only worth having if someone writes for it; the Dashboard's News widget does a similar job from RSS feeds.",
       "effort": "S",
       "questions": [
@@ -170,9 +170,9 @@
         "Pinned chats; attachments other than photos",
         "Reply suggestions"
       ],
-      "depends_on": "her decision",
+      "depends_on": "his decision",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "2.0 already has the conversation that matters to the client. Team chat competes with the WhatsApp groups studios already use, so ask before building it.",
       "effort": "M",
       "questions": [
@@ -197,7 +197,7 @@
       ],
       "depends_on": "an image model; an AI credits price",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "The planner's isometric view already shows a plan in 3D with rooms you can change. The AI picture is a quicker wow for a first meeting, but it needs a real model.",
       "effort": "M",
       "questions": [
@@ -223,9 +223,9 @@
         "Theme skins and mascots",
         "Open / Closed to new leads in the top bar"
       ],
-      "depends_on": "real sign-in for the profile (developers' lane); her decision",
+      "depends_on": "real sign-in for the profile (developers' lane); his decision",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Editing one's own profile becomes necessary once real sign-in lands; dark mode and tours are design calls; skins are novelty and can stay behind.",
       "effort": "M",
       "questions": [
@@ -254,7 +254,7 @@
       "depends_on": "product telemetry (developers' lane)",
       "held_by": "Accounts Setup Q-16",
       "recommendation": "skip",
-      "why": "She answered No to Q-16: it is the platform's telemetry, and the business numbers already sit in Reports.",
+      "why": "He answered No to Q-16: it is the platform's telemetry, and the business numbers already sit in Reports.",
       "effort": "M",
       "questions": []
     },
@@ -274,9 +274,9 @@
         "Page access, data scope and action switches per role",
         "Overrides for one member"
       ],
-      "depends_on": "her decision",
+      "depends_on": "his decision",
       "held_by": "Q-40",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Four fixed roles serve the studios so far, and 1.0's editor was largely inert; it pays off only when studios ask for roles of their own.",
       "effort": "M",
       "questions": [
@@ -299,9 +299,9 @@
         "No Log out and no personal Settings in a profile menu (sign-in is the developers')",
         "Qanvast Ops' Credits · Raise Complaint · Promote · Portfolio · Reviews & Rankings · Hangouts: 1.0's menu links to pages missing from the 1.0 repo; 2.0 has Leads · Studios"
       ],
-      "depends_on": "her decision; sign-in (developers' lane)",
+      "depends_on": "his decision; sign-in (developers' lane)",
       "held_by": "",
-      "recommendation": "needs her mocks / decision",
+      "recommendation": "needs his mocks / decision",
       "why": "Every working 1.0 destination already has a home in 2.0; what is left is four dead-end items, each decided on its own card.",
       "effort": "S",
       "questions": [

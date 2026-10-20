@@ -13,7 +13,7 @@ import p from './pages.module.css'
 import st from './pricing.module.css'
 
 /*
- * (S46D — D4, her "fix everything" 2026-10-19 after the findability audit; finding D4 · raw T-2) OpenMaison's public Pricing at /site/pricing —
+ * (S46D — D4, his "fix everything" 2026-10-19 after the findability audit; finding D4 · raw T-2) OpenMaison's public Pricing at /site/pricing —
  * 1.0's plg page in its content shape, on the site's own pieces: the hero with the billing period, the three plans (Pro's Freelance · Studio
  * as Plans has it), every tool from day one, how AI credits work (per action · what a month buys · top-ups), the whole comparison, the
  * questions, and the closing band. Every number comes from the app's one source through lib/site/pricing.ts. A plan's button starts the studio

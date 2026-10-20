@@ -1,5 +1,5 @@
 /**
- * (S43B · F1-01 — her "fix all the pending things" 2026-10-15, as recommended; REG-319's Auto Fill was a scripted stand-in: whatever file was
+ * (S43B · F1-01 — his "fix all the pending things" 2026-10-15, as recommended; REG-319's Auto Fill was a scripted stand-in: whatever file was
  * dropped, the Move stage window filled the mock's "WhatsApp · Callback requested" and the Notes tab a fixed sentence) Auto Fill, read by rule —
  * the same honest treatment S42F gave Fill from a document (`lib/leads/document-fill.ts`): the picked file's OWN words, in the browser, the
  * moment it is picked; nothing leaves it while it reads, nothing calls a model, no AI credits (1.0's screenshot read cost 0).

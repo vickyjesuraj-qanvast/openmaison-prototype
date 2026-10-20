@@ -9,7 +9,7 @@ import { lineOf, type ChatLine } from './message-lines'
 import { CHAT_LOAD, STUDIO_ROOM, chatEventWords, chatFileAddress, conversationKey, studioRoomTitle, type ChatEvent, type ChatType } from './messages-model'
 
 /*
- * (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) The studio's own conversations,
+ * (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) The studio's own conversations,
  * read: one among its members (`conversations` kind direct · group · studio — 1.0's New Chat, New Group and the studio-wide room its card asked
  * for) and a lead's Team conversation before Won (kind `lead`). Never a client's — no client page reads these tables, and every write here is
  * the studio's (app/projects/messages-actions.ts, app/chat/actions.ts). Who is in one: a direct or a group conversation's participants (taken

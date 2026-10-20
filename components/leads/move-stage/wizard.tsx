@@ -296,7 +296,7 @@ export function MoveStageWizard({
   /** The modal's upload — the Files tab's own (bytes kept); the new file joins the library so its tile can draw it. */
   const uploadForAttach = (file?: File) => (file ? uploadPicked(lead.id, file).then((r) => { if (r && !('error' in r)) setLibrary((l) => [r, ...l.filter((x) => x.id !== r.id)]); return r }) : undefined)
 
-  /* (S43B · F1-01 — her "fix all the pending things" 2026-10-15, as recommended; REG-319's scripted fill retired) Auto Fill READS the picked
+  /* (S43B · F1-01 — his "fix all the pending things" 2026-10-15, as recommended; REG-319's scripted fill retired) Auto Fill READS the picked
      file by rule (lib/leads/contact-fill.ts): what it plainly says lands only where the log is still empty (what was entered is kept, and said
      so); the file itself goes up to the lead's Files and onto the log, as before (S05) — a picture too, filling nothing; the line at the top of
      the log says what filled and what wasn't found, or why the file couldn't be read. Save then works out the reminder from the logs (REG-319). */

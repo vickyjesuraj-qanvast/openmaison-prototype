@@ -1,7 +1,7 @@
 # S18 · Notifications — outcome (2026-10-12, lane A)
 
-Card: `held:notifications` (recommendation "needs her mocks / decision"; questions "Open the digest and a personal mute now?" · "Rename the
-bell's 'Updates' group?"), Leads Q-42 · Q-43 opened as recommended — her old holds lifted for this card. Carried notes taken: **S09** (a
+Card: `held:notifications` (recommendation "needs his mocks / decision"; questions "Open the digest and a personal mute now?" · "Rename the
+bell's 'Updates' group?"), Leads Q-42 · Q-43 opened as recommended — his old holds lifted for this card. Carried notes taken: **S09** (a
 finally-failed invitation doesn't ring the inviter's bell), **S10** (Maison AI could answer "what did I miss today?" from the digest's own
 rows), **S02 / S04** (Viewed stamps never come from chat fetchers — the summary's links are studio pages, never a client link; nothing here
 stamps Viewed). 1.0 read: `src/app/api/cron/notification-digest/route.ts` (hourly; 8 AM studio time; unread in-app rows of the last 24 h in the
@@ -19,7 +19,7 @@ recipients, junction fan-out, `targetedOnly`), `dispatch.ts` (critical events in
 | "Daily digest email — held · Q-42 left blank, so it fell to hold · revisit: per-event email is built; a once-a-day summary is the quiet option owners expect" | **built** — a member's own *A daily summary* on Your profile › Your notifications: one email at 8 AM with the unread notices since the last one and what is due, built from their bell's own rows; urgent emails still at once; Send one now · Read it; Sent messages lists it | `lib/notifications/{personal,summary,summary-server,prefs-server,due-line}.ts`, `lib/notifications/{emit,queries,delivery,outbox,model}.ts`, `app/notifications/{personal-actions,actions,outbox-actions}.ts`, `components/profile/your-notifications.tsx`, `app/settings/sent-messages.tsx` |
 | "Choose who hears each notice — held · Q-43 left blank, so it fell to hold · revisit as a personal mute only (today an event can be switched off only for the whole studio)" | **built** — a personal mute: *Choose what reaches you* lists the notices that can reach that member (by area, by the recipients each is raised for), a switch each; a muted notice never reaches them (no bell row, email or WhatsApp), a muted reminder leaves their Due list | `lib/notifications/personal.ts` (`EVENT_PLACE` · `mayReach`), `lib/notifications/emit.ts`, `lib/notifications/queries.ts` (`fetchFeed`), `components/profile/your-notifications.tsx` |
 | "Email and WhatsApp really sent; the timed reminders (T−30, the 09:00 hold ping) arrive only when the bell is opened — stand-ins · developers' lane" | **stand-in** (kept the developers') — nothing leaves the machine: the outbox adapter records, a real provider is `setDeliveryAdapter`; the sweep that would run `deliverDerived` / `releaseHeldMessages` for every member is S34's card (`api:message-delivery-providers`, same line). This step adds the daily summary to what that sweep runs (`sendDueSummaries()`), and until it exists the summary goes on the first read from 8 AM (the bell, Sent messages, Your profile) — said in its record's time | `lib/notifications/summary-server.ts` (the PRODUCTION note) |
-| "The bell's 'Updates' group shares its name with a project's Updates tab — her open call (N-14)" | **built, as recommended — flagged for Vicky**: the bell's notices are headed **Notices** (Due stays; order and badge unchanged); one constant to change if she picks another word | `components/shell/notifications-panel.tsx`; `ux-build-2026-09-30/P7/verify-p7.cjs` (a deliberate change) |
+| "The bell's 'Updates' group shares its name with a project's Updates tab — his open call (N-14)" | **built, as recommended — flagged for Vicky**: the bell's notices are headed **Notices** (Due stays; order and badge unchanged); one constant to change if he picks another word | `components/shell/notifications-panel.tsx`; `ux-build-2026-09-30/P7/verify-p7.cjs` (a deliberate change) |
 
 **Carried notes:** S09's — **built**: an invitation that can't go after its last try tells whoever sent it (else Owners and Admins), opening
 the member's row (`lib/notifications/delivery.ts` `sendRow`); S10's — **built**: Maison AI's "What did I miss?" (`lib/maison-ai/answers/notices.ts`,
@@ -43,7 +43,7 @@ Finance (the foot now opens Your profile, REG-S18.1).
 - **`log-hub.ts` · `admin/notifications`** — platform admin (excluded). **`homeowner/notifications`** — the portal's bell (built).
   **`notification-template-editor`** — Message wording (built). **`customer_notification_preferences`** — the client messages' settings (built).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **One home for a member's own choices: Your profile › Your notifications** (S01's page for everything that is the member's); the studio's
   channels stay Settings › Notifications'. The bell's *Notification settings* is the door (it is the member's bell), Settings' Events table
   points there, ⌘K finds it.

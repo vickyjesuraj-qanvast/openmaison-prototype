@@ -20,7 +20,7 @@ export async function syncPreparedSnapshot(quoteId: string): Promise<void> {
     if (q.preparedJson) await db.update(quotes).set({ preparedJson: null }).where(and(eq(quotes.id, q.id), isNotNull(quotes.preparedJson)))
     return
   }
-  /* (S44O — call C3, her UAT ask 2026-10-15) and its GST's rounding, stamped as it first goes to the client — the figure it went out with never
+  /* (S44O — call C3, his UAT ask 2026-10-15) and its GST's rounding, stamped as it first goes to the client — the figure it went out with never
      moves if the rule does. Unlike the preparer it is never cleared: a revision keeps the rounding its client has already read. */
   await db.update(quotes).set({ gstRule: GST_RULE_NOW }).where(and(eq(quotes.id, q.id), isNull(quotes.gstRule)))
   if (q.preparedJson) return

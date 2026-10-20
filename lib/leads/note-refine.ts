@@ -1,5 +1,5 @@
 /**
- * (pending modules S05 — card held:leads, "Notes › AI chip › Refine — Coming soon · her call (REG-185) · keep without a model") Refine, by
+ * (pending modules S05 — card held:leads, "Notes › AI chip › Refine — Coming soon · his call (REG-185) · keep without a model") Refine, by
  * rule: a quick note typed on site reads cleanly — the studio's chat shorthand spelt out ("w/" → "with", "abt" → "about", "tmr" →
  * "tomorrow", "qtn" → "quotation"…), every sentence opening on a capital, "i" as "I", one space between words and one after a comma or a
  * full stop, no space before one, no "!!!", and a full stop where a line of words ends without one. Nothing is reworded beyond that and no

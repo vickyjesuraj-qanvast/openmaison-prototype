@@ -1,6 +1,6 @@
 /*
  * (pending modules S45A — H-UHD-1; 1.0's six sales reports, urbanhomedemo 479480a5e · 4da810229 `src/lib/leads/sales-reports.ts`, Urban Home
- * Design's B-requirements; her "build everything and complete it" 2026-10-17 — built as a feature every studio gets) **Sales** — the second
+ * Design's B-requirements; his "build everything and complete it" 2026-10-17 — built as a feature every studio gets) **Sales** — the second
  * report of Company › Reports › Leads, beside Response time (lib/leads/tat.ts): who brings leads in and wins them, where leads stop, which
  * sources pay, how leads and wins move month to month, what is still in play and what is going quiet. Pure and client-safe: the server hands the
  * facts (lib/leads/sales-queries.ts), the page and the Dashboard's Sales tile work the figures out per range with these functions — one set of

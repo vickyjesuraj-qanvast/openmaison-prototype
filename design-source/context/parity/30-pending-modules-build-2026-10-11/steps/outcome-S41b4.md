@@ -23,7 +23,7 @@ sheet at 390 and 320 touch).
 
 | # | 1.0 (fires when · kind) | Status in 2.0 | Where |
 | --- | --- | --- | --- |
-| T1 | 5 active minutes, cumulative · proactive, once | **kept** — counting a member's active minutes is the telemetry her Q-16 declined (S39: "nothing in 2.0 records what a member opens"); T12 (a third day of work, read from records) and T11 carry the same pitch. `nudge_state.active_seconds` is ported (1.0's column) and stays 0 — one counter to add if she ever wants it | `lib/credits/nudge-model.ts` (out of `PROACTIVE`) |
+| T1 | 5 active minutes, cumulative · proactive, once | **kept** — counting a member's active minutes is the telemetry his Q-16 declined (S39: "nothing in 2.0 records what a member opens"); T12 (a third day of work, read from records) and T11 carry the same pitch. `nudge_state.active_seconds` is ported (1.0's column) and stays 0 — one counter to add if he ever wants it | `lib/credits/nudge-model.ts` (out of `PROACTIVE`) |
 | T2 | the studio's net AI-credit spend passes 50 · proactive, once | **built** — "You’re a pro at this" — "The studio has used {n} AI credits. Pro gives 1,500 AI credits a seat every month." (net = spends less refunds since the studio's start; a drift repair counts, 1.0's D17) | `lib/credits/nudges.ts` `loadFacts`, the bell |
 | T3 | the second successful render · proactive, once | **built** — "Enjoying the AI Visualizer?" — "… about 150 renders each." (a render given back never counts; a drift repair is never a render) | same |
 | T4 | the first quote read with at least one line · proactive, once | **built** — "One quote read. More to come?" — "… enough to read about 300 quotes." In 2.0 a read with no line is given back (S19), so an unrefunded `quote_digitize` IS a read with lines (1.0 needed `usage_events`, D5) | same |
@@ -34,7 +34,7 @@ sheet at 390 and 320 touch).
 | T9 | the studio gains its second active member · proactive, once | **built** — "Pro — Studio is made for teams" — "1,500 AI credits a seat every month — 3 seats from S$100 a month." (an invitation accepted by someone who uses the AI tools — S09's record; a re-activated member doesn't count, 1.0's D7) | same |
 | T10 | a success in one tool on 2 different days · proactive, once | **built** — "Making the most of {the AI Visualizer · reading quotes · the Meeting Co-Pilot}?" | same |
 | T11 | successes in 2 different tools · proactive, once | **built** — "Get more with Pro" — "1,500 AI credits a seat every month, with Quote X-Ray, your own quote templates and approvals." | same |
-| T12 | active on a 3rd distinct day · proactive, once | **built from records** — the first look of a new day after two earlier days with the member's own acts (Studio health's `ACT_SOURCES`, S39 — 2.0 keeps no page views, her Q-16) — "Enjoying OpenMaison?" | same |
+| T12 | active on a 3rd distinct day · proactive, once | **built from records** — the first look of a new day after two earlier days with the member's own acts (Studio health's `ACT_SOURCES`, S39 — 2.0 keeps no page views, his Q-16) — "Enjoying OpenMaison?" | same |
 | T13 | the Owner tries AI work with 0 credits · blocking | **answered** — the out-of-credits sheet (Buy {n} and carry on · See plans); **new:** it restarts the gap | `credit-dialogs.tsx` → `noteUpgradeMoment('T13')` |
 | T14 | the Owner tries AI work with too few · blocking | **answered** — the same sheet; restarts the gap | → `noteUpgradeMoment('T14')` |
 | T15 | a member tries AI work with 0 · blocking | **answered** — the sheet's *Ask {Owner}* (2.0's real ask, in the Owner's bell — 1.0 only said "Contact your account owner") | S19 / REG-702 |
@@ -57,13 +57,13 @@ switch `UPGRADE_NUDGES_DISABLED=1`.
 | "Once ever per trigger, one modal lane, a kill switch (`UPGRADE_NUDGES_DISABLED`)" | **built** — `ONCE_EVER`; one offer at a time; the kill switch | same |
 | "Table `nudge_state` per member (`spent` triggers, `last_modal_at`, `last_proactive_at`, `active_seconds`, a compare-and-set `version`)" | **built** — 1.0's table under its own name, all its columns (+ `t7_last_shown_at`, `last_evaluated_at` from migration 432; + 2.0's `offer_id` · `offer_json` · `answers_json`), migration 0110 | `lib/db/schema.ts` `nudgeState` |
 | "In 2.0 today … Nothing offers an upgrade before a wall is hit." · "Its 2.0 home. The credits store and host …, triggers read from records 2.0 already keeps (`credit_ledger`, `members`, the plan); per-member state as a table" | **built** as the sweep placed it — the engine beside the credits host in the shell, reading the credits store; facts from `credit_ledger`, `studio_credit_balances`, `studio_invitations`, `members`, `subscriptions` and the acts list | — |
-| "Would a studio lose anything? No data; it is OpenMaison's conversion work. Her call whether 2.0 should nudge at all." | **built, calm, and flagged for her** — the orchestrator's brief asked for it in 2.0's shape; the studio can switch the notice off for everyone (Settings › Notifications › In app) and the Owner for themselves (Your notifications) | below, *Flags for Vicky* |
+| "Would a studio lose anything? No data; it is OpenMaison's conversion work. His call whether 2.0 should nudge at all." | **built, calm, and flagged for him** — the orchestrator's brief asked for it in 2.0's shape; the studio can switch the notice off for everyone (Settings › Notifications › In app) and the Owner for themselves (Your notifications) | below, *Flags for Vicky* |
 | `nudges/evaluate` POST (plg) · `nudges/claim` POST (plg) — **MISSING** (M-02) | **built** — `offerUpgradeNow` · `answerUpgradeOffer` · `undoPutAway` · `noteUpgradeMoment` (server actions; the member is always the signed-in one) | `app/credits/nudge-actions.ts` |
 | `nudge_state` — **MISSING** with the feature (M-02) | **built** — migration 0110, baseline table, repair R124 | — |
 
 ## Found in 1.0, not on a card
 - **1.0's analytics events** (`paywall_shown` · `paywall_dismissed` · `upgrade_clicked`, R10, `analytics-upgrade-funnel.test`) — 2.0 has no
-  analytics layer (her Q-16); the record keeps each offer's show and answer (`spent`, `answers_json`) — the numbers a funnel would read. Kept.
+  analytics layer (his Q-16); the record keeps each offer's show and answer (`spent`, `answers_json`) — the numbers a funnel would read. Kept.
 - **The Free-plan block copy for T13 / T14** ("Top up to keep going, or upgrade to Pro for 1,500 AI credits per user monthly", Buy credits ·
   Upgrade to Pro) — 2.0's sheet already offers both ways (Buy {n} and carry on · See plans); unchanged.
 - **Plan pre-selection** (Pro — Studio for T9 and teams, else Freelance) — 2.0's Plans already picks by team size (`suggestedPlan`); unchanged.
@@ -71,7 +71,7 @@ switch `UPGRADE_NUDGES_DISABLED=1`.
   while the studio can take its trial; the one press is See plans (Plans carries the trial).
 - **`/upgrade`** — S41b-2 already redirects it to Plan & billing. Nothing for S41b.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **The bell, not a dialog** (the prompt's three pieces weighed per trigger): every offer is a bell row — the bell already carries the credits'
   other notices (running low, out, renewed, receipts, asks), never covers the page, isn't on a client page, and has the member's own mute.
   *The Dashboard's Needs you* — not used: it holds places that wait on you (S22's rule); an offer is not one, and a row there beside a bell row

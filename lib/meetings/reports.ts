@@ -15,7 +15,7 @@ import { outcomeOf, type MeetingFact, type ObjectionFact, type ReportPerson } fr
  * `outcomeOf`), and every objection logged in them. Owners and Admins only (1.0's Analytics was the Owner's, its Objections report the Owners'
  * and Admins' — 2.0 gives both to whoever runs the studio); anyone else gets null and the tab's gate. Owners and Admins see every lead, so no
  * Who-sees-leads narrowing applies. The report itself is pure and derives per range in the browser.
- * (S42 audit C-02, call C·1 as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review) "A meeting
+ * (S42 audit C-02, call C·1 as recommended — his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review) "A meeting
  * held IS the Met log" (S23's own rule): every Met log no meeting holds counts as a meeting held too — on its day (the log's when, else when it
  * was written), for whoever logged it — the very rows the meetings lists show (`meetingRows`), so "held" is one number on both pages. A log has
  * no brief: no score, no checklist, no co-pilot; the tiles say how many of the meetings held carry those.

@@ -20,18 +20,18 @@ Register rows: `steps/reg-S04.md` (REG-S04.1…13). Probe: `design-source/verify
 | Draft with Maison AI (a brief becomes a quote) | **Built, rule-built** (the card's question: a first cut now) — My Sections, My Items by trade, 1.0's baseline at S$0 to price; nothing metered; the brief kept; Activity | `lib/quotes/draft.ts` (new, pure: `readBrief` · `draftPlan`), `app/quotes/draft-actions.ts` (new: `draftQuote` · `createQuoteFromDraft`), `components/quotes/create-quote-modal.tsx`, `components/leads/quotes/lead-quotes.tsx`, `components/quotes/list/quotes-workspace.tsx` |
 | Upload a quote reads spreadsheets; its chip says PDF · XLS · JPG on a 5-credit press | **Words fixed** — "XLSX · CSV · 5 AI credits"; the document reader stays the developers' (only the demo's three reference quotes read as PDFs) | `components/quotes/create-quote-modal.tsx` |
 | AI help in the editor (insights, margin warnings, set a global margin) | **Built by rule** — below cost · under 10 % · no price yet, each row to its line; one markup through Set a value. **Not built**: under-market / upsell (need market data or a model), wrong-client (impossible in 2.0) | `lib/quotes/hints.ts` (new), `components/quotes/editor/use-quote-maison.tsx` (new), `components/quotes/editor/quote-editor.tsx`, `components/quotes/editor/items/items-section.tsx` (`command`, opening folded sections), `components/quotes/editor/items/set-value-dialog.tsx` (`initialField`) |
-| Starter Quote (quote rules by project type) | **Kept** (her call, templates Q-07) — My Sections with property-type tags cover it, and Draft with Maison AI reads them by the lead's property type | — |
-| Prices that include GST | **Kept** (her hold — "ask the studios first") | — |
+| Starter Quote (quote rules by project type) | **Kept** (his call, templates Q-07) — My Sections with property-type tags cover it, and Draft with Maison AI reads them by the lead's property type | — |
+| Prices that include GST | **Kept** (his hold — "ask the studios first") | — |
 | A stored PDF with its render hash; quote emails really sent | **Stand-ins, kept** — the developers' (Preview prints; the link travels on WhatsApp) | — |
-| Sort the Items table by a column head | **Kept** (her call, REG-483) | — |
+| Sort the Items table by a column head | **Kept** (his call, REG-483) | — |
 | SKU and Add New Column; eight column switches refused | **Removed** — Column settings lists only what the table draws; no Add New Column | `components/quotes/editor/items/column-settings-drawer.tsx` |
 | Items › row thumbnail › Upload Logo; the Create strip's Brand Catalog; a photo upload stamps a canned thumbnail | **Removed · removed · fixed** — Upload Logo and Brand Catalog dropped (1.0 had neither); Upload Image keeps the picked picture (the lead's Files, its bytes) | `components/quotes/editor/items/{table-menus,item-row,items-section}.tsx`, `components/quotes/editor/create-strip.tsx`, `components/quotes/editor/editor-skeleton.tsx` (three bones) |
 | Quote Files › Download of a non-image | **Built** — any kind, the Files tab's way | `components/quotes/editor/files/files-section.tsx` |
 | Sort on the Quotes table heads | **Built** — eight heads, A→Z · Z→A · off, one sort with Filters' (S03's model); Client joins Title and Creator as a name | `lib/leads/quote-filters.ts` (`sortQuotesByHead` · `nextQuoteHeadSort` · `headOrderWords`), `components/leads/quotes/{quotes-table,lead-quotes,quotes-filters-modal}.tsx` (+ css), `components/quotes/list/quotes-workspace.tsx` |
 | Round-2 testers' asks | **Kept** (the design lead's Later list) | — |
 | A line's status (Pending · Approved · Declined) — decide or drop | **Dropped** — no screen, no writer, 1.0 had none; the client's per-line answer is the optional pick; R106 turns the demo's Declined line into an optional work the client said no to | `app/quotes/items-actions.ts` (`cleanPatch` takes no status), `components/quotes/editor/items/item-cards.tsx`, `scripts/repair-demo-data.ts` (R23's statement + check, R106) |
-| Accounting approves quotes (REG-1660) — needs her answer | **Decided: no** — 1.0 let only the owner approve a quote; 2.0 keeps Owners, Admins and the backup approver. Flagged for her below | — |
-| Word labels on the Items toolbar (D5), muted section prompts (D7) | **Kept** (her "not now") | — |
+| Accounting approves quotes (REG-1660) — needs his answer | **Decided: no** — 1.0 let only the owner approve a quote; 2.0 keeps Owners, Admins and the backup approver. Flagged for him below | — |
+| Word labels on the Items toolbar (D5), muted section prompts (D7) | **Kept** (his "not now") | — |
 | Quote lines from a meeting brief | **Kept** — comes with Meetings (S23, REG-552) | — |
 | (found) Duplicate failed on a quote with a view-only link; it carried the signed total, the change ask and the decline | **Fixed** | `app/leads/quotes-actions.ts` (`duplicateQuote`) |
 | (found) the repair's quote sums ignored optional and word lines and named discounts | **Fixed** (no demo amount moved) | `scripts/repair-demo-data.ts` (R23) |
@@ -53,7 +53,7 @@ For CLAUDE.md's Map (the orchestrator's): the confirmation link is `/confirm/<to
 Maison AI = `lib/quotes/draft.ts` + `app/quotes/draft-actions.ts`; the editor's Maison AI = `lib/quotes/hints.ts` + `use-quote-maison.tsx`; the
 Quotes heads = `sortQuotesByHead`; a quote line's `status` is retired (always Pending).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Draft with Maison AI is a rule-built first cut now** (the card's first question), never a guessed price, never metered (1.0 charged nothing).
 - **The confirmation link gets a token; its window is the quote's Valid until** — the link stays open while the quote does (REG-625: an expired
   quote is marked, never blocked); the SMS code stays the developers'.

@@ -41,7 +41,7 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
  * member may see — a lead's (one each, named after the lead) or a personal one — as covers, with the Kind pill, search, folders for
  * personal designs, the list view, rename · move · duplicate · delete with Undo and the Deleted sheet. New ▾ starts a blank design, a
  * lead's design or one from a sample room; the intro card says what the tool does until it is dismissed.
- * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M8; 1.0's start strip had From a project and its
+ * (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M8; 1.0's start strip had From a project and its
  * landing grouped Projects · Leads; audit 16's VL-03 "projects Later" closed) New ▾ › **For a project…** — pick a project, its lead's design
  * opens, as the project's Design › Designs opens it — and the Kind pill's **Projects**: a lead's design whose lead is won into a live project
  * ("Project · P-…"), Leads keeping the ones still leads — the 3D Space Planner's home is the model (Projects · Leads · Personal).

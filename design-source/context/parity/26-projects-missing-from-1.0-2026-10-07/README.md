@@ -3,7 +3,7 @@
 The owner: "I feel there are a lot of missing things from 1.0 to 2.0 project module. Can you please audit in depth and give me a report
 on what are missing?" The report is the Claude Doc **Projects — what 2.0 is still missing from 1.0**,
 https://claude.ai/code/artifact/f2f2dbf0-a883-40b2-8731-6e611598cdf4 (nine calls M-01…M-09 with *Your call* dropdowns at its end —
-read her marks before building anything from it).
+read his marks before building anything from it).
 
 Seven read-only reviewers, one brief (`brief.md`): 1 listing + starting (A · B) · 2 detail page, updates, ending (C · D · K) ·
 3 schedule, tasks, choices, floor plan, 3D, compliance (E · F) · 4 finance (G) · 5 files, data, roles (H · J) · 6 the portal, both

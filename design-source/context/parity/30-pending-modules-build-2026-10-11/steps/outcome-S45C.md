@@ -1,8 +1,8 @@
 # S45C · the leftovers — outcome (2026-10-17, lane C)
 
-Her ask (17 Oct 00:15): "can you go ahead and build everything and complete it" — her scope: the leftovers of the 15 Oct report plus Urban Home
+His ask (17 Oct 00:15): "can you go ahead and build everything and complete it" — his scope: the leftovers of the 15 Oct report plus Urban Home
 Design's three dashboards (`s45/plan-2026-10-17.md`). Package S45C = the leftovers: S43D's NB-07 (c), S44Z's note to the developers, S44O's
-`sharp`, the closing regression's note on pj-r2 · pj-r4b, S43D's note on 1.0's per-vendor prices. Every call taken **as recommended — her ask
+`sharp`, the closing regression's note on pj-r2 · pj-r4b, S43D's note on 1.0's per-vendor prices. Every call taken **as recommended — his ask
 2026-10-17**. Built in lane C (port 3175). Register rows: `steps/reg-S45C.md` (REG-S45C.1…7). Probe: `design-source/verify/pending-modules/
 verify-pm2-s45c.cjs` (120 checks, + its pure half `pm2-s45c-pure.mts`). **No migration. No repair** (R165…R169 unused — nothing in the demo needed a
 record).
@@ -17,7 +17,7 @@ record).
 | 4 | **pj-r2 and pj-r4b read their dates from the records** | **Built** | `design-source/verify/projects/verify-pj-r2.cjs` · `verify-pj-r4b.cjs`: every asserted day read before the probe changes anything (the live and shared handover, Carpentry's end, Painting's days and length, Cleaning's start, Electrical's payment day, the share's day, the snapshot's Carpentry range, Electrical's finishing day, Masonry's answer day) and worded by the app's own rules (`dayLabel` · `dayMonth` · `rangeLabel` · `nextWeekday`); every rule kept, "one week later" now asserted from the records. Pass on today's base (anchored 17 Oct): 87/87 · 75/75. **Added on the coordinator's word:** `verify-pj-gap-a.cjs` (Aisha's hold — the listing's "On hold till: …", the tooltip's "On hold since …", Activity's "it resumes …", the phone card — from `on_hold_until` · `on_hold_at` and the hold's Activity line `when`; was "1[5-8] Nov" / "[1-5] Oct"), `verify-pj-gap-c.cjs` ("Resolved …" from `resolved_at`, "sent …" from `external_sent_at`; was "\d{1,2} Oct"), `verify-pj-r6.cjs` ("n days overdue · due …" and the portal's "is (over)due · (was) due …" from `due_at`, counted as `daysOverdue`; was "\d{1,2} (Sep|Oct)"), `verify-pj-r8.cjs` ("Needed by …" from `needed_by`; was "\d{1,2} Oct") — and the days in words they type (a resolve note, a payment reference) taken out. The S45C probe scans all six for a literal day or a window of days / months (the old files: 34 · 32 · 5 · 5 · 5 · 4 hits; now 0). REG-S45C.6 |
 | 5 | **1.0's per-vendor prices → each vendor's own Price book entry** | **Built** (developers' port; nothing visible) | Read through git only (`qanvast-id-tool` 340cbc74f on `origin/deployment/qanvast`: migration 425, `src/lib/price-book-vendor-pricing.ts`, the spec). New `lib/port/price-book-vendor-prices.ts` (pure): `vendorEntries` (one item → one entry per vendor, name · unit · category kept, each at its vendor's own cost and sell, a blank side the base; first vendor keeps the 1.0 id, the k-th `entryIdFor(item, vendor)`; merged vendors → one entry at the kept vendor's own price; an unlinked priced vendor kept; an unknown vendor → no vendor + a note), `portVendorPrices` (a whole book + orphan prices), `directoryLookup` (Finance › Vendors, merges followed), `pricePair` (D-152 · D-153 · D-155), `dollarsOf` · `minorOf`. Sample rows: `pm2-s45c-pure.mts` (25 port checks). Map 14: a §2 store row and §4 step **2a**. REG-S45C.7 |
 
-## Calls taken as recommended (her ask 2026-10-17)
+## Calls taken as recommended (his ask 2026-10-17)
 
 - **Item 1's selection model** — Excel's own two ways in (Shift+click, Shift+↓ ↑), nothing new to learn; the run is one column (a series is a
   column's job); the square moves to the run's last cell (Excel); the run lets go after a fill rather than stretching over what it filled
@@ -41,7 +41,7 @@ record).
 
 - 1.0's quote line **re-prices when its vendor changes** (340cbc74f, "only when the old or new vendor has a vendor price") — in 2.0 a vendor's
   price lives on that vendor's entry, so the same product from another vendor is picked as its own entry in Add Item / the Price book dialog
-  (found by vendor); the line's Vendor cell does not re-price. Built in another form (the sweep's own reading, REG-594) — listed for her review,
+  (found by vendor); the line's Vendor cell does not re-price. Built in another form (the sweep's own reading, REG-594) — listed for his review,
   not built.
 - Browse's **vendor pills with counts** — 2.0's My Items has *Filters › Vendor* and Add Item finds by vendor; nothing to add.
 

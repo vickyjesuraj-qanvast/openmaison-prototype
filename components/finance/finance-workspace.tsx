@@ -37,7 +37,7 @@ import fin from './finance.module.css'
  * record's panel — the Money tab's same steps (`useCosts`). Who sees what is the server's: the projects whose money the viewer sees, the
  * overhead for Owners and Admins (a member's own expenses otherwise), the figures for Owners and Admins.
  *
- * (simplify S-11, her "build everything" 2026-10-09 — F1 §6.4) **Money out** is one tab where Purchase orders · Bills · Expenses · Payments out were
+ * (simplify S-11, his "build everything" 2026-10-09 — F1 §6.4) **Money out** is one tab where Purchase orders · Bills · Expenses · Payments out were
  * four: a kind switch (house Chips — Purchase orders · Bills · Expenses · Paid; Paid is the Owners' and Admins') rides the address (`?kind=`), each
  * kind's own status chips moved into one scope pill ("Status: All ▾", the galleries' REG-666 pattern), and below it the kind's table exactly as
  * it was (`cost-tables.tsx`), its help line keeping the Owners' figures. One New ▾ (Purchase order · Supplier bill · Expense) for every kind.

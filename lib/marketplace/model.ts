@@ -1,5 +1,5 @@
 /**
- * (pending modules S24 — card studio:marketplace, her "build all of them" 2026-10-11) The Marketplace's words and rules, pure and client-safe:
+ * (pending modules S24 — card studio:marketplace, his "build all of them" 2026-10-11) The Marketplace's words and rules, pure and client-safe:
  * what a brand, a deal, a product and a banner are as the pages read them, the sorts 1.0 offered (Most popular · Most recent · Most reviews,
  * a featured brand first under Most popular — 1.0's order), when a deal runs and what its dates say, how Get deal reaches the brand (its own
  * page, WhatsApp or email — never a pretend checkout), and the message a press drafts. The records are Qanvast's feed (lib/marketplace/feed.ts);

@@ -1,5 +1,5 @@
 /**
- * (simplify S-13, her "build everything" 2026-10-09 — F1 §6.7) Company › Reports remembers, per browser, the last tab read (Leads · Projects ·
+ * (simplify S-13, his "build everything" 2026-10-09 — F1 §6.7) Company › Reports remembers, per browser, the last tab read (Leads · Projects ·
  * Finance) and the last Finance report — the Leads listing's remembered view (lib/leads/view-pref.ts) as a pattern, kept in a cookie so the
  * server's landing (`/company/reports`, a redirect) and the Finance tab can read it: an Owner who reads Finance lands on it. The address always
  * wins — `/company/reports/<tab>` and `?report=` are never overridden. Client-safe; a cookie that cannot be written is only a convenience lost.

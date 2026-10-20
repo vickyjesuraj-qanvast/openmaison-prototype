@@ -4,7 +4,7 @@ import { refuse, type Refusal } from '@/lib/company/template-rules'
 import { roleNow } from '@/lib/settings/desk'   // (S45C) one role read per request, shared with the workspace's rule
 
 /**
- * (S44Z — S44O's note to the developers; as recommended — her ask 2026-10-15) THE QUOTE AND CONTRACT EDITORS' ROLE RULE ON THE SERVER.
+ * (S44Z — S44O's note to the developers; as recommended — his ask 2026-10-15) THE QUOTE AND CONTRACT EDITORS' ROLE RULE ON THE SERVER.
  * Their pages answer a Marketing member with the house gate before a record is read (S44O); their server actions trusted that gate, as they
  * did for Accounting, so a call made by hand was refused only where an action asked the role. Now the editors' actions ask here:
  *

@@ -22,7 +22,7 @@ export { Dialog, DangerButton, type DialogSize } from '@/components/om/dialog'
 export type SharedDialogVariant = 'wizard' | 'notes'
 
 /**
- * Auto Fill's upload (REG-319). (S43B · F1-01 — her "fix all the pending things" 2026-10-15) The picked file is READ by rule
+ * Auto Fill's upload (REG-319). (S43B · F1-01 — his "fix all the pending things" 2026-10-15) The picked file is READ by rule
  * (`lib/leads/contact-fill.ts`, the host's `onUpload`): a chat export, an email or call notes fill what they plainly say; a picture is attached
  * and said so — never the mock's scripted values. The drop zone and Upload open the picker; while it reads, "Reading {file}…".
  */

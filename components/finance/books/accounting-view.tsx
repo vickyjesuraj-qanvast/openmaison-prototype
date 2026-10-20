@@ -31,7 +31,7 @@ import b from './books.module.css'
  * organisation per issuing entity, the accounts and tax codes (Auto-map, a change per row), Push automatically, Sync now, what waits to push (a
  * failed one says why, with Retry) and the sync log. Unapproved money is never pushed. Owners and Admins only.
  * (one-home N-09) The connection itself — Connect and Disconnect — is Company › Integrations' Xero card; this card says its state and links there.
- * (simplify S-11, her "build everything" 2026-10-09 — F1 §6.6) The tab is named **Xero** (it was Accounting; its address stays). Before Xero is
+ * (simplify S-11, his "build everything" 2026-10-09 — F1 §6.6) The tab is named **Xero** (it was Accounting; its address stays). Before Xero is
  * connected the card connects it in place — the Integrations card's own Connect Xero and its action — and the mapping appears here at once; the
  * connection's home is still Integrations (Disconnect lives there), as the card says.
  */

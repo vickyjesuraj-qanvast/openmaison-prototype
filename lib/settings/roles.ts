@@ -1,5 +1,5 @@
 /**
- * (parity map, PR-022 · MI-007 · MO-098 · FB-114 · FR-040 — her "build everything that's in 1.0" 2026-10-10; F-16 · F2-Q14 · REG-1310 lifted)
+ * (parity map, PR-022 · MI-007 · MO-098 · FB-114 · FR-040 — his "build everything that's in 1.0" 2026-10-10; F-16 · F2-Q14 · REG-1310 lifted)
  * The studio's five roles, and the ONE place that splits *running the studio* from *keeping its books*. 1.0 tagged a bookkeeper
  * `accounting` (src/lib/access-control.ts): finance pages only, never leads or projects (PR-022), landing on Finance (FR-040). 2.0's
  * Accounting keeps that job in 2.0's shape:
@@ -16,7 +16,7 @@
  * follows a project's team reaches them. What they open is `opensPath` — the shell's gate and the pages read the same list. Pure,
  * client-safe; no imports, so every rule file may read it.
  *
- * (S44O — call C6 · UAT row 313, IDL's "a marketing person sees only lead things"; as recommended — her UAT ask 2026-10-15) A SIXTH fixed role,
+ * (S44O — call C6 · UAT row 313, IDL's "a marketing person sees only lead things"; as recommended — his UAT ask 2026-10-15) A SIXTH fixed role,
  * **Marketing**, on Accounting's pattern — the studio's lead desk: the Leads pipeline (every lead — the leads they hand out, so Who sees leads'
  * "only their own" never narrows it, as for Owners and Admins), putting any member on a lead, Company › Reports › Leads, Settings › Lead
  * management and Company › Integrations' lead capture (`runsLeadSetup`). Never a quote's or a contract's money, a project or Finance; no cost

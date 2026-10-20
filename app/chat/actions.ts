@@ -15,7 +15,7 @@ import { CONV_GONE, forConversation, isRefusal, type Ctx, type Refusal } from '@
 import { chatFileAddress, cleanGroupName, conversationKey, linkLabel, linksIn, pairKeyOf, placeHref, type ChatEvent } from '@/lib/projects/messages-model'
 
 /*
- * (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) Starting and keeping a
+ * (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) Starting and keeping a
  * conversation among the studio's members, 1.0's New Chat · New Group · a group's members by hand (src/components/inbox/new-chat-panel.tsx,
  * context-panel.tsx; src/app/api/chats/records/** — conversations, participants), in 2.0's shape: members only (a client writes on their page,
  * anyone else is WhatsApp — 1.0's chat with a typed number reached nobody), one conversation per pair, a group named (1.0: "Required"), a

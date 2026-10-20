@@ -1,5 +1,5 @@
 /*
- * (pending modules S41b-2 — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b pages sweep's M1) EVERY address 1.0
+ * (pending modules S41b-2 — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b pages sweep's M1) EVERY address 1.0
  * printed — its website's, its studio app's and the links it sent clients — and where each lands in 2.0. One list: S35's website addresses
  * moved here from lib/site/model.ts, S02's client links are named here too (their record lookups stay in lib/links/old-links.ts), and the
  * studio app's own addresses join them. Members bookmarked those, and 1.0's notifications carry them in bell rows, emails and WhatsApp
@@ -17,7 +17,7 @@
  *     (`by: 'route'`), through lib/links/old-links.ts: it asks the visitor's permission first and, for a record they may not see or that 2.0
  *     does not hold, lands where that kind of thing lives — the same answer either way, so no address reveals a record.
  * Every landing page keeps its own permission: a redirect only ever names an id the old address already carried, or one the route checked.
- * (S46A — the findability audit's D1, her "fix everything" 2026-10-19) The list was first read from 1.0's Qanvast line; 1.0's other two live
+ * (S46A — the findability audit's D1, his "fix everything" 2026-10-19) The list was first read from 1.0's Qanvast line; 1.0's other two live
  * lines — `deployment/plg` (the self-serve product, its Company pages and personal Settings) and `urbanhomedemo` (UHD's Contractors) — printed
  * addresses of their own, and those are here too.
  * An address on none of these answers the app-wide "page not found" (app/not-found.tsx), never Next's bare page.
@@ -40,7 +40,7 @@ const rows = (kind: OldAddress['kind'], list: Row[]): OldAddress[] => list.map((
 
 /* ── 1.0's website (S35) — its addresses at the domain's root land on the same page of the site here ─────────────────────────────── */
 /* 1.0's own redirects ride along (/about → Story, /products and /ai-agents → Platform; (S46D) /pricing → the site's Pricing). None of these
-   paths is one of the app's. NOT here: /uae-get-started (her hold on countries beyond Singapore, 2026-10-12). (pending modules S36) 1.0's trial
+   paths is one of the app's. NOT here: /uae-get-started (his hold on countries beyond Singapore, 2026-10-12). (pending modules S36) 1.0's trial
    addresses land on the trial: /try-visualizer and its six tool pages, and 1.0's older /try. */
 const SITE: OldAddress[] = rows('site', [
   { from: '/platform', to: '/site/platform' },
@@ -335,7 +335,7 @@ export const OLD_PERSONAL_SECTIONS: Readonly<Record<string, string>> = {
 }
 
 /**
- * (S46A — the findability audit's D3 · T-3, her "fix everything" 2026-10-19) plg opened three tools to a visitor with no account — its paid
+ * (S46A — the findability audit's D3 · T-3, his "fix everything" 2026-10-19) plg opened three tools to a visitor with no account — its paid
  * campaign landed on the AI Visualizer — and 2.0 sent those addresses to studio pages that ask a stranger to sign in. A member still goes to
  * the tool; a VISITOR — a browser that never signed in here, or one that signed out — goes to the website's free try of the same tool, while
  * that trial is switched on (TRIAL_VISUALIZER_ENABLED · TRIAL_TOOLS_ENABLED); with it off they go where a member does, whose page then asks

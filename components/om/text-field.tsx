@@ -69,7 +69,7 @@ export type TextFieldProps = {
   /** (fix-C, C-30) A text field that takes a few lines and keeps their breaks — a textarea with this many rows, the box growing with it;
    *  the label, states and messages are the field's own. Text mode only, never with `below`. */
   multiline?: number
-  /** (S44P — her UAT ask 2026-10-15, row 319) A select's last row, under a rule: an action that makes a new option ("New category…") — it
+  /** (S44P — his UAT ask 2026-10-15, row 319) A select's last row, under a rule: an action that makes a new option ("New category…") — it
    *  opens what makes it, the field keeps its value until the caller picks the new one. `help` is its second line — the rule, when the
    *  viewer may not (the row then reads disabled and says why, REG-728). */
   action?: { label: string; onSelect: () => void; disabled?: boolean; help?: string; testId?: string }

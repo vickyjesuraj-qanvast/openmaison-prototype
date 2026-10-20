@@ -55,7 +55,7 @@ import styles from './room.module.css'
 type PhoneView = 'notes' | 'tips' | 'checklist' | 'estimate' | 'more'
 
 /**
- * (pending modules S23 — 1.0's Meeting Co-Pilot: the launcher, the live session and the brief; her "build all of them" 2026-10-11) A meeting's
+ * (pending modules S23 — 1.0's Meeting Co-Pilot: the launcher, the live session and the brief; his "build all of them" 2026-10-11) A meeting's
  * one page, in three moments on the house frame (the L2 header, the lead Overview's two stacks of cards, the LEAD STAGES rows):
  *  · Before — what the studio knows and still has to find out (1.0's prep card), what the meeting is for and where, and the consent the
  *    client is given (1.0's Recording Reminder), with the co-pilot's price said before Start (the credits audit's Q-45 · E-22).

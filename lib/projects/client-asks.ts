@@ -9,8 +9,8 @@ import { parseDiscounts, quoteTotals } from '@/lib/quotes/math'
 import { ASK_TITLE_MAX, ASK_VO_TITLE_MAX, askDescription, askFallbackTitle, askSourceLine, askTitle, type AskLinks, type AskSource } from './client-asks-model'
 
 /*
- * (simplify S-22, her "build everything" 2026-10-09) The client asks, on the server: a task or a variation order made from a client's message
- * or ticket, the client's words carried over, and the ask's link to what it made. (simplify round 2, her "fix all the pending things"
+ * (simplify S-22, his "build everything" 2026-10-09) The client asks, on the server: a task or a variation order made from a client's message
+ * or ticket, the client's words carried over, and the ask's link to what it made. (simplify round 2, his "fix all the pending things"
  * 2026-10-09) The link lives on the record: `project_messages.task_id · variation_id` and `project_tickets.task_id · variation_id` (migration
  * 0084 — the floor plan's columns, `floor_plan_marks.task_id · variation_id`, the model), written when Make a task / Raise a variation order
  * runs and read by the ask menu (*Open the task* · *Open VO-n*). The `lead_events` line each press writes stays (kinds `project_ask_task` ·

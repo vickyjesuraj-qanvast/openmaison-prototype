@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 
 /**
- * (S45C — S43D's note to the developers, 1.0's newer branch `deployment/qanvast` 340cbc74f; as recommended — her ask 2026-10-17) THE PORT OF
+ * (S45C — S43D's note to the developers, 1.0's newer branch `deployment/qanvast` 340cbc74f; as recommended — his ask 2026-10-17) THE PORT OF
  * 1.0's PER-VENDOR PRICES. Pure: no database, no clock — a port script reads 1.0's rows, calls this, and writes what it answers.
  *
  * 1.0 (migration 425, `price_book_vendor_prices`): one price-book item links several vendors (`vendor_ids`, else `vendor_id`), and each linked

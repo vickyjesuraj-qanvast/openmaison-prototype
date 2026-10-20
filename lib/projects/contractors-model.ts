@@ -1,5 +1,5 @@
 /**
- * (S45B · H-UHD-2 — her "build everything and complete it" 2026-10-17; 1.0's Contractor Dashboard for Urban Home Design, req. B4:
+ * (S45B · H-UHD-2 — his "build everything and complete it" 2026-10-17; 1.0's Contractor Dashboard for Urban Home Design, req. B4:
  * `src/lib/contractors/allocation.ts` · `trades.ts`, commit 4da810229) Contractors on site, in 2.0's shape — pure and client-safe, read by the
  * server actions, the project's Schedule, the Projects listing's Workload view and Finance › Vendors alike, so a word on one screen is the
  * word on every other.

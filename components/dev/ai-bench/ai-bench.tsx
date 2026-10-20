@@ -21,7 +21,7 @@ import pageStyles from '@/app/leads/leads.module.css'
 import styles from './ai-bench.module.css'
 
 /**
- * (pending modules S41 — card studio:ai-sandboxes; her "build all of them" 2026-10-11 and "nothing left behind from 1.0 to 2.0" 2026-10-12)
+ * (pending modules S41 — card studio:ai-sandboxes; his "build all of them" 2026-10-11 and "nothing left behind from 1.0 to 2.0" 2026-10-12)
  * **AI benches** — the developers' page for 1.0's seven AI sandboxes: the map (each sandbox, where 2.0 does its job, what was left behind),
  * the four experiments that only lived there built by rule (Depth · Look around with its camera moves · Orbit clip · Extend), 1.0's floor-plan
  * corner editor (Plan corners), and the seams a model would plug into. No model is called. Not in any studio menu (the rail, Tools, Company,

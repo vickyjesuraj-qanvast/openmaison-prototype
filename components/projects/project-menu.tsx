@@ -19,14 +19,14 @@ import { RUNS_RULE, TEAM_RULE, stageRow } from './stage-menu'
  * Rename is a field of Edit details now.
  * (simplify S-14 · Q-04, 2026-10-09) On the project page's phone sheet those two ride in the sheet's whole Create group now — the strip's seven,
  * drawn above these rows by the page (`QuickLinkItems`, components/leads/detail/quick-links.tsx); `phone` stays for any host without it.
- * (parity map, PR-058 · FB-042 · FB-043 — her "build everything that's in 1.0" 2026-10-10) after Invite to Portal: **Commission** (the project's
+ * (parity map, PR-058 · FB-042 · FB-043 — his "build everything that's in 1.0" 2026-10-10) after Invite to Portal: **Commission** (the project's
  * team, Owners and Admins — P-C's dialog) and **Duplicate project** (any member) — each opens its own dialog, wherever the project's id is known
  * (the project page reads it from its address); no "…", as every row here.
- * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M6 · M7) Two doors a 1.0 member looked for here:
+ * (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M6 · M7) Two doors a 1.0 member looked for here:
  * **See it as {client}** beside Invite to Portal (1.0's *Preview as Homeowner*; the panel's own press, where the host knows the portal — the
  * project page), and **Complete handover** just before Delete (1.0's *Close project*, beside Delete project) — the Stage menu's Completed row
  * itself (`stageRow`): the same sheet, the same refusals in the row, Review the handover while one waits for this viewer, gone once completed.
- * Stage ▾ keeps every stage row (P-08 stands); this partly reverses P-08's menu, on her "fix everything".
+ * Stage ▾ keeps every stage row (P-08 stands); this partly reverses P-08's menu, on his "fix everything".
  */
 export type ProjectMenuAction = 'edit' | 'lead' | 'quote' | 'contract' | 'copy'
   | 'access'   // (Projects r4a) the Invite to Portal panel (board 8; "Client access" until one-home N-15)

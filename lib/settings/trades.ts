@@ -1,5 +1,5 @@
 /**
- * (S44P — her UAT ask 2026-10-15, rows 264 · 340 · 341 · 319; triage M14) One name per trade. Pure and client-safe: Settings › Trades, the
+ * (S44P — his UAT ask 2026-10-15, rows 264 · 340 · 341 · 319; triage M14) One name per trade. Pure and client-safe: Settings › Trades, the
  * Price book's item dialog, its bulk Set category and the trade actions (app/settings/trades-actions.ts) read the same words and rules.
  *
  * - A name already in a list says WHICH entry it matches — a case variant ("carpentry works") read as "it exists, but where?" (row 264).

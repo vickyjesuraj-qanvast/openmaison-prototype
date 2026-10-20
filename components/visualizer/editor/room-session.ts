@@ -17,7 +17,7 @@ import type { Marker } from './stage'
 import type { SurfaceSel } from './panels/surfaces-panel'
 
 /*
- * (pending modules S36 — her "build all of them" 2026-10-11; card public:try-it-visualizer, "the trial reuses the editor's panels, not a copy")
+ * (pending modules S36 — his "build all of them" 2026-10-11; card public:try-it-visualizer, "the trial reuses the editor's panels, not a copy")
  * ONE ROOM ON SCREEN, as the AI Visualizer works it — taken out of the studio's editor (components/visualizer/editor/visualizer-editor.tsx)
  * so the website's no-account trial (components/visualizer/trial/*) runs the very same code, not a copy: the markers and the washes on the
  * photo, the lit region and the light's live preview, every pick (a finish, a piece, a look, Clear all, Take off the list) and the marking
@@ -217,7 +217,7 @@ export function useRoomEdits(o: {
     if (mid) pushRecent(mid)
   }
   const pickPiece = (ids: string[], pick: FurniturePick) => patch((p) => ({ ...p, furniture: pick.action === 'keep' ? omit(p.furniture, ids) : { ...p.furniture, ...Object.fromEntries(ids.map((id) => [id, pick])) } }), { coalesce: `furn:${ids.join(',')}:${pick.action}` })
-  /* (pending modules S20 — Q-21 as she answered) a Replace the prototype can't draw becomes, on one press, a Customize in the pick's colour and
+  /* (pending modules S20 — Q-21 as he answered) a Replace the prototype can't draw becomes, on one press, a Customize in the pick's colour and
      finish (the words' colour, else the photo's, else the style's) — one step ⌘Z and the snackbar's Undo take back */
   const recolourToMatch = async (ids: string[]) => {
     if (!roomId || !reading) return

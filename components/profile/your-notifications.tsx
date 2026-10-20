@@ -21,7 +21,7 @@ import styles from './your-profile.module.css'
 type Summary = NonNullable<YourNotices['lastSummary']>
 
 /**
- * (pending modules S18 — card held:notifications; Leads Q-42 · Q-43 opened as recommended, her "build all of them" 2026-10-11) **Your
+ * (pending modules S18 — card held:notifications; Leads Q-42 · Q-43 opened as recommended, his "build all of them" 2026-10-11) **Your
  * notifications** on Your profile — the member's own choices, their one home (the bell's Notification settings opens it; ⌘K finds it):
  *  · Emails — As they happen · A daily summary (1.0's digest mode, made the member's own): the summary's last one with Read it, and Send one
  *    now for the demo (the 8 AM one is the platform's — lib/notifications/summary-server.ts).

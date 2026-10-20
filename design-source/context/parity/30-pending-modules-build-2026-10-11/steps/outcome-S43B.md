@@ -1,6 +1,6 @@
 # S43B · Honest reads and true demo data — outcome (2026-10-15, lane B)
 
-Package S43B: `s42/pending-ledger.md` › FIX package **F1**, every item but F1-05 (the new sample-room photos — its own package). Her words
+Package S43B: `s42/pending-ledger.md` › FIX package **F1**, every item but F1-05 (the new sample-room photos — its own package). His words
 (2026-10-15): "can you fix all the pending things apart from — dark mode, languages, themes and guided tours, and countries beyond Singapore";
 every call taken as recommended. Built in lane B (port 3170), repair number **R147** (R148…R159 unused). No migration. Register rows:
 `steps/reg-S43B.md` (REG-S43B.1…8). Probe: `design-source/verify/pending-modules/verify-pm2-s43b.cjs` (**70 / 70**), shots
@@ -23,8 +23,8 @@ every call taken as recommended. Built in lane B (port 3170), repair number **R1
 
 **Counts:** 9 of 9 items fixed (F1-05 belongs to its own package). Siblings fixed: the Met step's Auto Fill; Notes' Add tasks after a read; the template editor's Match snackbar; DEF-32 · G-15; S-10; UAT 5.11.
 
-## Calls taken as recommended (her "fix all the pending things" 2026-10-15)
-- **Auto Fill's picture** — the ledger's "keep it attached, fill nothing, say so" and her "We can't read pictures yet — type what was said".
+## Calls taken as recommended (his "fix all the pending things" 2026-10-15)
+- **Auto Fill's picture** — the ledger's "keep it attached, fill nothing, say so" and his "We can't read pictures yet — type what was said".
   The line sits at the top of the log (the dialog closes on pick — the file is already on the log), the lead form's pattern (S42F).
 - **Testers' L-6** kept for a file with words but no moment: the log takes the upload's, said so in the line.
 - **Recreate's photo** — no claim: "Not read", the designs open to pick from (the ledger said "Closest match"; nothing was matched, so the

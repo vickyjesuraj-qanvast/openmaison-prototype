@@ -26,7 +26,7 @@ const GROUPS: ToolDef[][] = [
   [{ icon: 'align_horizontal_left', label: 'Align left', cmd: 'justifyLeft' }, { icon: 'align_horizontal_center', label: 'Align centre', cmd: 'justifyCenter' }, { icon: 'align_horizontal_right', label: 'Align right', cmd: 'justifyRight' }],
 ]
 const ALL = GROUPS.flat()
-/* (S44G — NB-08, her ask 2026-10-15, as recommended) a template's Text block: the marks 1.0's rich-text sections printed — bold · italic ·
+/* (S44G — NB-08, his ask 2026-10-15, as recommended) a template's Text block: the marks 1.0's rich-text sections printed — bold · italic ·
    underline | bulleted · numbered — then the kit's colour and the link; no strikethrough, and no alignment: the block's own Text style aligns it */
 const BLOCK_GROUPS: ToolDef[][] = [GROUPS[0]!.filter((t) => t.cmd !== 'strikeThrough'), GROUPS[1]!]
 const JUSTIFY: Record<string, Cmd> = { left: 'justifyLeft', center: 'justifyCenter', right: 'justifyRight' }

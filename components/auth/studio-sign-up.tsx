@@ -46,7 +46,7 @@ const readHanded = (): Handed => {
 type Step = 'who' | 'member' | 'details' | 'code'
 
 /**
- * (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's /onboarding tour — Get started · Your unified
+ * (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up; 1.0's /onboarding tour — Get started · Your unified
  * workspace · Choose your role · phone and code — which saved nothing) A new studio signs itself up, on sign-in's page (the client portal's
  * sign-in, composed, in OpenMaison's frame). Three short steps, one filled button each: how you work (1.0's role choice, which now decides
  * something — someone who works in a studio is sent to its Owner, a freelancer gets a studio of one), the studio's name with yours and your

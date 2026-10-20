@@ -30,7 +30,7 @@ export const isPoTerms = (v: unknown): v is PoTerms => PO_TERMS.some((t) => t.va
     terms (Net 30), and the PO numbers (`PO-{YYYY}-{seq}`, the quotes' numbering model). */
 export type CostRules = { poApproval: boolean; poLimitMinor: number; expenseApproval: boolean; terms: PoTerms; numbering: ProjectNumbering
   /** (parity map, FB-097) the purchase order paper's own words and blocks */ paper: PoPaperLayout
-  /** (S44R — UAT row 361, call C8, as recommended — her UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A supplier bill waits for an
+  /** (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A supplier bill waits for an
       Owner's or an Admin's OK before it is paid when it is over the PO approval limit with no PO, or when its PO's bills come to more than the
       PO by over `billTolerancePct` per cent. Every other bill is paid as before. On by default, at 10%. */
   billApproval: boolean; billTolerancePct: number }
@@ -140,7 +140,7 @@ export const logsExpense = (v: Who, teamIds: readonly string[] | null) => (teamI
 export const expenseWaits = (role: string, rules: Pick<CostRules, 'expenseApproval'>) => rules.expenseApproval && !runsStudio(role)
 export const approvesExpense = (role: string) => runsStudio(role)
 
-/* ── (S44R — UAT row 361, call C8, as recommended — her UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A bill's OK ─────────────
+/* ── (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A bill's OK ─────────────
    Approval only where it earns its place: a bill on no PO over the PO approval limit, or a bill that takes its PO's bills over the PO by more
    than the studio's tolerance (Settings › Finance › Money out). It waits for an Owner or an Admin in Finance › To do before anyone pays it; an
    Owner's or an Admin's own bill never waits (their recording is the OK, as their own PO is); a bill something is already paid on is past the

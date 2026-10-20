@@ -28,7 +28,7 @@ export type TokenValues = Record<TokenKey, string>
 export const tokenText = (key: TokenKey) => `[${TOKENS.find((t) => t.key === key)!.label}]`
 
 /**
- * (S44Q — row 311, her UAT ask 2026-10-15) What a template's studio tokens become when its text lands on a quote: the live fields, so the quote's
+ * (S44Q — row 311, his UAT ask 2026-10-15) What a template's studio tokens become when its text lands on a quote: the live fields, so the quote's
  * Terms and Notes print the quote's issuing entity — its name and its phone (else the studio's) — whichever entity is picked, now or later. The
  * client's name and the preparer's stay the words they were (they don't change with the entity). The T&Cs & Notes library keeps its
  * "[Studio Name]" placeholders; the print resolves `{studio_name}` (lib/templates/fields.ts).

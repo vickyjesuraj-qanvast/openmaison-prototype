@@ -83,7 +83,7 @@ export const DOCUMENT_NUMBERS_HELP = 'How the studio’s invoices, receipts, cre
 export const INVOICES_HELP = 'Each project’s invoices, one per payment stage — when they fall due, and how a project’s own split may start.'
 export const INVOICE_APPROVAL_POINTER: Linked = { lead: 'Whether a Designer’s or a Manager’s invoice waits for an Owner or an Admin is set with the studio’s other approvals, under ', link: 'Projects › What waits for an Owner or an Admin', end: '. Invoice numbers are set under Document numbers, above.' }
 export const PAYMENT_TERMS_HELPER = 'The due day is the day it’s sent plus these days; 0 is on receipt'
-/** (S44O — UAT row 360, her UAT ask 2026-10-15) How an approved variation order is billed. *(invented copy)* */
+/** (S44O — UAT row 360, his UAT ask 2026-10-15) How an approved variation order is billed. *(invented copy)* */
 export const VO_BILLING_WORDS = {
   label: 'Variation orders are billed',
   options: [{ value: 'spread', label: 'Spread over the stages' }, { value: 'own', label: 'On their own, up front' }],

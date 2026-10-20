@@ -7,7 +7,7 @@ import { toolsTrialEnabled } from '@/lib/trial/policy'   // (S46A — D3) …and
 import { PLAN_INTENT_KEYS } from '@/lib/credits/plan-intent'   // (S46D — D4) the plan a visitor picked rides past the sign-up guard
 
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/proxy.ts) Before any studio route runs:
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/proxy.ts) Before any studio route runs:
  * a browser whose cookies say it is signed out goes to sign-in (a page) or is refused (a file, a picture, a save — 401), the address it asked
  * for riding along so sign-in brings it back. The client links (the portal, signing, quotes, invoices…) and sign-in itself are open to anyone,
  * each with its own permission (lib/auth/paths.ts `PUBLIC_PATHS`). A remembered session's cookie renews on every page (1.0's sliding 30 days).

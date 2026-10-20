@@ -35,7 +35,7 @@ import styles from './your-profile.module.css'
 const asRole = (role: string) => (role === 'Accounting' || role === 'Marketing' ? `in ${role}` : `${/^[AEIOU]/.test(role) ? 'an' : 'a'} ${role}`)
 
 /**
- * (pending modules S01 — her "build all of them" 2026-10-11; 1.0's Settings › Your Profile, My Signature) **Your profile**: the signed-in
+ * (pending modules S01 — his "build all of them" 2026-10-11; 1.0's Settings › Your Profile, My Signature) **Your profile**: the signed-in
  * member's own name, email, phone and photo — each checked as Add member checks it, and (1.0) never another member's — and their signature as
  * its own card, so a new designer sets it up without opening a quote. Company › Profile's shape: the L1 header's Discard · Save changes, the
  * house cards, the leave guard. The rail's studio block and the phone's avatar open it (View as's menu); ⌘K finds it. An Owner or an Admin

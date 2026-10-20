@@ -2,12 +2,12 @@ import { MSG } from '@/lib/forms'
 import { isSgMobile, isSgPhone, phoneDigits } from '@/lib/format'
 
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/app/login/page.tsx and
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/app/login/page.tsx and
  * api/auth/{login,verify}) What a member signs in with and the words sign-in says — pure, for the page and the server alike.
  *
  * 1.0 signed a member in with their mobile number and a 6-digit SMS code. 2.0 takes the mobile number or the work email (a member added with
  * an email only — Add member allows it, S09 — must be able to come in too, and Dane, the demo's Owner, has no mobile on record). The country is
- * Singapore's (+65) until other countries come (S33, on hold by her). A code goes to a mobile, never a landline.
+ * Singapore's (+65) until other countries come (S33, on hold by him). A code goes to a mobile, never a landline.
  */
 
 export const CODE_LENGTH = 6
@@ -53,7 +53,7 @@ export function keyToConfirm(before: { phone: string | null; email: string | nul
   const added = contactsOf(after).filter((c) => !had.some((x) => x.kind === c.kind && x.value === c.value))
   return added.find((c) => c.kind === 'phone') ?? added[0] ?? null
 }
-/** (S44O — UAT row 344, Dwellings' "User not found"; her UAT ask 2026-10-15) A member's phone that is their only sign-in key — no email
+/** (S44O — UAT row 344, Dwellings' "User not found"; his UAT ask 2026-10-15) A member's phone that is their only sign-in key — no email
     beside it — must be a mobile: the code goes there, and a landline (6…) takes none. With an email, a landline is just their number.
     Company › Members (Add member, Edit details) and Your profile ask it, on the page and on the server. */
 export function landlineOnlyKey(d: { phone: string; email: string }): string | null {

@@ -627,7 +627,7 @@ export async function linkProjectContract(projectId: string, contractId: string)
   return { ok: true }
 }
 
-/* ── (parity map, PR-058 — her "build everything that's in 1.0" 2026-10-10; 1.0's CloneProjectDialog, B-292…B-302) Duplicate a project ──── */
+/* ── (parity map, PR-058 — his "build everything that's in 1.0" 2026-10-10; 1.0's CloneProjectDialog, B-292…B-302) Duplicate a project ──── */
 
 export type DuplicateRead = {
   name: string; number: string; client: string
@@ -736,7 +736,7 @@ export async function duplicateProject(projectId: string, input: DuplicateInput)
   const sees = seesMoney(viewer, team.map((t) => t.memberId))
   const money = sees ? await moneySummaryOf(src) : null
   const value = money ? money.baseMinor ?? src.agreedValueMinor ?? null : null
-  /* (S44O — UAT row 297, her UAT ask 2026-10-15) a fixed design fee first comes along at its amount — it read as a 0% stage on the copy */
+  /* (S44O — UAT row 297, his UAT ask 2026-10-15) a fixed design fee first comes along at its amount — it read as a 0% stage on the copy */
   const split: ProjectSplit | null = money?.stages.length ? { template: null, rows: money.stages.map((st) => ({ name: st.name, pct: st.pct, ...(st.fixedMinor != null && st.fixedMinor > 0 ? { fixedMinor: st.fixedMinor } : {}) })) } : null
   const refs = (await import('@/lib/projects/create')).stageRefMap((money?.stages ?? []).map((st) => st.ref))
   const now = new Date()

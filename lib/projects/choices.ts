@@ -396,7 +396,7 @@ export async function restoreWaitForPick(w: NonNullable<PickUndo['wait']>, proje
   await db.update(projectMilestones).set({ waitingOn: 'client', waitingNote: typeof w.note === 'string' ? w.note.slice(0, 80) : null, waitingSince: at(w.since) ?? new Date(), waitingUntil: at(w.until), updatedAt: new Date() }).where(eq(projectMilestones.id, m.id))
 }
 
-/* ── (simplify S-21, her "build everything" 2026-10-09) a share starts the milestone's wait — the pick (above) ends it ─────────────── */
+/* ── (simplify S-21, his "build everything" 2026-10-09) a share starts the milestone's wait — the pick (above) ends it ─────────────── */
 
 /**
  * Sharing a choice that names a milestone starts that milestone's *Waiting on {client} for {choice}* — the same wait the client's pick ends

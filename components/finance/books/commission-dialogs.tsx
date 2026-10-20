@@ -75,7 +75,7 @@ export function PayCommissionDialog({ open, target, busy, onClose, onSave }: {
 export type PayMemberTarget = { memberId: string; member: string; lines: { projectId: string; project: string; owedMinor: number }[]
   /** (simplify round 2) the member's PayNow, as PayTarget's */ payNow?: string | null }
 /**
- * (simplify S-12, her "build everything" 2026-10-09) Pay a member everything they are owed — or part of it — in one dialog: the amount (all of
+ * (simplify S-12, his "build everything" 2026-10-09) Pay a member everything they are owed — or part of it — in one dialog: the amount (all of
  * it, to start) pays their projects oldest first, one payment per project, and the dialog says which before it is recorded. Pay commission's
  * fields (the day, how, the reference, a note) — the same dialog grammar. Invented copy.
  */

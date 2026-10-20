@@ -779,7 +779,7 @@ export function SettingsView({ leadStages, stageMovement, quoteApproval, templat
                              onChange={guardQV((v: string) => { const o = PREPARED_BY_OPTIONS.find((x) => x.label === v); if (o) void writeRules({ preparedBy: o.key }, `Prepared by prints ${o.label.charAt(0).toLowerCase()}${o.label.slice(1)}`) })} />
                 </div>
               </div>
-              {/* (S44Q — row 357, her UAT ask 2026-10-15; Spaces Studio: "no picking") Whether the confirmation link lets the client tick optional works.
+              {/* (S44Q — row 357, his UAT ask 2026-10-15; Spaces Studio: "no picking") Whether the confirmation link lets the client tick optional works.
                   On, as it always has; off, the link lists them with their prices and the client asks the designer to add one. *(invented copy)* */}
               <div className={styles.setting} data-testid="optional-picks" id="optional-picks">
                 <div className={styles.settingHead}>

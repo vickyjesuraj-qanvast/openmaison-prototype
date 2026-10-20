@@ -35,7 +35,7 @@ import b from './books.module.css'
  * owe · Profitability · Cash flow · Vendor spend · Commissions · Client statement — each a few tiles and its tables, exported through the house
  * Export (CSV · XLS · XLSX · PDF). One set of numbers: every report is `buildReport` over the server's `moneyOf` · `costsOf` · `commissionsOf`.
  * The choice rides the address (`?report=` · `?period=` · `?project=`), so a report can be opened from anywhere.
- * (simplify S-13, her "build everything" 2026-10-09 — F1 §6.7) The Period is a select beside Export (15 controls above the first figure → 10);
+ * (simplify S-13, his "build everything" 2026-10-09 — F1 §6.7) The Period is a select beside Export (15 controls above the first figure → 10);
  * on a phone the report is a select too, so the first number shows on the first screen. The last report is remembered for this browser (the
  * address wins). A row's tone colours its one meaning-carrying figure — never every money cell on a healthy row, never S$0.00.
  */

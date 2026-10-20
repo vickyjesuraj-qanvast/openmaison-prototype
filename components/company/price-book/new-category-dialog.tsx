@@ -11,7 +11,7 @@ import { TRADES_FULL, TRADES_MAX, listedAs } from '@/lib/settings/trades'
 import { addTrade } from '@/app/settings/trades-actions'
 
 /**
- * (S44P — her UAT ask 2026-10-15, row 319) "New category…" at the foot of a Price book category list: a name, and it joins the studio's
+ * (S44P — his UAT ask 2026-10-15, row 319) "New category…" at the foot of a Price book category list: a name, and it joins the studio's
  * trades (Settings › Quotes & pricing › Trades) — the one list every category picker reads (REG-651) — then lands on what asked for it.
  * The house form dialog over the open one (nested, through a portal); a name already in the list says which entry it matches as it is
  * typed and Add waits (sweep S4 #23 · row 264); it closes only once the trade is saved, and a refusal is said on the field.

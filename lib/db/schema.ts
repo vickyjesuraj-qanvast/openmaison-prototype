@@ -181,7 +181,7 @@ export const studioInvitations = sqliteTable(
 )
 export type StudioInvitation = typeof studioInvitations.$inferSelect
 
-/* (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's signed `qanvast_session` cookie and its
+/* (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's signed `qanvast_session` cookie and its
    `auth_sessions` record) A member signed in on one browser: their mobile or email and a code (`via` 'code' on the sign-in page, 'join' on
    their invitation's page), 24 hours — or 30 days with Keep me signed in, renewed on each visit (`remember`, `last_seen_at`, `expires_at`).
    The cookie carries the id; Sign out ends it (`ended_at` · `ended_reason` 'signed-out', 'replaced' by a new sign-in on that browser,
@@ -504,10 +504,10 @@ export const quotes = sqliteTable(
     preparedJson: text('prepared_json'),
     /* (S04 — 1.0's Draft with AI, the quote drafter) The brief a quote was drafted from by Maison AI, as typed — the Activity line says it. */
     draftBrief: text('draft_brief'),
-    /* (S44T — UAT row 321, her UAT ask 2026-10-15) General Info's Remarks: the studio's own words for this quote, printed wherever the template
+    /* (S44T — UAT row 321, his UAT ask 2026-10-15) General Info's Remarks: the studio's own words for this quote, printed wherever the template
        places `{remarks}` (a Details row "Project remarks", a text). Null = none. */
     remarks: text('remarks'),
-    /* (S44O — call C3 · UAT rows 282 · 283, her UAT ask 2026-10-15) How the quote's GST is rounded, stamped when it first goes to its client so
+    /* (S44O — call C3 · UAT rows 282 · 283, his UAT ask 2026-10-15) How the quote's GST is rounded, stamped when it first goes to its client so
        its figures never move: 'rate' (once per rate — today's rule) or 'line' (per line — every quote sent before the rule, R163). Null = not
        yet with its client: it follows today's rule (lib/quotes/math.ts `gstRuleOf`). */
     gstRule: text('gst_rule'),
@@ -930,7 +930,7 @@ export const contracts = sqliteTable(
        upload, a standard document from the library) and the signed copy attached on Mark as signed — lead_files ids, the bytes kept there. */
     fileId: text('file_id'),
     signedFileId: text('signed_file_id'),
-    /* (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Send for digital signature's "Ask for the deposit": once the client
+    /* (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Send for digital signature's "Ask for the deposit": once the client
        signs, the signing page ends on "Pay the deposit" — the named quote's first payment stage, to its issuing entity's PayNow. */
     askDeposit: integer('ask_deposit', { mode: 'boolean' }).notNull().default(false),
     /* (S44R — UAT row 359, call C9) A letter the Hand over sheet issued: 'handover' = the completion & warranty letter (one live per project);
@@ -1790,7 +1790,7 @@ export type CreditRequest = typeof creditRequests.$inferSelect
    plan's upgrade offers, one row per member who may be offered one (the Owner — 1.0's purchaser): which once-ever moments were offered
    (`spent`, { "T3": <ms> }), when the last offer or blocking moment showed (`last_modal_at` — the 10-minute gap) and the last proactive one
    (`last_proactive_at` — one a day), when "Only n AI credits left" last showed (`t7_last_shown_at`, its re-arm), the watermark the next look
-   reads events after (`last_evaluated_at`), 1.0's `active_seconds` (kept at 0 — T1's active minutes are telemetry her Q-16 declined) and the
+   reads events after (`last_evaluated_at`), 1.0's `active_seconds` (kept at 0 — T1's active minutes are telemetry his Q-16 declined) and the
    compare-and-set `version`. 2.0 adds what the bell needs: the live offer's notification row (`offer_id`), what that offer said (`offer_json`,
    kept after it is answered so Not now can be undone) and how each offer was answered (`answers_json`, { "T3": { answer, at } }) — the
    records 1.0's analytics events stood for (R10). Times in milliseconds. */
@@ -2478,7 +2478,7 @@ export const vendors = sqliteTable(
     /* (pending modules S24) The Marketplace brand this vendor is (marketplace_brands) — Add to my vendors writes it; the brand reads
        "In your vendors" and the vendor's panel opens the brand's page. */
     marketplaceBrandId: text('marketplace_brand_id'),
-    /* (S45B · H-UHD-2, her "build everything and complete it" 2026-10-17 — 1.0's migration 497) A vendor who works on site: the studio
+    /* (S45B · H-UHD-2, his "build everything and complete it" 2026-10-17 — 1.0's migration 497) A vendor who works on site: the studio
        schedules them onto its projects (project_contractors). `trades_json` = the studio's trades they do (Settings › Quotes & pricing ›
        Trades — one list, never a second vocabulary), several allowed; `crew_capacity` = how many sites they run at once; `code` = the
        studio's own short name for them. `trade` stays the first of them, for every picker that reads one. */
@@ -3221,7 +3221,7 @@ export const spaceLayoutShares = sqliteTable(
 )
 export type SpaceLayoutShare = typeof spaceLayoutShares.$inferSelect
 
-/* ── (parity map 2026-10-10 — her "build everything that's in 1.0 to 2.0 without losing anything") ───────────────────────────────── */
+/* ── (parity map 2026-10-10 — his "build everything that's in 1.0 to 2.0 without losing anything") ───────────────────────────────── */
 
 /** (UC-064) A conversation with a lead before Won — the lead invited to the portal writes from its lead page; the studio answers from the
     lead. Once Won, the project's Messages shows these first (the conversation belongs to the home). */
@@ -3256,7 +3256,7 @@ export const conversationPrefs = sqliteTable(
 )
 export type ConversationPref = typeof conversationPrefs.$inferSelect
 
-/* ── (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) 1.0's free chats
+/* ── (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats · api:messages-free-chats) 1.0's free chats
    (`conversations` · `conversation_participants` · `messages` · `conversation_files`, src/app/api/chats/records/**) in 2.0's shape: a
    conversation among the studio's members only — never a client's (a client writes on their page: `project_messages` · `lead_messages`, and
    no client page reads these tables). `kind`: `direct` (two members, one pair — `pair_key`), `group` (a name and hand-picked members),
@@ -3401,7 +3401,7 @@ export const studioFonts = sqliteTable(
 export type StudioFont = typeof studioFonts.$inferSelect
 
 /*
- * (pending modules S23 — Meetings and the Meeting Co-Pilot; her "build all of them" 2026-10-11, REG-552's hold lifted for this card) A meeting
+ * (pending modules S23 — Meetings and the Meeting Co-Pilot; his "build all of them" 2026-10-11, REG-552's hold lifted for this card) A meeting
  * with a lead's client — planned, live, held or cancelled — on the lead (or its project: `project_id`, a site meeting). 1.0 kept a live session
  * in `copilot_sessions` and its brief in `meeting_briefs` (one per session); its unmerged Google Calendar branch planned them in `meetings`.
  * Here one record holds the plan, the co-pilot's session and the brief. A meeting held on a lead IS its Met log: the Met step's log entry carries
@@ -3681,7 +3681,7 @@ export const marketInsights = sqliteTable(
 )
 export type MarketInsight = typeof marketInsights.$inferSelect
 
-/* ── (pending modules S27 — Hangouts; her "build all of them" 2026-10-11; survey keys public:hangouts · api:designer-portfolio-profiles)
+/* ── (pending modules S27 — Hangouts; his "build all of them" 2026-10-11; survey keys public:hangouts · api:designer-portfolio-profiles)
    Qanvast Hangouts are Qanvast's in-person events where homeowners meet interior designers at tables in one venue. 1.0 kept eight tables
    (supabase/migrations/20240301000001_hangout_tables.sql + scripts/migrations 047 · 076 · 077 · 078 · 082 · 295); 2.0 keeps the studio's side
    of them under 1.0's names where the job is the same:
@@ -3875,7 +3875,7 @@ export const memberPortfolioPictures = sqliteTable(
 )
 export type MemberPortfolioPicture = typeof memberPortfolioPictures.$inferSelect
 
-/* ── (pending modules S34 — her "build all of them" 2026-10-11; card api:message-delivery-providers, "What happens to a client's WhatsApp
+/* ── (pending modules S34 — his "build all of them" 2026-10-11; card api:message-delivery-providers, "What happens to a client's WhatsApp
    reply (1.0 only logged it)") A client's WhatsApp reply, as the provider's webhook brought it (app/api/webhooks/whatsapp). 1.0 only wrote
    it to the server's log; 2.0 keeps every one here, once (`provider_ref`), and files the ones it can place in that client's conversation in
    Messages (`filed` → `message_id`): a reply to one of the studio's own messages (`reply_to`, the wamid it answers) or a number that is one
@@ -3901,10 +3901,10 @@ export const inboundMessages = sqliteTable(
 )
 export type InboundMessage = typeof inboundMessages.$inferSelect
 
-/* ── (pending modules S35 — her "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo) OpenMaison's own
+/* ── (pending modules S35 — his "build all of them" 2026-10-11; cards public:marketing-website · onboarding:book-a-demo) OpenMaison's own
    records from its website — 1.0's three global tables, under 1.0's names and columns (scripts/migrations/085 · 094 · 248): a demo request
    (Book a demo), a message from the contact form, a newsletter address. The platform's, never a studio's: no studio reads them, and staff's
-   list of them is Platform admin (excluded by her) — the records are kept for it. The team hears of a demo request and a contact message
+   list of them is Platform admin (excluded by him) — the records are kept for it. The team hears of a demo request and a contact message
    through the house outbox (lib/notifications/delivery.ts), recorded in Settings › Notifications › Sent messages. ─────────────────────── */
 export const betaSignups = sqliteTable(
   'beta_signups',
@@ -3948,7 +3948,7 @@ export const newsletterSubscribers = sqliteTable(
   (t) => [uniqueIndex('newsletter_subscribers_email_uq').on(t.email)],
 )
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect
-/* ── (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) The
+/* ── (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) The
    studio's application to be listed on Qanvast, under 1.0's own table name (`studio_verifications` — 1.0 kept its status, its documents, the
    staff's note and when it was reviewed; its /verify form saved none of it). 2.0 keeps each application as it was sent: what the studio wrote
    (the description, what makes it different), what its records said that day (its name and UEN, the projects it had completed, which

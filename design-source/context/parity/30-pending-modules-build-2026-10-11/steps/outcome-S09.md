@@ -33,7 +33,7 @@ once it no longer brings anyone in); its loader draws its own ghost; the welcome
 what's members row says invite; the bell's `?open=<id>` lands on the member's row; a bug fixed on the way — adding a member in Accounting said
 "added as a Accounting" (now "added in Accounting", REG-S09.10).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Keep 2.0's direct Add member, and invite** (the card's Q1): the member is in every picker at once (as 1.0's self-serve flow created them
   with the invitation); the invitation is the message and the *Invited* state. Not "an invitation the person accepts before they exist" — a
   lead could not be put on them meanwhile, and 1.0 didn't work that way either.

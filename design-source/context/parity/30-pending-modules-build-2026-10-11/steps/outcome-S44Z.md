@@ -2,7 +2,7 @@
 
 Vicky's ask (2026-10-15): "fix all the pending things … without any overlaps nor any issues without losing what we have already built … If you
 have any questions please go ahead based on your recommendations." Package S44Z = the hand-offs in `steps/outcome-S44O.md`, `outcome-S44P.md`,
-`outcome-S44T.md` and `outcome-S44I.md` ("For other packages"). Every call taken **as recommended — her ask 2026-10-15**. Register rows:
+`outcome-S44T.md` and `outcome-S44I.md` ("For other packages"). Every call taken **as recommended — his ask 2026-10-15**. Register rows:
 `steps/reg-S44Z.md` (REG-S44Z.1…6). Probe: `design-source/verify/pending-modules/verify-pm2-s44z.cjs` (**106 checks**). Shots:
 `design-source/verify/pending-modules/pm2-s44z/`. **No migration. No repair** (R130…R139 unused — nothing in the demo needed a record).
 
@@ -20,7 +20,7 @@ have any questions please go ahead based on your recommendations." Package S44Z 
 | 5 · "Priced after the contract" on the phone's item cards | S44T | **Already built by S44I** (REG-S44I.23: the cards carry the divider and the section's *Priced after* tag) — verified at 390 (the divider over the gathered sections, the marked section under it) and at 1440 (the grid's divider). The card's tag now says the grid tooltip's words to a screen reader (`aria-label`, as the card's other tags do). |
 | design:lint ratchet | S44I | **Lowered** — `components/templates/render/slices.tsx` inline-style 10 → 9 (`npm run design:lint -- --update`); nothing raised. |
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 
 - **Item 1's reach** — every studio page outside the role's list, not only the ones the prompt named; and the server gate for Accounting too, since
   it reads the same list (the shell already drew that gate for them — the server now agrees before reading). Route handlers: the two Company-only

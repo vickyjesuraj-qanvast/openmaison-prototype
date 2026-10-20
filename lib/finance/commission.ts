@@ -211,7 +211,7 @@ export function commissionsOf(o: { projects: CommissionProject[]; rules: Commiss
   }
 }
 
-/* ── Paying a member (simplify S-12, her "build everything" 2026-10-09) ────────────────────────────────────────────────────────────── */
+/* ── Paying a member (simplify S-12, his "build everything" 2026-10-09) ────────────────────────────────────────────────────────────── */
 
 /** A member's lines with something owed, oldest first — the line whose first earning came first (its project's first payment under a rule),
     then by project. *Pay {member}* pays in this order. */

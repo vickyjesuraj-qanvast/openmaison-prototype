@@ -121,7 +121,7 @@ export const DEMO_STUDIO: StudioDetails = {
 const dueLabel = (kind: string, at: Date | null) => (kind === 'approval' ? 'On approval' : at ? (kind === 'estimate' ? `~ ${displayDate(at)}` : displayDate(at)) : '')
 
 /**
- * (S44Q — row 256, her UAT ask 2026-10-15) The rate `{gst_rate}` prints: the one the quote's GST-bearing lines carry (the most of them; a tie goes to
+ * (S44Q — row 256, his UAT ask 2026-10-15) The rate `{gst_rate}` prints: the one the quote's GST-bearing lines carry (the most of them; a tie goes to
  * the higher), never simply the first line's — a 0% line (zero-rated, or on the client's behalf) says nothing about the quote's GST. With no
  * line bearing GST: the studio's rate (Settings › Quotes & pricing › GST), else 9. Optional lines, lines out of the quote and lines that print a
  * word (FOC · Inclusive …) or go on the client's behalf (no GST of their own) never count.

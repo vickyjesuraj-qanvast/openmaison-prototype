@@ -17,8 +17,8 @@ on Monday and an Admin paying vendors:
 **The review page:** https://claude.ai/artifact/XfuYjdho5vUxE9xnMq2fhu (source `report/projects-finance-simplified.html`; its pictures are
 the studies' screenshots). Seven root causes, one idea — every page answers *What needs me → What's next → Where does it stand* — and
 concept screens drawn with Benjamin Han's (P-2026-002) and Demo Studio's real records: the project Overview (1440 + 390 with the site bar),
-the Mark done sheet, the Money tab, Finance › To do. **25 proposals (S-01…S-25) and 18 questions (Q-01…Q-18)**, each with her pick
-(Build · Discuss · Skip, a note; questions: an option). Her picks live in that page's db (collection `picks`, one document per S-/Q- id) —
+the Mark done sheet, the Money tab, Finance › To do. **25 proposals (S-01…S-25) and 18 questions (Q-01…Q-18)**, each with his pick
+(Build · Discuss · Skip, a note; questions: an option). His picks live in that page's db (collection `picks`, one document per S-/Q- id) —
 read them before building.
 
 The headline numbers: project tabs 14 → 7 (Overview · Tasks · Schedule · Client · Design · Money · Files & notes); "what needs you" 7
@@ -43,7 +43,7 @@ the numbers.
 
 ## Built (2026-10-09)
 
-Her answer to the page: **"Go ahead and build everything as you found and what's best and your recommendation without losing anything."** No
+His answer to the page: **"Go ahead and build everything as you found and what's best and your recommendation without losing anything."** No
 picks were saved on the page, so every proposal was built (S-01…S-25) on the recommended answer to every question (Q-01…Q-18); Q-11 (hide
 modules a studio doesn't use) was recommended *Later* and is not built.
 
@@ -85,7 +85,7 @@ build); the money row's reminder line lower-cased the month.
 
 ## Round 2 — every pending item closed (2026-10-09)
 
-Her ask: **"Can you please check and fix all the pending things."** Six packages (brief: session scratchpad `sbuild/round2-brief.md`; outcomes
+His ask: **"Can you please check and fix all the pending things."** Six packages (brief: session scratchpad `sbuild/round2-brief.md`; outcomes
 `build/outcome-R2-{A…F}.md`, rows REG-1527…1554, the merge REG-1555), on one migration written first (`0084_simplify_round2`: `members.paynow` ·
 `notification_outbox.send_after` + `held` · the asks' `task_id` / `variation_id` on messages and tickets) and two repairs (R95 · R96).
 - **R2-A Money & the VO** — a client's priced pick drafts its VO on a system path (`lib/projects/draft-variation.ts`, the project's own member;
@@ -95,7 +95,7 @@ Her ask: **"Can you please check and fix all the pending things."** Six packages
 - **R2-B The Overview's doors** — *Draft it* opens the draft in the composer (`?draft=<id>` · `?draft=week`); Send back / Decline answered in
   place on the Overview (the tabs' own dialogs, sentences and Undo); a Done approved from the row takes the tab's full Undo; Designs says when
   the client can't see it; the phone Overview shorter (Needs you 4 rows, Coming up 3 — about 3,200px; folding Progress / My tasks / Money on a
-  phone to reach ~2,900 is her call).
+  phone to reach ~2,900 is his call).
 - **R2-C Moments & held emails** — an Undo also takes back the client's email: hold / resume / handover / the Start and Mark done sheets hold their
   client mail for the Undo's window (10 s; a handover 10 min) and release it after (`lib/notifications/held.ts`, `holdClientMail` ·
   `releaseHeldMessages` in `delivery.ts`; Sent messages shows *Held — goes at … unless undone*); an approval's photos post as the one who asked
@@ -112,7 +112,7 @@ Her ask: **"Can you please check and fix all the pending things."** Six packages
 the bell answers with an Undo you can press and the bell stays open (the client's bell had the same latent gap); the phone Money tiles' row fixed
 (a stray JSX text node counted as a fourth tile). All 26 Projects probes, `verify-ks` (29) and `verify-r2e` (25) green.
 
-**The three open calls, decided (2026-10-10, her "you decide the best as per the best UX and 2.0 POV")** — REG-1557…1559: the payment-due
+**The three open calls, decided (2026-10-10, his "you decide the best as per the best UX and 2.0 POV")** — REG-1557…1559: the payment-due
 email stays with clients on the portal, and a client who won't hear by themselves becomes the studio's Needs you row on the due day ("due today",
 Remind on WhatsApp · Record a payment); the phone Overview folds Progress's stage rows (the header's Stage ▾ says and runs them) and Recent
 activity to one Show / Hide row; under Activity › All a task or VO made from a client's ask is said once, by the ask's line (its own line keeps

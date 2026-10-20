@@ -43,7 +43,7 @@ Each step = one report card (sometimes two that belong together). "Survey keys" 
 18. **S18 · Notifications** — `held:notifications` (the daily digest and a personal mute — Q-42 / Q-43 opened as recommended).
 19. **S19 · AI credits and plans** — `held:ai-credits` (plan locks enforced or the table softened, auto top-up, one price for digitizing; the
     demo credits month riding the demo day was done early in S08b).
-20. **S20 · AI Visualizer** — `held:ai-visualizer` (HEIC, Replace as she answered, the drift guard, the dead Maison AI suggestions; the model
+20. **S20 · AI Visualizer** — `held:ai-visualizer` (HEIC, Replace as he answered, the drift guard, the dead Maison AI suggestions; the model
     stays the developers').
 21. **S21 · Quote X-Ray** — `held:quote-x-ray`.
 22. **S22 · Dashboard** — `studio:dashboard`, `held:dashboard`, `api:industry-news`, `public:industry-news-feed` (the hold lifted; a first cut on
@@ -58,27 +58,27 @@ Each step = one report card (sometimes two that belong together). "Survey keys" 
 29. **S29 · AI writing help on quote text** — `api:ai-writing-help-quotes`.
 30. **S30 · Signing in** — `onboarding:studio-sign-in` (+ Log out's place).
 31. **S31 · A new studio joins** — `onboarding:studio-sign-up`.
-32. ~~**S32 · Dark mode, guided tours, theme skins**~~ — `studio:personal-settings` — **PARKED WHOLE**, her words 2026-10-12: "ignore the dark
+32. ~~**S32 · Dark mode, guided tours, theme skins**~~ — `studio:personal-settings` — **PARKED WHOLE**, his words 2026-10-12: "ignore the dark
     and languages completely for now" and then "no do work on any themes and guided tours for now, since we will be building a lot more things
     later so that there is no repeat work later". Nothing of S32 is built. Skip it.
-33. ~~**S33 · Countries beyond Singapore**~~ — **ON HOLD**, her words 2026-10-12: "holdon to countries beyond singapore for now." Nothing of
+33. ~~**S33 · Countries beyond Singapore**~~ — **ON HOLD**, his words 2026-10-12: "holdon to countries beyond singapore for now." Nothing of
     S33 is built (DEF-30 stands); skip it.
 34. **S34 · Real services behind the stand-ins** — `api:message-delivery-providers` (the adapters' seams and their admin, for the developers).
 35. **S35…S41 · The cards I'd have skipped** — the marketing site and Book a demo · Try the Visualizer without an account · Verify for a Qanvast
-    listing · ~~Languages~~ (**PARKED**, her word 2026-10-12) · Studio Health · Designer portfolio profiles (if not in S27) · the AI sandboxes — each built in its right form or, where
+    listing · ~~Languages~~ (**PARKED**, his word 2026-10-12) · Studio Health · Designer portfolio profiles (if not in S27) · the AI sandboxes — each built in its right form or, where
     1.0's is dead code, recorded as such.
 
-41b. **S41b · Nothing left behind** — her words 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". Before S42: (1) a
+41b. **S41b · Nothing left behind** — his words 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0". Before S42: (1) a
     ledger of every `pending` line on all 41 cards (`29-…/surveys/*.json`) against the steps' outcomes — each line built / kept with its reason /
-    stand-in / parked by her — any line with no answer gets built; (2) a sweep of 1.0 itself beyond the cards: every route under `src/app/**`,
+    stand-in / parked by him — any line with no answer gets built; (2) a sweep of 1.0 itself beyond the cards: every route under `src/app/**`,
     every API route, every table in `supabase/migrations/**`, every menu entry — each mapped to its 2.0 home or to a card; anything no card
-    covered (and not Platform admin, which she excluded) is built in its right form, or recorded with why. The ledger is published for her.
-42. **S42 · Bugs, intuitiveness, world-class UX** — her words 2026-10-12: "it will be good to build rest of the things like, bug fixes,
+    covered (and not Platform admin, which he excluded) is built in its right form, or recorded with why. The ledger is published for him.
+42. **S42 · Bugs, intuitiveness, world-class UX** — his words 2026-10-12: "it will be good to build rest of the things like, bug fixes,
     intuitiveness, world-class ux." After S41: a read-only audit of everything this programme built (S01…S41) against DESIGN-PRINCIPLES.md and
     the brief's "How to add a missing thing", walked as each role at 1440 and 390 (bugs, dead ends, a second home, unclear words, more than one
     filled button, missing Undo, ghosts that don't match), then the fixes, then the full regression.
 
-## Two lanes from S18 (her "two lanes sounds good", 2026-10-12)
+## Two lanes from S18 (his "two lanes sounds good", 2026-10-12)
 Each lane is a full copy of the repo (`scratchpad/lanes/A` · `B`, re-synced from the main tree after each merge); builds take one lock; the
 orchestrator merges each finished step into the main tree (3-way against the lane's base, migration regenerated in main), runs after-step, builds
 main and re-runs the step's probe, then re-syncs the lane. Connected steps share a lane; the Dashboard comes last in its lane.
@@ -225,7 +225,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   quick link; a meeting held IS the Met log (`stage_logs` payload `meetingId`), a planned one rides its reminder task (`lead_tasks.meeting_id`);
   the meeting page Before · During · After by rule (`lib/meetings/engine.ts` `readMeeting`, `brief.ts` `briefOf` — the model seam), recording /
   transcription honest stand-ins; the client's `/meeting/<token>` (.ics, "I'll be there", shared notes); 1.0's `/copilot/share/<id>` redirects;
-  Settings › **Meetings** module; Company › Reports › Meetings; Integrations › Calendar invites; the co-pilot is metered at her Q-45 price (25 per
+  Settings › **Meetings** module; Company › Reports › Meetings; Integrations › Calendar invites; the co-pilot is metered at his Q-45 price (25 per
   10 minutes, check-in per block, refund if not started, Free gets 3 blocks once — **flag for Vicky: 1.0 published that price but never charged
   in code**). Migration 0098 (regenerated at land; five tables + `lead_tasks.meeting_id`), repair R140 (lane B's range; R141 next). Joined at land:
   `meeting_answered` placed in the personal mute list (Leads). **For S26:** a meeting could post its brief to the Team conversation. **For S34:**
@@ -237,7 +237,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   in 50s, S$2 per 100); **auto top-up** for the Owner (once per crossing, a monthly ceiling, off by default, no card charged); Change seats; every
   quote read costs 5 (VO quote, schedule upload, Create Quote); the paid work rides with its charges (R118, `PAID_WORK_TIMES`). Migration 0099
   (regenerated at land), repair R118 (lane A; R119 next). Joined at land (REG-1897): co-pilot charges in Usage. **Any new Pro surface** uses
-  `requirePlan` / `usePlanLock` / `ProLocked`. **Note for Vicky:** her own local.db is on the Free plan (View as › Studio plan) — her :3000 now
+  `requirePlan` / `usePlanLock` / `ProLocked`. **Note for Vicky:** his own local.db is on the Free plan (View as › Studio plan) — him :3000 now
   shows the Pro locks; View as › Pro — Studio puts them away.
 - **After S24 (lane B):** **the Marketplace** (`/marketplace`, the rail's / More's item now live; Accounting doesn't see it): brands directory
   (categories, search, 1.0's three sorts, Show more), Deals + the deal dialog (Get deal = the brand's own way, the ask recorded, nothing bought),
@@ -248,7 +248,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   at land), repair R141 (R142 next in lane B). **Flags for Vicky:** no mock; banners don't rotate; every studio sees it (1.0's flag was off).
 - **After S20 (lane A):** HEIC photos open everywhere (`lib/heic.ts`, 1.0's converter `heic-to` 1.5.2 pinned, LGPL-3.0, loaded only when a HEIC
   lands and the browser can't draw it; a HEIC in Files keeps its bytes and gains a preview); Replace keeps its picker and says the prototype
-  can't draw a new piece in — "Recolour it to match" turns the pick into a Customize with Undo (her Q-21; flag: she may prefer the old silent
+  can't draw a new piece in — "Recolour it to match" turns the pick into a Customize with Undo (his Q-21; flag: he may prefer the old silent
   recolour); the drift guard ("Checking the room's shape", one corrective pass kept only if it reads better; `render_repair` = 2 credits, never
   counted as a render; `scripts/viz/drift-test.mts`); Maison AI's "Suggest {style} finishes" applies as one step with Undo. No migration, no
   repair (R119 free). **The orchestrator** copied `node_modules/heic-to` into main and lane B (`package-lock.json` carries it; a fresh clone's
@@ -258,7 +258,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   at a time; the article page renders Markdown (no raw HTML) with 1.0's five chart types in the house palette (crosshair readout, "Show the
   numbers"); the feed's one mapper `lib/market-insights/feed.ts`, table `market_insights` (dates ride the demo day); six **sample** articles
   written for the demo, each flagged "A sample article written for the demo. Its figures are illustrative — not market data." (1.0's seed
-  credited unverifiable numbers to HDB / BCA / CASE — not ported). Writing / publishing = platform admin (excluded by her). Migration 0101,
+  credited unverifiable numbers to HDB / BCA / CASE — not ported). Writing / publishing = platform admin (excluded by him). Migration 0101,
   repair R142 (R143 next in lane B). **For S22:** a Dashboard news card links into Market Insights, never a second reader.
 - **After S28 (lane A):** **Make a 3D picture** from a floor-plan photo, no model: step 1 straightens the photo in the browser (1.0's deskew
   maths; `findPaper` a rule stand-in for 1.0's ML finder; JPG · PNG · WebP · HEIC · PDF), step 2 lists rooms (`roomsForType`, the model seam) and
@@ -283,7 +283,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   to the quote's own total; another currency refused; the shared sheet reader fixed (an Amount-only sheet, a "Total" row); the Meeting
   Co-Pilot's *Their quote* wears the Pro tag on Free. X-Ray stays free of credits (1.0 never charged). No migration, no repair (R120 free).
   Sample `public/uat-files/urban-nest-competitor-quote.pdf` (23 lines, S$40,210); UAT 7.14 added. **Flag for Vicky:** Create Quote / VO /
-  schedule uploads still say "XLSX · CSV" — using the PDF reader there would charge 5 credits for a rule read (her call).
+  schedule uploads still say "XLSX · CSV" — using the PDF reader there would charge 5 credits for a rule read (his call).
 - **After S29 (lane A):** **writing help by rule** — Improve · Shorten · Expand · Rewrite · Plain English, always a proposal first (Changes ·
   Before · After, Not now · Use these words, Undo after), free (1.0 never charged), one shared piece `components/writing/writing-help.tsx`
   (rules `lib/writing/*`, never cost or mark-up; the model seam `proposeWriting`), on the quote's Terms / Notes (REG-420's Write with AI now
@@ -377,7 +377,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   `qanvast` + S36's two), the developers' map keeps both lanes' seams. No migration, no repair. **Flags for Vicky:** in the demo a never-signed-
   out browser is Dane, so Start your studio lands on the Dashboard; a sample restyle counts as one of three; the photo carry is new.
 - **S41b · Nothing left behind — what the three sweeps found (2026-10-13; `s41b/ledger.md` · `sweep-pages.md` · `sweep-data.md`):** the ledger
-  answers all 314 card lines (206 built · 47 kept · 34 stand-in · 22 parked by her · 5 in progress (S39 · S41) · **0 not answered**; ~120 "built"
+  answers all 314 card lines (206 built · 47 kept · 34 stand-in · 22 parked by him · 5 in progress (S39 · S41) · **0 not answered**; ~120 "built"
   claims spot-checked, none failed). The sweeps found what no card named — built as S41b packages, in the two lanes as they free up:
   - **S41b-1 · Cost and margin visibility per role** (1.0's `deployment/qanvast` branch, `settings.cost_visibility`, `studio-config/cost-visibility`):
     the Owner hides cost · mark-up · margin from Admin / Designer / Accounting — today a Designer always sees them (a confidentiality gap).
@@ -403,7 +403,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
 - **After S39 + S40 (lane A):** **Studio Health** = Company › Reports › Health (`/company/reports/health`, Owners / Admins; the others see the
   tab's lock): Your team · New work · Work done · Your clients (fifteen tiles), Over time, By team member (Column settings, phone cards), Export,
   Maison AI; every number reads its own page's records (the probe checks each against SQL on all four ranges; tiles with a page open it on the
-  same range); no new tracking (page views, top pages, funnels, minutes, the nightly rollup — her Q-16 No; the footnote says why). Repair R123
+  same range); no new tracking (page views, top pages, funnels, minutes, the nightly rollup — his Q-16 No; the footnote says why). Repair R123
   gives the demo's past the sign-ins its activity implies (194 members, 7 portal; none open). Reports tabs open on `?range=`. **S40:** S27
   covered the profiles; added: a member opens their own "Known for" (lead preferences on Members) from Your profile. Fixed on every Reports tab:
   Export off-screen on a phone, a stray line on phone cards. No migration (R124 next in lane A).
@@ -437,14 +437,14 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
 - **After S41b-4 (lane A; relaunched 2026-10-14 after the 13 Oct usage-limit stop):** **the Free plan's upgrade nudges** — 1.0's 17 plg
   triggers: nine built as offers with their own record (T2 · T3 · T4 · T9 · T10 · T11 · T12 proactive, once ever, one a day; T7 · T8 lifecycle),
   seven answered by moments 2.0 already has (T6 · T17 S19's lock card; T13…T16 the out-of-credits sheet; T5 dropped by 1.0 itself), T1 (five
-  active minutes) not built — counting minutes is the telemetry her Q-16 declined. An offer = one quiet row in the **Owner's** bell (one way on:
+  active minutes) not built — counting minutes is the telemetry his Q-16 declined. An offer = one quiet row in the **Owner's** bell (one way on:
   See plans / Buy AI credits; Not now with Undo); never a dialog, never on a client page, never over a dialog / menu / typing / a live meeting.
   1.0's rules kept: Free only (a paid plan or trial withdraws every live offer), spent when shown, one proactive a day, a 10-minute gap (the lock
   card and the out-of-credits sheet restart it), one at a time, 1.0's priority order, kill switch `UPGRADE_NUDGES_DISABLED=1`; the sheet says
   "Welcome AI credits used up" once. 1.0's `nudge_state` (+ three columns for the live offer), migration 0110 `s41b4_nudges`, repair R124 (checks),
   both baseline lists. Settings › Notifications: "An offer to move to Pro" (Owner, in app only, off-able; mutable on Your profile). Fixed on the
   way: Your profile's ghost drew the cards below the signature 5px low (s18 63/63). REG-2135…2142. Verified on main: s41b4 82 · s19 116 · s18 63
-  · s22 116 · s16 56. **Flags for Vicky:** whether 2.0 should nudge at all; T1 not built; her local.db is on Free (since 9 Oct 13:13) so her :3000
+  · s22 116 · s16 56. **Flags for Vicky:** whether 2.0 should nudge at all; T1 not built; his local.db is on Free (since 9 Oct 13:13) so his :3000
   shows the offers; all words invented (REG-2135…2142).
 - **After S41b-5 (lane B):** **Qanvast Ops › Lead credits and Reviews** live at 1.0's own addresses — `/qanvast-ops/credits` (Overview ·
   Transactions `?month=` · Contracts) and `/qanvast-ops/reviews` (Reviews · Ranking · Feedback `?days=`), on the house pieces (StatTiles, Chips
@@ -469,7 +469,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   proposals built, the demo plan switch restores Pro exactly, "3D" everywhere) · **S42E** outside the studio and Qanvast (REG-2206…2229,
   R170 · R171 — the website says what 2.0 does, Demo Studio's own logo) · **S42F** the leftovers (REG-2250…2257, R161 — a project always
   has a member; Fill from a document reads the file) · **S42G** a held meeting moves its lead as the stage policy allows (REG-2279…2283);
-  REG-2249 the Cookie Policy's `om_studio`; REG-2278 the site changelog. Her calls, all built as recommended (three couldn't be — said so):
+  REG-2249 the Cookie Policy's `om_studio`; REG-2278 the site changelog. His calls, all built as recommended (three couldn't be — said so):
   `s42/calls-for-vicky.md`. **The closing regression:** `reg-s42/go.sh` — 160 probes (the 73 harness ids + 87 pm2 / pm / ks / pj), all
   green after six checks were brought to the deliberate S42 rules. **For the next regression:** `pbuild/run-env.sh` gives every server the
   CRON / WhatsApp secrets; `verify-pm2-s41` also needs `OPENMAISON_DEV_PREVIEWS=1` on its server + `BENCH=on` (or `BENCH=off` on a plain
@@ -518,13 +518,13 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   redrawn. A style on a sample room is now the engine's restyle (lists its finishes, quotable, keeps the outlines) — one hint reworded
   (invented copy). `pieceKind` no longer cuts a word at an accent ("Sofa taken out"). Repair R162 brings Kevin Ng's design up to date; R61
   writes the same for a fresh demo. No migration. REG-2331…2340. Probe pm2-s43c 42/42; cr-r3 · cr-r5 · viz-sheets · viz-studio · s20 · s36 ·
-  P7 follow the new names; UAT ch13 updated (rebuild its tab). Asks her (REG-S43C.8): a demo moment for the drift guard's repair.
+  P7 follow the new names; UAT ch13 updated (rebuild its tab). Asks him (REG-S43C.8): a demo moment for the drift guard's repair.
 - **After S43D (lane B, 2026-10-15) — ledger F2:** Finance › Commission's ghost draws the *Asks for another rate* band when the page will
   (`lib/ghost-shapes.server.ts` seed, `FinanceFrame` / `FinanceGhost` `asks`); the Chips note ('' is no pick); Fill from a document's comments.
   **The sweep of 1.0's six newer branches** (`s42/sweep-newer-branches-2026-10-15.md`, read through git only): two bugs from `quotes/port`
   fixed — *Apply defaults* keeps GST off under an entity that isn't registered; every bill splits out the GST its own quote holds
   (`lib/projects/money.ts` `billGstRate` — the one rule; any new bill calls it); rows NB-01…NB-08 routed (NB-05…07 → S44I, NB-01…04 → S44F,
-  NB-08 → S44G); UHD's three dashboards held for her (their exclusivity ask); crm-client-link-sarthak · billing-app excluded (Platform admin).
+  NB-08 → S44G); UHD's three dashboards held for him (their exclusivity ask); crm-client-link-sarthak · billing-app excluded (Platform admin).
   F2-05 / F2-06: 1.0's quote document editor and per-knob locks compared — nothing to build but NB-08 (1.0's lock guarded overrides nothing
   ever wrote; Q-02 stands). REG-2341…2345. No migration, no repair. Probe pm2-s43d 35/35. `verify-pj-gap-a.cjs`'s four literal hold dates
   loosened to a window (the base moves a day with each re-take).
@@ -647,7 +647,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   pass on a base restored to it (87/87 · 75/75 on `pbuild/base14.db`, made with `pbuild/restore-at.ts 2026-10-14T12:00:00+05:30`) and fail
   on any other day — re-anchor them to read their dates from the records (a later probe round). s43b's R147 check now asks "this month",
   not "today" (a morning restore re-dates the invoice to late yesterday). Refunds go to the top-up pool on purpose (A-05) — not a fault.
-- **After S45A (lane A, 2026-10-17) — UHD's Sales reports + their Projects columns and Dashboard tiles (H-UHD-1 · H-UHD-3; her "build
+- **After S45A (lane A, 2026-10-17) — UHD's Sales reports + their Projects columns and Dashboard tiles (H-UHD-1 · H-UHD-3; his "build
   everything" with UHD's dashboards in scope — built for every studio):** Company › Reports › Leads offers two reports by Chips — Response time
   (the default, unchanged) · **Sales** (`?report=sales`, `?range=`): 1.0's six as sections on the listing's table model — By team member ·
   Where leads stop (the funnel, Met included) · By source · Open pipeline · Over time (chart + table) · Going quiet (the listing's Last contact
@@ -671,7 +671,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   migration, no repair. Probe pm2-s45c 120/120. Left for the developers: the same first line for Accounting in those families.
   S45C on main: pm2-s45c 120/120; pj-r2 87 · pj-r4b 75 · pj-gap-a 72 · pj-gap-c 105 · pj-r6 82 · pj-r8 67 (dates now from the records) ·
   pm2-s44z 106 · pm2-s45a 157 — all green on the base anchored to 17 Oct.
-- **After S45B (lane B, 2026-10-17) — UHD's Contractors (H-UHD-2; built for every studio on her pick):** Finance › Vendors stays the one
+- **After S45B (lane B, 2026-10-17) — UHD's Contractors (H-UHD-2; built for every studio on his pick):** Finance › Vendors stays the one
   roster — a vendor gets *Works on site* with its trades (the studio's one trade list), how many sites it runs at once (1–20) and a code; the
   list's Contractors · n chip; a contractor's panel shows On site · This week · Sites; a vendor merge moves its rows, a trade rename follows.
   On a project a contractor goes on a milestone and reads its dates from the schedule (a move moves them), or keeps dates of its own;
@@ -716,7 +716,7 @@ main and re-runs the step's probe, then re-syncs the lane. Connected steps share
   103/103 on main.
 - **After S46B (lane B, 2026-10-19) — Tickets, the project's doors (REG-2513…2521):** Projects › Tickets has New ticket (header, or the empty
   card) → pick the project → the project's own compose; `?new=1` opens the picker, `&project=` the form; Tickets stays in the Projects ⋮
-  (her REG-1425). A Dashboard *Tickets* tile (the ⋮ row's count, one shared count) → `/projects/tickets?from=/dashboard` for Owners, Admins,
+  (his REG-1425). A Dashboard *Tickets* tile (the ⋮ row's count, one shared count) → `/projects/tickets?from=/dashboard` for Owners, Admins,
   Managers, Designers; Back names the Dashboard. The project ⋮: *Complete handover* before Delete (the Stage menu's own Completed row — same
   sheet, same refusals; the Stage menu doesn't refuse a project on hold, so neither does the row) and *See it as {client}* beside Invite to
   Portal. A client conversation's People and files: the client's number with Call (dials on touch; at a desk copies, REG-746) and Copy.

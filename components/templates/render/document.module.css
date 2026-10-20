@@ -166,7 +166,7 @@
 .newMark { display: inline-block; margin-left: 6px; padding: 0 4px; border: 1px solid currentColor; border-radius: 3px; font-size: 0.68em; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; }
 .was { text-decoration: line-through; opacity: .65; margin-right: 5px; }
 
-/* ── (S44T — her UAT ask 2026-10-15, rows 246–364) ── */
+/* ── (S44T — his UAT ask 2026-10-15, rows 246–364) ── */
 /* (call C2) A line's name with its emphasis: its paragraphs sit tight, as the plain name's one line did. */
 .nameRich p { margin: 0; }
 /* (row 293) A line whose description runs on in the rows after it: the rule is drawn once, under its last piece. A continuation keeps the
@@ -186,7 +186,7 @@
 .payWithQr { display: flex; gap: 12px; align-items: flex-start; }
 .payMain { flex: 1; min-width: 0; }
 
-/* ── (S44F — NB-01, her ask 2026-10-15) "Every version": the key under the Items table — each version that left a mark, in its colour ── */
+/* ── (S44F — NB-01, his ask 2026-10-15) "Every version": the key under the Items table — each version that left a mark, in its colour ── */
 .versionKey { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .versionKeyItem { display: inline-flex; align-items: center; gap: 4px; }
 .versionSwatch { display: inline-block; width: 8px; height: 8px; background: var(--mark); }

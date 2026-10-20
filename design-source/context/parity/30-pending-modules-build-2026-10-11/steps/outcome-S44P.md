@@ -3,7 +3,7 @@
 Vicky's ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments
 based on our 2.0 experience without any overlaps nor any issues without losing what we have already built … If you have any questions please go
 ahead based on your recommendations." Source: the triage `design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md` (§5 area P,
-§7 M8 · M14, §9, §12 item 12). Every call taken **as recommended — her ask 2026-10-15**. Register rows: `steps/reg-S44P.md` (REG-S44P.1…7).
+§7 M8 · M14, §9, §12 item 12). Every call taken **as recommended — his ask 2026-10-15**. Register rows: `steps/reg-S44P.md` (REG-S44P.1…7).
 Probe: `design-source/verify/pending-modules/verify-pm2-s44p.cjs`. Shots: `design-source/verify/pending-modules/pm2-s44p/`.
 **No migration. No repair** (R127…R139 left unused — nothing in the demo needed a record: its trades are unset, with no case variants or
 near-duplicates; the probe makes its own and puts them back).
@@ -37,7 +37,7 @@ near-duplicates; the probe makes its own and puts them back).
 - **345** — 2.0 has no Packages and seeds nothing into a studio's book; 1.0's ops can delete them. (§9)
 - **346 · 347** — Built: the item dialog takes a Unit price beside Cost and Markup — S$0 is a price, and the markup goes below zero ("Below cost by S$…"), as the quote's Items table does.
 
-## Calls taken as recommended (her ask 2026-10-15)
+## Calls taken as recommended (his ask 2026-10-15)
 - **M8**: all three boxes, the grid's order and rules — the Markup stays typed-in (the grid keeps it editable) and takes a minus; a cost keeps the markup (the grid's rule, not "keep the price"); the floor is −cost, applied when the box is left (the grid's commit), silently as the grid does. A price with no cost is a markup (the grid's), unlike the import's price-only convention (a lone price is the cost, 1.0's 1c9323f6b — already 2.0's, untouched).
 - **319**: the trade is added when its dialog's Add is pressed (Settings' own Add does the same; the snackbar says so), not deferred to the item's Save — so it is offered at once and the item dialog keeps no hidden studio change. Offered in bulk Set category too (the sibling picker). The row is a house-piece prop (`TextField` `action`), not a hand-rolled menu.
 - **264**: two wordings on one helper — typed exactly as listed keeps the house words; another case names the entry. Lit up with the menus' selected fill. The same helper on Lead sources and reasons (siblings).

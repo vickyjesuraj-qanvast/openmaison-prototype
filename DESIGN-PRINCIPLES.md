@@ -1,6 +1,6 @@
 # Vicky's Design Principles — OpenMaison 2.0
 
-OpenMaison 2.0 is designed by **Vicky**, product designer. Every screen, word, state and motion in this prototype was decided on
+OpenMaison 2.0 is designed by **Vicky** (he/him), product designer and the repo's owner. Every screen, word, state and motion in this prototype was decided on
 purpose, checked at every screen size, and written down: the design register (`design-source/REGISTER.md`) holds close to
 700 decisions (REG-1…698) and the reason for each. Studios have seen it in live demos. It is the product, not a sketch of it.
 
@@ -9,7 +9,7 @@ purpose, checked at every screen size, and written down: the design register (`d
 > **Nothing a user can see changes without Vicky.**
 > Before you change layout, spacing, colour, type, copy, an icon, motion, an interaction, a flow, an empty / loading /
 > error state, or add a screen — ask Vicky first. If the change is already made, don't merge it: open the pull request and
-> ask for her review.
+> ask for his review.
 
 This holds even when the change looks like a fix, a cleanup or "the obvious thing". What looks like a glitch is often a
 decision — the register says why. When in doubt, ask. A two-line question costs a minute; an unreviewed change can undo
@@ -30,7 +30,7 @@ weeks of work that studios have already signed off on.
   tests and CI.
 
 Even there, a change can reach the screen — a new error, a slower response, a field that is now optional. If it does,
-it needs Vicky. `.github/CODEOWNERS` asks for her review on every pull request, so she is always informed.
+it needs Vicky. `.github/CODEOWNERS` asks for his review on every pull request, so he is always informed.
 
 ## The principles
 
@@ -140,8 +140,8 @@ Nothing depends on hover alone.
 1. Open a pull request (or an issue, if you haven't built it yet) that says **what** and **why**.
 2. For anything visible, add before and after screenshots at **1440** and **390**, plus **768** when the layout
    changes.
-3. Mark it for design review and ask Vicky to review it. `CODEOWNERS` requests her review automatically.
-4. Wait for her approval before merging. If she changes the design, she logs it in the register.
+3. Mark it for design review and ask Vicky to review it. `CODEOWNERS` requests his review automatically.
+4. Wait for his approval before merging. If he changes the design, he logs it in the register.
 5. Found something that doesn't match the mock or the register? Flag it the same way — Vicky confirms the intended
    behaviour before anyone "fixes" it.
 

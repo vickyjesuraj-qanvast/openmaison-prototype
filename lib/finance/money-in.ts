@@ -15,7 +15,7 @@ import type { PaymentStatus } from '@/lib/projects/payments-model'
 import { entityOptions, type EntityOption } from './entity-scope'
 
 /*
- * (parity map 2026-10-10 — FB-013 · FB-016 · FB-012; her "build everything that's in 1.0 to 2.0") Company › Finance › **Money in** on the server:
+ * (parity map 2026-10-10 — FB-013 · FB-016 · FB-012; his "build everything that's in 1.0 to 2.0") Company › Finance › **Money in** on the server:
  * 1.0's Finance › Operations kept three studio-wide registers — every invoice (number, project, status incl. pending approval / rejected, total,
  * paid, outstanding, due), every receipt, every variation order — and 2.0 had them only per project. Here they are again as Money out's twin,
  * read from the ONE set of numbers (`moneyOf` per project — nothing is added up twice) and the payments' own records, scoped as the Money tab is:

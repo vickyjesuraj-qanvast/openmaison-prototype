@@ -7,7 +7,7 @@
  * they doubted, and its next steps can name a sales move ("Offer a line-by-line comparison with the other quote"). Competitors and objections
  * never reach a client (S23's rule), so a sentence or a step that names one is left out here — whatever the studio typed, edited or not.
  *
- * (S42 audit C-01 · C-05, call C·2 as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review) The
+ * (S42 audit C-01 · C-05, call C·2 as recommended — his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review) The
  * link is written TO the client: the summary in "we / your" ("We met in person for a first consultation on Wed, 14 Oct. We talked about the
  * kitchen in your semi-D."), and the next steps are only what the studio will do for them, said so ("We’ll prepare the quote for the
  * kitchen"). The designer's own notes never go — the checklist's "Ask about …" (what to find out next time), "Send the follow-up message"

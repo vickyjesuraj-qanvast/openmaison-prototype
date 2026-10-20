@@ -17,7 +17,7 @@ import s from './site-footer.module.css'
 /*
  * (pending modules S35 — 1.0's marketing-footer.tsx) The website's footer: the wordmark, its line and the security line, the newsletter sign-up
  * ("Occasional studio notes"), the Platform · Company · Legal columns, and the bottom rule — © OpenMaison · Built by the team behind Qanvast, the
- * market it serves and the social links. 1.0's market flags named four countries; 2.0 serves Singapore (her hold, 2026-10-12).
+ * market it serves and the social links. 1.0's market flags named four countries; 2.0 serves Singapore (his hold, 2026-10-12).
  */
 
 const PLATFORM_LINKS: NavLink[] = [...MODULES.map((m) => ({ label: m.name, href: m.href })), { label: 'Platform overview', href: site('/platform') }, { label: 'Pricing', href: PRICING_PATH }]   // (S46D — D4)

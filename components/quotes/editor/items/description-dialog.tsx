@@ -26,7 +26,7 @@ export const WritingBookContext = createContext<readonly BookWords[]>([])
  * (REG-557, the testers' ask) The box is the in-house rich editor the Terms and Notes sections use — bullets, numbered lists,
  * bold, italic, underline — so a line's description and a section's note print with their shape. Save writes both the HTML
  * and its plain text through the row's own patch (autosave, undo); text with no formatting stays plain, as before.
- * (S44I — call C2 as recommended, her ask 2026-10-15) On a line it is *Words on this line*: the name above — bold, italic, underline,
+ * (S44I — call C2 as recommended, his ask 2026-10-15) On a line it is *Words on this line*: the name above — bold, italic, underline,
  * strike and line breaks — the description below, each with the brand kit's text colours (no free hex; REVERSES REG-557's "no colour
  * inside text"). The plain name stays the line's name for search, the X-Ray and exports. (M3) A description keeps its paragraphs, blank
  * lines and alignment. Nothing changed, nothing is written.

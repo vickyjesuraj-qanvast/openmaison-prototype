@@ -3,7 +3,7 @@
 Cards: `held:shell` (the report's line: "The phone's avatar should open View as like the rail's studio block; Log out has no place yet (it comes
 with sign-in); Marketplace, Market Insights and Meeting Copilot keep their Soon until those cards are decided") and `studio:studio-navigation`
 (1.0's frame, folded into the same card by `compile.py`; its question "Hide the Soon items until they are built, or keep them as signposts?").
-No picks were stored on the report page (her "build all of them" stands). 1.0 read: `src/components/layout/app-sidebar.tsx` (the rail: its
+No picks were stored on the report page (his "build all of them" stands). 1.0 read: `src/components/layout/app-sidebar.tsx` (the rail: its
 items, badges capped at "99+", Finance / Tools / Qanvast Ops sections, Qanvast Ops only for a Qanvast-listed studio), `topbar.tsx` (logo →
 Dashboard, search, the bell capped at "9+", **Open / Closed to new leads** for designers, the Tools & Apps grid, the profile menu: name ·
 studio · plan · Accounts Setup · Settings · Sign out), `bottom-nav.tsx` (Home · Leads · Chats · Projects · More, the More sheet's grids),
@@ -38,7 +38,7 @@ in `design-source/verify/pending-modules/pm2-s16/`.
 | 1.0's frame · a count on Leads (every lead in New) | **Not added — flagged for Vicky** — the bell rings Owners and Admins for a new lead and the assignee for theirs; the listing's *Unseen* scope counts them; a red count for a lead that is not late would break 2.0's red rule | — |
 | S15's note · `.consentRow.consentRow` in Your profile's stylesheet is redundant | **Removed** (REG-S16.5) — measured at 390 touch: the row starts at its card's padding, margin 0; pm2-s01's ghost check green | `components/profile/your-profile.module.css` |
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Soon items stay as signposts** until their own steps (the card's recommendation; REG-808). Nothing in the rail, the dock, More or Tools was
   added, removed or reordered — the mock's rail (1082:23305) and More sheet (1082:24995) are as drawn.
 - **Messages takes G then M** — 2.0's word (one-home N-08), the house rule of a place's first letter; 1.0's G then I would read as nothing in 2.0.

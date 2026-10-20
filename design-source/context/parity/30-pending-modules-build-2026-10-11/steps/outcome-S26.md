@@ -1,9 +1,9 @@
 # S26 · Team and group chats — outcome (2026-10-13, lane B)
 
-Cards: `studio:team-chats` — "Chats: team and group conversations" (recommendation *needs her mocks / decision*, effort M; its question "Do
+Cards: `studio:team-chats` — "Chats: team and group conversations" (recommendation *needs his mocks / decision*, effort M; its question "Do
 studios need team chat inside OpenMaison, or is WhatsApp enough?") and `api:messages-free-chats` — "Messages: free chats and groups"
 (recommendation *skip*, held by H-Q11; its question "Do studios need one team chat that is not about a project (a studio-wide 'Team' room)?").
-Her "build all of them" 2026-10-11 decides both: built, in 2.0's shape — **one list, one composer, never a second chat app**. 1.0 read in full:
+His "build all of them" 2026-10-11 decides both: built, in 2.0's shape — **one list, one composer, never a second chat app**. 1.0 read in full:
 `src/app/(main)/inbox/page.tsx`, `src/components/inbox/*` (chat-list · chat-list-item · conversation-header · context-panel · message-thread ·
 message-bubble · message-input · new-chat-panel · ai-suggestions · emoji-data), `src/app/api/chats/records/**` (conversations · participants ·
 messages · [id] PATCH), `src/app/api/chat/upload/route.ts`, `src/lib/transformers.ts` `transformChat`, `supabase/migrations/…08_messaging.sql`
@@ -32,7 +32,7 @@ table it touches, whole, and checks the leads' stages and stage logs are as foun
 | *free-chats:* "Add or remove a conversation's members by hand" | **Built** for groups: Details › Add people · Take out (1.0's rule: a Designer never takes an Owner or an Admin out) · Leave the group — each remove with Undo, each change a line in the group. **Kept** for a lead's or a project's Team conversation: its people are the record's members, changed on the lead or the project (one home — Details links there); two people stay two (Start a group with them); the room is everyone (mute it) | `addToGroupChat` · `removeFromGroupChat` · `leaveGroupChat` + Undos, `conversation-details.tsx` |
 | *free-chats:* "All · Unread · Escalations filters (2.0 sorts unread first; tickets have their own place)" | **Built** All · Unread, plus who it is with — Clients · Team (the house chips under the list's search). **Kept** Escalations: 1.0's were conversations labelled "escalation"; 2.0's are tickets, with their own place (Projects › Tickets — one home) | `INBOX_FILTERS` · `keepsRow` (`lib/projects/messages-model.ts`), `chat-inbox.tsx` |
 | *free-chats:* "The Docs · Media · Links view of a conversation's shared files (2.0 files them in Files › Messages)" | **Built** for every conversation: Details › Shared in this conversation — Media · Docs · Links read from every line (photos, videos, voice notes · documents · the addresses in the words and a shared place), each opening in a new tab; a lead's or project's ends with **All in Files › Messages**. Links needed links: an address in any line's words now opens | `app/chat/actions.ts` `conversationShared`, `conversation-details.tsx`, `components/projects/threads/thread.tsx` (`Words`) |
-| (question) "Do studios need team chat inside OpenMaison, or is WhatsApp enough?" · "…one team chat that is not about a project?" | **As recommended under her "build all of them":** yes — the room, two people, groups, and a lead's Team conversation; WhatsApp stays the way to anyone outside the studio and its clients | REG-S26.1 |
+| (question) "Do studios need team chat inside OpenMaison, or is WhatsApp enough?" · "…one team chat that is not about a project?" | **As recommended under his "build all of them":** yes — the room, two people, groups, and a lead's Team conversation; WhatsApp stays the way to anyone outside the studio and its clients | REG-S26.1 |
 
 ## Found in 1.0, not on a card
 - **Read receipts** — 1.0 drew two ticks under every own line whoever had read it (`message-bubble.tsx`). **Built honestly:** "Seen" / "Seen by …"
@@ -49,13 +49,13 @@ table it touches, whole, and checks the leads' stages and stage logs are as foun
 - **`chat-highlights.tsx`** (the last five messages on 1.0's project page) — 2.0 answers it in the project's Needs you (a client's message
   waiting → Reply) and the Client tab's count; no second card (one home).
 - **The home widget "View messages"** (`home-widgets.tsx`) — for **S22** (Dashboard): a door into Messages, never a second list.
-- **Coach marks for /inbox** — guided tours are parked by her (S32).
+- **Coach marks for /inbox** — guided tours are parked by him (S32).
 - **`conversation_participants.external_phone` / `is_external`, `conversations.context_label`, `messages.status`** — not carried (outside
   numbers reach nobody; 2.0's chips and read marks do their jobs).
 - **Keyboard `i` → /inbox** — S16's G then M.
 - For **S41b**: nothing else in 1.0's inbox folders.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **One home:** every conversation lives in Messages (`/chat`); the doors are New message ▾ (C, ⌘K's Create), the Collaborators' Team chat row
   (lead · project · phone sheet), the meeting room's Share with the team, Maison AI, ⌘K's Messages scope. No rail change, no new page.
 - **A lead's Team conversation** rather than "groups about a lead": the project's Team conversation already is the team's talk about a project,

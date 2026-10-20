@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache'
 import { DEFECTS_MONTHS_MAX } from './completion-letter-model'
 
 /*
- * (S44R — UAT row 359, call C9, as recommended — her UAT ask 2026-10-15) The completion & warranty letter at handover. Company › Templates ›
+ * (S44R — UAT row 359, call C9, as recommended — his UAT ask 2026-10-15) The completion & warranty letter at handover. Company › Templates ›
  * Contracts marks ONE template *Use at handover*; the Hand over sheet offers "Send {client} the completion letter" with it, filled from the project
  * (the Handover fields: its number, the completion day, the defects period and the day it ends — lib/contracts/snapshot.ts), to sign (the house
  * signing link) or just to read and keep (`to_read`: its link shows the letter and a copy to download — nothing to sign). It goes with the press

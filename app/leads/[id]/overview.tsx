@@ -119,7 +119,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   const holdOptions = liveReasonNames(leadReasons.hold)
   const lostOptions = liveReasonNames(leadReasons.lost)
   const canDelete = runsStudio(detail.viewer.role)
-  /* (S44O — call C6, her UAT ask 2026-10-15) Marketing works the lead up to Met: no Quotes · Contracts · Meetings tab, no QUOTES card, the Create
+  /* (S44O — call C6, his UAT ask 2026-10-15) Marketing works the lead up to Met: no Quotes · Contracts · Meetings tab, no QUOTES card, the Create
      strip's Task · Note · Contact Log, and Quote Sent / Won are the designer's (`roleStageBlock`) — no Convert and no project to open */
   const desk = isMarketing(detail.viewer.role)
   const role = detail.viewer.role

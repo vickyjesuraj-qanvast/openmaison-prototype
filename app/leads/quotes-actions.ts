@@ -174,7 +174,7 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
   const [rules, [meRole]] = await Promise.all([fetchQuoteRules(), db.select({ role: members.role }).from(members).where(eq(members.id, await sessionMemberId()))])
   const keepPayments = !changesPayments(meRole?.role, rules.paymentLock)
   if (!keepPayments) {
-    /* (S44O — UAT row 297, her UAT ask 2026-10-15) a quote that opens with a fixed design fee keeps it first, with its own word: the template's
+    /* (S44O — UAT row 297, his UAT ask 2026-10-15) a quote that opens with a fixed design fee keeps it first, with its own word: the template's
        split (shares only, MI-021) shares what the fee leaves — Apply defaults rewrote the schedule as % rows and the fee was gone */
     const [first] = await db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position).limit(1)
     const fee = first && isFixedRow(first, 0) ? first : null

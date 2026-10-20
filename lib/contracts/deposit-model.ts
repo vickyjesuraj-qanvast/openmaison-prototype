@@ -1,5 +1,5 @@
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) *Ask for the deposit* on Send for digital signature: once the client
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) *Ask for the deposit* on Send for digital signature: once the client
  * signs, the signing page ends on "Pay the deposit" — the named quote's FIRST payment stage, to its issuing entity's PayNow (the money papers'
  * pay box, `components/portal/money/pay-box.tsx`). Pure and client-safe; the server reads the records (`lib/contracts/deposit.ts`).
  *

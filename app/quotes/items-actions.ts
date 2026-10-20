@@ -34,7 +34,7 @@ const seen = (l: QuoteItem, s: CostSight) => pricedFor(l, s)
 /** A deleted line's cost is kept 30 days, so a member who doesn't see costs can bring the line back whole (Undo, ⌘Z) — lib/quotes/kept-costs.ts. */
 const keepCosts = keepLineCosts
 
-/* (S44I — row 335, her UAT ask 2026-10-15) A write that can't land says why: these sentences reach the snackbar through the adds' refusals
+/* (S44I — row 335, his UAT ask 2026-10-15) A write that can't land says why: these sentences reach the snackbar through the adds' refusals
    (`addQuoteItem` and the other `{ error }` answers below) — a thrown word never survives a production server action. */
 const GONE_QUOTE = 'This quote was deleted since it was opened'
 const GONE_LINE = 'That line was removed since the quote was opened'
@@ -853,7 +853,7 @@ export async function listQuoteItems(quoteId: string): Promise<QuoteItem[]> {
 }
 
 /**
- * (S44T — call C1, as recommended, her UAT ask 2026-10-15; UAT rows 277 · 278 · 280 · 281 · 317 · 318 — Dyel's Estimation Direct) A section's
+ * (S44T — call C1, as recommended, his UAT ask 2026-10-15; UAT rows 277 · 278 · 280 · 281 · 317 · 318 — Dyel's Estimation Direct) A section's
  * ⋮ › Priced after the contract: the section's work is estimated now and priced once the contract is signed. It leaves the quote's total, its
  * payment split and its margin; the print shows it after the main items as its own part; the client's pages call it an estimate. Marked, the
  * section moves to the end of the table, where the marked ones gather. A section at the top only — a sub-section follows its section — and

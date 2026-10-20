@@ -86,7 +86,7 @@ switch; **A** = Admin; **Ac** = Accounting. The read is `fetchViewer()` (`Viewer
 - **`finance/margin-analysis`** and **`finance/export (pl)`** — 2.0's are Reports › Profitability and its Export, closed with the reports.
 - Nothing else in the cost-visibility files is outside this card.
 
-## Decisions (as recommended — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12, and the step's brief)
+## Decisions (as recommended — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12, and the step's brief)
 1. **One home: Settings › Roles & access**, between Who sees leads and Who may do what (the brief's place; it governs every role's screens).
    Not Quotes & pricing (it reaches the books too).
 2. **Four switches** (Admins · Managers · Designers · Accounting), not 1.0's three — 2.0's Manager is its own role and its own column in the

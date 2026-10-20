@@ -241,7 +241,7 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
        "Till Sat, 24 Oct ’26" ("On hold" said to a screen reader, the Stage cell beside it says it) — so it reads whole at the column's floor */
     ok('g-weekday the listing’s On hold till wears its day', /On hold Till (Sun|Mon|Tue|Wed|Thu|Fri|Sat), \d{1,2} \w{3} ’\d\d/.test(arjun), arjun.slice(0, 80))
     /* NOT a check — reported for Vicky: the Lead Name column's 240 floor never held an On Hold lead's phone line ("9800 4172 · On hold till:
-       24 Oct ’26" + the copy glyph ran ~12 px + the glyph past the cell before this round); the day adds ~26 px. Fitting it is her call. */
+       24 Oct ’26" + the copy glyph ran ~12 px + the glyph past the cell before this round); the day adds ~26 px. Fitting it is his call. */
     const over = await page.locator('[data-kb-row]', { hasText: 'Arjun Mehta' }).first().locator('span[class*="__phone"]').first().evaluate((s) => Math.round(s.getBoundingClientRect().right - s.closest('[role="cell"]').getBoundingClientRect().right))
     console.log(`INFO  the On Hold phone line runs ${over} px past the Lead Name column at 1440 (pre-existing; see the report)`)
     await page.locator('[data-kb-row]', { hasText: 'Arjun Mehta' }).first().screenshot({ path: path.join(OUT, 'g-weekday-listing-on-hold.png') })

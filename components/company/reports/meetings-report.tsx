@@ -40,7 +40,7 @@ import { ReportTable } from './report-table'
 import styles from './meetings-report.module.css'
 
 /*
- * (pending modules S23 — card studio:meetings-copilot: "for Owners and Admins Analytics with coaching and an Objections report"; her "build all
+ * (pending modules S23 — card studio:meetings-copilot: "for Owners and Admins Analytics with coaching and an Objections report"; his "build all
  * of them" 2026-10-11) Company › Reports › Meetings — 1.0's Meeting Insights › Analytics and its Objections report, one Reports tab, built the
  * way Leads (components/leads/insights/insights-view.tsx) and Projects (components/projects/insights/project-insights-view.tsx) are: the
  * house ranges, the house tile row, By team member on the listing's table model with Column settings, Export; then Coaching and the Deal

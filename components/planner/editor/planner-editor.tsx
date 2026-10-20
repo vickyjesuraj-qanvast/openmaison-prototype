@@ -59,7 +59,7 @@ import styles from './editor.module.css'
  * Top · 3D · Walk · saved · undo / redo · Share with client · ⋮), the rail's three panels (Rooms · Furniture · Finishes), the stage and
  * the inspector of what is picked. Every change is one Undo step and saves itself; a viewer who may not change it reads it (the bar's
  * note says why). ≤1024 the camera-app model: the stage, a selection bar, the dock; panels and the inspector in sheets.
- * (parity map 2026-10-10 — her "build everything that's in 1.0") The View ▾ (Isometric · Ruler · Furniture · Dimensions · Present, TD-081 ·
+ * (parity map 2026-10-10 — his "build everything that's in 1.0") The View ▾ (Isometric · Ruler · Furniture · Dimensions · Present, TD-081 ·
  * TD-092 · TD-098), levels (TD-075), Save as a template (TD-076), versions (TD-087), a room's Arrange and wall elevations (TD-088 · TD-091),
  * a described piece (TD-090) and Render in AI Visualizer (TD-089).
  */

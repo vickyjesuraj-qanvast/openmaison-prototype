@@ -33,7 +33,7 @@ export type QuotePricing = { additionalDiscountMode: string; additionalDiscountV
   gstRule?: string | null }
 
 /**
- * (S44O — call C3 · UAT rows 282 · 283, Dyel's GST drifting by cents; as recommended — her UAT ask 2026-10-15) How GST is rounded.
+ * (S44O — call C3 · UAT rows 282 · 283, Dyel's GST drifting by cents; as recommended — his UAT ask 2026-10-15) How GST is rounded.
  *   'rate' — today's rule: each rate's GST is the rate × that rate's taxable net (its lines after the discounts), rounded ONCE per rate — as a
  *            studio's own paper takes 9% of the subtotal. On-behalf lines carry none.
  *   'line' — the rule before: each line's GST rounded on its own and the pieces added. A quote that went to its client under it keeps it, so
@@ -100,7 +100,7 @@ export function ancestorIds<T extends Pick<Line, 'id' | 'parentId'>>(items: T[],
 /** How deep a row sits: 0 at the top, 1 in a section, 2 in a sub-section. */
 export const depthOf = <T extends Pick<Line, 'id' | 'parentId'>>(items: T[], id: string) => ancestorIds(items, id).length
 
-/* ── (S44I — the team's sections prototype, B1; her ask 2026-10-15) the rules a ticked set of rows follows, pure — the bulk bar, the drag and
+/* ── (S44I — the team's sections prototype, B1; his ask 2026-10-15) the rules a ticked set of rows follows, pure — the bulk bar, the drag and
    the server (app/quotes/items-actions.ts) read the same ones ── */
 /** The refusal when the ticked lines all sit in one sub-section (the server says the same, word for word). */
 export const GROUP_DEPTH_RULE = 'Sections go two levels deep — these lines are in a sub-section already'
@@ -147,7 +147,7 @@ export function afterContractIds<T extends Pick<Line, 'id' | 'parentId' | 'kind'
   return descendantIds(items, items.filter((i) => i.kind === 'group' && i.pricedAfter).map((i) => i.id))
 }
 /**
- * (S44I — M17, UAT row 323 · 274; as recommended, her UAT ask 2026-10-15) A section may print a word in place of its amount — FOC, Inclusive,
+ * (S44I — M17, UAT row 323 · 274; as recommended, his UAT ask 2026-10-15) A section may print a word in place of its amount — FOC, Inclusive,
  * KIV, By client, Packaged or the studio's own word — set from its row's ⋮ › Print as. Each of its lines without a word of its own then counts
  * as if it carried the section's: out of the totals, and its cost still the studio's for FOC · Inclusive · Packaged (REG-555's rules). A
  * section summing ITSELF (`stopAt`) keeps its own lines — the grid strikes that figure under the word, as a line's own word does.

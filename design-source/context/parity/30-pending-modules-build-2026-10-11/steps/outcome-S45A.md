@@ -1,8 +1,8 @@
 # S45A · Urban Home Design's Sales reports + the Projects listing's columns and the Dashboard's widgets — outcome (2026-10-17, lane A)
 
-Rows **H-UHD-1** and **H-UHD-3** of `s42/sweep-newer-branches-2026-10-15.md` §2.1, held for her on UHD's exclusivity ask and released by her
+Rows **H-UHD-1** and **H-UHD-3** of `s42/sweep-newer-branches-2026-10-15.md` §2.1, held for him on UHD's exclusivity ask and released by his
 "build everything and complete it" (2026-10-17) **as features every studio gets** (`s45/plan-2026-10-17.md`). Every call below is **as recommended —
-her ask 2026-10-17**. 1.0 read through git only (`/Users/vicky/Documents/GitHub/qanvast-id-tool`, `origin/urbanhomedemo` · `origin/port/urbanhome-ui-2026-10-13`,
+his ask 2026-10-17**. 1.0 read through git only (`/Users/vicky/Documents/GitHub/qanvast-id-tool`, `origin/urbanhomedemo` · `origin/port/urbanhome-ui-2026-10-13`,
 `git show 479480a5e` · `git show 4da810229` · `git show <branch>:<path>`; its working tree untouched, :3001 never opened): `src/lib/leads/sales-reports.ts`,
 `src/app/api/leads/sales-report/route.ts`, `src/lib/queries/sales-reports.ts`, `src/components/leads/reports/{lead-reports-container,report-shell,sales-report-views}.tsx`,
 `src/lib/leads/sales-report-mock.ts` (seen, not carried), the TAT route's and `lead-performance-view.tsx`'s 4da810229 changes, `src/components/dashboard/{home-widgets,chat-first-home}.tsx`,
@@ -45,11 +45,11 @@ columns, the Dashboard and the report opened from it).
 - **`/api/project-aggregates/lead-info`** and **`useProjectsPreGstSalesCents`** — the listing's loader reads both in one pass (`fetchProjectRows`).
 Nothing for S41b.
 
-## Calls taken (as recommended — her ask 2026-10-17)
+## Calls taken (as recommended — his ask 2026-10-17)
 - **Two reports, not seven chips**: Response time (the landing, unchanged) and Sales holding 1.0's six as sections — the sweep's shape ("a second report
   beside Response time"); 1.0's picker order kept for the sections.
 - **Sales is the Owners' and Admins'** (1.0's rule); Marketing keeps Response time alone — its money is not theirs (S44O). *For Vicky*: Marketing could
-  be given the count-only sections (funnel, sources, flow, going quiet) without money if she wants the lead desk to read them.
+  be given the count-only sections (funnel, sources, flow, going quiet) without money if he wants the lead desk to read them.
 - **Every money figure before GST** — Reports › Finance's rule and UHD's "bf GST".
 - **Won value = the sale as signed, variation orders out** (UHD's "Initial Amount"; 1.0 skipped VOs) — the same rule for the Projects listing's
   **Value before GST**, so the two never disagree; its tooltip says what it stands on, so it is not read as Contract value less GST.

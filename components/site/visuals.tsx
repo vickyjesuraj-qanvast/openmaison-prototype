@@ -291,7 +291,7 @@ export function ModuleVisual({ slug }: { slug: ModuleSlug }) {
   )
 }
 
-/** The AI Visualizer's before and after (1.0's BeforeAfterVisualiser): the house compare slider and the palette. (S43B · F1-03 — her "fix all
+/** The AI Visualizer's before and after (1.0's BeforeAfterVisualiser): the house compare slider and the palette. (S43B · F1-03 — his "fix all
     the pending things" 2026-10-15, as recommended) The pair is 2.0's own — the living-room sample painted by the engine, the Visualizer welcome's
     and the trial's (REG-819, `WELCOME_AFTER`) — where it was 1.0's model render of a kitchen 2.0 never made; the palette is that look's three picks. */
 export function BeforeAfter() {

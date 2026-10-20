@@ -139,7 +139,7 @@ export function addressFor(channel: OutboundChannel, to: Recipient): string | nu
   return channel === 'email' ? to.email?.trim() || null : waNumber(to.phone)
 }
 
-/* ── (simplify round 2 — R2-C, her "fix all the pending things" 2026-10-09) Held client emails ─────────────────────────────────────────
+/* ── (simplify round 2 — R2-C, his "fix all the pending things" 2026-10-09) Held client emails ─────────────────────────────────────────
    An action that answers with Undo runs its sends inside `holdClientMail(window, …)`: every message to a client it raises of the events it
    names (`HELD_EVENTS` — paused, running again, handed over, an invoice sent, the schedule shared, an update; a recipient who is not a studio
    member — `tellClient`'s) is written to the outbox HELD (`status = 'held'`, `send_after = now + window`) instead of reaching the

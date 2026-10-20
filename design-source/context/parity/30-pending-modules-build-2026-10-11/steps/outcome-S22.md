@@ -1,9 +1,9 @@
 # S22 · the Dashboard — outcome (2026-10-13, lane B)
 
 Cards: `studio:dashboard` (the home page — 1.0's chat-first home and its Classic mode), `held:dashboard` (the held page), `api:industry-news`
-(the Industry News card and its RSS reader) and `public:industry-news-feed` (the same reader, listed among the public APIs). Her "build all of
+(the Industry News card and its RSS reader) and `public:industry-news-feed` (the same reader, listed among the public APIs). His "build all of
 them" 2026-10-11 lifts the Dashboard's hold (L7 "waits on frames", N-02, REG-1560). **What it is in 2.0:** one page, no mock, built from what the
-studio already works out — **What needs me → What's next → Where it stands** (her rule for every page, REG-1445…) — on the house pieces the lead
+studio already works out — **What needs me → What's next → Where it stands** (his rule for every page, REG-1445…) — on the house pieces the lead
 and project Overviews are made of: the MAISON AI BRIEF with the assistant's box, Needs you, MY TASKS, Coming up, the number tiles, Workload,
 Site updates and one Market Insights article. Every row and tile is a door into its thing's one home (`?from=/dashboard` where that home has a
 Back); nothing is a second copy of a list or a number worked out another way. The Dashboard is the studio's front door (`/`), Accounting's is
@@ -40,7 +40,7 @@ back the signed-in member, the task it ticks, the questions it asks and the head
 | studio:dashboard · (question) A chat-first home (the assistant on top) or a widgets dashboard? | **Both, on one page** — as above | — |
 | studio:dashboard · (question) Once it exists, should 2.0 open on the Dashboard instead of Leads? | **Yes, as 1.0** (`getDefaultRoute`); Accounting keeps Finance › To do (FR-040) (REG-S22.1) | `app/page.tsx` |
 | studio:dashboard · (question) Keep the industry News feed? | **Yes, as Market Insights' Industry News** — one reader (above) | — |
-| held:dashboard · The whole page (lead KPIs, Studio Pulse, team workload, upcoming, priority feed) — held · her call (L7 'waits on frames'; REG-1560 kept it held) · revisit: it is the rail's first item and the first thing a demo client presses | **Built** — the hold lifted by her "build all of them"; no mock, every screen on house pieces and logged (REG-S22.1…12) | `app/dashboard/*`, `components/dashboard/*`, `lib/dashboard/*` |
+| held:dashboard · The whole page (lead KPIs, Studio Pulse, team workload, upcoming, priority feed) — held · his call (L7 'waits on frames'; REG-1560 kept it held) · revisit: it is the rail's first item and the first thing a demo client presses | **Built** — the hold lifted by his "build all of them"; no mock, every screen on house pieces and logged (REG-S22.1…12) | `app/dashboard/*`, `components/dashboard/*`, `lib/dashboard/*` |
 | held:dashboard · Project widgets, compliance alerts, recent updates, the 'Site Update' chip (PR-030 · FR-108 · TD-106 · UC-026 · UC-027) — held (Dashboard) | **Built** — Open projects tile; each project's own Needs you; compliance rows; Site updates; the 'Site Update' chip is the page's *Draft a site update* (Maison AI lists the running projects, each opening its Updates composer) | same |
 | held:dashboard · Margin alerts, the One-Click Profit card, a revenue KPI — held (N-02) · 1.0's revenue tile showed fixed sample figures | **Built** — Profit this month (its revenue in the help line) and Owed to you from Reports › Finance's own reports; no sample figure | same |
 | held:dashboard · (question) Draw a 'today' page first, or take a first cut from Reports and Needs you? | **A first cut from Needs you and Reports** (the brief's instruction), on house pieces | — |
@@ -54,13 +54,13 @@ back the signed-in member, the task it ticks, the questions it asks and the head
 - **The chat-first home's inline conversation** (`inline-response.tsx`, "Continue in mAIson panel") — answered in Maison AI's sheet instead (one
   place for answers; the conversation is the sheet's Recent).
 - **The home's page tip** ("Meet mAIson, your AI assistant", `page-coach-marks.tsx`) and the **skin's greeting flair** — guided tours and
-  skins are S32's, parked whole by her.
+  skins are S32's, parked whole by him.
 - **The rotating chip marquee** (twelve capabilities scrolling for ever) — not carried: motion without purpose; the box answers each by rule.
 - **1.0's DRY_RUN headlines** (eight invented stories credited to PropertyGuru, BCA, URA, CNA, the Straits Times) — not carried: invented stories
   under real newsrooms' names.
 Nothing for S41b.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **The Dashboard is the front door** for the studio's roles (1.0's); **Accounting lands on Finance › To do** (FR-040 kept) and has its
   Dashboard first on the rail and the dock.
 - **The logo tile keeps expanding the rail** — the mock (795:22541) wins over 1.0's logo → Dashboard (S16's question).

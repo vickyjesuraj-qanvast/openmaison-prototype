@@ -1,4 +1,4 @@
-// S43B · Honest reads and true demo data (s42/pending-ledger.md › F1, every item but F1-05 — her "fix all the pending things" 2026-10-15).
+// S43B · Honest reads and true demo data (s42/pending-ledger.md › F1, every item but F1-05 — his "fix all the pending things" 2026-10-15).
 // Each fix asserted as the rule it builds, never another round's count:
 //  F1-01 Auto Fill reads the picked file by rule — the Move stage window (Contacted, Met) and Notes: a picture is attached and fills nothing
 //        ("We can’t read pictures yet — type what was said"); a WhatsApp export, call notes or an email PDF fill only the empty fields with what

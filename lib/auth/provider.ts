@@ -3,7 +3,7 @@ import type { Contact } from './model'
 import { serviceSlot } from '@/lib/services/slots'
 
 /*
- * (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/lib/twilio.ts `sendVerification` ·
+ * (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in; 1.0's src/lib/twilio.ts `sendVerification` ·
  * `checkVerification`, src/lib/bypass-otp.ts, and the Qanvast line's auth routes) THE ONE SEAM for a real sign-in provider.
  *
  * The prototype's provider is a stand-in and says so on every page that asks for a code: it sends nothing and takes any six digits. A real
@@ -11,7 +11,7 @@ import { serviceSlot } from '@/lib/services/slots'
  * page, the invitation's page and Your profile's number check all ask it, and nothing else changes:
  *   · `sendCode` — a 6-digit code by SMS to the mobile, or by email to the address.
  *   · `checkCode` — whether the code typed is the one sent. A staff test code for demos (1.0's 72-hour "bypass OTP" set in Platform admin)
- *     belongs inside the real provider's check — Platform admin is out of this build by her call.
+ *     belongs inside the real provider's check — Platform admin is out of this build by his call.
  *   (pending modules S34) The client portal's code step asks it too (app/portal/actions.ts — a client's mobile, the same `sendCode` /
  *   `checkCode`), and with a real provider every code step is held to 1.0's limit per visitor address as well (lib/auth/limit.ts).
  *   · `provision` (optional — the Qanvast line): someone the studio has no member for, known to the provider (a Qanvast company user), becomes

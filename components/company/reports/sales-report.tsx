@@ -24,7 +24,7 @@ import { ReportTable } from './report-table'
 import styles from './sales-report.module.css'
 
 /*
- * (pending modules S45A — H-UHD-1; 1.0's six sales reports, urbanhomedemo 479480a5e · 4da810229; her "build everything and complete it"
+ * (pending modules S45A — H-UHD-1; 1.0's six sales reports, urbanhomedemo 479480a5e · 4da810229; his "build everything and complete it"
  * 2026-10-17, a feature every studio gets) Company › Reports › Leads › **Sales** — the second report beside Response time, built the way the
  * other Reports tabs are (Studio health's ./studio-health-report.tsx): the house tile row, then 1.0's reports as sections, each a table on the
  * listing's model (frozen first column, resizable and draggable heads, Column settings; cards on a phone): By team member (1.0's Rep

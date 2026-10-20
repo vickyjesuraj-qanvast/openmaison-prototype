@@ -20,7 +20,7 @@ import {
 import { workspaceRefusal, offWorkspace } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
- * (pending modules S27 — Hangouts; her "build all of them" 2026-10-11) The studio's side of Qanvast Hangouts — 1.0's studio page (Events ·
+ * (pending modules S27 — Hangouts; his "build all of them" 2026-10-11) The studio's side of Qanvast Hangouts — 1.0's studio page (Events ·
  * Plan · Dashboard · Your meetings, src/app/(main)/qanvast-ops/hangouts/page.tsx, removed from 1.0 on 2026-06-01 though its hooks and routes
  * stayed) in 2.0's shape. Who may: applying, the plan and the studio's page are an Owner's or an Admin's (1.0: the owner); on the day each
  * designer runs their own chats (start · end · take one nobody has), and Owners and Admins run any. Every refusal answers `{ error: <the rule> }`.

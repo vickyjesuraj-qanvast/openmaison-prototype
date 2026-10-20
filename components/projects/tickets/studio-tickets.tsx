@@ -37,7 +37,7 @@ type Open = { ticket: TicketRow; lines: TicketLine[]; team: TicketTeamMember[]; 
  * Opened by the Projects ⋮'s Tickets row (REG-1425 moved it from the header), the Dashboard's Tickets tile, the bell and ⌘K; `?open=` lands
  * on one.
  * (parity map 2026-10-10, UC-047) Filters — Priority · Status · Looks after (the house pattern, live); a Status pick widens the chips to All.
- * (pending modules S46B — her "fix everything" 2026-10-19 after the findability audit, M1; 1.0's Escalations › New Ticket) **New ticket**, in
+ * (pending modules S46B — his "fix everything" 2026-10-19 after the findability audit, M1; 1.0's Escalations › New Ticket) **New ticket**, in
  * the header as the rail's Tasks page carries Add Task (REG-466) — on the empty card while there is none: pick the project (the house picker,
  * the ones this member may not change kept with the rule), then the project tab's own New ticket compose; the new ticket opens in the drawer.
  * `?new=1` opens it (⌘K's Create, 1.0's /escalations/new), `&project=` straight onto that project's compose. Shown only while some project

@@ -1,5 +1,5 @@
 /**
- * (simplify S-10 · Q-07, her "build everything" 2026-10-09; F1 §6.3) Company › Finance › **To do** — what the money needs from you, each with its
+ * (simplify S-10 · Q-07, his "build everything" 2026-10-09; F1 §6.3) Company › Finance › **To do** — what the money needs from you, each with its
  * action on the row. Pure and client-safe: it READS the summaries the server already builds — `costsOf` (lib/finance/costs.ts) for money out,
  * `moneyOf` (lib/projects/money.ts) for money in, `commissionsOf` (lib/finance/commission.ts), the Xero pushes that failed — and adds no number of
  * its own. The screen (components/finance/todo/todo-workspace.tsx) and the tab's count (and the rail's money badge, S-16) read the same rows.

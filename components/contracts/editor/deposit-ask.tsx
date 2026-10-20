@@ -10,7 +10,7 @@ import { money2 } from '@/lib/quotes/math'
 import tick from '@/components/projects/schedule/moment.module.css'
 
 /**
- * (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) Send for digital signature's *Ask for the deposit* — one row for the
+ * (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) Send for digital signature's *Ask for the deposit* — one row for the
  * editor's Send and Preview's: the house tick (the Hand over sheet's Tell row), what the client will be asked for under it — or why it can't be
  * asked for, in the row (never a silent greyed tick). Saved as it is ticked; a refusal puts it back and says why. (invented copy)
  */

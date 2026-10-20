@@ -20,7 +20,7 @@ import { contractorOf } from '@/lib/projects/contractors'
 import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
- * (S45B · H-UHD-2 — her "build everything and complete it" 2026-10-17; 1.0's `/api/projects/[id]/contractors` routes, migration 498) Putting
+ * (S45B · H-UHD-2 — his "build everything and complete it" 2026-10-17; 1.0's `/api/projects/[id]/contractors` routes, migration 498) Putting
  * the studio's contractors on a project: on one of its milestones (the window is the milestone's dates — it follows the schedule) or on dates
  * of its own; Planned · On site · Done; Leader checked; off the project. Who may: the project's team, their Managers, Owners and Admins
  * (`mayChangeProject`, the schedule's own rule) — Leader checked only an Owner, an Admin or a Manager; Marketing never (S45C's `workspaceRefusal`,

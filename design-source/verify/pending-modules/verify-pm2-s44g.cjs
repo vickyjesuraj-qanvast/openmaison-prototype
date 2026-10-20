@@ -1,4 +1,4 @@
-// S44G · a quote template's Text block takes formatting (row NB-08 of s42/sweep-newer-branches-2026-10-15.md; S43D's F2-05) — her ask
+// S44G · a quote template's Text block takes formatting (row NB-08 of s42/sweep-newer-branches-2026-10-15.md; S43D's F2-05) — his ask
 // 2026-10-15 ("fix all the pending things"), every call as recommended. Each build asserted as the rule it makes:
 //  - the block is written with the house rich editor (its dense form for the 320 inspector): Bold · Italic · Underline | Bulleted list ·
 //    Numbered list | Text colour (the kit's four only) | Link — no strikethrough, no alignment; the tools are 36 boxes in one row

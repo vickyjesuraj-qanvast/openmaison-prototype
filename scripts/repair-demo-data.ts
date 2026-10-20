@@ -651,7 +651,7 @@ async function main() {
   await client.execute(`UPDATE quote_templates SET is_default = 1 WHERE id = ? AND NOT EXISTS (SELECT 1 FROM quote_templates WHERE is_default = 1)`.replace('?', `'${sid('Default Quote PDF', 'quote_template')}'`))
   note(`${templates.length} design templates present, one default`)
 
-  /* ── R163 · A quote that went to its client keeps the GST it went out with (S44O — call C3 · UAT rows 282 · 283, as recommended, her UAT ask
+  /* ── R163 · A quote that went to its client keeps the GST it went out with (S44O — call C3 · UAT rows 282 · 283, as recommended, his UAT ask
      2026-10-15) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
      GST is now rounded once per rate (lib/quotes/math.ts `gstOfLines`, 'rate'); every quote already with its client (sent, confirmed or signed)
      was worked out per line. Each one without a stamp gets the rule its stored amount was worked out by — per line, unless its amount is the
@@ -1024,7 +1024,7 @@ async function main() {
      The house style put the studio's address at 16 mm under a signature block that is ~20 mm tall, so the two printed over each
      other on every quote through Default Quote PDF. The preset moved the address to 22 mm in a 36 mm footer; every stored copy of
      that design — the template, its draft, its versions — is moved the same way, and only where it still sits at 16.
-     (S44T — UAT rows 312 · 351, M11, her UAT ask 2026-10-15) …and only on the three templates R31 seeded: no repair writes a studio's own
+     (S44T — UAT rows 312 · 351, M11, his UAT ask 2026-10-15) …and only on the three templates R31 seeded: no repair writes a studio's own
      template — "template adjustments are lost after bug fixes and releases" must never be true. */
   console.log('\nR37 Letter footer geometry')
   {
@@ -4989,7 +4989,7 @@ async function main() {
     note(`moved_by: ${won.rowsAffected} Won move(s) from their project's line, ${rung.rowsAffected} move(s) checked against the bell — assigned_by: ${told.rowsAffected} member(s) checked against the bell, ${direct.rowsAffected} checked against a direct project's creation (rows still unnamed stay so)`)
   }
 
-  /* ── R93 · the signed quotes' lines name who does them (simplify Q-10, her "build everything" 2026-10-09) ────────────────────────────────
+  /* ── R93 · the signed quotes' lines name who does them (simplify Q-10, his "build everything" 2026-10-09) ────────────────────────────────
      New ▾ › Order from the quote groups a signed quote's lines by vendor and makes one Draft PO per ticked vendor. The demo's signed quotes named
      a vendor on one line only, so the dialog had one group. A line with no vendor takes the directory's vendor for its trade (the one the studio
      orders from most — the most POs, then the name) where the directory has one; lines of a trade nobody in the directory does stay unnamed.
@@ -5005,7 +5005,7 @@ async function main() {
     note(`${r.rowsAffected} signed quote line(s) now name their trade's vendor`)
   }
 
-  /* ── R94 · Finance › To do (simplify S-10, her "build everything" 2026-10-09) ────────────────────────────────────────────────────────────
+  /* ── R94 · Finance › To do (simplify S-10, his "build everything" 2026-10-09) ────────────────────────────────────────────────────────────
      An approver's bell row for a PO or an expense waiting opens the To do row they act on now. A stored row keeps the address it was written
      with (the project's Money, or Finance › Expenses), so it moves. Idempotent: a row already on To do is left. */
   {
@@ -5014,7 +5014,7 @@ async function main() {
     note(`${r.rowsAffected} bell row(s) moved to To do`)
   }
 
-  /* ── R95 · the client asks keep their task and order on their own rows (simplify round 2, S-22 — her "fix all the pending things" 2026-10-09) ──
+  /* ── R95 · the client asks keep their task and order on their own rows (simplify round 2, S-22 — his "fix all the pending things" 2026-10-09) ──
      Round 1 kept "this message / ticket made task T and VO V" only as `lead_events` lines (`project_ask_task` · `project_ask_vo`, detail.source ·
      ref · id) — no column existed. Migration 0084 gave `project_messages` and `project_tickets` their `task_id` · `variation_id`, which the ask menu
      now reads. The lines stay (who did it and when; Activity's sentence). Filled from the newest line per ask whose task / order is still there,
@@ -5037,7 +5037,7 @@ async function main() {
     note(`${n} ask link(s) moved onto their message or ticket`)
   }
 
-  /* ── R96 · a member's PayNow (simplify round 2 — F1 §6.9.3, her "fix all the pending things" 2026-10-09) ────────────────────────────
+  /* ── R96 · a member's PayNow (simplify round 2 — F1 §6.9.3, his "fix all the pending things" 2026-10-09) ────────────────────────────
      Germaine and Michelle are the demo's members who are paid back for claims and paid commission: their PayNow is their mobile, as a
      Singapore designer's usually is. Kept bare (eight digits), as Company › Members saves it. Only where none is set. */
   {
@@ -5047,7 +5047,7 @@ async function main() {
   }
 
 
-  /* ── R97 · the 3-D Space Planner's parity round (parity map P-J, 2026-10-10 — her "build everything that's in 1.0") ───────────────────
+  /* ── R97 · the 3-D Space Planner's parity round (parity map P-J, 2026-10-10 — his "build everything that's in 1.0") ───────────────────
      What the round's new pieces need to show on the demo, each backed by its records: (TD-087) SkyOasis keeps two versions — its share's
      (the snapshot as shared on 4 Oct, "Shared with the client") and Germaine's own the day before, the kitchen island not placed yet
      ("Before the kitchen island"); (TD-076) the studio's own template — Dane's "Studio standard — HDB 5-Room", furnished, the studio's walnut
@@ -5110,7 +5110,7 @@ async function main() {
     }
   }
 
-  /* ── R98 · a paused stage says when it picks up (parity map, CP-064 · P-F — her "build everything that's in 1.0" 2026-10-10) ──────────────
+  /* ── R98 · a paused stage says when it picks up (parity map, CP-064 · P-F — his "build everything that's in 1.0" 2026-10-10) ──────────────
      Ryan's Blocked "Electrical & plumbing" (waiting on the supplier's pressure-test sign-off) gets an expected restart four days after the repair
      first runs, local midnight — the client reads "Paused · Resuming around …". No client note is invented. Only where none is set. */
   {
@@ -5120,7 +5120,7 @@ async function main() {
     note(`${r.rowsAffected} paused stage(s) given a restart day`)
   }
 
-  /* ── R99 · commission on the project's Activity (parity map, FB-057 — her "build everything that's in 1.0" 2026-10-10) ──────────────────
+  /* ── R99 · commission on the project's Activity (parity map, FB-057 — his "build everything that's in 1.0" 2026-10-10) ──────────────────
      The demo's asks for another rate (Germaine's approved on Benjamin Han, Michelle's open on Ryan D'Souza) were made before their lines
      existed: each ask gets its `parity_c_commission_asked` line at its own time, an answered one its `parity_c_commission_answered` line at the
      answer's, and a project's own rate (one not made by an ask) its `parity_c_commission_rule` line. detail.ask / detail.rule name the record. */
@@ -5202,7 +5202,7 @@ async function main() {
   }
 
 
-  /* ── R102 · a bookkeeper on the team (parity map P-I — PR-022 · MI-007 · MO-098 · FB-114 · FR-040, her "build everything that's in 1.0"
+  /* ── R102 · a bookkeeper on the team (parity map P-I — PR-022 · MI-007 · MO-098 · FB-114 · FR-040, his "build everything that's in 1.0"
      2026-10-10) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
      1.0 had an Accounting role; 2.0 has it now, and Demo Studio › View as needs someone to be one. Priya Tan keeps the studio's books: in
      Accounting, active, on no lead and no project (so not open to new leads), reporting to nobody, a work address that is the studio's
@@ -5220,7 +5220,7 @@ async function main() {
       FROM members m WHERE m.id = 'priya' AND coalesce(m.is_active, 1) = 1`)
   }
 
-  /* ── R164 · the studio's lead desk (S44O — call C6 · UAT row 313, IDL's "a marketing person sees only lead things"; as recommended, her UAT
+  /* ── R164 · the studio's lead desk (S44O — call C6 · UAT row 313, IDL's "a marketing person sees only lead things"; as recommended, his UAT
      ask 2026-10-15) ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
      2.0 has a sixth role, Marketing (lib/settings/roles.ts), and Demo Studio › View as needs someone to be one. Nurul Huda looks after the
      studio's leads: in Marketing, active, on no lead and no project (so not open to new leads — she hands them out), reporting to nobody, her
@@ -5238,7 +5238,7 @@ async function main() {
       FROM members m WHERE m.id = 'nurul' AND coalesce(m.is_active, 1) = 1`)
   }
 
-  /* ── R103 · a member's one photo (pending modules S01 — Your own profile, her "build all of them" 2026-10-11) ───────────────────────────────
+  /* ── R103 · a member's one photo (pending modules S01 — Your own profile, his "build all of them" 2026-10-11) ───────────────────────────────
      A member's photo is their avatar everywhere and their portrait on the About page — one picture (lib/company/member-photo.ts). A portrait
      set on the About page before S01 (gaps build H kept it in `portal_photo_id` alone) becomes the avatar's look too; a look that carries a
      photo puts its picture on the About page's column. Idempotent: a look that already carries the portrait is left as it is. */
@@ -5252,7 +5252,7 @@ async function main() {
     console.log(a.rowsAffected || b.rowsAffected ? `  ${a.rowsAffected} About portrait(s) made the avatar · ${b.rowsAffected} photo(s) put on the About page` : '  every photo already one')
   }
 
-  /* ── R104 · client links (pending modules S02 — her "build all of them" 2026-10-11) ───────────────────────────────────────────────────────────
+  /* ── R104 · client links (pending modules S02 — his "build all of them" 2026-10-11) ───────────────────────────────────────────────────────────
      A quote's view-only link (`quotes.view_token`) belongs to a quote, never a variation order (approved on its confirmation link), and keeps
      when and by whom it was made. A render shown to the client from Files reaches their Designs through a link of its own
      (`render_share_links.file_id`): that link is live only while the file is shown, and only on the file's own lead. Nothing in the demo
@@ -5265,7 +5265,7 @@ async function main() {
     console.log(a.rowsAffected || b.rowsAffected ? `  ${a.rowsAffected} view-only link(s) cleared · ${b.rowsAffected} Files link(s) stopped` : '  every client link already in step')
   }
 
-  /* ── R105 · contracts leftovers (pending modules S03 — her "build all of them" 2026-10-11) ────────────────────────────────────────────────
+  /* ── R105 · contracts leftovers (pending modules S03 — his "build all of them" 2026-10-11) ────────────────────────────────────────────────
      The signing link's key and window, consent before a member's signature is stamped, the contract value frozen at signing. Every contract
      has a token — one made before this step keeps its id, so the links already in clients' chats keep opening (1.0's tokens arrive the same
      way on a port). A contract out for signature gets its window: the studio's Signing links days from the later of when it was sent and
@@ -5288,7 +5288,7 @@ async function main() {
     console.log(n ? `  ${t.rowsAffected} link key(s) · ${w.rowsAffected + b.rowsAffected} window(s) (${days} days) · ${d.rowsAffected} Draft window(s) cleared · ${c.rowsAffected} signature consent(s) · ${q.rowsAffected} signed total(s)` : '  every contract link, consent and signed total already in step')
   }
 
-  /* ── R106 · quotes leftovers (pending modules S04 — her "build all of them" 2026-10-11) ────────────────────────────────────────────────────
+  /* ── R106 · quotes leftovers (pending modules S04 — his "build all of them" 2026-10-11) ────────────────────────────────────────────────────
      The confirmation link's key, a line's status dropped, the preparer kept at send. Every quote has a confirmation token — one made before
      this step keeps its id, so the links already in clients' chats keep opening (1.0's quote-link tokens arrive the same way on a port). A
      line has no status of its own any more: one the client passed on becomes an optional work they said no to (out of every total, as before),
@@ -5317,7 +5317,7 @@ async function main() {
     console.log(n ? `  ${t.rowsAffected} confirmation key(s) · ${passedGroups.rowsAffected} passed-on line(s) made optional · ${st.rowsAffected} line status(es) back to Pending · ${kept} preparer(s) kept · ${cleared} cleared` : '  every quote’s link key, line and preparer already in step')
   }
 
-  /* ── R107 · leads leftovers (pending modules S05 — her "build all of them" 2026-10-11) ─────────────────────────────────────────────────────
+  /* ── R107 · leads leftovers (pending modules S05 — his "build all of them" 2026-10-11) ─────────────────────────────────────────────────────
      A second client on the lead (testers' L-4): Benjamin Han's wife, Mei Ling Han, is on his household already (round 9's demo) — the lead
      names her as its second client, so Client access reads her as the household she is and new quotes start with her. Idempotent: only a lead
      with no second client is written. Nothing else to seed: the rejected return (Arjun Mehta) demos the appeal, the stage rules read their
@@ -5330,7 +5330,7 @@ async function main() {
     console.log(u?.rowsAffected ? `  ${u.rowsAffected} second client named (Benjamin Han · Mei Ling Han)` : '  every second client already in step')
   }
 
-  /* ── R108 · finance leftovers (pending modules S06 — her "build all of them" 2026-10-11) ───────────────────────────────────────────────────
+  /* ── R108 · finance leftovers (pending modules S06 — his "build all of them" 2026-10-11) ───────────────────────────────────────────────────
      A repeating expense (1.0's "Recurring expense", made to work): the studio's design software is paid every month — Dane's September
      expense (R83) is the series' first one; it repeats every month, so October's was logged on 5 Oct by the rule, as the app logs it (the
      same amount, category and GST; no receipt; Dane's — an Owner's counts at once), and the next one is due on 5 Nov. The first one's words lose
@@ -5361,7 +5361,7 @@ async function main() {
     }
   }
 
-  /* ── R109 · projects leftovers (pending modules S07 — her "build all of them" 2026-10-11) ─────────────────────────────────────────────────
+  /* ── R109 · projects leftovers (pending modules S07 — his "build all of them" 2026-10-11) ─────────────────────────────────────────────────
      Two records put in step with the app's rules. (1) A credit note's entry in Files › Payments IS its paper — its page, printed, is its PDF (the
      invoices' and receipts' rule; Files' Download opens it printing): R82's third step had given the credit notes' entries a stand-in page that
      only named them (R84 makes the notes after R82 has looked, so the second run caught them), so those bytes, their picture and their size go.
@@ -5393,7 +5393,7 @@ async function main() {
     console.log(papers || carried ? `  ${papers} credit note entr${papers === 1 ? 'y' : 'ies'} back to ${papers === 1 ? 'its' : 'their'} paper · ${carried} lead layout(s) carried to their project` : '  every money paper’s entry and every lead’s layout already in step')
   }
 
-  /* ── R110 · setting up a new studio (pending modules S08 — her "build all of them" 2026-10-11) ─────────────────────────────────────────────
+  /* ── R110 · setting up a new studio (pending modules S08 — his "build all of them" 2026-10-11) ─────────────────────────────────────────────
      (1) The first-visit welcome is owed to a member from the moment they are added (Company › Members › Add member) until their first visit.
      Every demo member has long been in the app — they joined before the welcome existed — so none is owed it, and each carries that first
      visit: their earliest trace in the studio (a lead put on them, something they did, a bell row of theirs), else the run day. A member added
@@ -5495,7 +5495,7 @@ async function main() {
     console.log(`  ${note}${held ? ` · ${held} bookkeeping stamp(s) held at now` : ''}`)
   }
 
-  /* ── R112 · inviting your team (pending modules S09 — her "build all of them" 2026-10-11) ───────────────────────────────────────────────
+  /* ── R112 · inviting your team (pending modules S09 — his "build all of them" 2026-10-11) ───────────────────────────────────────────────
      Company › Members › Add member now sends an invitation (`studio_invitations`, 1.0's table; its messages in the outbox). The demo seeds
      none: every demo member came in long ago (R110), so there is nobody to invite — the Invited state appears when a studio adds someone,
      backed by its own invitation and outbox rows. A member added in the app before this step (owed a welcome, never in) gets no invitation
@@ -5509,7 +5509,7 @@ async function main() {
     console.log(`  ${n ? `${n} invitation(s) on record` : 'no invitations yet — the demo’s members all came in before them'}${closed.rowsAffected ? ` · ${closed.rowsAffected} left waiting on a deactivated member, cancelled` : ''}`)
   }
 
-  /* ── R113 · Maison AI's Recent (pending modules S10 — her "build all of them" 2026-10-11) ────────────────────────────────────────────────
+  /* ── R113 · Maison AI's Recent (pending modules S10 — his "build all of them" 2026-10-11) ────────────────────────────────────────────────
      The Ask box keeps what a member asked (`maison_questions`) so the sheet's Recent is there tomorrow. The demo seeds none: a question is the
      member's own words, and a Recent made up for them would claim questions nobody asked — it fills as the studio asks. Kept in step: a question
      whose member is gone goes, and a member keeps their newest 20 (the app's own rule). Idempotent. */
@@ -5521,7 +5521,7 @@ async function main() {
     console.log(`  ${n ? `${n} question(s) in members’ Recent` : 'no questions yet — Recent fills as the studio asks'}${gone.rowsAffected ? ` · ${gone.rowsAffected} of a member no longer there, removed` : ''}${over.rowsAffected ? ` · ${over.rowsAffected} past a member’s 20, removed` : ''}`)
   }
 
-  /* ── R114 · The Price book's waste (pending modules S12 — her "build all of them" 2026-10-11) ───────────────────────────────────────────────
+  /* ── R114 · The Price book's waste (pending modules S12 — his "build all of them" 2026-10-11) ───────────────────────────────────────────────
      1.0 kept a waste factor on an item (price-book-item-editor.tsx, 0–50 %): what an order adds for cuts and breakage. 2.0 keeps it on My Items
      (`price_book_items.waste_pct`) and applies it when a purchase order is made from the signed quote. The demo's two floor finishes carry the
      shares a Singapore studio orders on top: the 600×600 homogeneous tiles 10 % (both vendors), the vinyl 5 % — so Order from the quote on
@@ -5536,7 +5536,7 @@ async function main() {
     console.log(`  ${n} item(s) in My Items with a waste share${tiles.rowsAffected + vinyl.rowsAffected ? ` · ${tiles.rowsAffected + vinyl.rowsAffected} given theirs` : ''}`)
   }
 
-  /* ── R115 · The client portal's foot and faces (pending modules S13 — her "build all of them" 2026-10-11) ────────────────────────────────
+  /* ── R115 · The client portal's foot and faces (pending modules S13 — his "build all of them" 2026-10-11) ────────────────────────────────
      1.0 linked a studio's Privacy · Terms · Contact pages at the foot of every branded portal page (its Studio Profile's Footer Links); 2.0
      keeps them under `settings.portal_links` (Company › Client portal › Privacy and terms). The demo sets none: a privacy notice is the studio's
      own page on its own website, and a made-up address would open nothing — so Getting it live shows the privacy notice as the step still to
@@ -5559,7 +5559,7 @@ async function main() {
     console.log(`  ${shown ? `${shown} link(s) at the foot of the portal` : 'no links at the foot of the portal yet — Getting it live asks for the privacy notice'}${cleaned ? ' · a link that was not a web address, dropped' : ''}${faces.length ? ` · ${faces.length} member look(s) in the portal’s face form, put back` : ''}`)
   }
 
-  /* ── R116 · The studio's registrations, as its brand says (pending modules S14 — her "build all of them" 2026-10-11) ─────────────────────
+  /* ── R116 · The studio's registrations, as its brand says (pending modules S14 — his "build all of them" 2026-10-11) ─────────────────────
      Card held:settings-company: "Demo shows a CaseTrust badge and award while the record says not done — package flagged · her data call",
      taken as recommended (one-home K2b had left it for her). The demo studio wears the CaseTrust "Accredited" badge in its brand kit (it prints
      on its quotes) and its About page names the award "CaseTrust accredited renovation business · 2019"; its HDB badge and Company › Profile
@@ -5593,7 +5593,7 @@ async function main() {
     console.log(`  ${done.length ? `${done.length} registration(s) on record: ${done.join(' · ')}` : 'no registration on record'}${add.length ? ` · ${add.length} recorded as the brand shows them` : ' · already in step'}`)
   }
 
-  /* ── R117 · Each member's own notifications (pending modules S18 — her "build all of them" 2026-10-11; Leads Q-42 · Q-43 opened) ──────────
+  /* ── R117 · Each member's own notifications (pending modules S18 — his "build all of them" 2026-10-11; Leads Q-42 · Q-43 opened) ──────────
      Your profile › Your notifications keeps, on the member, how their emails come (`notice_email` 'daily' = one summary at 8 AM, null = as they
      happen; `notice_email_at` = when they chose it) and what they muted for themselves (`notice_muted`, a JSON list of event keys). The demo's
      members never chose either — every one hears exactly what the studio's rules send, as before — so nothing is written for them. Kept tidy:
@@ -5615,7 +5615,7 @@ async function main() {
     console.log(`  ${daily ? `${daily} member(s) take a daily summary` : 'no member takes a daily summary'} · ${muting ? `${muting} member(s) muted a notice` : 'nothing muted'}${odd.rowsAffected + stray.rowsAffected + tidied ? ` · ${odd.rowsAffected + stray.rowsAffected + tidied} choice(s) tidied` : ''}`)
   }
 
-  /* ── R140 · Meetings and the Meeting Co-Pilot (pending modules S23 — her "build all of them" 2026-10-11) ────────────────────────────────
+  /* ── R140 · Meetings and the Meeting Co-Pilot (pending modules S23 — his "build all of them" 2026-10-11) ────────────────────────────────
      A meeting lives on its lead: a planned one carries its reminder task (`lead_tasks.meeting_id`), a held one IS the Met step's log (its
      entry carries `meetingId`), never a second record. The demo shows both moments, each backed by what the app itself would have written:
        · Kevin Ng (Met) — the first consultation the Met log records (13 Aug, in person) was written up from the studio's notes: the log entry
@@ -5760,7 +5760,7 @@ async function main() {
     console.log(`  ${said.length ? said.join(' · ') : 'every charged render sits on its charge’s day — nothing to move'}`)
   }
 
-  /* ── R119 · A floor-plan photo to make a 3D picture from (pending modules S28 — her "build all of them" 2026-10-11; card
+  /* ── R119 · A floor-plan photo to make a 3D picture from (pending modules S28 — his "build all of them" 2026-10-11; card
      studio:floorplan-isometric-ai) ───────────────────────────────────────────────────────────────────────────────────────────────────
      Farah Ahmad (Contacted — HDB 4-Room at Waterway Sunrise, Punggol; Dane and Sarah on her) answered the studio's first WhatsApp (her contact
      log, 22 Aug 1:45 PM) with a photo of her printed floor plan, and Sarah kept it in her Files › Floor plans when she logged the call, as an
@@ -5816,7 +5816,7 @@ async function main() {
     console.log(`  ${say.join(' · ')}`)
   }
 
-  /* ── R120 · Signing in (pending modules S30 — her "build all of them" 2026-10-11; card onboarding:studio-sign-in) ──────────────────────
+  /* ── R120 · Signing in (pending modules S30 — his "build all of them" 2026-10-11; card onboarding:studio-sign-in) ──────────────────────
      A member signed in on a browser is a `studio_sessions` row (their code checked, 24 hours or 30 days); the demo seeds none — a browser that
      never signed in or out is the demo's own session (lib/auth/paths.ts DEMO_STANDING_SESSION), so the base state needs no row. Kept in step:
      a deactivated member is signed out everywhere (deactivateMember ends their sessions), and a session whose member has gone ends too.
@@ -5828,7 +5828,7 @@ async function main() {
     console.log(`  ${n ? `${n} live session(s)` : 'no live sessions — the demo opens as its own session (Dane)'}${ended.rowsAffected ? ` · ${ended.rowsAffected} session(s) of a deactivated or departed member ended` : ''}`)
   }
 
-  /* ── R121 · A new studio joins (pending modules S31 — her "build all of them" 2026-10-11; card onboarding:studio-sign-up) ──────────────
+  /* ── R121 · A new studio joins (pending modules S31 — his "build all of them" 2026-10-11; card onboarding:studio-sign-up) ──────────────
      A studio that signs itself up is made in a database of its own beside the demo's (`<the demo's file>.studios/<key>.db`, lib/studios/*) —
      its Owner, its empty brand kit, Free with 1.0's welcome AI credits, the record of its making (`studio_origin`) — never in the demo's: the
      demo carries no `studio_origin` (it is the demo, so its studio block keeps the mock's words) and none of a new studio's first records.
@@ -5839,7 +5839,7 @@ async function main() {
     console.log(n ? '  the demo’s database holds a sign-up’s record — see the check below' : '  the demo is the demo — a new studio is made in a database of its own')
   }
 
-  /* ── R122 · OpenMaison's website (pending modules S35 — her "build all of them" 2026-10-11; cards public:marketing-website ·
+  /* ── R122 · OpenMaison's website (pending modules S35 — his "build all of them" 2026-10-11; cards public:marketing-website ·
      onboarding:book-a-demo) ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
      The site's three records — a demo request (`beta_signups`), a contact message (`contact_messages`), a newsletter address
      (`newsletter_subscribers`), 1.0's tables — are made only by a visitor on the site (app/site/actions.ts); the demo seeds none, so a studio
@@ -5852,7 +5852,7 @@ async function main() {
     console.log(n && (n.d || n.c || n.l) ? `  ${n.d} demo request(s) · ${n.c} message(s) · ${n.l} newsletter address(es) — a visitor's, kept as sent` : '  no website records — a visitor makes them on the site')
   }
 
-  /* ── R141 · The Marketplace (pending modules S24 — her "build all of them" 2026-10-11; card studio:marketplace) ──────────────────────────
+  /* ── R141 · The Marketplace (pending modules S24 — his "build all of them" 2026-10-11; card studio:marketplace) ──────────────────────────
      1.0's Marketplace read Qanvast's brand API, which the 1.0 repo no longer has. The studio's copy of the feed is written here the way a real
      feed writes it: the demo catalogue (lib/marketplace/demo.ts — fourteen invented brands in 1.0's eight categories, their deals, products and
      three banners, in the feed's own shape) through the feed's one mapper (lib/marketplace/feed.ts `rowsFromFeed` → `feedStatements`), every
@@ -5903,7 +5903,7 @@ async function main() {
     console.log(`  ${say.join(' · ')}`)
   }
 
-  /* ── R142 · Market Insights (pending modules S25 — her "build all of them" 2026-10-11; card studio:market-insights) ─────────────────────
+  /* ── R142 · Market Insights (pending modules S25 — his "build all of them" 2026-10-11; card studio:market-insights) ─────────────────────
      1.0's Market Insights listed the articles OpenMaison's staff publish in Platform admin's CMS (one platform table, `market_insights`). The
      studio's copy of the editors' feed is written here the way a real feed writes it: the demo's sample articles (lib/market-insights/demo.ts
      — six published in 1.0's four categories, one draft that never reaches the studio) through the feed's one mapper
@@ -5926,7 +5926,7 @@ async function main() {
     console.log(`  ${say.join(' · ')}`)
   }
 
-  /* ── R143 · Team and group chats (pending modules S26 — her "build all of them" 2026-10-11; cards studio:team-chats ·
+  /* ── R143 · Team and group chats (pending modules S26 — his "build all of them" 2026-10-11; cards studio:team-chats ·
      api:messages-free-chats) ─────────────────────────────────────────────────────────────────────────────────────────────────────────
      1.0's Inbox held conversations between the studio's members — one-to-one, named groups, a studio-wide room — beside the clients'. The demo
      shows each, as the app itself writes them (lib/projects/studio-chats.ts · app/chat/actions.ts · sendInConversation):
@@ -6011,7 +6011,7 @@ async function main() {
     console.log(`  ${wrote} row(s) written · ${say.join(' · ') || 'nothing to do'}`)
   }
 
-  /* ── R144 · Hangouts and designers' public profiles (pending modules S27 — her "build all of them" 2026-10-11; cards public:hangouts ·
+  /* ── R144 · Hangouts and designers' public profiles (pending modules S27 — his "build all of them" 2026-10-11; cards public:hangouts ·
      api:designer-portfolio-profiles) ─────────────────────────────────────────────────────────────────────────────────────────────────────
      1.0's Hangouts were Qanvast's events (its own tables, its staff console). The studio's copy of Qanvast's feed is written here the way a
      real feed writes it: the demo's three sample events (lib/hangouts/demo.ts — one that ended three days ago, one today, one in three and a half
@@ -6213,7 +6213,7 @@ async function main() {
     console.log(`  ${say.join(' · ')}`)
   }
 
-  /* ── R145 · The studio's listing on Qanvast (pending modules S37 — her "build all of them" 2026-10-11; cards
+  /* ── R145 · The studio's listing on Qanvast (pending modules S37 — his "build all of them" 2026-10-11; cards
      onboarding:qanvast-listing-verification · studio:verify-listing) ──────────────────────────────────────────────────────────────────────
      1.0 seeded its demo studio `verification_status = 'verified'` with no application behind it (supabase/seeds/022_seed_studios.sql), and
      2.0's demo studio is a Qanvast partner on every page: Qanvast's leads arrive in its Leads, Qanvast Ops lists them and their returns, it
@@ -6245,7 +6245,7 @@ async function main() {
     console.log(`  ${say.join(' · ')}`)
   }
 
-  /* ── R146 · Try the tools without an account (pending modules S41b-3 — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12;
+  /* ── R146 · Try the tools without an account (pending modules S41b-3 — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12;
      the S41b data sweep's M-01; 1.0's deployment/plg anonymous workspace) ─────────────────────────────────────────────────────────────────
      A website visitor's leads, quote read and Quote X-Ray reading are kept in a workspace of their own — 1.0's anon_workspaces, in a database
      file beside the demo's (`<the demo's file>.trial.db`, lib/trial/store.ts), never a studio's — and move into the studio they start
@@ -6323,7 +6323,7 @@ async function main() {
   }
 
   /* ── R124 · An upgrade offer in the bell is its record's live offer (pending modules S41b-4 — the S41b data sweep's M-02, 1.0's plg upgrade
-     nudges; her "build all of them" 2026-10-11) ────────────────────────────────────────────────────────────────────────────────────────
+     nudges; his "build all of them" 2026-10-11) ────────────────────────────────────────────────────────────────────────────────────────
      The Free plan's offers live as one row each in the Owner's bell, kept by `nudge_state.offer_id` (lib/credits/nudges.ts). Honest data
      (REG-343): an offer row nothing stands behind (its record answered or gone), or any offer while the studio is not on Free (1.0's R1 — every
      offer stops on a paid plan or a trial), leaves the bell; a record pointing at a row that is gone lets it go. The demo is on Pro — no row and
@@ -6354,7 +6354,7 @@ async function main() {
     console.log(`  ${n ? `${kelvinLead.rowsAffected + kelvinReg.rowsAffected} of Kelvin Goh’s record(s) → 9336 0518 · ${priya.rowsAffected} Priya Tan → 9641 7305` : 'nothing to mend — each has a number of their own'}`)
   }
 
-  /* ── R170 · Demo Studio's own logo (S42E — call E·5 as recommended, her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md) ──────
+  /* ── R170 · Demo Studio's own logo (S42E — call E·5 as recommended, his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md) ──────
      The brand kit's logo was OpenMaison's mark (R31 seeds the kit from DEFAULT_BRAND), so the public Hangout page, the client portal, the link
      cards and every paper read as OpenMaison's brand in the demo — S27's rule is "the studio's brand, never OpenMaison's". Demo Studio gets a
      mark of its own (public/demo-studio/logo.svg). Only while the kit still holds OpenMaison's mark: a logo the studio chose is kept. Idempotent. */
@@ -6488,7 +6488,7 @@ async function main() {
     console.log(`  ${mended.length ? `${mended.length} project(s) given a member: ${mended.join(' · ')}` : 'nothing to mend — every project has a member'}`)
   }
 
-  /* ── R147 · The demo's month is never a loss (S43B · F1-04 — her "fix all the pending things" 2026-10-15, as recommended; S42 call A·3) ─────
+  /* ── R147 · The demo's month is never a loss (S43B · F1-04 — his "fix all the pending things" 2026-10-15, as recommended; S42 call A·3) ─────
      The Dashboard's "Profit this month" is a calendar month (studios think in months, and A·3 kept it). The fixture's October held one recorded
      invoice (S$648) against two credit notes (2 and 3 Oct, S$1,635) and its costs, so the front door opened on a loss. A restore moves every
      moment by whole days (S42A's demo day, lib/db/demo-day.ts), so money dated ON the demo day is in "this month" on every restore — save one
@@ -6567,7 +6567,7 @@ async function main() {
     }
   }
 
-  /* ── R172 · Every stored piece of rich text through the house allowlist (S44Q — the UAT comments' triage §12.1, her UAT ask 2026-10-15) ────
+  /* ── R172 · Every stored piece of rich text through the house allowlist (S44Q — the UAT comments' triage §12.1, his UAT ask 2026-10-15) ────
      A quote line's or section's description, the quote's Terms and Notes, the T&Cs & Notes library, the Price book's items and saved sections,
      a lead's formatted note, a quote template's Text blocks and the kept versions of quotes were stored as the browser sent them — and drawn as
      raw HTML, on the client's own pages too. Every save goes through the allowlist since S44Q (lib/rich-html.ts) and every render does; this
@@ -6620,7 +6620,7 @@ async function main() {
     console.log(`  ${said.length ? `cleaned: ${said.join(' · ')}` : 'every stored rich text is the allowlist’s already'}`)
   }
 
-  /* ── R173 · A Blank Quote is pinned to the default template's version (S44Q — row 312, triage §12.10 · M11; her UAT ask 2026-10-15) ────────
+  /* ── R173 · A Blank Quote is pinned to the default template's version (S44Q — row 312, triage §12.10 · M11; his UAT ask 2026-10-15) ────────
      A quote started blank kept no template of its own and printed through the default's LATEST design for ever — a template edited after the
      quote went out changed the client's paper (Spaces Studio's "the header band came back"). createQuote pins a new one since S44Q; a quote
      made before (a variation order made from one too) is pinned to the default as it prints today, so nothing it shows changes now and nothing
@@ -6635,7 +6635,7 @@ async function main() {
     }
   }
 
-  /* ── R126 · The printed quote's new records keep their rules (S44T — her UAT ask 2026-10-15, rows 246–364) ──────────────────────────
+  /* ── R126 · The printed quote's new records keep their rules (S44T — his UAT ask 2026-10-15, rows 246–364) ──────────────────────────
      Migration 0111 adds a quote's Remarks, a fixed fee's own word, a section priced after the contract and a name's emphasis — every one empty
      on every row, so nothing a studio has prints differently. Their rules, mended where a write went round them (idempotent): only a section
      at the top of a quote — never a sub-section, never a line, never a variation order's — is priced after the contract; only a fixed row
@@ -6647,7 +6647,7 @@ async function main() {
     console.log(`  ${after.rowsAffected + word.rowsAffected ? `${after.rowsAffected} mark(s) priced-after and ${word.rowsAffected} fixed-fee word(s) taken off rows they can't be on` : 'every mark on a row it belongs to'}`)
   }
 
-  /* ── R162 · the AI Visualizer's sample rooms are the owner's photos (pending modules S43C — her "fix all the pending things" 2026-10-15;
+  /* ── R162 · the AI Visualizer's sample rooms are the owner's photos (pending modules S43C — his "fix all the pending things" 2026-10-15;
      the ledger's F1-05) ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
      The sample photos and the kitchen sketch are the owner's new ones (1.0's 4a51f3522), each room traced again, its looks, relit picture
      and empty plate made by the engine from the photo itself. What the demo kept of the old rooms follows: (a) a sample room's stored
@@ -6743,7 +6743,7 @@ async function main() {
     console.log(`  ${say.length ? say.join(' · ') : 'already in step — the sample rooms are the owner’s photos'}`)
   }
 
-  /* ── R127 · A letter of appointment in the contract library (S44R — UAT row 358, call C7, as recommended — her UAT ask 2026-10-15) ─────
+  /* ── R127 · A letter of appointment in the contract library (S44R — UAT row 358, call C7, as recommended — his UAT ask 2026-10-15) ─────
      Spaces Studio starts a project with a letter of appointment and a deposit: the library holds one, written on the house's fields (the
      Deposit field reads the quote's first payment), with the client's signature at its foot. Seeded once — a studio's edits are kept; never
      the default, never the handover letter. Nothing else changes: Settings › Projects › When a project starts stays "The quote is signed". */
@@ -6788,7 +6788,7 @@ async function main() {
     }
   }
 
-  /* ── R129 · The completion & warranty letter, used at handover (S44R — UAT row 359, call C9, as recommended — her UAT ask 2026-10-15) ─────
+  /* ── R129 · The completion & warranty letter, used at handover (S44R — UAT row 359, call C9, as recommended — his UAT ask 2026-10-15) ─────
      The library holds "Completion & Warranty Letter", written on the Handover fields (the project's number, the completion day, the defects
      period and the day it ends) with the client's "Received by" signature, and marked *Use at handover* — the Hand over sheet offers it.
      Seeded once; marked only while no other template is (one at most — a studio's own pick stands). No letter is sent in the demo: none of its
@@ -6802,7 +6802,7 @@ async function main() {
     console.log(`  ${r.rowsAffected ? `“${COMPLETION_TITLE}” added` : 'in the library'}${marked.rowsAffected ? ' and used at handover' : ''}`)
   }
 
-  /* ── R148 · Contractors on site (S45B · H-UHD-2 — her "build everything and complete it" 2026-10-17; 1.0's `uhd-contractors.sql` and
+  /* ── R148 · Contractors on site (S45B · H-UHD-2 — his "build everything and complete it" 2026-10-17; 1.0's `uhd-contractors.sql` and
      `uhd-sample-projects.sql`, in the demo's own vendors and projects — no sample projects, no second roster) ─────────────────────────────
      Six of Finance › Vendors' trades people are marked as working on site (their trades from the studio's own list, the sites they run at
      once, the studio's code): Woodcraft (Carpentry, one site), Stone & Tile (Hacking · Masonry · Tiling, two), Bright Spark (Electrical, two),
@@ -6902,7 +6902,7 @@ async function main() {
     console.log(`  ${marked} vendor(s) marked as working on site · ${made} place(s) on projects${made || marked ? '' : ' — already in step'}`)
   }
 
-  /* ── R176 · Deleted Leads' demo leads sit inside its 30 days (pending modules S46C · R1 — her "fix everything" 2026-10-19, findability L-1) ──
+  /* ── R176 · Deleted Leads' demo leads sit inside its 30 days (pending modules S46C · R1 — his "fix everything" 2026-10-19, findability L-1) ──
      Deleted Leads now keeps the promise its words make — a lead deleted more than 30 days ago is removed for good (lib/leads/purge.ts
      `purgeExpiredLeads`, run whenever the sheet is read and by the daily sweep). The demo's deleted leads were deleted 46–57 days before the demo
      day, so the sheet would have emptied on its first read. Each keeps its story and its order — Jason Lim (Not a real lead), then Daniel Ong

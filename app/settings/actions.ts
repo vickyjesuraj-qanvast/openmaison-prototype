@@ -17,7 +17,7 @@ async function assertRunsStudio(): Promise<void> {
   const { runsStudio } = await import('@/lib/leads/assign-policy')
   if (!runsStudio((await fetchViewer()).role)) throw new Error('owners and admins only')
 }
-/** (S44O — call C6, her UAT ask 2026-10-15) Settings › Lead management is the lead set-up — Owners, Admins and Marketing change it (the page
+/** (S44O — call C6, his UAT ask 2026-10-15) Settings › Lead management is the lead set-up — Owners, Admins and Marketing change it (the page
     reads the same rule, `runsLeadSetup`). */
 async function assertRunsLeadSetup(): Promise<void> {
   const { fetchViewer } = await import('@/lib/leads/visibility')
@@ -388,7 +388,7 @@ export async function setCostVisibility(patch: { role: string; on: boolean }): P
   return { visibility: next }
 }
 
-/* ── (S44I — M9, UAT rows 350 · 325; as recommended, her ask 2026-10-15) Settings › Quotes & pricing › Units — the Trades card's rules ── */
+/* ── (S44I — M9, UAT rows 350 · 325; as recommended, his ask 2026-10-15) Settings › Quotes & pricing › Units — the Trades card's rules ── */
 /** The studio's unit list, written whole (add · remove · move). Owners and Admins only, as every setter here. */
 export async function setUnits(units: string[]): Promise<string[]> {
   await assertRunsStudio()

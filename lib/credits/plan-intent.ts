@@ -1,7 +1,7 @@
 import type { BillingCycle } from './plans'
 
 /*
- * (S46D — D4, her "fix everything" 2026-10-19; finding D4 · raw T-2 — plg's pricing → sign-up → `/upgrade?plan=` hand-off) The plan a visitor
+ * (S46D — D4, his "fix everything" 2026-10-19; finding D4 · raw T-2 — plg's pricing → sign-up → `/upgrade?plan=` hand-off) The plan a visitor
  * picked on the website rides into the studio: the site's Pricing sends `/sign-up?plan=<key>&period=<monthly|yearly>`; sign-up lands the new
  * studio with the same query; and on any studio page (CreditsHost reads it — 1.0's `/upgrade?plan=` lands on Plan & billing with it too) Plans
  * opens on that plan, then the address is tidied. Free needs no Plans; Max opens Plans with Talk to us over it (Max is arranged with the team).

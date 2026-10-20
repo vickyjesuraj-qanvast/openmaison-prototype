@@ -41,7 +41,7 @@ leads, the books' rule and the confirm before any change stay where they are.
 | held:maison-ai · A model-backed assistant | **Stand-in** — the seam (`readQuestion`) | — |
 | held:maison-ai · Words-only suggestions (Leads listing, Visualizer / Planner homes and editors, Client portal set-up, Plan & AI credits, the AI brief's two) | **Built — each acts** (no "Coming soon" anywhere in Maison AI): listing (S05's three, now shared with Qanvast Ops › Leads), Visualizer home · Planner home · Client portal · Usage · Plan & billing · Qanvast Ops › Studios (asked and answered by rule, two proposed first), the Visualizer and Planner editors (on the page's own state), the brief's "Attach a client review" (says 2.0 keeps no reviews; offers the studio's own finished homes of the type) and "Add to newsletter list" → "Remind me in a year" (2.0 keeps no list); a plain string left anywhere is asked | `components/visualizer/{home/visualizer-home,editor/visualizer-editor}.tsx`, `components/planner/{home/planner-home,editor/planner-editor}.tsx`, `components/company/portal/portal-setup-view.tsx`, `components/company/plan/{usage,billing}-view.tsx`, `components/qanvast/qanvast-{studios,leads}.tsx`, `lib/leads/briefs.ts`, `components/leads/detail/use-lead-maison.ts` |
 | held:maison-ai · Eight editors open an empty sheet | **Built** — EDITOR_LIST (below) | each editor's file |
-| held:maison-ai · The lead brief's copy never signed off (REG-169) | **Kept for her** — two button words changed (flagged invented copy) | — |
+| held:maison-ai · The lead brief's copy never signed off (REG-169) | **Kept for him** — two button words changed (flagged invented copy) | — |
 | note after S04 · the quote editor's Ask box | **Built** — the shared sheet (its Ask box understands its hints in other words) | `components/quotes/editor/{use-quote-maison,quote-editor}.tsx` |
 | note after S05 · the Overview's AI brief suggestions still words-only | **Built** (above) | — |
 | note after S06 · "what repeats" / "stop the rent" | **Built** — the repeating expenses (with about what they cost a month) and Stop repeating proposed first, Undo; a word that names none ("rent" on the demo) lists the ones that do | `answers/money.ts` |
@@ -78,7 +78,7 @@ every editor above, the tool homes and Company pages above, `app/leads/workspace
 (`MaisonAiSheet` — every editor's too · `MaisonAi` the shell's) + `lib/maison-ai.ts` + `lib/maison-ai/` (intents · answer + `answers/*` · when ·
 drafts · history) + `components/shell/maison-plans.ts`; table `maison_questions`.
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Answers by rule now; the model is the developers'** — one seam (`readQuestion`). Free (1.0 never charged a chat question; AI credits Q-30).
 - **Only propose; the member confirms** — 1.0's mAIson wrote at once; 2.0 shows the change with one button, or opens the house form filled in.
   Where the house makes a record the moment its button is pressed (a variation order's Draft), Maison AI proposes it first.
@@ -150,9 +150,9 @@ conversation's name — *a deliberate change of this rule*).
 - **Developers:** a model replaces `readQuestion` (same input, a `Match` out); a speech service for voice; file reading in the box; every
   proposal runs a house server action that re-checks its own rule, so a model can only ever propose.
 
-## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock for a chat; built on the sheet she approved (A4, REG-507) and its answer panel
-   (I-Q18): no new surface. Every new word is flagged invented copy in `reg-S10.md`; two brief buttons' words changed and are flagged for her
-   (REG-169's sign-off is still hers).
+## Principles check (DESIGN-1. **The mock wins, every exception written down** — no mock for a chat; built on the sheet he approved (A4, REG-507) and its answer panel
+   (I-Q18): no new surface. Every new word is flagged invented copy in `reg-S10.md`; two brief buttons' words changed and are flagged for him
+   (REG-169's sign-off is still his).
 2. **One system, no one-offs** — ONE sheet (`MaisonAiSheet`) for the shell and all ten editors; the house field, chips, buttons, rows,
    snackbar-with-Undo; the bars are the answer row's own; the drafts are one copy for every place that drafts; every change runs a house
    action, never a new write path.
@@ -176,9 +176,9 @@ conversation's name — *a deliberate change of this rule*).
     DS buttons; bars are `aria-hidden` (the figure is in the words); Escape closes; the editors' FABs toggle (REG-153).
 - **How to add a missing thing** — one home (the FAB's sheet, on every page; no rail item, no page); shown only when it applies (Recent,
   a proposal only for whoever may make the change, Accounting's own chips); one filled button (the proposal's); nothing to set up..md)
-1. **The mock wins, every exception written down** — no mock for a chat; built on the sheet she approved (A4, REG-507) and its answer panel
-   (I-Q18): no new surface. Every new word is flagged invented copy in `reg-S10.md`; two brief buttons' words changed and are flagged for her
-   (REG-169's sign-off is still hers).
+1. **The mock wins, every exception written down** — no mock for a chat; built on the sheet he approved (A4, REG-507) and its answer panel
+   (I-Q18): no new surface. Every new word is flagged invented copy in `reg-S10.md`; two brief buttons' words changed and are flagged for him
+   (REG-169's sign-off is still his).
 2. **One system, no one-offs** — ONE sheet (`MaisonAiSheet`) for the shell and all ten editors; the house field, chips, buttons, rows,
    snackbar-with-Undo; the bars are the answer row's own; the drafts are one copy for every place that drafts; every change runs a house
    action, never a new write path.

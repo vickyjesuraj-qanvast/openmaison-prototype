@@ -152,7 +152,7 @@ Close it short · Money to verify · trusted proof not checked · Waiting to pus
 | F26 | P&L · Owed to you · You owe · Profitability · Cash flow · Vendor spend · Commissions · Client statement; periods (6); project pick; Export (CSV · XLS · XLSX · PDF); row links; Maison AI (who owes · thinnest margins · open cash flow) | Reports | **kept** (one home for numbers); pickers become two selects on a phone; numbers made to agree (P3) |
 | **Settings** | | | |
 | F27 | Costs: PO approval switch + limit · expense approval · usual terms · PO numbers (prefix, next, digits, year, example) · LeaveGuard · read-only for others | Settings › Finance | same |
-| F28 | Money-in rules: Invoices · invoice numbers by entity · invoice paper · credit notes · client payments | Settings › **Projects** | her call (§6.8): beside Costs in one *Money* module |
+| F28 | Money-in rules: Invoices · invoice numbers by entity · invoice paper · credit notes · client payments | Settings › **Projects** | his call (§6.8): beside Costs in one *Money* module |
 | **On the project** | | | |
 | F29 | Money tab Costs half: New cost ▾ · tiles Committed · Paid · You owe · Profit · Margin · Cash so far · *What the numbers say* · bands (vendor answered, PO awaiting, expenses awaiting, bill overdue) · the three tables | project › Money | the bands become **the same To do rows, filtered to the project** (one component) |
 
@@ -262,7 +262,7 @@ the Leads standard (one list, one primary per row, scope pill, the house table).
 | Purchase orders · Bills · Expenses · Payments out | **Money out** — one tab, a kind switch: *Purchase orders · Bills · Expenses · Paid* | **Money out** (their projects; no *Paid*) |
 | Vendors | **Vendors** (as is) | **Vendors** (as is, no bank) |
 | Commissions | **Commission** (one grouped table) | **My commission** |
-| Accounting | **Xero** (as is, renamed — her word) | — |
+| Accounting | **Xero** (as is, renamed — his word) | — |
 
 Reports › Finance keeps its eight reports. Settings › Finance keeps Costs and Commission (6.8 asks about money-in rules).
 
@@ -323,14 +323,14 @@ What it saves: three tabs, three New buttons and a duplicate *Payments out* tab;
 only while one is open (answered asks fold into the row history); **one grouped table** — a member row (earned · paid · owed, **Pay
 Michelle S$362.21**) that opens to their project rows (share · rate + which rule · earned · paid · owed · ⋮ *Their rate on this project ·
 Remove it · Change the shares*); *Payments* (Reverse). Paying a member pays their owed lines oldest first, one `commission_payouts` row per
-project — a new behaviour (her call, 6.9). **390**: tiles two-up; members as cards with *Pay*; projects inside the card. **Member**: *My
+project — a new behaviour (his call, 6.9). **390**: tiles two-up; members as cards with *Pay*; projects inside the card. **Member**: *My
 commission* — tiles, their projects, *Ask for another rate*, *Paid to you*.
 
 ### 6.6 Xero
 
-Keep the content; name the tab **Xero** (her word). Before Xero is connected, the tab shows the Integrations card's **Connect Xero** in place
+Keep the content; name the tab **Xero** (his word). Before Xero is connected, the tab shows the Integrations card's **Connect Xero** in place
 of a bare door, and after connecting stays here (the connection's home remains Integrations per N-09; this is the door acting, as *Approve
-and send* does elsewhere — her call). Failed pushes also appear in To do › Stuck with *Retry*.
+and send* does elsewhere — his call). Failed pushes also appear in To do › Stuck with *Retry*.
 
 ### 6.7 Reports › Finance (stays the one home for numbers)
 
@@ -344,7 +344,7 @@ and send* does elsewhere — her call). Failed pushes also appear in To do › S
 
 ### 6.8 Settings
 
-Keep Settings › Finance as is. Her call: rename the module **Money** and give it three cards groups — *Money in* (Invoices · invoice numbers
+Keep Settings › Finance as is. His call: rename the module **Money** and give it three cards groups — *Money in* (Invoices · invoice numbers
 by entity · invoice paper · credit notes · client payments, moved from Settings › Projects with Kept-in links back), *Money out* (Costs),
 *Commission* — so every money rule has one home; Settings › Projects keeps schedule, updates, handover, tickets, workload, compliance.
 
@@ -402,7 +402,7 @@ builds (`costsOf`, `moneyOf`, `commissionsOf`, `xeroItems`) — no new numbers.
 - The role rules (F1-Q3, F2-Q8): only Owners and Admins approve and pay; members see their own records and never a total.
 - Reports as the one home for numbers (REG-1361) and Integrations as the home of the Xero connection (N-09) — the proposal only adds doors.
 
-### 6.14 Her calls (to decide before anything is built)
+### 6.14 His calls (to decide before anything is built)
 
 1. **To do as Finance's landing for everyone**, replacing Overview (and for Designers replacing *Purchase orders*).
 2. **Collect rows in Finance** — client invoices overdue / ready / payments to confirm listed (not owned) in Finance, opening the project's

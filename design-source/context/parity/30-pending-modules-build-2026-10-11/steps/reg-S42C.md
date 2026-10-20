@@ -1,7 +1,7 @@
 # S42C · projects, money and the client — register rows (staged; the orchestrator numbers them into REGISTER.md)
 
 The closing audit's package C (`s42/audit-C.md`, C-01…C-27) and its calls C·1…C·5 (`s42/calls-for-vicky.md`), each call fixed **as recommended —
-her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for her review**. C-20 (the demo's ageing moments) is S42A's.
+his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for his review**. C-20 (the demo's ageing moments) is S42A's.
 
 | ID | Area | Decision | Source |
 | --- | --- | --- | --- |

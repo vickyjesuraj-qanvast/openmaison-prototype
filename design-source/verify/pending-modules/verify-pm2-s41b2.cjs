@@ -1,4 +1,4 @@
-// Pending modules, S41b-2 · Old addresses and an app-wide not found (her "please make sure nothing left behind from 1.0 to 2.0", 2026-10-12; the
+// Pending modules, S41b-2 · Old addresses and an app-wide not found (his "please make sure nothing left behind from 1.0 to 2.0", 2026-10-12; the
 // S41b pages sweep's M1 · M2 and the ledger's open items). Each item asserted as the rule it builds, never another round's count:
 //  - M1: every 1.0 studio-app address the sweep lists lands on its 2.0 home — the status of each hop and the final page (200) — signed in; the
 //    landings that name a record carry it (a ticket open, an invoice's paper, a project's view, a milestone's row), and only for a member who
@@ -111,7 +111,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       ['/inbox?chat=8c1d2e3f-1.0-chat', '/chat'],
       ['/inbox/8c1d2e3f-1.0-chat', '/chat'],
       [`/inbox?newChat=91234567&name=Ben&leadId=${BEN_LEAD}`, `/chat?open=${encodeURIComponent(`lead:${BEN_LEAD}`)}`],
-      /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+      /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19) */
       ['/escalations', '/tickets'],
       ['/escalations/new', '/tickets?new=1'],   // (S46A — the findability audit's M1, a deliberate change of this rule) 1.0's New Ticket page → Tickets' own New ticket
       [`/escalations/${TICKET.number}`, `/tickets?open=${TICKET.id}`],

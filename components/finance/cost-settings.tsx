@@ -22,7 +22,7 @@ import u from '@/components/projects/updates/update-review-setting.module.css'
  * (simplify S-15, a deliberate change) The PO numbers went to the module's one *Document numbers* card (INV · RCT · CN · PO, one Save); the
  * card keeps the two approvals, the limit and the terms. Settings › Projects' *What waits for an Owner or an Admin* names the two approvals
  * and links here (S-20) — they are set here only.
- * (S44R — UAT row 361, call C8, as recommended — her UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A third rule on the table: a
+ * (S44R — UAT row 361, call C8, as recommended — his UAT ask 2026-10-15; REVERSES F1-Q10 "bills: no approval") A third rule on the table: a
  * supplier bill over the limit with no PO, or more than its PO by over the tolerance beside the limit, waits for an Owner's or an Admin's OK
  * before it is paid. Its own row and its own field, saved like the rest.
  */

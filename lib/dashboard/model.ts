@@ -1,5 +1,5 @@
 /**
- * (pending modules S22 — cards studio:dashboard · held:dashboard · api:industry-news · public:industry-news-feed; her "build all of them"
+ * (pending modules S22 — cards studio:dashboard · held:dashboard · api:industry-news · public:industry-news-feed; his "build all of them"
  * 2026-10-11 lifted the Dashboard's hold) **The Dashboard** — 1.0's front door (`/dashboard`, its rail's first item, the logo, the dock's Home),
  * rebuilt in 2.0's shape: ONE page that answers **What needs me → What's next → Where it stands** for whoever is signed in, built from what
  * the studio already works out, every row and tile a door into the thing's one home (`?from=/dashboard` where the home has a Back). Nothing

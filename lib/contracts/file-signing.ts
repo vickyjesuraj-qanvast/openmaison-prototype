@@ -1,7 +1,7 @@
 import { CONTRACT_FOLDERS } from '@/lib/leads/file-model'
 
 /*
- * (S46D — D2, her "fix everything" 2026-10-19 after the findability audit, finding D2 · raw P-1 · L-4; FROM-1.0-TO-2.0.md §9 #3) 1.0's
+ * (S46D — D2, his "fix everything" 2026-10-19 after the findability audit, finding D2 · raw P-1 · L-4; FROM-1.0-TO-2.0.md §9 #3) 1.0's
  * *Request signature* on a lead's file (qanvast only — `document-signing-controls.tsx`, its own `/sign/document/<token>` page) is 2.0's
  * Contracts › Import a PDF → Send for digital signature: the file becomes one of the lead's contracts and goes out through the contract's
  * signing link. Files names the way there — *Send for signature* on a file's ⋮ — so a studio that signed loose documents from Files finds it

@@ -84,7 +84,7 @@ export async function tellUpdate(updateId: string): Promise<number> {
   } catch { return 0 }
 }
 
-/* ── (simplify S-21 · Q-13, her "build everything" 2026-10-09) four more moments the client hears of by themselves ──────────────────── */
+/* ── (simplify S-21 · Q-13, his "build everything" 2026-10-09) four more moments the client hears of by themselves ──────────────────── */
 
 /** A choice shared with the client (or shared again after their no) — "A choice to make". Once per share: the share's moment is in the key. */
 export async function tellChoiceShared(selectionId: string): Promise<number> {

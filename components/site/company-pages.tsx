@@ -10,7 +10,7 @@ import p from './pages.module.css'
 
 /*
  * (pending modules S35 — 1.0's story-view.tsx · trust-view.tsx · careers/page-client.tsx) Story, Trust & Security and Jobs, in 1.0's words. Trust's
- * "Region & residency" named four countries; 2.0 serves Singapore (her hold, 2026-10-12). Server-rendered.
+ * "Region & residency" named four countries; 2.0 serves Singapore (his hold, 2026-10-12). Server-rendered.
  */
 
 const TENETS = [

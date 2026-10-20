@@ -70,7 +70,7 @@ export function StartPreview({ data, src, onSkip, startDay, can, blankWords }: {
   const lo = drafts.length ? Math.min(...drafts.map((d) => d.start)) : 0
   const span = drafts.length ? Math.max(...drafts.map((d) => d.end)) - lo + 1 : 1
   const handover = drafts.length ? Math.max(...drafts.map((d) => d.end)) : null
-  /* (S44O — UAT row 297, her UAT ask 2026-10-15) a fixed design fee first is one of the payments — at its amount ("S$3,000 design fee"); the
+  /* (S44O — UAT row 297, his UAT ask 2026-10-15) a fixed design fee first is one of the payments — at its amount ("S$3,000 design fee"); the
      line hid it as a 0% row */
   const pays = s.payments.filter((p) => p.pct > 0 || (p.fixedMinor ?? 0) > 0)
   const payLine = pays.length ? `Payments follow the ${data.start.quote ? 'quote' : 'agreed split'}: ${pays.map((p) => `${payShareWord(p)} ${p.name.toLowerCase()}`).join(', ')}.` : null

@@ -18,7 +18,7 @@ const CHIP_COLOR: Record<ListingState, 'default' | 'green' | 'yellow' | 'blue'> 
 const day = (ms: number) => displayDate(new Date(ms))
 
 /**
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) Company ›
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) Company ›
  * Profile › **Listed on Qanvast** — the one home of the studio's listing (1.0's /verify, reached only by typing it, saved nothing). One state,
  * said plainly, and the one press that moves it on:
  *   · Not applied — Apply to be listed (the application, built from the studio's records — `ListingDialog`);

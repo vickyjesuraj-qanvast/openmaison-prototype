@@ -4,7 +4,7 @@ import type { RefLine } from '@/lib/xray/reference'
 import type { XrayResult, YourLine } from '@/lib/xray/compare'
 
 /*
- * (pending modules S41b-3 — her "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b data sweep's M-01; 1.0's
+ * (pending modules S41b-3 — his "please make sure nothing left behind from 1.0 to 2.0" 2026-10-12; the S41b data sweep's M-01; 1.0's
  * `origin/deployment/plg`: src/lib/anon/{cookie,workspace,quota,registry,surfaces,try-now,claim,claim-on-login}.ts, the materialisers
  * src/lib/anon/materialisers/{leads,quote-digitizer}.ts and the retired quote-xray one, src/app/api/anon/{session,leads,quote-digitizer}/route.ts,
  * src/app/api/cron/{anon-sweep,anon-storage-gc}/route.ts, scripts/migrations/315_anon_workspaces.sql + 316_anon_token_fns.sql, the specs

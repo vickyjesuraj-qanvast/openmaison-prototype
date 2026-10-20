@@ -1,5 +1,5 @@
 /**
- * (pending modules S01 — Your own profile, her "build all of them" 2026-10-11; 1.0's profiles.avatar_url) A member's photo, as their avatar
+ * (pending modules S01 — Your own profile, his "build all of them" 2026-10-11; 1.0's profiles.avatar_url) A member's photo, as their avatar
  * shows it everywhere in the studio. `members.color` has always been the avatar's look — a tint (`#5B7FD7`), or `photo` for the demo's one
  * fixed portrait (REG-329). A member's own photo joins that vocabulary as `photo:<pictureId>|<the look under it>`: the picture is a
  * `studio_pictures` row of kind `member` (served at /company/picture/<id>), and the look under it is what the avatar goes back to when the

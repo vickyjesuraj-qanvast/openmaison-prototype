@@ -12,7 +12,7 @@ import { folderPath, type FileRow } from '@/lib/leads/file-model'
 import { withFrom } from '@/lib/nav'
 
 /**
- * (S46D — D2, her "fix everything" 2026-10-19; finding D2 · raw P-1 · L-4) Files › ⋮ › *Send for signature* — the Files tab's and the file
+ * (S46D — D2, his "fix everything" 2026-10-19; finding D2 · raw P-1 · L-4) Files › ⋮ › *Send for signature* — the Files tab's and the file
  * viewer's one way into Contracts › Import a contract with the file already in it (no upload). Import makes the contract from the file
  * (`createContractDoc` `upload.fromFileId`: the very file when it sits in Files › Contract & VOs, else a copy kept there) and opens its editor,
  * where Send for digital signature goes out on WhatsApp — the quote's *Send for signature* lands in the same place (REG-538). The dialog stays,

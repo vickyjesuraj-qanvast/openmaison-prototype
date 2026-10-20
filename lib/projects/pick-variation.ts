@@ -83,7 +83,7 @@ export async function undoPickVariation(u: NonNullable<PickUndo['vo']>, o: { pro
   await retotal(q.id, () => title)
 }
 
-/* ── (simplify S-21, her "build everything" 2026-10-09) the variation orders a pick drafted — what Money's Needs you says ─────────────── */
+/* ── (simplify S-21, his "build everything" 2026-10-09) the variation orders a pick drafted — what Money's Needs you says ─────────────── */
 
 /** A live variation order drafted from a choice's pick: which choice, which option, who picked it — "{person} chose {option} · Send VO-n". */
 export type PickVariation = {

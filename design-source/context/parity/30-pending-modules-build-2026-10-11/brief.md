@@ -16,7 +16,7 @@ everything is built in a right way."** One step at a time; you build ONE step (y
    (`design-source/REGISTER.md`). The record of the last build is `design-source/context/parity/28-projects-finance-parity-map-2026-10-10/`
    (`build/brief.md` — its "How to add a missing thing" rules apply here word for word).
 
-## How to add a missing thing (her ask: the right way — best UX, least cognitive load, intuitive)
+## How to add a missing thing (his ask: the right way — best UX, least cognitive load, intuitive)
 1. **One home, where people already look.** Join an existing surface (a row, a panel, a ⋮, the list that holds its kind, a Settings card) before
    adding a page; a new page only when the module is a page in its own right (the Dashboard, Meetings, the Marketplace). Doors elsewhere open it
    with `?from=`, never a copy. Check `lib/company/sections.ts` and the rail before adding a rail item.
@@ -31,8 +31,8 @@ everything is built in a right way."** One step at a time; you build ONE step (y
    (as Maison AI's Ask box does, `lib/maison-ai/`), priced through AI credits if 1.0 charged; where a real service is needed (sign-in, SMS, email,
    storage, payments, Xero, an image model) build the screen and the record on an honest stand-in and say so in the outcome — never a fake success.
 6. **Decisions.** Where a card asks the owner something, take the recommendation written on the card (or the obvious, smallest, most 2.0-like
-   answer) and record it in your register rows as "as recommended — her 'build all of them' 2026-10-11". Her standing holds are lifted for the
-   cards she now asked to build (the Dashboard, Meetings, regions…), each in its own step.
+   answer) and record it in your register rows as "as recommended — his 'build all of them' 2026-10-11". His standing holds are lifted for the
+   cards he now asked to build (the Dashboard, Meetings, regions…), each in its own step.
 
 ## Rules for the step
 - You are the only builder running. You MAY run `npx next build`, `next start` on **port 3160 only** (kill it by port when done:
@@ -51,13 +51,13 @@ everything is built in a right way."** One step at a time; you build ONE step (y
   (args `<scratch.db> [shotDir] [base]`, env `BASE`, sqlite3 with `-cmd ".timeout 30000"`, refuses `local.db`, puts back what it changes,
   asserts rules not counts from another round, case-insensitive on uppercase captions, `textContent` for SVG text).
 - Register: `design-source/context/parity/30-pending-modules-build-2026-10-11/steps/reg-<step>.md` as
-  `| REG-<step>.1 | Area | **What** — why (her "build all of them" 2026-10-11; card key; decisions taken as recommended) … *(invented copy: …)* | user-directed |`.
+  `| REG-<step>.1 | Area | **What** — why (his "build all of them" 2026-10-11; card key; decisions taken as recommended) … *(invented copy: …)* | user-directed |`.
   Don't edit `design-source/REGISTER.md` or `CLAUDE.md` (the orchestrator does).
 - Outcome: `…/steps/outcome-<step>.md` — per pending line: built (files) · kept (why) · stand-in · not done (why); decisions taken; what to check
   in the browser (roles: Dane Owner, Hui Min Admin, Germaine / Michelle Designers, Priya Accounting — View as switches; 1440 / 390); probes run
   and their tallies; migration and repair numbers; anything the next steps should know. Final message: 10 lines + the outcome path.
 
-## Her words for the overnight run (2026-10-11): "please make sure nothing is left buggy. Remember our core design principles and intuitive and best user experience definitions to be built by."
+## His words for the overnight run (2026-10-11): "please make sure nothing is left buggy. Remember our core design principles and intuitive and best user experience definitions to be built by."
 Before you write the outcome, review your step against **`DESIGN-PRINCIPLES.md`'s twelve principles** one by one — the mock wins and every
 exception is written down · one system, no one-offs · plain words for studio people · nothing is lost · say why · Back returns where you came from
 · every screen is whole (shell, ghost, empty state, error) · every width is designed (1440 · 1024 · 768 · 390 · 320) · tables follow the leads
@@ -67,7 +67,7 @@ listing · motion with purpose · honest data (every state backed by records) ·
 the browser on the production build (your probe does it), check the page error log is empty, check the ghost matches the page, check 390 and 320
 for sideways overflow against `screen.width`, and fix what you find before you finish — don't hand back a known bug.
 
-## Her words when the build went to two lanes (2026-10-12): "i don't want anything to be missed and absolutely bug free build and remember our core design principles and super good world-class user experience."
+## His words when the build went to two lanes (2026-10-12): "i don't want anything to be missed and absolutely bug free build and remember our core design principles and super good world-class user experience."
 Two lanes changes the speed, never the bar. Before you hand back: every pending line on your card is built, kept with its reason, or a stand-in —
 none silently dropped (list each in the outcome); every new press exercised on the production build; the page error log empty; ghosts match
 their pages at 1440 and 390 touch; no sideways overflow at 390 / 320 against `screen.width`; every principle in DESIGN-PRINCIPLES.md answered in
@@ -84,8 +84,8 @@ hand-written statement does). Use the repair numbers your prompt gives your lane
 restyle shared house pieces (`components/om/*`, the shell, `app/globals.css`) beyond what your card needs — if you must, say so in the outcome
 under "Shared pieces changed".
 
-## Her words 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0"
+## His words 2026-10-12: "please make sure nothing left behind from 1.0 to 2.0"
 Your outcome opens with a **Pending lines ledger**: every `pending` line of your card(s), word for word, each with one status — **built**
-(where) · **kept** (the card's or her reason) · **stand-in** (what is honest about it) · **parked by her** — and no line without one. While you
+(where) · **kept** (the card's or his reason) · **stand-in** (what is honest about it) · **parked by him** — and no line without one. While you
 read 1.0's code for your card, note anything in the same 1.0 folders that no card names (a page, an action, a column, a setting) under
 **Found in 1.0, not on a card** — build it if it belongs to your module, else list it for S41b.

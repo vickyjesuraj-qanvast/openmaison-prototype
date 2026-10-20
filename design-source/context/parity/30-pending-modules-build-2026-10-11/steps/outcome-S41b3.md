@@ -1,7 +1,7 @@
 # S41b-3 · Try the tools without an account, kept at sign-up — outcome (2026-10-14, lane B)
 
 Package: the S41b data sweep's **M-01** (`s41b/sweep-data.md` §3, the `anon/*` route rows, the `anon_workspaces` table, the `anon-sweep` /
-`anon-storage-gc` crons), on her "please make sure nothing left behind from 1.0 to 2.0" (2026-10-12). **Leads, Upload a quote (1.0's Quote
+`anon-storage-gc` crons), on his "please make sure nothing left behind from 1.0 to 2.0" (2026-10-12). **Leads, Upload a quote (1.0's Quote
 Digitizer) and Quote X-Ray open to a website visitor with no account, beside S36's AI Visualizer — one trial home at `/site/try` — on the
 studio's own pieces; what the visitor makes is kept in one anonymous workspace per browser (1.0's `anon_workspaces`, never a studio's
 database) and moves into the studio they start (or sign in to), each piece with its Activity line; 1.0's two sweeps run on S34's scheduler.**
@@ -82,7 +82,7 @@ Register rows: `steps/reg-S41b3.md` (REG-S41b3.1…10). Probe: `design-source/ve
 - **1.0 later withdrew every anonymous model call** (2026-09-22 "signup comes before any model call"; the Visualizer to zero renders on 2026-09-30) — for its own spend; 2.0's tools are rules in the browser, so the trial keeps 1.0's earlier, fuller design. Said for Vicky.
 - **TURNSTILE_DISABLED** (1.0: run without the bot check on purpose) — 2.0's stand-in bot check passes everyone already and the tools are off in a real build until set; not read, so not listed (the first builder had added it to `.env.example` and the registry — taken out).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11, her "nothing left behind" 2026-10-12)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11, his "nothing left behind" 2026-10-12)
 1. **Leads: three, not 1.0's later one.** 1.0 lowered the cap to one on 2026-09-30 only because it then mixed five made-up "(Demo)" leads
    into the visitor's board; 2.0 shows no made-up records, so the reason for one is gone and 1.0's own three (the gated platform as shipped)
    stands — the brief's figure too.

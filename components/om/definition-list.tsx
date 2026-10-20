@@ -13,7 +13,7 @@ import { MSG } from '@/lib/forms'
 import styles from './definition-list.module.css'
 
 /**
- * (pending modules S17 — consistency leftovers, card held:consistency-leftovers, as recommended — her "build all of them" 2026-10-11) A list of
+ * (pending modules S17 — consistency leftovers, card held:consistency-leftovers, as recommended — his "build all of them" 2026-10-11) A list of
  * the studio's own definitions — something every lead carries, with a type, its options, Required and Active, in an order: Settings › Lead
  * management › **Custom fields** (REG-612 · Q-25) and Company › Questionnaire's **Question bank** (REG-612 · Q-21). They were twin components
  * with twin dialogs — the same card table, drag handle, switches, arrows, Edit / Delete and the same Add / Edit form, each copied and each

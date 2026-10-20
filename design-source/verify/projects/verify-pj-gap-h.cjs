@@ -188,7 +188,7 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
     console.log('5 · Projects › Tickets and the search')
     await go(d, '/projects')
     /* (parity P-21 · Q-06, a deliberate change of this rule) Tickets left the header for ⋮, its count in the row; the header's outlined slot is Insights */
-    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — her ask 2026-10-19) */
+    /* (S46 — REG-2524, a deliberate change of this rule: Tickets is a rail place of its own at /tickets, as Tasks is — his ask 2026-10-19) */
     const railTickets = d.locator('[class*="app-rail-module__"] a[href^="/tickets"]')
     ok(await railTickets.count() === 1 && await d.locator('[data-testid="open-tickets"]').count() === 0, 'the rail offers Tickets (no longer a header button or a ⋮ row)')
     await railTickets.click(); await d.waitForURL(/\/tickets/); await settle(d, 1200)

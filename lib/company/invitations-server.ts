@@ -14,7 +14,7 @@ import { readStudioSession } from '@/lib/auth/session'
 import { INVITE_EVENT, channelsFor, inviteEndsAt, inviteMessage, isInviteToken, joinPath, parseChannels, type InviteChannel, type InviteView } from './invitations'
 
 /*
- * (pending modules S09 — her "build all of them" 2026-10-11; 1.0's `/api/invitations/send` · `[token]` (GET · PATCH resend · DELETE cancel) ·
+ * (pending modules S09 — his "build all of them" 2026-10-11; 1.0's `/api/invitations/send` · `[token]` (GET · PATCH resend · DELETE cancel) ·
  * `accept` and auth/verify's auto-accept) Inviting a member, on the server: the invitation's record, its messages through the house outbox, its
  * page's read and the first visit that accepts it. The rules (who may) live in the actions (app/company/members-actions.ts); this module
  * only does what they allow. PRODUCTION: a real provider is the developers' `setDeliveryAdapter` — nothing here changes; sign-in (S30)

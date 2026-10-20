@@ -3,7 +3,7 @@
 Vicky's ask (2026-10-15): "go through the sheet for the UAT comments from row number 246 and below to identify and fix all the UAT comments
 based on our 2.0 experience without any overlaps nor any issues without losing what we have already built … If you have any questions please go
 ahead based on your recommendations." Source: the triage `design-source/context/feedback/05-uat-comments-246-364-triage-2026-10-15.md` (area O,
-§7 M15 · M18, §10 C3 · C6 · C10, §12.13). Every call taken **as recommended — her UAT ask 2026-10-15**. Register rows: `steps/reg-S44O.md`
+§7 M15 · M18, §10 C3 · C6 · C10, §12.13). Every call taken **as recommended — his UAT ask 2026-10-15**. Register rows: `steps/reg-S44O.md`
 (REG-S44O.1…10). Probe: `design-source/verify/pending-modules/verify-pm2-s44o.cjs` (**56 checks, 56 pass**). Shots:
 `design-source/verify/pending-modules/pm2-s44o/`. Migration **`s44o_gst_rule`** (one additive column, `quotes.gst_rule`; generated as 0112 in
 the lane — the landing renumbers it). Repairs **R163** (GST rule stamps) · **R164** (the demo's Marketing member).
@@ -20,7 +20,7 @@ the lane — the landing renumbers it). Repairs **R163** (GST rule stamps) · **
 | **row 313** (IDL, call C6) | A marketing person sees only lead things | **Built** — the Marketing role, everywhere listed in REG-S44O.6…9 (`lib/settings/roles.ts` `MARKETING_PATHS` · `runsLeads` · `runsLeadSetup` · `roleGate` · `homeOfRole`, the pages' server gate `refusesPath`, the lead page, the listing, the stage rule `roleStageBlock`, Settings, Integrations, Reports, Dashboard, ⌘K, Maison AI, the bell, Members, Who may do what, the cost card, the phone dock, the welcome), repair R164 (Nurul Huda). Probe §6. |
 | **row 315 · 336** (M16) | WhatsApp notices | **Already** (triage) — no change; answer below. |
 | **rows 288 · 289 · 333 · 343** | Settings search · theme skins · portal preview · RO-Well | **Already / N/A** (triage) — answers below. |
-| **rows 358 · 359 · 361** (C7 · C9 · C8) | Letter of appointment + deposit · completion letter · approving supplier bills | **Not this package** — the triage's calls C7 / C9 / C8 wait for Vicky (her ask names them later work, "after the quote rows"); nothing in my prompt. Flagged under "For other packages". |
+| **rows 358 · 359 · 361** (C7 · C9 · C8) | Letter of appointment + deposit · completion letter · approving supplier bills | **Not this package** — the triage's calls C7 / C9 / C8 wait for Vicky (his ask names them later work, "after the quote rows"); nothing in my prompt. Flagged under "For other packages". |
 
 ### Sheet answers (for the UAT comments tab)
 
@@ -40,16 +40,16 @@ the lane — the landing renumbers it). Repairs **R163** (GST rule stamps) · **
   signed keeps the figure its client read.
 - **315 / 336, 288, 289, 333, 343** — as the triage's §9 answers (no change).
 
-## Calls taken as recommended (her UAT ask 2026-10-15)
+## Calls taken as recommended (his UAT ask 2026-10-15)
 
 - **C3 GST rounding** — once per rate, for quotes not yet sent; the rule stamped at the first send. **REVERSES** the quote maths' per-line
   GST ("GST = Σ line gst% on what is left", owner 2026-09-11 build plan) for every quote not yet with its client. One reading of "as
   `prepared_json` does": the stamp is taken at the same moment, but — unlike the preparer — never cleared by Revise, so a revision keeps the
   rounding its client already read (a cent's drift between versions would read as a change nobody made).
-- **C6 Marketing role** — as recommended. One reading to confirm with her: "Leads (all, or assigned ones under Who sees leads)". Marketing is
+- **C6 Marketing role** — as recommended. One reading to confirm with him: "Leads (all, or assigned ones under Who sees leads)". Marketing is
   never put on a lead (it hands leads out — the recommendation's "assigning any member"), so "the ones assigned to them" would be none; I read
   it as Marketing seeing the whole pipeline under either rule, as Owners and Admins do (`runsLeads` in `canSeeLead` / `visibleLeadIds` /
-  `canOpenLead`). If she wants Marketing narrowed under "Only the leads assigned to them", Marketing must become assignable to leads first.
+  `canOpenLead`). If he wants Marketing narrowed under "Only the leads assigned to them", Marketing must become assignable to leads first.
   Also within the call: Marketing moves a lead up to Met and never into Quote Sent or Won (those steps carry the quote's amount and the signed
   split); no Messages, Tools, Qanvast Ops or Members page (not lead set-up) — said on the gate.
 - **C10 the email's look** — today's layout approved as it is; only the logo's size and hosting changed.

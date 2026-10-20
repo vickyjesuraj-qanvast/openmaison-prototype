@@ -34,7 +34,7 @@ import fin from '../finance.module.css'
 import money from '@/components/projects/money/money.module.css'
 
 /**
- * (parity map 2026-10-10 — FB-013 · FB-016 · FB-012; her "build everything that's in 1.0 to 2.0 … best user experience, cognitive load") Company ›
+ * (parity map 2026-10-10 — FB-013 · FB-016 · FB-012; his "build everything that's in 1.0 to 2.0 … best user experience, cognitive load") Company ›
  * Finance › **Money in** — Money out's twin, so 1.0's three studio-wide registers (Finance › Operations › Invoices · Receipts · Variation orders)
  * have their one home again: the same toolbar (search · the kind switch · one Status pill, only the statuses present · *Issued by* only with two or
  * more entities · Export), the kind's table on the listing's model (`CreditsTable`, as Money out's are). **Invoices** (number, project, status incl.

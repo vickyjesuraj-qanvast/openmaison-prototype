@@ -98,7 +98,7 @@ unnamed controls.
    really is below nothing, word the tile's line as "Credit notes S$1,635 more than invoiced this month".
 4. **The rail's Projects badge vs the Designer's tile**: for Germaine, the rail says "Projects (3 need attention)" (every project she can
    see) and her tile says "My projects 2 · 2 need attention" on the same screen. Each matches its own scope.
-   *Recommendation:* keep it (different scopes, both doors land on matching lists), unless she wants a Designer's rail badge to count
+   *Recommendation:* keep it (different scopes, both doors land on matching lists), unless he wants a Designer's rail badge to count
    "mine".
 
 ## Walked — surface × role × width

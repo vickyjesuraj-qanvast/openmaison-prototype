@@ -11,7 +11,7 @@ import b from './books.module.css'
 
 /*
  * (gaps build F2 — REG-708's rule) The books tabs' ghosts, each the tab's own shape on the classes the page draws, drawn by FinanceGhost inside
- * Company's frame. (simplify S-10 · S-12 · S-13, her "build everything" 2026-10-09) The Overview became To do (finance-ghost.tsx); Commission is
+ * Company's frame. (simplify S-10 · S-12 · S-13, his "build everything" 2026-10-09) The Overview became To do (finance-ghost.tsx); Commission is
  * three tiles, the table grouped by member (a member's: their projects) and the payments; Xero is its card, then the sync log; Reports (Company ›
  * Reports draws it) is the report chips, the Period select and Export, the head, the tiles and two tables.
  */

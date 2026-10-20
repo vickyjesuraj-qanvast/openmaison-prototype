@@ -1,5 +1,5 @@
 // Pending modules, package S45A · Urban Home Design's Sales reports (H-UHD-1) + the Projects listing's three columns and the Dashboard's widgets
-// (H-UHD-3) — her "build everything and complete it" 2026-10-17, built as features every studio gets (s42/sweep-newer-branches-2026-10-15.md
+// (H-UHD-3) — his "build everything and complete it" 2026-10-17, built as features every studio gets (s42/sweep-newer-branches-2026-10-15.md
 // §2.1; 1.0 urbanhomedemo 479480a5e · 4da810229). Each item asserted as the rule it builds, never a count another round can change:
 //  - one home: Company › Reports › Leads holds two reports, Response time and Sales, picked by chips as Reports › Finance picks its own; the
 //    pick and the range ride in the address; Owners and Admins read Sales, Marketing keeps Response time alone (no chips), anyone else the gate;

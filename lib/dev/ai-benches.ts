@@ -1,5 +1,5 @@
 /*
- * (pending modules S41 — card studio:ai-sandboxes, her "build all of them" 2026-10-11 and "nothing left behind from 1.0 to 2.0" 2026-10-12)
+ * (pending modules S41 — card studio:ai-sandboxes, his "build all of them" 2026-10-11 and "nothing left behind from 1.0 to 2.0" 2026-10-12)
  * 1.0's SEVEN AI SANDBOXES, EACH ACCOUNTED FOR. They were developers' test benches linked from no menu, each calling itself throwaway
  * (src/app/(main)/tools/*-sandbox): what each tried, where 2.0 already does that job (a studio's own page), the harness that checks it in Node,
  * the seam a model would plug into (lib/services/registry.ts), and what was left behind with its reason. The four experiments that only ever

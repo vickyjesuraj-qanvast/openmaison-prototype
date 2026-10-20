@@ -20,7 +20,7 @@ run is identical); shots banked in `design-source/verify/pending-modules/pm2-s11
 | Recreate a template from an uploaded quote — stand-in (three curated PDFs) · developers' lane | **Built by rule (no model)** — a PDF is read for its own words in the browser: paper, the table's columns in its words and order, trade / area grouping, validity, the grand total's words, the house style's marking phrases; the reasons are only what it found; the new template (and the editor's Match) takes it. A photo or a picture-only PDF is matched by its name and says so. No credits (1.0 had no such reader). **The seam for a developer's model: `readLayout(lines…)`** — feed it a picture's OCR lines | `lib/templates/recreate.ts` (`readLayout` · `applyReading` · `parseReading`) · `lib/templates/read-quote-file.ts` · `lib/pdf-text.ts` (`pdfReading`) · `components/company/templates/recreate-dialog.tsx` · `quote-templates-gallery.tsx` · `template-editor.tsx` · `app/company/templates-actions.ts` |
 | 1.0's five cover-page presets | **Built** — Editorial · Magazine split · Minimal · Bold statement · Studio letterhead under the cover's More options › Start the cover from a look; one undo step, "Cover changed to …" with Undo (one line at a time); the photo place is an empty Picture that says so and prints nothing | `lib/templates/covers.ts` · `components/templates/editor/inspector.tsx` (`CoverLooks`, `ImageSource`) · `template-editor.tsx` (`applyCoverLook`) · `inspector.module.css` |
 | Header / footer on chosen pages only | **Kept** (the card's call — 1.0 had the same three choices: every page · first only · after the first) | — |
-| Template comments | **Kept** (held, no button — REG-485, her call) | — |
+| Template comments | **Kept** (held, no button — REG-485, his call) | — |
 | A fixed-amount row in a Payments template | **Kept** (the fee lives on the quote, REG-1563) | — |
 | Maison AI in the template, Tasks, T&Cs, Payments and Schedules editors opens an empty sheet | **Done in S10** (REG-1787 — each editor's own suggestions on the shared sheet); checked again here | — |
 | Invoice and PO paper live in Settings › Finance, not Templates — revisit against the one-home rule | **Kept in Settings › Finance, with a door** (as recommended — one home beside the paper's numbers, rules and live preview; K2a's call stands) — the Brand kit's *Invoices, receipts and purchase orders* door lands on Invoice paper with `?from=` and Back | `brand-kit-view.tsx` |
@@ -32,10 +32,10 @@ behind the sticky header and tab strip; there were two copies of the landing (`u
 (`bringCardIntoView`), which lands a tall card with its title in view. (4) The curated web faces printed in fallbacks on any computer without them
 installed (Fraunces → Georgia on the demo's Showflat Presentation).
 
-## Decisions taken (as recommended — her "build all of them" 2026-10-11)
+## Decisions taken (as recommended — his "build all of them" 2026-10-11)
 - **Should the invoice / PO paper move into Company › Templates?** No — one home stays Settings › Finance (its numbers, money rules and live preview;
-  her K2a call); Templates gets the door. Open for Vicky if she'd rather a Templates tab.
-- **Fonts:** the curated list stays her list (2026-09-17) + Outfit; uploads come in with a licence tick (an honest stand-in — nothing verifies a
+  his K2a call); Templates gets the door. Open for Vicky if he'd rather a Templates tab.
+- **Fonts:** the curated list stays his list (2026-09-17) + Outfit; uploads come in with a licence tick (an honest stand-in — nothing verifies a
   licence; the record keeps who ticked).
 - **An entity's accent** applies to its quotes where the template uses the kit's Accent; a template's own Accent wins (1.0's explicit theme colours
   did); the studio's own entity keeps the kit (its Profile accent is the money papers', as before).
@@ -83,9 +83,9 @@ installed (Fraunces → Georgia on the demo's Showflat Presentation).
   wait for `document.fonts.ready` as the preview does now.
 
 ## Principles check (DESIGN-PRINCIPLES.md)
-1. **The mock wins, every exception written down** — no mock for any of the five; each lives inside a surface she approved (the Brand kit's Fonts
+1. **The mock wins, every exception written down** — no mock for any of the five; each lives inside a surface he approved (the Brand kit's Fonts
    card, the cover's More options, the Recreate dialog, Profile's More details, the door card Profile already uses); every new word is flagged
-   invented copy in `reg-S11.md`; the one look that changes on its own (Fraunces in Showflat Presentation) is flagged for her.
+   invented copy in `reg-S11.md`; the one look that changes on its own (Fraunces in Showflat Presentation) is flagged for him.
 2. **One system, no one-offs** — the card table (REG-727), the house Dialog / bottom sheet, `TextField`, DS `Switch` sm and `Checkbox`, the snackbar
    with Undo and `key`, `Tooltip whenCut`, the door card (`kitLink`), `PortalMenu` field menu; one font list function for every box; one card landing
    for both hash handlers (a copy removed).

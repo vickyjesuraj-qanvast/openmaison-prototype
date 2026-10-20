@@ -20,7 +20,7 @@ import h from './home.module.css'
  * (pending modules S35 — 1.0's src/app/(marketing)/page-client.tsx) The home page, section by section as 1.0 ran it: the statement (the pain,
  * named), the hero with its rotating word and card, the Qanvast lineage, the three pillars, "Beautiful is expected", one login instead of six,
  * the security band, the proof tiles and the closing call. 1.0's words; 2.0's names (the hero's quote card is Upload a quote's, the lead card
- * scores nothing, the Visualizer is spelt 2.0's way) and a fourth proof tile on markets beyond Singapore taken out (her hold, 2026-10-12).
+ * scores nothing, the Visualizer is spelt 2.0's way) and a fourth proof tile on markets beyond Singapore taken out (his hold, 2026-10-12).
  */
 
 /** True only on a desktop (≥1025) — the decorative drifting runs there alone (1.0's useIsDesktop: battery-friendly elsewhere). */

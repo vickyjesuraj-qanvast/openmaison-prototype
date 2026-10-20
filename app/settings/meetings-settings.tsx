@@ -34,7 +34,7 @@ import own from './meetings-settings.module.css'
 import band from './studio-settings.module.css'   // Who may do what's group band: the card table's head band across the row
 
 /**
- * (pending modules S23 — Meetings and the Meeting Co-Pilot; her "build all of them" 2026-10-11, card studio:meetings-copilot ·
+ * (pending modules S23 — Meetings and the Meeting Co-Pilot; his "build all of them" 2026-10-11, card studio:meetings-copilot ·
  * api:copilot-objections-competitors) Settings › **Meetings** — the co-pilot's playbook, 1.0's Accounts › AI & Copilot group as one Settings
  * module, on the house Settings card and the card table (REG-727):
  *   1 · During a meeting — 1.0's nine session switches (one browser's storage there, four off), the studio's here and all on by default;

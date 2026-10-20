@@ -1,5 +1,5 @@
 /**
- * (simplify S-22, her "build everything" 2026-10-09) The client asks — pure and client-safe. Every client message, ticket and floor-plan mark
+ * (simplify S-22, his "build everything" 2026-10-09) The client asks — pure and client-safe. Every client message, ticket and floor-plan mark
  * carries the same three actions (components/projects/threads/ask-menu.tsx): Reply · Make a task · Raise a variation order. The task's title
  * and the variation order's first line take the client's words; the task's description says where they came from ("From Benjamin’s message,
  * 7 Oct"), and the ask keeps its task and order — one each: a second press opens the one already made. The server half is

@@ -1,8 +1,8 @@
 # S42D · AI and design tools — outcome (2026-10-14, lane B)
 
 The closing audit's package D: `s42/audit-D.md` (19 findings, D-01…D-19 — Blocker 0 · Major 2 · Minor 11 · Polish 6) and audit D's calls
-D·1…D·4 (`s42/calls-for-vicky.md`), each call fixed **as recommended — her "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for
-her review** (D·2 is S42B's). Also closed: the older `verify-pm2-s17` failure — "3-D" with a hyphen in S34 / S41 files (REG-1841; A-18 among
+D·1…D·4 (`s42/calls-for-vicky.md`), each call fixed **as recommended — his "build all of them" 2026-10-11; listed in s42/calls-for-vicky.md for
+his review** (D·2 is S42B's). Also closed: the older `verify-pm2-s17` failure — "3-D" with a hyphen in S34 / S41 files (REG-1841; A-18 among
 them). Register rows: `steps/reg-S42D.md` (REG-S42D.1…20). Probe: `design-source/verify/pending-modules/verify-pm2-s42d.cjs` — see *Probes run*.
 Shots: `design-source/verify/pending-modules/pm2-s42d/`. No migration, no repair rule (R147…R159 unused — nothing here needed data).
 
@@ -33,7 +33,7 @@ Shots: `design-source/verify/pending-modules/pm2-s42d/`. No migration, no repair
 
 **Counts:** Major 2 of 2 fixed · Minor 10 of 11 fixed (D-08 is S42B's) · Polish 6 of 6 fixed · the older s17 check fixed.
 
-## Calls fixed as recommended (her "build all of them" 2026-10-11 — listed in s42/calls-for-vicky.md for her review)
+## Calls fixed as recommended (his "build all of them" 2026-10-11 — listed in s42/calls-for-vicky.md for his review)
 - **D·1 — S41's two proposals, both built.**
   - *Download a turning clip* — `components/planner/picture/picture-dialog.tsx`: under the Dollhouse (only — Top-down never turns), one press
     turns the planner's own drawing once in 12 s (`ThreeView spin`) and records it in the browser (`recordCanvas`, S41's) → a WebM (MP4 on

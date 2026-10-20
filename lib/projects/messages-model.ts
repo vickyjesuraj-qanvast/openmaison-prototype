@@ -22,12 +22,12 @@ export function firstWords(body: string, max = 80): string {
   return one.length > max ? `${one.slice(0, max - 1).trimEnd()}…` : one
 }
 
-/* ── (parity map 2026-10-10 — her "build everything that's in 1.0", UC-064 · UC-066 · UC-067 · UC-069 · UC-070) ──────────────────────
+/* ── (parity map 2026-10-10 — his "build everything that's in 1.0", UC-064 · UC-066 · UC-067 · UC-069 · UC-070) ──────────────────────
    More than one conversation, more than photos. Pure and client-safe. */
 
 /** (UC-064) Whose conversation: the client's side with the team (`client`, a project's — the household reads it), the team's own (`team`, a
     project's — the client never sees it), or a lead's before Won (`lead` — the lead invited to the portal writes from their page). */
-/** (pending modules S26 — her "build all of them" 2026-10-11, cards studio:team-chats · api:messages-free-chats) two more, both the studio's
+/** (pending modules S26 — his "build all of them" 2026-10-11, cards studio:team-chats · api:messages-free-chats) two more, both the studio's
     alone: a lead's own Team conversation before Won (`lead-team` — its team talks it through; once Won the project's Team conversation carries
     it on, its lines first), and a conversation among the studio's members (`chat` — two members, a named group, or the studio's room every
     member reads). A client never reads either: the portal builds its own keys (`client` · `lead`) and never parses one it is sent. */

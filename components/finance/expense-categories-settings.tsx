@@ -26,7 +26,7 @@ const theExpenses = (n: number) => (n === 1 ? 'the expense' : `the ${expensesWor
 const countOf = (counts: Record<string, number>, name: string) => Object.entries(counts).reduce((t, [k, n]) => t + (k.toLowerCase() === name.toLowerCase() ? n : 0), 0)
 
 /**
- * (pending modules S06 — card `held:finance`, her "build all of them" 2026-10-11; 1.0's Accounts › Expense Categories) Settings › Finance ›
+ * (pending modules S06 — card `held:finance`, his "build all of them" 2026-10-11; 1.0's Accounts › Expense Categories) Settings › Finance ›
  * Money out › **Expense categories** — the list an expense is logged under, on the Trades card's grammar (REG-561 · REG-647): a token per
  * category (press it to rename or move it — the expenses logged under it and its Xero account follow), its remove with Undo (the expenses already
  * logged keep it; new ones can't pick it), and *Add a category*. Written at once; a refusal puts the list back and says why. Owners and Admins

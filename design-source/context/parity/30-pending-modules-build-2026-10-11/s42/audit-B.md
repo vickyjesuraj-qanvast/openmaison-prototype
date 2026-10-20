@@ -77,7 +77,7 @@ none is. (4) The Lead stages card **ignores Who sees leads**.
    window is open and switching to the date once it has passed. Appeals stay display-only, as S05 decided.
 4. **S21's flag: the PDF reader for Create Quote › Upload a quote, the VO upload and the schedule's quote.** Recommend reading PDFs by rule
    there too and charging the 5 credits only when a model reads. A rule read costs the studio nothing, and 1.0 charged for the model.
-5. **B-15, Draft with Maison AI's quantities.** Recommend reading "6 downlights" as 6. Say if she'd rather keep "always 1, set it on the
+5. **B-15, Draft with Maison AI's quantities.** Recommend reading "6 downlights" as 6. Say if he'd rather keep "always 1, set it on the
    quote".
 
 ## Walked — every surface × role × width covered

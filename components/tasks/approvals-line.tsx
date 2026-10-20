@@ -10,7 +10,7 @@ import note from '@/components/company/read-only-note.module.css'
 import styles from './approvals-line.module.css'
 
 /**
- * (pending modules S46C · M3 — her "fix everything" 2026-10-19 after the findability audit, finding L-2) 1.0's Owners approved from Tasks ›
+ * (pending modules S46C · M3 — his "fix everything" 2026-10-19 after the findability audit, finding L-2) 1.0's Owners approved from Tasks ›
  * Approvals; 2.0 gathers every approval on the Dashboard's *Needs your OK*. The rail's Tasks page says so, in one line at its top, while any
  * waits for this member — the number is the Dashboard's own (`countApprovalsWaiting`), the door opens it with the way back. Never at 0, never
  * for a member nothing waits on. The house info strip's look (the read-only line, components/company/read-only-note.module.css).

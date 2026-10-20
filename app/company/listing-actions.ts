@@ -16,7 +16,7 @@ import {
 import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace's role rule
 
 /*
- * (pending modules S37 — her "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) Company ›
+ * (pending modules S37 — his "build all of them" 2026-10-11; cards onboarding:qanvast-listing-verification · studio:verify-listing) Company ›
  * Profile › Listed on Qanvast. Owners and Admins only (1.0's /verify was the owner's; the Profile's rule, REG-646) — every action asks the
  * signed-in member and answers a refusal as `{ error: <the rule> }`. A file travels inside one object (the house rule for long strings).
  * One application waits at a time; sending writes the record first, then the seam (a real service's refusal takes it away again, said).

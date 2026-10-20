@@ -1,9 +1,9 @@
 # S46C · what a 1.0 user can't find, fixed — M2 · M3 · H2 · H4 · R1 — outcome (2026-10-19, lane C)
 
-Her ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed", after the findability
+His ask (19 Oct): "Please go ahead and fix everything and make sure every pixel, feature and functionality is fixed", after the findability
 audit (`design-source/context/parity/31-findability-audit-2026-10-19/`). Package S46C (`s46/plan-2026-10-19.md`) = M2 (Settings → Your
 profile) · M3 (approvals on Tasks) · H2 (the Leads rail count) · H4 (District search, the mail link, the phone, Upcoming) · R1 (Deleted Leads'
-30 days, archived leads in the port). Her two open calls in this package (R1, H2) are taken **as recommended**, as the plan says. Built in lane C
+30 days, archived leads in the port). His two open calls in this package (R1, H2) are taken **as recommended**, as the plan says. Built in lane C
 (port 3175). Register rows: `steps/reg-S46C.md` (REG-S46C.1…10). Probe: `design-source/verify/pending-modules/verify-pm2-s46c.cjs` + its pure
 half `pm2-s46c-pure.mts`. **No migration. Repair R176** (the demo's deleted leads inside the 30 days — R174 · R175 left for the other lanes;
 renumber at landing if one collides).
@@ -14,13 +14,13 @@ renumber at landing if one collides).
 |---|---|---|---|
 | M2 | "A 'Your own settings → Your profile' line at the head of Settings" (N-3 · L-6) | **built** | `app/settings/module-head.tsx` — every module's head, every role: "Your own details, signature and notifications:" + **Your profile** (`/profile?from=<the module>`; Back says *Back to Settings* and returns to that module). One component, so all seven modules (Roles & access · Lead management · Meetings · Projects · Quotes & pricing · Finance · Notifications) carry it; the ghost too (`settings-ghost.tsx`). The ⌘K words "my settings" are S46A's. |
 | M3 | "On Tasks, a line '3 approvals wait for you → Dashboard'" (L-2) | **built** | `components/tasks/approvals-line.tsx` on `/tasks` above the toolbar; the number is the Dashboard's own Needs your OK (`countApprovalsWaiting` → `fetchDashboard`); *Open Dashboard* → `/dashboard?from=/tasks`; never at 0 (a Designer / Accounting / Marketing with nothing to approve: no line). Ghost: reveal from the count, loader from `om.shape.tasks.approvals.n`, first visit from the seed `tasks.approvals`. The ⌘K words "approve · approvals" are S46A's. |
-| H2 | "Decide whether Leads counts the viewer's unseen new leads" (N-6) | **built** (her call as recommended) | `railBadges` `'/leads'` (`countUnseenLeads`: `seen_at` null — the band and the Unseen scope — on leads the viewer sees); rail + phone dock, "Leads (n new)", 99+, lands on `/leads?scope=unseen` while it counts (T5); Marketing counts, Accounting has no item. Opening the lead clears it from anywhere (`markLeadSeen` from the lead's page, `app/leads/[id]/overview.tsx`). |
+| H2 | "Decide whether Leads counts the viewer's unseen new leads" (N-6) | **built** (his call as recommended) | `railBadges` `'/leads'` (`countUnseenLeads`: `seen_at` null — the band and the Unseen scope — on leads the viewer sees); rail + phone dock, "Leads (n new)", 99+, lands on `/leads?scope=unseen` while it counts (T5); Marketing counts, Accounting has no item. Opening the lead clears it from anywhere (`markLeadSeen` from the lead's page, `app/leads/[id]/overview.tsx`). |
 | H4a | "District isn't searchable" | **built** | `app/leads/workspace.tsx` — the search matches `leads.area` (the District column already marked it). |
 | H4b | "the email isn't a mail link" | **built** | `components/leads/detail/info-column.tsx` — a `mailto:` link at every width, *Copy email* kept; the project's info column alike (one piece). |
 | H4c | "the phone calls only on touch" | **kept** — a recorded rule | REG-746: on a touch screen the number is a `tel:` link; a mouse keeps plain text + Copy (a desk can't place a call — REG-1566's grammar "on a touch device it dials; at a desk it copies"). Probed both ways. |
 | H4d | "Tasks has no *Upcoming* filter" | **built** | `components/leads/tasks/lead-tasks.tsx` — the *Upcoming* to-do chip (1.0's `plannedDate > today`: open, due after today) on **My Tasks** and the Unassigned scope, where Unassigned isn't — All / Studio Tasks keep Overdue · Due today · Unassigned, so a row never holds four; `?due=upcoming` lands on My Tasks with it on. |
-| R1a | "Make the trash's sentence true or remove it" | **built** (made true — her call as recommended) | `lib/leads/purge.ts` `purgeExpiredLeads` (+ `splitKept`, Delete Forever's rule shared, `LEAD_TRASH_DAYS = 30`); `lib/services/sweep.ts` job `deleted-leads` (`/api/cron/deleted-leads`, daily 03:00, and inside `/api/cron/run`); lazily in `fetchDeletedLeads` (every listing load). Records what Delete Forever records — nothing beyond the removal. Repair **R176**: the demo's eight deleted leads (46–57 days old) now 25 · 19 · 14 days back, moving with the demo day. |
-| R1a′ | "Check the other trash sheets' promises" | **checked — nothing to fix** | Deleted Quotes · Contracts · Files · the template libraries promise no removal (their Delete forever confirms are true on the press); Deleted Projects says "stay here until they are deleted forever" (true — no purge). Only the leads' promised a time. *Found on the way:* the import Review sheet's "Merge can be undone for 30 days" (mock copy, REG-63) has no undo — a promise, not a removal; flagged in REG-63 since day one, left for her. |
+| R1a | "Make the trash's sentence true or remove it" | **built** (made true — his call as recommended) | `lib/leads/purge.ts` `purgeExpiredLeads` (+ `splitKept`, Delete Forever's rule shared, `LEAD_TRASH_DAYS = 30`); `lib/services/sweep.ts` job `deleted-leads` (`/api/cron/deleted-leads`, daily 03:00, and inside `/api/cron/run`); lazily in `fetchDeletedLeads` (every listing load). Records what Delete Forever records — nothing beyond the removal. Repair **R176**: the demo's eight deleted leads (46–57 days old) now 25 · 19 · 14 days back, moving with the demo day. |
+| R1a′ | "Check the other trash sheets' promises" | **checked — nothing to fix** | Deleted Quotes · Contracts · Files · the template libraries promise no removal (their Delete forever confirms are true on the press); Deleted Projects says "stay here until they are deleted forever" (true — no purge). Only the leads' promised a time. *Found on the way:* the import Review sheet's "Merge can be undone for 30 days" (mock copy, REG-63) has no undo — a promise, not a removal; flagged in REG-63 since day one, left for him. |
 | R1b | "Land 1.0's archived leads somewhere honest (Lost, 'Archived in 1.0')" | **built** (developers' port; nothing visible) | `lib/port/archived-leads.ts` (pure): Lost + one Lost stage log, reason "Archived in 1.0", at `archived_at`, by the archive's activity-log member; never `deleted_at`; a lead already Lost keeps its own log, a lead with a project stays put; a system reason, never in `lead_reasons`. Map 02 §2's `archived_at` row corrected. FROM-1.0-TO-2.0.md's lines are the orchestrator's (below). |
 
 ## Built on the way (bugs found while building — fixed, not noted)
@@ -32,13 +32,13 @@ renumber at landing if one collides).
 - **The phone's dock and More sheet read the rail's badges their own way** — Accounting's and Marketing's dock *Tasks* said "need attention"
   and opened every task; More › Tasks opened every task. One rule now (`badgeHref` · `badgeLabel`), REG-S46C.4.
 
-## Calls taken as recommended (her "fix everything", 2026-10-19)
+## Calls taken as recommended (his "fix everything", 2026-10-19)
 
 - **M2 for every role**, not only those who can't change the rules: an Owner looks for their own signature too, and one line is cheaper than a
   rule about who sees it. The *Kept in Company:* grammar (words, then the door), right under those links.
 - **M3's number is the Dashboard's Needs your OK** (the group label's count), read through `fetchDashboard` itself — the two pages can never
-  say different numbers. Note for her: the Dashboard counts *places* (a row per project, per library, Finance's To do), so "5 approvals" can
-  stand for more asks inside them; the line follows the Dashboard rather than counting differently. If she'd rather both count asks, it is
+  say different numbers. Note for him: the Dashboard counts *places* (a row per project, per library, Finance's To do), so "5 approvals" can
+  stand for more asks inside them; the line follows the Dashboard rather than counting differently. If he'd rather both count asks, it is
   the Dashboard's group label to change (S46B's file) and the line follows by itself.
 - **M3's line is the house info strip** (the read-only line's tint — what Settings uses to tell a member something about the page), the door at
   its end; no chip in the to-do row (those narrow the list; this leaves it). Cost: `/tasks` now reads the Dashboard (≈0.3 s on the demo, inside
@@ -104,7 +104,7 @@ renumber at landing if one collides).
   → add "removed for good after 30 days (`purgeExpiredLeads`, the sweep's `deleted-leads`)". §9/services: the sweep's job list gains
   `deleted-leads` (daily, `/api/cron/deleted-leads`) — `design-source/context/parity/30-…/services.md` lists the cron routes.
 - **Orchestrator — the landing:** run `npm run db:repair` (R176) on `local.db` **before anyone opens `/leads`**, then `npm run db:baseline`:
-  her local.db still has the demo's deleted leads 46–57 days old, and the first read of Deleted Leads would remove them for good (a Reset to base
+  his local.db still has the demo's deleted leads 46–57 days old, and the first read of Deleted Leads would remove them for good (a Reset to base
   brings them back too, once the baseline is re-taken after R176).
 - **S46A (⌘K):** M2's words ("my settings", "personal settings") on Your profile, and M3's ("approve", "approvals") on the Dashboard, as the
   plan says. Nothing of mine in `lib/global-search/*`.
