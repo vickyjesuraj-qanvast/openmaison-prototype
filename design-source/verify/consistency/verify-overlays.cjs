@@ -90,7 +90,9 @@ const menuPick = async (page, button, item) => {
   await tryFlow('Move to folder', async () => {
     const row = page.locator('[data-kb-row]').filter({ visible: true }).first(); await row.hover(); await page.waitForTimeout(200)
     await row.locator('[data-kb-select] input, [data-kb-select] [role="checkbox"], [data-kb-select]').first().click({ force: true }); await page.waitForTimeout(400)
-    await page.getByRole('button', { name: /^Move/ }).filter({ visible: true }).first().click(); await check(page, 'Move to folder', { shot: 'o11-move-to-folder' }); await esc(page, 2)
+    // (landing 2026-10-23) the bulk bar's own Move to Folder — /^Move/ alone found the lead header's "Move to Contacted" first, which opened the
+    // Move stage window (and passed for it); since REG-2655 an unowned lead's move refuses, so the press must be the bar's
+    await page.getByRole('toolbar', { name: /selected/ }).getByRole('button', { name: 'Move to Folder' }).click(); await check(page, 'Move to folder', { shot: 'o11-move-to-folder' }); await esc(page, 2)
   })
   await tryFlow('File viewer panel', async () => {
     await page.goto(`${BASE}/leads/${FLEAD}/files/${FILE}`, { waitUntil: 'networkidle' }); await page.waitForTimeout(1200)

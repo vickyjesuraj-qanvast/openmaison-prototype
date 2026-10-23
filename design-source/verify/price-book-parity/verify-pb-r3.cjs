@@ -198,7 +198,7 @@ const addBox = async (page, text) => { const a = page.getByRole('combobox', { na
     const menu = await rowMenu(page, HAUL, 'Haulage and debris disposal')
     await menu.getByRole('menuitem', { name: /^Add Item/ }).click(); await page.waitForTimeout(200)
     // REG-773 (UX audit Q7) · (S44I, B6 — a deliberate change of this rule) the row menu's "From Price book…" opens the Price book modal with the row's place
-    await page.getByRole('menu').last().getByRole('menuitem', { name: /^From Price book/ }).click(); await page.waitForTimeout(800)
+    await page.getByRole('menu').last().getByRole('menuitem', { name: /^Add from Price book/ }).click(); await page.waitForTimeout(800)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
     ok('the popover says where the pick lands', /goes in below “Haulage and debris disposal”/.test(await page.getByRole('dialog', { name: 'Price book' }).innerText()))   // (sweep S5 #13)
     await shot('08-lands-below')
     await page.locator('[data-testid="book-item"]:has-text("Electrical point, new")').first().click(); await page.getByRole('button', { name: 'Add 1 item' }).click(); await page.waitForTimeout(1800)

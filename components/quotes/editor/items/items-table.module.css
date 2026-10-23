@@ -40,8 +40,8 @@
 .wrap[data-row-drag] .row:not([data-dragging]) { transition: transform 160ms ease; }
 .wrap[data-row-settle] .row[data-dragging] { transition: transform 160ms ease; }
 .row[data-dragging][data-drop-depth='0'] .colItem { padding-left: var(--om-spacing-4); }
-.row[data-dragging][data-drop-depth='1'] .colItem { padding-left: var(--om-spacing-8); }
-.row[data-dragging][data-drop-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
+.row[data-dragging][data-drop-depth='1'] .colItem { padding-left: var(--om-spacing-10); }
+.row[data-dragging][data-drop-depth='2'] .colItem { padding-left: calc(var(--om-spacing-15) + var(--om-spacing-2)); }
 .wrap[data-row-drag] .kebab, .wrap[data-row-drag] .edgeAdd, .wrap[data-row-drag] .edgeLine { opacity: 0 !important; pointer-events: none !important; }
 .wrap[data-row-drag] .row:hover .cell { background-image: none; }
 /* (REG-573) A row that just arrived — added, pasted, duplicated, moved, dropped — pulses once so the eye finds it. */
@@ -90,7 +90,10 @@
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
-.wrap[data-more] .colTotal { box-shadow: var(--om-shadow-frozen-column-mirrored); }   /* (sweep S1 #32) the listing's frozen-column shadow (REG-286) */
+/* (REG-2530) The frozen blocks' shadow rides a strip the cell's height, clipped at its top and bottom: a cell's own box-shadow blurred 3px up
+   and down onto every row's rule, so the rules read darker across ITEM and TOTAL than in the columns between */
+.colItem::after, .colTotal::after { content: ''; position: absolute; inset: 0; pointer-events: none; transition: box-shadow var(--motion-toggle); }
+.wrap[data-more] .colTotal::after { box-shadow: var(--om-shadow-frozen-column-mirrored); clip-path: inset(0 0 0 -8px); left: -4px; }   /* the strip starts at the 4px rule, as the shadow did; (sweep S1 #32) the listing's frozen-column shadow (REG-286) */
 
 /* Selection cell: drag_indicator · add · checkbox, 20px glyphs 4 apart (1260:31254). */
 .handle, .plus, .foldAll, .bucketAdd {
@@ -149,14 +152,19 @@
 /* While the row is active the clamp keeps its lines but goes invisible and the 24px field sits over its first line — so a
    two-line row stays 80 and nothing jumps (owner 2026-09-15: "while editing … there is some UI jerk"). */
 .row[data-active] .descText { visibility: hidden; }
-/* A group row: cards glyph after the name, the fold chevron at the cell's right, a 4px tertiary-blue bar down the cell's left edge (1260:31364). */
-.groupBar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--om-color-tertiary-blue-default); }
+/* A group row: cards glyph after the name, the fold chevron at the cell's right. (REG-2525) No 4px bar down the cell's left edge any more —
+   the band and the tree's guides say it's a section. */
 .groupTag { display: inline-flex; flex-shrink: 0; }   /* the DS Tag "Group" after the name (REG-445) */
 .groupCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }   /* "3 items" after the Group tag (REG-463) */
-.fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); margin-left: auto; }   /* flush with the text column, 16 from the cell edge (1260:31357) */
+/* (REG-2526, the team's sections prototype) The fold leads a section's row: a 28 box (the guide's level sits under its middle), 8 to the
+   name, the glyph turned −90° while folded. */
+.fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; margin-right: calc(-1 * var(--om-spacing-1)); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
+.fold > * { transition: transform var(--motion-toggle); }
+.fold[data-folded] > * { transform: rotate(-90deg); }
+.row[data-group]:not([data-child]) .colItem { padding-left: var(--om-spacing-3); }   /* a top section's fold at 12, its middle over the lines' guide */
 .fold:hover { background: var(--om-color-hover-08p); }
 /* A child row (1260:31402): 32 inset, the eye that opens the visibility menu. (S44I, B11) No tint and no bar — the guides draw the tree. */
-.row[data-child] .colItem { padding-left: var(--om-spacing-8); }
+.row[data-child] .colItem { padding-left: var(--om-spacing-10); }   /* (REG-2526) 28 a level, as the prototype's tree: 40 · 68 */
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
 
@@ -195,6 +203,7 @@
    instead a primary line") — drawn around the text with negative margins so the row keeps its 72 and nothing shifts. */
 .input[data-name] { font: var(--om-type-subheading-m); height: 20px; width: auto; flex: 0 1 auto; max-width: 100%; field-sizing: content; }   /* the name's own 20 line: 20 + 4 + 16 in the 72 row */
 .input[data-name]:focus { height: 24px; margin: -2px calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2); border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); background: var(--om-color-surface-default); }
+.input[data-name]:focus { flex: 1 1 0; min-width: 0; field-sizing: fixed; margin-right: var(--om-spacing-1); }   /* (REG-2537) the box's −8 right margin let it run into the eye: 8 clear of what follows (4 + the row's 4 gap) */   /* (REG-2528) while typing the box takes the name line's free width; the tags and the eye wait at its end */
 /* The description field: hidden at rest (the clamp above shows), the 24px box over the clamp's first line while the row is active.
    (owner 2026-09-17, REG-482: "alignment of the add description needs to align to the item input") The box bleeds 8 into the cell's
    padding on both sides exactly as the name's box does, so the two boxes' edges line up and the description's text stays where the
@@ -202,6 +211,8 @@
 .input[data-desc] { display: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); height: 24px; padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
 .row[data-active] .input[data-desc] { display: block; position: absolute; left: calc(-1 * var(--om-spacing-2)); right: calc(-1 * var(--om-spacing-2)); top: 24px; width: auto; z-index: 1; }
 .input[data-desc]:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.input[data-desc]:focus { color: var(--om-color-on-surface-default); }   /* (REG-2538) what's typed reads as text, not as the hint */
+.input[data-desc]::placeholder { color: var(--om-color-on-surface-secondary); }
 /* "Expand" (1271:40880 drew a chip with the word): a 24px icon-only button hanging 2 under the description box's right end — the
    seat of the ✕ / ✓ pair (REG-472; owner 2026-09-17, REG-478) — only while the row is active. The box sits 24 under the name line
    and is 24 tall (.input[data-desc] below), so the button starts at 50. */
@@ -277,7 +288,7 @@
 .row[data-group] .colSel, .row[data-group] .colNum, .row[data-group] .colItem { background: var(--om-color-tertiary-blue-variant2); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
-.wrap[data-scrolled] .colItem { box-shadow: var(--om-shadow-frozen-column); }
+.wrap[data-scrolled] .colItem::after { box-shadow: var(--om-shadow-frozen-column); clip-path: inset(0 -8px 0 0); }
 .row[data-active] .colItem { overflow: visible; }
 /* Row hover (owner 2026-09-15: "item table hover state is missing"): the 4 % wash every table's row takes (tasks / quotes
    rows fill #f2f2f2) — painted as an overlay on each cell, so the frozen cells' own fills, a child's tint and a selection all
@@ -352,8 +363,8 @@
      the Total scrolls with the rest — an interim until the owner picks a phone layout for the lines (REG-417 proposes the
      Quotes-tab card of REG-377: thumb · name · status · qty × unit price · total · kebab). */
   .colSel, .colNum, .colItem, .colTotal { position: static; }
-  .colTotal { box-shadow: none !important; }
-  .wrap[data-scrolled] .colItem { box-shadow: none; }
+  .colTotal::after { box-shadow: none !important; }
+  .wrap[data-scrolled] .colItem::after { box-shadow: none; }
 }
 
 /* ── The Excel benchmark, phases 2 · 3 (REG-476 / REG-477) ── */
@@ -378,6 +389,7 @@
 .head [data-client='no'] { color: var(--om-color-on-surface-secondary); }
 /* The description as a real button (Show Full Content mode): keyboard-reachable, the text's own look. */
 .descBtn { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%; }
+.desc.descBtn { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (REG-2532) a full or formatted description keeps the description's 12 grey type — the button's `font: inherit` came later and took the name's */
 .descBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-0-5); }
 
 /* ── Edge adds (REG-527) ───────────────────────────────────────────────────────────────────────────────
@@ -397,7 +409,7 @@
 .edgeLine { position: absolute; left: 0; right: 0; height: 2px; background: var(--om-color-primary-default); z-index: 5; opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
 .edgeLine[data-edge='bottom'] { bottom: -1px; }
 @media (hover: hover) {
-  .row:hover .edgeAdd { opacity: 1; pointer-events: auto; }
+  .row:hover[data-edge-near] .edgeAdd { opacity: 1; pointer-events: auto; }   /* (REG-2536) on the bottom line only, not anywhere on the row */
   .edgeAdd:hover + .edgeLine { opacity: 1; }
 }
 @media (hover: none), (max-width: 767px) { .edgeAdd, .edgeLine { display: none; } }   /* no hover, or a phone-width window: the leading + is the way */
@@ -407,9 +419,15 @@
 .row[data-active] .edgeAdd, .row[data-active] .edgeLine { display: none; }
 
 /* ── Round 1 of the testers' asks (2026-09-23) ── */
-/* (REG-558) A sub-section and its lines step in once more: the bar stays, the inset doubles. */
-.row[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
-.row[data-depth='2'][data-group] { background: color-mix(in srgb, var(--om-color-tertiary-blue-variant2) 75%, var(--om-color-surface-default)); }
+/* (REG-558) A sub-section and its lines step in once more: the inset doubles. */
+.row[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-15) + var(--om-spacing-2)); }
+/* (REG-2525, REVERSES REG-558's darker band) Only a top section wears the band; a sub-section's row sits on white like its lines, its
+   Sub-section tag and the guides say what it is. Selection still wins (the [data-selected] rules come later or carry more weight). */
+.row[data-group][data-depth]:not([data-selected]),
+.row[data-group][data-depth]:not([data-selected]) .colSel,
+.row[data-group][data-depth]:not([data-selected]) .colNum,
+.row[data-group][data-depth]:not([data-selected]) .colItem,
+.row[data-group][data-depth]:not([data-selected]) .colTotal { background-color: var(--om-color-surface-default); }   /* the colour only: the hover wash (REG-449) is a background-image and stays (REG-2531) */
 /* (REG-556) Highlight: a 4px bar in the kit colour on the row's left edge for every kind; an ink colours the name, a fill tints the whole row. */
 .row[data-highlight]::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--hl); z-index: 2; }
 .row[data-highlight='text'] .input[data-name], .row[data-highlight='text'] .descText, .row[data-highlight='text'] .desc { color: var(--hl); }
@@ -497,30 +515,39 @@
 /* B11 · Branches: the tree in the ITEM cell — a 1px line per level (x 20 under a section's name, 40 under a sub-section's), a tee or the last
    child's elbow (rounded) running into the row's content, an open section's stem from under its name down to its first row. A ticked row's own
    branch takes the primary ink. Hidden on the lifted block (its indent cue already says where it lands, REG-571). */
-.guides { position: absolute; left: 0; top: 0; bottom: 0; width: 64px; pointer-events: none; z-index: 1; }
+.guides { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--om-spacing-15) + var(--om-spacing-3)); pointer-events: none; z-index: 1; }
 .gPass, .gBranch, .gStem { position: absolute; border: 0 solid var(--om-color-on-surface-border); }
 .gPass { top: 0; bottom: 0; border-left-width: var(--om-border-1); }
-.gBranch { top: 0; height: 50%; border-left-width: var(--om-border-1); border-bottom-width: var(--om-border-1); border-bottom-left-radius: var(--om-radius-1); }
-.gStem { bottom: 0; height: var(--om-spacing-3); border-left-width: var(--om-border-1); }   /* the row's bottom padding only — clear of the section's name and note */
-.gPass[data-level='1'], .gBranch[data-level='1'], .gStem[data-level='1'] { left: 20px; }
-.gPass[data-level='2'], .gBranch[data-level='2'], .gStem[data-level='2'] { left: 40px; }
-.gBranch[data-level='1'] { width: 8px; }   /* into the content at 32 (4 short of it) */
-.gBranch[data-level='2'] { width: 12px; }  /* into the content at 56 */
+/* (REG-2526) the prototype's geometry: a level every 28 (x 25 · 53, under the fold's middle), the tee runs 13 to 2 short of the content
+   (40 · 68), the scale's 8 corner (the prototype drew 6); the stem starts under the fold's glyph */
+.gBranch { top: 0; height: 50%; width: 13px; border-left-width: var(--om-border-1); border-bottom-width: var(--om-border-1); border-bottom-left-radius: var(--om-radius-2); }
+.gStem { top: calc(50% + 10px); bottom: 0; border-left-width: var(--om-border-1); }
+.gPass[data-level='1'], .gBranch[data-level='1'], .gStem[data-level='1'] { left: 25px; }
+.gPass[data-level='2'], .gBranch[data-level='2'], .gStem[data-level='2'] { left: 53px; }
 .row[data-selected] .gBranch, .row[data-selected] .gPass[data-own] { border-color: var(--om-color-primary-default); }
 .row[data-dragging] .guides { display: none; }
 
 /* B3 · A section's foot: its adds at the children's indent, 44 tall, the house text links with a + glyph; a drop on it lands last (B4). */
-.footRow { display: flex; align-items: stretch; min-height: 44px; background: var(--om-color-surface-default); position: relative; }
+.footRow { display: flex; align-items: stretch; min-height: 44px; background: var(--om-color-surface-default); position: relative; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (REG-2527) the rows' own top rule */
 .footRow .colSel, .footRow .colNum, .footRow .colItem { background: var(--om-color-surface-default); }
 .footRow .colTotal { background: var(--om-color-surface-default); }
 /* the adds read on one line: past the ITEM cell they run over the row's empty cells (no rules drawn in a foot), under the frozen Total */
-.footRow .colItem { padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-1) var(--om-spacing-8); overflow: visible; }
+.footRow .colItem { padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-1) var(--om-spacing-10); overflow: visible; }
 .footRow .cell:not(.colItem):not(.colTotal) { border-right-color: transparent; }
 .footRow .colItem { border-right-color: transparent; }
-.footRow[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
+/* (REG-2529) …and none of the frozen blocks' rules either: no ITEM shadow once the table is panned, no TOTAL 4px rule or shadow — the foot
+   reads as one straight row under its section, whatever the sideways scroll */
+.footRow .colItem::after, .wrap[data-scrolled] .footRow .colItem::after { box-shadow: none; }
+.footRow .colTotal, .wrap[data-more] .footRow .colTotal { border-left-color: transparent; }
+.footRow .colTotal::after, .wrap[data-more] .footRow .colTotal::after { box-shadow: none; }
+.footRow[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-15) + var(--om-spacing-2)); }
 .footBody { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--om-spacing-4); white-space: nowrap; }
 .footEmpty { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .footLink { composes: link from '../../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; min-height: 36px; position: relative; }
+/* (REG-2526) After a rule, the Price book and Paste lines read quieter than the two adds: secondary ink, a glyph each */
+.footRule { width: var(--om-border-1); height: var(--om-spacing-4); background: var(--om-color-on-surface-border); flex-shrink: 0; }
+.footLink[data-quiet] { color: var(--om-color-on-surface-secondary); gap: var(--om-spacing-1); }
+.footLink[data-quiet]:hover { color: var(--om-color-on-surface-default); }
 .wrap[data-row-drag] .footRow { transition: transform 160ms ease; }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .footLink { min-height: 44px; } }
 
@@ -549,6 +576,7 @@
 
 /* Row 290 · A section's name offering the studio's trades as it is typed in: the menu's option rows (the Add Item box's listbox pattern). */
 .suggestWrap { display: inline-flex; min-width: 0; max-width: 100%; }
+.suggestWrap:focus-within { flex: 1 1 0; }   /* (REG-2528) a section's name box (it carries the trades list) fills the line too */
 .suggestRow { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 40px; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; background: none; text-align: left; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
 .suggestRow:hover, .suggestRow[data-active] { background: var(--om-color-primary-variant); }
 .suggestHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

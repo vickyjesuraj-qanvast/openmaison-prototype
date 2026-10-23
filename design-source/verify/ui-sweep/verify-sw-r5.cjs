@@ -193,7 +193,7 @@ const Q1 = sql(`select id from quotes where number='OM-10001'`)
     const row = page.locator(`[data-item-id="${sql(`select id from quote_items where quote_id='${Q1}' and name='${top.replace(/'/g, "''")}' and parent_id is null`)}"]`).first()
     await row.scrollIntoViewIfNeeded(); await row.hover(); await row.getByRole('button', { name: `More options for ${top}` }).click()
     // REG-773 (UX audit Q7) · (S44I, B6 — a deliberate change of this rule) the row's "From Price book…" opens the Price book modal with the row's place
-    await page.getByRole('menuitem', { name: /^Add Item/ }).click(); await page.getByRole('menuitem', { name: /^From Price book/ }).click(); await page.waitForTimeout(600)
+    await page.getByRole('menuitem', { name: /^Add Item/ }).click(); await page.getByRole('menuitem', { name: /^Add from Price book/ }).click(); await page.waitForTimeout(600)   // (Dane's Items-sections round, REG-2534 — a deliberate change of this rule) the row reads "Add from Price book…"
     ok('the place says an item lands below', (await page.getByRole('radio', { name: 'Below' }).getAttribute('aria-checked')) === 'true' && /goes in below/.test(await page.getByRole('dialog', { name: 'Price book' }).innerText()))
     ok('the place offers Above beside it', await page.getByRole('radio', { name: 'Above' }).count() === 1)
     await page.keyboard.press('Escape'); await page.waitForTimeout(400)

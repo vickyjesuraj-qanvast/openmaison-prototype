@@ -316,7 +316,7 @@
        "m390"
       ]
      ],
-     "fix": "Swap the card's foot (stage pill left, members right — the pill is the press, the avatars are not), or let the FAB step out of the listing at ≤767 as it steps out of a tablet section screen (REG-2602), its three suggestions behind the header ⋮ (\"Ask Maison AI\")."
+     "fix": "Swap the card's foot (stage pill left, members right — the pill is the press, the avatars are not), or let the FAB step out of the listing at ≤767 as it steps out of a tablet section screen (REG-2587), its three suggestions behind the header ⋮ (\"Ask Maison AI\")."
     },
     {
      "id": "A-03",
@@ -1570,7 +1570,7 @@
        "m390"
       ]
      ],
-     "fix": "Give every tab's content a right-edge clearance under the FAB's band (`--fab-clearance` on the cards' trailing column), or hide the FAB on L2 tab screens and keep Maison AI in the lead's ⋮ (REG-2602's move for section screens)."
+     "fix": "Give every tab's content a right-edge clearance under the FAB's band (`--fab-clearance` on the cards' trailing column), or hide the FAB on L2 tab screens and keep Maison AI in the lead's ⋮ (REG-2587's move for section screens)."
     },
     {
      "id": "C-11",

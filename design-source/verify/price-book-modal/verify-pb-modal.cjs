@@ -80,10 +80,13 @@ const lines = () => Number(sql(`select count(*) from quote_items where quote_id=
 
   await step('phone', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
-    await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
-    await page.locator('#section-items').getByRole('button', { name: 'Price book', exact: true }).first().click().catch(() => {}); await page.waitForTimeout(700)
+    // (quotes on the move, a deliberate change of this rule) a phone opens the quote as its document; the Items are their own screen at
+    // ?edit=items, where the Price book sits in the Items ⋮ ("From Price book") — the table's link is the desk's
+    await page.goto(`${BASE}/quotes/${Q1}?edit=items`); await ready(page)
+    await page.getByRole('button', { name: 'More options for Items' }).locator('visible=true').first().tap().catch(() => {}); await page.waitForTimeout(500)
+    await page.getByRole('menuitem', { name: /Price book/ }).first().tap().catch(() => {}); await page.getByTestId('price-book-dialog').waitFor({ timeout: 8000 }).catch(() => {}); await page.waitForTimeout(500)
     const open = await page.getByTestId('price-book-dialog').isVisible().catch(() => false)
-    const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)   // measured against the device (responsive.md § On the move)
     ok('390: the modal opens as a sheet and fits', open && over <= 0, `${open} · ${over}px`)
     const clip = await page.getByTestId('price-book-dialog').evaluate((el) => [...el.querySelectorAll('[data-testid="book-item"]')].map((r) => {
       const n = r.querySelector('[class*="name"]'), rb = r.getBoundingClientRect(), kids = [...r.children].map((c) => c.getBoundingClientRect())

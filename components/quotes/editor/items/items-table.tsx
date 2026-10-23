@@ -702,8 +702,9 @@ function SectionFoot({ d, columns, colW, colStyle, autonumber, itemStyle, onFoot
           {d.empty ? <span className={styles.footEmpty} data-testid="foot-empty">Nothing in {name} yet —</span> : null}
           <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'item')} aria-label={`Add item to the end of ${name}`} data-testid="foot-add-item"><Icon name="add" size={16} />Add item</button>
           {d.top ? <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'sub')} aria-label={`Add sub-section to ${name}`} data-testid="foot-add-sub"><Icon name="add" size={16} />Add sub-section</button> : null}
-          <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'book')} aria-label={`Price book — add to the end of ${name}`} data-testid="foot-book">Price book</button>
-          <button type="button" className={styles.footLink} onClick={() => onFoot(d.section, 'paste')} aria-label={`Paste lines at the end of ${name}`} data-testid="foot-paste">Paste lines</button>
+          <span className={styles.footRule} aria-hidden />
+          <button type="button" className={styles.footLink} data-quiet="" onClick={() => onFoot(d.section, 'book')} aria-label={`Price book — add to the end of ${name}`} data-testid="foot-book"><Icon name="list_alt" size={16} weight={300} />Price book</button>
+          <button type="button" className={styles.footLink} data-quiet="" onClick={() => onFoot(d.section, 'paste')} aria-label={`Paste lines at the end of ${name}`} data-testid="foot-paste"><Icon name="notes" size={16} weight={300} />Paste lines</button>
         </span>
       </div>
       {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }} />)}

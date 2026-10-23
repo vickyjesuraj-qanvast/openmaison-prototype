@@ -137,7 +137,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   h: RowHandlers
 }) {
   const variation = useVariation()   // (Projects round 5) a variation order's omissions: a minus quantity
-  const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'vendor' | 'thumb' | 'vis' | 'row' | null>(null)
+  const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'vendor' | 'thumb' | 'vis' | 'row' | 'add' | null>(null)
   const [descOpen, setDescOpen] = useState(false)
 
   /* The row is ACTIVE while an editable control holds the focus — a cell input, a select, the description — or one of its
@@ -155,6 +155,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const thumbRef = useRef<HTMLButtonElement>(null)
   const eyeRef = useRef<HTMLButtonElement>(null)
   const kebabRef = useRef<HTMLSpanElement>(null)
+  const plusRef = useRef<HTMLButtonElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   const descRef = useRef<HTMLInputElement>(null)
   const isGroup = item.kind === 'group'
@@ -284,7 +285,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
          data-dragging={dragging || undefined} data-drop-depth={dropDepth ?? undefined} data-shift={shift ? '' : undefined} data-fresh={fresh || undefined} data-full={showFull || undefined}
          data-carried={carried || undefined} data-drop-into={dropInto || undefined} data-chained={chained || undefined}
          onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
-         onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ix', `${Math.round(e.clientX - r.left)}px`) }}>
+         onPointerMove={(e) => {
+           const el = e.currentTarget, r = el.getBoundingClientRect()
+           el.style.setProperty('--ix', `${Math.round(e.clientX - r.left)}px`)
+           /* (REG-2536) the edge + shows only while the pointer is on the row's bottom line — its last 8px, or on the + hanging under it */
+           if (r.bottom - e.clientY <= EDGE_NEAR) el.dataset.edgeNear = ''; else delete el.dataset.edgeNear
+         }}
+         onPointerLeave={(e) => { delete e.currentTarget.dataset.edgeNear }}>
       {/* (REG-527, owner 2026-09-18) A + on the row's bottom edge that follows the pointer, so adding a line below never means
           travelling to the leading +. Bottom only (owner: "remove the top one"). Hover only — a finger keeps the leading + and the kebab. */}
       <Tooltip label="Add item below"><button type="button" className={styles.edgeAdd} data-edge="bottom" aria-label={`Add item below ${item.name}`} tabIndex={-1} onClick={() => h.onInsertBelow(item)}><Icon name="add" size={16} /></button></Tooltip>
@@ -296,11 +303,16 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             <Icon name="drag_indicator" size={20} weight={300} />
           </button>
         </Tooltip>
-        <Tooltip label="Add item below">
-          <button type="button" className={styles.plus} aria-label={`Add item below ${item.name}`} onClick={() => h.onInsertBelow(item)}>
+        {/* (REG-2533 — reverses REG-441's one press and the prototype review's C3) the + opens ⋮'s Add Item list: Above · Below (a section:
+            At the top) · Several… · From Price book… · Paste lines… — words and glyphs since REG-2534 */}
+        <Tooltip label="Add items" disabled={menu === 'add'}>
+          <button ref={plusRef} type="button" className={styles.plus} aria-label={`Add items near ${item.name}`} aria-haspopup="menu" aria-expanded={menu === 'add'} onClick={() => toggle('add')}>
             <Icon name="add" size={20} weight={300} />
           </button>
         </Tooltip>
+        <RowMenu addOnly open={menu === 'add'} anchor={plusRef} item={item} groups={groups} all={all} selectedCount={selected ? selectedCount : 1} brandColors={brandColors}
+                 onClose={() => setMenu(null)} onAction={(a) => h.onMenu(item, a)} onChooseGroup={(g) => h.onChooseGroup(item, g)}
+                 onPrintAs={(v) => h.onPrintAs(item, v)} onHighlight={(v) => h.onHighlight(item, v)} onAddSeveral={(n, where) => h.onAddSeveral(item, n, where)} />
         {/* The DS Checkbox reports the next state, not the event, so Shift is read off the press on its way in (the Tasks table's rule). */}
         <span className={styles.check} onClickCapture={(e) => { shiftHeld.current = e.shiftKey }} onKeyDownCapture={(e) => { shiftHeld.current = e.shiftKey }}>
           <Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on, shiftHeld.current)} aria-label={`Select ${item.name}`} />
@@ -310,7 +322,6 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
         {/* (S44I, B11 — call C1 as recommended, his ask 2026-10-15; REVERSES REG-457 / REG-440's child half) a section keeps its 4px bar and its
             band; its lines sit on white and the tree's guides say whose they are */}
-        {isGroup ? <span className={styles.groupBar} aria-hidden /> : null}
         {tree ? <Guides tree={tree} /> : null}
         {/* (P-07) the number rides in the Item cell on the touch grid — on its own line, so no whitespace text node reaches the desktop's cell */}
         {touchGrid && details.autonumber && number ? <span className={styles.numInline} data-testid="num-inline">{number}</span> : null}
@@ -332,6 +343,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         ) : null}
         {isGroup ? null : <ThumbMenu open={menu === 'thumb'} anchor={thumbRef} icon={kind} onClose={() => setMenu(null)}
                    onUpload={() => h.onUploadImage(item)} onIcon={(k) => patch({ icon: k, thumb: null, thumbCount: 0 })} />}
+        {isGroup ? (
+          /* (REG-2526, the team's sections prototype) the fold leads the row, pointing down while open and turned −90° when folded */
+          <Tooltip label={item.collapsed ? 'Expand section' : 'Collapse section'}>
+            <button type="button" className={styles.fold} data-folded={item.collapsed || undefined} aria-label={item.collapsed ? `Expand ${item.name}` : `Collapse ${item.name}`} aria-expanded={!item.collapsed} onClick={() => patch({ collapsed: !item.collapsed })}>
+              <Icon name="keyboard_arrow_down" size={20} />
+            </button>
+          </Tooltip>
+        ) : null}
         <div className={styles.itemText}>
           {/* The name is text-wide; a press on the row's remaining width still lands the caret in it. */}
           <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) { if (richName) setDescOpen(true); else nameRef.current?.focus() } }}>
@@ -363,18 +382,11 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
                 <VisibilityMenu open={menu === 'vis'} anchor={eyeRef} value={vis} onClose={() => setMenu(null)} onPick={(v) => patch({ visibility: v })} />
               </>
             ) : null}
-            {isGroup ? (
-              <Tooltip label={item.collapsed ? 'Expand section' : 'Collapse section'}>
-                <button type="button" className={styles.fold} aria-label={item.collapsed ? `Expand ${item.name}` : `Collapse ${item.name}`} aria-expanded={!item.collapsed} onClick={() => patch({ collapsed: !item.collapsed })}>
-                  <Icon name={item.collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={20} />
-                </button>
-              </Tooltip>
-            ) : null}
           </div>
           {chained ? (
             /* (S44I, B10 — call C4 as recommended) while a line an add press just made holds the caret: Enter adds another, Esc finishes */
             <span className={styles.chainHint} data-testid="chain-hint"><Keys spec="enter" /> adds another · <Keys spec="esc" /> to finish</span>
-          ) : !details.description ? null : showFull || rich ? (
+          ) : !details.description || (isGroup && !rich && !item.description) ? null : showFull || rich ? (   /* (REG-2526) a section without a note shows none — ⋮ › Section note… adds one */
             /* (REG-557) A formatted description shows its plain text (bullets kept) and opens the editor on a press — the one-line box cannot hold the formatting. */
             <button type="button" className={`${styles.desc} ${styles.descBtn}`} data-rich={rich || undefined} data-full={showFull || undefined} onClick={() => setDescOpen(true)}>{(rich ? htmlToPlain(item.descriptionHtml!) : item.description) || (rich && /<img\b/i.test(item.descriptionHtml!) ? 'A picture' : 'Add a description')}</button>
           ) : (
@@ -457,6 +469,9 @@ function tradesFor(trades: string[], typed: string, current: string): string[] {
   const fresh = /^new (sub-)?section$/i.test(t || current.trim())
   return trades.filter((x) => x.toLowerCase() !== t && (fresh || (t !== '' && x.toLowerCase().includes(t)))).slice(0, 8)
 }
+
+/** (REG-2536) How close to a row's bottom line, in px, the pointer brings up the edge +. */
+const EDGE_NEAR = 8
 
 /** (S44I — row 308) Why the # cell is empty: the print passes over the row too. */
 const NO_NUMBER_WHY = {
