@@ -1,4 +1,4 @@
-# Contracts on the move — C3's register rows (staged; the orchestrator numbers them from REG-2588 at landing)
+# Contracts on the move — C3's register rows (staged; the orchestrator numbers them from REG-2603 at landing)
 
 Package C3 — the client's signing page on a phone and a tablet: P-05 · P-06 · A-24 · A-25 · C-26 (+ absorbed A-16 A-17 A-18 A-19 A-20 A-21 A-22
 A-23 A-26). Every row: his "I have marked everything in the doc please check and built accordingly" 2026-10-22 on the Contracts-on-the-move

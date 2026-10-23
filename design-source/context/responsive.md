@@ -92,12 +92,12 @@ On ≤1024:
   snackbar above that foot (`useSheetFootLift`, `--sheet-foot`); a Send ▾ mounted in a foot opens upward (`SendButton side · align`). A phone's
   send sheet fits: the message box grows with its words, the link row gives way to Copy link in the foot.
   A floating button (Maison AI) never sits where a pane's or a foot's button is: on a tablet it steps out of a section screen whose toolbar
-  carries it (REG-2587); on a phone it slides away on scroll and the pane is a sheet above it.
+  carries it (REG-2602); on a phone it slides away on scroll and the pane is a sheet above it.
 - **Measure against the device, not the window.** Under touch emulation `innerWidth` and `scrollWidth` grow with overflowing content; a probe
   reads `documentElement.clientWidth` / `screen.width`, takes tablet shots viewport-only, and moves a menu by layout (margin), never by a
   transform, when it asserts the width while the menu is open.
 
-### Contracts on the move (REG-2588…2639, 2026-10-23) — what the second module added to the rule
+### Contracts on the move (REG-2603…2654, 2026-10-23) — what the second module added to the rule
 - **A document is clauses.** A contract (and a contract template) on ≤1024 reads as its clauses as cards split at the headings, the signature
   boxes as the last card; editing the paper is one screen (the Document frame) with ONE row of tools at a 44 pitch and the rest under + ▾.
   Signed reads only — no toolbar, greyed or not.

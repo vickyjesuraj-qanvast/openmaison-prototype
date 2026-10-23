@@ -46,7 +46,7 @@ add('pj-gap-d', 'projects/verify-pj-gap-d.cjs', { args: ['$DB', '$L/shots', '$BA
 for (const c of [1, 2, 3, 4]) add(`rc-c${c}`, `responsive-contracts/verify-rc-c${c}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
 for (const s of ['s03', 's11', 's29', 's42b', 's44g', 's44r', 's46d']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
 add('pm-f', 'parity-map-build/verify-pm-f.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
-add('pm2-s05', 'pending-modules/verify-pm2-s05.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads (S05) — the stage rule REG-2640 touches
+add('pm2-s05', 'pending-modules/verify-pm2-s05.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads (S05) — the stage rule REG-2655 touches
 add('rl-fixes', 'responsive-leads/verify-rl-fixes.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads on the move: the two blockers fixed ahead of the proposal
 for (const r of [1, 5, 6]) add(`pj-r${r}`, `projects/verify-pj-r${r}.cjs`, { args: ['$DB', '$L/shots'] })   // the project Overview / Money that C4's Documents card and To collect line touch
 add('pj-gap-f2', 'projects/verify-pj-gap-f2.cjs', { args: ['$DB', '$L/shots'] })

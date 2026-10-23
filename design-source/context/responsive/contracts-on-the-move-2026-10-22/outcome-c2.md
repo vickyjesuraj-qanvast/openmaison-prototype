@@ -21,7 +21,7 @@ this file. The desk's bar, paper and drawer at ≥1025 are byte-identical (§ Th
 | B-12 | built (P-04) | the panel is two parts — Signature fields (rows, Add) and Before the client signs (label rows); no 36-tall Insert buttons, no 12px help on touch. |
 | B-13 | built in part (P-04) | the placement closes on Add and scrolls the box into view, so nothing covers where a field lands at 768 / 1024; a 1024 pane **beside** the paper with the paper sliding left is the frame's layout (C1's `DocumentFrame` / stage) — see *For other packages* (▲). |
 | B-19 | built (P-03) | the chip's tap sheet (above). |
-| B-20 · C-10 | the frame's (C1) | the Document screen has no Maison button (REG-2587's rule in `DocumentFrame`); on today's page the FAB still sits over the paper at 390 until C1 lands — nothing in C2's files draws or hides it. |
+| B-20 · C-10 | the frame's (C1) | the Document screen has no Maison button (REG-2602's rule in `DocumentFrame`); on today's page the FAB still sits over the paper at 390 until C1 lands — nothing in C2's files draws or hides it. |
 | C-11 | the frame's (C1) | Done in the pinned bar is `DocumentFrame`'s; the row itself is sticky under the host's chrome (`--doc-tools-top`). |
 | C-17 | built (P-04) | the box's own ✕ with Undo; the box's label reads 14 on touch (its uppercase kept). |
 | P-13 (the scale, in C2's pieces) | built | 16 / 14 / 44 in every new piece: the row's 44 boxes, the sheet rows 44, the panel rows 56 (16 over 14), the placement rows 48 (16), the chip sheet 16 / 14, the Outline's rows 16 / 14 at ≤1024 (`outline-pane.tsx`). |
@@ -43,7 +43,7 @@ this file. The desk's bar, paper and drawer at ≥1025 are byte-identical (§ Th
   several pages); it reads "Add another" as a text button, "Add" outlined when the field is missing. The chips in the placement say "·
   placed" for the same reason.
 - **The placement is a Dialog, not a pane.** On a phone the house `Dialog size="form"` is a bottom sheet; on a tablet held sideways a centred
-  400 dialog (REG-2572's pattern for the payment sheet); it closes on Add before the box is shown, so nothing covers the landing place.
+  400 dialog (REG-2587's pattern for the payment sheet); it closes on Add before the box is shown, so nothing covers the landing place.
 - **Studio signature with no saved signature.** The placement still offers it (the readiness check says the box would print blank before Send,
   as it does for the desk's Insert); its help line says so under the chips, and the panel's row says "Not placed · set your signature up…".
   `DocToolbar` passes no `hasStudioSignature`, so the row's dialog assumes one; the panel (which has it) says the truth.

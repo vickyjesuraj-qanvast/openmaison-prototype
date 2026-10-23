@@ -79,7 +79,7 @@ export function nextStep(f: QuoteFacts, now: number): NextStep {
     if (f.canApprove) return { primary: 'approve', label: 'Approve', lead: 'Next', icon: 'approval', text: `${sent} Approve it, or request changes from ⋮.`, more: null }
     return { primary: null, label: null, lead: null, icon: 'approval', text: `${sent} Waiting for an Owner, an Admin or the backup approver.`, more: null }
   }
-  /* (landing fix 2026-10-22, REG-2586 — the Contracts audit's C-21) a contract raised from this quote and already with the client for
+  /* (landing fix 2026-10-22, REG-2601 — the Contracts audit's C-21) a contract raised from this quote and already with the client for
      signature is the live path: the line says where it stands and the primary opens it — never a second "Send for signature" while the
      first is out. A contract still in Draft leaves the quote's own map in place (the desk's Contract chip names it; P-11 of the Contracts page). */
   if (f.contract && f.contract.status === 'Sent to Client' && !f.variation && (f.status === 'Approved' || f.status === 'Sent to Client' || f.status === 'Confirmed')) {

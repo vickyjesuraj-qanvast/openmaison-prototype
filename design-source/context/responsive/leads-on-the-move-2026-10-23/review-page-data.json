@@ -146,7 +146,7 @@
    "refs": "A-lane",
    "title": "The listing on a tablet: a column set, a frozen ⋮, a kanban that moves",
    "today": "At 768 the table shows Lead Name · Stage · part of Tasks of 1,544px; Edit and ⋮ are 850px of sideways scroll away; the kanban cannot move a lead on touch (drag gives way to the pan, no stage control, ⋮ holds Delete only).",
-   "proposed": "The table core’s tablet default (REG-2549): Name · Stage · Last contact · Next follow-up · Members, Edit and ⋮ frozen at the right, the rest in Column settings remembered for the tablet (its handles and pins at 44). The kanban card carries the stage pill (the same sheet as the phone card); ⋮ holds Move to › and Delete. Numbers grouped everywhere; values at 14.",
+   "proposed": "The table core’s tablet default (REG-2564): Name · Stage · Last contact · Next follow-up · Members, Edit and ⋮ frozen at the right, the rest in Column settings remembered for the tablet (its handles and pins at 44). The kanban card carries the stage pill (the same sheet as the phone card); ⋮ holds Move to › and Delete. Numbers grouped everywhere; values at 14.",
    "why": "Quotes and Contracts made the same move this week; a lead’s tablet table should not be the exception.",
    "shots": [
     [
@@ -316,7 +316,7 @@
        "m390"
       ]
      ],
-     "fix": "Swap the card's foot (stage pill left, members right — the pill is the press, the avatars are not), or let the FAB step out of the listing at ≤767 as it steps out of a tablet section screen (REG-2587), its three suggestions behind the header ⋮ (\"Ask Maison AI\")."
+     "fix": "Swap the card's foot (stage pill left, members right — the pill is the press, the avatars are not), or let the FAB step out of the listing at ≤767 as it steps out of a tablet section screen (REG-2602), its three suggestions behind the header ⋮ (\"Ask Maison AI\")."
     },
     {
      "id": "A-03",
@@ -1043,7 +1043,7 @@
       ]
      ],
      "absorbed": "P-04",
-     "absorbedNote": "fixed tonight as REG-2640 — every forward stage move now asks the owner rule first, and the lead page’s refusal offers Assign"
+     "absorbedNote": "fixed tonight as REG-2655 — every forward stage move now asks the owner rule first, and the lead page’s refusal offers Assign"
     },
     {
      "id": "B-02",
@@ -1474,7 +1474,7 @@
       ]
      ],
      "absorbed": "P-03",
-     "absorbedNote": "fixed tonight as REG-2641 — Auto Fill and Attach open on the layer above the log’s phone sheet"
+     "absorbedNote": "fixed tonight as REG-2656 — Auto Fill and Attach open on the layer above the log’s phone sheet"
     },
     {
      "id": "C-10",
@@ -1570,7 +1570,7 @@
        "m390"
       ]
      ],
-     "fix": "Give every tab's content a right-edge clearance under the FAB's band (`--fab-clearance` on the cards' trailing column), or hide the FAB on L2 tab screens and keep Maison AI in the lead's ⋮ (REG-2587's move for section screens)."
+     "fix": "Give every tab's content a right-edge clearance under the FAB's band (`--fab-clearance` on the cards' trailing column), or hide the FAB on L2 tab screens and keep Maison AI in the lead's ⋮ (REG-2602's move for section screens)."
     },
     {
      "id": "C-11",

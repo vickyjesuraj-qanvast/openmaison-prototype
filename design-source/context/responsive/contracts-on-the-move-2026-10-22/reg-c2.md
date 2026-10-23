@@ -1,6 +1,6 @@
 # Contracts on the move — C2's staged register rows (2026-10-22)
 
-Numbered from REG-2588 at landing by the orchestrator; `REG-C2.n` here. Every row: his "I have marked everything in the doc please check and
+Numbered from REG-2603 at landing by the orchestrator; `REG-C2.n` here. Every row: his "I have marked everything in the doc please check and
 built accordingly" (2026-10-22) on the Contracts-on-the-move page https://claude.ai/artifact/LWsKVuRnUiALheTvetDzUv — Build on P-03 · P-04 ·
 C-13 · C-15 · C-16 (absorbing B-03 B-04 B-05 B-12 B-13 B-19 B-20 C-08 C-10 C-11 C-17), decisions as recommended.
 

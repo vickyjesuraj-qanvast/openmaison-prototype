@@ -37,7 +37,7 @@ stacked on each other, the amount's data, the to-do chip's place). Nothing commi
 | C-09 C-12 C-18 | built (P-10) | the reading screen; one Open the PDF. |
 | C-14 | built in part (P-13) | in C4's surfaces: the Money tab's tile lines, the gallery's lines, Import's sentence, the sheets' note, the since lines, the picker's meta. **Kept**: the house Dialog subtitle (the picker's 12px subtitle), the house Dropdown's 12px help and the Move stage window's subtitle — house pieces K5 already raised as the house head's question; not changed here. |
 | C-20 | built (P-09) | the picker's list at ≤1024. |
-| C-21 | built (P-11) | the 44 row; the Next line was REG-2586. |
+| C-21 | built (P-11) | the 44 row; the Next line was REG-2601. |
 | C-23 C-24 | built (P-11) | Documents; the contract line. |
 | C-25 C-27 | built (P-12) | Import's photo and 14 sentence; the Won step's rows. |
 | **Integration (a)** | **built** | C1's Signature fields / Before the client signs screens mount C2's `SignatureFieldsPanel` (+ placement) and `BeforeSigningPanel` (`bare`) on `doc.panelCard`; `esign-screens.tsx` deleted; a placed field lands on the Document screen with the pulse and Undo (the contract's and the template's). |

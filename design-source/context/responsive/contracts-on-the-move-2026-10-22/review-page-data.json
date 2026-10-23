@@ -7,7 +7,7 @@
    "<b>62</b> shared shots + the lanes’ own at 390 · 768 · 1024",
    "<b>3</b> audit lanes",
    "Desktop <b>unchanged</b>",
-   "Build: main + Quotes on the move (REG-2525…2586)",
+   "Build: main + Quotes on the move (REG-2540…2586)",
    "22 Oct 2026, evening"
   ],
   "answer": [
@@ -93,7 +93,7 @@
    "refs": "B · C lanes · screen 3",
    "title": "The Document screen: the paper full-screen with one row of tools",
    "today": "The paper is a 3,000–3,800px contenteditable in the middle of the page under a two-row bar whose tools scroll sideways with no cut-off (seven of twelve hidden at 390); the Maison button covers the last 31px of every line; a chip’s “prints as” is hover-only; Insert a field is two levels deep. The same in the template editor.",
-   "proposed": "Document (and a template’s clause) opens as the <b>full-screen editor</b> Quotes built for Terms (REG-2574, `Dialog phoneFull`): a 56 bar (← Document · the clause · Done) and <b>one 44-pitch tool row</b> — Undo · Text style ▾ · B · I · U · List · <b>+ ▾</b> (a sheet: Insert a field with its sample values · Add a signature field › · Link · Image · Highlight · Alignment · Numbered list). Nothing scrolls sideways, nothing hidden; the Outline (≡) jumps to a clause; no Maison button on this screen. A tap on a Smart Text chip opens “Client name · prints as Harpreet Kaur · Remove”. 768–1024: the same screen; the Outline is a pane.",
+   "proposed": "Document (and a template’s clause) opens as the <b>full-screen editor</b> Quotes built for Terms (REG-2589, `Dialog phoneFull`): a 56 bar (← Document · the clause · Done) and <b>one 44-pitch tool row</b> — Undo · Text style ▾ · B · I · U · List · <b>+ ▾</b> (a sheet: Insert a field with its sample values · Add a signature field › · Link · Image · Highlight · Alignment · Numbered list). Nothing scrolls sideways, nothing hidden; the Outline (≡) jumps to a clause; no Maison button on this screen. A tap on a Smart Text chip opens “Client name · prints as Harpreet Kaur · Remove”. 768–1024: the same screen; the Outline is a pane.",
    "why": "a thumb can edit a sentence when the tools are one row at 44 and nothing covers the text. Hidden tools and a hover-only answer break “nothing is hover-only, nothing is cut” (REG-273).",
    "shots": [
     [
@@ -185,7 +185,7 @@
    "refs": "A-lane",
    "title": "The lists as the phone card: the client first, what it signs, a read-only status",
    "today": "Four cards read “Interior Design Service Agreement”; the client is a 14px purple link on line 2 (absent on the lead’s tab); no amount; “Created” unlabelled; the only thing that opens the contract is the 248×20 title text; the status pill is live — one mis-tap marks a Draft Sent to Client or stops a client’s link.",
-   "proposed": "The Quotes card (REG-2547): the <b>client’s name</b> 16/700 with the <b>amount</b> 18 at the right · “Signs OM-10008 · Interior Design Service Agreement” 14 · a read-only status chip with its since (“sent 2d ago · not opened” · “link expired” · “signed 12 Sep”) and a chevron. The whole card opens the contract; a long press selects. ⋮ = Open · Send a reminder (or Send the link again) · Copy link · Mark as signed… · Stop the signing link · Change status › · Share PDF · Archive · Delete. The to-do chips keep their words (“3 awaiting signature” · “1 link expired”). The lead’s tab: the same card with the title first. The Deleted and Archived sheets’ rows are the card.",
+   "proposed": "The Quotes card (REG-2562): the <b>client’s name</b> 16/700 with the <b>amount</b> 18 at the right · “Signs OM-10008 · Interior Design Service Agreement” 14 · a read-only status chip with its since (“sent 2d ago · not opened” · “link expired” · “signed 12 Sep”) and a chevron. The whole card opens the contract; a long press selects. ⋮ = Open · Send a reminder (or Send the link again) · Copy link · Mark as signed… · Stop the signing link · Change status › · Share PDF · Archive · Delete. The to-do chips keep their words (“3 awaiting signature” · “1 link expired”). The lead’s tab: the same card with the title first. The Deleted and Archived sheets’ rows are the card.",
    "why": "a designer thinks of a contract by the client and the quote it signs, not by its template’s title; the status changes on the contract, where the rule can say why (Q-04 of Quotes, as picked).",
    "shots": [
     [
@@ -208,7 +208,7 @@
    "refs": "A · C lanes",
    "title": "Touch tablets open the tables with a default set, Title and ⋮ frozen",
    "today": "Both tables open every desktop column with the 555px Title floor: at 768 the frame is 642 and the row 1,700 — Title is the only column in view, the row’s ⋮ at x 1,733. `contracts-table.module.css` overrides the table core’s sticky actions under `hover: none`. The lead’s tab keeps the quick-links strip at 768 portrait. The gallery’s list view hides three columns.",
-   "proposed": "The table core’s tablet default (`tabletHidden`, `useTableColumns(…, tablet)`, built for Quotes — REG-2549): Title · Lead · Status + since · Sent; Title and ⋮ frozen; View dropped (the title opens); the rest in Column settings remembered for the tablet. The module override of the sticky actions goes. No quick-links strip on the lead’s Contracts tab at 768 portrait (the Quotes rule). The templates gallery’s list takes the same default.",
+   "proposed": "The table core’s tablet default (`tabletHidden`, `useTableColumns(…, tablet)`, built for Quotes — REG-2564): Title · Lead · Status + since · Sent; Title and ⋮ frozen; View dropped (the title opens); the rest in Column settings remembered for the tablet. The module override of the sticky actions goes. No quick-links strip on the lead’s Contracts tab at 768 portrait (the Quotes rule). The templates gallery’s list takes the same default.",
    "why": "a table on a touch tablet shows what fits, never twelve columns (responsive.md § On the move). The piece exists; Contracts declares its columns.",
    "shots": [
     [
@@ -227,7 +227,7 @@
    "refs": "A · C lanes",
    "title": "New contract on a phone: who first, then the kind; the picker’s list on tablets too",
    "today": "“Which lead is this contract for?” is a 400 form with the house select: every lead, alphabetical, 44 rows, no search, no recent, a 690px list over the sheet. The picker on a phone was rebuilt this afternoon as a radio list and holds; on a tablet it still shows 414×328 cards whose 300px “paper” holds an 8px excerpt.",
-   "proposed": "The Create Quote phone step (REG-2555): <b>Who is it for?</b> — recent leads first, a search — then the kind as rows: From the studio agreement · From a template (the list, the suggested one picked) · Import from file. The picker’s list goes to ≤1024 (the tablet’s cards are decoration that takes 70% of each card).",
+   "proposed": "The Create Quote phone step (REG-2570): <b>Who is it for?</b> — recent leads first, a search — then the kind as rows: From the studio agreement · From a template (the list, the suggested one picked) · Import from file. The picker’s list goes to ≤1024 (the tablet’s cards are decoration that takes 70% of each card).",
    "why": "the lead first is how a designer starts anything on site; the list is already built.",
    "shots": [
     [
@@ -269,7 +269,7 @@
    "refs": "C-lane",
    "title": "The contract inside the quote and the project",
    "today": "The quote’s *Contract · Sent to Client* was a 10px chip with a 20px touch box, and the Quote screen’s Next line ignored a live contract (it still said “send … for signature”, and Send ▾ would have raised a second one). The project’s signed contract is the eighth row of “View Client Info”; the contract value shows only inside a tile’s 12px help.",
-   "proposed": "The Next line is the contract’s state once one exists and the primary is Open contract — <b>built tonight as REG-2586</b> while the audit ran. Still to do: a 44 row “Contract · Sent to Client ›” under the quote’s hero; a <b>Documents</b> fold on the project Overview (the signed quote, the contract, each a 48 row with its date and ↗); the contract total at 14 in the To collect tile with its source.",
+   "proposed": "The Next line is the contract’s state once one exists and the primary is Open contract — <b>built tonight as REG-2601</b> while the audit ran. Still to do: a 44 row “Contract · Sent to Client ›” under the quote’s hero; a <b>Documents</b> fold on the project Overview (the signed quote, the contract, each a 48 row with its date and ↗); the contract total at 14 in the To collect tile with its source.",
    "why": "knowing from the quote whether a contract is out, signed or missing is the question on site; a 10px chip does not answer it.",
    "shots": [
     [
@@ -456,7 +456,7 @@
      "width": "all touch",
      "what": "Three module stylesheets re-declare the house overlay: `contracts-toolbar.module.css` 23–28 (`.menuWrap > span > button::after { inset: -4px }`), `contracts-table.module.css` 119–122 (`.float button::after { inset: -4px }`), `contracts-filters-modal.module.css` (`.foot button::after`). The house `::after` keeps its `translate(−22,−22)`, so the 44 box is displaced up-left: hit map −26…+36 on both axes at 390 and 768 — a thumb 4px right of or below the 36 glyph misses, 26px left/above hits.",
      "shots": [],
-     "fix": "Delete the three rules — `IconButton` and the DS md button already carry the centred 44 (REG-344, REG-2577)."
+     "fix": "Delete the three rules — `IconButton` and the DS md button already carry the centred 44 (REG-344, REG-2592)."
     },
     {
      "id": "A-12",
@@ -511,7 +511,7 @@
      "title": "Send together: with four documents the tools row drops below the fold",
      "severity": "Minor",
      "width": "390",
-     "what": "The sheet is REG-2578's (the link row hidden, Copy link in the foot — holds). With four documents the message grows to 292px and Reset message · Write with AI land at y 943 (below an 844 screen; the body scrolls 228px under the foot — REG-2578 accepts it); the document rows truncate \"Interior Design Service Agreem…\" against \"Sent to Client\" / \"Draft\" 12px on the right; a document already out (Sent to Client) is listed and ticked again.",
+     "what": "The sheet is REG-2593's (the link row hidden, Copy link in the foot — holds). With four documents the message grows to 292px and Reset message · Write with AI land at y 943 (below an 844 screen; the body scrolls 228px under the foot — REG-2593 accepts it); the document rows truncate \"Interior Design Service Agreem…\" against \"Sent to Client\" / \"Draft\" 12px on the right; a document already out (Sent to Client) is listed and ticked again.",
      "shots": [
       [
        "m390-15-send-together",
@@ -530,7 +530,7 @@
   {
    "key": "s-create",
    "title": "New contract, Import, the picker",
-   "intro": "Starting a contract on a phone: the lead, then the kind. Today’s picker on a phone (rebuilt this afternoon as a radio list, REG-2579) holds; the tablet still shows the desktop cards, and the lead question is a 30-row select.",
+   "intro": "Starting a contract on a phone: the lead, then the kind. Today’s picker on a phone (rebuilt this afternoon as a radio list, REG-2594) holds; the tablet still shows the desktop cards, and the lead question is a 30-row select.",
    "findings": [
     {
      "id": "A-10",
@@ -635,7 +635,7 @@
      "title": "Send lives at the top of a 3,920px page; nothing is sticky but the tool bar",
      "severity": "Major",
      "width": "390",
-     "what": "**Send lives in the header at the top of a 3,920 px page**; the header is not sticky at ≤767 (only the bar is). After touching clause 9 the primary is ~3,000 px away; after typing in clause 1 it is already at y −391. The status pill (89×36) and Send (257×36) are 36 drawn (REG-2577 keeps the 44 overlay), not the foot's 48.",
+     "what": "**Send lives in the header at the top of a 3,920 px page**; the header is not sticky at ≤767 (only the bar is). After touching clause 9 the primary is ~3,000 px away; after typing in clause 1 it is already at y −391. The status pill (89×36) and Send (257×36) are 36 drawn (REG-2592 keeps the 44 overlay), not the foot's 48.",
      "shots": [
       [
        "B-390-02-typing",
@@ -729,7 +729,7 @@
      "title": "Send for digital signature scrolls 68px; “Mark as signed” hides under the foot",
      "severity": "Minor",
      "width": "390 · 1024",
-     "what": "At 390 the sheet's body **scrolls 68 px** (602 in 534) and \"Signed in person? Mark as signed\" sits under the pinned foot until scrolled; the subtitle is four lines at 12 px (64 px); the deposit help is 12 px. At 1024×768 the body scrolls too (580 in 535) and the same line is below the fold. REG-2578 fitted the quote's dialog; the contract's extra rows (deposit 74, Mark as signed 36, standard documents) push it over.",
+     "what": "At 390 the sheet's body **scrolls 68 px** (602 in 534) and \"Signed in person? Mark as signed\" sits under the pinned foot until scrolled; the subtitle is four lines at 12 px (64 px); the deposit help is 12 px. At 1024×768 the body scrolls too (580 in 535) and the same line is below the fold. REG-2593 fitted the quote's dialog; the contract's extra rows (deposit 74, Mark as signed 36, standard documents) push it over.",
      "shots": [
       [
        "B-390-12-send-top",
@@ -757,7 +757,7 @@
      "title": "The snackbar lands over the ⋮ sheet’s last rows",
      "severity": "Minor",
      "width": "390",
-     "what": "After Send the snackbar \"Sent to Olivia Martinez for signature\" lands **over the sheet's last rows (Archive · Delete)**: REG-2580 lifts a snackbar above a sheet's *foot*; a menu sheet has none, and the editor group has no dock, so the band is 0.",
+     "what": "After Send the snackbar \"Sent to Olivia Martinez for signature\" lands **over the sheet's last rows (Archive · Delete)**: REG-2595 lifts a snackbar above a sheet's *foot*; a menu sheet has none, and the editor group has no dock, so the band is 0.",
      "shots": [
       [
        "m390-07-more-menu",
@@ -828,7 +828,7 @@
      "title": "Seven of twelve tools hide in a sideways scroller with no cut-off",
      "severity": "Major",
      "width": "390 · 768",
-     "what": "The tools scroll **sideways inside `.barTools { overflow-x: auto; scrollbar-width: none }`**: at 390 only Undo · Redo · Normal text · B · I are on screen — Underline, Highlight, Alignment, both lists, Link and Image sit at x 399…829 (`clippedX`); at 768 the row is 363 wide for 623 of tools (Alignment · lists · Link · Image `hit0`). Nothing says there is more. REG-2575 made the quote's text toolbar wrap at ≤1024; the contract bar never got it.",
+     "what": "The tools scroll **sideways inside `.barTools { overflow-x: auto; scrollbar-width: none }`**: at 390 only Undo · Redo · Normal text · B · I are on screen — Underline, Highlight, Alignment, both lists, Link and Image sit at x 399…829 (`clippedX`); at 768 the row is 363 wide for 623 of tools (Alignment · lists · Link · Image `hit0`). Nothing says there is more. REG-2590 made the quote's text toolbar wrap at ≤1024; the contract bar never got it.",
      "shots": [
       [
        "m390-05-editor-draft-top",
@@ -956,7 +956,7 @@
   {
    "key": "s-preview",
    "title": "The contract’s Preview",
-   "intro": "The quote’s Preview got a one-line bar and the paper viewer this afternoon (REG-2564…2571); the contract’s kept the desk bar.",
+   "intro": "The quote’s Preview got a one-line bar and the paper viewer this afternoon (REG-2579…2571); the contract’s kept the desk bar.",
    "findings": [
     {
      "id": "B-09",
@@ -1102,7 +1102,7 @@
      "title": "The client’s buttons are 36 drawn, not the client pages’ 48",
      "severity": "Minor",
      "width": "390 · 768 · 1024",
-     "what": "Send code 324×36, Verify 73×36, Sign agreement 324×36, Download a copy 324×36, the bar's Go to the box 122×36, Continue 324×36 — 36 drawn, 44 by the house overlay (REG-2577's decision). The Quotes client pages draw 48 (`confirm-page.module.css` `.card > button { min-height: 48px }` and the bar's 48 at ≤1024).",
+     "what": "Send code 324×36, Verify 73×36, Sign agreement 324×36, Download a copy 324×36, the bar's Go to the box 122×36, Continue 324×36 — 36 drawn, 44 by the house overlay (REG-2592's decision). The Quotes client pages draw 48 (`confirm-page.module.css` `.card > button { min-height: 48px }` and the bar's 48 at ≤1024).",
      "shots": [
       [
        "m390-10-review-gates",
@@ -1474,7 +1474,7 @@
   {
    "key": "s-pieces",
    "title": "The contract inside the quote, the project and the Won step",
-   "intro": "Where a contract shows up on other screens. One of these was fixed tonight: the Quote screen’s Next line now reads a live contract (REG-2586). The Won step still cannot take a photo of the paper the client just signed.",
+   "intro": "Where a contract shows up on other screens. One of these was fixed tonight: the Quote screen’s Next line now reads a live contract (REG-2601). The Won step still cannot take a photo of the paper the client just signed.",
    "findings": [
     {
      "id": "C-21",
@@ -1493,7 +1493,7 @@
       ]
      ],
      "absorbed": "P-11",
-     "absorbedNote": "the Next line is the contract’s state (REG-2586, built tonight); the chip becomes a 44 row"
+     "absorbedNote": "the Next line is the contract’s state (REG-2601, built tonight); the chip becomes a 44 row"
     },
     {
      "id": "C-22",

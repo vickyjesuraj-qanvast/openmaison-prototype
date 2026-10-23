@@ -4,7 +4,7 @@
 the module is audited the same way Quotes was (`../quotes-on-the-move-2026-10-22/`). Nothing of this is built until he marks the page.
 
 ## 1. The audit (read-only)
-- A production build of main with the Quotes-on-the-move build landed (REG-2525…2586) on a scratch copy of the morning's demo database,
+- A production build of main with the Quotes-on-the-move build landed (REG-2540…2601) on a scratch copy of the morning's demo database,
   captured at **390×844**, **768×1024** and **1024×768** with touch emulation (`isMobile: true, hasTouch: true`): 62 shared shots
   (`audit/capture-contracts.cjs`) and three audit lanes — **A** entry, the lists and the client's signing pages · **B** the contract editor ·
   **C** templates and the contract pieces inside other flows — that measured touch boxes, type sizes, truncation and sideways scroll, read the
@@ -22,9 +22,9 @@ the module is audited the same way Quotes was (`../quotes-on-the-move-2026-10-22
 - **The three blockers:** B-01 the contract's title field is 0px wide at 768 (the meta row gives everything to the other fields); A-16 the
   quote the client signs (`/sign/<token>/quote`) is an A4 zoomed to 0.45 — 4px type; C-27 the Won step's "Attach client signed contract"
   accepts PDFs only with no camera, so the paper the client just signed on site cannot be attached from a phone.
-- **Fixed the same evening, outside the proposal:** the Quote screen's Next line now reads a live contract (REG-2586 — lane C's C-21: with a
+- **Fixed the same evening, outside the proposal:** the Quote screen's Next line now reads a live contract (REG-2601 — lane C's C-21: with a
   contract already out for signature it still said "send … for signature" and would have raised a second contract); a tap on any DS search
-  bar on a phone now focuses it (REG-2585, found by the Dane P3 probe while the audit ran).
+  bar on a phone now focuses it (REG-2600, found by the Dane P3 probe while the audit ran).
 - Lanes' notes for later audits: under Chromium's touch emulation `innerWidth` / `scrollWidth` grow with overflowing content — measure
   against `documentElement.clientWidth`; the DS SearchBar's input is not the hit target (its shell is); a card's checkbox and ⋮ in one corner
   collide at 44.
@@ -40,7 +40,7 @@ built accordingly."
 `brief.md` is the contract every package follows (the Contract screen, Edit as a short list, the Document frame + content, placing a
 signature field, the client's page and sheet, the lists, New contract, templates, the pieces inside the quote and the project, the Won step's
 photo, the scale, the fixes) and the ownership table. Four packages in git worktrees, each starting from a "WIP base" commit of main's
-uncommitted Quotes-on-the-move state (`rc-build/setup-lane.sh`), no commits; two waves. Register rows are numbered from REG-2588 at landing.
+uncommitted Quotes-on-the-move state (`rc-build/setup-lane.sh`), no commits; two waves. Register rows are numbered from REG-2603 at landing.
 
 | Pkg | Builds | Wave | Outcome | Rows |
 | --- | --- | --- | --- | --- |
@@ -55,7 +55,7 @@ Probes: `design-source/verify/responsive-contracts/verify-rc-c{1…4}.cjs`.
 - 20:05 — the audit server on :3014 (a scratch copy of the morning's base); 62 shots at 390 · 768 · 1024.
 - 20:15 — lanes A · B · C launched (one agent each, read-only, their own records on the scratch DB).
 - 20:40 — B back (24: 1 blocker · 9 major · 14 minor). 21:00 — C back (27: 1 · 11 · 15). 21:05 — A back (26 rows, one holds: 1 · 12 · 12).
-- 21:10 — REG-2586 (the Quote screen's Next line reads a live contract) from C-21, with pure tests; REG-2585 (search bars take a tap) from
+- 21:10 — REG-2601 (the Quote screen's Next line reads a live contract) from C-21, with pure tests; REG-2600 (search bars take a tap) from
   the Dane P3 probe.
 - 21:30 — the review page built from the three tables (`content.py` → `review-page-data.json` → the page) and published, private to him.
 - 23:12 — his picks read from the page's db (31 rows, all Build / as recommended); `picks-2026-10-22.json`; the brief written; the lane set-up tested on a throwaway worktree (matches main's working tree).
@@ -67,5 +67,5 @@ Probes: `design-source/verify/responsive-contracts/verify-rc-c{1…4}.cjs`.
 - 23:40 — **C4 stopped by a usage limit** on the build agents' model (Fable) about 30 minutes in, with 23 files changed and 3 new in its worktree (the phone card's words, the lists and toolbar, the picker, the Deleted / Archived sheets, a new-contract sheet, the quote's Contract row, the project Money tile, the touch tooltip). The owner switched the session to Opus; C4 resumed on Opus in the same worktree with a hand-over of what was done and what remains (P-10 templates, P-11 Documents fold, P-12 the Won step's photo, the three integration items, the probe and the outcome).
 - 23:55 — the combined wave-1 lane on one main build: ct-r1 36 · ct-r2 24 · ct-r3 28 · rq-k1 116 · rq-k5 79 · pm2-s03 79 · overlays 67 green; the packages' own probes needed probe-side landing fixes (rc-c1 and rc-c3 read repo files relative to their folder, which the harness's lane copy cannot reach — they now resolve the repo from the working directory; rc-c2's touch steps open the Document screen `?edit=document`, where C1 hosts C2's tool row) → **rc-c1 175/0 · rc-c3 110/0** on main; rc-c2 green through the box's ✕ (46) and handed to C4 from its Send step on (on ≤1024 the blocked Send's Show me opens C1's Signature fields screen, which C4 turns into C2's panel). C4 told to take the three probes from main.
 - 03:35 — **C4 landed** (61 paths through a plain apply, 18 new files; its three copies of rc-c1 · rc-c2 · rc-c3 taken whole — main's landing fixes + its merged Send → Show me → the Signature fields panel flow; `esign-screens.tsx` deleted, C2's panels in C1's screens; the frame's ≡ named "Outline"). Probe rc-c4 177/0 (33 pure); rc-c1 176 · rc-c2 90 · rc-c3 110 · ct-r1…r4 · sw-r2 · rq-k1 · k4 · k5 · pm2-s02 · s03 · s44r · s46d · Dane P4 · P5a · ux-P5 · overlays · pj-r1 · r5 · r6 · fix-D · gap-f2 · folders-galleries · pickers green on its lane; pj-gap-a and pj-gap-b 71/1 each fail the same way on the WIP base's own build (the Projects listing, untouched). 1440: 35 of 41 identical; the six that differ are a port and a random id inside a signing link (same words), a 1-unit anti-alias at the Won step's Project type field corners, and one deliberate 1025 change (the to-do chip folds to "✎ 1" so the title reads whole). Decisions flagged ▲ in its outcome §2.
-- 03:45 — rows numbered **REG-2588…2638** (C1 2588–2598 · C2 2599–2607 · C3 2608–2618 · C4 2619–2638) + **REG-2639** (the Signed line's separator, a landing fix); the lint baseline lowered (icon-button-overlay 10 → 7); CLAUDE.md Map, `responsive.md` § Contracts on the move, UAT chapter 27 (15 steps).
+- 03:45 — rows numbered **REG-2603…2653** (C1 2603–2613 · C2 2614–2622 · C3 2623–2633 · C4 2634–2653) + **REG-2654** (the Signed line's separator, a landing fix); the lint baseline lowered (icon-button-overlay 10 → 7); CLAUDE.md Map, `responsive.md` § Contracts on the move, UAT chapter 27 (15 steps).
 - 03:30 — **the closing regression on the final build is green (32 probes):** rc-c1 176 · rc-c2 90 · rc-c3 110 · rc-c4 177 (33 pure) · ct-r1 36 · r2 24 · r3 28 · r4 29 · sw-r2 27 · overlays 67 · ghosts-same 76 ×2 (1440 and 390) · rq-k1 116 · rq-k4 143 · rq-k5 79 · pm2-s02 107 · s03 79 · s44r 82 · s46d 73 · Dane P4 37 · P5a 59 · P5b 56 · ux-P5 59 · pj-r1 98 · r5 91 · r6 82 · gap-f2 84 · gap-d 65 · folders-galleries 44 · pickers 15 · kb-r1 35 · kb-r2 29. Type-check clean; lint only the three old quote-editor errors; design lint green with the baseline lowered. No test server left; local.db untouched; nothing committed (he commits).

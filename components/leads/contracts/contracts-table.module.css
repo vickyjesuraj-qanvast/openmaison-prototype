@@ -94,7 +94,7 @@
    parked row actions as `position: absolute; right: 0` over a 150px band (the ⋮ sat 1,100px to the right at 768 — REG-310's rule is the
    listing's, not a touch tablet's, whose first screen must carry the actions), and the `.float`'s ::after inset ring (a 4px ring round the 36 glyph), which
    displaced the house 44 box by (−22, −22) — the house IconButton and the DS md button carry the centred target themselves (REG-344,
-   REG-2577; the design-lint rule `icon-button-overlay`). */
+   REG-2592; the design-lint rule `icon-button-overlay`). */
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The Quotes twin's rule (components/leads/quotes/quotes-table.module.css), with this table's two
@@ -140,7 +140,7 @@
 /* The phone card's own pieces (contracts-table.tsx): the name line, the signs line, the amount, the chip row — none of them on a desk or a tablet. */
 .cardName, .cardSigns, .cardAmount, .cardStatus { display: none; }
 
-/* ── ≤767: the card (Contracts on the move, C4 — P-07 · A-01 · A-02 · A-03 · A-07 · A-08 · A-14, Q-03 as picked; the Quotes card, REG-2547;
+/* ── ≤767: the card (Contracts on the move, C4 — P-07 · A-01 · A-02 · A-03 · A-07 · A-08 · A-14, Q-03 as picked; the Quotes card, REG-2562;
    supersedes REG-377's lines and the live pill) ──
    Line 1: the client's name leads (the title where the list is one lead's) — 16 bold, the press that opens — with the amount the contract signs
    at the right, 18 tabular, clear of the ⋮ in the corner. Line 2: "Signs OM-10008 · Interior Design Service Agreement" at 14 (the title first on

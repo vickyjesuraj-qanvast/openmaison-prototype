@@ -12,7 +12,7 @@ export type NewContractKind = 'blank' | 'template' | 'import'
 
 /**
  * (Contracts on the move, C4 — P-09 · A-10; his "please check and built accordingly" 2026-10-22) New contract on a phone, studio-wide: the Create
- * Quote phone step (REG-2555, components/quotes/create-quote-modal.tsx — its rows composed, never copied). **Who is it for?** — the leads with
+ * Quote phone step (REG-2570, components/quotes/create-quote-modal.tsx — its rows composed, never copied). **Who is it for?** — the leads with
  * the newest contract activity first, then everyone by name, a search over both — then the kind as 56 rows: From the studio agreement · From
  * a template (the picker's list, the suggested one picked) · Import from file. A bottom sheet (the house Dialog's form size); its Back returns
  * to the list. `whoOnly`: the first step alone (the templates gallery's "New contract from this template" asks only who).
@@ -55,7 +55,7 @@ export function NewContractSheet({ open, onClose, leads, recent = [], busy = fal
 
 /**
  * (C4 — P-09 · A-10) **Who is it for?** — the leads with the newest contract activity first ("Recent"), then everyone else by name, a search
- * over both (the DS SearchBar, REG-2585 made it take a tap); a tap on a row picks. The New contract sheet's first step, and on a phone the
+ * over both (the DS SearchBar, REG-2600 made it take a tap); a tap on a row picks. The New contract sheet's first step, and on a phone the
  * contract hosts' lead question (`PickLeadDialog whoList`: Import / a template / Send together from Tools, where no lead is in context).
  */
 export function LeadWhoList({ leads, recent = [], onPick, disabled = false }: { leads: { id: string; name: string }[]; recent?: string[]; onPick: (leadId: string) => void; disabled?: boolean }) {

@@ -15,7 +15,7 @@
 
 /* (Contracts on the move, C4 — A-09, 2026-10-22) The `(hover: none)` block that re-declared the house touch overlay as a 4px `::after` ring on
    New Contract, Filters and the kebab left this sheet: the house IconButton and the DS md button carry the centred 44 box themselves
-   (REG-344, REG-2577; the design-lint rule `icon-button-overlay`) — the module's inset kept the house translate(−50%, −50%) and moved
+   (REG-344, REG-2592; the design-lint rule `icon-button-overlay`) — the module's inset kept the house translate(−50%, −50%) and moved
    that box by (−22, −22), so a thumb 4px right of or below the glyph missed. */
 
 /* (REG-354) The mobile canvas' toolbar is ONE row — the section title and the glyphs (2b · 2n · 3f · 3i · 3d).

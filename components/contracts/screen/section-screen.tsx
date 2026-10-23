@@ -12,7 +12,7 @@ import styles from './section-screen.module.css'
  * and a touch tablet: the one bar (← back to the section list · the section's title · its controls), the body as the scroller, an optional
  * foot. Fixed over the section list; on a landscape tablet it stands beside the list's pane (`--screen-left`). The screen takes focus as it
  * opens (a keyboard tablet tabs from its bar); Esc is its back while it is the topmost surface — an Esc typed inside a field blurs the field
- * first (REG-2584's rule), so the next Esc is the one that leaves. The quote's section screen (SectionCard's screen mode) is the model.
+ * first (REG-2599's rule), so the next Esc is the one that leaves. The quote's section screen (SectionCard's screen mode) is the model.
  */
 export function SectionScreen({ title, subtitle, onBack, backLabel = 'Back to the sections', trailing, foot, flush = false, full = false, children, testId = 'section-screen', titleId, as = 'h1' }: {
   title: ReactNode

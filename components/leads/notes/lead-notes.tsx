@@ -750,7 +750,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           setAttached(id, [...have, ...fresh], 'attach the files', `${fresh.length === 1 ? '1 file' : `${fresh.length} files`} attached`)
         }}
         onUploadPicked={uploadPicked}   /* (UX audit 2026-09-30, T1) the real upload; the modal ticks the file it hands back */
-        layered={sheetLayout}   /* (REG-2641, C-01) above the contact log's phone sheet */
+        layered={sheetLayout}   /* (REG-2656, C-01) above the contact log's phone sheet */
       />
       {/* AutoFillDialog / SuggestedTasksDialog = the Move stage window's, in their Notes variant (164 · 166, spec 02): 600 wide,
           the 64px modal header (20/Bold + rule, 779:26016), body p24; Add tasks with 14/Semi Bold group labels, leading boxes and the rule. */}

@@ -13,7 +13,7 @@ import styles from './section-screen.module.css'
  * contract's paper full-screen on a phone and a touch tablet (`?edit=document`). A 56 bar — ← (back to the sections) · "Document" · the
  * clause the caret is in as the sub-line ("clause 2 of 12 · saved just now") · Outline ≡ · Done — and the body is whatever the host mounts:
  * today's `DocToolbar` + `DocEditor` (components/contracts/editor/*), whose insides C2 makes the one 44-pitch tool row and the paper at
- * ≤1024. No Maison AI button over the paper (the host draws none while this screen is open — REG-2587's rule for a section screen). The
+ * ≤1024. No Maison AI button over the paper (the host draws none while this screen is open — REG-2602's rule for a section screen). The
  * Outline: a sheet on a phone (the host's Drawer, today's — it closes on pick and lands the heading mid-screen) or, on a landscape tablet,
  * `pane` at the paper's left, never a drawer over the place a field is being put (P-02 · B-13). The contract template's clauses (C4, wave 2)
  * open in this same frame. Esc is its back while it is the topmost surface (a field's Esc blurs the field first).

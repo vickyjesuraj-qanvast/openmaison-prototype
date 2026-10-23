@@ -1,4 +1,4 @@
-// (REG-2640, the Leads audit's B-01) The owner gate on every forward stage move, pure. Run: npx tsx design-source/verify/responsive-leads/rl-stage-intent-pure.mts
+// (REG-2655, the Leads audit's B-01) The owner gate on every forward stage move, pure. Run: npx tsx design-source/verify/responsive-leads/rl-stage-intent-pure.mts
 import { stageIntent } from '../../../lib/leads/stage-policy'
 
 let pass = 0, fail = 0

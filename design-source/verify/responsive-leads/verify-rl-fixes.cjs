@@ -1,4 +1,4 @@
-// Leads on the move — the two blockers the audit found, fixed ahead of the proposal (REG-2640 · REG-2641, 2026-10-23).
+// Leads on the move — the two blockers the audit found, fixed ahead of the proposal (REG-2655 · REG-2656, 2026-10-23).
 //  0 · the pure owner gate (rl-stage-intent-pure.mts)
 //  1 · B-01 at 390 and 1440: on a lead nobody owns, the header's "Move to Contacted" refuses with "Assign a member first" and its Assign
 //      action (the stage menu's rule), and opens no Move stage window — so no log can be typed and lost; an owned lead still opens it.

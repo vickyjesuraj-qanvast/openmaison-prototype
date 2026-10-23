@@ -17,7 +17,7 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
    `audit/B-the-contract-editor.md` · `audit/C-templates-and-the-pieces-inside-other-flows.md` (in your worktree). The shots:
    `/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/5925ce42-6d4b-4f83-b6c8-f3e919c3f6fb/scratchpad/rwd-contracts/shots/`
    (+ `A/`, `B/`, `C/` beside it). The drawn screens: `audit/drawn-screens.html` (render it in a browser — the shape to build, with OpenMaison's tokens).
-3. **What Quotes built this afternoon — the pieces you reuse (REG-2525…2587; record `../quotes-on-the-move-2026-10-22/`, read its `brief.md`
+3. **What Quotes built this afternoon — the pieces you reuse (REG-2540…2587; record `../quotes-on-the-move-2026-10-22/`, read its `brief.md`
    § The design and the outcomes of K1 · K3 · K5):** the Quote screen `components/quotes/screen/*` (`QuoteScreen`, `ScreenBar`, `SectionList`,
    the folds, the foot, `screen-context.ts`), `lib/quotes/next-step.ts` (the model for the contract's), the paper viewer
    `components/quotes/confirm/paper-viewer.tsx`, the reading cards `components/quotes/confirm/reading-cards.tsx`, the client page layout
@@ -29,7 +29,7 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
    Dropdown's ≤1024 clamp, the house `CodeBoxes` (`components/om/code-boxes.tsx`), `components/om/signature-pad.tsx`, the ghost kit.
 4. In the repo: `CLAUDE.md` (How we work · the Map's Contracts and Quotes entries), `DESIGN-PRINCIPLES.md`, `design-source/context/responsive.md`
    § *On the move* (the rules you extend), `design-source/context/page-checklist.md`, the REG rows named in comments near what you change
-   (`design-source/REGISTER.md`; the Contracts decisions are REG-534, REG-629…635, REG-1691…1700, REG-2572…2587), `lib/contracts/*` (`policy.ts`
+   (`design-source/REGISTER.md`; the Contracts decisions are REG-534, REG-629…635, REG-1691…1700, REG-2587…2587), `lib/contracts/*` (`policy.ts`
    `linkState` · `quoteHoldsSigning`, `model.ts` `awaitingLine` · `signingMessage` · `reminderMessage` · `contractLink`, `readiness.ts`,
    `status.ts`, `tokens.ts` `outlineOf` · `signField` · `signFieldsIn`, `snapshot.ts`, `won.ts`, `files.ts`).
 
@@ -65,7 +65,7 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
   sub-line · Outline ≡ · Done), the body = children). C2 makes `DocToolbar` + `DocEditor` the content at ≤1024: **one 44-pitch tool row** —
   Undo · Text style ▾ · B · I · U · List · **+ ▾** (a sheet: Insert a field with its "prints as" values in one level · Add a signature field › ·
   Link · Image · Highlight · Alignment · Numbered list) — nothing scrolls sideways, nothing hidden; the desk's bar at ≥1025 is untouched. No
-  Maison AI button over the paper (the frame hides it as REG-2587 does for a section screen). A tap on a Smart Text chip on touch opens
+  Maison AI button over the paper (the frame hides it as REG-2602 does for a section screen). A tap on a Smart Text chip on touch opens
   "Client name · prints as Harpreet Kaur · Remove" (B-19). The Outline (≡) closes on pick and lands the heading mid-screen (today's, kept).
 - **A signature field is placed by choosing where (P-04, C2).** On touch **Add a signature field** asks *which* (Studio · Client · initials,
   with "placed" marks) then *where* — the document's clauses from the Outline ("After 11. Governing law and disputes" · "Under Signatures", picked
@@ -92,7 +92,7 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
   Download. The dead-link notices (`/sign/none`, expired, inactive) carry **Message {studio}** (K4's `notice-message.tsx`, pass the contact —
   A-25). The chat card (`/card/sign/<id>`, C-26): the eyebrow and "For {client}" large enough to survive WhatsApp's ~300px preview (≥ 36 and
   ≥ 48 of 630). 48 buttons and 16 inputs on every client page at ≤1024; the desk's signing page at ≥1025 as it is.
-- **The lists (P-07 · P-08, C4).** The phone card (REG-2547's, `components/leads/quotes/*` is the model): the **client's name** 16/700 with the
+- **The lists (P-07 · P-08, C4).** The phone card (REG-2562's, `components/leads/quotes/*` is the model): the **client's name** 16/700 with the
   **amount** 18 right (the quote it signs; none → the title alone) · "Signs OM-10008 · Interior Design Service Agreement" 14 · a **read-only**
   status chip (Q-03) with its since (`awaitingLine`: "sent 2d ago · not opened" · "link expired" · "signed 12 Sep") and a chevron; the whole
   card opens the contract; a long press selects (`use-long-press.ts`); ⋮ = Open · Send a reminder (Send the link again when expired) · Copy
@@ -103,9 +103,9 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
   (A-05); no quick-links strip on the lead's Contracts tab at 768 portrait (K4's rule, `quick-links.module.css`). The templates gallery's list
   view takes the same tablet default (C-05).
 - **New contract (P-09, C4).** On ≤767 the lead question is the Create Quote phone step: **Who is it for?** — recent leads first, a search
-  (`SearchBar`; REG-2585 made it tappable) — then the kind as rows: From the studio agreement · From a template (the picker's list, the suggested
+  (`SearchBar`; REG-2600 made it tappable) — then the kind as rows: From the studio agreement · From a template (the picker's list, the suggested
   one picked) · Import from file. The picker's **list goes to ≤1024** (the tablet's cards go, C-20). Import keeps today's sheet; Send together
-  keeps REG-2578's sheet with the message growing and the tools row never below the fold (A-15: the count only ≥768, as REG-2578).
+  keeps REG-2593's sheet with the message growing and the tools row never below the fold (A-15: the count only ≥768, as REG-2593).
 - **Templates (P-10, C4 + C2's content).** Company › Templates › Contracts on ≤767 is a **list**: Default and At handover pinned on top, each
   row name 16/600 · "13 headings · used by 5 · edited 14 Aug" 14 · chevron; the row opens the template's **reading screen**
   (`/templates/contracts/<id>` on ≤1024): a 56 bar (← · the name · ⋮), a status row ("Default · used by 5 · fills 10 fields · client signs ✓"),
@@ -116,7 +116,7 @@ You build ONE package (your prompt names it). Four packages run in two waves; ea
   say so). Desk ≥1025 unchanged.
 - **The contract inside the quote and the project (P-11, C4).** The quote's hero on ≤1024 gets a 44 row **"Contract · Sent to Client ›"** (opens
   the contract) under the client row when a contract exists (`components/quotes/screen/quote-screen.tsx` — K1's file, a small additive change;
-  rq-k1 must stay green); the Next line already reads a sent contract (REG-2586). The project Overview gets a **Documents** fold (the signed
+  rq-k1 must stay green); the Next line already reads a sent contract (REG-2601). The project Overview gets a **Documents** fold (the signed
   quote · the contract, each a 48 row with its date and ↗ — C-23); the To collect tile shows the contract total at 14 with its source (C-24).
 - **The Won step and Import take a photo (P-12, C4; Q-04 photo).** On touch the Won step's "Attach client signed contract" and Import's dropzone
   become two rows — **Take a photo** (`capture="environment"`, images) · **Choose a file** (PDF or image) — the photo kept as the signed copy
@@ -185,7 +185,7 @@ need in your outcome under "For other packages" instead.
 - **Register rows:** stage them in `design-source/context/responsive/contracts-on-the-move-2026-10-22/reg-<c>.md` as
   `| REG-<C>.n | Area | **What** — why (his "please check and built accordingly" 2026-10-22 on the Contracts-on-the-move page; P-xx / A-xx …;
   decisions as recommended) *(invented copy: …)* | user-directed |` (a bug fix row ends `| bug fix |`). Don't edit `design-source/REGISTER.md`
-  or `CLAUDE.md` (the orchestrator does; rows are numbered from REG-2588 at landing).
+  or `CLAUDE.md` (the orchestrator does; rows are numbered from REG-2603 at landing).
 - **Outcome:** `…/contracts-on-the-move-2026-10-22/outcome-<c>.md`: a **ledger** with every id assigned to you (P-, A-, B-, C-), each built
   (where) · kept (why) · not done (why); decisions taken (the ones he should see flagged ▲); **Shared pieces changed**; **For other packages**;
   what to check in the browser (Dane Owner · Hui Min Admin · Germaine Designer; 390 · 768 · 1024 · 1440; the client's page as a client); the

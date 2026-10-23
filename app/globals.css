@@ -318,7 +318,7 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
     transform: translate(-50%, -50%);
     width: max(100%, 44px); height: max(100%, 44px);
   }
-  /* (REG-2585, found 2026-10-22 by the Dane P3 probe on the phone's Create Quote) the SearchBar's overlay lay ABOVE its input and took
+  /* (REG-2600, found 2026-10-22 by the Dane P3 probe on the phone's Create Quote) the SearchBar's overlay lay ABOVE its input and took
      every tap — the shell is not focusable, so "Search leads" could not be typed into on a phone. The overlay lets taps through: the input
      already fills the shell (above), so the finger's target is the shell itself. */
   [class*='_searchBar_']::after { pointer-events: none; }

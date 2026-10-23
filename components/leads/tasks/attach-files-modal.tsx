@@ -67,7 +67,7 @@ export function AttachFilesModal({
    *  tinted — the caption is kind glyph · name · kebab, folder cards count their items, "Search files", no dropzone helper,
    *  the `sort` glyph and a list-then-grid toggle. tasks = the Tasks tab's own mock (902:28220), unchanged. */
   chrome?: 'tasks' | 'quote'
-  /** (REG-2641, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the layer above it */
+  /** (REG-2656, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the layer above it */
   layered?: boolean
 }) {
   const imageMode = mode === 'image'

@@ -107,7 +107,7 @@ export function stageIntent(
   }
   // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
   if (to <= from) return { kind: 'wizard', stage }
-  /* (REG-2640, the Leads audit's B-01 — a bug fix) Nothing moves past New without an owner (REG-130) — the stage menu greyed the move,
+  /* (REG-2655, the Leads audit's B-01 — a bug fix) Nothing moves past New without an owner (REG-130) — the stage menu greyed the move,
      but the header's "Move to Contacted" opened the Contacted step, let the whole first log be typed, and lost it when the server
      refused. Every forward move now asks the same rule first; the lead page's refusal carries Assign as its way on. */
   if (stage !== 'New' && lead.assignees.length === 0) return { kind: 'blocked', message: 'Assign a member first' }

@@ -62,7 +62,7 @@ export function SectionCard({ id, title, open, onToggle, actions, onHandlePointe
      typing finger; Esc is its back while it is the topmost surface */
   const onBack = screen?.onBack
   useEffect(() => { if (isScreen) card.current?.focus({ preventScroll: true }) }, [isScreen])
-  /* (quotes on the move, landing fix 2026-10-22 — REG-2584) an Esc typed inside a field, a text editor or the Items grid cancels THAT edit:
+  /* (quotes on the move, landing fix 2026-10-22 — REG-2599) an Esc typed inside a field, a text editor or the Items grid cancels THAT edit:
      the control blurs and the screen takes the focus back, so the next Esc is the one that leaves. The house layer listens in capture, ahead
      of the grid's own Esc (items-table.tsx), so without this the first Esc in a cell left the whole section (found by the rq-k2 probe). */
   const back = useCallback(() => {

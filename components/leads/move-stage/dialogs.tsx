@@ -37,7 +37,7 @@ export function AutoFillDialog({
   variant?: SharedDialogVariant
   /** a contact log, or Met's meeting log — the helper says what each is read for */
   kind?: ContactKind
-  /** (REG-2641, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the nested layer above it */
+  /** (REG-2656, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the nested layer above it */
   layered?: boolean
 }) {
   const notes = variant === 'notes'

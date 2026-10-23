@@ -19,8 +19,8 @@ of this audit is the lead's page, the moments that move it (the Move stage windo
 - **The answer in one line:** the listing stays (his benchmark) and its card gains the last contact and the next follow-up; a lead on a phone
   opens as a person and a position (stage and days, Call · WhatsApp, one Next line, Due now, a row per tab, a sticky Log ▾ + the next move); a
   call is logged in three taps; the Move stage window is one step per screen; a new lead is a name and a mobile.
-- **The two blockers were plain bugs and are fixed tonight** (no pick needed): **REG-2640** — an unowned lead's "Move to Contacted" opened
-  the Contacted step and lost the typed log on Save (B-01); every forward move now asks the owner rule first. **REG-2641** — Auto Fill and
+- **The two blockers were plain bugs and are fixed tonight** (no pick needed): **REG-2655** — an unowned lead's "Move to Contacted" opened
+  the Contacted step and lost the typed log on Save (B-01); every forward move now asks the owner rule first. **REG-2656** — Auto Fill and
   Attach opened under the Notes contact log's phone sheet (C-01). Probe `design-source/verify/responsive-leads/verify-rl-fixes.cjs` 22/0.
 
 ## 2. His picks
@@ -32,5 +32,5 @@ Not started.
 ## 4. Log
 - 2026-10-23 03:40 — committed the Quotes + Contracts builds (`a6caecb1`, on main, not pushed); the audit server on :3014; 77 shots.
 - 03:50 — lanes A · B · C launched on Opus (the build agents' earlier model is out of usage credits).
-- 05:20 — the three lanes back (A 30 · B 26 · C 27); B-01 and C-01 fixed as REG-2640 · REG-2641 with a pure test and a probe (22/0 at 390 and 1440); the review page built from the three tables.
+- 05:20 — the three lanes back (A 30 · B 26 · C 27); B-01 and C-01 fixed as REG-2655 · REG-2656 with a pure test and a probe (22/0 at 390 and 1440); the review page built from the three tables.
 - 05:35 — the review page published, private to him: https://claude.ai/artifact/Az4YWRVEPWoMe8PwsPn3gh (13 proposals · 11 stand-alone fixes · 8 questions).

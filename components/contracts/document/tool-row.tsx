@@ -25,7 +25,7 @@ const STYLE_CLASS: Partial<Record<string, string>> = { h1: editorStyles.styleH1,
  * + ▾** — seven 44 boxes at a 44 pitch, nothing scrolling sideways, nothing hidden; the rest of the desk's bar (Highlight, Alignment, the
  * numbered list, Link, Image, Insert a field, Add a signature field) is one tap further under + ▾ (PlusMenu). The Outline is not here: the
  * Document screen's bar carries ≡ (C1's `DocumentFrame`), and today's page keeps it in Maison AI's sheet. No Maison button covers the paper
- * — the frame hides it (REG-2587's rule). Write with AI rides the + sheet's pinned row on a phone and the row's end on a tablet held sideways.
+ * — the frame hides it (REG-2602's rule). Write with AI rides the + sheet's pinned row on a phone and the row's end on a tablet held sideways.
  */
 export function ToolRow({ editor, state, values, disabled, writing }: {
   editor: RefObject<DocEditorHandle | null>; state: DocState; values: TokenValues; disabled?: boolean; writing?: ReactNode

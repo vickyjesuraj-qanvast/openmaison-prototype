@@ -21,7 +21,7 @@ module: Contracts". Nothing is built from this audit until he marks it. You AUDI
   that must be perfect).
 - `DESIGN-PRINCIPLES.md`, `design-source/REGISTER.md` (search the REG-nnn named in a code comment before calling something a defect — if it
   is a decision, say so and still say whether it serves a person on the move; the Contracts decisions are REG-534, REG-629…635, REG-1691…1700,
-  REG-2572…2583 for today's), `design-source/context/lead-contracts/` (the specs), `design-source/context/parity/07-…` and `08-…` (what 1.0
+  REG-2587…2583 for today's), `design-source/context/lead-contracts/` (the specs), `design-source/context/parity/07-…` and `08-…` (what 1.0
   had and where it went).
 
 ## What you have

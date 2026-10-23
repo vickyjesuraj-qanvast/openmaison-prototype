@@ -61,7 +61,7 @@
 @media (max-width: 767px) {
   :global(body[data-om-file-strip]) .wrap { bottom: calc(var(--app-mobile-dock-height) + var(--app-file-strip-height, 64px) + var(--om-spacing-3)); }
 }
-/* (REG-2587, quotes on the move — landing fix 2026-10-22) 768–1024: inside a section screen (`data-screen`, K1) the Items toolbar carries its
+/* (REG-2602, quotes on the move — landing fix 2026-10-22) 768–1024: inside a section screen (`data-screen`, K1) the Items toolbar carries its
    own Maison AI button, and the FAB's corner is exactly where the line pane's foot puts Done (the pane is 400 wide at the right edge, its
    foot at the bottom) — at 1024 the FAB sat over Done and took every tap (found by the rq-k2 probe at landing). The FAB steps out of a
    section screen on a tablet; the phone keeps it (its pane is a bottom sheet above the FAB, and the phone's Items bar has no Maison AI). */
