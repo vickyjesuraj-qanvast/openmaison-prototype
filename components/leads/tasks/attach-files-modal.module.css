@@ -6,6 +6,8 @@
   display: flex; align-items: safe center; justify-content: center;
   padding: 48px 0; overflow-y: auto;
 }
+/* (REG-2641, C-01) opened from a phone sheet (z 115): the house nested layer, as `Dialog nested` (REG-615's z 120) */
+.overlay[data-layered] { z-index: 120; }
 /* (REG-725) The look (surface, r12 — the mock's r10 → the modal standard's 12, REG-107 — level 5, the column) is the shared panel's
    (surfaceClasses.panel); the head 64 and the foot 68 are the house's (SurfaceHead / SurfaceFoot, components/om/dialog.tsx). The
    panel stays positioned: the upload toast is placed inside it. */

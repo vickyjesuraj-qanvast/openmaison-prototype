@@ -1,0 +1,233 @@
+<!-- The proposed on-the-move Leads experience, drawn with OpenMaison's own tokens (the Quotes page's frames). Each frame is a 390-wide phone at 0.82 scale (320px). -->
+<style>
+.mk-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 18px; align-items: start; }
+.mk { display: grid; gap: 10px; min-width: 0; }
+.mk-cap { font-size: 13px; color: var(--muted); }
+.mk-cap b { color: var(--fg); font-weight: 600; display: block; font-size: 14px; margin-bottom: 2px; }
+.phone { --p: #5500ff; --p10: #eee5ff; --p20: #ddccff; --n0: #fff; --n5: #f2f2f2; --n10: #e5e5e5; --n20: #ccc; --n40: #999; --n60: #666; --n90: #1a1a1a; --g: #469e59; --g10: #edf5ee; --r: #db382a; --y: #f19e2b; --y10: #fef5ea;
+  width: 320px; max-width: 100%; height: 660px; border-radius: 30px; border: 7px solid #1a1a1a; background: var(--n5); overflow: hidden; position: relative; color: var(--n90); font: 12.5px/1.35 Inter, system-ui, sans-serif; box-shadow: 0 10px 30px rgba(20, 10, 60, .14); margin: 0 auto; display: flex; flex-direction: column; }
+.phone * { box-sizing: border-box; }
+.phone.tab { width: 100%; max-width: 640px; height: 460px; border-radius: 18px; }
+.p-sb { height: 22px; background: var(--n0); font-size: 10px; display: flex; justify-content: space-between; padding: 4px 16px; color: var(--n90); font-weight: 600; }
+.p-bar { height: 48px; background: var(--n0); display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--n10); flex: 0 0 auto; }
+.p-bar .ttl { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-bar .sub { font-size: 11px; color: var(--n60); font-weight: 400; display: block; }
+.ic { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; color: var(--n90); font-size: 16px; flex: 0 0 auto; }
+.ic.b { border: 1px solid var(--n20); }
+.p-body { flex: 1 1 auto; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.p-body.tight { gap: 8px; }
+.card { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; padding: 12px; }
+.hero .num { font-size: 11px; color: var(--n60); display: flex; gap: 6px; align-items: center; }
+.chip { display: inline-block; font-size: 10px; font-weight: 600; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--n20); color: var(--n60); background: var(--n0); line-height: 1.6; }
+.chip.draft { background: var(--n5); }
+.chip.sent { color: var(--p); border-color: var(--p); background: var(--p10); }
+.chip.ok { color: var(--g); border-color: var(--g); background: var(--g10); }
+.chip.warn { color: #8f5400; border-color: var(--y); background: var(--y10); }
+.hero .ttl { font-weight: 700; font-size: 16px; margin-top: 4px; }
+.hero .amt { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hero .meta { font-size: 11.5px; color: var(--n60); margin-top: 2px; }
+.hero .cl { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--n10); font-size: 12px; }
+.hero .cl .av { width: 28px; height: 28px; border-radius: 50%; background: var(--p10); color: var(--p); font-weight: 700; display: grid; place-items: center; font-size: 11px; }
+.hero .cl .acts { margin-left: auto; display: flex; gap: 6px; }
+.hero .cl .acts span { width: 32px; height: 32px; border: 1px solid var(--n20); border-radius: 8px; display: grid; place-items: center; font-size: 13px; }
+.next { background: var(--p10); border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #4400cc; display: flex; gap: 8px; align-items: flex-start; }
+.next b { font-weight: 600; }
+.sec { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; overflow: hidden; }
+.sec .h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-weight: 600; font-size: 12.5px; }
+.sec .h .n { color: var(--n60); font-weight: 400; font-size: 11px; }
+.sec .h .amt { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sec .h .chev { color: var(--n60); width: 20px; text-align: right; }
+.line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 12px 9px 16px; border-top: 1px solid var(--n10); font-size: 12px; }
+.line .nm { font-weight: 500; }
+.line .q { color: var(--n60); font-size: 11px; grid-column: 1; }
+.line .t { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.line.dim { opacity: .55; }
+.p-foot { flex: 0 0 auto; background: var(--n0); border-top: 1px solid var(--n10); padding: 10px 12px calc(10px + 6px); display: flex; gap: 8px; }
+.btn { flex: 1; height: 44px; border-radius: 6px; display: grid; place-items: center; font-weight: 600; font-size: 14px; border: 1px solid var(--p); color: var(--p); background: var(--n0); }
+.btn.fill { background: var(--p); color: #fff; }
+.btn.ghost { border-color: var(--n20); color: var(--n90); }
+.dock { flex: 0 0 auto; height: 56px; background: var(--n0); border-top: 1px solid var(--n10); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; font-size: 9px; color: var(--n60); text-align: center; }
+.dock span::before { content: "▢"; display: block; font-size: 14px; }
+.dock .on { color: var(--p); font-weight: 600; }
+.lrow { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 12px; background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; }
+.lrow .t1 { font-weight: 600; font-size: 13px; grid-column: 1; }
+.lrow .t2 { grid-column: 1; }
+.lrow .t2 { font-size: 11px; color: var(--n60); }
+.lrow .amt { font-weight: 700; font-size: 15px; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-variant-numeric: tabular-nums; }
+.lrow .st { display: flex; gap: 6px; align-items: center; margin-top: 4px; grid-column: 1 / -1; }
+.lrow .st .when { font-size: 11px; color: var(--n60); }
+.mrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 12px; background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; align-items: center; }
+.mrow .t1 { font-weight: 600; font-size: 13px; }
+.mrow .t2 { font-size: 11px; color: var(--n60); }
+.mrow .chev { grid-column: 2; grid-row: 1 / span 2; color: var(--n40); }
+.mrow .t1, .mrow .t2 { grid-column: 1; }
+.toolbar { display: flex; align-items: center; gap: 8px; }
+.toolbar .pill { font-weight: 600; font-size: 13px; flex: 1; }
+.fld { background: var(--n0); border: 1px solid var(--n20); border-radius: 4px; padding: 6px 10px; font-size: 13px; position: relative; min-height: 44px; display: flex; align-items: center; }
+.fld i { position: absolute; top: -7px; left: 8px; font-size: 9.5px; color: var(--n60); background: var(--n0); padding: 0 3px; font-style: normal; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sheet { position: absolute; left: 7px; right: 7px; bottom: 7px; background: var(--n0); border-radius: 14px 14px 22px 22px; padding: 12px; box-shadow: 0 -8px 30px rgba(0, 0, 0, .25); display: grid; gap: 8px; }
+.sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--n20); margin: -4px auto 4px; }
+.sheet .h { font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .h span { font-weight: 400; color: var(--n60); font-size: 12px; }
+.scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .35); }
+.paper { background: #fff; border: 1px solid var(--n10); border-radius: 4px; margin: 0 auto; width: 100%; aspect-ratio: 210 / 297; padding: 10% 8%; font-size: 6px; color: #333; line-height: 1.5; display: grid; gap: 4px; align-content: start; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.paper .l { height: 4px; background: #ddd; border-radius: 2px; }
+.paper .l.w60 { width: 60%; } .paper .l.w30 { width: 30%; } .paper .l.w80 { width: 80%; }
+.paper .zoom { font-size: 9px; color: #666; text-align: center; margin-top: 6px; }
+.pages { display: flex; gap: 4px; justify-content: center; }
+.pages i { width: 6px; height: 6px; border-radius: 50%; background: var(--n20); display: block; }
+.pages i.on { background: var(--p); }
+.callout { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; position: absolute; z-index: 2; box-shadow: 0 0 0 2px #fff; }
+.mk-notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 13px; }
+.mk-notes li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; }
+.mk-notes li b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; }
+/* tablet frame */
+.tab .split { display: grid; grid-template-columns: minmax(0, 1fr) 240px; flex: 1 1 auto; overflow: hidden; }
+.tab .doc { padding: 12px; overflow: hidden; display: grid; gap: 8px; align-content: start; }
+.tab .pane { border-left: 1px solid var(--n10); background: var(--n0); padding: 12px; display: grid; gap: 8px; align-content: start; }
+.tab .pane .ph { font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; }
+.grid4 { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; overflow: hidden; font-size: 11.5px; }
+.grid4 .gr { display: grid; grid-template-columns: minmax(0, 1fr) 48px 70px 72px; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--n10); align-items: center; }
+.grid4 .gr:first-child { border-top: 0; background: var(--n5); font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--n60); font-weight: 600; }
+.grid4 .gr .r { text-align: right; font-variant-numeric: tabular-nums; }
+.grid4 .gr.s { background: var(--p10); font-weight: 600; }
+.grid4 .in { border: 1px solid var(--n20); border-radius: 4px; padding: 3px 6px; text-align: right; background: var(--n0); }
+</style>
+
+<div class="mk-row">
+
+  <!-- 1 · the listing card says who to call now -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ttl">Leads</span><span class="ic">⌕</span><span class="ic b" style="color:var(--p);border-color:var(--p)">+</span></div>
+      <div class="p-body tight">
+        <div class="toolbar"><span class="pill">All Leads · 31 ▾</span><span class="chip warn" style="font-size:11px">3 to call today</span></div>
+        <div class="lrow" style="position:relative;border-left:3px solid var(--p)"><span class="callout" style="top:-8px;left:-8px">1</span><span class="t1">Chloe Tan <span class="chip sent" style="font-size:10px">New</span></span><span class="amt" style="font-size:13px">☏ ✉</span><span class="t2">HDB 5-Room · S$80K · Instagram · 2h ago</span><span class="st"><span class="when" style="color:var(--n90)"><b>Not contacted yet</b> · unseen</span></span></div>
+        <div class="lrow" style="position:relative"><span class="callout" style="top:-8px;left:-8px">2</span><span class="t1">Farah Ahmad</span><span class="amt" style="font-size:13px">☏ ✉</span><span class="t2">Condo · S$95K · Contacted · 4 days</span><span class="st"><span class="when">Last: Call · callback requested · Mon</span></span><span class="st" style="margin-top:0"><span class="chip warn" style="font-size:10px">Next: Call back · Thu 10:00 · overdue</span></span></div>
+        <div class="lrow"><span class="t1">Gerald Tan</span><span class="amt" style="font-size:13px">☏ ✉</span><span class="t2">Landed · S$180K · Met · 9 days</span><span class="st"><span class="when">Last: Site visit · 12 Oct</span></span><span class="st" style="margin-top:0"><span class="chip" style="font-size:10px">Next: Send the quote · Fri</span></span></div>
+        <div class="lrow"><span class="t1">Vivien Lee</span><span class="amt" style="font-size:13px">☏ ✉</span><span class="t2">HDB 4-Room · S$68K · Quote Sent · 3 days</span><span class="st"><span class="when">Quote OM-10008 · opened twice</span></span></div>
+      </div>
+      <div class="dock"><span>Dashboard</span><span class="on">Leads</span><span>Tools</span><span>Projects</span><span>More</span></div>
+    </div>
+    <div class="mk-cap"><b>1 · The card says who to call now</b>The listing stays the card you like; <b style="display:inline">1</b> a new unseen lead carries its mark on the phone too, and <b style="display:inline">2</b> each card adds the two lines that decide the next call — the last contact and the next follow-up, red when it is late — with Call and WhatsApp beside the name. A "to call today" chip filters to the leads that need a call.</div>
+  </div>
+
+  <!-- 2 · the Lead screen -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Farah Ahmad<span class="sub">Contacted · 4 days</span></span><span class="ic">⋮</span></div>
+      <div class="p-body tight">
+        <div class="card hero" style="position:relative"><span class="callout" style="top:-8px;left:-8px">3</span>
+          <div class="num"><span class="chip sent">Contacted</span><span>Condo · S$95K · Referral</span></div>
+          <div class="meta" style="margin-top:6px">Blk 21 Bedok North Ave 1 #08-12 · Directions ›</div>
+          <div class="cl"><span class="av">FA</span><span>Farah Ahmad<br><span style="color:var(--n60);font-size:11px">9812 0443 · Dane</span></span><span class="acts"><span style="width:44px;height:36px">☏</span><span style="width:44px;height:36px">✉</span></span></div>
+        </div>
+        <div class="next" style="position:relative"><span class="callout" style="top:-8px;left:-8px">4</span><span>→</span><span><b>Call back</b> — the follow-up was Thu 10:00, it is overdue. Then book the site visit.</span></div>
+        <div class="sec"><div class="h"><span>Due now</span><span class="n">2</span></div><div class="line" style="grid-template-columns:auto 1fr"><span>○</span><span class="nm">Call back about the kitchen layout · overdue</span></div><div class="line" style="grid-template-columns:auto 1fr"><span>○</span><span class="nm">Send the floor-plan options · today</span></div></div>
+        <div class="mrow" style="position:relative"><span class="callout" style="top:-8px;left:-8px">5</span><span class="t1">Notes &amp; Logs</span><span class="chev">›</span><span class="t2">Call · callback requested · Mon 4:10 PM</span></div>
+        <div class="mrow"><span class="t1">Tasks <span style="color:var(--n60);font-weight:400">3</span></span><span class="chev">›</span><span class="t2">2 due now · 1 next week</span></div>
+        <div class="mrow"><span class="t1">Files <span style="color:var(--n60);font-weight:400">2</span></span><span class="chev">›</span><span class="t2">Take a photo · 2 floor plans</span></div>
+        <div class="mrow"><span class="t1">Quotes · Contracts · Meetings · more</span><span class="chev">›</span><span class="t2">No quote yet</span></div>
+      </div>
+      <div class="p-foot" style="position:relative"><span class="callout" style="top:-8px;left:-8px">6</span><span class="btn ghost">Log ▾</span><span class="btn fill">Move to Met</span></div>
+    </div>
+    <div class="mk-cap"><b>2 · A lead is a person and a position</b><b style="display:inline">3</b> The hero: the stage and its days, the property and budget, the address with Directions, and Call · WhatsApp as 44 buttons. <b style="display:inline">4</b> One Next line built from the stage and the earliest follow-up. Due now ticks in place. <b style="display:inline">5</b> Every tab is a row with what it holds; a row opens it as its own screen. <b style="display:inline">6</b> A sticky foot: Log ▾ (Call · WhatsApp · Visit · Note) and the next move.</div>
+  </div>
+
+  <!-- 3 · log the call in three taps -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Farah Ahmad<span class="sub">Contacted · 4 days</span></span><span class="ic">⋮</span></div>
+      <div class="p-body tight" style="opacity:.35"><div class="card">…</div></div>
+      <div style="background:var(--n0);border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -8px 24px rgba(0,0,0,.12);padding:12px;display:grid;gap:9px;position:relative"><span class="callout" style="top:-8px;left:-8px">7</span>
+        <div style="font-weight:700;font-size:15px">How did the call with Farah go?</div>
+        <div style="font-size:12px;color:var(--n60)">Call · now (4:12 PM) · change</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px"><span class="chip">Reached · interested</span><span class="chip sent">Callback requested</span><span class="chip">Meeting scheduled</span><span class="chip">No answer</span><span class="chip">Not interested</span></div>
+        <div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Call back</span>Tomorrow 10:00 · In 3 days · Next week</div>
+        <div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--n60)">Notes (optional)</div>
+        <div style="display:flex;gap:8px"><span class="btn ghost" style="flex:0 0 auto;padding:0 14px">📷</span><span class="btn fill">Save log</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>3 · Log a call in three taps</b><b style="display:inline">7</b> After a press on Call or WhatsApp the page offers "Log the call"; the sheet has the channel and "now" set, the outcomes as chips, a call-back with presets, an optional photo and one Save. On a New lead, Save logs it and moves the lead to Contacted. Auto Fill from a chat stays as the second way.</div>
+  </div>
+
+  <!-- 4 · Move stage: one step, Won as a checklist -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Move to Won<span class="sub">Vivien Lee · step 5 of 5</span></span></div>
+      <div class="p-body tight">
+        <div class="mrow" style="position:relative;border-color:var(--g)"><span class="callout" style="top:-8px;left:-8px">8</span><span class="t1">Signed quote ✓</span><span class="chev">›</span><span class="t2">OM-10008 · S$68,176 · signed online 12 Oct</span></div>
+        <div class="mrow"><span class="t1">Signed contract</span><span class="chev">›</span><span class="t2" style="color:var(--p)">Take a photo · Choose a file · From the system</span></div>
+        <div class="mrow"><span class="t1">Payments</span><span class="chev">›</span><span class="t2">10 · 30 · 30 · 30 — the studio’s usual</span></div>
+        <div class="mrow"><span class="t1">Project type</span><span class="chev">›</span><span class="t2">HDB renovation</span></div>
+        <div class="next"><span>✓</span><span>Creates project P-2026-007 for Vivien, with the quote’s schedule and the members Dane · Sarah.</span></div>
+      </div>
+      <div class="p-foot" style="position:relative"><span class="callout" style="top:-8px;left:-8px">9</span><span class="btn fill" style="width:100%">Create project</span></div>
+    </div>
+    <div class="mk-cap"><b>4 · One step at a time, one filled button</b>The Move stage window on a phone is one step per screen with "step n of 5" — no sideways rail. <b style="display:inline">8</b> Won reads as a checklist; a signed paper is a photo; the payments start from the studio's usual split. <b style="display:inline">9</b> One Save &amp; move at 48 — a refusal stays in the foot and nothing typed is lost.</div>
+  </div>
+
+  <!-- 5 · a tab as its own screen -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Tasks<span class="sub">Farah Ahmad · 3</span></span><span class="ic">⋮</span></div>
+      <div class="p-body tight">
+        <div class="mrow" style="position:relative;grid-template-columns:auto 1fr auto"><span class="callout" style="top:-8px;left:-8px">10</span><span style="font-size:16px">○</span><span class="t1">Call back about the kitchen layout</span><span class="chip warn" style="font-size:10px">Thu · late</span></div>
+        <div class="mrow" style="grid-template-columns:auto 1fr auto"><span style="font-size:16px">○</span><span class="t1">Send the floor-plan options</span><span class="chip" style="font-size:10px">Today</span></div>
+        <div class="mrow" style="grid-template-columns:auto 1fr auto;opacity:.6"><span style="font-size:16px">●</span><span class="t1">Share the moodboard</span><span class="chip ok" style="font-size:10px">Done</span></div>
+      </div>
+      <div style="background:var(--n0);border-top:1px solid var(--n10);padding:10px 12px;display:grid;gap:6px;position:relative"><span class="callout" style="top:-8px;left:-8px">11</span>
+        <div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:9px 10px;font-size:12px;color:var(--n60)">Add a task…</div>
+        <div style="display:flex;gap:6px"><span class="chip">Tomorrow 10:00</span><span class="chip">In 3 days</span><span class="chip">Next week</span><span class="chip">Dane ▾</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>5 · A tab is its own screen</b>On a phone the nine-tab strip gives way to the Lead screen's rows; a row opens its tab as a screen with a 56 bar. <b style="display:inline">10</b> Tasks read whole with their due day, a 44 ring ticks one done. <b style="display:inline">11</b> Add a task with a due preset and a member in two taps. Files open on Take a photo; Notes on Log a call.</div>
+  </div>
+
+  <!-- 6 · a new lead on one screen -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">✕</span><span class="ttl">New lead</span></div>
+      <div class="p-body tight" style="background:var(--n0)">
+        <div class="fld" style="border:2px solid var(--p);border-radius:6px;padding:9px 10px;font-size:13px;position:relative"><span class="callout" style="top:-8px;left:-8px">12</span><span style="font-size:10px;color:var(--p);display:block">Name</span>Rachel Ong</div>
+        <div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:9px 10px;font-size:13px"><span style="font-size:10px;color:var(--n60);display:block">Mobile</span>+65 9334 1209</div>
+        <div class="mrow"><span class="t1" style="color:var(--p)">✦ Paste the WhatsApp message to fill the rest</span><span class="chev"></span></div>
+        <div class="mrow"><span class="t1">More details</span><span class="chev">›</span><span class="t2">Source · property · budget · address · district</span></div>
+        <div class="mrow"><span class="t1">Assign</span><span class="chev">›</span><span class="t2">Dane (you) · Sarah has room</span></div>
+      </div>
+      <div class="p-foot" style="position:relative"><span class="callout" style="top:-8px;left:-8px">13</span><span class="btn fill" style="width:100%">Add lead</span></div>
+    </div>
+    <div class="mk-cap"><b>6 · A new lead is a name and a mobile</b><b style="display:inline">12</b> Two fields on one screen, a pasted WhatsApp message fills the rest, "More details" holds the other eleven. <b style="display:inline">13</b> One Add lead; ✕ asks before it throws anything away; a duplicate's default is to open the existing lead. The new lead opens ready to call.</div>
+  </div>
+
+</div>
+
+<h3 style="margin:28px 0 10px;font-size:17px">On a tablet</h3>
+<div class="mk-row" style="grid-template-columns:minmax(0,1fr)">
+  <div class="mk">
+    <div class="phone tab" style="display:grid;grid-template-columns:320px 1fr;grid-template-rows:auto 1fr;height:420px">
+      <div class="p-bar" style="grid-column:1/-1"><span class="ic">←</span><span class="ttl">Farah Ahmad<span class="sub">Contacted · 4 days · Dane</span></span><span class="btn ghost" style="flex:0 0 auto;height:36px;padding:0 14px">Log ▾</span><span class="btn fill" style="flex:0 0 auto;height:36px;padding:0 16px">Move to Met</span><span class="ic">⋮</span></div>
+      <div style="border-right:1px solid var(--n10);background:var(--n0);padding:10px;display:grid;gap:8px;align-content:start;position:relative"><span class="callout" style="top:-8px;left:-8px">14</span>
+        <div class="card hero"><div class="num"><span class="chip sent">Contacted</span><span>Condo · S$95K</span></div><div class="cl" style="margin-top:6px;padding-top:6px"><span class="av">FA</span><span>9812 0443</span><span class="acts"><span>☏</span><span>✉</span></span></div></div>
+        <div class="next"><span>→</span><span><b>Call back</b> — overdue since Thu.</span></div>
+        <div class="mrow" style="border-color:var(--p)"><span class="t1">Tasks 3</span><span class="chev">›</span></div>
+        <div class="mrow"><span class="t1">Notes &amp; Logs</span><span class="chev">›</span></div>
+        <div class="mrow"><span class="t1">Files 2</span><span class="chev">›</span></div>
+      </div>
+      <div style="padding:12px;display:grid;gap:8px;align-content:start;overflow:hidden">
+        <div style="font-weight:700;font-size:14px">Tasks</div>
+        <div class="mrow" style="grid-template-columns:auto 1fr auto"><span>○</span><span class="t1">Call back about the kitchen layout</span><span class="chip warn" style="font-size:10px">Thu · late</span></div>
+        <div class="mrow" style="grid-template-columns:auto 1fr auto"><span>○</span><span class="t1">Send the floor-plan options</span><span class="chip" style="font-size:10px">Today</span></div>
+        <div class="mrow" style="grid-template-columns:auto 1fr auto"><span>●</span><span class="t1">Share the moodboard</span><span class="chip ok" style="font-size:10px">Done</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>On a tablet held sideways: the person beside the open tab</b><b style="display:inline">14</b> The left pane holds the hero, the Next line and the rows; the right pane the open tab. The bar carries Log ▾ and the next move; Create lives in ⋮ (no strip of unlabelled glyphs). Held upright, a tablet follows the phone. The listing's table opens with Name · Stage · Last contact · Next follow-up · Members, its Edit and ⋮ frozen at the right.</div>
+  </div>
+</div>

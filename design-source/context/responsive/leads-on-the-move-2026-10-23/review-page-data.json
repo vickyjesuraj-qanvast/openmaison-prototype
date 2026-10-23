@@ -1,0 +1,1862 @@
+{
+ "title": "Leads on the Move",
+ "intro": {
+  "quote": "“Honestly the lead listing is too good but anything with the too heavy data is not pure responsive.” — and Q-08 of the Contracts page: the next module is Leads.",
+  "method": "A read-only audit of every Leads screen at 390 (phone), 768 (tablet, portrait) and 1024 (tablet, landscape) with touch emulation, on a production build of main after Quotes and Contracts on the move (a6caecb1). Three lanes measured touch boxes, type sizes and taps-to-finish, read the code behind each screen, and moved their own test leads from New to Won on a scratch database. Nothing of the proposal is built. Two blockers were plain bugs and are fixed tonight; they need no pick.",
+  "facts": [
+   "<b>77</b> shared shots + the lanes’ own (≈300)",
+   "<b>83</b> findings · 2 blockers fixed tonight",
+   "Desktop <b>unchanged</b>",
+   "Build: main a6caecb1",
+   "23 Oct 2026"
+  ],
+  "answer": [
+   "<b>The listing stays — it is the benchmark — and gains the two lines that decide the next call: when we last spoke and what is next.</b> Everything after the listing changes shape on a phone: a lead opens as a person and a position (the stage and its days, Call and WhatsApp as buttons, one Next line, what is due now, a row per tab), with a sticky foot that holds Log ▾ and the next move. Logging a call becomes three taps after the call; the Move stage window becomes one step per screen; a new lead is a name and a mobile.",
+   "This reuses what Quotes and Contracts built this week — the screen with a hero and a Next line, the rows that open as screens, the sticky foot, the tablet column sets, Take a photo · Choose a file. What is genuinely new for a lead is the capture after a call or a visit, and the Next line built from the stage and the earliest follow-up."
+  ]
+ },
+ "navProposal": "The proposal",
+ "proposalTitle": "The proposal: a lead is a person and a position; its moments are captures",
+ "proposalIntro": "Six rules, then the screens drawn with OpenMaison’s own tokens, then each change as a card you can mark. Desktop stays exactly as it is; the stage rules, the logs and the records are the same code behind a different order of screens.",
+ "principles": [
+  {
+   "title": "Who to call now, first",
+   "body": "The card and the lead both lead with the next call: when we last spoke, what is next, how late it is. Everything else is one tap further."
+  },
+  {
+   "title": "One primary per screen",
+   "body": "The filled button is the next move (Move to Met, Convert to Project, Resume at …). Logging sits beside it as Log ▾. Everything else is behind ⋮."
+  },
+  {
+   "title": "A moment is a capture",
+   "body": "A call, a visit, a photo: captured in three taps with now already set, the outcome as chips and the photo from the camera."
+  },
+  {
+   "title": "One thing at a time",
+   "body": "A tab opens as its own screen; a stage step is one screen with \"step n of 5\". No sideways strips, no rails."
+  },
+  {
+   "title": "Nothing typed is lost",
+   "body": "A refusal says why before you type, or stays in the foot after; ✕ asks before it discards."
+  },
+  {
+   "title": "A tablet is not a small desktop",
+   "body": "Upright it follows the phone; sideways it holds the person beside the open tab. Tables show the columns a finger needs."
+  }
+ ],
+ "proposals": [
+  {
+   "id": "P-01",
+   "size": "L",
+   "refs": "B-lane · screen 2",
+   "title": "A lead opens as a person and a position on a phone",
+   "today": "The Overview is the desktop’s three columns stacked: the name twice, a static header whose stage pill and \"Move to …\" scroll away, the brief at 43% of the first screen, LEAD STAGES a screen down, cards at 12px, empty cards a quarter of the page; Call is a 70×20 link beside two 24px glyphs.",
+   "proposed": "The <b>Lead screen</b> (the Quote / Contract screen’s frame): a 56 bar (← · the name over \"Contacted · 4 days\" · ⋮ with Create first); a hero (the stage chip and its days, property · budget · source, the address with Directions, the client row with <b>Call</b> and <b>WhatsApp</b> as 44 buttons); one <b>Next</b> line from a new pure <code>lib/leads/next-step.ts</code> — the stage and the earliest open follow-up (\"Call back — Thu 10:00 is overdue\", \"Assign a member — Sarah has room\", \"Sent 4 days ago · not opened\"), the brief one line under it; <b>Due now</b> (at most three overdue / today tasks with a 44 ring); a <b>row per tab</b> with its count and next thing; a sticky foot with <b>Log ▾</b> (Call · WhatsApp · Visit · Note) and the next move. Signed / Won: Open project.",
+   "why": "the person on site wants the client’s number, what is late and the next move in one look. The pieces exist since this week; the hero’s contents and the Next line are what is new.",
+   "shots": [
+    [
+     "m390-03-overview-olivia",
+     "Today · 390"
+    ],
+    [
+     "m390-03-overview-olivia-full",
+     "Today · the whole page"
+    ],
+    [
+     "m390-03-overview-farah",
+     "Today · Contacted"
+    ]
+   ]
+  },
+  {
+   "id": "P-02",
+   "size": "M",
+   "refs": "C-lane · screen 5",
+   "title": "A tab opens as its own screen on a phone",
+   "today": "Every tab repeats the name, the stage row and a sideways strip of nine tabs (4½ visible) before its toolbar: 241px of chrome; Notes & Logs, Meetings, Questionnaire and Activity are off-screen with no cue.",
+   "proposed": "On a phone the tabs are the Lead screen’s rows; a row opens its tab as a screen with a 56 bar (← · \"Tasks\" over \"Farah Ahmad\" · the tab’s + and ⋮), the body, no strip. The address stays the tab’s (Back returns to the lead). The stage row on each tab is your REG-370 decision — see Q-04.",
+   "why": "one thing at a time; 241px of chrome on every tab is the cost of carrying the desktop’s frame.",
+   "shots": [
+    [
+     "m390-06-tab-tasks",
+     "Today · Tasks"
+    ],
+    [
+     "m390-06-tab-notes",
+     "Today · Notes & Logs"
+    ]
+   ]
+  },
+  {
+   "id": "P-03",
+   "size": "M",
+   "refs": "B · C lanes · screen 3",
+   "title": "Log a call in three taps, from the lead or from Notes",
+   "today": "A first call is 13 taps and a mandatory screenshot in the Move stage window, 8–10 from Notes: the date opens empty although it is being written now, the outcome is a list behind a select, the attach sheet says \"Drop your file or browse\" and has no camera.",
+   "proposed": "After a press on Call or WhatsApp, the Lead screen offers <b>Log the call</b> (Q-06); the sheet has the channel and <b>now</b> set, the five outcomes as chips, a call-back with presets (Tomorrow 10:00 · In 3 days · Next week), an optional photo (Take a photo first) and one <b>Save log</b>. On a New lead Save logs it and moves the lead to Contacted (the move hand-off exists). The same sheet from Notes › Log a call. Auto Fill from a chat stays the second way. The screenshot rule follows Q-02.",
+   "why": "the call is the commonest moment on the move; three taps while it is fresh beats thirteen later.",
+   "shots": [
+    [
+     "m390-04-stage-olivia",
+     "Today · the window at 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-04",
+   "size": "L",
+   "refs": "B-lane · screen 4",
+   "title": "The Move stage window: one step per screen, one Save & move",
+   "today": "A full-screen form with a sideways rail (533px of tabs in 390, Won off-screen); New ticks a member only on its 44 checkbox; a completed log opens as a greyed form; Quote Sent / Won take a PDF only for the signed quote; Won’s split starts at 0% and Save refuses; On Hold is a sheet, Lost a centred card; feet 36–44.",
+   "proposed": "Each step is one screen: a bar \"Move to Met · step 3 of 5\" (the rail goes), only that step’s fields in the order a finger fills them, one filled <b>Save & move</b> at 48; a refusal stays in the foot and nothing typed is lost (B-01’s data loss is fixed tonight). New: a member row is its label. Completed logs read as summary cards with Edit. <b>Won as a checklist</b> — the signed quote \"OM-10008 · S$68,176 ✓\" or <b>Take a photo · Choose a file</b> (Q-03), the signed contract the same, payments \"10 · 30 · 30 · 30 — the studio’s usual\", project type as chips, <b>Create project</b>. On Hold and Lost share one sheet (reason chips, the duration or the competitor, Save & move with Undo). At 1024 the window stays the centred modal.",
+   "why": "moving a lead is the moment after a visit, often at the client’s table; one step per screen is one thing at a time.",
+   "shots": [
+    [
+     "m390-04-stage-farah",
+     "Today · the stage sheet"
+    ],
+    [
+     "m390-04-stage-olivia",
+     "Today · the window"
+    ]
+   ]
+  },
+  {
+   "id": "P-05",
+   "size": "M",
+   "refs": "A-lane · screen 1",
+   "title": "The phone card says who to call now",
+   "today": "The listing card is right in shape, but it cannot say who to call: Last contact and Next follow-up are listing columns that never reached it; the only date is the lead’s age at 12px; a new unseen lead has no mark on the phone; WhatsApp is not on the card; a refused stage move says why without a fix; a Lost card says nothing about why.",
+   "proposed": "Keep the card; add <b>Last</b> (\"Call · callback requested · Mon\") and <b>Next</b> (\"Call back · Thu 10:00\", red when late) as one 14 line each, the <b>new</b> mark (the tablet’s primary band and a New chip), WhatsApp beside the number, three items on the info line. The stage sheet from a card puts the next move first; a locked row says why in the row with its fix (Assign). A \"to call today\" chip. Lost and Deleted views use the same card (the reason and the date; Restore on Deleted).",
+   "why": "his benchmark keeps its shape; the two lines are what a designer between visits scrolls the list for.",
+   "shots": [
+    [
+     "m390-01-list-top",
+     "Today · 390"
+    ],
+    [
+     "m390-01-list-full",
+     "Today · the whole list"
+    ]
+   ]
+  },
+  {
+   "id": "P-06",
+   "size": "S",
+   "refs": "A-lane",
+   "title": "The listing on a tablet: a column set, a frozen ⋮, a kanban that moves",
+   "today": "At 768 the table shows Lead Name · Stage · part of Tasks of 1,544px; Edit and ⋮ are 850px of sideways scroll away; the kanban cannot move a lead on touch (drag gives way to the pan, no stage control, ⋮ holds Delete only).",
+   "proposed": "The table core’s tablet default (REG-2549): Name · Stage · Last contact · Next follow-up · Members, Edit and ⋮ frozen at the right, the rest in Column settings remembered for the tablet (its handles and pins at 44). The kanban card carries the stage pill (the same sheet as the phone card); ⋮ holds Move to › and Delete. Numbers grouped everywhere; values at 14.",
+   "why": "Quotes and Contracts made the same move this week; a lead’s tablet table should not be the exception.",
+   "shots": [
+    [
+     "t768-01-list-top",
+     "Today · 768"
+    ],
+    [
+     "t1024-01b-kanban",
+     "Today · the kanban at 1024"
+    ]
+   ]
+  },
+  {
+   "id": "P-07",
+   "size": "M",
+   "refs": "B · C lanes · tablet",
+   "title": "The lead on a tablet: upright follows the phone, sideways two panes",
+   "today": "The tablet is the desk squeezed: rail 52 + info column 300 + centre 320 + Create strip 72, so the cards are 272 wide at 768 portrait; the Create strip is nine unlabelled glyphs whose hit boxes are clipped to 28×44; Notes upright is master-detail at 280 + 268.",
+   "proposed": "Held upright, the tablet gets the Lead screen (Q-01). Held sideways (1024): two panes — the hero, Next, Due now and the rows at the left (320–360), the open tab at the right; Log ▾ and the next move in the bar; Create in ⋮ (no glyph strip on touch). Notes upright opens a log full width.",
+   "why": "the person beside the open tab is the landscape answer Quotes and Contracts gave.",
+   "shots": [
+    [
+     "t768-03-overview-olivia",
+     "Today · 768"
+    ],
+    [
+     "t1024-03-overview-olivia",
+     "Today · 1024"
+    ]
+   ]
+  },
+  {
+   "id": "P-08",
+   "size": "S",
+   "refs": "A · B lanes · screen 6",
+   "title": "A new lead is a name and a mobile; Edit details a short list",
+   "today": "Create New Lead is a 9-field sheet that types at 14; its ✕ throws away what was typed without a word; Fill from a document opens a second card over the sheet; the duplicate dialog’s filled default creates the duplicate; Edit details is 17 fields in one 2.6-screen sheet.",
+   "proposed": "Name and mobile on one screen (autocomplete name / tel, 16), \"Paste the WhatsApp message to fill the rest\" and Fill from a document in the same sheet, <b>More details</b> folded, Assign with the suggested member; one <b>Add lead</b>; ✕ asks before it discards; the duplicate dialog’s default is <b>Open existing lead</b>; the new lead opens on its Lead screen ready to call. Edit details is a short list (Contact · Property · Budget & source · People), each a screen.",
+   "why": "a lead arrives in a hurry, usually from a message; three taps and nothing lost.",
+   "shots": [
+    [
+     "m390-02b-lead-form",
+     "Today · the form"
+    ],
+    [
+     "m390-07-edit-details",
+     "Today · Edit details"
+    ]
+   ]
+  },
+  {
+   "id": "P-09",
+   "size": "M",
+   "refs": "A-lane",
+   "title": "Imports on a phone fold what matched and say what won’t land",
+   "today": "Mapping eleven columns that all matched is 5.9 screens of cards; the preview is the 12-column sheet and never flags the row with no name; the end says \"4 of 5 imported\" with no reason; merging one duplicate is 8.7 screens of Existing / New / Merged rows even when equal.",
+   "proposed": "Mapping folds to \"11 columns matched ✓ · Review\" with only the unmatched as cards; the preview is a list of the leads with a red line on a row that won’t land (\"No name — skipped\"); the end names what was skipped and why; the merge shows only the fields that differ (\"Phone: 9133 5520 → 9133 5521\"), the rest under \"13 the same\"; the review queue’s card is the listing card.",
+   "why": "a lead sheet arrives on WhatsApp too; reviewing it on a phone should be a list, not a spreadsheet.",
+   "shots": [
+    [
+     "m390-08-import",
+     "Today · the import at 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-10",
+   "size": "M",
+   "refs": "C-lane · screen 5",
+   "title": "Tasks on the move: whole names, due presets, a bulk bar of three",
+   "today": "A task’s name is cut at 19 characters; Create New Task takes a title only (a due day is 8 more taps through a calendar whose controls are 24–32); the bulk bar needs 511px in 372 and pushes Delete off; the panel opens on Creator; on a tablet the table keeps the desk’s 1,395px in 570 (Meetings and Files the same).",
+   "proposed": "A task row reads whole (two lines) with its due day as a chip and a 44 ring to tick it done; <b>Add a task</b> takes a title, a due preset (Tomorrow 10:00 · In 3 days · Next week · Pick a day) and a member in one row; the bulk bar is Done · Assign · ⋯; the panel opens on the task; tablet column sets for Tasks, Meetings and Files with ⋮ frozen. Module-wide: the rail’s /tasks and a project’s Tasks get the same.",
+   "why": "\"call back tomorrow at 10\" is the commonest task on the move.",
+   "shots": [
+    [
+     "m390-06-tab-tasks",
+     "Today · 390"
+    ],
+    [
+     "t768-06-tab-tasks",
+     "Today · 768"
+    ]
+   ]
+  },
+  {
+   "id": "P-11",
+   "size": "S",
+   "refs": "C-lane",
+   "title": "Files on a phone open on the camera",
+   "today": "A site photo is seven taps (Files → New File → From Local Files → the OS sheet’s Take Photo …); \"From Google Drive\" answers Coming soon; inside a folder the toolbar splits into two rows; the viewer has no pinch and no swipe.",
+   "proposed": "The Files screen’s first action is <b>Take a photo</b> (several in a row, into the open folder) with Choose files beside it; a folder keeps one toolbar row with the title its own line; the viewer pinches, swipes to the next file and keeps the chrome still.",
+   "why": "on site, Files is photos.",
+   "shots": [
+    [
+     "m390-06-tab-files",
+     "Today · Files"
+    ]
+   ]
+  },
+  {
+   "id": "P-12",
+   "size": "S",
+   "refs": "C-lane",
+   "title": "Meetings, Questionnaire and Activity read first",
+   "today": "A meeting card opens only from its 20px title; the meeting page is 3,037px with its Save scrolling away; the Questionnaire’s summary is the last card; Ask the client’s ticks are ragged on touch; Activity is a 4,643px flat log with ten \"uploaded the file\" rows in a row.",
+   "proposed": "The whole meeting card opens it; the meeting page’s one Save to the lead in a sticky foot. Questionnaire: \"4 to answer · 7 answered\" on top with To answer / Answered chips; each Ask the client tick a full-width row. Activity grouped by day, repeats folded (\"James uploaded 10 files\").",
+   "why": "read first: the count and the next thing before the list.",
+   "shots": [
+    [
+     "m390-06-tab-meetings",
+     "Today · Meetings"
+    ],
+    [
+     "m390-06-tab-activity-full",
+     "Today · Activity"
+    ]
+   ]
+  },
+  {
+   "id": "P-13",
+   "size": "S",
+   "refs": "A · B · C lanes",
+   "title": "The scale 16 · 14 · 44 in every Leads surface",
+   "today": "Card values and sentences at 12 (LEAD STAGES days, Last contact, Next follow-up, MY TASKS dates); file names and tags at 10; dates 12; sheet feet drawn 36; Sort radios 24; the search and the composer type at 14.",
+   "proposed": "The rule Quotes and Contracts follow: text people read 16, secondary 14, never under 14 for a value, a name or a sentence; targets 44, feet 48; inputs at 16.",
+   "why": "his rule after Quotes (responsive.md § On the move).",
+   "shots": []
+  }
+ ],
+ "findingsTitle": "What is wrong today, screen by screen",
+ "findingsIntro": "Each finding names what was seen, where, and how bad. A finding the proposal resolves (or that was fixed tonight) says so and needs no pick. Severity: <b>Blocker</b> = can’t finish the job at that width · <b>Major</b> = hard, slow or error-prone · <b>Minor</b> = polish. The lanes’ full tables, measurements and shots are in the record folder.",
+ "findingsNote": "most are covered by the proposal above; the rest are quick fixes you can pick",
+ "surfaces": [
+  {
+   "key": "s-list",
+   "title": "The listing on a phone — the benchmark",
+   "intro": "You called the listing the part that is right, and it mostly is: one column of cards, the stage in reach, the number dials. What it cannot say yet is who to call now: the last contact and the next follow-up never reached the card.",
+   "findings": [
+    {
+     "id": "A-01",
+     "title": "A new, unseen lead has no mark on the phone card",
+     "severity": "Major",
+     "width": "390",
+     "what": "Nothing on a card says a lead is new and unseen. The dock reads \"Leads (1 new)\" and the tablet paints Chloe Tan's 4px primary band; her phone card is identical to the other 30. The only way to find what is new is the dock badge's `?scope=unseen` — and the moment that matters most on the move is the new enquiry (the studio's own tip on Return Lead: \"Contact within 2 hours\").",
+     "shots": [
+      [
+       "m390-A01-list",
+       "m390"
+      ],
+      [
+       "t768-A20-table",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "the new mark on the phone card"
+    },
+    {
+     "id": "A-02",
+     "title": "The Maison AI button covers the card’s stage pill",
+     "severity": "Major",
+     "width": "390",
+     "what": "The FAB sits on the stage pill. Whenever a card's foot crosses y 644–692 with the button shown (at rest, and every time the chrome returns on a scroll up) the 48px FAB (x 326–374) covers the right 32px of the pill (x 230–358); `elementFromPoint` on the pill's chevron returns the FAB — the tap opens Maison AI instead of the stage sheet.",
+     "shots": [
+      [
+       "m390-A15-fab-on-pill",
+       "m390"
+      ]
+     ],
+     "fix": "Swap the card's foot (stage pill left, members right — the pill is the press, the avatars are not), or let the FAB step out of the listing at ≤767 as it steps out of a tablet section screen (REG-2587), its three suggestions behind the header ⋮ (\"Ask Maison AI\")."
+    },
+    {
+     "id": "A-03",
+     "title": "A card cannot say who to call now",
+     "severity": "Major",
+     "width": "390",
+     "what": "A card cannot say who to call now. Last contact (REG-600) and Next follow-up (REG-608) are listing columns that never reached the card; the task box shows the first task's title + \"OVERDUE\" but not its date; the only date is the lead's created age at 12px (\"6d ago\", \"30 Aug ’26\"). Farah Ahmad reads \"Follow up on WhatsApp · OVERDUE · +2\" — overdue since when, and when did we last speak?",
+     "shots": [
+      [
+       "m390-A11-list-scrolled",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "last contact and next follow-up on the card"
+    },
+    {
+     "id": "A-04",
+     "title": "The card’s info line wraps after a dangling separator",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The line carries four items where the canvas drew three (\"· 6 days in New\", UX audit L3), so 18 of 31 cards wrap and the break lands after a dangling separator (\"Hangout ·\" / \"6 days in New\"); cards alternate 173 / 197 tall.",
+     "shots": [
+      [
+       "m390-01-list-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "three items on the info line"
+    },
+    {
+     "id": "A-05",
+     "title": "WhatsApp is not on the card; the name and number boxes overlap",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The number dials (tel:, UX audit L11) but WhatsApp — Singapore's main channel, on the identity block of the lead's page — is not on the card. The name row's 44 box and the number's 44 box overlap by ~18px: the head measures 38 tall, the number 32–36, so a tap just under the name dials.",
+     "shots": [],
+     "absorbed": "P-05",
+     "absorbedNote": "Call and WhatsApp beside the name"
+    },
+    {
+     "id": "A-06",
+     "title": "A refused move from a card says why but offers no fix",
+     "severity": "Major",
+     "width": "390",
+     "what": "A refused move says why only after the tap, in a snackbar, with no way to fix it. Olivia Martinez (no member) → Contacted is grey; tapping it raises \"Assign a member first\" over the sheet — no Assign in it. Finishing the job costs 6 taps: close · the card's Assign · tick · Assign · the pill again · Contacted. Met / Quote Sent / Won are grey with no word until each is tapped.",
+     "shots": [
+      [
+       "m390-A13-stage-disabled-tap",
+       "m390"
+      ],
+      [
+       "m390-A14-stage-contacted-noowner",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "a locked row says why with its fix"
+    },
+    {
+     "id": "A-07",
+     "title": "The card’s pill says where the lead is, not the next move",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The card's biggest control is labelled with where the lead IS (\"New ▾\") and opens a 7-row list where 3–4 rows are off; the lead's page offers the same move as one filled \"Move to Contacted\". The common move from the listing is two taps and a read.",
+     "shots": [
+      [
+       "m390-A07-stage-sheet",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "the sheet puts the next move first"
+    },
+    {
+     "id": "A-08",
+     "title": "The Assign sheet from a card never names the lead",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Titled \"Assign Member\" and never names the lead, while the stage and tasks sheets from the same card do (\"Chloe Tan · 9331 8842 · Current stage: New\"); the card is under the scrim, so nothing confirms whose lead is being assigned. Role captions 12.",
+     "shots": [
+      [
+       "m390-A09-assign-sheet",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "every sheet from a card names the lead"
+    },
+    {
+     "id": "A-09",
+     "title": "Add Task from a card takes no due date",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "Adds a task with no due date: one field + Cancel / Save. \"Call back tomorrow at 10\" — the commonest task on the move — needs card → lead → Tasks → task panel. The sheet's own words are 12 (\"OPEN TASKS · 0\", the subject line, \"Follow-up · Mon, 26 Oct ’26 · 10:00 AM\"); the field types at 14.",
+     "shots": [
+      [
+       "m390-A08-tasks-sheet",
+       "m390"
+      ],
+      [
+       "m390-A08b-tasks-existing",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "Add a task with a due preset"
+    },
+    {
+     "id": "A-10",
+     "title": "Two search glasses, two scopes; the field types at 14",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Two magnifiers 128px apart with two scopes: the top bar's opens ⌘K (the studio), the toolbar's filters this list. Opened, the field types at 14 (16 only inside the iOS `@supports` rule), and its clear ✕ is a 20×20 target.",
+     "shots": [
+      [
+       "m390-A03-search",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "one search per screen, typing at 16"
+    },
+    {
+     "id": "A-11",
+     "title": "Filters is the desktop’s two-pane modal inside a sheet",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The desktop's two-pane modal in a sheet (rail 156 + pane 234). Its height follows the tab — Sort 453, Date 493, Members 743 — so the head jumps 290px under the thumb; Quick filters repeats the pill's To do scopes (Overdue follow-ups · Unassigned · Unseen) as checkboxes; Done never says what the live filters leave, and the list is behind the sheet.",
+     "shots": [
+      [
+       "m390-A04-filters",
+       "m390"
+      ]
+     ],
+     "fix": "The sheet holds its tallest height; Done reads \"Show 9 leads\"; the To do scopes live on the pill only; (later) one scrolling sheet of sections on the house `Chips`, as Quotes A-21 proposed."
+    },
+    {
+     "id": "A-26",
+     "title": "Deleted Leads is still an 8-column table on a phone",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "Still the 8-column table on a phone (1,316 wide in 356): Restore and Delete Forever sit ~960px to the right; the head sort buttons are 16-tall targets; Empty Trash — the destructive one — is an outlined button beside ✕ at the top right. REG-378 gave Deleted Files the list treatment; Deleted Leads never got it.",
+     "shots": [
+      [
+       "m390-A70-deleted",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "Deleted Leads as the card with Restore"
+    },
+    {
+     "id": "A-28",
+     "title": "A Lost card says nothing about why or when",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A Lost card says nothing about why or when (the reason, the competitor, the expected restart — REG-607 / REG-640); it still shows its task in red (\"Respond to Qanvast team · OVERDUE\") though Overdue follow-ups leaves Lost out; its pill opens the 7-row sheet where resuming is \"New ✓\".",
+     "shots": [
+      [
+       "m390-A72-lost",
+       "m390"
+      ],
+      [
+       "m390-A72b-lost-stage",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "a Lost card says why and when"
+    }
+   ]
+  },
+  {
+   "key": "s-tablet-list",
+   "title": "The listing on a tablet",
+   "intro": "A touch tablet opens the desktop table and a kanban that cannot move a lead.",
+   "findings": [
+    {
+     "id": "A-12",
+     "title": "The tablet table shows three of eight columns",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "Three columns on the first screen. At 768 the 642 frame holds Lead Name 240 · Stage 146 · Tasks (256 of 321) of a 1,544 grid (2.4 screens); Members starts at x 800, Budget at 1,092. At 1024 the frame is 898 and Source is cut mid-word. Rows stand 105 (name 12+24+12, the phone row 44, cell 8+8): 7 leads a screen. The listing still reads `useColumnPrefs('leads', …)`, not the tablet default Quotes added.",
+     "shots": [
+      [
+       "t768-A20-table",
+       "t768"
+      ],
+      [
+       "t1024-01-list-top",
+       "t1024"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "the tablet column set"
+    },
+    {
+     "id": "A-13",
+     "title": "Edit and ⋮ sit 850px of sideways scroll away on a tablet",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "Edit + ⋮ are 850px (768) / 617px (1024) of sideways scroll away (x 1,515 / 1,585 in frames ending at 735 / 991). The ⋮ there holds one row, Delete. Nothing on the first screen says a row has actions; the name is the only way in.",
+     "shots": [
+      [
+       "t768-A21-table-end",
+       "t768"
+      ],
+      [
+       "t768-A22-row-kebab",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "Edit and ⋮ frozen at the right"
+    },
+    {
+     "id": "A-14",
+     "title": "The tablet’s phone numbers and card dates read 12",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "The phone under each name is 12 (body/s) in the table, the kanban card's \"Updated 6d ago\" 12, the review queue's info line 12 and status tag 10.",
+     "shots": [
+      [
+       "t768-A60-review",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "14 on a tablet"
+    },
+    {
+     "id": "A-15",
+     "title": "The kanban cannot move a lead on a touch tablet",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The board cannot move a lead. Drag gives way to the pan on touch (REG-379), the card has no stage control, and its ⋮ holds Delete only — the stage board is read-only on an iPad. Columns are 416 / 422 wide in 644 / 898 frames (1.5 / 2.1 visible) with no snap.",
+     "shots": [
+      [
+       "t768-A30-kanban-kebab",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "a stage control on the kanban card"
+    },
+    {
+     "id": "A-16",
+     "title": "Phone numbers print ungrouped on the kanban and the review queue",
+     "severity": "Minor",
+     "width": "768 · 1024 · 390",
+     "what": "The kanban card prints \"96652018\" and the review queue \"91335520\" where the table and the phone card read \"9665 2018\".",
+     "shots": [
+      [
+       "t768-01b-kanban",
+       "t768"
+      ],
+      [
+       "m390-A60-review",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "numbers grouped everywhere"
+    },
+    {
+     "id": "A-30",
+     "title": "Column settings’ handles and pins are 24px on a tablet",
+     "severity": "Minor",
+     "width": "768 · 1024 touch",
+     "what": "Drag handles and pins are 24×24 targets on a touch tablet (measured 24×24, no growth), and order changes only by dragging a 24px handle. Module-wide: every list's drawer.",
+     "shots": [
+      [
+       "t768-A28-columns",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "Column settings at 44 on touch"
+    }
+   ],
+   "measure": "At 768 the 642 frame holds Lead Name 240 · Stage 146 · Tasks of a 1,544 grid; Edit and ⋮ at x 1,515."
+  },
+  {
+   "key": "s-arrive",
+   "title": "A new lead and the imports",
+   "intro": "How a lead arrives on a phone: typed, pasted from a message, or imported. The form loses what was typed on a stray ✕; the import is the desktop wizard in a sheet.",
+   "findings": [
+    {
+     "id": "A-17",
+     "title": "✕ on Create New Lead throws away what was typed",
+     "severity": "Major",
+     "width": "390",
+     "what": "✕ throws away what was typed: with a name typed — or with the nine fields a document just filled — the close discards without a word. The import wizard asks (\"Are you sure you want to close?\"); this form, the one filled during a call, doesn't. (The scrim tap does not close — good.)",
+     "shots": [
+      [
+       "m390-A48-close-typed",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "✕ asks before it discards"
+    },
+    {
+     "id": "A-18",
+     "title": "The lead form types at 14 with no name / phone autocomplete",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "Every input types at 14 (the 16 rule is iOS-only, so Android and an iPad reading desktop get 14); the name has no `autocapitalize=\"words\"` / `autocomplete=\"name\"`, the phone no `autocomplete=\"tel\"`; the helper \"Client project address.\" and the fill summary are 12. Additional info opens to 1,688px of fields in a 602 body (2.8 screens) in one run.",
+     "shots": [
+      [
+       "m390-A43-form-second-client",
+       "m390"
+      ],
+      [
+       "m390-A44-form-end",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "16 and autocomplete"
+    },
+    {
+     "id": "A-19",
+     "title": "Fill from a document opens a second card over the sheet",
+     "severity": "Minor",
+     "width": "390",
+     "what": "On a phone it reads \"Drop in the document or browse\" in a 342 centred card over the sheet (two scrims), Cancel + Upload under a dropzone that is itself the button; it takes PDF / XLSX / CSV / TXT but not what arrives on a phone — a WhatsApp message or a screenshot.",
+     "shots": [
+      [
+       "m390-A45-fill-doc",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "paste a message or a document in the same sheet"
+    },
+    {
+     "id": "A-20",
+     "title": "The duplicate dialog’s default creates the duplicate",
+     "severity": "Minor",
+     "width": "390",
+     "what": "\"Create anyway\" is the filled button, \"Open existing lead\" the outlined one: the one-thumb default makes the duplicate. The help line is 12.",
+     "shots": [
+      [
+       "m390-A49-duplicate",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "the default opens the existing lead"
+    },
+    {
+     "id": "A-21",
+     "title": "The import toast shows a CSV badge for every file",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The upload toast draws a CSV badge for every file — `/figma-assets/file-csv.svg` is hard-coded, so an XLSX (and a PDF) shows \"CSV\" — and on a phone it covers the success card above the foot. Half of the first screen is tips and a template download a phone can't edit.",
+     "shots": [
+      [
+       "m390-A50-import-new-lead-picked",
+       "m390"
+      ]
+     ],
+     "fix": "The badge from the extension (the Files tab's kind icons); ≤767 the toast becomes the dropzone's own row; tips fold under \"How to prepare the file\"."
+    },
+    {
+     "id": "A-22",
+     "title": "Mapping eleven matched columns takes 5.9 screens",
+     "severity": "Major",
+     "width": "390",
+     "what": "Eleven columns, all auto-matched, still cost 2,739px of mapping cards in a 468 body (5.9 screens — name, AUTO-MATCHED, three samples and a select each) before Next.",
+     "shots": [
+      [
+       "m390-A51-import-new-lead-map",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "matched columns fold to one line"
+    },
+    {
+     "id": "A-23",
+     "title": "The import preview never flags the row that won’t land",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "The preview is the 12-column sheet (2,050px wide in 356 / 622) and says nothing about what won't land: row 5 has no name and is dropped — step 4 says \"4 of 5 records imported successfully\" with no reason — and Gerald Tan (an existing lead's phone) isn't flagged until the review queue. The routing dialog still asks about \"these 5 leads\".",
+     "shots": [
+      [
+       "m390-A53-import-new-lead-preview",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "the preview says what won’t land and why"
+    },
+    {
+     "id": "A-24",
+     "title": "Merging one duplicate takes 8.7 screens",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "Merging one duplicate at 390 is 3,937px of scroll in a 450 window: each of 15 fields stacks Existing / New / Merged rows even when both sides are \"—\" or equal; only Phone differs (⚠). The source chips, the switch and Approve All Clean (190px) stay above the merge; the three-button foot + note takes 145. At 768 the New column is cut under the frozen Merged result (\"Ge…\", \"identic…\", \"120…\") — the values being merged are hidden until a sideways pan.",
+     "shots": [
+      [
+       "m390-A61-merge",
+       "m390"
+      ],
+      [
+       "t768-A61-merge",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "the merge shows only what differs"
+    },
+    {
+     "id": "A-25",
+     "title": "The review queue’s cards print 10–12px; Approve All is a green button",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Queue cards print the phone ungrouped, the info line at 12, the status tag at 10; \"Approve All Clean (16)\" — a green filled button, not the house primary — adds 16 leads in one tap and answers with a plain snackbar, no Undo.",
+     "shots": [
+      [
+       "m390-A60-review",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "the queue card is the listing card"
+    },
+    {
+     "id": "A-27",
+     "title": "Import History reads “4 of 5imported”",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The counts read \"4 of 5imported\", \"13 of 14imported\", \"233 of 243imported\": the ≤767 `::after { content: ' imported' }` has no `white-space: pre`, so its leading space collapses (REG-390 gave the other two separators `pre`, not this one).",
+     "shots": [
+      [
+       "m390-A91-import-history",
+       "m390"
+      ]
+     ],
+     "fix": "`white-space: pre` on that `::after`."
+    },
+    {
+     "id": "A-29",
+     "title": "Return Lead runs the whole form on an expired window",
+     "severity": "Minor",
+     "width": "390",
+     "what": "One clean column, but on an expired window (\"Return period expired (30 days) · 0 of 2 returns used\") the reason, Attach Files and a filled Next → Confirm still run the whole form with nothing saying what an expired return becomes; the tips card (four lines at 12) sits between the fields and the foot.",
+     "shots": [
+      [
+       "m390-A74-return-1",
+       "m390"
+      ]
+     ],
+     "fix": "One sentence first: \"The 30 days are over — Qanvast decides; it goes as a late return\"; tips folded, at 14."
+    }
+   ],
+   "measure": "Mapping 11 matched columns: 2,739px (5.9 screens). Merging one duplicate: 3,937px (8.7 screens)."
+  },
+  {
+   "key": "s-page",
+   "title": "The lead’s page",
+   "intro": "A lead is a person and a position, not a document. Today the phone page is the desktop’s three columns stacked: 2.9–3.8 screens, the primary scrolls away, Call is a 70×20 link.",
+   "findings": [
+    {
+     "id": "B-03",
+     "title": "Call, Copy and WhatsApp are the page’s smallest targets",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "The page's two most-used on-site actions are its smallest targets: the tel: number 70×20, Copy 24×24 and WhatsApp 24×24, 8 px apart; email 79×20, Copy email 24×24. **This is a decision** (REG-365: the owner kept the block's 8 px rhythm \"below REG-273's 44 floor\"). It doesn't serve someone holding the phone in one hand at a client's door.",
+     "shots": [
+      [
+       "m390-03-overview-farah",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "Call and WhatsApp as 44 buttons in the hero"
+    },
+    {
+     "id": "B-04",
+     "title": "The one primary scrolls away on a 3-screen page",
+     "severity": "Major",
+     "width": "390",
+     "what": "The header is static on a phone: after a 600 px scroll the stage pill and \"Move to …\" sit at y −536, and only the tab strip sticks. The page is 2457–3171 px long (2.9–3.8 screens), so the stage's next step is off-screen everywhere below the brief.",
+     "shots": [
+      [
+       "m390-ov-farah-scrolled600",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "a sticky foot with Log ▾ and the next move"
+    },
+    {
+     "id": "B-05",
+     "title": "The Overview cards keep the desk’s 12px values",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "The cards keep the desk's 12 px for values and sentences: LEAD STAGES days, \"current\", \"Assign a member first\" (12); Last contact's line \"Call · Callback requested\" (12); Next follow-up's task name and date (12); Response time (12, cut with an ellipsis — \"First contact in 28h …\"); MY TASKS dates (12); the Questionnaire counts (12); the files tile names (10); the brief's tag (10, uppercase); Invite to Portal's \"Not invited\" chip (10) and the page address (12).",
+     "shots": [
+      [
+       "m390-03-overview-olivia-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the scale in every Leads card"
+    },
+    {
+     "id": "B-06",
+     "title": "The QUOTES card’s step labels break inside words",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "The step labels break inside words: \"Dra/ft\", \"Approv/ed\", \"Confirm/ed\", \"Signe/d\" at 390; \"Dr/aft\", \"Appr/oved\", \"Confi/rmed\", \"Sig/ned\" at 768 (272 px card). The bar is 128 px tall of 12 px fragments.",
+     "shots": [
+      [
+       "m390-03-overview-olivia-full",
+       "m390"
+      ],
+      [
+       "t768-03-overview-olivia",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the quote’s state is a row with its chip"
+    },
+    {
+     "id": "B-07",
+     "title": "The tablet Overview is the desk squeezed: 272px cards",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The tablet is the desk squeezed: rail 52 + info column 300 + centre 320 + Create strip 72, so the cards are 272 wide at 768 portrait (hence B-06's breaks and the cut Last contact / Response time lines). LEAD STAGES is the **fourth** card, at y 1806 on 768 and y 1473 on 1024 landscape — two screens down — while the phone puts it right under the identity block (REG-377's canvas order).",
+     "shots": [
+      [
+       "t768-tab-01-stages-card",
+       "t768"
+      ],
+      [
+       "t768-03-overview-farah",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "portrait follows the phone; landscape two panes"
+    },
+    {
+     "id": "B-08",
+     "title": "The Create strip’s nine glyphs have no labels and 28×44 boxes",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "Nine unlabelled 24 px glyphs. Each one's hit box is **28×44**: the `.glyphs` list's `overflow-x: hidden` (2 px padding) clips the `::after { inset: -10px }` that should make it 44×44. The names exist only in tooltips, and a finger gets no tooltip, so the wand (AI Visualizer) and the scan (Quote X-Ray) can't be told apart without pressing them.",
+     "shots": [
+      [
+       "t768-03-overview-olivia",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "Create lives in ⋮ on a tablet"
+    },
+    {
+     "id": "B-16",
+     "title": "Locked stages say why only after a tap",
+     "severity": "Major",
+     "width": "390",
+     "what": "Locked stages are grey with no reason in the row; you hear why only by tapping (the snackbar). Meanwhile the LEAD STAGES card prints \"Assign a member first\" under four rows and offers no way to assign. On a phone, Assign is three levels deep: View Client Info › Assign Member › tick › Assign.",
+     "shots": [
+      [
+       "m390-04-stage-olivia",
+       "m390"
+      ],
+      [
+       "m390-mx-b0-stages-card",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the Next line and the stage sheet offer Assign"
+    },
+    {
+     "id": "B-17",
+     "title": "The name shows twice on the first screen",
+     "severity": "Minor",
+     "width": "390",
+     "what": "\"Olivia Martinez\" appears in the bar (20/700) and again 40 px lower in the identity block (24/700): about 44 px of the first screen is the same words. Both are drawn (mock 1186:2453, REG-359; canvas 2a).",
+     "shots": [
+      [
+       "m390-03-overview-olivia",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the name once, in the bar"
+    },
+    {
+     "id": "B-18",
+     "title": "The Maison AI brief takes 43% of the first screen",
+     "severity": "Major",
+     "width": "390",
+     "what": "The brief and its Show more take about 360 px (310→671), 43 % of the first screen, between the identity block and LEAD STAGES — and the canvas order (REG-377) puts LEAD STAGES there. Its tag is 10 px. The FAB's sheet repeats the same two buttons.",
+     "shots": [
+      [
+       "m390-03-overview-farah",
+       "m390"
+      ],
+      [
+       "m390-mx-e1-maison",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the brief is one line under Next"
+    },
+    {
+     "id": "B-19",
+     "title": "Empty cards take a quarter of the page",
+     "severity": "Minor",
+     "width": "390",
+     "what": "On Vivien's page the empty Questionnaire card (\"No questions yet\", about 330 px) and the empty Files card (\"Add your first files\" with two buttons, about 330 px) take a quarter of a 2713 px page.",
+     "shots": [
+      [
+       "m390-won-vivien",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "an empty tab is one row with its action"
+    },
+    {
+     "id": "B-20",
+     "title": "Nine tabs in a sideways strip, four and a half visible",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Nine tabs in a sideways strip: four and a half show (Files is cut at 383); Notes & Logs, Meetings, Questionnaire and Activity are off-screen, with no pager on touch.",
+     "shots": [
+      [
+       "m390-03-overview-olivia",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the tabs are the Lead screen’s rows"
+    },
+    {
+     "id": "B-21",
+     "title": "Edit details is 17 fields in one sheet",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Seventeen fields in one sheet: 1540 px of scroll in a 602 px view (2.6 screens). Foot Cancel / Save are 36 tall. Labels are 12. The edits a designer makes on site (the phone, the address, the budget, the start date) sit among NRIC, Customer ID and the custom fields.",
+     "shots": [
+      [
+       "m390-07-edit-details",
+       "m390"
+      ],
+      [
+       "m390-edit-2",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "Edit details as a short list"
+    },
+    {
+     "id": "B-25",
+     "title": "Assign stacks a sheet on the Client Info sheet",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Assign is a sheet stacked on the Client Info sheet (two scrims, two ✕). The sheet's four sections are all open, so Assign sits under \"Collaborators\" with Owner \"--\".",
+     "shots": [
+      [
+       "m390-mx-a1-client-info",
+       "m390"
+      ],
+      [
+       "m390-mx-a2-assign",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "Assign from the Next line and the hero"
+    },
+    {
+     "id": "B-26",
+     "title": "The Maison AI button covers a LEAD STAGES row at rest",
+     "severity": "Minor",
+     "width": "390",
+     "what": "At scroll 0 the FAB (326,780,48×48) covers the second LEAD STAGES row's right end — its days or \"--\" and its chevron. The row can still be pressed to the left.",
+     "shots": [
+      [
+       "m390-03-overview-olivia",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the button lifts above the sticky foot"
+    }
+   ],
+   "measure": "Page heights at 390: 2,457–3,171px. The brief and Show more: 360px (43% of the first screen). Card values 12px."
+  },
+  {
+   "key": "s-move",
+   "title": "The Move stage window and the moments",
+   "intro": "The moments a designer does on site in one hand: log the call, move after the visit, win with the signed papers. One of them lost data — fixed tonight.",
+   "findings": [
+    {
+     "id": "B-01",
+     "title": "An unowned lead’s first log was lost on Save — fixed tonight",
+     "severity": "Blocker",
+     "width": "all",
+     "what": "On a lead nobody owns, \"Move to Contacted\" opens the window **at Contacted** (`stageIntent` returns `wizard` for the next stage without the owner gate that `blockedReason` and the stage menu apply). I filled the whole log (Call · date · outcome · a screenshot), pressed Save → Suggested tasks → \"Move without tasks\": the server refused (\"Couldn’t move the lead — assign a member first\"), **the window closed and the log was gone** — 0 `lead_notes`, 0 `stage_logs`; the screenshot stayed in Files, once per attempt (two copies after two tries). Every lead an Owner or Admin adds lands like this (only a Designer self-assigns, REG-609).",
+     "shots": [
+      [
+       "m390-w1-01-after-primary",
+       "m390"
+      ],
+      [
+       "m390-w2b-10-after-save",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "fixed tonight as REG-2640 — every forward stage move now asks the owner rule first, and the lead page’s refusal offers Assign"
+    },
+    {
+     "id": "B-02",
+     "title": "The New step ticks a member only on its checkbox",
+     "severity": "Major",
+     "width": "390",
+     "what": "Only the 44×44 checkbox at the right edge ticks a member; the rest of the 358×64 row — avatar, name, role — does nothing (a tap on \"Dane\" left it unticked). The foot reads \"Save changes\" while the lead is still in New, and Save closes the window (\"Members updated\") instead of carrying on: you press \"Move to Contacted\" a second time. Nothing in the Contacted step says New still needs someone (the rail's empty circle is the only sign).",
+     "shots": [
+      [
+       "m390-w3-02-new-ticked",
+       "m390"
+      ],
+      [
+       "m390-w3-01-new-step",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "a member row is its label"
+    },
+    {
+     "id": "B-09",
+     "title": "A completed log opens as a greyed form",
+     "severity": "Major",
+     "width": "390",
+     "what": "A completed log opens as the **form, greyed** — chips, fields and the attachment at disabled contrast, with Edit in the card head and **Cancel** alone in the foot. You can't read the call back at a glance: the value is inside a disabled input.",
+     "shots": [
+      [
+       "m390-ro-01-contacted-readonly",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "a completed log is a summary card with Edit"
+    },
+    {
+     "id": "B-10",
+     "title": "Logging a first call takes 13 taps and a screenshot",
+     "severity": "Major",
+     "width": "390",
+     "what": "Thirteen taps, and a screenshot is mandatory: Call chip (1) · Date & Time (3: the sheet, today, Done — the field opens empty; `defaultNow` only supplies the time once a day is picked) · Outcome (2, an anchored list that opens upward over the chips, not a sheet) · Attach (an \"Attach files\" sheet whose words are \"Drop your file or browse\", then the OS picker, then \"Attach 1 File\" at 36 tall) · Save · Suggested tasks › Save. The window demands the screenshot (REG-543 kept it) **but the same contact log on Notes doesn't** (\"Attach screenshots of your call attempts\" has no `*` there) — one log, two rules. Auto Fill from an exported chat is fast (5 taps, it filled channel, time, outcome and the next meeting), but only if a file exists.",
+     "shots": [
+      [
+       "m390-w2-02-datepicker",
+       "m390"
+      ],
+      [
+       "m390-w2-04-outcome",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "three taps after a call"
+    },
+    {
+     "id": "B-11",
+     "title": "A signed quote at Won cannot be a photo",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "Both quote uploads take PDF only (`accept=\".pdf\"`). A photo of a signed paper quote is refused with \"Choose a PDF — the quote is kept as one\", while the **signed contract on the same Won screen** offers Take a photo · Choose a file (C4 P-12).",
+     "shots": [
+      [
+       "m390-w6-03-photo",
+       "m390"
+      ],
+      [
+       "m390-w7-01-won",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "Take a photo for the signed quote"
+    },
+    {
+     "id": "B-12",
+     "title": "Won’s payment split starts at 0% and Save refuses",
+     "severity": "Major",
+     "width": "390",
+     "what": "An uploaded quote zeroes the split (REG-149, a decision). On the phone that means four 48×42 % boxes at 14 px, typed one by one. Save is refused with \"Milestones must add up to 100%\" until you find **Reset to default**. The \"0%\" badge is 10 px, and \"Total S$70,500\" shows while 0 % is assigned.",
+     "shots": [
+      [
+       "m390-w8b-03-y500",
+       "m390"
+      ],
+      [
+       "m390-w8b-04a-zero-refused",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "the studio’s usual split"
+    },
+    {
+     "id": "B-13",
+     "title": "On Hold is a sheet, Lost a centred card",
+     "severity": "Minor",
+     "width": "390",
+     "what": "On Hold is a bottom sheet titled \"Put on hold\"; Lost is a centred card titled \"Move stage\". Both carry a reason select and fields (P-10 changed only On Hold).",
+     "shots": [
+      [
+       "m390-w9-01-hold",
+       "m390"
+      ],
+      [
+       "m390-w9-07-lost-filled",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "On Hold and Lost share one sheet"
+    },
+    {
+     "id": "B-14",
+     "title": "A refusal’s snackbar sits on the On Hold sheet’s chips",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A stage-menu refusal's snackbar (\"Assign a member first\") stayed on screen across the Duration chips of the On Hold sheet that opened next (snackbar y 711–759 over chips 675–719): the chips' effective box dropped to 36. The chips' words are 12 px.",
+     "shots": [
+      [
+       "m390-w9-01-hold",
+       "m390"
+      ]
+     ],
+     "fix": "`Dialog`'s phone sheet lifts `--snackbar-bottom` the way `Sheet` does (`useSheetFootLift`); a refusal's snackbar is dismissed when the next surface opens. Chip text 14."
+    },
+    {
+     "id": "B-15",
+     "title": "Two snackbars with two Undos stack",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Hold then Resume left two snackbars showing at once, each with its own Undo (\"Laneb Beta is on hold · Undo\" over \"Moved to New · Undo\"): 112 px over the page, and the older Undo now undoes a hold that is already over.",
+     "shots": [
+      [
+       "m390-w9-05-lost",
+       "m390"
+      ]
+     ],
+     "fix": "The stage moves share one snackbar `key`, so the newest replaces the last."
+    },
+    {
+     "id": "B-22",
+     "title": "Attach files from a log has desk words and no camera",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Foot \"Cancel / Attach 1 File\" 36 tall; File Type 36; sort 36×36; the words are the desk's (\"Drop your file or browse · Supports: JPEG, PNG, PDF\"); no camera.",
+     "shots": [
+      [
+       "m390-w2-07-attach",
+       "m390"
+      ],
+      [
+       "m390-w2-08-uploaded",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "Take a photo in the log"
+    },
+    {
+     "id": "B-23",
+     "title": "The window’s and its dialogs’ feet are 36–44",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The Move stage foot is Cancel / Save at 44, right-aligned. The nested Auto Fill and Suggested tasks cards use 36-tall buttons (\"Move without tasks\" 164×36). The Auto Fill helper is 12 px.",
+     "shots": [
+      [
+       "m390-w4-02-autofill-dialog",
+       "m390"
+      ],
+      [
+       "m390-w4-05-suggested",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "one Save & move at 48"
+    },
+    {
+     "id": "B-24",
+     "title": "“Resume at Contacted” is clipped at 320",
+     "severity": "Major",
+     "width": "320",
+     "what": "\"Resume at Contacted\" is clipped at **both** ends in its 118 px button (\"esume at Contacte\"), with no ellipsis; \"Stage: On Hold\" takes 157.",
+     "shots": [
+      [
+       "m320-meiling",
+       "m320"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the foot replaces the header pair"
+    }
+   ],
+   "measure": "Taps: a first call 13 (+ a mandatory screenshot) · Quote Sent 6 · Won 9 + typing · On Hold 5 · Lost 5."
+  },
+  {
+   "key": "s-tasks",
+   "title": "Tasks (the lead’s, the rail’s and a project’s)",
+   "intro": "The Tasks tab shares its component with the rail’s /tasks and a project’s Tasks: every finding here is module-wide.",
+   "findings": [
+    {
+     "id": "C-02",
+     "title": "The Tasks toolbar’s tap areas are shifted 22–24px left",
+     "severity": "Major",
+     "width": "all",
+     "what": "**Hit boxes are shifted 22–24px left of the glyphs.** `.touchTarget::after { inset: -4px }` on top of the house IconButton's `translate(-50%,-50%)` box. At 390: Filters drawn 290–326 hits 265–312, so its right 14px open **More options**; Search drawn 242–278 hits 238–264 (27 wide). Same at 768 (Column settings drawn 580–616 hits 555–602) and on /tasks. Meetings: New Meeting hits 217–277 and steals Briefs' right half (Briefs hits 165–216 of 168–230); Search 27 wide; More options takes Search's right half. The design lint misses it: its `icon-button-overlay` rule only matches `button::after`.",
+     "shots": [
+      [
+       "m390-06-tab-tasks",
+       "m390"
+      ]
+     ],
+     "fix": "Delete the three overrides (`tasks-toolbar.module.css`, `task-panel.module.css` `.touchTarget::after`, `meetings-toolbar.module.css` `.menuWrap > button::after`); widen the lint to any `::after` with `inset` on a class passed to `IconButton`."
+    },
+    {
+     "id": "C-03",
+     "title": "A task’s checkbox is hittable in a 24px band",
+     "severity": "Major",
+     "width": "390",
+     "what": "The row checkbox's 44 box is hittable only 24–26px tall on the lead's tab (the title cell paints over its top 20px). On the rail's **/tasks** the box's drawn centre is dead: a real tap at (36, 343) hit `tasks-table cell` and selected nothing. The comment chip (\"2\") is 36×24 — its `::after` sits under the next cell. Module-wide (one `tasks-table`).",
+     "shots": [
+      [
+       "m390-x-checkbox-tap-rail",
+       "m390"
+      ]
+     ],
+     "fix": "Raise `.cell.colSel` and the chip above the cells (`z-index`) — or, as the Quotes card did, drop the checkbox on a phone and select by long press (`use-long-press.ts`)."
+    },
+    {
+     "id": "C-04",
+     "title": "The Tasks bulk bar pushes Delete and Clear off the screen",
+     "severity": "Major",
+     "width": "390",
+     "what": "One selected task: Assign · Mark as completed · Save as Template · Duplicate · Delete · ✕ need 511px in a 372 bar. Duplicate is cut, **Delete and Clear selection are off the right edge**, with no sign the bar scrolls. REG-358 meant the scroll for the 320 floor only.",
+     "shots": [
+      [
+       "m390-t09-bulk-bar",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the bulk bar of three"
+    },
+    {
+     "id": "C-05",
+     "title": "A task’s name is cut at 19 characters",
+     "severity": "Major",
+     "width": "390 / 320",
+     "what": "A task's name is cut at ~19 characters at 14px (\"Book the showroom v…\", \"Send the revis…\"); at 320, 10 characters, and the due date runs under the ⋮. The member cell wraps to a **third line that starts at x 28, under the checkbox**, while the title starts at x 104: 129px per task, 5 tasks = 645px. The canvas (2b) draws two lines.",
+     "shots": [
+      [
+       "m390-06-tab-tasks-full",
+       "m390"
+      ],
+      [
+       "w320-tasks",
+       "w320"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the name whole, the due day first"
+    },
+    {
+     "id": "C-06",
+     "title": "Create New Task takes a title only; a due day is 8 more taps",
+     "severity": "Major",
+     "width": "390 / 768",
+     "what": "Creates an inline row: a blank 44px band with no placeholder and the ✕/✓ floating over the **next** row's top right. It takes a title only; a due day and a member are 8 more taps (calendar icon → day → hour select → minute → Done → person_add → tick → Save).",
+     "shots": [
+      [
+       "m390-t07-new-task-row",
+       "m390"
+      ],
+      [
+       "t768-t07-new-task-row",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "title + due preset + member in one row"
+    },
+    {
+     "id": "C-07",
+     "title": "Tasks, Meetings and Files tables keep the desk’s width on a tablet",
+     "severity": "Major",
+     "width": "768 / 1024",
+     "what": "The desk's column floor scrolls sideways: Tasks 1395 in 570 at 768 (Due date off, Status off, Tags off; at 1024 Due date cut), Meetings 1394 in 570 (Where cut, People/Status/Deal score off), Files list 1410 in 570 (Owner cut, Updated off). **Every row's ⋮ sits at x 1428 / 1201 / 1435 — 760px past the card's right edge at 768**, behind REG-310's 150 band: no row action without a full pan. Module-wide (/tasks, a project's Tasks and Files).",
+     "shots": [
+      [
+       "t768-x-tasks",
+       "t768"
+      ],
+      [
+       "t768-x-meetings",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "tablet column sets for Tasks, Meetings, Files"
+    },
+    {
+     "id": "C-20",
+     "title": "The due-date picker is a calendar first, its controls 24–32",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Year chooser 24 tall; Today · ‹ › 28 wide; hour / minute / AM-PM selects 32 tall; Done 32 tall. A due date is a calendar first; nothing quicker for \"tomorrow 10 am\".",
+     "shots": [
+      [
+       "m390-t10-due-picker",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "due presets before the calendar"
+    },
+    {
+     "id": "C-24",
+     "title": "The task panel opens on Creator; the due date shows twice",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 743px sheet that opens on Creator / Created on; the due date shows twice (\"26/10/2026, 10:00 AM\" in the field, \"Mon, 26 Oct ’26 · 10:00 AM\" at 12 under it).",
+     "shots": [
+      [
+       "m390-t01-task-panel",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the panel opens on the task"
+    }
+   ],
+   "measure": "Toolbar hit boxes shifted 22–24px; the bulk bar needs 511px in 372; Tasks on a tablet 1,395px in 570."
+  },
+  {
+   "key": "s-files",
+   "title": "Files and the viewer",
+   "intro": "Files on site means photos. Today a site photo is seven taps and the viewer has no pinch.",
+   "findings": [
+    {
+     "id": "C-09",
+     "title": "A site photo takes 7 taps; there is no Take a photo",
+     "severity": "Major",
+     "width": "390 / 768",
+     "what": "The phone's upload sheet is \"From Local Files\" · \"From Google Drive\" — Drive answers \"Coming soon\". No **Take a photo**: a site photo is Files → New File → From Local Files → the OS sheet's Take Photo → shutter → Use Photo (7 taps; the input has no `accept` / `capture`) and lands loose under today in All Files with the camera's file name; the upload toast (358×120) then covers the grid until closed.",
+     "shots": [
+      [
+       "m390-f01-new-file-menu",
+       "m390"
+      ],
+      [
+       "m390-f13-uploaded",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "Take a photo first"
+    },
+    {
+     "id": "C-15",
+     "title": "Inside a folder the Files toolbar splits into two rows",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Inside Kitchen the toolbar splits into two rows — \"← All Files / Kitchen ⋮\", then five glyph squares left-aligned — and two ⋮ show at once.",
+     "shots": [
+      [
+       "m390-f05-folder",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "one toolbar row in a folder"
+    },
+    {
+     "id": "C-16",
+     "title": "The Files toolbar leaves the title “A…” at 320",
+     "severity": "Minor",
+     "width": "320",
+     "what": "Five glyphs (New Folder · Upload · Search · Filters · ⋮) leave the title \"A…\".",
+     "shots": [
+      [
+       "w320-files",
+       "w320"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the title owns its line"
+    },
+    {
+     "id": "C-23",
+     "title": "The file viewer has no pinch and no swipe",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Zoom is − / Fit / + only; no pinch on the image, no swipe to the next file (the page's pinch zooms the chrome too); a floor plan's room labels at fit width are unreadable. Information is a full-screen overlay for six lines (70% empty); Comments is full screen without the file's name.",
+     "shots": [
+      [
+       "m390-f06-viewer",
+       "m390"
+      ],
+      [
+       "m390-f08-viewer-info",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the viewer pinches and swipes"
+    }
+   ]
+  },
+  {
+   "key": "s-notes",
+   "title": "Notes & Logs",
+   "intro": "Notes is where a call is logged when it isn’t a stage move. One of its flows could not be done on a phone at all — fixed tonight.",
+   "findings": [
+    {
+     "id": "C-01",
+     "title": "Auto Fill and Attach opened under the contact log — fixed tonight",
+     "severity": "Blocker",
+     "width": "390",
+     "what": "**Auto Fill and Attach open UNDER the contact-log sheet.** The Auto Fill dialog sits at z 110, the log's sheet at z 115: pressing Auto Fill shows nothing (`elementFromPoint(195,600)` = the log's Remarks); Attach raises \"Attach files\" behind it (its head peeks out above the sheet). Reading a WhatsApp export or attaching the call screenshots from Notes cannot be done on a phone.",
+     "shots": [
+      [
+       "m390-n07-autofill-under-sheet",
+       "m390"
+      ],
+      [
+       "m390-n09-attach-from-log",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "fixed tonight as REG-2641 — Auto Fill and Attach open on the layer above the log’s phone sheet"
+    },
+    {
+     "id": "C-10",
+     "title": "The attachment tile’s time runs under its ⋮",
+     "severity": "Major",
+     "width": "all",
+     "what": "The tile's time \"30 Aug ’26・11:30 AM\" (12px, `nowrap`) runs **under the tile's ⋮** — it reads \"11⋮30 AM\" — at 390, 768 and 1024 (REG-600 added the time to a 150 tile that reserves 40 for the kebab).",
+     "shots": [
+      [
+       "m390-n01-note-open",
+       "m390"
+      ],
+      [
+       "m390-n02-log-open",
+       "m390"
+      ]
+     ],
+     "fix": "Date only (\"30 Aug\") at 14 with an ellipsis; on a phone the attach-files list row (REG-393: 48 thumb · name · date · ⋮)."
+    },
+    {
+     "id": "C-14",
+     "title": "Notes on a tablet upright is master-detail at 280 + 268",
+     "severity": "Major",
+     "width": "768",
+     "what": "Master-detail at list 280 + pane ~268: a new log's Date & Time and Outcome share a row (\"Date & Ti…\" cut), the note's tool row wraps to two, the attachments stack under a narrow editor. The 80px quick-links strip stays (its glyphs hit 28 wide), though the Quotes and Contracts tabs drop it at 768 portrait.",
+     "shots": [
+      [
+       "t768-n05-new-log",
+       "t768"
+      ],
+      [
+       "t768-n01-note-open",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the log opens full width"
+    },
+    {
+     "id": "C-21",
+     "title": "Logging a call from Notes takes 8–10 taps",
+     "severity": "Major",
+     "width": "390",
+     "what": "8–10 taps to log a call: + → Contact Log → Call → Date & Time (empty, although it is being written now) → pick → Done → Outcome → option → Save. Outcome is a list behind a select; channels are six 12px chips over two rows.",
+     "shots": [
+      [
+       "m390-n05-new-log",
+       "m390"
+      ],
+      [
+       "m390-n11-outcome-from-log",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "the same sheet from Notes"
+    },
+    {
+     "id": "C-22",
+     "title": "The phone composer’s body types at 14",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The docked composer's Title is a 20px-tall target (326×20) and its body (a contenteditable) types at 14 — REG-306's iOS rule lifts `input / textarea / select` only, so the body likely zooms the page on focus (verify on a device).",
+     "shots": [
+      [
+       "m390-06-tab-notes",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the composer types at 16"
+    }
+   ]
+  },
+  {
+   "key": "s-tabs",
+   "title": "Meetings, Questionnaire, Activity and the tab frame",
+   "intro": "Every tab spends 241px of chrome before its first row, and the strip hides five of nine tabs.",
+   "findings": [
+    {
+     "id": "C-08",
+     "title": "The Maison AI button covers a row’s control at rest",
+     "severity": "Major",
+     "width": "390",
+     "what": "At rest the FAB covers row controls: Questionnaire's 6th card \"Edit answer\" pencil is under it — a tap there **opened Maison AI** (m390-q04); on Tasks the last visible row's ⋮ is under it (`pass1`: covered by `maison-fab`), and it sits on the Add Task foot's right end. It slides away only on scroll.",
+     "shots": [
+      [
+       "m390-q04-edit-answer",
+       "m390"
+      ],
+      [
+       "m390-06-tab-questionnaire",
+       "m390"
+      ]
+     ],
+     "fix": "Give every tab's content a right-edge clearance under the FAB's band (`--fab-clearance` on the cards' trailing column), or hide the FAB on L2 tab screens and keep Maison AI in the lead's ⋮ (REG-2587's move for section screens)."
+    },
+    {
+     "id": "C-11",
+     "title": "A meeting card opens only from its 20px title",
+     "severity": "Major",
+     "width": "390",
+     "what": "Only the 20px title \"First consultation\" opens the meeting; a tap on the card body (70% across, 60% down) does nothing. The 146px card carries 12px lines (\"Written up from notes\", the place, \"Brief to save\") and an unexplained \"57 · Cool\".",
+     "shots": [
+      [
+       "m390-06-tab-meetings",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "the whole card opens"
+    },
+    {
+     "id": "C-12",
+     "title": "Activity is a 4,643px flat log",
+     "severity": "Major",
+     "width": "390",
+     "what": "One New lead's feed is **4,643px** (≈70 rows; ten \"James uploaded the file “Q-101”\" in a row), each row its own full date. Only the words are the link: 17–18px tall targets, and at several rows the centre hit the row body, not the link.",
+     "shots": [
+      [
+       "m390-06-tab-activity-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "Activity by day, repeats folded"
+    },
+    {
+     "id": "C-13",
+     "title": "Ask the client’s ticks are centred and ragged on touch",
+     "severity": "Minor",
+     "width": "390 / 768",
+     "what": "The question ticks are **centred and ragged** — each checkbox at a different x — only on touch (at 1440 all four sit at x 547). The rows are 32 apart, so each 44 box gets 22–34px.",
+     "shots": [
+      [
+       "m390-q02-ask-client",
+       "m390"
+      ],
+      [
+       "t768-q02-ask-client",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "each tick a full-width row"
+    },
+    {
+     "id": "C-17",
+     "title": "Names, dates and chips at 10–12px on the tabs",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "Under 14 for names, values and sentences: folder count \"4 items\" **10**; \"By Studio\" **10**; \"Clients can’t see these comments\" **10**; task tags **10** uppercase; note and log dates 12; kind chips All · Notes · Contact Log 12; Activity chips 12; \"Contacted via\" chips 12; meeting sub-lines 12; the task panel's helper date 12 (a value, repeating the field above it); Ask the client's count / link / help 12; \"1 template\" 12. Task names and the Notes list read at 14 where the scale says 16.",
+     "shots": [],
+     "absorbed": "P-13",
+     "absorbedNote": "the scale on the tabs"
+    },
+    {
+     "id": "C-18",
+     "title": "The tabs’ sheets’ foot buttons are drawn 36",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Drawn 36 tall: Mark as Completed, the contact log's and the note sheet's Cancel · Save, comments' Submit, Filters' Clear All · Done, Ask the client's Send via WhatsApp (their hit boxes reach 44).",
+     "shots": [],
+     "absorbed": "P-13",
+     "absorbedNote": "48 feet"
+    },
+    {
+     "id": "C-19",
+     "title": "The Filters sheet’s Sort radios are 24px targets",
+     "severity": "Minor",
+     "width": "390 / 768",
+     "what": "The Sort radios' targets are 24 tall inside 52px rows (\"Due date\" 92×24, \"Newest at the top\" 148×24).",
+     "shots": [
+      [
+       "m390-t04-filters",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "a radio’s row is its label"
+    },
+    {
+     "id": "C-25",
+     "title": "The Questionnaire’s summary is the last card",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The summary (7 / 11 answered · client 0 · studio 7) is the last card, at ~1,700px; every answered card repeats a 10px \"By Studio\" chip.",
+     "shots": [
+      [
+       "m390-06-tab-questionnaire-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "the summary on top"
+    },
+    {
+     "id": "C-26",
+     "title": "The meeting page’s Save scrolls away on 3,037px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "3,037px; the head's \"Save to the lead\" (filled) and \"Share the notes\" scroll away; the \"On the lead · Not saved to the lead yet · Save\" card repeats it 1,600px down; four more actions compete (Move to Contacted, Send on WhatsApp, Copy, Make a draft quote); section eyebrows and their Edit links at 12.",
+     "shots": [
+      [
+       "m390-m03-meeting-open-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "one Save in a sticky foot"
+    },
+    {
+     "id": "C-27",
+     "title": "Every tab spends 241px of chrome before the first row",
+     "severity": "Major",
+     "width": "390",
+     "what": "241px (29% of 844) before the first row: name 56 + \"Stage · Move to Contacted\" 61 + tabs 48 + toolbar 68 — on every tab. Nine tabs in a sideways strip, 4½ visible: from Tasks, Notes & Logs, Meetings, Questionnaire (with its red 4) and Activity are off-screen; nothing says how many tabs there are.",
+     "shots": [],
+     "absorbed": "P-02",
+     "absorbedNote": "a tab is its own screen with a 56 bar"
+    }
+   ],
+   "measure": "Chrome on every tab at 390: name 56 + stage row 61 + tabs 48 + toolbar 68 = 241px (29% of 844)."
+  }
+ ],
+ "questionsIntro": "Where the proposal has more than one good answer. My recommendation is marked.",
+ "questions": [
+  {
+   "id": "Q-01",
+   "refs": "P-01 · P-07",
+   "title": "Does a tablet in portrait (768) get the phone model, as Quotes and Contracts do?",
+   "opts": [
+    [
+     "phone",
+     "The phone model with room: the Lead screen, tabs as screens, one step per screen",
+     true
+    ],
+    [
+     "desktop",
+     "The desktop page with the type and target fixes"
+    ],
+    [
+     "width",
+     "Phone model up to 1024 in portrait; two panes only sideways"
+    ]
+   ]
+  },
+  {
+   "id": "Q-02",
+   "refs": "P-03 · B-10",
+   "title": "Is a contact log’s screenshot mandatory?",
+   "opts": [
+    [
+     "optional",
+     "Optional in both places, with Take a photo offered first — the log is what matters on the move (the Move stage window asks for it today, Notes does not)",
+     true
+    ],
+    [
+     "mandatory",
+     "Mandatory in both, as the window does today (REG-543)"
+    ],
+    [
+     "window",
+     "Mandatory in the window only, as today"
+    ]
+   ]
+  },
+  {
+   "id": "Q-03",
+   "refs": "P-04 · B-11",
+   "title": "May a signed quote be a photo at Quote Sent and Won?",
+   "opts": [
+    [
+     "photo",
+     "Yes — kept as the copy, the amount typed, as the signed contract already is (Contracts’ Q-04)",
+     true
+    ],
+    [
+     "pdf",
+     "No — a quote stays a PDF"
+    ]
+   ]
+  },
+  {
+   "id": "Q-04",
+   "refs": "P-02 · C-27",
+   "title": "The stage row on every tab (your REG-370): on a phone’s tab screens too?",
+   "opts": [
+    [
+     "drop",
+     "Not on a phone’s tab screens — the next move is one Back away in the Lead screen’s foot; tablets and the desk keep it",
+     true
+    ],
+    [
+     "keep",
+     "Keep it on every tab at every width, as REG-370 decided"
+    ],
+    [
+     "compact",
+     "Keep it on a phone as a one-line chip in the tab’s bar"
+    ]
+   ]
+  },
+  {
+   "id": "Q-05",
+   "refs": "P-05 · A-07",
+   "title": "The card’s stage control on the listing",
+   "opts": [
+    [
+     "pill",
+     "Keep the pill (where the lead is) — its sheet puts the next move first and says why a locked row is locked, with its fix",
+     true
+    ],
+    [
+     "next",
+     "Show the next move on the card (\"Move to Contacted\") with the pill behind ⋮"
+    ],
+    [
+     "none",
+     "No stage control on the card; move from the lead"
+    ]
+   ]
+  },
+  {
+   "id": "Q-06",
+   "refs": "P-03",
+   "title": "After a call from the app, how does the log come up?",
+   "opts": [
+    [
+     "prompt",
+     "A one-line prompt on the Lead screen when you come back — \"Log the call with Farah · Log\" — never a sheet that opens by itself",
+     true
+    ],
+    [
+     "sheet",
+     "The log sheet opens by itself when you come back"
+    ],
+    [
+     "manual",
+     "Nothing automatic: Log ▾ in the foot"
+    ]
+   ]
+  },
+  {
+   "id": "Q-07",
+   "refs": "P-01",
+   "title": "The Lead screen’s filled button",
+   "opts": [
+    [
+     "move",
+     "The next move, as the header’s primary today (Move to Met · Convert to Project · Resume at …), with Log ▾ beside it; the Next line names the job",
+     true
+    ],
+    [
+     "capture",
+     "The state’s capture (Log a contact · Log the meeting · Create quote), with the move behind Stage ▾"
+    ],
+    [
+     "both",
+     "Two filled buttons"
+    ]
+   ]
+  },
+  {
+   "id": "Q-08",
+   "refs": "the next module",
+   "title": "After Leads, which module next?",
+   "opts": [
+    [
+     "projects",
+     "Projects — the schedule, updates, money and choices on site (the module most used outside the office)",
+     true
+    ],
+    [
+     "tasks",
+     "Tasks and Tickets in the rail"
+    ],
+    [
+     "company",
+     "Company, Settings and the price book"
+    ]
+   ]
+  }
+ ]
+}

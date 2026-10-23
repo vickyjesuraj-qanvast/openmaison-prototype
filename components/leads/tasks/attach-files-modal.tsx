@@ -51,7 +51,7 @@ const isFileRow = (r: unknown): r is LeadFile => !!r && typeof r === 'object' &&
  * nothing keeps REG-149's stand-in ("Uploading…" 1.4 s → the mock's file under today, local id).
  */
 export function AttachFilesModal({
-  open, files, attached, onClose, onAttach, onUploadPicked, mode = 'files', chrome = 'tasks',
+  open, files, attached, onClose, onAttach, onUploadPicked, mode = 'files', chrome = 'tasks', layered = false,
 }: {
   open: boolean
   files: LeadFile[]
@@ -67,6 +67,8 @@ export function AttachFilesModal({
    *  tinted — the caption is kind glyph · name · kebab, folder cards count their items, "Search files", no dropzone helper,
    *  the `sort` glyph and a list-then-grid toggle. tasks = the Tasks tab's own mock (902:28220), unchanged. */
   chrome?: 'tasks' | 'quote'
+  /** (REG-2641, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the layer above it */
+  layered?: boolean
 }) {
   const imageMode = mode === 'image'
   const quoteChrome = chrome === 'quote'
@@ -218,7 +220,7 @@ export function AttachFilesModal({
   return (
     <AnimatePresence>
       {open ? (
-        <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
+        <motion.div className={styles.overlay} data-layered={layered || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
           {/* (REG-287) tabIndex={-1} so the panel can hold focus; the shared panel's `outline: none` (surfaceClasses.panel)
               leaves the ring to the panel's own controls. */}

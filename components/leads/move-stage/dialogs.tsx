@@ -27,7 +27,7 @@ export type SharedDialogVariant = 'wizard' | 'notes'
  * and said so — never the mock's scripted values. The drop zone and Upload open the picker; while it reads, "Reading {file}…".
  */
 export function AutoFillDialog({
-  open, onClose, onUpload, title = 'Auto Fill', width = 400, variant = 'wizard', kind = 'contact',
+  open, onClose, onUpload, title = 'Auto Fill', width = 400, variant = 'wizard', kind = 'contact', layered = false,
 }: {
   /** reads and attaches the picked file — the host closes the dialog once it lands (what filled is said under the log's Auto Fill) */
   open: boolean; onClose: () => void; onUpload: (file: File) => Promise<void> | void
@@ -37,6 +37,8 @@ export function AutoFillDialog({
   variant?: SharedDialogVariant
   /** a contact log, or Met's meeting log — the helper says what each is read for */
   kind?: ContactKind
+  /** (REG-2641, the Leads audit's C-01 — a bug fix) opened from a phone sheet (the Notes tab's contact log): the nested layer above it */
+  layered?: boolean
 }) {
   const notes = variant === 'notes'
   const [busy, setBusy] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export function AutoFillDialog({
     try { await onUpload(file) } finally { setBusy(null) }
   }
   return (
-    <Dialog open={open} onClose={onClose} title={title} width={width} size={notes ? 'modal' : 'compact'} nested={!notes}
+    <Dialog open={open} onClose={onClose} title={title} width={width} size={notes ? 'modal' : 'compact'} nested={!notes || layered}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={!!busy}>Cancel</Button>
                      <Button onPress={() => input.current?.click()} isDisabled={!!busy}>{busy ? 'Reading…' : 'Upload'}</Button></>}>
       <Dropzone
