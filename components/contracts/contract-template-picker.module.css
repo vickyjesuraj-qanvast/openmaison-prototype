@@ -18,7 +18,23 @@
 .emptyGlyph { composes: glyph from '../om/folders/folder-empty.module.css'; }
 .emptyTitle { composes: title from '../om/folders/folder-empty.module.css'; }
 .emptyHelp { composes: help from '../om/folders/folder-empty.module.css'; }
-@media (max-width: 767px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* ── Phone (≤767 — quotes on the move 2026-10-22, B-18): a LIST, not two 171px cards with 8px previews — each template a DS radio row (the
+   name 16/600 over "Default · Edited 14 Aug ’26" 14), "Start from the studio agreement" the first row, 56 tall; one button in the foot. The
+   head's "Manage Templates" takes its own line instead of wrapping mid-word. (Contracts on the move, C4 — C-20) The list rows to ≤1024: a
+   tablet's cards were 300px of unreadable paper each. */
+@media (max-width: 767px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sub { flex-wrap: wrap; }
+}
+@media (max-width: 1024px) {
+  .list { display: flex; flex-direction: column; gap: 0; }
+  .list > * { width: 100%; }
+  .pick { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 56px; padding: var(--om-spacing-2) 0; }   /* the DS radio, a row */
+  .pickText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pickName { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+  .pickMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); }
+  .emptyLine { margin: 0; padding: var(--om-spacing-3) 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+}
 /* (REG-664) The folders above the cards, and the crumb inside one. */
 .browse { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
 /* (UX audit C6) The templates lead and the folders follow: with folders under it the grid keeps to its cards (its 320 floor is for the grid alone). */

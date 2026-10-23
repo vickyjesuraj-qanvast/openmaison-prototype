@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { displayDateLong } from '@/lib/format'
+import { displayDate, displayDateLong } from '@/lib/format'
 import { docTotals } from '@/lib/templates/data'
 import { money2 } from '@/lib/quotes/math'
 import { agoText } from '@/lib/portal/model'
@@ -15,7 +14,8 @@ import { VIEW_POLL_MS, notReadyWords, viewCardWords } from '@/lib/quotes/view-li
 import type { QuoteViewData } from '@/lib/quotes/view-link-queries'
 import { readQuoteViewStamp } from '@/app/quotes/view-link-actions'
 import { stampQuoteSeen } from '@/app/quotes/seen-actions'
-import { QuoteStage } from '@/components/quotes/confirm/quote-stage'
+import { QuoteStage, readingLineCount } from '@/components/quotes/confirm/quote-stage'
+import { useClientPhoneModel, waNumber } from '@/components/quotes/confirm/client-layout'
 import shell from '@/components/contracts/sign/signing-page.module.css'
 import confirm from '@/components/quotes/confirm/confirm-page.module.css'
 
@@ -27,14 +27,17 @@ const first = (name: string) => name.trim().split(/\s+/)[0] ?? name
  * what this is: a look, live, with nothing to confirm or sign. 1.0 polled every 5 s and re-drew everything; this asks every 10 s, only while
  * the page is in front, whether the quote changed — and only then re-reads it. A link stopped meanwhile turns into the house notice on the
  * next ask. "Message {designer}" opens WhatsApp on the press; "Download a copy" prints the A4.
+ * (Quotes on the move, K4 — P-12 · A-15 · A-16) On the phone model (confirm-page.module.css) the page reads first — the total card, the cards —
+ * and a sticky bar holds Message {designer} and Download; "View as printed" opens the viewer.
  */
 export function QuoteViewPage({ data }: { data: QuoteViewData }) {
   const router = useRouter()
-  const phone = useMediaQuery(MOBILE)
+  const phone = useClientPhoneModel()
   const totals = useMemo(() => docTotals(data.data), [data.data])
   const [printed, setPrinted] = useState(false)
   const [pages, setPages] = useState(0)
   const [now, setNow] = useState(() => data.now)
+  const lines = useMemo(() => readingLineCount(data.design, data.data, data.view), [data.design, data.data, data.view])
   const stampRef = useRef(data.stamp)
   useEffect(() => { stampRef.current = data.stamp }, [data.stamp])
   useEffect(() => {
@@ -52,10 +55,12 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
   const q = data.quote
   const clientFirst = first(data.clientName)
   const designerFirst = data.designer.member ? first(data.designer.name) : data.designer.name   // a quote nobody prepared: the studio answers
-  const digits = data.designer.phone.replace(/\D/g, '')
-  const to = digits.length === 8 ? `65${digits}` : digits
+  const to = waNumber(data.designer.phone)
   const message = () => window.open(`https://wa.me/${to}?text=${encodeURIComponent(`Hi ${designerFirst}, it’s ${clientFirst} about quote ${q.number}. `)}`, '_blank', 'noopener')
   const download = () => { if (phone && !printed) { setPrinted(true); window.setTimeout(() => printPaper(), 600) } else printPaper() }
+  const words = data.ready
+    ? viewCardWords({ status: q.status, clientFirst, studio: data.studio, designerFirst, confirmedBy: q.confirmedBy, confirmedOn: q.confirmedAt ? displayDateLong(new Date(q.confirmedAt)) : null })
+    : notReadyWords({ clientFirst, studio: data.studio })
   return (
     <div className={shell.page} data-testid="quote-view-page">
       <header className={shell.top}>
@@ -66,27 +71,43 @@ export function QuoteViewPage({ data }: { data: QuoteViewData }) {
         </span>
         <MetaChip icon="visibility">View only</MetaChip>
       </header>
-      <div className={shell.body}>
+      <div className={`${shell.body} ${confirm.pageBody}`}>
+        {/* (K4 — P-12) the phone model's total card, before the reading — drawn there only */}
+        <section className={confirm.totalCard} aria-label="About this quote" data-testid="quote-view-total-card">
+          <span className={shell.eyebrow}>{q.number} · Version {q.version}</span>
+          <span className={confirm.bigLabel}>{data.ready ? (q.title || `Quote ${q.number}`) : 'Not ready yet'}</span>
+          {data.ready ? <strong className={confirm.bigAmount}>{money2(totals.totalMinor)}</strong> : null}
+          <span className={confirm.totalLine}>{data.ready ? `${lines ? `${lines} ${lines === 1 ? 'line' : 'lines'}` : 'view only'}${data.data.quote.validUntil ? ` · valid until ${displayDate(data.data.quote.validUntil)}` : ''} · last changed ${agoText(data.changedAt, Math.max(now, data.now))}` : words}</span>
+          {data.ready ? <span className={confirm.totalAction}><Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="description" size={20} />} onPress={() => setPrinted(true)} data-testid="view-as-printed">View as printed</Button></span> : null}
+        </section>
         {/* (S02) while the quote waits for the studio's approval (a revision on its way) the stage stays empty and the card says so */}
         <QuoteStage design={data.design} brand={data.brand} data={data.data} view={data.view} totalMinor={totals.totalMinor} show={data.ready} printed={printed} onPrinted={setPrinted} onPages={setPages} />
-        <aside className={shell.card} aria-label="About this quote" data-testid="quote-view-card">
+        <aside className={`${shell.card} ${confirm.card}`} aria-label="About this quote" data-testid="quote-view-card">
           <span className={shell.eyebrow}>{q.number} · Version {q.version}{data.ready && pages > 1 ? ` · ${pages} pages` : ''}</span>
           {data.ready ? (
             <>
               <h2 className={shell.cardTitle}>{q.title || `Quote ${q.number}`}</h2>
-              <p className={shell.cardText} data-testid="quote-view-words">{viewCardWords({ status: q.status, clientFirst, studio: data.studio, designerFirst, confirmedBy: q.confirmedBy, confirmedOn: q.confirmedAt ? displayDateLong(new Date(q.confirmedAt)) : null })}</p>
+              <p className={shell.cardText} data-testid="quote-view-words">{words}</p>
               <div className={confirm.total}><span>Total</span><strong data-testid="quote-view-total">{money2(totals.totalMinor)}</strong></div>
               <p className={shell.fine} data-testid="quote-view-changed">Last changed {agoText(data.changedAt, Math.max(now, data.now))}</p>
             </>
           ) : (
             <>
               <h2 className={shell.cardTitle} data-testid="quote-view-not-ready">Not ready yet</h2>
-              <p className={shell.cardText} data-testid="quote-view-words">{notReadyWords({ clientFirst, studio: data.studio })}</p>
+              <p className={shell.cardText} data-testid="quote-view-words">{words}</p>
             </>
           )}
           {to ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="chat" size={20} />} onPress={message} data-testid="quote-view-message">Message {designerFirst}</Button> : null}
           {data.ready ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="quote-view-download">Download a copy</Button> : null}
         </aside>
+        {/* (K4 — P-12) the phone model's sticky bar: a look is what this is — the designer one press away, the copy beside it */}
+        <div className={confirm.bar} data-state={data.ready ? 'view' : 'not-ready'} data-testid="quote-view-bar">
+          <p className={confirm.barNote}>{data.ready ? words : null}</p>
+          <div className={confirm.barRow}>
+            {data.ready ? <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="download" size={20} />} onPress={download} data-testid="quote-view-download-bar">Download</Button> : null}
+            {to ? <Button size="lg" iconStart={<Icon name="chat" size={20} />} onPress={message} data-testid="quote-view-message-bar">Message {designerFirst}</Button> : null}
+          </div>
+        </div>
       </div>
     </div>
   )

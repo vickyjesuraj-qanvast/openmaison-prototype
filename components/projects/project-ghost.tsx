@@ -40,8 +40,9 @@ const STRIP_LINKS = 7
     show, the Money tab for whoever sees money, the project-type chip. The reveal is told; the loader reads what this browser saw last.
     (parity P-07) …and the brief's Show more, and the info column's Custom fields. */
 export type ProjectShape = { setup: boolean; schedule: boolean; money: boolean; typeChip: boolean; /** (gaps build, package A) a completed project's Closing summary */ closing?: boolean
-  /** (parity P-02) the brief has more than its first card */ briefMore?: boolean; /** (parity P-01) the studio has custom fields */ customFields?: boolean }
-const SHAPE_KEYS = ['setup', 'schedule', 'money', 'typeChip', 'closing', 'briefMore', 'customFields'] as const
+  /** (parity P-02) the brief has more than its first card */ briefMore?: boolean; /** (parity P-01) the studio has custom fields */ customFields?: boolean
+  /** (Contracts on the move, C4 — P-11 · C-23) the Overview's Documents card (≤1024) */ documents?: boolean }
+const SHAPE_KEYS = ['setup', 'schedule', 'money', 'typeChip', 'closing', 'briefMore', 'customFields', 'documents'] as const
 /** A project never seen here draws a running project's page — the common shape (simplify S-01: Needs you · My tasks · With {client} · Coming up |
     Progress · Money · Recent activity). */
 const RUNNING: ProjectShape = { setup: false, schedule: true, money: true, typeChip: true }
@@ -49,11 +50,11 @@ const shapeKeyOf = (projectId: string, k: keyof ProjectShape) => `om.shape.proje
 
 /** The page, once it has drawn: its shape remembered for the loader's next time (per browser). */
 export function useRememberProjectShape(projectId: string, s: ProjectShape) {
-  const { setup, schedule, money, typeChip, closing = false, briefMore = true, customFields = false } = s
+  const { setup, schedule, money, typeChip, closing = false, briefMore = true, customFields = false, documents = true } = s
   useEffect(() => {
-    const v: ProjectShape = { setup, schedule, money, typeChip, closing, briefMore, customFields }
+    const v: ProjectShape = { setup, schedule, money, typeChip, closing, briefMore, customFields, documents }
     for (const k of SHAPE_KEYS) setFlagPref(shapeKeyOf(projectId, k), !!v[k])
-  }, [projectId, setup, schedule, money, typeChip, closing, briefMore, customFields])
+  }, [projectId, setup, schedule, money, typeChip, closing, briefMore, customFields, documents])
 }
 function useRememberedShape(projectId: string): ProjectShape {
   const [setup] = useFlagPref(shapeKeyOf(projectId || '_', 'setup'), RUNNING.setup)
@@ -63,7 +64,8 @@ function useRememberedShape(projectId: string): ProjectShape {
   const [closing] = useFlagPref(shapeKeyOf(projectId || '_', 'closing'), false)   // (gaps build, package A)
   const [briefMore] = useFlagPref(shapeKeyOf(projectId || '_', 'briefMore'), true)   // (parity P-07)
   const [customFields] = useFlagPref(shapeKeyOf(projectId || '_', 'customFields'), false)
-  return { setup, schedule, money, typeChip, closing, briefMore, customFields }
+  const [documents] = useFlagPref(shapeKeyOf(projectId || '_', 'documents'), true)   // (Contracts on the move, C4 — C-23) a running project has its documents
+  return { setup, schedule, money, typeChip, closing, briefMore, customFields, documents }
 }
 
 /**

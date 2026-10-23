@@ -13,24 +13,33 @@ import { reorderColumns } from './column-drag'
  * `left` of a pinned column measured from the head row (the fluid title has no width in CSS). Dragged widths (REG-430) still
  * live in lib/table-widths and are read here only to build the grid template.
  */
-export type TableColumnDef = { key: string; label: string; track: string; locked?: boolean; hidden?: boolean }
+/** (Quotes on the move, K4 — P-11) `tabletHidden`: off by default on a touch tablet, where the first screen must carry the amount and the
+    actions — the table's tablet default set is every column without it (Column settings keeps the rest, remembered per breakpoint). */
+export type TableColumnDef = { key: string; label: string; track: string; locked?: boolean; hidden?: boolean; tabletHidden?: boolean }
 export type TableColumn = TableColumnDef & { visible: boolean; pinned: boolean }
 
 export function defaultColumns(defs: readonly TableColumnDef[]): TableColumn[] {
   return defs.map((d) => ({ ...d, visible: !d.hidden, pinned: !!d.locked }))
 }
+/** (P-11) The tablet default set: the desktop defaults less the columns marked `tabletHidden`. */
+export function tabletDefaultColumns(defs: readonly TableColumnDef[]): TableColumn[] {
+  return defs.map((d) => ({ ...d, visible: !d.hidden && !d.tabletHidden, pinned: !!d.locked }))
+}
 
-/** The table's columns as the user left them (the defaults on a phone, where the cards place every cell themselves). */
-export function useTableColumns(table: string, defs: readonly TableColumnDef[], phone = false) {
-  const defaults = useMemo(() => defaultColumns(defs), [defs])
-  const prefs = useColumnPrefs<TableColumn>(table, defaults)
+/** The table's columns as the user left them (the defaults on a phone, where the cards place every cell themselves).
+    (P-11) `tablet` — a touch tablet: its own defaults (`tabletHidden` off) and its own remembered set, `om.columns.<table>.tablet`, so a
+    column shown on the desk stays shown there and the tablet's first screen keeps the amount and the actions. */
+export function useTableColumns(table: string, defs: readonly TableColumnDef[], phone = false, tablet = false) {
+  const key = tablet ? `${table}.tablet` : table
+  const defaults = useMemo(() => (tablet ? tabletDefaultColumns(defs) : defaultColumns(defs)), [defs, tablet])
+  const prefs = useColumnPrefs<TableColumn>(key, defaults)
   const source = phone ? defaults : prefs
   const columns = useMemo(() => source.filter((c) => c.visible), [source])
   const all = useMemo<ColumnItem[]>(() => prefs.map((c) => ({ key: c.key, label: c.label, visible: c.visible, pinned: c.pinned, locked: c.locked })), [prefs])
-  const save = (next: ColumnItem[]) => saveColumnPrefs(table, next)
-  const reset = (): ColumnItem[] => { clearColumnWidths(table); resetColumnPrefs(table); return defaults.map((c) => ({ key: c.key, label: c.label, visible: c.visible, pinned: c.pinned, locked: c.locked })) }
+  const save = (next: ColumnItem[]) => saveColumnPrefs(key, next)
+  const reset = (): ColumnItem[] => { clearColumnWidths(table); resetColumnPrefs(key); return defaults.map((c) => ({ key: c.key, label: c.label, visible: c.visible, pinned: c.pinned, locked: c.locked })) }
   /** A head dragged on the table (REG-462): the visible order it lands in, the hidden columns kept after. */
-  const reorder = (keys: string[]) => saveColumnPrefs(table, reorderColumns(prefs, keys).map((c) => ({ key: c.key, label: c.label, visible: c.visible, pinned: c.pinned, locked: c.locked })))
+  const reorder = (keys: string[]) => saveColumnPrefs(key, reorderColumns(prefs, keys).map((c) => ({ key: c.key, label: c.label, visible: c.visible, pinned: c.pinned, locked: c.locked })))
   return { columns, all, save, reset, reorder }
 }
 

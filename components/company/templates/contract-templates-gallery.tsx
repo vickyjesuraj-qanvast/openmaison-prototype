@@ -26,11 +26,22 @@ import own from './contract-templates-gallery.module.css'
 import { templateChangeBlock, templateDefaultBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { useHere } from '@/components/om/use-here'
+import { useMediaQuery } from '@/lib/breakpoint'
+import { PHONE_MODEL } from '@/components/contracts/document/model'
+import { NewContractSheet } from '@/components/contracts/new-contract-sheet'
+import { galleryFacts, stateWords } from '@/components/contracts/template-screen/template-words'
+import { ago } from '@/lib/templates/ago'
 
 /**
  * Company › Templates › Contracts (REG-534 → REG-538): the shared library gallery with the contract kind's pieces — a paper
  * thumbnail, "Starts with" as a column, New template ▾ (Blank · From the studio agreement · From a contract…), and the kebab's
  * "New contract from this template" (a lead picker, then the editor). No versions, no approval (owner 2026-09-18).
+ * (Contracts on the move, P-10 · C-01 · C-02 · C-03 · C-04 · C-05 · C-07 — his "please check and built accordingly" 2026-10-22) On a phone and a
+ * tablet held upright (Q-01) the gallery is a LIST (the gallery's `move`): Default and At handover pinned on top, each row the name 16/600 ·
+ * its standing in words · "13 headings · used by 5 · edited 14 Aug ’26" · a chevron; the row opens the template's reading screen; ⋮ = New
+ * contract from this template (who first — the phone's Who is it for?) · Set as default · Use at handover · Duplicate · Move to Folder ·
+ * Rename · Delete. A touch tablet's list view opens with Template · Used by · Updated, its ⋮ frozen; the state chips read as 14 words where a
+ * finger reads them (the chip stays the desk's mark).
  */
 export function ContractTemplatesGallery({ data, brand, studio, values, from, folders = [] }: { data: ContractTemplatesData; folders?: Folder[]; brand: BrandKit; studio: StudioDetails; values: TokenValues; from?: string }) {
   const { templates, deleted, leads, now } = data
@@ -59,6 +70,15 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
   const here = useHere('/company/templates/contracts')   // (round 3) the open folder and search ride along
   const open = useCallback((id: string) => router.push(`/templates/contracts/${id}?from=${encodeURIComponent(here)}`), [router, here])
   useRememberContractPdfs(templates.map((t) => ({ id: t.id, pdf: t.kind === 'pdf' })))   // (S42 B-17) a PDF template's loader draws its PDF
+  /* (P-10, Q-01) a phone and a tablet held upright read the gallery as rows; New contract from this template asks who first (P-09's step) */
+  const rowsOn = useMediaQuery(PHONE_MODEL)
+  const startFrom = async (templateId: string | null, leadId: string | null) => {
+    if (!templateId || !leadId || creating) return
+    setCreating(true)
+    try { const cid = await newIdOf(contractFromTemplate(templateId, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) } catch (e) { fail('create the contract', reasonOf(e)); setCreating(false) }
+  }
+  /* (C-04) the standing as a mark on the desk, as words where a finger reads it */
+  const chipWords = (t: ContractTemplateRow) => [t.isDefault ? 'Default' : null, t.useAtHandover ? 'At handover' : null, isPdf(t) ? 'PDF' : null].filter(Boolean).join(' · ')
   /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
   const create = async (fn: () => Promise<unknown>, what: string) => { try { open(await newIdOf(fn())) } catch (e) { fail(what, reasonOf(e)) } }
   const loadContracts = useCallback(async (): Promise<PickOption[]> => (await fetchContractOptionsAction()).map((c) => ({ id: c.id, label: c.title, sub: c.leadName })), [])
@@ -84,7 +104,9 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} contract${t.usedBy === 1 ? '' : 's'}`)}
       columns={[{ key: 'excerpt', label: 'Starts with', track: '320px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{isPdf(t) ? `PDF · ${t.fileName ?? t.title}` : excerptOf(t.body, 120) || '—'}</span> }, { key: 'used', label: 'Used by', track: '140px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} contract{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not used yet</span>) }]}
       onOpen={(t) => open(t.id)}
-      chips={(t) => (t.isDefault || isPdf(t) || t.useAtHandover ? <>{t.isDefault ? <MetaChip>Default</MetaChip> : null}{t.useAtHandover ? <MetaChip>At handover</MetaChip> : null}{isPdf(t) ? <MetaChip>PDF</MetaChip> : null}</> : null)}   /* (REG-632, parity Q-13) · (pending modules S03) a standard PDF says so · (S44R, C9) the completion letter */
+      move={{ rows: rowsOn, pinned: (t) => t.isDefault || t.useAtHandover, state: stateWords, tabletColumns: ['used', 'updated'], rowTestId: 'contract-template-row', menuTestId: 'contract-template-row-menu',
+              facts: (t) => galleryFacts({ kind: t.kind, usedBy: t.usedBy, body: t.body, size: t.fileSize ? fileSize(t.fileSize) : null }, ago(t.updatedAt.getTime(), now)) }}
+      chips={(t) => (t.isDefault || isPdf(t) || t.useAtHandover ? <><span className={own.chipsDesk}>{t.isDefault ? <MetaChip>Default</MetaChip> : null}{t.useAtHandover ? <MetaChip>At handover</MetaChip> : null}{isPdf(t) ? <MetaChip>PDF</MetaChip> : null}</span><span className={own.chipsTouch} data-testid="template-state-words">{chipWords(t)}</span></> : null)}   /* (REG-632, parity Q-13) · (pending modules S03) a standard PDF says so · (S44R, C9) the completion letter */
       kebab={(t) => [
         { label: 'New contract from this template', onSelect: () => setPickFor(t.id) },
         { label: 'Set as default', disabled: t.isDefault || !!templateDefaultBlock(data.viewer), title: templateDefaultBlock(data.viewer) ?? (t.isDefault ? 'Already the default' : 'Contracts raised from a quote or the Won step start from it'), onSelect: () => { void run('set the default', () => setDefaultContractTemplate(t.id), `${t.title} is the default contract template`) } },
@@ -110,9 +132,9 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
           secondary: { label: 'Blank template', onPress: () => { void create(() => createContractTemplate({ source: { kind: 'blank' } }), 'create the template') } },
           link: { label: 'From a contract…', onPress: () => setFromContract(null) } }) }}>
       {/* (Dane UAT 8.02, REG-659) the lead question reads "Creating…" and stays until the editor takes over, as every contract picker does */}
-      <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} busy={creating}
-        onPick={async (leadId) => { const id = pickFor; if (!id || !leadId || creating) return; setCreating(true)
-          try { const cid = await newIdOf(contractFromTemplate(id, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) } catch (e) { fail('create the contract', reasonOf(e)); setCreating(false) } }} />
+      <PickLeadDialog open={!!pickFor && !rowsOn} onClose={() => setPickFor(null)} leads={leads} busy={creating} onPick={(leadId) => { void startFrom(pickFor, leadId) }} />
+      {/* (P-10 · P-09) on the move: Who is it for? — a search over the leads, a tap makes the contract from this template for that lead */}
+      <NewContractSheet open={!!pickFor && rowsOn} onClose={() => setPickFor(null)} leads={leads} busy={creating} whoOnly onStart={(leadId) => { void startFrom(pickFor, leadId) }} />
       <UploadPdfDialog open={uploadIn !== undefined} onClose={() => setUploadIn(undefined)}
                        onSave={async ({ title, file }) => { const folderId = uploadIn ?? null; try { const id = await newIdOf(createPdfTemplate({ title, file, folderId })); rememberContractPdf(id, true); setUploadIn(undefined); snackbar({ message: `${title} is in your templates — it goes with signings from Send together` }); open(id); return true } catch (e) { fail('add the PDF', reasonOf(e)); return false } }} />
       <PickOneDialog open={fromContract !== undefined} onClose={() => setFromContract(undefined)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"

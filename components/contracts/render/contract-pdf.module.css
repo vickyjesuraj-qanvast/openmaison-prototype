@@ -17,6 +17,9 @@
 .emptyName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .help { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .empty .help { padding: 0; border-top: 0; max-width: 480px; }
+/* (Contracts on the move, C4 — P-12, Q-04) a photo of the signed paper in the paper's place: the picture whole, at the card's width */
+.photo { display: flex; justify-content: center; padding: var(--om-spacing-4); background: var(--om-color-surface-bg); }
+.photo img { display: block; width: 100%; max-width: 640px; height: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
 @media (max-width: 767px) {
   /* the name keeps its own line; the row's presses wrap under it */
   .head { flex-wrap: wrap; }

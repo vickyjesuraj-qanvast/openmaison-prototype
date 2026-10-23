@@ -67,6 +67,16 @@
     overflow-y: auto;
   }
 }
+/* (quotes on the move 2026-10-22, B-02) ≤1024 an anchored menu never runs past the viewport's edge: Dropdown measures itself once open and
+   writes `--menu-shift` — the overflow past an 8px edge, negative when it ran off the right — so a 320 menu under a Send at x 557 of a 768
+   screen sits back inside (the page took a sideways scroll and the rows' help lines were cut). A MARGIN, never a transform: a mobile
+   browser sizes its layout viewport from the layout box, so a translated menu still widened the page (865 on a 768 screen) while it was
+   open. A left-aligned menu is placed by `left` and moves by its left margin; a right-aligned one by `right` and its right margin
+   (`data-align`, dropdown.tsx). 0 wherever nothing overflows, so ≥1025 draws as before. */
+@media (max-width: 1024px) {
+  .menu[data-align='left'] { margin-left: var(--menu-shift, 0px); }
+  .menu[data-align='right'] { margin-right: calc(-1 * var(--menu-shift, 0px)); }
+}
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* Touch ergonomics (REG-273): the 36px menu row is the last control under a fingertip, and it is shared —

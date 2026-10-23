@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -21,16 +21,30 @@ import type { MaisonSuggestion } from '@/lib/maison-ai'
 import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { SelectTrigger } from '@/components/om/select-trigger'
 import { useFlagPref } from '@/lib/prefs'
-import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { TABLET_DOWN, TABLET_LANDSCAPE, useMediaQuery } from '@/lib/breakpoint'
+import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { Drawer } from '@/components/om/drawer'
-import { withFrom } from '@/lib/nav'
+import { backLabel, withFrom } from '@/lib/nav'
 import { displayDate, inputDate, parseInputDate, phoneTyped } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
-import { contractLink, firstName, longDate, savedLabel, signCodeLine, signingLink, signingMessage, tokenOf } from '@/lib/contracts/model'
+import { contractLink, firstName, longDate, reminderMessage, savedLabel, signCodeLine, signingLink, signingMessage, tokenOf } from '@/lib/contracts/model'
 import { contractIssuer, issuerChoices } from '@/lib/contracts/issuer'
 import { money2 } from '@/lib/quotes/math'
 import bannerStyles from '@/components/quotes/editor/template-bar.module.css'
-import { isBlankDoc, outlineOf, TOKEN_LABEL, type TokenKey, type TokenValues } from '@/lib/contracts/tokens'
+import { insertSignFieldAfter, isBlankDoc, outlineOf, placeWords, SIGN_FIELDS, SIGN_LABEL, signFieldsIn, TOKEN_LABEL, tokensIn, type SignKey, type SignPlaceRow, type TokenKey, type TokenValues } from '@/lib/contracts/tokens'
+import { contractNextStep, contractTimeline, type ContractPrimary } from '@/lib/contracts/next-step'
+import { clausesOf, signsLine } from '@/lib/contracts/clauses'
+import { ContractScreen, type ContractEditKey, type ContractMenuAction } from '@/components/contracts/screen/contract-screen'
+import { ContractDocument } from '@/components/contracts/screen/contract-document'
+import { SectionScreen, screenStyles } from '@/components/contracts/screen/section-screen'
+import { DocumentFrame } from '@/components/contracts/screen/document-frame'
+import { DetailsForm, type DetailsFocus } from '@/components/contracts/screen/details-form'
+/* (Contracts on the move, C4 — the integration of C1's screens with C2's content) the two eSign section screens draw C2's panels; C1's interim
+   bodies (esign-screens.tsx) left with them */
+import { SignatureFieldsPanel } from '@/components/contracts/document/signature-fields-panel'
+import { BeforeSigningPanel } from '@/components/contracts/document/before-signing-panel'
+import docStyles from '@/components/contracts/document/document.module.css'
+import { SectionList, type SectionRow } from '@/components/quotes/screen/section-list'
 import { moveStageHref } from '@/lib/leads/move-link'
 import type { ContractEditorData } from '@/lib/contracts/queries'
 import { attachContractPdf, duplicateContract, markContractSigned, renewSigningLink, reopenSigningLink, saveContractAsTemplate, saveContractDoc, sendContract, setContractAutomation, setContractStatusDoc, shareContractLink, stopSigningLink } from '@/app/contracts/actions'
@@ -58,11 +72,14 @@ import { useWritingHelp } from '@/components/writing/writing-help'
 import { useSignCodeDemo } from '@/components/contracts/use-sign-code-demo'   // (S42 B-03)
 import { useRememberContractPdf } from './contract-route-ghost'   // (S42 B-17)
 import { docParts, proposeWriting, type WritingAction } from '@/lib/writing/propose'
-import { AutomationDialog, AutomationPopover, MarkSignedDialog, RecipientDialog, SaveTemplateDialog, SendContractDialog } from './dialogs'
+import { AutomationDialog, AutomationPopover, AutomationRows, MarkSignedDialog, RecipientDialog, SaveTemplateDialog, SendContractDialog } from './dialogs'
 import quoteStyles from '@/components/quotes/editor/quote-editor.module.css'
 import styles from './contract-editor.module.css'
 
 const AUTOSAVE_MS = 600
+/** (Contracts on the move, P-02) The Edit list's sections, as the address names them (`?edit=<key>`; `?edit=1` is the list). */
+const EDIT_KEYS: readonly ContractEditKey[] = ['details', 'document', 'fields', 'gates', 'automation', 'files']
+const isEditKey = (k: string | null): k is ContractEditKey => !!k && (EDIT_KEYS as readonly string[]).includes(k)
 
 /**
  * The contract editor (REG-534, no mock; the reference screens on 2.0's pieces): the quote editor's header (crumb · [title ▾]
@@ -151,8 +168,10 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     label: 'Contract', subject: title.trim() || undefined, kind: 'contract', trigger: 'text', compact: true, disabled: status === 'Signed' || uploaded, testId: 'contract-writing',
     sources: () => ({ template: data.writingTemplate, names: [recipientName || lead.name] }),
     read: () => { const at = editor.current?.partAt(); return at && at.blocks.length ? { html: at.blocks.join(''), parts: docParts(at.blocks, at) } : { html: body } },
-    apply: (h, part) => { if (part && part.key !== 'whole') editor.current?.replaceBlocks(part.from, part.to, h); else editor.current?.replaceAll(h) },
-    restore: (h) => editor.current?.replaceAll(h),
+    /* (contracts on the move, P-01) on a phone the paper is mounted only on the Document screen: a proposal taken from Maison AI's sheet on the
+       Contract screen lands on the record itself, as the paper would have saved it */
+    apply: (h, part) => { if (part && part.key !== 'whole' && editor.current) editor.current.replaceBlocks(part.from, part.to, h); else if (editor.current) editor.current.replaceAll(h); else { setBody(h); queue({ body: h }) } },
+    restore: (h) => { if (editor.current) editor.current.replaceAll(h); else { setBody(h); queue({ body: h }) } },
   })
   /* …and in Maison AI's sheet, when it would do something to the whole contract (worked out by rule as the menu does) */
   const writeRows = useMemo(() => {
@@ -172,6 +191,70 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const [outlinePref, setOutlinePref] = useFlagPref('om.contracts.outline', true)
   const narrow = useMediaQuery(TABLET_DOWN)   // (REG-634, E-114) ≤1024 the Outline is a drawer
   const [outlineDrawer, setOutlineDrawer] = useState(false)
+  /* ── (Contracts on the move, P-01 · P-02 · P-03 · Q-01 — his "please check and built accordingly" 2026-10-22) On a phone and a touch tablet
+     (≤1024) the address opens the CONTRACT SCREEN (read first, components/contracts/screen/*); Edit is the section list (`?edit=1`), a row its
+     section's own screen (`?edit=<key>`), so Back works (REG-465). The address moves by the browser's own history (no server round trip); a
+     landscape tablet holds the list as a 300 pane and the open section beside it; the Document screen takes the whole width. A Signed
+     contract reads only — the copy is kept (REG-631), so no Edit, and `?edit=` is ignored. The desk (≥1025) is untouched. ── */
+  const searchParams = useSearchParams()
+  const editParam = searchParams.get('edit')
+  const split = useMediaQuery(TABLET_LANDSCAPE)
+  const readOnlyMove = status === 'Signed'
+  const openKey: ContractEditKey | null = narrow && !readOnlyMove && isEditKey(editParam) ? editParam : null
+  const editing = narrow && !readOnlyMove && editParam !== null
+  const shownKey: ContractEditKey | null = openKey ?? (editing && split ? 'details' : null)   // the landscape pane rests on Details until a row is picked
+  const mode: 'desk' | 'read' | 'list' | 'section' = !narrow ? 'desk' : openKey ? 'section' : editing ? 'list' : 'read'
+  const [detailsFocus, setDetailsFocus] = useState<DetailsFocus>(null)
+  const [direct, setDirect] = useState(false)   // a section opened straight from the Contract screen (the date row, ⋮ › Edit recipient): ← returns there
+  const [outlinePane, setOutlinePane] = useState(false)   // the landscape tablet's Outline pane on the Document screen (P-02: a pane, never a drawer over the paper)
+  const setEdit = useCallback((v: string | null, how: 'push' | 'replace') => {
+    const u = new URL(window.location.href)
+    if (v === null) u.searchParams.delete('edit'); else u.searchParams.set('edit', v)
+    const url = `${u.pathname}${u.search}`
+    /* our own mark on the entry, so Back knows what it undoes (K1's rule) — and how many entries stand between it and the record, so Done
+       on a section screen (the Document frame's) lands on the Contract screen in one move, never on the list it passed through */
+    const depth = (Number(window.history.state?.omDepth) || 0) + (how === 'push' ? 1 : 0)
+    const st = { omEdit: v === null ? null : v === '1' ? 'list' : 'section', omDepth: v === null ? 0 : depth }
+    if (how === 'push') window.history.pushState(st, '', url); else window.history.replaceState(st, '', url)
+  }, [])
+  const openEdit = () => { void flushRef.current(); setDirect(false); setDetailsFocus(null); setEdit('1', 'push') }
+  const openSection = useCallback((k: ContractEditKey, focus: DetailsFocus = null, fromScreen = false) => {
+    setDetailsFocus(focus); setDirect(fromScreen)
+    setEdit(k, split && window.history.state?.omEdit ? 'replace' : 'push')   // the pane swaps in place; a phone pushes, so ← is Back
+  }, [setEdit, split])
+  const backToList = useCallback(() => { setDetailsFocus(null); if (window.history.state?.omEdit === 'section') window.history.back(); else setEdit(direct ? null : '1', 'replace') }, [setEdit, direct])
+  /* Done lands on the Contract screen in one move: back through the entries the edit pushed; a deep-linked list under them (no record entry
+     beneath it) is then replaced by the record, so Back never reopens the editor */
+  const finishing = useRef(false)
+  const doneEditing = useCallback(() => { void flushRef.current(); setDetailsFocus(null); const d = Number(window.history.state?.omDepth) || 0; if (d > 0) { finishing.current = true; window.history.go(-d) } else setEdit(null, 'replace') }, [setEdit])
+  useEffect(() => { if (!finishing.current) return; finishing.current = false; if (editParam !== null) setEdit(null, 'replace') }, [editParam, setEdit])
+  useScrollLock(mode === 'list' || mode === 'section')   // the Contract screen behind keeps its place
+  /* (P-01) the Contract screen's foot: the FAB and the snackbar rest above it (the house offset, REG-302) */
+  useEffect(() => {
+    if (mode !== 'read') return
+    const root = document.documentElement.style
+    root.setProperty('--bottom-dock', '78px')   // 72 (12 + 48 + 12) + 6, the offset's own rule
+    return () => { root.removeProperty('--bottom-dock') }
+  }, [mode])
+  /* (P-03) the Document screen's bar says which clause the caret is in */
+  const [caretClause, setCaretClause] = useState<number | null>(null)
+  const onDocState = useCallback((s: DocState) => {
+    setDocState(s)
+    const at = editor.current?.partAt()
+    if (!at || at.caret === null) { setCaretClause(null); return }
+    let k = 0
+    for (let i = 0; i <= at.caret && i < at.blocks.length; i++) if (/^<h[123][\s>]/i.test(at.blocks[i]!)) k++
+    setCaretClause(k)
+  }, [])
+  /* Maison AI's outline rows on the move open the Document screen on that heading */
+  const pendingHeading = useRef<number | null>(null)
+  useEffect(() => {
+    if (shownKey !== 'document' || pendingHeading.current === null) return
+    const i = pendingHeading.current; pendingHeading.current = null
+    const t = setTimeout(() => editor.current?.scrollToHeading(i), 80)
+    return () => clearTimeout(t)
+  }, [shownKey])
+  const [remindOpen, setRemindOpen] = useState(false)
   const [esign, setEsign] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [autoOpen, setAutoOpen] = useState(false)
@@ -218,7 +301,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     quote: namedQuote ? { number: namedQuote.number, status: namedQuote.status } : null, approvalRequired: data.approvalRequired, approver: data.canApprove }), [data.canApprove, contract.source, contract.toRead, body, values, data.studioSignature, data.signatureState, namedQuote, data.approvalRequired])
   const blockIssue = issues.find((i) => i.blocking) ?? null
   const openQuote = () => { if (namedQuote) go(withFrom(`/quotes/${namedQuote.id}`, `/contracts/${contract.id}`)) }
-  const sayBlocked = () => { if (blockIssue) snackbar({ message: `Before you send: ${blockIssue.label}`, ...(blockIssue.fix === 'esign' ? { actionLabel: 'Show me', onAction: () => setEsign(true) } : blockIssue.fix === 'open-quote' && namedQuote ? { actionLabel: 'Open the quote', onAction: openQuote } : {}) }) }
+  const showFields = () => { if (narrow) openSection('fields', null, true); else setEsign(true) }   // (contracts on the move) the fix lives on its own screen there
+  const sayBlocked = () => { if (blockIssue) snackbar({ message: `Before you send: ${blockIssue.label}`, ...(blockIssue.fix === 'esign' ? { actionLabel: 'Show me', onAction: showFields } : blockIssue.fix === 'open-quote' && namedQuote ? { actionLabel: 'Open the quote', onAction: openQuote } : {}) }) }
   /* (UX audit C1) A signed contract's next step while its lead isn't Won: the Move stage window at Won with this contract picked (REG-469's path). */
   const wonHref = data.leadStage && data.leadStage !== 'Won' ? moveStageHref(lead.id, 'won', { contract: contract.id }) : null
   const moveToWon = () => { if (wonHref) go(wonHref) }
@@ -281,7 +365,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     if (status === 'Draft' && blank) { snackbar({ message: 'Add some content before sharing the link' }); return }
     if (status === 'Draft' && blockIssue) { sayBlocked(); return }   // (REG-634, parity Q-22) sharing is sending
     /* (pending modules S03) a copy is a send: a link past its window opens again for the studio's days */
-    if (status === 'Sent to Client' && expiresAt && expiresAt <= Date.now()) { void copyText(contractLink({ id: contract.id, signToken: token, bundleId: contract.bundleId, status })).then(() => renewSigningLink(contract.id, 'copy')).then((r) => { if ('error' in r) { snackbar({ message: `Couldn’t open the link again — ${r.error.charAt(0).toLowerCase()}${r.error.slice(1)}` }); return } setExpiresAt(r.expiresAt); snackbar({ message: `Signing link copied — it opens for ${data.linkDays} days from now` }); router.refresh() }, () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }
+    if (status === 'Sent to Client' && expiresAt && expiresAt <= clock) { void copyText   // (contracts on the move) the page's clock, never Date.now() in render (react-hooks/purity)
+     (contractLink({ id: contract.id, signToken: token, bundleId: contract.bundleId, status })).then(() => renewSigningLink(contract.id, 'copy')).then((r) => { if ('error' in r) { snackbar({ message: `Couldn’t open the link again — ${r.error.charAt(0).toLowerCase()}${r.error.slice(1)}` }); return } setExpiresAt(r.expiresAt); snackbar({ message: `Signing link copied — it opens for ${data.linkDays} days from now` }); router.refresh() }, () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }
     if (status !== 'Draft') { void copy(); return }
     /* (UX audit C8, supersedes sweep S2 #2's order) the checks above first, then the copy, then the share — never Sent over a failed copy */
     const write = copyText(contractLink({ id: contract.id, signToken: token, bundleId: contract.bundleId, status }))
@@ -328,7 +413,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
      who signed it and when (the signing record). Nothing is metered. *(invented copy: the answers' titles and lines)* */
   const clientFirst = firstName(recipientName || lead.name)
   const fixRow = (i: (typeof issues)[number], k: number) => ({ id: `issue-${k}`, label: i.label, meta: i.blocking ? 'Holds the send' : 'Worth a look before it goes',
-    ...(i.fix === 'esign' ? { run: () => setEsign(true) } : i.fix === 'open-quote' && namedQuote ? { run: openQuote } : {}) })
+    ...(i.fix === 'esign' ? { run: showFields } : i.fix === 'open-quote' && namedQuote ? { run: openQuote } : {}) })
   const maison: MaisonSuggestion[] = [
     status === 'Signed'
       ? { label: 'Who signed it, and when?', answer: { title: `Signed by ${contract.signedBy ?? recipientName ?? lead.name}`, text: signedAt ? `On ${displayDate(signedAt)}${contract.signatureKind ? ` — ${contract.signatureKind === 'draw' ? 'drawn' : contract.signatureKind === 'type' ? 'typed' : 'marked by the studio'}` : ''}. The signing record is on the page: when it was opened, accepted and signed, and the document’s fingerprint.` : 'The signing record is on the page.',
@@ -340,17 +425,120 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
       ? { label: `Draft the WhatsApp to ${clientFirst}`, answer: () => Promise.resolve({ title: 'Not ready to send yet', text: `The signing link’s WhatsApp is drafted in Send — it opens once this is fixed:`, rows: [fixRow(blockIssue, 0)] }) }
       : { label: `Draft the WhatsApp to ${clientFirst}`, run: () => setSendOpen(true) }] : []),
     ...(uploaded ? [] : [{ label: 'What’s in this contract?', answer: () => Promise.resolve(outline.length
-      ? { title: `${outline.length === 1 ? '1 heading' : `${outline.length} headings`}`, text: 'Its outline — open one to go to it on the paper.', rows: outline.map((h, i) => ({ id: `h-${i}`, label: h.text, run: () => { if (editor.current) editor.current.scrollToHeading(i); else (document.querySelector('[data-testid="contract-signed-copy"]')?.querySelectorAll('h1, h2, h3')[i] as HTMLElement | undefined)?.scrollIntoView({ block: 'center', behavior: 'smooth' }) } })) }
+      ? { title: `${outline.length === 1 ? '1 heading' : `${outline.length} headings`}`, text: 'Its outline — open one to go to it on the paper.', rows: outline.map((h, i) => ({ id: `h-${i}`, label: h.text, run: () => { if (editor.current) editor.current.scrollToHeading(i); else if (narrow && !readOnlyMove) { pendingHeading.current = i; openSection('document', null, true) } else (document.querySelector('[data-testid="contract-signed-copy"]')?.querySelectorAll('h1, h2, h3')[i] as HTMLElement | undefined)?.scrollIntoView({ block: 'center', behavior: 'smooth' }) } })) }
       : { title: isBlankDoc(body) ? 'The document is empty' : 'No headings yet', text: isBlankDoc(body) ? 'Start writing, or insert a field — or start again from a template.' : 'Add a heading from the formatting bar and it shows here.' }) } satisfies MaisonSuggestion]),
     ...writeRows.map((r) => ({ label: r.label, run: () => writing.openAction(r.action, { html: body }) })),   // (pending modules S29)
   ]
 
+  /* ── (Contracts on the move, P-01 · P-02 · Q-07) the Contract screen's facts, the folds' words and the Edit list's rows ── */
+  const quoteMenu = (withOpen: boolean) => (
+    <Dropdown open={quoteOpen} onClose={() => setQuoteOpen(false)} align="right" width={MENU_WIDTH.detail} sheetTitle="Quote">
+      {/* (contracts on the move, P-01) from the Contract screen's quote row the sheet also opens the quote itself — the chip's door on the Quote screen, the other way */}
+      {withOpen && namedQuote ? <><DropdownItem onSelect={() => { setQuoteOpen(false); openQuote() }}>{`Open ${namedQuote.number}`}</DropdownItem><DropdownDivider /></> : null}
+      {data.quotes.map((q) => (
+        <DropdownItem key={q.id} role="menuitemradio" checked={q.id === quoteId} selected={q.id === quoteId} onSelect={() => pickQuote(q.id)} meta={`${money2(q.amountMinor)} · ${q.status}`}>
+          {`${q.number} · ${q.title}`}
+        </DropdownItem>
+      ))}
+      {data.quotes.length ? <DropdownDivider /> : null}
+      <DropdownItem role="menuitemradio" checked={!quoteId} selected={!quoteId} onSelect={() => pickQuote(null)}>No quote</DropdownItem>
+    </Dropdown>
+  )
+  const expired = status === 'Sent to Client' && !!expiresAt && expiresAt <= clock
+  const blockerWords = blockIssue ? (blockIssue.fix === 'esign' ? 'No client signature field yet — add one in Edit › Signature fields' : blockIssue.label) : null
+  const next = contractNextStep({ status, clientFirst, toRead: contract.toRead, uploaded, blocker: status === 'Draft' ? blockerWords : null, sentAt, viewedAt: contract.viewedAt ? contract.viewedAt.getTime() : null, expiresAt,
+    signedAt: signedAt ? signedAt.getTime() : null, signedBy: status === 'Signed' ? contract.signedBy : null, quoteNumber: namedQuote?.number ?? null, leadStage: data.leadStage, bundled: !!contract.bundleId && status === 'Sent to Client', linkDays: data.linkDays }, clock)
+  const docHtml = status === 'Signed' && data.signed?.body ? data.signed.body : body
+  const clauses = useMemo(() => clausesOf(docHtml).clauses, [docHtml])
+  const placed = useMemo(() => signFieldsIn(docHtml), [docHtml])
+  const fieldsLine = uploaded ? 'Signed on the page itself' : placed.length ? signsLine(placed)! : 'No client signature field yet'
+  const gatesLine = [gates.requiresScroll && !uploaded ? 'Read to the end' : null, gates.requiresAccept ? 'Tick to accept' : null].filter(Boolean).join(' · ') || 'No rules before signing'
+  const autoLine = [auto.reminders ? 'Follow-up task 3 days after sending' : null, auto.thankYou ? 'Thank-you task when signed' : null].filter(Boolean).join(' · ') || 'Off'
+  const here = `/contracts/${contract.id}`
+  const fileHref = (fileId: string) => withFrom(`/leads/${lead.id}/files/${fileId}`, here)
+  const filesLine = data.signedFile ? `Signed copy · ${data.signedFile.name}` : pdf ? pdf.name : status === 'Signed' ? 'The signed page is the copy' : 'Nothing kept yet'
+  const signWords = placed.filter((k) => k.endsWith('signature')).map((k) => (k.startsWith('studio') ? 'Studio' : 'Client'))
+  const fieldCount = tokensIn(body).length
+  const docLine = uploaded ? (pdf ? pdf.name : 'No PDF attached yet') : blank ? 'Empty — nothing written yet'
+    : [`${outline.length} ${outline.length === 1 ? 'clause' : 'clauses'}`, fieldCount ? `${fieldCount} ${fieldCount === 1 ? 'field fills' : 'fields fill'} in` : null, signWords.length ? `${signWords.join(' and ')} sign${signWords.length === 1 ? 's' : ''}` : 'nowhere to sign yet'].filter(Boolean).join(' · ')
+  const sectionRows: SectionRow<ContractEditKey>[] = [
+    { key: 'details', label: 'Details', summary: [recipientName || lead.name, phoneTyped(recipientPhone || lead.phone), displayDate(new Date(contractDate)), namedQuote?.number ?? 'No quote', entities.length > 1 ? issuer.name : null].filter(Boolean).join(' · ') },
+    { key: 'document', label: 'Document', summary: docLine },
+    { key: 'fields', label: 'Signature fields', summary: fieldsLine },
+    { key: 'gates', label: 'Before the client signs', summary: gatesLine },
+    { key: 'automation', label: 'Automation', summary: autoLine },
+    { key: 'files', label: 'Files', summary: filesLine },
+  ]
+  const timeline = contractTimeline({ createdAt: contract.createdAt.getTime(), createdByName: null, sentAt, recipient: recipientName || lead.name, viewedAt: contract.viewedAt ? contract.viewedAt.getTime() : null,
+    acceptedAt: contract.acceptedAt ? contract.acceptedAt.getTime() : null, signedAt: signedAt ? signedAt.getTime() : null, signedBy: status === 'Signed' ? contract.signedBy : null, caseTrustAt: contract.caseTrustAt ? contract.caseTrustAt.getTime() : null, toRead: contract.toRead })
+  const docSub = `${caretClause ? `clause ${caretClause} of ${outline.length}` : `${outline.length} ${outline.length === 1 ? 'clause' : 'clauses'}`} · ${savedLabel(updatedAt, clock).replace(/^Saved/, 'saved')}`
+  /* (P-04 — C2's placement, C1's screen; integrated by C4) a field added from the Signature fields screen is placed where the person chose —
+     which, then where (C2's PlacementDialog) — and shown landing: the Document screen opens on it, the field as its own block after that
+     clause (`insertSignFieldAt` → `insertSignFieldAfter`, never inside a word) at mid-screen with the fresh pulse, and the snackbar says
+     "Client signature added under Signatures" with Undo. ← returns to Signature fields (the next one to add), Done to the contract. */
+  const pendingPlace = useRef<{ key: SignKey; row: SignPlaceRow } | null>(null)
+  /* the paper settles after the screen opens (the letterhead's picture lands, the boxes' ✕ are placed): once it has, the new block is brought back
+     to mid-screen if it drifted — the landing the person is shown */
+  const recentre = () => window.setTimeout(() => { const n = document.querySelector<HTMLElement>('[data-document-frame] [data-fresh]'); if (!n) return; const r = n.getBoundingClientRect(); if (r.top < innerHeight * 0.2 || r.bottom > innerHeight * 0.8) n.scrollIntoView({ block: 'center' }) }, 650)
+  const placeField = (key: SignKey, row: SignPlaceRow) => { pendingPlace.current = { key, row }; openSection('document', null, true) }
+  useEffect(() => {
+    if (shownKey !== 'document' || !pendingPlace.current) return
+    const t = setTimeout(() => {
+      const p = pendingPlace.current; pendingPlace.current = null
+      if (!p) return
+      const r = editor.current?.insertSignFieldAt(p.row.place, p.key)
+      if (r) recentre()
+      if (r) snackbar({ message: `${SIGN_LABEL[p.key]} added ${placeWords(p.row)}`, actionLabel: 'Undo', onAction: () => editor.current?.replaceAll(r.prev) })
+      else {   // the paper did not mount (a read-only copy): the record still takes the field, said the same way
+        const before = body; const { html } = insertSignFieldAfter(body, p.row.place, p.key)
+        setBody(html); queue({ body: html })
+        snackbar({ message: `${SIGN_LABEL[p.key]} added ${placeWords(p.row)}`, actionLabel: 'Undo', onAction: () => { setBody(before); queue({ body: before }) } })
+      }
+    }, 240)
+    return () => clearTimeout(t)
+  }, [shownKey])   // eslint-disable-line react-hooks/exhaustive-deps -- once, when the Document screen opens on a field being placed
+  const onPrimary = (p: ContractPrimary) => {
+    if (p === 'send') { if (blockIssue) { sayBlocked(); return } setSendOpen(true); return }
+    if (p === 'remind' || p === 'resend') { setRemindOpen(true); return }
+    if (p === 'won') { moveToWon(); return }
+    if (data.signedFile) window.location.assign(`/files/raw/${data.signedFile.fileId}?download=1`); else onMenu('pdf')   // (pending modules S03) the kept signed copy itself
+  }
+  const onScreenMenu = (a: ContractMenuAction) => {
+    if (a === 'record') { setRecordOpen(true); return }
+    if (a === 'signedCopy') { if (data.signedFile) go(fileHref(data.signedFile.fileId)); return }
+    if (a === 'markSigned') { setSignedOpen(true); return }
+    if (a === 'stop') { stopLink(); return }
+    if (a === 'recipient') { openSection('details', 'recipient', true); return }
+    if (a === 'automation') { if (signedLock) setAutoDialog(true); else openSection('automation', null, true); return }
+    onMenu(a)
+  }
+  const pdfInputEl = <input ref={pdfInput} type="file" accept={PDF_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="contract-pdf-input" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pickPdf(f) }} />
+  const pdfCard = (
+    <div data-testid="contract-uploaded" style={{ display: 'contents' }}>
+      <ContractPdf name={pdf?.name ?? contract.fileName ?? title} src={pdf ? `/files/raw/${pdf.fileId}` : null} thumb={pdf?.thumb ? `/files/thumb/${pdf.fileId}` : null} picture={pdf?.picture}
+                   help={pdf ? (pdf.picture ? 'The photo of the signed paper — kept in Files › Contract & VOs as the signed copy.' : status === 'Signed' ? 'The PDF the contract was signed on — kept in Files › Contract & VOs.' : 'The client reads this PDF on the signing link and signs under it. Kept in Files › Contract & VOs.')
+                     : 'Only its name was kept — attach the PDF so the client reads it on the link and you can open it again.'}
+                   actions={<>
+                     <Button variant="secondary" appearance="outlined" iconStart={<Icon name="draw" size={20} />} onPress={() => openSection('gates')} isDisabled={status === 'Signed'}>Before the client signs</Button>
+                     {!pdf ? <Button iconStart={<Icon name="upload_file" size={20} />} onPress={() => pdfInput.current?.click()} isDisabled={pdfBusy} data-testid="contract-attach-pdf">{pdfBusy ? 'Keeping…' : 'Attach the PDF'}</Button>
+                       : status === 'Draft' ? <Button variant="secondary" appearance="text" onPress={() => pdfInput.current?.click()} isDisabled={pdfBusy} data-testid="contract-replace-pdf">{pdfBusy ? 'Keeping…' : 'Replace'}</Button> : null}
+                   </>} />
+    </div>
+  )
+  const recordDialog = (
+    <Dialog open={recordOpen} onClose={() => setRecordOpen(false)} title="Signing record" size="modal" width={600}>
+      <SigningRecord compact r={{ signedBy: contract.signedBy, signedAt, nric: contract.signedNric, signatureKind: contract.signatureKind, phone: contract.signerPhone, method: contract.verificationMethod, device: contract.signerUserAgent, timezone: contract.signerTimezone, viewedAt: contract.viewedAt, acceptedAt: contract.acceptedAt, hash: data.signed?.hash ?? null }} />
+    </Dialog>
+  )
+
   return (
     <PageReveal skeleton={<ContractSkeleton pdf={uploaded} signed={contract.status === 'Signed'} />}>
-      <div className={styles.page} data-testid="contract-editor">
+      <div className={styles.page} data-testid="contract-editor" data-mode={mode} data-shell={mode === 'desk' ? undefined : split ? 'split' : 'phone'} style={split ? ({ '--list-pane': '300px', '--screen-left': '300px' } as CSSProperties) : undefined}>
+        {mode === 'desk' ? (
+          <>
         <ContractHeader crumbs={[{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Contracts', href: `/leads/${lead.id}/contracts` }]} title={title.trim() || 'Untitled contract'} siblings={siblings} currentId={contract.id}
                         onSwitch={(id) => go(withFrom(`/contracts/${id}`, from))}
-                        chips={<>{signedAt ? <MetaChip>Signed {displayDate(signedAt)}</MetaChip> : null}{uploaded ? <MetaChip>Uploaded PDF</MetaChip> : null}{contract.templateId ? <MetaChip>From template</MetaChip> : null}{contract.bundleId && status === 'Sent to Client' ? <MetaChip>Sent together</MetaChip> : null}</>}
+                        chips={<>{signedAt ? <MetaChip>Signed {displayDate(signedAt)}</MetaChip> : null}{uploaded ? <MetaChip>{pdf?.picture ? 'Signed on paper' : 'Uploaded PDF'}</MetaChip> : null}{contract.templateId ? <MetaChip>From template</MetaChip> : null}{contract.bundleId && status === 'Sent to Client' ? <MetaChip>Sent together</MetaChip> : null}</>}
                         savedLabel={savedLabel(updatedAt, clock)} statusSlot={statusPill}
                         primary={status === 'Signed'
                           /* (UX audit C1) a signed contract's main press is its signed copy — Send was a dead button */
@@ -418,15 +606,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                                )} />
               </Tooltip>
               {/* (REG-728) Rows with a description: 320; the picked quote wears the Selected fill (its label is not plain text). */}
-              <Dropdown open={quoteOpen} onClose={() => setQuoteOpen(false)} align="right" width={MENU_WIDTH.detail} sheetTitle="Quote">
-                {data.quotes.map((q) => (
-                  <DropdownItem key={q.id} role="menuitemradio" checked={q.id === quoteId} selected={q.id === quoteId} onSelect={() => pickQuote(q.id)} meta={`${money2(q.amountMinor)} · ${q.status}`}>
-                    {`${q.number} · ${q.title}`}
-                  </DropdownItem>
-                ))}
-                {data.quotes.length ? <DropdownDivider /> : null}
-                <DropdownItem role="menuitemradio" checked={!quoteId} selected={!quoteId} onSelect={() => pickQuote(null)}>No quote</DropdownItem>
-              </Dropdown>
+              {quoteMenu(false)}
             </span>
             {/* (REG-632, parity Q-10) Issued by — offered when Company › Profile names two or more entities. */}
             {entities.length > 1 ? (
@@ -468,9 +648,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                         expiresAt={expiresAt} onResend={() => { if (blockIssue) { sayBlocked(); return } setSendOpen(true) }} toRead={contract.toRead}
                         onSignedCopy={status === 'Signed' && data.signedFile ? () => go(withFrom(`/leads/${lead.id}/files/${data.signedFile!.fileId}`, `/contracts/${contract.id}`)) : undefined} />
         {/* (REG-633, parity Q-19) the signing record, as the client's page and the print carry it */}
-        <Dialog open={recordOpen} onClose={() => setRecordOpen(false)} title="Signing record" size="modal" width={600}>
-          <SigningRecord compact r={{ signedBy: contract.signedBy, signedAt, nric: contract.signedNric, signatureKind: contract.signatureKind, phone: contract.signerPhone, method: contract.verificationMethod, device: contract.signerUserAgent, timezone: contract.signerTimezone, viewedAt: contract.viewedAt, acceptedAt: contract.acceptedAt, hash: data.signed?.hash ?? null }} />
-        </Dialog>
+        {recordDialog}
 
         {!uploaded ? (
           <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign}
@@ -485,8 +663,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
               /* (pending modules S03) the PDF itself, kept in the lead's Files › Contract & VOs — the client reads this very file on the link */
               <div data-testid="contract-uploaded" style={{ display: 'contents' }}>
                 <input ref={pdfInput} type="file" accept={PDF_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="contract-pdf-input" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pickPdf(f) }} />
-                <ContractPdf name={pdf?.name ?? contract.fileName ?? title} src={pdf ? `/files/raw/${pdf.fileId}` : null} thumb={pdf?.thumb ? `/files/thumb/${pdf.fileId}` : null}
-                             help={pdf ? (status === 'Signed' ? 'The PDF the contract was signed on — kept in Files › Contract & VOs.' : 'The client reads this PDF on the signing link and signs under it. Kept in Files › Contract & VOs.')
+                <ContractPdf name={pdf?.name ?? contract.fileName ?? title} src={pdf ? `/files/raw/${pdf.fileId}` : null} thumb={pdf?.thumb ? `/files/thumb/${pdf.fileId}` : null} picture={pdf?.picture}
+                             help={pdf ? (pdf.picture ? 'The photo of the signed paper — kept in Files › Contract & VOs as the signed copy.' : status === 'Signed' ? 'The PDF the contract was signed on — kept in Files › Contract & VOs.' : 'The client reads this PDF on the signing link and signs under it. Kept in Files › Contract & VOs.')
                                : 'Only its name was kept — attach the PDF so the client reads it on the link and you can open it again.'}
                              actions={<>
                                {/* (sweep S2 #17) an uploaded PDF has no formatting bar, so its eSignatures (Before the client signs) open from here */}
@@ -509,6 +687,100 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
             )}
           </div>
         </div>
+          </>
+        ) : (
+          <>
+            {/* (Contracts on the move, P-01) the Contract screen — read first; the list and the section screens layer over it while editing */}
+            <ContractScreen inert={editing}
+                            title={title.trim() || 'Untitled contract'} recipient={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone, first: clientFirst }}
+                            status={status} statusSlot={statusPill}
+                            metaWords={[contract.templateId ? 'From template' : null, uploaded ? (pdf?.picture ? 'Signed on paper · a photo' : 'Uploaded PDF') : null, contract.bundleId && status === 'Sent to Client' ? 'Sent together' : null].filter((w): w is string => !!w)}
+                            signedLine={status === 'Signed' ? `Signed${signedAt ? ` ${displayDate(signedAt)}` : ''} · ${contract.signedBy ? `by ${contract.signedBy} online` : 'marked by the studio'}` : null}
+                            contractDate={contractDate}
+                            quote={namedQuote ? { number: namedQuote.number, amountText: money2(namedQuote.amountMinor), status: namedQuote.status, gone: quoteGone } : null}
+                            quoteSheet={quoteMenu(true)} onQuoteRow={() => { if (signedLock) openQuote(); else setQuoteOpen((o) => !o) }}
+                            onDate={() => { if (!signedLock) openSection('details', 'date', true) }}
+                            onEditRecipient={() => openSection('details', 'recipient', true)}
+                            next={next} onPrimary={onPrimary}
+                            onEdit={openEdit} onBack={close} backLabel={backLabel(from, { leadName: lead.name, fallback: `Back to ${lead.name}` })}
+                            onMenu={onScreenMenu} menu={{ canDelete, deleteRule: CONTRACT_DELETE_RULE, uploaded, hasRecord: status === 'Signed' && !!data.signed, hasSignedCopy: status === 'Signed' && !!data.signedFile }}
+                            document={<ContractDocument html={docHtml} values={values} brand={data.brand} studio={studio} studioSignature={status === 'Signed' && data.signed ? data.signed.studioSignature : data.studioSignature} letterhead={data.letterhead}
+                                                        client={signedAt && status === 'Signed' ? { name: contract.signedBy ?? recipientName ?? lead.name, at: signedAt, nric: contract.signedNric, drawing: contract.signatureKind === 'draw' ? contract.signatureData : null } : null}
+                                                        uploaded={uploaded} pdf={pdf ? { name: pdf.name, src: `/files/raw/${pdf.fileId}`, thumb: pdf.thumb ? `/files/thumb/${pdf.fileId}` : null, picture: pdf.picture } : uploaded ? { name: contract.fileName ?? title, src: null, thumb: null } : null}
+                                                        blank={blank} onAsPrinted={() => go(withFrom(`/contracts/${contract.id}/preview?paper=1`, from))} />}
+                            folds={{ fields: { rows: SIGN_FIELDS.map((f) => ({ label: f.label, placed: clauses.find((c) => c.signs.includes(f.key))?.title ?? null })), line: fieldsLine, uploaded },
+                                     gates: { scroll: gates.requiresScroll, accept: gates.requiresAccept, words: gates.acceptLabel, uploaded }, automation: auto,
+                                     files: { signed: data.signedFile ? { name: data.signedFile.name, href: fileHref(data.signedFile.fileId) } : null, pdf: pdf ? { name: pdf.name, href: fileHref(pdf.fileId) } : null }, activity: timeline }}
+                            onEditSection={(k) => openSection(k, null, true)} signed={signedLock} />
+            {/* (P-02) Edit is the section list, every time; a landscape tablet keeps it as the 300 pane */}
+            {editing ? <SectionList<ContractEditKey> rows={sectionRows} number={title.trim() || 'Untitled contract'} savedLabel={savedLabel(updatedAt, clock)} current={shownKey} onOpen={(k) => openSection(k)} onDone={doneEditing} pane={split} inert={mode === 'section' && !split}
+                                                     title="Edit contract" subtitle={`${title.trim() || 'Untitled contract'} · ${savedLabel(updatedAt, clock).replace(/^Saved/, 'saved')}`} /> : null}
+            {uploaded ? pdfInputEl : null}
+            {shownKey === 'details' ? (
+              <SectionScreen title="Details" subtitle={savedLabel(updatedAt, clock)} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="details-screen">
+                <DetailsForm v={{ title, recipientName: recipientName || lead.name, recipientPhone: recipientPhone || lead.phone.replace(/\D/g, '').slice(-8), contractDate, quoteId, entity }}
+                             quotes={data.quotes} quoteGone={quoteGone} entities={entities} locked={signedLock} now={now} focus={detailsFocus}
+                             onTitle={(t) => { setTitle(t); queue({ title: t }) }}
+                             onRecipient={(n, p, valid) => { setRecipientName(n); setRecipientPhone(p); queue({ recipientName: n, ...(valid ? { recipientPhone: p } : {}) }) }}
+                             onDate={(at) => { setContractDate(at); queue({ contractDate: at }) }}
+                             onQuote={pickQuote} onEntity={pickEntity} />
+              </SectionScreen>
+            ) : null}
+            {shownKey === 'document' ? (uploaded ? (
+              <SectionScreen title="Document" subtitle={pdf ? pdf.name : 'No PDF attached yet'} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="document-screen"
+                             trailing={<Button appearance="text" onPress={doneEditing} data-testid="document-done">Done</Button>}>
+                {pdfCard}
+              </SectionScreen>
+            ) : (
+              /* (P-03) the paper full-screen in C1's frame; today's toolbar and editor are its content — C2 makes their insides the one tool row */
+              <DocumentFrame subtitle={docSub} onBack={backToList} onDone={doneEditing} backLabel={direct ? 'Back to the contract' : 'Back to the sections'}
+                             outlineOpen={split ? outlinePane : outlineDrawer} onOutline={() => (split ? setOutlinePane((o) => !o) : setOutlineDrawer((o) => !o))}
+                             pane={split && outlinePane ? <OutlinePane inDrawer items={outline} onClose={() => setOutlinePane(false)} onPick={(i) => editor.current?.scrollToHeading(i)} /> : undefined}>
+                <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign} writing={writing.trigger} />
+                <div className={styles.body}>
+                  <div className={styles.stage}>
+                    <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
+                      <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={onDocState} label="Contract document" placeholder="Start writing, or insert a field…" chipTip={chipTip} />
+                    </div>
+                  </div>
+                </div>
+              </DocumentFrame>
+            )) : null}
+            {shownKey === 'fields' ? (
+              <SectionScreen title="Signature fields" subtitle={fieldsLine} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="fields-screen">
+                {uploaded ? <p className={screenStyles.note}>A PDF is read and signed on the page itself: the client ticks your words, then signs under it. There are no fields to place.</p> : (<>
+                  <div className={docStyles.panelCard}><SignatureFieldsPanel html={body} hasStudioSignature={!!me?.signatureKind} locked={signedLock} onPlace={placeField} /></div>
+                  <p className={screenStyles.note}>{signedLock ? 'Signed — the fields stay where they were signed.' : 'Add asks which field, then where it goes — after one of the clauses, as its own block. The client’s field is where they sign online once you send the link.'}</p>
+                </>)}
+              </SectionScreen>
+            ) : null}
+            {shownKey === 'gates' ? (
+              <SectionScreen title="Before the client signs" subtitle={gatesLine} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="gates-screen">
+                <div className={docStyles.panelCard}><BeforeSigningPanel bare gates={gates} onGates={(p) => { setGates((g) => ({ ...g, ...p })); queue(p) }} uploaded={uploaded} locked={signedLock} /></div>
+                <p className={screenStyles.note}>{signedLock ? 'Signed — the rules stay as they were when the client signed.' : 'Both rules hold on the signing page before the signature box opens.'}</p>
+              </SectionScreen>
+            ) : null}
+            {shownKey === 'automation' ? (
+              <SectionScreen title="Automation" subtitle={autoLine} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="automation-screen">
+                <div className={screenStyles.rowList} data-testid="automation-rows"><AutomationRows reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} /></div>
+                <p className={screenStyles.note}>Each is a task on the lead: a follow-up three days after sending (closed once it’s signed), and one on the signing day to thank the client.</p>
+              </SectionScreen>
+            ) : null}
+            {shownKey === 'files' ? (
+              <SectionScreen title="Files" subtitle={filesLine} onBack={backToList} backLabel={direct ? 'Back to the contract' : 'Back to the sections'} testId="files-screen">
+                {data.signedFile || pdf ? (
+                  <div className={screenStyles.rowList}>
+                    {data.signedFile ? <a className={screenStyles.row} href={fileHref(data.signedFile.fileId)} data-testid="files-signed-copy"><span className={screenStyles.rowText}><span className={screenStyles.rowLabel}>{data.signedFile.name}</span><span className={screenStyles.rowHelp}>The signed copy · in Files › Contract &amp; VOs</span></span><span className={screenStyles.rowActs}><Icon name="chevron_right" size={24} /></span></a> : null}
+                    {pdf ? <a className={screenStyles.row} href={fileHref(pdf.fileId)} data-testid="files-pdf"><span className={screenStyles.rowText}><span className={screenStyles.rowLabel}>{pdf.name}</span><span className={screenStyles.rowHelp}>The PDF the client reads · in Files › Contract &amp; VOs</span></span><span className={screenStyles.rowActs}><Icon name="chevron_right" size={24} /></span></a> : null}
+                  </div>
+                ) : null}
+                {uploaded && !pdf ? pdfCard : null}
+                <p className={screenStyles.note}>{uploaded ? 'The PDF is the document the client signs; the signed copy is kept beside it once it comes back.' : 'The signed copy is kept here, in the lead’s Files › Contract & VOs, once the contract comes back signed — online, or attached on Mark as signed.'}</p>
+              </SectionScreen>
+            ) : null}
+            {recordDialog}
+          </>
+        )}
 
         <Drawer open={!uploaded && narrow && outlineDrawer} onClose={() => setOutlineDrawer(false)} title="Outline" label="Outline" width="narrow">
           <OutlinePane inDrawer items={outline} onClose={() => setOutlineDrawer(false)}
@@ -519,9 +791,10 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
         <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} defaults={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone }} onCopy={status === 'Draft' ? shareDraft : undefined}
                             subtitle={contract.toRead ? 'Your client reads it in their browser and keeps a copy — there is nothing to sign.' : `Your client reviews and signs in their browser. ${signCodeLine(codeDemo)} The link opens for ${data.linkDays} days from when you send it.`}   /* (pending modules S03) the window, said before the press · (S44R, C9) a letter to read says so */
                             {...(contract.toRead ? { title: 'Send the letter' } : {})}
+                            subtitleShort={contract.toRead ? 'Your client reads it in their browser and keeps a copy.' : 'Your client reviews and signs in their browser.'}   /* (contracts on the move, B-17) the one line a phone's head holds; the rest under "How signing works" */
                             extra={status !== 'Signed' && !contract.toRead ? <>
                               {/* (S44R — UAT row 358, call C7) the deposit, said whole before it goes — or why it can't be asked for */}
-                              <DepositAsk contractId={contract.id} option={quoteId ? data.deposits[quoteId] ?? null : null} on={askDeposit} onChange={setAskDeposit} recipient={recipientName || lead.name} beforeSave={() => flushRef.current()} />
+                              <DepositAsk contractId={contract.id} option={quoteId ? data.deposits[quoteId] ?? null : null} on={askDeposit} onChange={setAskDeposit} recipient={recipientName || lead.name} beforeSave={() => flushRef.current()} helpClassName={styles.sendHelp} />
                               {data.standardDocs > 0 ? <span className={styles.markSigned} data-testid="send-standard-docs"><span className={styles.footNote}>{data.standardDocs === 1 ? 'Your standard document goes with it' : `Your ${data.standardDocs} standard documents go with it`} through Send together.</span><Button appearance="text" onPress={() => { setSendOpen(false); go(`/leads/${lead.id}/contracts?bundle=${encodeURIComponent(contract.id)}`) }}>Send together</Button></span> : null}
                             </> : undefined}
                             onMarkSigned={() => { setSendOpen(false); setSignedOpen(true) }}   /* (UX audit C9) signed in person: the other way it comes back */
@@ -537,6 +810,21 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                                 setStatus(r.status); setRecipientName(name); setRecipientPhone(phone); setUpdatedAt(r.updatedAt); setSentAt(r.sentAt); setExpiresAt(r.expiresAt); setSendOpen(false)
                                 snackbar({ message: contract.toRead ? `Sent to ${name} to read and keep` : `Sent to ${name} for signature` })
                               } catch (e) { snackbar({ message: sendError(e) }) }
+                            }} />
+        {/* (Contracts on the move, Q-07) Remind — the lists' Send a reminder (UX audit C5): the same link, a nudge on WhatsApp; the link's window opens again from now (1.0's resend) */}
+        <SendContractDialog open={remindOpen} onClose={() => setRemindOpen(false)} title={expired ? 'Send the link again' : 'Send a reminder'} link={contractLink({ id: contract.id, signToken: token, bundleId: contract.bundleId, status })}
+                            subtitle={`${title.trim() || 'The agreement'} is still waiting for a signature. Send via WhatsApp opens your chat with the client, the same link in the message — it opens for ${data.linkDays} days from now.`}
+                            subtitleShort={expired ? `A new link on WhatsApp — it opens for ${data.linkDays} days.` : 'A nudge on WhatsApp with the same link.'}
+                            defaults={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone }}
+                            draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: values['studio.name'] ?? studio.name, title: title.trim() || 'agreement', link: contractLink({ id: contract.id, signToken: token, bundleId: contract.bundleId, status }) })}
+                            onSend={({ name, phone, message }) => {
+                              window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')   // on the press, before the round-trip
+                              const wasExpired = expired
+                              setRemindOpen(false)
+                              void flushRef.current().then(() => renewSigningLink(contract.id, 'whatsapp')).then((r) => {
+                                if ('error' in r) { snackbar({ message: `Couldn’t renew the link — ${r.error.charAt(0).toLowerCase()}${r.error.slice(1)}` }); return }
+                                setExpiresAt(r.expiresAt); snackbar({ message: wasExpired ? `Link sent again to ${name}` : `Reminder sent to ${name}` }); router.refresh()
+                              }, () => snackbar({ message: 'Couldn’t renew the link — please try again' }))
                             }} />
         <AutomationDialog open={autoDialog} onClose={() => setAutoDialog(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
         <MarkSignedDialog open={signedOpen} onClose={() => setSignedOpen(false)} today={new Date(now)}
@@ -566,7 +854,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                        onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void orThrow(deleteContracts([contract.id])).then((r) => { snackbar({ message: contractsDeletedLine(r) }); if (r.deleted) router.push(backHref) }, () => snackbar({ message: 'Couldn’t delete the contract — please try again' })) }} />
         {writing.dialog}
         <MaisonAiSheet open={aiOpen} suggestions={maison} onClose={() => setAiOpen(false)} anchorRef={fabRef} />   {/* (sweep S2 #30) the FAB's own press toggles it · (pending modules S10) the shell's one sheet */}
-        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
+        {mode === 'desk' || mode === 'read' ? <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} raised={mode === 'read'} /></span> : null}   {/* (P-01 · P-03) above the Contract screen's foot; never over a section screen or the paper */}
       </div>
     </PageReveal>
   )

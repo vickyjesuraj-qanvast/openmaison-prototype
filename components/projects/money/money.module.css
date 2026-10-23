@@ -116,3 +116,16 @@
 @media (max-width: 767px) { .pairs { grid-template-columns: minmax(0, 1fr); } }
 .inlineLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-body-s); white-space: nowrap; }
 .bannerText .inlineLink { font: inherit; }
+
+/* (Contracts on the move, C4 — P-11 · C-24 · C-14, 2026-10-22) Where a finger reads the tiles (≤1024), every help line in them reads 14 — "S$17,790.01
+   collected of S$81,355.42" was the smallest text on the page — and the To collect tile says the contract total and where it comes from
+   ("Contract S$81,355.42 · OM-10004 + 1 variation order"): on a desk that is the value's hover breakdown, which a finger never sees. From 1025 up
+   neither rule applies — the line is not drawn and the help lines keep the house tile's 12 (components/om/stat-tile.module.css, untouched). */
+.contractLine.contractLine, .contractGhost.contractGhost { display: none; }
+.moneyTiles { --tile-help-lh: 16px; }   /* the ghost's help lines (money-ghost.tsx) */
+@media (max-width: 1024px) {
+  .touchHelp.touchHelp, .contractLine.contractLine { font: var(--om-type-body-m); }
+  .contractLine.contractLine { display: block; overflow-wrap: anywhere; }
+  .moneyTiles { --tile-help-lh: 20px; }
+  .contractGhost.contractGhost { display: flex; }   /* the line's bone in the ghost (the kit's own line box) */
+}

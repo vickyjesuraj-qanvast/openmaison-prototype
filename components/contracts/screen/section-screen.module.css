@@ -1,0 +1,43 @@
+/* (Contracts on the move, P-02 · P-03 · P-13 — 2026-10-22) A section of a contract as its own SCREEN, ≤1024 only: a surface fixed over the
+   section list from the top of the viewport (`--screen-left` = the list's pane on a landscape tablet, 0 on a phone), the one 56 bar every
+   on-the-move screen wears (components/quotes/screen/screen-bar.tsx), its body the scroller, an optional foot. The quote's section screen
+   is SectionCard's screen mode (components/quotes/editor/section-card.module.css); a contract has no section cards to grow into one, so this
+   is the frame alone, on the same measures — z 40 (under the menus 95, a drawer 100, a dialog 110, a sheet 115, the snackbar 135), 16
+   gutters, 12 inside cards, a 720 column on a tablet held upright, 16 / 14 for what is read, 44 targets. */
+.screen { position: fixed; inset: 0; left: var(--screen-left, 0px); z-index: 40; display: flex; flex-direction: column; background: var(--om-color-surface-bg); outline: none; }
+.screen[data-full] { left: 0; }   /* the Document screen: one thing at a time — the whole width, the list behind it */
+/* (C4, integrating C2's row) inside the frame the tool row pins at the top of the frame's own scroller — its default offset is the desk
+   page's header + meta row (`--doc-tools-top`, components/contracts/document/document.module.css), which this screen has none of */
+.screen[data-document-frame] { --doc-tools-top: 0px; }
+/* (C4) room past the paper's end: the last clause — and a signature field placed under it — can rise to mid-screen, clear of the keyboard and of
+   the snackbar that says where it landed (a field under Signatures is the document's last block) */
+.screen[data-document-frame] .body[data-flush] > .column::after { content: ''; display: block; flex-shrink: 0; height: 40dvh; }
+.bar { flex-shrink: 0; }
+.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+.column { flex: 1; width: 100%; max-width: 752px; align-self: center; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+.body[data-flush] > .column { max-width: none; padding: 0; gap: 0; }
+/* the Document screen's row: an Outline pane at the paper's left on a landscape tablet (P-02: a pane, never a drawer over the paper), the body beside it */
+.frameRow { flex: 1; min-height: 0; display: flex; align-items: stretch; }
+.frameRow > .body { flex: 1; min-width: 0; }
+.pane { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; background: var(--om-color-surface-default); box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }
+/* (P-13) inside a screen every text box types at 16 (body-l), so iOS never zooms the page on focus */
+@media (max-width: 1024px) {
+  .body input, .body textarea { font: var(--om-type-body-l); }
+}
+/* the screens' own pieces: a note, a card, a list of 56 rows (label 16 over help 14, the control at the end) */
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.rowList { display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3); color: inherit; }
+.row + .row, .row + .rowMore { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rowMore { padding: var(--om-spacing-3); }
+label.row { cursor: pointer; }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rowLabel { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); }
+.rowHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.rowHelp[data-placed] { color: var(--om-color-tertiary-green-default, var(--om-color-on-surface-secondary)); }
+.rowActs { flex-shrink: 0; display: inline-flex; align-items: center; }
+/* a DS md button in a row grows to the 44 target by height, never an ::after inset (the icon-button-overlay lint rule) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .rowActs button { min-height: 44px; }
+}

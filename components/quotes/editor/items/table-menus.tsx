@@ -151,7 +151,7 @@ export function ThumbMenu({ open, anchor, icon, onClose, onUpload, onIcon }: {
 export const BookRuleContext = createContext<{ runsBook: boolean; bookItem: (id: string | null) => { name: string } | null }>({ runsBook: true, bookItem: () => null })
 /** (S44I, B8) The ticked rows — the row menu's *Section with n items* reads what it would make of them. */
 export const SelectedContext = createContext<ReadonlySet<string>>(new Set())
-export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight, onAddSeveral }: {
+export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight, onAddSeveral, compact = false }: {
   open: boolean; anchor: Anchor; item: QuoteItem; groups: QuoteItem[]; all: QuoteItem[]; selectedCount: number
   /** The brand kit's colours by key — the Highlight swatches follow the kit (REG-556). */
   brandColors: Record<string, string>
@@ -159,11 +159,14 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
   onPrintAs: (v: PrintAs | null) => void; onHighlight: (v: Highlight | null) => void
   /** (S44I, B5) Add Item › Several…: n blank lines above or below (a section: at its top). */
   onAddSeveral: (n: number, where: 'above' | 'below') => void
+  /** (Quotes on the move — P-03, C-06) The cards' ⋮: five rows a thumb reaches — Edit… · Duplicate · Mark as optional · Move to section › ·
+   *  Remove — and More…, which opens the whole menu as its own level. Sixteen rows in a sheet left Remove below the fold. */
+  compact?: boolean
 }) {
   const bookRule = useContext(BookRuleContext)
   const variation = !!useVariation()
   const sectionsLocked = usePlanLock('package_creation').locked   // (pending modules S19) My Sections are Pro
-  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | null>(null)
+  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | 'all' | null>(null)
   const [several, setSeveral] = useState(5)
   const level = useLevelFocus(sub)
   const close = () => { setSub(null); setSeveral(5); onClose() }
@@ -261,8 +264,20 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
               </DropdownItem>
             ))}
           </>
+        ) : compact && sub === null ? (
+          <>
+            {/* (P-03) the phone's five, then everything else one level in */}
+            <DropdownItem onSelect={() => act('edit')}>{isItem ? 'Edit…' : 'Edit section…'}</DropdownItem>
+            <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
+            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}
+            {canMove ? <DropdownItem submenu onSelect={() => setSub('group')}>Move to section<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            <DropdownItem tone="danger" onSelect={() => act('remove')}>Remove</DropdownItem>
+            <DropdownDivider />
+            <DropdownItem submenu onSelect={() => setSub('all')}>More…<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+          </>
         ) : (
           <>
+            {sub === 'all' ? back('More') : null}
             {/* (REG-653, price book parity Q-09 · Q-18) A line from My Items says so, and its save names what it does — update that item
                 (an Owner's or an Admin's) or add a new one; a Designer proposes. One name for the book: My Items, My Sections. */}
             {source ? <div className={styles.menuHead} data-testid="line-source">From My Items · {source.name}</div> : null}

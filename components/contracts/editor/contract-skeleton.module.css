@@ -31,3 +31,21 @@
   .bar > .barEnd { display: flex; flex-basis: 100%; justify-content: flex-end; gap: var(--om-spacing-2); }
 }
 @media (max-width: 767px) { .paper { padding: 24px; min-height: 480px; } .stage { padding: var(--om-spacing-4); } .meta { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .metaEnd { flex: 1 1 100%; flex-wrap: wrap; } .mRec { width: 100%; } .mDate { width: 168px; } .mRec, .mQuote, .mDate { height: 44px; } }
+/* (Contracts on the move, P-01 · P-02 · P-03 — 2026-10-22) The on-the-move twin's own pieces (the shapes themselves are the quote editor's
+   ghost classes, components/quotes/editor/editor-skeleton.module.css, reused): the hero's two rows, the Document screen's tool row, a
+   section screen's row list, the Preview's stage on a phone (the reflowed paper) and a tablet (the paper at 1:1). */
+.heroRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; }
+.toolRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 52px; padding: var(--om-spacing-1) var(--om-spacing-3); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.rowList { display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.ghostRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3); }
+.ghostRow + .ghostRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.previewTouch { position: relative; flex: 1; display: flex; flex-direction: column; }
+.previewStage { flex: 1; display: flex; justify-content: center; }
+@media (max-width: 1024px) {
+  .previewStage { overflow: hidden; }
+  .previewStage > .paper { width: 816px; flex-shrink: 0; }
+}
+@media (max-width: 767px) {
+  .previewStage > .paper { width: 100%; }
+  .page[data-kind='editor'] .paper, .page[data-kind='preview'] .paper { padding: var(--om-spacing-6) var(--om-spacing-4); }
+}

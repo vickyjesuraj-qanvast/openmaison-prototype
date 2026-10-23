@@ -458,7 +458,8 @@ export function TemplateLibraryGhost() {
   const at = TEMPLATE_KINDS.findIndex((k) => path.startsWith(k.href))   // (S42 audit A-10) the strip starts where the page's does
   return (
     <CompanyGhostFrame title={100} tabs={TEMPLATE_TABS} active={at} label="Loading templates">
-      <LibraryGhostFor page="templates" pill folders={2} cards={4} />
+      {/* (Contracts on the move, P-10) Templates › Contracts lands on rows on a phone and a tablet held upright — its ghost draws them there */}
+      <LibraryGhostFor page="templates" pill folders={2} cards={4} rows={path.startsWith('/company/templates/contracts') ? 5 : 0} />
     </CompanyGhostFrame>
   )
 }

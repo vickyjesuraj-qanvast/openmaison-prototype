@@ -18,7 +18,6 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useSnackbar } from '@/components/om/snackbar'
-import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
@@ -28,7 +27,10 @@ import { couldnt, refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, PriceBookSection, QuoteItem } from '@/lib/db/schema'
 import { uploadPicked } from '@/components/leads/files/upload-picture'   // (pending modules S04) a line's picture keeps its bytes
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, HIGHLIGHTS, isHighlight, UNITS, inSavedOrder, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, sectionForTrade, tradeOfSection, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, HIGHLIGHTS, isHighlight, UNITS, inSavedOrder, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, sectionForTrade, tradeOfSection, UNLABELLED, TABLET_COLUMNS, TABLET_COLUMNS_KEY, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
+import { useItemsLayout } from './items-layout'   // (Quotes on the move — P-03 · P-07) phone · cards · grid · desktop
+import { ItemsTouchFoot } from './items-touch-foot'
+import type { OpenLine } from './item-cards'
 import { carried as carriedOf, categoryShares, counts, depthOf, descendantIds, flattenItems, groupLevel, lineTotalMinor, money2, moveTargets, pct, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
 import { scrollParentOf } from '@/components/om/use-stuck'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportCells, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
@@ -79,6 +81,10 @@ function takeExpanded(quoteId: string): boolean {
 }
 /** (S44I — M14) A list with each name once whatever its case — the first spelling stays ("Carpentry" before "carpentry"). */
 const oneCase = (list: string[]) => { const seen = new Set<string>(); return list.filter((x) => { const k = x.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true }) }
+/* (Quotes on the move — P-07) The touch tablet's column set, per browser (localStorage, guarded — a private window simply forgets); never the
+   quote's own `items_columns`, which stays the desktop's. */
+function readTabletColumns(): ColumnSettings { try { return parseColumns(typeof localStorage === 'undefined' ? null : localStorage.getItem(TABLET_COLUMNS_KEY), TABLET_COLUMNS) } catch { return parseColumns(null, TABLET_COLUMNS) } }
+function writeTabletColumns(c: ColumnSettings) { try { localStorage.setItem(TABLET_COLUMNS_KEY, JSON.stringify(c)) } catch { /* nothing to remember it in */ } }
 /** (Dane UAT 6.11) What a template's View by is called in the note: "prints lines by trade". */
 const PRINTS_BY: Record<Exclude<ItemsView, 'none'>, string> = { category: 'trade', room: 'room', section: 'section label' }
 
@@ -191,8 +197,13 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const { run, fail } = useRun()
   const { quoteId } = seed
   const costs = seed.costs !== false   // (pending modules S41b-1)
-  /* ≤1024 the toolbar is one row (REG-354 / REG-384): the AI mark, Create as its icon and a kebab that folds the rest. */
-  const compact = useMediaQuery(TABLET_DOWN)
+  /* ≤1024 the toolbar is one row (REG-354 / REG-384): the AI mark, Create as its icon and a kebab that folds the rest.
+     (Quotes on the move — P-03 · P-07) …and the section is designed for a finger: the phone's cards with the pinned foot, a tablet held
+     upright the cards with a pane, a tablet held sideways the working grid; Expand, Column settings and Row density belong to a grid. */
+  const layout = useItemsLayout()
+  const compact = layout !== 'desktop'
+  const phone = layout === 'phone', grid = layout === 'grid'
+  const compactRef = useRef(compact); useEffect(() => { compactRef.current = compact })
   const variation = useVariation()   // (fix-G, G-13) a variation order's note names it; (gaps build B, item 7) its omissions
 
   /* ── state ── */
@@ -204,6 +215,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [bookOpen, setBookOpen] = useState<PriceBookTab | null>(null)
   const [seenBookTick, setSeenBookTick] = useState(bookTick)
   if (bookTick !== seenBookTick) { setSeenBookTick(bookTick); setBookOpen('items') }
+  /* (P-03) ≤1024 the Add Item box is gone with its popover: the strip's My Items opens the Price book modal, as the tile's other press does */
+  const [seenAddTick, setSeenAddTick] = useState(addTick)
+  if (addTick !== seenAddTick) { setSeenAddTick(addTick); if (compact) setBookOpen('items') }
+  /* (P-03 · P-07) the line to open after an add press — its sheet on a phone, the pane on a tablet — once per `n` */
+  const [openLine, setOpenLine] = useState<OpenLine | null>(null)
+  const openCount = useRef(0)
+  const openNew = (id: string) => { if (!compactRef.current) return; setOpenLine({ id, n: ++openCount.current, focusName: true }) }
+  /* (P-07) the touch tablet's own column set — Column settings on the grid edits this one, remembered per browser */
+  const [tabletColumns, setTabletColumns] = useState<ColumnSettings>(() => readTabletColumns())
+  const saveTabletColumns = (c: ColumnSettings) => { setTabletColumns(c); writeTabletColumns(c) }
   const [printAsOpen, setPrintAsOpen] = useState(false)   /* (REG-555) the bulk bar's Print as */
   /* (gaps build B, item 7 — 1.0 G-151) a variation order's *Omit from the contract*: the signed quote's lines, read when it opens */
   const [omit, setOmit] = useState<{ contract: string | null; lines: ContractLine[]; loading: boolean; busy: boolean } | null>(null)
@@ -226,8 +247,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* Expand (REG-434): the whole card as a full-page layer over the editor; Escape (with no menu or dialog up) and the toolbar's
      Collapse bring it back. The page keeps a collapsed stand-in in the section's slot so nothing below it moves. */
   const [expanded, setExpanded] = useState(false)
-  /* (Dane UAT 6.15) Back from a Preview opened while expanded: expanded again (read after mount — the server renders it collapsed). */
-  useEffect(() => { const r = requestAnimationFrame(() => { if (takeExpanded(quoteId)) setExpanded(true) }); return () => cancelAnimationFrame(r) }, [quoteId])
+  /* (Dane UAT 6.15) Back from a Preview opened while expanded: expanded again (read after mount — the server renders it collapsed).
+     (P-07) Never ≤1024: Expand is a desktop idea (C-24). */
+  useEffect(() => { const r = requestAnimationFrame(() => { if (takeExpanded(quoteId) && !compactRef.current) setExpanded(true) }); return () => cancelAnimationFrame(r) }, [quoteId])
   const previewNow = () => { if (!onPreview) return; if (expanded) rememberExpanded(quoteId); onPreview() }
   /* P in the expanded layer: the key layer stands down under any modal layer (the expanded card is one), so the card answers its own P
      — the same checks the layer makes: not while typing, not in a widget that owns its letters, not under a menu or another dialog, and
@@ -470,6 +492,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const r = await structural('add the item', () => addQuoteItem(quoteId, input))
     if (r.ok) {
       attention([r.value.id], { focus: focusName })
+      if (focusName) openNew(r.value.id)   // (P-03) ≤1024 a new line opens its sheet or pane to be named — there is no box in a card
       if (opts.chain && r.value.kind === 'item') { setChain(r.value.id); window.setTimeout(() => { chainHandoff.current = false }, 400) } else chainHandoff.current = false
     } else chainHandoff.current = false
   }
@@ -1074,11 +1097,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const isOwner = seed.me?.role === 'Owner'
   /* (REG-596) The Rebate column exists for Owners alone: a designer never sees it, in the table or in Column settings.
      (pending modules S41b-1) Cost, Markup and Margin exist only for a member who sees costs — the member's own column choice is kept. */
-  const visibleColumns = columns.columns.filter((c) => c.on && (c.key !== 'gst' || pricing.gstEnabled) && (c.key !== 'rebate' || isOwner) && (costs || !COST_COLUMNS.includes(c.key))).map((c) => c.key) as ColumnKey[]
+  /* (P-07) the touch grid reads its own set; the cards read the quote's for the sheet's Cost · Markup boxes */
+  const colSet = grid ? tabletColumns : columns
+  const visibleColumns = colSet.columns.filter((c) => c.on && (c.key !== 'gst' || pricing.gstEnabled) && (c.key !== 'rebate' || isOwner) && (costs || !COST_COLUMNS.includes(c.key))).map((c) => c.key) as ColumnKey[]
+  const costOn = costs && columns.columns.some((c) => c.key === 'cost' && c.on), markupOn = costs && columns.columns.some((c) => c.key === 'markup' && c.on)
   const selectedList = [...selected]
   /* (S44I, B8) what the bulk bar's Group into makes, where Move to section may go, and whether Out of the section applies */
-  const [bulkMenu, setBulkMenu] = useState<'move' | 'highlight' | null>(null)
+  const [bulkMenu, setBulkMenu] = useState<'move' | 'highlight' | 'more' | null>(null)
   const bulkAnchor = useRef<HTMLElement | null>(null)
+  const hideFromClient = () => { const before = itemsRef.current.filter((i) => selectedList.includes(i.id)).map((i) => [i.id, i.visibility] as const); snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client`, actionLabel: 'Undo', onAction: () => { for (const [id, v] of before) patchItem(id, { visibility: v as QuoteItem['visibility'] }, { snapshot: false }) } }); setSelected(new Set()) }
   const bulkLevel = groupLevel(items, selectedList)
   const bulkTargets = useMemo(() => moveTargets(items, selected), [items, selected])
   const bulkAllInside = selected.size > 0 && carriedOf(items, selected).every((id) => !!items.find((i) => i.id === id)?.parentId)
@@ -1089,7 +1116,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const createGroup = (ids: string[] = selectedList) => {
     const lvl = groupLevel(itemsRef.current, ids)
     if (typeof lvl === 'object') { snackbar({ message: couldnt('put the lines in a section', lvl.refused) }); return }
-    void structural('create the section', () => groupQuoteItems(quoteId, ids), lvl === 'sub-section' ? 'Sub-section created' : 'Section created').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) })
+    void structural('create the section', () => groupQuoteItems(quoteId, ids), lvl === 'sub-section' ? 'Sub-section created' : 'Section created').then((r) => { if (r.ok) { attention([r.value.id], { focus: true }); openNew(r.value.id) } })
     setSelected(new Set())
   }
   /* (REG-555 · REG-556) Print as and Highlight from the row menu and the bulk bar: cell-like patches, one snapshot for a run. */
@@ -1204,16 +1231,21 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   )
 
   /* ── toolbar (section-top actions, 1260:31216) ── */
+  /* (Quotes on the move — P-03 · P-07, C-10 · C-11 · C-24) ≤1024 the row is the search glyph and a ⋮ — plus, on a tablet, Maison AI and Create ▾.
+     On a phone the adds are the pinned foot's (Add section · + Add item); From Price book and Paste lines sit in the ⋮, and Column settings,
+     Row density and Expand do not appear where there is no grid (Expand nowhere ≤1024). The key hints are not drawn on touch (REG-273). */
   const toolbar = compact ? (
     <div className={styles.tools} data-compact="">
       {find}
-      <Tooltip label="Maison AI"><IconButton icon="auto_awesome" glyph={<AiMark />} label="Maison AI" variant="primary" onClick={onOpenAi} /></Tooltip>
-      <span ref={createRef} className={styles.anchor}>
-        <Tooltip label="Create" disabled={menu === 'create'}>
-          <IconButton icon="add" label="Create" variant="primary" aria-haspopup="menu" aria-expanded={menu === 'create'} onClick={() => setMenu((m) => (m === 'create' ? null : 'create'))} />
-        </Tooltip>
-        {createMenu}
-      </span>
+      {phone ? null : <Tooltip label="Maison AI"><IconButton icon="auto_awesome" glyph={<AiMark />} label="Maison AI" variant="primary" onClick={onOpenAi} /></Tooltip>}
+      {phone ? null : (
+        <span ref={createRef} className={styles.anchor}>
+          <Tooltip label="Create" disabled={menu === 'create'}>
+            <IconButton icon="add" label="Create" variant="primary" aria-haspopup="menu" aria-expanded={menu === 'create'} onClick={() => setMenu((m) => (m === 'create' ? null : 'create'))} />
+          </Tooltip>
+          {createMenu}
+        </span>
+      )}
       <span ref={moreRef} className={styles.anchor}>
         <Tooltip label="More options" disabled={menu === 'more'}>
           <IconButton icon="more_vert" label="More options for Items" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} />
@@ -1236,13 +1268,20 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                 {view === 'category' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'category' }) }}>Add Category</DropdownItem> : null}
                 {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add Section label</DropdownItem> : null}
                 <DropdownItem onSelect={() => { closeMenus(); createGroup(selectedList) }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>New section</DropdownItem>
-                <DropdownItem disabled={history.past.length === 0} keys="mod+z" onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
-                <DropdownItem disabled={history.future.length === 0} keys="mod+shift+z" onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
+                {phone ? (
+                  <>
+                    <DropdownItem onSelect={fromPriceBook}>From Price book</DropdownItem>
+                    <DropdownItem onSelect={() => { closeMenus(); setPasting({ text: '', anchorId: null, typed: true }) }}>Paste lines…</DropdownItem>
+                    {variation ? <DropdownItem onSelect={openOmit} help="Lines of the signed quote, each a credit on this order">Omit from the contract</DropdownItem> : null}
+                  </>
+                ) : null}
+                {bookPlan.matches.length > 0 ? <DropdownItem onSelect={() => { closeMenus(); setMatchOpen(true) }} help="Lines that read like items in My Items take their cost">{`Match ${bookPlan.matches.length} ${bookPlan.matches.length === 1 ? 'line' : 'lines'} to the Price book`}</DropdownItem> : null}   {/* (pending modules S12) the link under the grid is gone with the Add Item row */}
                 <DropdownDivider />
-                {expanded && onPreview ? <DropdownItem shortcut="preview" onSelect={() => { closeMenus(); previewNow() }}><span className={styles.menuIcon}><Icon name="visibility" size={20} /></span>Preview</DropdownItem> : null}   {/* (Dane UAT 6.15) */}
-                <DropdownItem onSelect={() => { closeMenus(); setExpanded((x) => !x) }}><span className={styles.menuIcon}><Icon name={expanded ? 'collapse_content' : 'expand_content'} size={20} /></span>{expanded ? 'Collapse' : 'Expand'}</DropdownItem>
-                <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem>
-                <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+                <DropdownItem disabled={history.past.length === 0} onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
+                <DropdownItem disabled={history.future.length === 0} onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
+                <DropdownDivider />
+                {grid ? <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem> : null}
+                {grid ? <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
                 <DropdownItem submenu onSelect={() => setMoreSub('view')}>View by: {ITEM_VIEW_LABEL[view]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
                 {foldShown ? <DropdownItem onSelect={toggleFold}><span className={styles.menuIcon}><Icon name={foldExpand ? 'expand_all' : 'collapse_all'} size={20} /></span>{foldExpand ? 'Expand All' : 'Collapse All'}</DropdownItem> : null}
               </>
@@ -1304,7 +1343,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           {/* (Dane UAT 6.11, g-sections-trade) The template decides how the lines print (REG-488 / REG-497): when it files them by a label,
               the quote's own sections never reach the paper — said once, above the table, with the way to a template that prints them. */}
           {printsBy && items.some((i) => i.kind === 'group') ? (
-            <p className={styles.printNote} role="note" data-testid="print-note">
+            /* (C-22) on a phone one 44 row: the glyph, the sentence that ends in "…", the link */
+            <p className={styles.printNote} role="note" data-testid="print-note" data-compact={phone || undefined}>
               <Icon name="info" size={20} weight={300} />
               <span>{printsBy.template} prints lines by {PRINTS_BY[printsBy.view]}, so these sections don’t show on the printed {variation ? 'variation order' : 'quote'}.</span>
               {onChangeTemplate ? <button type="button" className={styles.printNoteLink} onClick={onChangeTemplate}>Change template</button> : null}
@@ -1312,9 +1352,10 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           ) : null}
           <ItemsTable
             onAddColumn={() => setSettingsOpen(true)}
-            onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
-            items={items} priceBook={shownBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null} propertyType={propertyType}
+            onReorder={(keys) => (grid ? saveTabletColumns : saveColumns)({ ...colSet, columns: [...keys.map((k) => colSet.columns.find((c) => c.key === k)!), ...colSet.columns.filter((c) => !c.on)] })}
+            items={items} priceBook={shownBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={colSet.details} labels={usedLabels} clientColumns={clientColumns ?? null} propertyType={propertyType}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
+            openLine={openLine} showCost={costOn} showMarkup={markupOn}
             query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })} commentCounts={commentCounts} changes={changes}
             h={{
               onPatch: patchItem,
@@ -1359,7 +1400,13 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             addInputRef={addInputRef}
             addOpenTick={addTick}   /* (S44I, B6) only the Create strip's tick opens the Add Item box now — a row asks the Price book modal */
           />
-          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} entities={seed.entities} billsProject={seed.billsProject ?? null} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
+          {compact ? (
+            /* (P-03, C-08) ≤1024 the totals are a strip pinned at the body's bottom with Adjust · Breakdown, over Add section · + Add item */
+            <ItemsTouchFoot totals={totals} pricing={pricing} studio={seed.studio} entities={seed.entities} billsProject={seed.billsProject ?? null} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)}
+                            onAddItem={() => { void create({}, true, { chain: true }) }} onAddSection={() => createGroup([])} />
+          ) : (
+            <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} entities={seed.entities} billsProject={seed.billsProject ?? null} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
+          )}
         </div>
   )
   return (
@@ -1381,9 +1428,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         /* (REG-570) `sticky`: the top holds while the table scrolls. */
         <SectionCard id="section-items" title={title} open={open} onToggle={onToggle} actions={toolbar} sticky>{body}</SectionCard>
       )}
+      {/* (Quotes on the move — P-03, C-07) ≤1024 the bar is three: Move to section · Delete · More… (a sheet of the rest) — it held 726px of
+          buttons in 372 with Delete off the screen */}
       <DetailBulkBar
         count={selected.size}
-        actions={[
+        actions={compact ? [
+          { label: 'Move to section', onClick: (e) => { bulkAnchor.current = e?.currentTarget ?? null; setBulkMenu('move') } },
+          { label: 'Delete', tone: 'danger', onClick: () => setRemoving(selectedList) },
+          { label: 'More…', onClick: (e) => { bulkAnchor.current = e?.currentTarget ?? null; setBulkMenu('more') } },
+        ] : [
           { label: 'Copy', onClick: () => copyRows(selectedList) },
           { label: 'Set value', onClick: () => setSetValueOpen(true) },
           /* (S44I, B8 — the team's sections prototype) the level it makes, said; Move to section › and Out of the section; (§12.14) Highlight › */
@@ -1394,11 +1447,22 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           /* (sweep S1) Undo on the snackbar puts each line back as it was (its own visibility), as ⌘Z would */
           /* (gaps build B, item 7 — 1.0 G-152) a variation order's Omit and Restore */
           ...(variation ? [{ label: 'Omit', tone: 'danger' as const, onClick: () => signLines(selectedList, true) }, { label: 'Restore', onClick: () => signLines(selectedList, false) }] : []),
-          { label: 'Hide from client', onClick: () => { const before = itemsRef.current.filter((i) => selectedList.includes(i.id)).map((i) => [i.id, i.visibility] as const); snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client`, actionLabel: 'Undo', onAction: () => { for (const [id, v] of before) patchItem(id, { visibility: v as QuoteItem['visibility'] }, { snapshot: false }) } }); setSelected(new Set()) } },
+          { label: 'Hide from client', onClick: hideFromClient },
           { label: 'Delete', tone: 'danger', onClick: () => setRemoving(selectedList) },
         ]}
         onClear={() => setSelected(new Set())}
       />
+      <PortalMenu open={bulkMenu === 'more' && selected.size > 0} anchor={bulkAnchor} onClose={() => setBulkMenu(null)} role="menu" width={MENU_WIDTH.wide} sheetTitle={`${selected.size} selected`}>
+        <div data-testid="bulk-more-menu">
+          <DropdownItem onSelect={() => { setBulkMenu(null); setSetValueOpen(true) }}>Set value…</DropdownItem>
+          <DropdownItem onSelect={() => { setBulkMenu(null); createGroup(selectedList) }}>{bulkLevel === 'sub-section' ? 'Group into sub-section' : 'Group into section'}</DropdownItem>
+          <DropdownItem onSelect={() => { setBulkMenu(null); setPrintAsOpen(true) }}>Print as…</DropdownItem>
+          <DropdownItem submenu onSelect={() => setBulkMenu('highlight')}>Highlight<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+          <DropdownItem onSelect={() => { setBulkMenu(null); hideFromClient() }}>Hide from client</DropdownItem>
+          <DropdownItem onSelect={() => { setBulkMenu(null); copyRows(selectedList) }} help="As a sheet's rows, to paste into Excel">Copy</DropdownItem>
+          {variation ? <><DropdownDivider /><DropdownItem tone="danger" onSelect={() => { setBulkMenu(null); signLines(selectedList, true) }}>Omit</DropdownItem><DropdownItem onSelect={() => { setBulkMenu(null); signLines(selectedList, false) }}>Restore</DropdownItem></> : null}
+        </div>
+      </PortalMenu>
       <PortalMenu open={bulkMenu === 'move' && selected.size > 0} anchor={bulkAnchor} onClose={() => setBulkMenu(null)} role="menu" width={MENU_WIDTH.wide} sheetTitle="Move to section">
         <div data-testid="bulk-move-menu">
           {bulkTargets.map((g) => <DropdownItem key={g.id} help={g.parentId ? `in ${items.find((p) => p.id === g.parentId)?.name ?? ''}` : undefined} onSelect={() => { setBulkMenu(null); moveTicked({ sectionId: g.id }) }}><span className={styles.menuIcon} data-sub={g.parentId ? '' : undefined}><Icon name="folder" size={20} weight={g.parentId ? 300 : 400} /></span>{g.name || 'New section'}</DropdownItem>)}
@@ -1441,7 +1505,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <ExportDialog open={exportOpen} title="Export Items" download={downloadItems} onClose={() => setExportOpen(false)}
                     onDone={(name, format) => snackbar({ message: `Exported ${lineCount} ${lineCount === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <SetValueDialog open={setValueOpen} count={selected.size} labels={usedLabels} units={usedLabels.units} onClose={() => setSetValueOpen(false)} onApply={applySet} initialField={costs && command?.kind === 'setMarkup' && command.n === seenCommand ? 'markupPct' : undefined} costs={costs} />
-      <ColumnSettingsDrawer open={settingsOpen} value={columns} previewHref={`/quotes/${quoteId}/preview?panel=client`} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} hidden={[...(owner ? [] : ['rebate' as const]), ...(costs ? [] : COST_COLUMNS)]} />
+      {/* (P-07) on the touch grid the drawer edits the tablet's own set, remembered per browser */}
+      <ColumnSettingsDrawer open={settingsOpen} value={colSet} previewHref={`/quotes/${quoteId}/preview?panel=client`} onClose={() => setSettingsOpen(false)} onSave={grid ? saveTabletColumns : saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} hidden={[...(owner ? [] : ['rebate' as const]), ...(costs ? [] : COST_COLUMNS)]} />
     </WritingBookContext.Provider>
     </SelectedContext.Provider>
     </BookRuleContext.Provider>

@@ -7,10 +7,21 @@
 .menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .menuIcon[data-on] { color: var(--om-color-primary-default); }
 
-/* ── Touch (REG-312): the 20px link takes a 44 box; the phone folds the actions into a kebab (text-section.tsx). */
+/* ── Touch (REG-312): the 20px link takes a 44 box; the phone folds the actions into a kebab (text-section.tsx) — a house icon button,
+   whose 44 is its own (K2's rule, quotes on the move 2026-10-22: the `::after { inset }` it carried here displaced that box). */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .link { position: relative; }
   .link::after { content: ''; position: absolute; inset: -12px 0; }
-  .anchor button { position: relative; }
-  .anchor button::after { content: ''; position: absolute; inset: -4px; }   /* the folded kebab (36) takes 44 */
+}
+
+/* ── Phone (≤767 — quotes on the move 2026-10-22, B-12): the body is ONE ROW — what the text holds, whether the client sees it, its first
+   lines — and a press opens the full-screen editor (text-section.tsx). The 1,904px editor open mid-page, with its 34px-wide tools, is gone. */
+@media (max-width: 767px) {
+  .row { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 72px; padding: var(--om-spacing-4); border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+  .row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+  .rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+  .rowMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+  .rowPreview { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
+  .rowChev { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+  .sheetBody { display: flex; flex-direction: column; flex: 1; min-height: 0; }   /* the editor fills the full-screen sheet; its text scrolls inside */
 }

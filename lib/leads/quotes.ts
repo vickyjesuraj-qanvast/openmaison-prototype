@@ -28,6 +28,10 @@ export type LeadQuotesData = {
   extras: PickerExtras
   /** (UX audit Q1) The lead's stage — a quote marked with the client on a lead before Quote Sent offers the move. */
   leadStage: string
+  /** (Quotes on the move, K4 — P-06) The lead's phone: the phone card's Remind drafts a WhatsApp nudge on the press (REG-534's rule). */
+  leadPhone: string
+  /** (K4) The studio's name, as the nudge names it. */
+  studioName: string
   now: number
 }
 
@@ -41,9 +45,9 @@ export async function fetchLeadQuotes(leadId: string): Promise<LeadQuotesData> {
     db.select().from(members).then(withYou),
     fetchBrand(),
     pickerExtras(),
-    db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, leadId)),
+    db.select({ stage: leads.stage, phone: leads.phone }).from(leads).where(eq(leads.id, leadId)),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const sent = await sentToClientDates(rows)
-  return { leadStage: leadRow[0]?.stage ?? 'New', quotes: rows.map((q) => ({ ...q, preparedJson: null /* (pending modules S04) the kept preparer (a signature picture) stays out of the list */, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
+  return { leadStage: leadRow[0]?.stage ?? 'New', leadPhone: leadRow[0]?.phone ?? '', studioName: brand.details.name, quotes: rows.map((q) => ({ ...q, preparedJson: null /* (pending modules S04) the kept preparer (a signature picture) stays out of the list */, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null, sentToClientAt: sent.get(q.id) ?? null })), templates, priceBookCount: book[0]?.n ?? 0, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
 }

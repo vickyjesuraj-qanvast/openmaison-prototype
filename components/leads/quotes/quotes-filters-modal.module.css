@@ -26,10 +26,14 @@
    checkbox, which globals grows to 44 on touch. A mouse never sees any of this. (REG-725) The close is the
    house head's and the Date chips the house chip group's, each with its own target. */
 @media (hover: none) {
-  .foot button { position: relative; }
-  .foot button::after { content: ''; position: absolute; inset: -4px; }  /* 36 → 44 */
+  /* (Quotes on the move, K2's lint `icon-button-overlay`) the foot's buttons take the house foot's own touch rule, no ring here */
   .sortRow { padding-block: 0; }
   .sortRow label { min-block-size: 44px; inline-size: 100%; }
   .row { height: auto; min-height: 44px; }
 }
 .headSort { composes: rowRole from '../../om/filters-modal.module.css'; }   /* (pending modules S04) the head's own order, said — the Contracts Filters' line (S03) */
+
+/* (Quotes on the move, K4 — A-21) The phone's one scrolling sheet: the groups 20 apart on the sheets' 16 gutter, each a title over its chips
+   (the house Chips grow to 44 on touch); the Custom dates stack under their chips. */
+.sheetBody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-4); }
+.sheetGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }

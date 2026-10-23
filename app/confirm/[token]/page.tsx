@@ -27,7 +27,7 @@ export default async function ConfirmQuotePage({ params }: { params: Promise<{ t
   if (!data || !extras) {
     /* (F111) a deleted quote, or a link that was never made: the studio's letterhead and the house notice, as the signing links — never a 404 */
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />
+    return <LinkGone studio={brand.details.name} brand={brand.kit} phone={brand.details.phone} />   /* (K4 — A-23) the way to ask for a new link */
   }
   const client = clientQuoteOf(data)
   const shows = extras.open || data.quote.status === 'Confirmed' || data.quote.status === 'Signed' || !!data.quote.confirmedAt

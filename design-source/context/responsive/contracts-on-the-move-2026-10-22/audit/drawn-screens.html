@@ -1,0 +1,246 @@
+<!-- The proposed on-the-move Contracts experience, drawn with OpenMaison's own tokens (the Quotes page's frames). Each frame is a 390-wide phone at 0.82 scale (320px). -->
+<style>
+.mk-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 18px; align-items: start; }
+.mk { display: grid; gap: 10px; min-width: 0; }
+.mk-cap { font-size: 13px; color: var(--muted); }
+.mk-cap b { color: var(--fg); font-weight: 600; display: block; font-size: 14px; margin-bottom: 2px; }
+.phone { --p: #5500ff; --p10: #eee5ff; --p20: #ddccff; --n0: #fff; --n5: #f2f2f2; --n10: #e5e5e5; --n20: #ccc; --n40: #999; --n60: #666; --n90: #1a1a1a; --g: #469e59; --g10: #edf5ee; --r: #db382a; --y: #f19e2b; --y10: #fef5ea;
+  width: 320px; max-width: 100%; height: 660px; border-radius: 30px; border: 7px solid #1a1a1a; background: var(--n5); overflow: hidden; position: relative; color: var(--n90); font: 12.5px/1.35 Inter, system-ui, sans-serif; box-shadow: 0 10px 30px rgba(20, 10, 60, .14); margin: 0 auto; display: flex; flex-direction: column; }
+.phone * { box-sizing: border-box; }
+.phone.tab { width: 100%; max-width: 640px; height: 460px; border-radius: 18px; }
+.p-sb { height: 22px; background: var(--n0); font-size: 10px; display: flex; justify-content: space-between; padding: 4px 16px; color: var(--n90); font-weight: 600; }
+.p-bar { height: 48px; background: var(--n0); display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--n10); flex: 0 0 auto; }
+.p-bar .ttl { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-bar .sub { font-size: 11px; color: var(--n60); font-weight: 400; display: block; }
+.ic { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; color: var(--n90); font-size: 16px; flex: 0 0 auto; }
+.ic.b { border: 1px solid var(--n20); }
+.p-body { flex: 1 1 auto; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.p-body.tight { gap: 8px; }
+.card { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; padding: 12px; }
+.hero .num { font-size: 11px; color: var(--n60); display: flex; gap: 6px; align-items: center; }
+.chip { display: inline-block; font-size: 10px; font-weight: 600; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--n20); color: var(--n60); background: var(--n0); line-height: 1.6; }
+.chip.draft { background: var(--n5); }
+.chip.sent { color: var(--p); border-color: var(--p); background: var(--p10); }
+.chip.ok { color: var(--g); border-color: var(--g); background: var(--g10); }
+.chip.warn { color: #8f5400; border-color: var(--y); background: var(--y10); }
+.hero .ttl { font-weight: 700; font-size: 16px; margin-top: 4px; }
+.hero .amt { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hero .meta { font-size: 11.5px; color: var(--n60); margin-top: 2px; }
+.hero .cl { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--n10); font-size: 12px; }
+.hero .cl .av { width: 28px; height: 28px; border-radius: 50%; background: var(--p10); color: var(--p); font-weight: 700; display: grid; place-items: center; font-size: 11px; }
+.hero .cl .acts { margin-left: auto; display: flex; gap: 6px; }
+.hero .cl .acts span { width: 32px; height: 32px; border: 1px solid var(--n20); border-radius: 8px; display: grid; place-items: center; font-size: 13px; }
+.next { background: var(--p10); border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #4400cc; display: flex; gap: 8px; align-items: flex-start; }
+.next b { font-weight: 600; }
+.sec { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; overflow: hidden; }
+.sec .h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-weight: 600; font-size: 12.5px; }
+.sec .h .n { color: var(--n60); font-weight: 400; font-size: 11px; }
+.sec .h .amt { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sec .h .chev { color: var(--n60); width: 20px; text-align: right; }
+.line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 12px 9px 16px; border-top: 1px solid var(--n10); font-size: 12px; }
+.line .nm { font-weight: 500; }
+.line .q { color: var(--n60); font-size: 11px; grid-column: 1; }
+.line .t { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.line.dim { opacity: .55; }
+.p-foot { flex: 0 0 auto; background: var(--n0); border-top: 1px solid var(--n10); padding: 10px 12px calc(10px + 6px); display: flex; gap: 8px; }
+.btn { flex: 1; height: 44px; border-radius: 6px; display: grid; place-items: center; font-weight: 600; font-size: 14px; border: 1px solid var(--p); color: var(--p); background: var(--n0); }
+.btn.fill { background: var(--p); color: #fff; }
+.btn.ghost { border-color: var(--n20); color: var(--n90); }
+.dock { flex: 0 0 auto; height: 56px; background: var(--n0); border-top: 1px solid var(--n10); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; font-size: 9px; color: var(--n60); text-align: center; }
+.dock span::before { content: "▢"; display: block; font-size: 14px; }
+.dock .on { color: var(--p); font-weight: 600; }
+.lrow { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 12px; background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; }
+.lrow .t1 { font-weight: 600; font-size: 13px; grid-column: 1; }
+.lrow .t2 { grid-column: 1; }
+.lrow .t2 { font-size: 11px; color: var(--n60); }
+.lrow .amt { font-weight: 700; font-size: 15px; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-variant-numeric: tabular-nums; }
+.lrow .st { display: flex; gap: 6px; align-items: center; margin-top: 4px; grid-column: 1 / -1; }
+.lrow .st .when { font-size: 11px; color: var(--n60); }
+.mrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 12px; background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; align-items: center; }
+.mrow .t1 { font-weight: 600; font-size: 13px; }
+.mrow .t2 { font-size: 11px; color: var(--n60); }
+.mrow .chev { grid-column: 2; grid-row: 1 / span 2; color: var(--n40); }
+.mrow .t1, .mrow .t2 { grid-column: 1; }
+.toolbar { display: flex; align-items: center; gap: 8px; }
+.toolbar .pill { font-weight: 600; font-size: 13px; flex: 1; }
+.fld { background: var(--n0); border: 1px solid var(--n20); border-radius: 4px; padding: 6px 10px; font-size: 13px; position: relative; min-height: 44px; display: flex; align-items: center; }
+.fld i { position: absolute; top: -7px; left: 8px; font-size: 9.5px; color: var(--n60); background: var(--n0); padding: 0 3px; font-style: normal; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sheet { position: absolute; left: 7px; right: 7px; bottom: 7px; background: var(--n0); border-radius: 14px 14px 22px 22px; padding: 12px; box-shadow: 0 -8px 30px rgba(0, 0, 0, .25); display: grid; gap: 8px; }
+.sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--n20); margin: -4px auto 4px; }
+.sheet .h { font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .h span { font-weight: 400; color: var(--n60); font-size: 12px; }
+.scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .35); }
+.paper { background: #fff; border: 1px solid var(--n10); border-radius: 4px; margin: 0 auto; width: 100%; aspect-ratio: 210 / 297; padding: 10% 8%; font-size: 6px; color: #333; line-height: 1.5; display: grid; gap: 4px; align-content: start; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.paper .l { height: 4px; background: #ddd; border-radius: 2px; }
+.paper .l.w60 { width: 60%; } .paper .l.w30 { width: 30%; } .paper .l.w80 { width: 80%; }
+.paper .zoom { font-size: 9px; color: #666; text-align: center; margin-top: 6px; }
+.pages { display: flex; gap: 4px; justify-content: center; }
+.pages i { width: 6px; height: 6px; border-radius: 50%; background: var(--n20); display: block; }
+.pages i.on { background: var(--p); }
+.callout { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; position: absolute; z-index: 2; box-shadow: 0 0 0 2px #fff; }
+.mk-notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 13px; }
+.mk-notes li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; }
+.mk-notes li b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; }
+/* tablet frame */
+.tab .split { display: grid; grid-template-columns: minmax(0, 1fr) 240px; flex: 1 1 auto; overflow: hidden; }
+.tab .doc { padding: 12px; overflow: hidden; display: grid; gap: 8px; align-content: start; }
+.tab .pane { border-left: 1px solid var(--n10); background: var(--n0); padding: 12px; display: grid; gap: 8px; align-content: start; }
+.tab .pane .ph { font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; }
+.grid4 { background: var(--n0); border: 1px solid var(--n10); border-radius: 8px; overflow: hidden; font-size: 11.5px; }
+.grid4 .gr { display: grid; grid-template-columns: minmax(0, 1fr) 48px 70px 72px; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--n10); align-items: center; }
+.grid4 .gr:first-child { border-top: 0; background: var(--n5); font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--n60); font-weight: 600; }
+.grid4 .gr .r { text-align: right; font-variant-numeric: tabular-nums; }
+.grid4 .gr.s { background: var(--p10); font-weight: 600; }
+.grid4 .in { border: 1px solid var(--n20); border-radius: 4px; padding: 3px 6px; text-align: right; background: var(--n0); }
+</style>
+
+<div class="mk-row">
+
+  <!-- 1 · the contract opens as its document -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Olivia Martinez<span class="sub">Interior Design Service Agreement · from OM-10001</span></span><span class="ic">⋮</span></div>
+      <div class="p-body tight">
+        <div class="card hero" style="position:relative"><span class="callout" style="top:-8px;left:-8px">1</span>
+          <div class="num"><span class="chip sent">Sent to Client</span><span>From template · 22 Oct ’26</span></div>
+          <div class="ttl">Interior Design Service Agreement</div>
+          <div class="meta">Quote OM-10001 · S$49,838.00 · Confirmed</div>
+          <div class="cl"><span class="av">OM</span><span>Olivia Martinez<br><span style="color:var(--n60);font-size:11px">+65 9123 4567</span></span><span class="acts"><span>☏</span><span>✉</span><span>✎</span></span></div>
+        </div>
+        <div class="next" style="position:relative"><span class="callout" style="top:-8px;left:-8px">2</span><span>→</span><span><b>With Olivia for signature</b> — sent 20 min ago · not opened yet · link open until 29 Oct.</span></div>
+        <div class="sec" style="position:relative"><span class="callout" style="top:-8px;left:-8px">3</span>
+          <div class="h"><span>1. Scope of works</span><span class="chev">⌄</span></div>
+          <div class="line" style="grid-template-columns:1fr"><span class="nm" style="font-weight:400;color:var(--n90)">The Designer shall carry out the interior design and renovation works at <b>Blk 123 Tampines St 11 #05-67</b> as described in quote <b>OM-10001</b>…</span></div>
+        </div>
+        <div class="sec"><div class="h"><span>2. Contract sum</span><span class="n">S$49,838.00</span><span class="chev">›</span></div></div>
+        <div class="sec"><div class="h"><span>3. Payment terms</span><span class="chev">›</span></div></div>
+        <div class="sec"><div class="h"><span>Signatures</span><span class="n">Studio · Client — placed</span><span class="chev">›</span></div></div>
+        <div class="mrow"><span class="t1">Signature fields</span><span class="chev">›</span><span class="t2">Studio signature · Client signature · placed</span></div>
+        <div class="mrow"><span class="t1">Before the client signs</span><span class="chev">›</span><span class="t2">Read to the end · Tick to accept</span></div>
+      </div>
+      <div class="p-foot" style="position:relative"><span class="callout" style="top:-8px;left:-8px">4</span><span class="btn ghost">Edit</span><span class="btn fill">Remind</span></div>
+    </div>
+    <div class="mk-cap"><b>1 · The contract opens as its document</b>Not the editor. The hero says who it is for, which quote it names and where it stands; <b style="display:inline">2</b> one line says what is happening on the client's side; <b style="display:inline">3</b> the clauses are reading cards split at the headings, with the signature boxes as the last card; <b style="display:inline">4</b> a sticky foot with Edit and the state's one primary (Send · Remind · Download signed copy · Move to Won).</div>
+  </div>
+
+  <!-- 2 · Edit: a short list -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">✕</span><span class="ttl">Edit contract<span class="sub">Interior Design Service Agreement · saved just now</span></span><span class="chip ok" style="font-size:11px">Done</span></div>
+      <div class="p-body tight">
+        <div class="mrow" style="position:relative"><span class="callout" style="top:-8px;left:-8px">5</span><span class="t1">Details</span><span class="chev">›</span><span class="t2">Olivia Martinez · 9123 4567 · 22 Oct ’26 · OM-10001 · Demo Studio Pte Ltd</span></div>
+        <div class="mrow"><span class="t1">Document</span><span class="chev">›</span><span class="t2">12 clauses · 10 fields fill in · Studio and Client sign</span></div>
+        <div class="mrow"><span class="t1">Signature fields</span><span class="chev">›</span><span class="t2">Studio · Client — placed under Signatures</span></div>
+        <div class="mrow"><span class="t1">Before the client signs</span><span class="chev">›</span><span class="t2">Read to the end · Tick to accept</span></div>
+        <div class="mrow"><span class="t1">Automation</span><span class="chev">›</span><span class="t2">Task when signed · Move the lead to Won</span></div>
+        <div class="mrow"><span class="t1">Files</span><span class="chev">›</span><span class="t2">Signed copy kept as a PDF</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>2 · Edit is a short list</b><b style="display:inline">5</b> Six rows, each with a one-line summary — Details is one form (the recipient and their number, the date, the quote, the issuing entity: the four things that change on site); Document opens the paper full-screen. Most rows never need opening. The address carries the step, so Back works.</div>
+  </div>
+
+  <!-- 3 · the Document screen -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Document<span class="sub">clause 2 of 12 · saved just now</span></span><span class="ic b">≡</span><span class="chip ok" style="font-size:11px">Done</span></div>
+      <div style="height:44px;background:var(--n0);border-bottom:1px solid var(--n10);display:grid;grid-template-columns:repeat(7,1fr);align-items:center;text-align:center;font-weight:600;font-size:13px;position:relative"><span class="callout" style="top:-8px;left:-8px">6</span><span>↶</span><span style="font-size:11px">Text ▾</span><span><b>B</b></span><span><i>I</i></span><span><u>U</u></span><span>☰</span><span style="color:var(--p)">+ ▾</span></div>
+      <div class="p-body tight" style="background:var(--n0);gap:8px;font-size:13px;line-height:1.5">
+        <div style="font-weight:700;font-size:14px">2. Contract sum</div>
+        <div>The total contract sum is <span class="chip sent" style="font-size:11px">S$49,838.00</span> inclusive of GST at <span class="chip sent" style="font-size:11px">9%</span>, as set out in quote <span class="chip sent" style="font-size:11px">OM-10001</span> dated <span class="chip sent" style="font-size:11px">22 Oct ’26</span>.</div>
+        <div>Any variation to the works shall be agreed in writing as a variation order before it is carried out.|</div>
+        <div style="font-weight:700;font-size:14px;margin-top:6px">3. Payment terms</div>
+        <div>Payment shall be made in the stages set out in the quote’s payment schedule…</div>
+      </div>
+      <div class="p-foot" style="justify-content:space-between;align-items:center;font-size:12px;color:var(--n60)"><span>Field chips fill in from the lead and the quote — tap one to see what it prints as</span></div>
+    </div>
+    <div class="mk-cap"><b>3 · The Document screen</b>The paper as a full-screen editor with <b style="display:inline">6</b> one row of tools at a 44 pitch — Undo · Text style · B · I · U · list · <b style="display:inline">+ ▾</b> (Insert a field · Add a signature field · Link · Image · Highlight · Alignment). Nothing scrolls sideways, nothing hidden; the outline (≡) jumps to a clause; no Maison button over the text.</div>
+  </div>
+
+  <!-- 4 · placing a signature field -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Document<span class="sub">clause 11 of 12</span></span><span class="ic b">≡</span><span class="chip ok" style="font-size:11px">Done</span></div>
+      <div class="p-body tight" style="background:var(--n0);opacity:.35;font-size:13px"><div>11. Governing law and disputes</div><div>This agreement is governed by the laws of Singapore…</div></div>
+      <div style="background:var(--n0);border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -8px 24px rgba(0,0,0,.12);padding:12px;display:grid;gap:8px;position:relative"><span class="callout" style="top:-8px;left:-8px">7</span>
+        <div style="font-weight:700;font-size:15px">Add a signature field</div>
+        <div style="display:flex;gap:6px"><span class="chip sent" style="font-size:11px">Client signature</span><span class="chip" style="font-size:11px">Client initials</span><span class="chip ok" style="font-size:11px">Studio — placed</span></div>
+        <div style="font-size:12px;color:var(--n60);margin-top:4px">Where should it go?</div>
+        <div class="mrow" style="padding:10px 12px"><span class="t1" style="font-size:12.5px">After 11. Governing law and disputes</span><span class="chev">○</span></div>
+        <div class="mrow" style="padding:10px 12px;border-color:var(--p)"><span class="t1" style="font-size:12.5px">Under Signatures</span><span class="chev" style="color:var(--p)">●</span></div>
+        <div class="mrow" style="padding:10px 12px"><span class="t1" style="font-size:12.5px">At the end</span><span class="chev">○</span></div>
+        <div style="display:flex;gap:8px;margin-top:4px"><span class="btn ghost" style="flex:0 0 auto;padding:0 14px">Cancel</span><span class="btn fill">Add under Signatures</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>4 · A signature field is placed by choosing where, never by a thumb's caret</b><b style="display:inline">7</b> Which field, then where — the clauses from the outline, Under Signatures picked for you. It lands as its own block, the sheet closes, the box scrolls into view with the fresh pulse and the snackbar says "Client signature added under Signatures · Undo".</div>
+  </div>
+
+  <!-- 5 · the client signs on their phone -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ttl">Demo Studio Pte Ltd<span class="sub">Interior Design Service Agreement · for Olivia Martinez</span></span></div>
+      <div class="p-body tight">
+        <div class="card hero" style="position:relative"><span class="callout" style="top:-8px;left:-8px">8</span>
+          <div class="num"><span class="chip sent">To sign</span><span>12 clauses · about 6 min to read</span></div>
+          <div class="amt" style="font-size:22px">S$49,838.00</div>
+          <div class="meta">Quote OM-10001 · 22 Oct ’26 · Demo Studio Pte Ltd, UEN 201912345K</div>
+        </div>
+        <div class="sec"><div class="h"><span>1. Scope of works</span><span class="chev">⌄</span></div><div class="line" style="grid-template-columns:1fr"><span class="nm" style="font-weight:400">The Designer shall carry out the interior design and renovation works at Blk 123 Tampines St 11 #05-67 as described in quote OM-10001…</span></div></div>
+        <div class="sec"><div class="h"><span>2. Contract sum</span><span class="n">S$49,838.00</span><span class="chev">›</span></div></div>
+        <div class="sec"><div class="h"><span>3. Payment terms</span><span class="chev">›</span></div></div>
+        <div class="sec"><div class="h"><span>4. Defects period</span><span class="chev">›</span></div></div>
+        <div style="font-size:11px;color:var(--n60);text-align:center">Read to the end to sign · 9 more clauses</div>
+      </div>
+      <div class="p-foot" style="position:relative;flex-direction:column;gap:6px"><span class="callout" style="top:-8px;left:-8px">9</span><span class="btn fill" style="width:100%">Continue reading</span><span style="font-size:11px;color:var(--n60);text-align:center">Then: your name and NRIC, draw or type your signature</span></div>
+    </div>
+    <div class="mk-cap"><b>5 · The client signs in two minutes, in one hand</b><b style="display:inline">8</b> The studio, the sum and the time it takes first; the clauses as cards that fold; <b style="display:inline">9</b> one filled button that walks them — Continue reading until the end, then Sign, which opens a short sheet (name · NRIC · draw or type · the gates' tick) — and a signed page they can keep. 48 buttons, 16 inputs, nothing under 14.</div>
+  </div>
+
+  <!-- 6 · a template on a phone -->
+  <div class="mk">
+    <div class="phone">
+      <div class="p-sb"><span>9:41</span><span>●●●</span></div>
+      <div class="p-bar"><span class="ic">←</span><span class="ttl">Interior Design Service Agreement<span class="sub">Default · used by 5 · edited 14 Aug</span></span><span class="ic">⋮</span></div>
+      <div class="p-body tight">
+        <div class="next" style="position:relative"><span class="callout" style="top:-8px;left:-8px">10</span><span>✓</span><span>Fills <b>10 fields</b> from the lead and the quote · the client signs · goes out with every new contract.</span></div>
+        <div class="mrow"><span class="t1">1. Scope of works</span><span class="chev">›</span><span class="t2">The Designer shall carry out the interior design and renovation works at {Project address}…</span></div>
+        <div class="mrow"><span class="t1">2. Contract sum</span><span class="chev">›</span><span class="t2">The total contract sum is {Quote total} inclusive of GST…</span></div>
+        <div class="mrow"><span class="t1">3. Payment terms</span><span class="chev">›</span><span class="t2">Payment shall be made in the stages set out…</span></div>
+        <div class="mrow"><span class="t1">4. Defects period</span><span class="chev">›</span><span class="t2">A defects liability period of {Defects months} months…</span></div>
+        <div class="mrow"><span class="t1">Signatures</span><span class="chev">›</span><span class="t2">Studio signature · Client signature</span></div>
+        <div class="mrow"><span class="t1">Before the client signs</span><span class="chev">›</span><span class="t2">Read to the end · Tick to accept · “I have read and agree”</span></div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>6 · A template is an outline you open one clause at a time</b><b style="display:inline">10</b> The status row says what it does; each clause is a row that opens full-screen to fix a word (the Document screen of 3); the signing rules are switches in their own row. Never a shrunk A4, never a 3,800px text box. The gallery is a list with Default and At handover on top.</div>
+  </div>
+
+</div>
+
+<h3 style="margin:28px 0 10px;font-size:17px">On a tablet</h3>
+<div class="mk-row" style="grid-template-columns:minmax(0,1fr)">
+  <div class="mk">
+    <div class="phone tab" style="display:grid;grid-template-columns:300px 1fr;grid-template-rows:auto 1fr;height:420px">
+      <div class="p-bar" style="grid-column:1/-1"><span class="ic">←</span><span class="ttl">Olivia Martinez<span class="sub">Interior Design Service Agreement · Sent to Client</span></span><span class="btn fill" style="flex:0 0 auto;height:36px;padding:0 16px">Remind</span><span class="ic">⋮</span></div>
+      <div style="border-right:1px solid var(--n10);background:var(--n0);padding:10px;display:grid;gap:8px;align-content:start;position:relative"><span class="callout" style="top:-8px;left:-8px">11</span>
+        <div class="mrow" style="border-color:var(--p)"><span class="t1">Details</span><span class="chev">›</span><span class="t2">Olivia · 9123 4567 · 22 Oct · OM-10001</span></div>
+        <div class="mrow"><span class="t1">Document</span><span class="chev">›</span><span class="t2">12 clauses</span></div>
+        <div class="mrow"><span class="t1">Signature fields</span><span class="chev">›</span><span class="t2">Studio · Client — placed</span></div>
+        <div class="mrow"><span class="t1">Before the client signs</span><span class="chev">›</span><span class="t2">Read to the end · Tick to accept</span></div>
+        <div class="mrow"><span class="t1">Automation</span><span class="chev">›</span><span class="t2">Won when signed</span></div>
+      </div>
+      <div style="padding:12px;display:grid;gap:8px;align-content:start;overflow:hidden">
+        <div class="card"><div style="font-weight:700;font-size:13px;margin-bottom:6px">Details</div>
+          <div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Title</span>Interior Design Service Agreement</div>
+          <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Recipient</span>Olivia Martinez · 9123 4567</div><div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Contract date</span>22 Oct ’26</div></div>
+          <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Quote</span>OM-10001 · S$49,838.00 · Confirmed</div><div class="fld" style="border:1px solid var(--n20);border-radius:6px;padding:8px 10px;font-size:12px"><span style="font-size:10px;color:var(--n60);display:block">Issued by</span>Demo Studio Pte Ltd</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="mk-cap"><b>On a tablet held sideways: the list beside the open section</b><b style="display:inline">11</b> Edit keeps the section list as a 300 pane and the open section beside it, as the quote does at 1024; the paper opens as the Document screen with the one tool row, and the Outline is a pane, never a drawer over the place a field is being put. Held upright, a tablet follows the phone.</div>
+  </div>
+</div>

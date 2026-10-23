@@ -1,0 +1,32 @@
+/* (Quotes on the move, P-01 · P-08) The Quote screen's document: the reading cards' own rules (components/quotes/confirm/reading-cards.module.css
+   — REG-597's card, composed, never copied) with the fold a phone needs, on the phone scale — a name 16, its figures 14, amounts tabular. */
+.doc { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.docHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 44px; padding-left: var(--om-spacing-1); }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.docHead button { min-height: 44px; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: 0 var(--om-spacing-3); }
+.section[data-open] { padding-bottom: var(--om-spacing-3); }
+/* the fold's head: a 48 row — name · count · amount · chevron */
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; margin: 0; padding: var(--om-spacing-1) 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; border-radius: var(--om-radius-1); }
+.head:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.headName { flex: 1 1 auto; min-width: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.headCount { flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.headAmount { flex-shrink: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chev { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.section[data-open] .chev { transform: rotate(180deg); }
+.cards { display: flex; flex-direction: column; gap: var(--om-spacing-2); list-style: none; margin: 0; padding: 0; }
+.card { composes: card from '../confirm/reading-cards.module.css'; }
+.cards > .card { grid-template-columns: minmax(0, 1fr) auto; align-items: start; background: var(--om-color-surface-bg); }
+.text { composes: text from '../confirm/reading-cards.module.css'; }
+.name { composes: name from '../confirm/reading-cards.module.css'; }
+.desc { composes: desc from '../confirm/reading-cards.module.css'; }
+.sub { composes: sub from '../confirm/reading-cards.module.css'; }
+.amount { composes: amount from '../confirm/reading-cards.module.css'; }
+.none { margin: 0; padding: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+/* (P-08) the phone scale, on top of the composed rules (one step more specific, so the sheets' order never decides) */
+@media (max-width: 1024px) {
+  .cards .name { font: var(--om-type-subheading-l); }
+  .cards .sub, .cards .desc { font: var(--om-type-body-m); }
+  .cards .desc { -webkit-line-clamp: 3; white-space: pre-line; }
+  .cards .amount { font: var(--om-type-subheading-l); }
+}

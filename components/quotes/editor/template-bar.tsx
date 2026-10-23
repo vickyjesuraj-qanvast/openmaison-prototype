@@ -36,8 +36,8 @@ export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs, locked =
         {words && words.sections !== 'No starter sections' ? <span className={styles.cardMeta}>Starts with {words.sections}</span> : null}
         <span className={styles.actions}>
           <Button appearance="text" onPress={onChange} isDisabled={busy}>{cur ? 'Change' : 'Choose a template'}</Button>
-          {cur && !cur.deleted ? <Button appearance="text" iconEnd={<Icon name="edit" size={18} />} onPress={onEdit} isDisabled={busy}>Edit template</Button> : null}
-          <Button appearance="text" onPress={onSaveAs} isDisabled={busy}>Save as new template</Button>
+          {cur && !cur.deleted ? <Button appearance="text" iconEnd={<Icon name="edit" size={18} />} onPress={onEdit} isDisabled={busy} className={styles.deskAction}>Edit template</Button> : null}
+          <Button appearance="text" onPress={onSaveAs} isDisabled={busy} className={styles.deskAction}>Save as new template</Button>   {/* (B-24) ≤767 these two live in the Quote screen's ⋮ */}
         </span>
       </div>
     </div>

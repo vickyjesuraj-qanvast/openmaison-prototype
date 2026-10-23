@@ -300,15 +300,51 @@
   .plus { display: none; }
   .handle::after { inset: -12px -6px; }
   .wrap { --sel-w: 80px; }
-  .eye, .fold, .foldAll, .expand, .pick, .link, .kebab button { position: relative; }
+  .eye, .fold, .foldAll, .expand, .pick, .link { position: relative; }
   .fold::after, .foldAll::after { content: ''; position: absolute; inset: -12px; }
   .eye::after { content: ''; position: absolute; inset: -12px -10px; }   /* 40 wide: its box must not reach into the name box beside it (REG-365) */
-  .kebab button::after, .expand::after { content: ''; position: absolute; inset: -10px; }
+  /* (C-03, Quotes on the move) the row kebab is the house IconButton and carries its own centred 44 (REG-344) — the `inset: -10px` this
+     rule used to add moved that box up-left by 22; the Expand button is the module's own and keeps its overlay */
+  .expand::after { content: ''; position: absolute; inset: -10px; }
   .link::after { content: ''; position: absolute; inset: -12px 0; }
   .row .cell .input:not([data-desc]):not([data-name]), .row[data-active] .cell .input:not([data-desc]):not([data-name]) { height: 44px; }
   .input[data-name] { height: 44px; margin: -12px 0; }   /* the name keeps its 20 line in the layout but takes a 44 box under a finger */
+  .input[data-name]:focus { height: 44px; margin: -12px calc(-1 * var(--om-spacing-2)); }   /* (C-14) the focused name box kept the desktop's 24 — the :focus rule above outranked this block */
   .row .cell .pick, .row[data-active] .cell .pick { height: 44px; }
 }
+/* ── (Quotes on the move — P-07 · Q-03, 2026-10-22) The touch tablet's working grid (items-layout.ts `grid`): Item · Qty · Unit · Unit price ·
+   Total fit the card with no pan — the Item column is the fluid one from 160, the number rides inside it, the fixed four are tight, the
+   "+" head and the number column are gone; a column switched on in Column settings scrolls as before behind the frozen Item and Total. ── */
+.wrap[data-touch-grid] { --sel-w: 56px; --num-w: 0px; }
+/* the table is the card's width, never its content's max-content (a description's one-line width made the five columns pan): the Item column
+   flexes to what the fixed four leave; a column switched on overflows the rows and the scroller pans behind the frozen Item and Total as before */
+.wrap[data-touch-grid] .table, .wrap[data-touch-grid] .head { min-width: 100%; width: 100%; }
+.wrap[data-touch-grid] .cell { padding-left: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
+.wrap[data-touch-grid] .colSel { padding: 0 var(--om-spacing-1); }
+.wrap[data-touch-grid] .head .colSel { padding-right: var(--om-spacing-1); }
+.wrap[data-touch-grid] .colItem { flex: 1 1 160px; width: auto; min-width: 160px; padding-left: var(--om-spacing-3); }
+.wrap[data-touch-grid] .colQty { width: 60px; }
+.wrap[data-touch-grid] .colUnit { width: 92px; }
+.wrap[data-touch-grid] .colUnitPrice { width: 104px; }
+.wrap[data-touch-grid] .colAdd { display: none; }
+.wrap[data-touch-grid] .colTotal { width: 144px; padding-right: 60px; padding-left: var(--om-spacing-2); }
+.wrap[data-touch-grid] .kebab { right: var(--om-spacing-3); }
+.wrap[data-touch-grid] .row[data-depth='1'] .colItem { padding-left: var(--om-spacing-6); }
+.wrap[data-touch-grid] .row[data-depth='2'] .colItem { padding-left: var(--om-spacing-8); }
+.wrap[data-touch-grid] .footRow .colItem { padding-left: var(--om-spacing-6); }
+.wrap[data-touch-grid] .footRow[data-depth='2'] .colItem { padding-left: var(--om-spacing-8); }
+.wrap[data-touch-grid] .guides { display: none; }   /* the tree's guides were drawn for the 32 inset; the touch rows step in 24 */
+/* nothing nowrap may widen the table past the card (`.table { min-width: max-content }`): a section's foot and the Sum row wrap in the Item cell */
+.wrap[data-touch-grid] .footBody { flex-wrap: wrap; white-space: normal; row-gap: 0; }
+.wrap[data-touch-grid] .footRow .colItem, .wrap[data-touch-grid] .sumRow .colItem { white-space: normal; overflow: hidden; }
+/* the number inside the Item cell, before the name (the # column is gone) */
+.numInline { flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; align-self: flex-start; padding-top: 2px; }
+/* a tap on the Total opens the rest of the line in the pane: the amount is a 44 press, drawn as the amount */
+.totalOpen { display: inline-flex; align-items: center; justify-content: flex-end; min-height: 44px; min-width: 44px; max-width: 100%; margin: -12px 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: right; cursor: pointer; border-radius: var(--om-radius-1); }
+.totalOpen:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (P-07) The tablet held upright: the cards with the 400 line pane beside them while a line is open — the list stays in view. */
+.cardsWrap[data-pane] { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: var(--om-spacing-4); align-items: start; }
+.drawerFields { display: flex; flex-direction: column; }
 @media (max-width: 767px) {
   .addInner { gap: var(--om-spacing-3); }
   .addField { width: 200px; }

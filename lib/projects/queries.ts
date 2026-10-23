@@ -327,7 +327,7 @@ export type ProjectDetail = {
   money: { valueMinor: number | null; source: 'quote' | 'agreed' | null; /** (pending modules S02 — MI-014, 1.0's "From signed quote · n line items") the signed quote's lines, Declined left out */ lines: number | null; stages: PaymentStage[]; splitName: string | null; /** (Projects round 5) the one set of numbers — lib/projects/money.ts */ summary: MoneySummary
     /** (gaps build F2 — F2-Q1) profit and margin — Owners and Admins only, null for anyone else */ profit?: import('@/lib/finance/profit').ProfitView | null } | null
   quote: { id: string; number: string; title: string; status: string; amountMinor: number; signedAt: Date | null } | null
-  contract: { id: string; title: string; status: string; signedAt: Date | null } | null
+  contract: { id: string; title: string; status: string; signedAt: Date | null; /** (Contracts on the move, C4 — P-11 · C-23) when it went to the client — the Overview's Documents row on ≤1024 */ sentAt: Date | null } | null
   renders: { id: string; name: string; thumb: string | null }[]
   activity: ActivityEvent[]
   /** (REG-955) The Overview's Latest updates card: the three newest, how many there are, how many wait In review. */
@@ -662,7 +662,7 @@ async function fetchProjectDetailUncached(projectId: string): Promise<ProjectDet
     waitingOn: waitingList.map((w) => w.text),   // (fix-A, A-10) the same lines the Status card presses
     money,
     quote: q ? { id: q.id, number: q.number, title: q.title, status: q.status, amountMinor: q.amountMinor, signedAt: q.signedAt } : null,
-    contract: c ? { id: c.id, title: c.title, status: c.status, signedAt: c.signedAt } : null,
+    contract: c ? { id: c.id, title: c.title, status: c.status, signedAt: c.signedAt, sentAt: c.sentAt } : null,
     renders: renderRows,
     activity: act.events.slice(0, 5),
     updates: latestUpdates,

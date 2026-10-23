@@ -5,9 +5,8 @@ import { contracts, leads, quotes, type Contract } from '@/lib/db/schema'
 import { fetchBrand } from '@/lib/templates/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
-import { countStandardDocs, namedQuotesOf } from '@/lib/contracts/queries'
+import { countStandardDocs, namedQuotesOf, type NamedQuote } from '@/lib/contracts/queries'
 import { defaultQuote } from '@/lib/contracts/snapshot'
-import type { QuoteForSend } from '@/lib/contracts/readiness'
 import type { ContractViewer } from '@/lib/contracts/policy'
 import { fetchContractRules } from '@/lib/contracts/link-server'
 
@@ -21,8 +20,9 @@ export type LeadContractsData = {
   studioName: string
   /** (REG-631, contracts parity Q-04) Who is looking — moving a studio-marked signature back is an Owner's or an Admin's. */
   viewer: ContractViewer
-  /** (UX audit C2) The quotes the contracts name, by id, and Settings' quote approval — the tab's send checks. */
-  quotes: Record<string, QuoteForSend>
+  /** (UX audit C2) The quotes the contracts name, by id, and Settings' quote approval — the tab's send checks. (Contracts on the move, C4 — P-07)
+      With the amount each signs, for the phone card. */
+  quotes: Record<string, NamedQuote>
   approvalRequired: boolean
   /** (S44Q — row 334) the member approves quotes: their send approves a Draft quote a contract names */
   canApprove: boolean

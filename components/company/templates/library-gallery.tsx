@@ -12,7 +12,8 @@ import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
-import { MOBILE, TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TABLET_DOWN, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import { useLongPress } from '@/components/leads/quotes/use-long-press'
 import { useFlagPref } from '@/lib/prefs'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -197,6 +198,14 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   focusFilter?: { key: string } | null
   /** (UX audit S12) A library with one way to make an entry (Materials): a plain button with its name, in place of a New ▾ of one row. */
   newAction?: (place: LibraryPlace) => { label: string; onPress: () => void }
+  /** (Contracts on the move, P-10 · C-01 C-02 C-03 C-05 C-07 · C-14 — his "please check and built accordingly" 2026-10-22; OPT-IN, Templates ›
+      Contracts only — every other library is as it was at every width) The gallery on the move. `rows` (the caller's phone model: a phone, a
+      tablet held upright) draws the entries as a LIST of rows in the cards' place — the name 16/600, the state as words at 14, the kind's
+      facts at 14, a chevron; the whole row opens it, ⋮ its menu (no Open: the row is the open), a hold selects where the bulk bar exists —
+      `pinned` first (at the top level from every folder, saying where it lives), the folders as rows under the entries. `tabletColumns` =
+      the list view's default set on a touch tablet (the rest in Column settings, remembered for the tablet) with the ⋮ frozen at the right.
+      A touch tablet's cards read their lines at 14. */
+  move?: { rows: boolean; facts: (t: T) => string; state?: (t: T) => string | null; pinned?: (t: T) => boolean; tabletColumns?: string[]; rowTestId?: string; menuTestId?: string }
 }
 /** (F118) Where the member stands when they press New ▾. */
 export type LibraryPlace = { folderId: string | null; here: string }
@@ -261,6 +270,11 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
     return o.n ? `${countLine(o.n, noun.one, noun.many)} restored — ${o.kept} ${o.kept === 1 ? 'stays' : 'stay'}` : `Nothing was restored — ${o.kept === 1 ? 'it stays' : `${o.kept} stay`}`
   }
   const phone = useMediaQuery(MOBILE)
+  /* (Contracts on the move, P-10 · C-05) a library that opts in: rows on the caller's phone model; a touch tablet's list opens with its own set */
+  const rowsView = !!p.move?.rows
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
+  const tabletKey = p.move?.tabletColumns?.join(',') ?? ''
+  const tabletSet = !!tabletKey && touchTablet
   /* (verify round 3) 768–1024: list view's Column settings rides the page kebab (the button leaves the bar in CSS, `.columnsTool`), so the
      list's bar is the grid's one row — the library's name whole, nothing to jump when the folded search opens. Read when ⋮ opens. */
   const tabletDown = useMediaQuery(TABLET_DOWN)
@@ -286,7 +300,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const [seenFocus, setSeenFocus] = useState(p.focusFilter ?? null)
   if ((p.focusFilter ?? null) !== seenFocus) { setSeenFocus(p.focusFilter ?? null); if (p.focusFilter) setFilter(p.focusFilter.key) }
   const [listPref, setListPref] = useFlagPref(`om.${p.tableKey}.list`, p.defaultView === 'list')
-  const view: 'grid' | 'list' = phone || !listPref ? 'grid' : 'list'
+  const view: 'grid' | 'list' = phone || rowsView || !listPref ? 'grid' : 'list'   // (P-10) the rows take the cards' place, and the list's
   const foldColumns = view === 'list' && tabletDown   // (verify round 3) Column settings in ⋮ at 768–1024
   const [newOpen, setNewOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
@@ -302,8 +316,14 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const [deletedOpen, setDeletedOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const byColumn = p.byColumn ?? !p.shell
-  const defs = useMemo<readonly TableColumnDef[]>(() => [{ key: 'name', label: p.nameLabel ?? 'Template', track: 'minmax(318px, 1fr)', locked: true }, ...p.columns.map(({ key, label, track, hidden }) => ({ key, label, track, hidden })), { key: 'updated', label: 'Updated', track: '132px' }, ...(byColumn ? [{ key: 'by', label: 'Updated by', track: '200px' }] : [])], [p.columns, p.nameLabel, byColumn])
-  const columnPrefs = useTableColumns(p.tableKey, defs, phone)
+  const defs = useMemo<readonly TableColumnDef[]>(() => {
+    const all: TableColumnDef[] = [{ key: 'name', label: p.nameLabel ?? 'Template', track: 'minmax(318px, 1fr)', locked: true }, ...p.columns.map(({ key, label, track, hidden }) => ({ key, label, track, hidden })), { key: 'updated', label: 'Updated', track: '132px' }, ...(byColumn ? [{ key: 'by', label: 'Updated by', track: '200px' }] : [])]
+    /* (P-10 · C-05) a library that names its tablet set: every other column waits in Column settings on a touch tablet */
+    if (!tabletKey) return all
+    const keep = new Set(['name', ...tabletKey.split(',')])
+    return all.map((d) => (keep.has(d.key) ? d : { ...d, tabletHidden: true }))
+  }, [p.columns, p.nameLabel, byColumn, tabletKey])
+  const columnPrefs = useTableColumns(p.tableKey, defs, phone, tabletSet)
   /* (REG-653, Q-15) Facet filters narrow the book first; the segments count what is left; search and the sort follow. */
   const [facet, setFacet] = useState<Record<string, string>>({})
   const [facetsOpen, setFacetsOpen] = useState(false)
@@ -343,6 +363,15 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const browsing = !!F && !finding
   const listed = useMemo(() => (browsing ? shown.filter((t) => placeIdOf(t) === openId) : shown), [browsing, shown, openId, flist])   // eslint-disable-line react-hooks/exhaustive-deps
   const shownFolders = useMemo(() => (browsing ? foldersIn(flist, openId) : []), [browsing, flist, openId])
+  /* (Contracts on the move, P-10) the rows' order: the pinned ones first (Default · At handover) — at the top level from every folder, each
+     saying where it lives — then the rest as the list has them */
+  const pinnedOf = p.move?.pinned
+  const moveEntries = useMemo(() => {
+    if (!rowsView || !pinnedOf) return listed
+    const lifted = browsing && !openId ? shown.filter((t) => pinnedOf(t) && placeIdOf(t) !== null) : []
+    const all = [...lifted, ...listed.filter((t) => !lifted.includes(t))]
+    return [...all.filter((t) => pinnedOf(t)), ...all.filter((t) => !pinnedOf(t))]
+  }, [rowsView, pinnedOf, listed, shown, browsing, openId])   // eslint-disable-line react-hooks/exhaustive-deps
   const folderCount = (f: Folder) => {
     const n = items.filter((t) => placeIdOf(t) === f.id).length
     const subs = foldersIn(flist, f.id).length
@@ -361,7 +390,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   /* (REG-653, Q-15) The list's selection: what is ticked among what the list shows — (REG-664) its folders too, so Move to Folder works
      on many at once. */
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const liveSelected = useMemo(() => new Set([...listed.filter((t) => selected.has(t.id)).map((t) => t.id), ...shownFolders.filter((f) => selected.has(f.id)).map((f) => f.id)]), [listed, shownFolders, selected])
+  const liveSelected = useMemo(() => new Set([...(rowsView ? moveEntries : listed).filter((t) => selected.has(t.id)).map((t) => t.id), ...shownFolders.filter((f) => selected.has(f.id)).map((f) => f.id)]), [rowsView, moveEntries, listed, shownFolders, selected])
   const clearSelection = () => setSelected(new Set())
   /* Selection is for the library's own bulk actions, or for someone who runs the folders; anyone else files what they may one at a time
      from its menu — a Designer's list keeps no ticks (REG-654), not a row of boxes most of which Move to Folder would refuse. */
@@ -369,9 +398,10 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const isFolderId = (id: string) => flist.some((f) => f.id === id)
 
   const openLabel = (t: T) => (typeof p.openLabel === 'function' ? p.openLabel(t) : p.openLabel ?? 'Open')
-  const rows = (t: T): LibraryKebabItem[] => [{ label: openLabel(t), onSelect: () => p.onOpen(t) }, ...(p.kebab?.(t) ?? [])]
+  /* (P-10) a row on the move is the open itself — its ⋮ starts with the kind's own rows */
+  const rows = (t: T): LibraryKebabItem[] => [...(rowsView ? [] : [{ label: openLabel(t), onSelect: () => p.onOpen(t) }]), ...(p.kebab?.(t) ?? [])]
   const pageRows = p.pageMenu?.(shown) ?? []
-  const menuItem = menuFor ? listed.find((t) => t.id === menuFor) ?? null : null
+  const menuItem = menuFor ? listed.find((t) => t.id === menuFor) ?? (rowsView ? items.find((t) => t.id === menuFor) ?? null : null) : null
   const delBlock = (t: T) => p.mayChange?.(t) ?? p.deleteBlock?.(t) ?? null
   /* (critic 14) Why this one can't be filed: it has no place in folders (fixed), or its rename rule refuses the viewer. */
   const moveBlock = (t: T) => p.fixed?.(t) ?? p.mayChange?.(t) ?? null
@@ -607,9 +637,10 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {/* (sweep S5 #15) the listing's Filters: the count rides the button as a badge (REG-69 · REG-295) */}
           {p.facets?.length ? <span className={styles.filterWrap}><Tooltip label="Filters" shortcut="filters"><IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={activeFacets.length ? `Filters (${activeFacets.length} active)` : 'Filters'} onClick={() => setFacetsOpen(true)} selected={activeFacets.length > 0} /></Tooltip>{activeFacets.length ? <span className={styles.filterBadge} aria-hidden>{activeFacets.length}</span> : null}</span> : null}
           {view === 'list' ? <span className={styles.columnsTool}><Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setColumnsOpen(true)} /></Tooltip></span> : null}
-          <span className={gallery.viewToggle} data-kb="view">
+          {/* (P-10) the rows are the one view on a phone and a tablet held upright — no toggle there */}
+          {rowsView ? null : <span className={gallery.viewToggle} data-kb="view">
             <SegmentedIconToggle label="View" value={view} options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]} onChange={(v) => setListPref(v === 'list')} />
-          </span>
+          </span>}
           </>)}
           {kebab}
           </div>
@@ -636,8 +667,34 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           <span className={gallery.emptyTitle}>{activeFilter !== 'all' ? `Nothing under ${(p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? activeFilter}` : p.empty.title}</span>
           <span className={gallery.emptyHelp}>{p.empty.help}</span>
         </div>
+      ) : rowsView && p.move ? (
+        /* (Contracts on the move, P-10 · C-01 · C-02 · C-03 · C-07) the entries as rows — pinned first — then the folders as rows */
+        <div className={styles.moveList} data-kb-list={noun.one} data-testid="library-rows">
+          {moveEntries.length ? (
+            <div className={styles.moveGroup} role="list" aria-label={p.ariaLabel}>
+              {moveEntries.map((t) => {
+                const where = placeText(t)
+                return (
+                  <MoveRow key={t.id} id={t.id} testId={p.move!.rowTestId ?? 'library-move-row'} menuTestId={p.move!.menuTestId ?? 'library-move-row-menu'}
+                           name={t.title} state={p.move!.state?.(t) ?? null} facts={p.move!.facts(t)} place={where || null}
+                           openLabel={`${openLabel(t)} ${t.title}`} selected={liveSelected.has(t.id)} selectable={selectable} selectMode={liveSelected.size > 0}
+                           onOpen={() => p.onOpen(t)} onToggle={() => toggleOne(t.id)} menuOpen={menuFor === t.id} onMenu={(el) => openMenu(t, el)} />
+                )
+              })}
+            </div>
+          ) : null}
+          {shownFolders.length ? (
+            <div className={styles.moveGroup} role="list" aria-label="Folders">
+              {shownFolders.map((f) => (
+                <MoveRow key={f.id} id={f.id} folder testId="library-move-folder" menuTestId="library-move-folder-menu" name={f.name} state={null} facts={folderCount(f)} place={null}
+                         openLabel={`Open ${f.name}`} selected={liveSelected.has(f.id)} selectable={selectable} selectMode={liveSelected.size > 0}
+                         onOpen={() => go(f.id)} onToggle={() => toggleOne(f.id)} menuOpen={folderMenu === f.id} onMenu={(el) => openFolderMenu(f, el)} />
+              ))}
+            </div>
+          ) : null}
+        </div>
       ) : view === 'list' ? (
-        <LibraryTable kbNoun={noun.one} rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.listChips ?? p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
+        <LibraryTable kbNoun={noun.one} frozenKebab={tabletSet} rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.listChips ?? p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
                       sort={sort} sortable={(k) => sortValue(k) !== null} onSort={onSort} openLabel={openLabel}
                       place={F && finding ? placeText : undefined}
                       folders={shownFolders} folderCount={folderCount} onOpenFolder={(f) => go(f.id)} folderMenuFor={folderMenu} onFolderMenu={openFolderMenu}
@@ -653,7 +710,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             </FolderGroup>
           ) : null}
           {listed.length ? (
-            <div className={`${gallery.grid} ${styles.cards}`} role="list" aria-label={p.ariaLabel}>
+            <div className={`${gallery.grid} ${styles.cards}`} role="list" aria-label={p.ariaLabel} data-move={p.move ? '' : undefined}>
               {listed.map((t) => (
                 <div key={t.id} className={gallery.card} role="listitem" data-testid="library-card" data-kb-row data-kb-id={t.id} data-selected={liveSelected.has(t.id) || undefined} data-selectable={selectable || undefined}>
                   {/* (sweep S5 #7) the selection rides the card too — the bulk bar was list-only, so a phone (always the grid) could never use it */}
@@ -666,7 +723,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
                       <span className={`${gallery.meta} ${styles.cardMeta}`}>{F && finding && placeText(t) ? <><span className={styles.place}><Icon name="folder" size={14} weight={300} />{placeText(t)}</span>{' · '}</> : null}{p.meta(t, { filter: activeFilter })}</span>
                     </span>
                   </button>
-                  <span className={gallery.usage}>{p.foot ? p.foot(t) : <>{p.usage(t)} · edited {ago(t.updatedAt.getTime(), now)}{(t.editedBy ?? t.author) ? ` by ${t.editedBy ?? t.author}` : ''}</>}</span>
+                  <span className={`${gallery.usage} ${styles.cardUsage}`}>{p.foot ? p.foot(t) : <>{p.usage(t)} · edited {ago(t.updatedAt.getTime(), now)}{(t.editedBy ?? t.author) ? ` by ${t.editedBy ?? t.author}` : ''}</>}</span>
                   <span className={`${gallery.kebab} ${styles.cardKebab}`}>
                     <Tooltip label="More options" disabled={menuFor === t.id}>
                       <IconButton icon="more_vert" label={`More options for ${t.title}`} size={24} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuFor === t.id}
@@ -758,11 +815,47 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   )
 }
 
+/** (Contracts on the move, P-10 · C-01 · C-02 · C-03 · C-07 — his "please check and built accordingly" 2026-10-22) An entry, or a folder, as a
+    row on a phone and a tablet held upright: a card of the page's width — the name 16/600 (up to two lines, clear of the ⋮ in the corner),
+    the state as words at 14, the facts at 14 with the chevron that says the whole row opens. No checkbox (C-03): a hold selects where the
+    bulk bar exists, and while anything is selected a tap selects too (the Quotes card's rule, use-long-press.ts). The ⋮ is the house icon
+    button with its own 44 box. */
+function MoveRow({ id, name, state, facts, place, folder = false, openLabel, selected, selectable, selectMode, onOpen, onToggle, menuOpen, onMenu, testId, menuTestId }: {
+  id: string; name: string; state: string | null; facts: string; place: string | null; folder?: boolean; openLabel: string
+  selected: boolean; selectable: boolean; selectMode: boolean; onOpen: () => void; onToggle: () => void
+  menuOpen: boolean; onMenu: (el: HTMLElement) => void; testId: string; menuTestId: string
+}) {
+  const hold = useLongPress(onToggle, { enabled: selectable })
+  return (
+    <div className={styles.moveRow} role="listitem" data-testid={testId} data-template-id={folder ? undefined : id} data-folder-id={folder ? id : undefined} data-selected={selected || undefined} data-kb-row data-kb-id={id}>
+      <button type="button" className={styles.moveOpen} aria-label={selectMode && selectable ? `${selected ? 'Unselect' : 'Select'} ${name}` : openLabel} aria-pressed={selectMode && selectable ? selected : undefined} data-kb-open
+              onClick={() => { if (hold.swallowClick()) return; if (selectMode && selectable) onToggle(); else onOpen() }}
+              onContextMenu={selectable ? (e) => e.preventDefault() : undefined} {...hold.handlers}>
+        <span className={styles.moveName}>{folder ? <span className={styles.moveGlyph} aria-hidden><Icon name="folder" size={20} weight={300} /></span> : null}{name}</span>
+        {state ? <span className={styles.moveState} data-testid="library-move-state">{state}</span> : null}
+        <span className={styles.moveFacts}>
+          <span className={styles.moveFactsText}>{place ? <><span className={styles.place}><Icon name="folder" size={14} weight={300} />{place}</span>{' · '}</> : null}{facts}</span>
+          <span className={styles.moveChev} aria-hidden><Icon name="chevron_right" size={24} /></span>
+        </span>
+      </button>
+      <span className={styles.moveKebab}>
+        <Tooltip label={folder ? 'Folder actions' : 'More options'} disabled={menuOpen}>
+          <IconButton icon="more_vert" label={folder ? `Actions for ${name}` : `More options for ${name}`} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuOpen}
+                      onClick={(e) => onMenu(e.currentTarget)} data-testid={menuTestId} />
+        </Tooltip>
+      </span>
+    </div>
+  )
+}
+
 /** The list view (REG-537 / REG-538): the quote templates list's stylesheet on the listing's table model — head 56, rows 60, frozen Template, resizable, draggable, the row kebab on hover with its side measured.
     (REG-653, price book parity Q-15) Sortable heads sort (↑ · ↓ · off); a list with bulk actions carries its selection in the frozen name cell — the listing's box (REG-614). */
-function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, columns, extra, onReorder, glyph, chips, onOpen, menuFor, onMenu, ariaLabel, sort, sortable, onSort, openLabel, selection, place, folders = [], folderCount, onOpenFolder, folderMenuFor = null, onFolderMenu }: {
+function LibraryTable<T extends LibraryItem>({ kbNoun, frozenKebab = false, rows, now, tableKey, columns, extra, onReorder, glyph, chips, onOpen, menuFor, onMenu, ariaLabel, sort, sortable, onSort, openLabel, selection, place, folders = [], folderCount, onOpenFolder, folderMenuFor = null, onFolderMenu }: {
   /** (REG-713) the J / K list's noun ("Next template") */
   kbNoun?: string
+  /** (Contracts on the move, P-10 · C-05 — opt-in) A touch tablet: the row's ⋮ is a frozen cell at the right (the Quotes table's rule, K4 —
+      P-11), its head an empty cell over it, so the first screen carries the actions. */
+  frozenKebab?: boolean
   rows: T[]; now: number; tableKey: string; columns: readonly TableColumn[]; extra: LibraryColumn<T>[]; onReorder: (keys: string[]) => void
   glyph: (t: T) => ReactNode; chips?: (t: T) => ReactNode; onOpen: (t: T) => void
   menuFor: string | null; onMenu: (t: T, el: HTMLElement) => void; ariaLabel: string
@@ -784,9 +877,10 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
   const allOn = !!selection && ids.length > 0 && ids.every((id) => selection.selected.has(id))
   const someOn = !!selection && ids.some((id) => selection.selected.has(id))
   return (
-    <div ref={frame} className={table.card} role="table" data-drag-root="" aria-label={ariaLabel} data-cols={tableKey} data-kb-list={kbNoun ?? 'item'} data-overflow={overflowing || undefined} data-testid="library-table"
-         style={{ '--tracks': tracks } as React.CSSProperties} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+    <div ref={frame} className={table.card} role="table" data-drag-root="" aria-label={ariaLabel} data-cols={tableKey} data-kb-list={kbNoun ?? 'item'} data-overflow={overflowing || undefined} data-testid="library-table" data-frozen-kebab={frozenKebab || undefined}
+         style={{ '--tracks': tracks } as React.CSSProperties} onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); if (frozenKebab) el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) }}>
       <div ref={headRow} className={table.head} role="row">
+        {frozenKebab ? <div className={`${table.hCell} ${styles.hActions}`} role="columnheader" aria-label="Actions" data-col="actions" data-testid="library-actions-head" /> : null}
         {columns.map((c) => (
           <div key={c.key} className={`${table.hCell} ${c.key === 'name' ? table.colName : ''} ${c.pinned ? table.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}
                aria-sort={sort?.key === c.key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
@@ -808,13 +902,13 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           return cell(key, '')
         }
         return (
-          <div key={f.id} className={table.row} role="row" data-testid="library-folder-row" data-kb-row data-kb-id={f.id} data-selected={selection?.selected.has(f.id) || undefined}>
+          <div key={f.id} className={frozenKebab ? `${table.row} ${styles.frozenRow}` : table.row} role="row" data-testid="library-folder-row" data-kb-row data-kb-id={f.id} data-selected={selection?.selected.has(f.id) || undefined}>
             {columns.map((c) => <Fragment key={c.key}>{render(c.key)}</Fragment>)}
             {onFolderMenu ? (
-              <span className={table.actions} data-open={open || undefined}>
-                <span className={table.actionsInner}>
+              <span className={frozenKebab ? `${table.actions} ${styles.frozenActions}` : table.actions} data-open={open || undefined}>
+                <span className={frozenKebab ? `${table.actionsInner} ${styles.frozenInner}` : table.actionsInner}>
                   <span className={table.menuWrap}>
-                    <span className={table.float}>
+                    <span className={frozenKebab ? `${table.float} ${styles.frozenFloat}` : table.float}>
                       <Tooltip label="Folder actions" disabled={open}>
                         <IconButton icon="more_vert" label={`Actions for ${f.name}`} variant="primary" className={table.touchBtn} aria-haspopup="menu" aria-expanded={open}
                                     onClick={(e) => onFolderMenu(f, e.currentTarget)} />
@@ -840,12 +934,12 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           return c ? cell(key, c.cell(t)) : null
         }
         return (
-          <div key={t.id} className={table.row} role="row" data-testid="library-row" data-kb-row data-kb-id={t.id} data-selected={selection?.selected.has(t.id) || undefined}>
+          <div key={t.id} className={frozenKebab ? `${table.row} ${styles.frozenRow}` : table.row} role="row" data-testid="library-row" data-kb-row data-kb-id={t.id} data-selected={selection?.selected.has(t.id) || undefined}>
             {columns.map((c) => <Fragment key={c.key}>{render(c.key)}</Fragment>)}
-            <span className={table.actions} data-open={open || undefined}>
-              <span className={table.actionsInner}>
+            <span className={frozenKebab ? `${table.actions} ${styles.frozenActions}` : table.actions} data-open={open || undefined}>
+              <span className={frozenKebab ? `${table.actionsInner} ${styles.frozenInner}` : table.actionsInner}>
                 <span className={table.menuWrap}>
-                  <span className={table.float}>
+                  <span className={frozenKebab ? `${table.float} ${styles.frozenFloat}` : table.float}>
                     <Tooltip label="More options" disabled={open}>
                       <IconButton icon="more_vert" label={`More options for ${t.title}`} variant="primary" className={table.touchBtn} aria-haspopup="menu" aria-expanded={open}
                                   onClick={(e) => onMenu(t, e.currentTarget)} />

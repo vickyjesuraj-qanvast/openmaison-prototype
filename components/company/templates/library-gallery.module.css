@@ -202,3 +202,43 @@
 .gCheck { margin: 3px; flex-shrink: 0; }
 /* (UX audit S8) the list ghost's Column settings box: a phone has the cards, and no Column settings */
 @media (max-width: 767px) { .gDeskOnly.gDeskOnly { display: none; } }
+
+/* ── (Contracts on the move, P-10 · C-01 · C-02 · C-03 · C-05 · C-07 · C-14 — his "please check and built accordingly" 2026-10-22) OPT-IN: only a
+   library that passes `move` (Templates › Contracts) draws any of this; every other library is as it was at every width. ── */
+/* the rows (a phone, a tablet held upright): one card a row on the page's width — the name 16/600 up to two lines, the state as words 14,
+   the facts 14 with the chevron at the end of the last line; the ⋮ in the corner; 12 inside, 8 between rows, the folders a group under them */
+.moveList { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.moveGroup { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.moveRow { position: relative; display: flex; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.moveRow[data-selected] { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+.moveOpen { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: var(--om-spacing-3); border: 0; background: none; border-radius: var(--om-radius-2); color: inherit; text-align: left; cursor: pointer; font: inherit; -webkit-touch-callout: none; user-select: none; }
+.moveOpen:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.moveName { padding-right: 40px; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.moveGlyph { display: inline-flex; vertical-align: -4px; margin-right: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); }
+.moveState { padding-right: 40px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.moveFacts { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.moveFactsText { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.moveChev { display: inline-flex; flex-shrink: 0; margin-right: calc(-1 * var(--om-spacing-1)); color: var(--om-color-on-surface-secondary); }
+.moveKebab { position: absolute; top: var(--om-spacing-2); right: var(--om-spacing-2); display: inline-flex; }
+/* a touch tablet's list view: the ⋮ a frozen cell at the right (the Quotes table's, K4 — P-11), the head's empty cell over it; no 84 band */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .hActions.hActions, .frozenActions.frozenActions { position: sticky; right: 0; grid-column: -2 / -1; grid-row: 1; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .hActions.hActions { z-index: 3; padding: 0; }
+  .frozenActions.frozenActions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; display: flex; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  [data-selected] > .frozenActions.frozenActions { background: var(--om-color-primary-variant); }
+  .frozenInner.frozenInner { position: static; transform: none; }
+  .frozenFloat.frozenFloat { box-shadow: none; background: transparent; }
+  .frozenActions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph in a column that always shows it */
+  .frozenRow.frozenRow > [role='cell']:last-of-type { padding-right: var(--om-spacing-6); }
+  [data-frozen-kebab][data-overflow]:not([data-at-end]) .hActions.hActions, [data-frozen-kebab][data-overflow]:not([data-at-end]) .frozenActions.frozenActions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}
+/* (C-14) a touch tablet's cards (1024 held sideways) read their two lines at 14 */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .cards[data-move] .cardMeta.cardMeta, .cards[data-move] .cardUsage.cardUsage { font: var(--om-type-body-m); }
+}
+/* (P-10) the ghost's rows: on the caller's phone model only (a phone, a tablet held upright), the cards and the view toggle everywhere else */
+.gRows.gRows { display: none; }
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  .gRows.gRows { display: flex; }
+  .gNoRows.gNoRows { display: none; }
+}

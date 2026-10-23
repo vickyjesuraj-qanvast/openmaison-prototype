@@ -75,6 +75,12 @@
   .chips { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; overflow: visible; row-gap: var(--om-spacing-1); padding-right: 0; -webkit-mask-image: none; mask-image: none; }
   .foldable { display: none; }
 }
+/* Touch (REG-312 — Quotes on the move, B-21): the title's switch is a 24px-tall button, the one header control without a 44 box; the
+   invisible ::after grows its box without moving the title. */
+@media (hover: none) and (max-width: 1024px), (max-width: 767px) {
+  .switch { position: relative; }
+  .switch::after { content: ''; position: absolute; inset: -10px 0; }
+}
 /* (REG-632, contracts parity Q-09) The contract raised from this quote — a chip that opens it. */
 .chipLink { display: inline-flex; border-radius: var(--om-radius-1); text-decoration: none; }
 .chipLink:hover > span { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }

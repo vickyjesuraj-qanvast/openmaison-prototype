@@ -113,6 +113,28 @@
 @media (max-width: 1024px) {
   .panel { width: min(var(--om-modal-xl), calc(100vw - 48px)); max-height: calc(100dvh - 48px); }
 }
+/* (Quotes on the move, K4 — A-13) Under 1,100 the 276 tiles wrapped 3 + 1 beside an empty rail and pushed More ways to start below the fold
+   of a landscape tablet: four across at 220 (the well keeps its 268:180 shape), so every tile and both rows sit on the first screen. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .tile { width: 220px; flex: 0 0 220px; }
+  .well { height: auto; aspect-ratio: 268 / 180; }
+}
+
+/* (Quotes on the move, K4 — P-10) The phone's steps: the lead list ("Who is this quote for?") and the four ways to start, 56px rows on the
+   house list's frame — a 36 glyph tile, the title at 16, the meaning at 14 (P-08), a chevron or the default row's Change at the end. */
+.phoneRow { display: flex; align-items: center; min-height: 56px; width: 100%; }
+.phoneRow + .phoneRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.phoneMain { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-4); border: 0; background: none; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.phoneMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.phoneTrail { flex-shrink: 0; padding-right: var(--om-spacing-2); }
+.phoneRow .rowTitle { font: var(--om-type-subheading-l); }
+.phoneRow .rowDesc { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whoSearch { width: 100%; }
+.whoRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; width: 100%; padding: var(--om-spacing-2) var(--om-spacing-4); border: 0; background: none; cursor: pointer; text-align: left; font: inherit; color: var(--om-color-on-surface-default); }
+.whoRow + .whoRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.whoRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.whoRow[aria-current] { color: var(--om-color-primary-default); }
+.whoName { flex: 1; min-width: 0; font: var(--om-type-body-l); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 767px) {
   .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
   /* (REG-725) `.overlay .panel` / `.panel .heading`: the house panel's r12 on every corner and the house head's padding must not win
@@ -134,12 +156,8 @@
   .well { height: auto; aspect-ratio: 268 / 180; }
   .doc { width: 60%; height: 90%; }
 }
-/* Touch (REG-273): the bare 24px kebab takes a 44px box ((REG-725) the head's close is the house IconButton, which carries its own). */
-@media (max-width: 767px), (hover: none) {
-  .kebab { position: absolute; }
-  .kebab > button { position: relative; }
-  .kebab > button::after { content: ''; position: absolute; inset: -10px; }
-}
+/* Touch (REG-273): the bare 24px kebab is the house IconButton, which carries its own centred 44 box — (Quotes on the move, K2's lint
+   `icon-button-overlay`) no override here, which displaced it. */
 /* (REG-525) the pinned footer shares the sheet's 16 gutter and clears the home indicator (dialog.module.css); doubled (REG-725) so the
    house foot's padding never wins the tie */
 @media (max-width: 767px) { .panel .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); } }

@@ -1,0 +1,4 @@
+{"marked": "2026-10-22T15:42Z (23:12 SGT) — \"I have marked everything in the doc please check and built accordingly\"",
+ "proposals": {"P-01": "build", "P-02": "build", "P-03": "build", "P-04": "build", "P-05": "build", "P-06": "build", "P-07": "build", "P-08": "build", "P-09": "build", "P-10": "build", "P-11": "build", "P-12": "build", "P-13": "build"},
+ "fixes": {"A-09": "build", "A-13": "build", "A-15": "build", "A-24": "build", "A-25": "build", "B-17": "build", "B-21": "build", "C-06": "build", "C-13": "build", "C-26": "build"},
+ "questions": {"Q-01": "phone", "Q-02": "type", "Q-03": "readonly", "Q-04": "photo", "Q-05": "paper", "Q-06": "page", "Q-07": "map", "Q-08": "leads"}}

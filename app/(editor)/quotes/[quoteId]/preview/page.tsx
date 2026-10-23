@@ -19,8 +19,9 @@ export async function generateMetadata({ params }: { params: Promise<{ quoteId: 
 }
 
 /** Preview (REG-490): the quote through its template, as the client sees it; `?print=1` prints the same pages (Download as PDF · Print); `?version=n` opens a kept earlier version (REG-565);
-    (S44F — NB-02 (c)) `?against=m` compares the version shown with an earlier kept one; (S44I, row 352) `?panel=client` opens with What your client sees. */
-export default async function QuotePreviewPage({ params, searchParams }: { params: Promise<{ quoteId: string }>; searchParams: Promise<{ from?: string; print?: string; version?: string; against?: string; panel?: string }> }) {
+    (S44F — NB-02 (c)) `?against=m` compares the version shown with an earlier kept one; (S44I, row 352) `?panel=client` opens with What your client sees;
+    (Quotes on the move, K3 — P-05) `?paper=1` opens a phone on the paper viewer — the Quote screen's "As printed" lands here. */
+export default async function QuotePreviewPage({ params, searchParams }: { params: Promise<{ quoteId: string }>; searchParams: Promise<{ from?: string; print?: string; version?: string; against?: string; panel?: string; paper?: string }> }) {
   const { quoteId } = await params
   if (await refusesPath(`/quotes/${quoteId}/preview`)) return <AccessGate section="Quotes" />   // (S44O — call C6) the role's own list (Marketing never reads a quote's money, a project or Finance) — before a record is read
   const sp = await searchParams
@@ -35,5 +36,5 @@ export default async function QuotePreviewPage({ params, searchParams }: { param
   /* (pending modules S06) Accounting reads a quote or a variation order a Money row links to — read-only, Back to that Money */
   /* (pending modules S41b-1) the lines as this member may see them — no cost, mark-up or rebate for whoever doesn't see costs — and no Internal copy */
   const sight = sightOf(viewer)
-  return <QuotePreview data={{ ...data, data: docDataFor(data.data, sight) }} costs={sight.costs} from={readFrom(sp.from)} print={sp.print === '1'} openPanel={sp.panel === 'client'} send={{ approval, canApprove }} readOnly={!opensWorkspace(viewer.role)} />
+  return <QuotePreview data={{ ...data, data: docDataFor(data.data, sight) }} costs={sight.costs} from={readFrom(sp.from)} print={sp.print === '1'} openPanel={sp.panel === 'client'} paper={sp.paper === '1'} send={{ approval, canApprove }} readOnly={!opensWorkspace(viewer.role)} />
 }

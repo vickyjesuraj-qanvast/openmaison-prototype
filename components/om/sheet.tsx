@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useSyncExternalStore, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { bottomSheet, overlayFade } from '@/lib/motion'
@@ -33,6 +33,36 @@ export function useSheetLayout(): boolean {
     () => window.matchMedia(QUERY).matches,
     () => false,
   )
+}
+
+/**
+ * (quotes on the move 2026-10-22, B-19) A sheet with a pinned foot lifts the snackbar above that foot while it is open: `--sheet-foot` on
+ * the root = the foot's top measured from the screen's bottom, and the house snackbar rests at the higher of the dock's band and this
+ * (snackbar.module.css). Off a level-1 page the dock is 0, so a snackbar raised from Version History landed over its Close. ≤767 only —
+ * a Drawer slid in from the right and a centred dialog have no foot on the screen's edge. Written once the sheet has risen (its slide
+ * moves the foot), kept in step by a ResizeObserver, and put back on close — the earlier value if another sheet wrote one.
+ * (contracts on the move 2026-10-22, B-21) A sheet with no foot — a menu sheet (the ⋮, a status list) — lifts it above its own top edge
+ * instead: a snackbar raised just before the sheet opened ("Sent to Olivia for signature") landed over the sheet's last rows (Archive ·
+ * Delete), the one place a finger was about to press. The snackbar never lands on a sheet; it waits above it, on the scrim.
+ */
+export function useSheetFootLift(on: boolean, panel: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!on || !window.matchMedia(QUERY).matches) return
+    const root = document.documentElement
+    const before = root.style.getPropertyValue('--sheet-foot')
+    const footOf = () => panel.current?.querySelector<HTMLElement>('[data-surface-foot]') ?? panel.current ?? null
+    const write = () => {
+      const foot = footOf()
+      if (!foot) return
+      root.style.setProperty('--sheet-foot', `${Math.max(0, Math.round(window.innerHeight - foot.getBoundingClientRect().top))}px`)
+    }
+    write()
+    const late = window.setTimeout(write, 450)   // after the sheet's slide (lib/motion bottomSheet)
+    const ro = new ResizeObserver(write)
+    const foot = footOf()
+    if (foot) ro.observe(foot)
+    return () => { window.clearTimeout(late); ro.disconnect(); if (before) root.style.setProperty('--sheet-foot', before); else root.style.removeProperty('--sheet-foot') }
+  }, [on, panel])
 }
 
 /**
@@ -69,6 +99,7 @@ export function Sheet({
   useScrollLock(open)   // the page never scrolls behind this surface
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  useSheetFootLift(open, panel)   // (B-19) the snackbar clears the pinned foot · (B-21) with no foot, the sheet's own top edge
   const onScrim = useCallback((e: React.MouseEvent) => { if (e.target === e.currentTarget) onClose() }, [onClose])
   if (typeof document === 'undefined') return null
   return createPortal(

@@ -49,9 +49,11 @@ export async function cardImage(card: LinkCard): Promise<ImageResponse> {
             <div style={{ fontSize: 40, fontWeight: 600, color: ink, display: 'flex' }}>{clip(card.studio, 34)}</div>
           </div>
           <div style={{ width: 96, height: 2, background: '#E5E5E5', margin: '40px 0 36px', display: 'flex' }} />
-          {card.eyebrow ? <div style={{ fontSize: 24, fontWeight: 600, color: accent, letterSpacing: 2, textTransform: 'uppercase', display: 'flex' }}>{card.eyebrow}</div> : null}
+          {/* (Contracts on the move, C3 — C-26) a chat shows the card ~300px wide: the eyebrow and the line are drawn at 40 and 44 of 1200 (24 and 30 before —
+              5px and 7px in WhatsApp's preview), so "Agreement to sign" and "For Olivia Martinez" survive the shrink; clipped to what fits the width at that size */}
+          {card.eyebrow ? <div style={{ fontSize: 40, fontWeight: 600, color: accent, letterSpacing: 1, textTransform: 'uppercase', display: 'flex' }}>{clip(card.eyebrow, 32)}</div> : null}
           <div style={{ fontSize: 56, fontWeight: 600, color: ink, lineHeight: 1.18, marginTop: card.eyebrow ? 14 : 0, maxWidth: 1000, textAlign: 'center', display: 'flex', justifyContent: 'center' }}>{clip(card.title, 64)}</div>
-          {card.line ? <div style={{ fontSize: 30, color: grey, marginTop: 18, display: 'flex' }}>{clip(card.line, 60)}</div> : null}
+          {card.line ? <div style={{ fontSize: 44, color: grey, marginTop: 18, display: 'flex' }}>{clip(card.line, 40)}</div> : null}
         </div>
       </div>
     ),

@@ -28,19 +28,30 @@
 .body a { color: var(--om-color-primary-default); text-decoration: underline; }
 .body:focus-visible { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
 
-/* ── Phone: the tools scroll under a finger and the right slot takes its own line; touch boxes at 44 (REG-312). */
+/* ── Phone: the tools wrap and the right slot takes its own line; touch boxes at 44 (REG-312). */
 @media (max-width: 767px) {
   .toolbar { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); }
-  .tools { flex-basis: 100%; flex-wrap: wrap; gap: var(--om-spacing-2); overflow: visible; }   /* the tools wrap at 8 apart (a 324 line holds nine; the link follows on the next) instead of scrolling off the edge (REG-437) */
-  .group { gap: var(--om-spacing-2); }
-  .rule { display: none; }   /* (fix-C, C-29) a wrapped line never starts after a stray rule — the 8 between groups parts them (REG-437 keeps the wrap) */
+  .tools { flex-basis: 100%; flex-wrap: wrap; overflow: visible; }   /* the tools wrap instead of scrolling off the edge (REG-437) */
+  .rule { display: none; }   /* (fix-C, C-29) a wrapped line never starts after a stray rule — the gap between groups parts them (REG-437 keeps the wrap) */
   .right { flex-basis: 100%; }
   .right > * { flex: 1; }
   .body { padding: var(--om-spacing-4); }
 }
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+/* ── Touch tablet (768–1024 on a touch pointer): the 24 tools keep the mock's 40 pitch and each takes a 44 box; (B-13, quotes on the move
+   2026-10-22) the row wraps instead of scrolling, so those boxes are no longer clipped to 35 by `overflow-x: auto`. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
   .tool { position: relative; }
   .tool::after { content: ''; position: absolute; inset: -10px; }
+}
+@media (max-width: 1024px) {
+  .tools { overflow: visible; flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+}
+/* ── Phone (≤767 — quotes on the move 2026-10-22, B-12 · P-08): the tools ARE 44 boxes, touching, at a 44 pitch — eight to a 358 line, the
+   rest on the next — the mark still 24. A tap two pixels past Bold's edge is Italic's own, never a miss between two 34-wide boxes (REG-312). */
+@media (max-width: 767px) {
+  .tools { gap: 0; row-gap: 0; }
+  .group { gap: 0; }
+  .tool { width: 44px; height: 44px; }
 }
 
 /* (S44I — call C2) The text colour tool: the kit's swatches in its menu, and the one-line note when nothing is picked to colour. */

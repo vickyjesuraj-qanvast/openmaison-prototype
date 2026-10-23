@@ -8,3 +8,9 @@
 .area > * { pointer-events: none; }
 .foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); flex-shrink: 0; }
 .note { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* (Quotes on the move, K3 — C-21 · B-08) ≤1024 the pane is a door to the Preview, not a 4px paper: the mark, two lines and one filled button. */
+.door { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-5) var(--om-spacing-4); }
+.doorIcon { color: var(--om-color-primary-default); }
+.doorTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.doorHelp { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); padding-bottom: var(--om-spacing-2); }
+.pane[data-touch] .foot { padding: var(--om-spacing-2) var(--om-spacing-4); min-height: 44px; }

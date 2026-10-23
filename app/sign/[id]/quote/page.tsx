@@ -27,9 +27,9 @@ export default async function SignQuotePage({ params }: { params: Promise<{ id: 
   const data = await fetchSigning(id)
   if (!data) {
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (F111, wave E) a contract deleted for good, or never made: the house notice, as /sign/[id] says it — never a bare 404 */
+    return <LinkGone studio={brand.details.name} brand={brand.kit} phone={brand.details.phone} />   /* (F111, wave E) a contract deleted for good, or never made: the house notice, as /sign/[id] says it — never a bare 404 · (C3 — A-25) */
   }
   const quoteId = data.state === 'open' || data.state === 'signed' ? data.contract.fromQuoteId : null
   const preview = quoteId ? await fetchQuotePreview(quoteId) : null
-  return <SignQuoteView token={id} issuer={data.letterhead.name} logo={data.letterhead.logo ?? data.brand.logo} data={preview ? clientQuoteOf(preview) : null} state={data.state} />
+  return <SignQuoteView token={id} issuer={data.letterhead.name} logo={data.letterhead.logo ?? data.brand.logo} data={preview ? clientQuoteOf(preview) : null} state={data.state} phone={data.studio.phone} />
 }

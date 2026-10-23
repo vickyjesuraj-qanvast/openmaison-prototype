@@ -62,3 +62,41 @@
 .compareRow { flex-wrap: wrap; }
 .compareWith { width: 200px; flex-shrink: 0; }
 @media (max-width: 767px) { .compareRow .issueText { flex: 1 1 100%; } .compareWith { flex: 1 1 auto; width: auto; min-width: 0; } }
+
+/* ── (Quotes on the move, K3 — P-05 · Q-06; C-16 C-17 C-18 C-19 C-20 C-21 B-08) the touch widths, ≤1024 ──────────────────────────────────
+   One 56px bar (back · the title's two lines · Download · ⋮, Send on a tablet) in place of the desk's bar, which stood 234px on a phone with
+   four outlined buttons and a switch beside Send (C-17). A phone reads the quote as cards under an "As a list · As printed" switch and sends
+   from a 48 foot; As printed is the paper viewer (paper-viewer.module.css). A tablet reads the A4 at 1:1, its margins scrolling (C-18). The
+   desk (≥1025) keeps every rule above this line. */
+.touchBar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 56px; padding: env(safe-area-inset-top, 0px) var(--om-spacing-4) 0; background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); flex-shrink: 0; }
+.touchTitle { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.touchH { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.touchSub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the bar's Send (a tablet): the DS button grows to the 44 target by height (REG-312) — never an ::after overlay, which the
+   icon-button-overlay lint rule forbids on any button (C-03) */
+.barSend { margin-left: var(--om-spacing-1); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .barSend button { min-height: 44px; } }
+/* the phone's cards' head: the line count, and "As printed" — the confirmation page's own row (confirm-page.module.css .readHead) */
+.readHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 44px; }
+.readCount { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.reading { width: 100%; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* the document inside the house viewer (components/quotes/confirm/paper-viewer.tsx) */
+.viewerDoc { display: block; }
+/* the phone's foot: the one filled button at 48, above the home indicator (REG-308) */
+.foot { position: sticky; bottom: 0; z-index: 9; display: flex; padding: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); background: var(--om-color-surface-default); box-shadow: var(--om-shadow-modal-footer); flex-shrink: 0; }
+.foot > * { flex: 1; display: flex; }
+.foot button { flex: 1; width: 100%; min-height: 48px; }
+@media (max-width: 1024px) {
+  .page[data-touch] .column { gap: var(--om-spacing-3); }
+  /* (C-18) a tablet's stage scrolls the A4's margins, the text in the middle (quote-preview.tsx centres the scroll); no bar drawn for it */
+  .page[data-touch] .stage { scrollbar-width: none; }
+  .page[data-touch] .stage::-webkit-scrollbar { display: none; }
+  /* (P-08 · C-19) the readiness rows stand 44; the drawer's rows 48 with their words at 16 and their help at 14 */
+  .page[data-touch] .issue { min-height: 44px; }
+  .drawerBody .row { min-height: 48px; font: var(--om-type-body-l); }
+  .drawerBody .rowHelp { font: var(--om-type-body-m); }
+  .drawerBody .panelNote { font: var(--om-type-body-m); }
+}
+@media (max-width: 767px) {
+  .page[data-touch] .column { padding: var(--om-spacing-4); }
+}

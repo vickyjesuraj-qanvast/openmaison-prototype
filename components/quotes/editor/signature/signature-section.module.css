@@ -29,12 +29,16 @@
 .canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .clear { composes: link from '../../../om/text-link.module.css'; position: absolute; top: 20px; right: 20px; }   /* (REG-729) the house text link (its disabled look too) */
 
-/* ── Tablet / phone: the panes stack; the panes' 36 gutter becomes 24 / 16. */
-@media (max-width: 1024px) { .pane { padding: 20px 24px; } }
+/* ── Tablet / phone: the panes stack; the panes' 36 gutter becomes 24 / 16. (quotes on the move 2026-10-22, P-08) What is read on a touch
+   screen is never under 14: the NRIC line, the client's line, the studio's name, the notes under the box and the switch's label. */
+@media (max-width: 1024px) {
+  .pane { padding: 20px 24px; }
+  .meta, .clientMeta, .consentNote, .uploadNote { font: var(--om-type-body-m); }
+}
 @media (max-width: 767px) {
   .panes { grid-template-columns: 1fr; }
   .pane { padding: 16px; }
-  .switchRow { font: var(--om-type-body-s); }
+  .switchRow { font: var(--om-type-body-m); }
   /* (Dane UAT 6.23) three choices no longer fit beside their label on a phone: the radios take the next line; the empty box's three
      buttons wrap rather than run past the box */
   .modeRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
@@ -43,6 +47,7 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .link, .clear { position: relative; }
   .link::after, .clear::after { content: ''; position: absolute; inset: -12px; }
+  /* Draw · Type · Upload are DS md buttons: the house gives each its centred 44 box here (app/globals.css, REG-344) — nothing to add. */
 }
 .modeRadios { display: inline-flex; align-items: center; gap: var(--om-spacing-6); }   /* (sweep S1) the DS radios in a row */
 /* (Dane UAT 6.23) Upload: the picture in the same 752×140 box, kept whole and centred; under the box the rule (PNG · JPG on white · 1 MB),

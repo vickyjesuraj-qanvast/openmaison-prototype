@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every paper's Download PDF, one call
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
@@ -10,6 +10,8 @@ import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
 import { SignaturePad } from '@/components/om/signature-pad'
 import { useSnackbar } from '@/components/om/snackbar'
+import { useSheetFootLift } from '@/components/om/sheet'
+import { useMediaQuery, TABLET_DOWN } from '@/lib/breakpoint'
 import { displayDateLong, isNric, maskNric } from '@/lib/format'
 import { acceptLabelOf } from '@/lib/contracts/policy'
 import type { BundleSigningData } from '@/lib/contracts/queries'
@@ -20,9 +22,16 @@ import { ContractPaper, type ClientSignature } from '@/components/contracts/rend
 import { LinkNotice } from './link-notice'
 import { ContractPdf } from '@/components/contracts/render/contract-pdf'
 import { SigningRecord } from './signing-record'
-import { deviceInfo, maskPhone } from './signing-page'
+import { deviceInfo, landOnBox, maskPhone, signedShort } from './signing-page'
 import { SIGN_CODE_DEMO, SIGN_CODE_WRONG } from '@/lib/contracts/model'   // (S42 B-03)
+import { SignHero } from './sign-hero'
+import { SignBar } from './sign-bar'
+import { SignSheet } from './sign-sheet'
+import { SignedCard } from './signed-card'
+import { useReadingProgress } from './use-reading-progress'
+import { saveCopy, saveCopyLine } from './save-copy'
 import styles from './signing-page.module.css'
+import ph from './sign-phone.module.css'
 import { DepositPay, depositAhead } from './deposit-pay'   // (S44R, C7)
 
 type Step = 'review' | 'code' | 'sign' | 'done'
@@ -32,6 +41,11 @@ type Step = 'review' | 'code' | 'sign' | 'done'
  * (B-57): one document per screen in the order the studio ticked them, "Document i of n" over a progress bar; each asks for what its own
  * gates ask (read to the end, tick its words) before Continue; the last leads to the code and one signature — typed or drawn — that
  * covers every document the agreement sentence names. A document already signed on its own shows as signed and asks nothing.
+ *
+ * (Contracts on the move, C3 — P-05 · P-06) On a phone and a touch tablet the walk is the signing page's phone model: the hero lists the
+ * documents (the open one in bold, a read one ticked), each document is read under the same sticky bar — "Document 1 of 2 · Read to the end"
+ * then **Next document**, **Accept and sign** on the last — and the sheet comes once, at the end: every document's tick on its first screen,
+ * the code, the one signature. Signed, the Signed card under the papers. The desk keeps its card.
  */
 export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }: { data: BundleSigningData; /** (gaps build D, item 6) the studio is CaseTrust-accredited */ caseTrust?: boolean
   /** (S42 B-03) the SMS stand-in answers — said, never "we sent a code" */ codeDemo?: boolean }) {
@@ -65,11 +79,14 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
   const needsCaseTrust = caseTrust && state === 'open' && at >= documents.length - 1
   const gatesMet = readEnd && (!needsAccept || !!accepted[doc!.contract.id]) && (!needsCaseTrust || !!caseTrustAt)
   const endRef = useRef<HTMLDivElement>(null)
-  /* (UX audit C3) On a phone or a tablet the card sits above the paper: the single page's sticky bar (REG-660) says at the paper's foot what is
-     next and does it — "Document 1 of 2 read · Next document", then "Continue to sign"; the next document starts at its own top. */
-  const cardRef = useRef<HTMLElement>(null)
+  /* (C3) the phone model and its pieces */
+  const onPhone = useMediaQuery(TABLET_DOWN)
   const walkRef = useRef<HTMLElement>(null)
-  const toCard = () => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const stageRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const signedCardRef = useRef<HTMLElement | null>(null)
+  const setSignedCard = useCallback((el: HTMLElement | null) => { signedCardRef.current = el }, [])
+  const [sheet, setSheet] = useState(false)
   const docId = doc?.contract.id
   useEffect(() => {
     if (step !== 'review' || !docId || !needsScroll) return
@@ -80,6 +97,9 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
     return () => io.disconnect()
   }, [step, docId, needsScroll])
   const last = at >= documents.length - 1
+  const progress = useReadingProgress(stageRef, onPhone && step === 'review' && !signed && needsScroll, docId ?? '')
+  const shows = state === 'open' || state === 'signed'
+  useSheetFootLift(onPhone && shows, bodyRef)   // (B-21's rule) the house snackbar clears the sticky bar
   /* (S42 B-03) the code goes through the one provider; a real one's "sent" is said, the stand-in's line says no text goes */
   const [codeBusy, setCodeBusy] = useState(false)
   const sendCode = async (again = false) => {
@@ -99,6 +119,14 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
     if (window.matchMedia('(max-width: 1024px)').matches) requestAnimationFrame(() => walkRef.current?.scrollIntoView({ block: 'start' }))
     else window.scrollTo({ top: 0 })
   }
+  /* (C3) the phone's ticks come once, at the end: every open document's words */
+  const ticks = documents.filter((d) => d.contract.status === 'Sent to Client' && d.contract.requiresAccept).map((d) => ({ id: d.contract.id, title: documents.length > 1 ? d.contract.title : undefined, label: acceptLabelOf(d.contract), at: accepted[d.contract.id] ?? null }))
+  const openSheet = () => { setSheet(true); if (!ticks.length && !needsCaseTrust && step === 'review') void sendCode() }
+  const save = async () => {
+    const who = signed?.name ?? bundle.signedBy ?? recipient, when = signed?.at ?? bundle.signedAt ?? new Date(data.now)
+    const r = await saveCopy({ title: documents.length === 1 ? documents[0]!.contract.title : `${documents.length} documents`, studio: studioName, signedLine: `signed by ${who} on ${displayDateLong(when)}` })
+    if (r === 'copied' || r === 'kept') snackbar({ message: saveCopyLine(r, bundle.signingHash) })
+  }
 
   const titles = documents.map((d) => d.contract.title)
   const agreement = `I, ${name.trim() || 'your name'}, agree to ${titles.length === 1 ? `the ${titles[0]}` : `these ${titles.length} documents — ${titles.join(', ')} —`} from ${studioName}, as set out above. I understand that this is my digital agreement to proceed.`
@@ -110,17 +138,18 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
       const r = await signBundleOnline(bundle.id, name.trim(), nricKept, data.fingerprint, { kind: how, drawing: how === 'draw' ? drawing : null, acceptedAt: accepted, caseTrustAt, code, ...deviceInfo() })
       if ('changed' in r) {
         snackbar({ message: 'These documents were updated while you were reading — please read them again before signing' })   /* (REG-631, parity Q-06) */
-        setRead({}); setAccepted({}); setAt(0); setStep('review'); router.refresh(); return
+        setRead({}); setAccepted({}); setAt(0); setStep('review'); setSheet(false); router.refresh(); return
       }
       if ('refused' in r) {
-        if (r.refused === 'accept') { snackbar({ message: 'Tick that you accept each document first' }); setAt(0); setStep('review'); return }
+        if (r.refused === 'accept') { snackbar({ message: 'Tick that you accept each document first' }); if (!onPhone) setAt(0); setStep('review'); return }
         if (r.refused === 'casetrust') { snackbar({ message: CASETRUST_RULE }); setStep('review'); return }   // (gaps build D, item 6)
         if (r.refused === 'code') { snackbar({ message: SIGN_CODE_WRONG }); setCode(''); setStep('code'); return }   // (S42 B-03)
         if (r.refused === 'expired') snackbar({ message: 'This link has expired — please ask for a new one' })   // (pending modules S03)
-        router.refresh(); return
+        setSheet(false); router.refresh(); return
       }
-      setSigned({ name: name.trim(), at: new Date(r.signedAt), nric: nricKept, drawing: how === 'draw' ? drawing : null }); setStep('done')
+      setSigned({ name: name.trim(), at: new Date(r.signedAt), nric: nricKept, drawing: how === 'draw' ? drawing : null }); setStep('done'); setSheet(false)
       router.refresh()
+      if (onPhone) window.setTimeout(() => landOnBox(stageRef.current, signedCardRef.current), 350)   // (C3) lands on the signature box
     } catch { snackbar({ message: 'Couldn’t sign — please try again' }) } finally { setBusy(false) }
   }
   if (state === 'not-sent' || state === 'inactive' || state === 'expired' || state === 'quote-updating') {   // (S42 B-01)
@@ -133,7 +162,7 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
             <span className={styles.studio}>{studioName}</span>
           </span>
         </header>
-        <LinkNotice state={state} studio={studioName} set />
+        <LinkNotice state={state} studio={studioName} set contact={studio.phone ? { phone: studio.phone } : null} />   {/* (C3 — A-25) */}
       </div>
     )
   }
@@ -148,8 +177,12 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
     return <ContractPaper html={kept?.body ?? d.contract.body ?? ''} values={d.values} brand={brand} studio={studio} studioSignature={kept ? kept.studioSignature : studioSignature} client={client} live={!signed && !kept} letterhead={d.letterhead} />
   }
   const walking = step === 'review' && !!doc
+  const done = step === 'done' && (!!signed || state === 'signed')
+  const signedName = signed?.name ?? bundle.signedBy ?? recipient, signedAt = signed?.at ?? bundle.signedAt ?? new Date(data.now)
+  const record = bundle.signedAt ? { signedBy: bundle.signedBy, signedAt: bundle.signedAt, nric: bundle.signedNric, signatureKind: bundle.signatureKind, phone: bundle.signerPhone, method: documents[0]?.contract.verificationMethod ?? null, device: bundle.signerUserAgent, timezone: bundle.signerTimezone, viewedAt: bundle.viewedAt, acceptedAt: null, hash: bundle.signingHash, documents: titles } : null
+  const first = recipient.split(' ')[0]
   return (
-    <div className={styles.page} data-testid="bundle-signing-page" data-state={state}>
+    <div className={styles.page} data-testid="bundle-signing-page" data-state={state} data-phone={onPhone || undefined}>
       <header className={styles.top}>
         <span className={styles.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -158,8 +191,15 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
         </span>
         <MetaChip color="green" icon="lock">Secure signing</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
       </header>
-      <div className={styles.body}>
-        <div className={`${styles.stage} ${styles.bundle}`}>
+      <div ref={bodyRef} className={`${styles.body} ${ph.body}`}>
+        {/* (C3 — P-05) the phone's hero: the set's documents as rows */}
+        <SignHero title={documents.length === 1 ? documents[0]!.contract.title : `${documents.length} documents to sign`} quote={null} onQuote={() => {}}
+                  docs={documents.length > 1 ? documents.map((d, i) => ({ id: d.contract.id, title: d.contract.title, read: d.contract.status === 'Signed' || !!signed || !!read[d.contract.id] || (walking && i < at), on: walking && i === at })) : null}
+                  fine={!done && data.deposit && !data.deposit.paid ? depositAhead(data.deposit) : null}>
+          {done ? (signed ? <>{documents.length === 1 ? 'The document' : `All ${documents.length} documents`} signed by <strong>{signed.name}</strong> on {displayDateLong(signed.at)}. Both you and {studioName} keep a copy of each.</> : <>Every document here is signed. Both you and {studioName} keep a copy of each.</>)
+            : <>Hi {first}, read each one, then sign once with a one-time code.</>}
+        </SignHero>
+        <div ref={stageRef} className={`${styles.stage} ${styles.bundle} ${ph.stageCol}`}>
           {walking ? (
             <section ref={walkRef} className={styles.bundleDoc} aria-label={`Document ${at + 1} of ${documents.length}: ${doc.contract.title}`} data-testid="bundle-walk">
               <div className={styles.walk}>
@@ -175,11 +215,13 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
               {paperOf(d)}
             </section>
           ))}
-          {bundle.signedAt ? (
-            <SigningRecord r={{ signedBy: bundle.signedBy, signedAt: bundle.signedAt, nric: bundle.signedNric, signatureKind: bundle.signatureKind, phone: bundle.signerPhone, method: documents[0]?.contract.verificationMethod ?? null, device: bundle.signerUserAgent, timezone: bundle.signerTimezone, viewedAt: bundle.viewedAt, acceptedAt: null, hash: bundle.signingHash, documents: titles }} />
+          {record && !onPhone ? <SigningRecord r={record} /> : null}
+          {onPhone && done ? (
+            <SignedCard cardRef={setSignedCard} name={signedName} at={signedAt} issuer={studioName} what="a copy of each" onSave={() => { void save() }} deposit={data.deposit} record={record} />
           ) : null}
         </div>
-        <aside ref={cardRef} className={styles.card} aria-label="Sign these documents" data-step={step}>
+        {!onPhone ? (
+        <aside className={`${styles.card} ${ph.deskCard}`} aria-label="Sign these documents" data-step={step}>
           {step === 'done' && (signed || state === 'signed') ? (
             <>
               <span className={styles.done}><Icon name="check_circle" size={40} /></span>
@@ -237,13 +279,23 @@ export function BundleSigningPage({ data, caseTrust = false, codeDemo = false }:
             </>
           )}
         </aside>
+        ) : null}
+        {/* (C3 — P-05) the phone's sticky bar: the walk, document by document, then Accept and sign; signed — the line and Save a copy */}
+        {done ? <SignBar state={{ kind: 'signed', line: signedShort(signedName, signedAt), onLine: () => landOnBox(stageRef.current, signedCardRef.current), onSave: () => { void save() } }} />
+          : walking ? (readEnd
+            ? <SignBar state={last ? { kind: 'ready', label: 'Accept and sign', onPress: openSheet, busy: codeBusy && !sheet } : { kind: 'ready', label: 'Next document', onPress: next, words: `Document ${at + 1} of ${documents.length} read` }} />
+            : <SignBar state={{ kind: 'reading', at: progress.at, total: progress.total, doc: `Document ${at + 1} of ${documents.length}` }} />)
+          : null}
       </div>
-      {walking && !signed ? (
-        <div className={styles.nextBar} data-testid="sign-next">
-          {gatesMet
-            ? <><span className={styles.nextText}>Document {at + 1} of {documents.length} read</span><Button onPress={() => { next(); if (last) toCard() }}>{last ? 'Continue to sign' : 'Next document'}</Button></>
-            : <><span className={styles.nextText}>{!readEnd ? 'Read to the end of this document' : needsAccept && !accepted[doc!.contract.id] ? 'Tick that you accept, in the box at the top' : 'Tick the CaseTrust disclosure, in the box at the top'}</span>{readEnd ? <Button variant="secondary" appearance="outlined" onPress={toCard}>Go to the box</Button> : null}</>}
-        </div>
+      {onPhone ? (
+        <SignSheet open={sheet && !done} onClose={() => setSheet(false)} step={step === 'done' ? 'sign' : step} noun={documents.length === 1 ? 'the document' : 'these documents'}
+                   ticks={ticks} onTick={(id, at) => setAccepted((a) => { const n = { ...a }; if (at) n[id] = at; else delete n[id]; return n })}
+                   caseTrust={needsCaseTrust ? { studio: studioName, at: caseTrustAt, onTick: setCaseTrustAt } : null}
+                   onContinue={() => { void sendCode() }} continueBusy={codeBusy}
+                   codeDemo={codeDemo} masked={masked} code={code} onCode={(c) => { setCode(c); if (c.length === 6) setStep('sign') }} onVerify={() => { if (code.length === 6) setStep('sign') }} onSendAgain={() => { void sendCode(true) }} codeBusy={codeBusy}
+                   name={name} onName={setName} how={how} onHow={setHow} drawing={drawing} onDrawing={setDrawing} nric={nric} onNric={setNric} nricOk={nricOk}
+                   consent={`${agreement} Signed on ${displayDateLong(new Date(data.now))}.`} signLabel={documents.length === 1 ? 'Sign the document' : `Sign ${documents.length} documents`} onSign={() => { void sign() }} busy={busy}
+                   canSign={!!name.trim() && nricOk && (how === 'type' || !!drawing)} />
       ) : null}
     </div>
   )

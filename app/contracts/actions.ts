@@ -36,12 +36,13 @@ import { contractIdForToken, newSignToken, windowFrom } from '@/lib/contracts/li
 import { notStartedWords, startedWords, wonOnSigning, type WonOnSigning } from '@/lib/leads/won-on-signing'   // (S44R, C7)
 import { depositOptions } from '@/lib/contracts/deposit'
 import { depositWhy } from '@/lib/contracts/deposit-model'
-import { contractPdfFromFile, keepContractPdf } from '@/lib/contracts/files'
+import { contractPdfFromFile, keepContractPdf, keepContractPicture } from '@/lib/contracts/files'
 import { FILES_READ_RULE } from '@/lib/leads/file-model'
 import { isAccounting } from '@/lib/settings/roles'   // (S46D — D2)
 import { checkPickedPdf, pdfNameOf, type PickedPdf } from '@/lib/contracts/pdf'
+import { PHOTO_NO_COPY, PHOTO_SIGNED_ONLY, isPictureData, pictureNameOf, titleOfFile } from '@/lib/contracts/picture'
 import { canOpenLead } from '@/lib/leads/visibility'
-import { contractTemplateFiles, leadEvents } from '@/lib/db/schema'
+import { contractTemplateFiles, leadEvents, leadFiles } from '@/lib/db/schema'
 import { logLeadEvent } from '@/lib/leads/events'
 import { dataUrlSize } from '@/lib/leads/file-store'
 import { isStandInProvider, signInProvider } from '@/lib/auth/provider'   // (S42 B-03) the one code provider — sign-in's, the portal's, the signing pages'
@@ -131,26 +132,31 @@ export async function createContractDoc(input: CreateContractInput): Promise<str
     if (isAccounting(viewer.role)) return refuse(FILES_READ_RULE)
     if (!(await canOpenLead(viewer, lead.id))) return refuse('This lead isn’t one you can open')
   }
-  if (input.upload?.file) { const why = checkPickedPdf(input.upload.file, dataUrlSize); if (why) throw new Error(why) }
+  /* (Contracts on the move, C4 — P-12 · C-25, Q-04 as picked) a PHOTO of a page the client signed: only as the signed copy (it carries no
+     signature fields to send), kept as a picture in Files › Contract & VOs — a server-side PDF of it is the developers' S34 renderer seam */
+  const photo = input.upload?.file && isPictureData(input.upload.file.data) ? input.upload.file : null
+  if (photo && !input.upload?.signed) return refuse(PHOTO_SIGNED_ONLY)
+  if (input.upload?.file && !photo) { const why = checkPickedPdf(input.upload.file, dataUrlSize); if (why) throw new Error(why) }
   /* (REG-632, parity Q-08 · Q-10) A contract names its quote from the start — the one it was raised from, else the lead's Signed quote,
      else its latest — and is issued by that quote's entity. Stored, so it never reads another quote in its place. */
   const qs = await db.select({ id: quotes.id, status: quotes.status, issuingEntity: quotes.issuingEntity, archivedAt: quotes.archivedAt, deletedAt: quotes.deletedAt }).from(quotes).where(and(eq(quotes.leadId, lead.id), eq(quotes.kind, 'quote'), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt))   /* (REG-1079) never a variation order */
   const quote = input.fromQuoteId ? qs.find((q) => q.id === input.fromQuoteId) ?? null : input.standard ? null : defaultQuote(qs.filter((q) => !q.archivedAt))
-  if (input.upload) { title = clean(input.upload.title) || input.upload.fileName.replace(/\.pdf$/i, ''); body = null }
+  if (input.upload) { title = clean(input.upload.title) || titleOfFile(input.upload.fileName); body = null }   // (C4) a photo's .jpg too
   const signed = !!input.upload?.signed
   /* (pending modules S03) the PDF itself, in the lead's Files › Contract & VOs — the import's, or the library's copy */
   const picked: PickedPdf | null = input.upload?.file ?? (pdfTemplate ? { name: pdfTemplate.name, data: pdfTemplate.data, thumb: pdfTemplate.thumb } : null)
   /* (S46D — D2) the lead's own PDF: kept where it is when it sits in Files › Contract & VOs, else a copy kept there; a refusal says its rule */
   const own = fromFile ? await contractPdfFromFile(lead.id, fromFile, now, stampBy) : null
   if (own && 'error' in own) return refuse(own.error)
-  const fileId = own ? own.fileId : picked ? await keepContractPdf(db, lead.id, picked, now) : null
-  if (fileId && typeof fileId !== 'string') throw new Error(fileId.error)
-  const fileName = own ? own.name : input.upload ? (picked ? pdfNameOf(picked.name) : input.upload.fileName) : pdfTemplate ? pdfTemplate.name : null
+  const fileId = own ? own.fileId : photo ? await keepContractPicture(db, lead.id, photo, now) : picked ? await keepContractPdf(db, lead.id, picked, now) : null
+  if (fileId && typeof fileId !== 'string') { if (photo) return refuse(fileId.error); throw new Error(fileId.error) }   // (C4) a photo's rule is said, as a refusal
+  const fileName = own ? own.name : input.upload ? (photo ? pictureNameOf(photo.name, photo.data) : picked ? pdfNameOf(picked.name) : input.upload.fileName) : pdfTemplate ? pdfTemplate.name : null
   await db.insert(contracts).values({
     id, leadId: lead.id, title: await nextTitle(lead.id, title), status: signed ? 'Signed' : 'Draft', createdAt: now, updatedAt: now,
     body, recipientName: lead.name, recipientPhone: digits(lead.phone), contractDate: now, templateId, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null,
     source: input.upload || pdfTemplate ? 'uploaded' : 'composed', fileName, fileId: fileId ?? null,
     signedAt: signed ? now : null, signedCopy: signed ? fileName : null, createdBy: stampBy, ...gates,
+    ...(photo && fileId ? { signedFileId: fileId } : {}),   // (C4 — P-12, Q-04) the photo is the signed copy itself
     signToken: newSignToken(),   // (pending modules S03) the link's own key
   })
   if (signed) { const c = await load(id); if (c) { await db.update(contracts).set({ ...await signedSnapshot(c, now), markedBy: await actingMember() }).where(eq(contracts.id, id)); const f = await freshContract(id); if (f) await afterSigned(f, now, { marked: true }) } }   // (REG-631, Q-05 · REG-634)
@@ -428,6 +434,8 @@ export async function duplicateContract(contractId: string): Promise<string | Re
   const stampBy = await sessionMemberId()   // (pending modules S43A) who writes — this browser's member, read before any write
   const c = await load(contractId)
   if (!c) throw new Error('contract not found')
+  /* (Contracts on the move, C4 — P-12, Q-04) a photo of a signed paper is that signing's copy: a Draft made from it would send a picture for signing */
+  if (c.source === 'uploaded' && c.fileId) { const [f] = await db.select({ kind: leadFiles.kind }).from(leadFiles).where(eq(leadFiles.id, c.fileId)); if (f?.kind === 'image') return refuse(PHOTO_NO_COPY) }
   const now = new Date()
   const id = randomUUID()
   await db.insert(contracts).values({

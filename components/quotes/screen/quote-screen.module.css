@@ -1,0 +1,93 @@
+/* (Quotes on the move, P-01 · P-08 · Q-07) The Quote screen — only ever drawn at ≤1024, on the phone scale: 16 for what is read, 14 for the
+   secondary line, the amount 24 tabular (the scale's step between 18 and 26), 44 boxes, 48 foot buttons, 16 gutters and 12 inside cards.
+   The canvas is the editor's surface-bg; the hero, the folds and the document's sections are white cards (r8, 1px surface-variant). On a
+   tablet the column caps at 720 and centres; the foot runs the full width with its buttons on the same column. */
+.screen { flex: 1; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }
+.screen[inert] { visibility: hidden; }   /* under the edit layers nothing of it is read or reached; its scroll keeps */
+.body { flex: 1; width: 100%; max-width: 752px; align-self: center; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); padding-bottom: calc(48px + var(--om-spacing-4) + var(--om-spacing-6)); }   /* the last row scrolls clear of the 48 FAB */
+.anchor { position: relative; display: inline-flex; min-width: 0; }
+
+/* ── the hero ── */
+.hero { display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-3); }
+.heroTop { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.heroMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.chipLink { display: inline-flex; border-radius: var(--om-radius-1); text-decoration: none; }
+.chipLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.amount { margin-top: var(--om-spacing-2); font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.heroLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.client { display: flex; align-items: center; gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-subheading-s); }
+.clientText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.clientName { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.clientCompany { color: var(--om-color-on-surface-secondary); }
+.clientPhone { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.clientActs { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }   /* 12 between the two marks: their 44 boxes never touch */
+/* Call and WhatsApp are links (tel: · wa.me) drawn as the house icon button (composed — its own 44 touch box comes with it, REG-312) */
+.iconLink { composes: btn from '../../om/icon-button.module.css'; text-decoration: none; }
+.iconLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (Contracts on the move, C4 — P-11 · C-21) the contract's row under the client: a glyph · "Contract" and its status · a chevron; 44 tall, the
+   whole row a press (the Contract screen's hero rows are the same shape, contract-screen.module.css) */
+.heroRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; margin: var(--om-spacing-2) calc(-1 * var(--om-spacing-2)) 0; padding: 0 var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); color: inherit; text-decoration: none; font: var(--om-type-body-l); transition: background-color var(--motion-hover); }
+.heroRow:hover { background: var(--om-color-hover-04p); }
+.heroRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.heroRowIcon { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.heroRowText { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-2); }
+.heroRowLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.heroRowValue { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); }
+.heroRowChev { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+
+/* ── the Next line ── */
+.next { display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); border-radius: var(--om-radius-2); font: var(--om-type-body-l); }
+.nextIcon { display: inline-flex; flex-shrink: 0; margin-top: 2px; }
+.nextText { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.nextText b { font: var(--om-type-subheading-l); }
+.nextMore { display: block; margin-top: var(--om-spacing-2); font: var(--om-type-body-m); }
+.nextChev { flex-shrink: 0; color: inherit; margin: -2px -2px -2px 0; }   /* the house icon button: its 44 box comes with it */
+.nextChev[data-open] { transform: rotate(180deg); }
+
+/* ── the folded rows ── */
+.folds { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.fold { display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.foldHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; width: 100%; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; background: var(--om-color-surface-default); border-radius: var(--om-radius-2); color: inherit; text-align: left; cursor: pointer; }
+.folds > .foldHead { border: var(--om-border-1) solid var(--om-color-surface-variant); }   /* Comments: a row that opens its panel, not a fold */
+.foldHead:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.foldText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.foldTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.foldCount { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); }
+.foldMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foldChev { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.fold[data-open] .foldChev { transform: rotate(180deg); }
+.foldBody { padding: 0 var(--om-spacing-3) var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding-top: var(--om-spacing-3); }
+.plain, .plainText { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.plain { color: var(--om-color-on-surface-secondary); }
+.plainText { white-space: pre-line; }
+.plainList { margin: 0; padding: 0 0 0 var(--om-spacing-5); font: var(--om-type-body-l); color: var(--om-color-on-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.payList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.payRow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; column-gap: var(--om-spacing-3); padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.payRow:last-child { border-bottom: 0; }
+.payWords { display: flex; flex-direction: column; min-width: 0; }
+.payName { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.payDesc { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.payShare, .payAmount { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.payShare { color: var(--om-color-on-surface-secondary); }
+.activity { margin: 0 calc(-1 * var(--om-spacing-1)); }
+
+/* ── the foot ── */
+.foot {
+  position: sticky; bottom: 0; z-index: 20;
+  display: flex; gap: var(--om-spacing-3); align-items: stretch;
+  width: 100%; max-width: 752px; align-self: center;
+  padding: var(--om-spacing-3) var(--om-spacing-4) calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant);
+}
+.foot > * { flex: 1 1 0; min-width: 0; }
+.foot > .primary > * { flex: 1 1 0; min-width: 0; width: 100%; }
+.foot button { width: 100%; min-height: 48px; }
+/* on a tablet the foot's plate runs the full width; the buttons keep the content column */
+@media (min-width: 768px) {
+  .foot { max-width: none; padding-left: max(var(--om-spacing-4), calc(50% - 360px)); padding-right: max(var(--om-spacing-4), calc(50% - 360px)); }
+}
+/* the foot's Send ▾ opens UPWARD and right-aligned on a tablet through the Dropdown's own `side` / `align` (K5's props on SendButton,
+   passed by quote-editor.tsx); ≤767 it is a sheet. No override here any more (the first cut's `!important` block is gone). */

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { Contract } from '@/lib/db/schema'
@@ -40,7 +41,7 @@ import { ContractsFiltersModal } from './contracts-filters-modal'
 import { DeleteContractsDialog } from './delete-dialog'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './lead-contracts.module.css'
 
 /**
@@ -68,8 +69,11 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   // (Contracts on the move, C4 — P-08) a touch tablet opens with its own default set, remembered apart
   const defs = useMemo(() => contractColumnDefs(false), [])
-  const columnPrefs = useTableColumns('lead-contracts', defs, phone)
+  const columnPrefs = useTableColumns('lead-contracts', defs, phone, touchTablet)
+  /* (C4 — P-07) the quote a contract signs: its number and amount on the phone card */
+  const quoteOf = useCallback((c: Contract) => { const q = c.fromQuoteId ? data.quotes[c.fromQuoteId] : null; return q ? { number: q.number, amountMinor: q.amountMinor } : null }, [data.quotes])
   const filterCount = activeContractFilterCount(filters)
   /* (pending modules S03) a head's own order — ONE sort with Filters' (the projects table's rule) */
   const [headSort, setHeadSort] = useState<ContractHeadSort>(null)
@@ -77,6 +81,11 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const applyFilters = (next: ContractFilters) => { if (next.sort !== filters.sort) setHeadSort(null); setFilters(next) }
   const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query), headSort), [contracts, filters, query, now, headSort])
   const nothingMatches = contracts.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
+  /* (Contracts on the move, C4 — P-07) a phone's selection: a hold on a card selects it, the bulk bar deletes; what leaves the view leaves it */
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const visibleIds = useMemo(() => new Set(visible.map((c) => c.id)), [visible])
+  if (selected.size && (!phone || [...selected].some((id) => !visibleIds.has(id)))) setSelected(new Set(phone ? [...selected].filter((id) => visibleIds.has(id)) : []))   // render-phase adjust
+  const toggleSelect = useCallback((id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n }), [])
 
   /* ── overlays ── */
   const [deleting, setDeleting] = useState<string[] | null>(null)
@@ -203,12 +212,15 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
       ) : (
         <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
-          contracts={visible}
+          contracts={visible} quoteOf={quoteOf}
           onStatus={onStatus}
           onView={(c) => openEditor(c.id)}
           onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock} now={now} sort={headSort} onSort={onSort}
+          selected={selected} onToggleSelect={phone ? toggleSelect : undefined}
         />
       )}
+      {/* (C4 — P-07) the phone's bulk bar: the Quotes cards' — Delete through the same confirm */}
+      <DetailBulkBar count={phone ? selected.size : 0} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting([...selected]) }]} onClear={() => setSelected(new Set())} />
       <ArchivedContractsSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb={`${data.lead.name} / Contracts`}
                               onUnarchive={async (ids) => { const r = await orThrow(unarchiveContracts(ids)); snackbar({ message: r.restored > 1 ? `${r.restored} contracts unarchived` : 'Contract unarchived' }); refresh() }} />
       <MarkSignedDialog open={!!marking} onClose={() => setMarking(null)} today={new Date(now)}
@@ -243,7 +255,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       <DeleteContractsDialog
         open={!!deleting} count={deleting?.length ?? 1}
         onNo={() => setDeleting(null)}
-        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; void run('delete', async () => { const r = await orThrow(deleteContracts(ids)); snackbar({ message: contractsDeletedLine(r) }) }) }}
+        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); void run('delete', async () => { const r = await orThrow(deleteContracts(ids)); snackbar({ message: contractsDeletedLine(r) }) }) }}
       />
       <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates} busy={creating}
                               onUse={(templateId) => { void create({ templateId }, 'Contract created from the template') }}

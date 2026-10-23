@@ -11,17 +11,18 @@ import styles from './signing-page.module.css'
  * it on Send: the named quote's first payment stage, to the issuing entity — the money papers' own pay box (the PayNow QR with the amount and
  * the reference in it, Copy on each value, the bank). Paid in full on the project's invoice, it says so instead. (invented copy)
  */
-export function DepositPay({ d }: { d: DepositView }) {
+/* (Contracts on the move, C3 — P-05) `bare` — inside the phone's "Pay the deposit" sheet, which carries the title: no rule above, no title. */
+export function DepositPay({ d, bare = false }: { d: DepositView; bare?: boolean }) {
   if (d.paid) {
     return (
-      <section className={styles.deposit} aria-label="The deposit" data-testid="deposit-paid">
+      <section className={bare ? undefined : styles.deposit} aria-label="The deposit" data-testid="deposit-paid">
         <p className={styles.gate} data-done=""><Icon name="check_circle" size={20} />Deposit received — thank you</p>
       </section>
     )
   }
   return (
-    <section className={styles.deposit} aria-labelledby="deposit-title" data-testid="deposit-pay">
-      <h3 id="deposit-title" className={styles.depositTitle}>Pay the deposit</h3>
+    <section className={bare ? styles.depositBare : styles.deposit} aria-labelledby={bare ? undefined : 'deposit-title'} aria-label={bare ? 'Pay the deposit' : undefined} data-testid="deposit-pay">
+      {bare ? null : <h3 id="deposit-title" className={styles.depositTitle}>Pay the deposit</h3>}
       <p className={styles.cardText}>{d.stage} of quotation {d.quoteNumber}: <strong>{money2(d.amountMinor)}</strong>. {d.pay ? 'Scan the QR in your banking app, or pay to the details below.' : `${d.entity} will send you the payment details.`}</p>
       {d.pay ? <PayBox pay={d.pay} stage={{ number: d.reference, owedMinor: d.amountMinor }} /> : null}
       <p className={styles.fine}>{d.entity} confirms it once it arrives.</p>

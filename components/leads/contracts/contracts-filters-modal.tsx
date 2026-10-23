@@ -111,6 +111,31 @@ export function ContractsFiltersModal({
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
             <SurfaceHead title="Filters" onClose={onClose} />
+            {sheet ? (
+              /* (Contracts on the move, C4 — A-12 · P-13; the Quotes Filters' K4 — A-21) On a phone: ONE scrolling sheet, every group a row of the
+                 house Chips — Sort by · Dates · Status — instead of the desk's 156 rail beside a 234 pane in a 390 screen. The same draft, applied live. */
+              <div ref={scrollRef} className={styles.sheetBody} data-testid="contract-filters-sheet">
+                <section className={styles.sheetGroup} aria-label="Sort by">
+                  <span className={styles.sectionTitle}>Sort by</span>
+                  {headSort ? <span className={styles.headSort} data-testid="filters-head-sort">Sorted by the {headSort} column. Choose an order below to sort by it instead.</span> : null}
+                  <Chips label="Sort by" options={SORTS.map((s) => ({ value: s.key, label: s.label }))} value={headSort ? null : draft.sort} onChange={(v) => { onClearHead?.(); setDraft((d) => ({ ...d, sort: v as ContractSort })) }} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Dates">
+                  <span className={styles.sectionTitle}>Dates</span>
+                  <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.date || null} onChange={(k) => pickPreset(k as Exclude<ContractDatePreset, ''>)} />
+                  {custom ? (
+                    <div className={styles.dateRow}>
+                      <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined} onChange={(v) => setDraft((d) => ({ ...d, from: v }))} />
+                      <DateField label="To date" value={draft.to} today={today} error={rangeBad ? MSG.dateRange : undefined} onChange={(v) => setDraft((d) => ({ ...d, to: v }))} />
+                    </div>
+                  ) : null}
+                </section>
+                <section className={styles.sheetGroup} aria-label="Status">
+                  <span className={styles.sectionTitle}>Status</span>
+                  <Chips multiple label="Status" options={CONTRACT_STATUSES.map((s) => ({ value: s, label: s }))} value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as ContractStatus[] }))} />
+                </section>
+              </div>
+            ) : (
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -167,6 +192,7 @@ export function ContractsFiltersModal({
                 )}
               </div>
             </div>
+            )}
             <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}

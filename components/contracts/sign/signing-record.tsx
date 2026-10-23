@@ -28,7 +28,8 @@ const when = (d: Date | null) => (d ? displayDateTime(d) : null)   // (sweep S2 
  * link was opened, the words ticked and the signature made, and the fingerprint of the text as signed. On the client's signed page, in
  * Preview, behind the editor's Signing record, and printed with Download a copy. A studio-marked signature says so and little else.
  */
-export function SigningRecord({ r, compact }: { r: SigningRecordData; compact?: boolean }) {
+/* (Contracts on the move, C3 — A-26) `bare` — inside the phone's "Signing record" sheet, which carries the title: the rows and the note alone. */
+export function SigningRecord({ r, compact, bare = false }: { r: SigningRecordData; compact?: boolean; bare?: boolean }) {
   const rows: [string, string | null][] = r.signedBy
     ? [
         ['Signed by', r.signedBy],
@@ -49,8 +50,8 @@ export function SigningRecord({ r, compact }: { r: SigningRecordData; compact?: 
         ['Fingerprint', r.hash ? `${r.hash.slice(0, 16)}…` : null],
       ]
   return (
-    <section className={styles.record} data-compact={compact || undefined} aria-label="Signing record" data-testid="signing-record">
-      <h2 className={styles.title}>Signing record</h2>
+    <section className={styles.record} data-compact={compact || bare || undefined} aria-label="Signing record" data-testid="signing-record">
+      {bare ? null : <h2 className={styles.title}>Signing record</h2>}
       <dl className={styles.rows}>
         {rows.filter(([, v]) => v).map(([k, v]) => (
           <div key={k} className={styles.row}><dt>{k}</dt><dd>{v}</dd></div>

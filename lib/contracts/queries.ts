@@ -27,11 +27,11 @@ export { fingerprintOf, setHashOf, tokenValuesFor }
 export type ContractSibling = { id: string; title: string; status: string }
 const studioSignatureFor = (createdBy: string | null, team: Member[]) => signatureOf(createdBy, team, SESSION_MEMBER_ID)
 /** (pending modules S03) A kept PDF as the pages show it: the file, the picture of its first page when one was drawn, its name. */
-export type KeptPdf = { fileId: string; name: string; thumb: boolean }
+export type KeptPdf = { fileId: string; name: string; thumb: boolean; /** (Contracts on the move, C4 — P-12, Q-04) a photo of the signed paper, not a PDF */ picture?: boolean }
 async function keptPdfs(ids: (string | null)[]): Promise<Map<string, KeptPdf>> {
   const want = [...new Set(ids.filter((x): x is string => !!x))]
-  const rows = want.length ? await db.select({ id: leadFiles.id, name: leadFiles.name, thumb: leadFiles.thumb }).from(leadFiles).where(and(inArray(leadFiles.id, want), isNull(leadFiles.deletedAt))) : []
-  return new Map(rows.map((r) => [r.id, { fileId: r.id, name: r.name, thumb: !!r.thumb }]))
+  const rows = want.length ? await db.select({ id: leadFiles.id, name: leadFiles.name, thumb: leadFiles.thumb, kind: leadFiles.kind }).from(leadFiles).where(and(inArray(leadFiles.id, want), isNull(leadFiles.deletedAt))) : []
+  return new Map(rows.map((r) => [r.id, { fileId: r.id, name: r.name, thumb: !!r.thumb, ...(r.kind === 'image' ? { picture: true } : {}) }]))
 }
 export type ContractEditorData = {
   contract: Contract
@@ -176,12 +176,14 @@ export async function namedQuoteHold(c: Pick<Contract, 'fromQuoteId'>): Promise<
   if (!q || q.deletedAt) return null
   return quoteHoldsSigning(q, (await fetchQuoteApproval()) === 'required') ? { number: q.number, version: q.version } : null
 }
-/** (UX audit C2 · C5) The quotes a list's contracts name — number and status, for the send checks a list runs before the server does. */
-export async function namedQuotesOf(rows: Pick<Contract, 'fromQuoteId'>[]): Promise<Record<string, QuoteForSend>> {
+/** (UX audit C2 · C5) The quotes a list's contracts name — number and status, for the send checks a list runs before the server does.
+    (Contracts on the move, C4 — P-07) …and the amount each signs, for the phone card's first line ("the amount 18 right"). */
+export type NamedQuote = QuoteForSend & { amountMinor: number }
+export async function namedQuotesOf(rows: Pick<Contract, 'fromQuoteId'>[]): Promise<Record<string, NamedQuote>> {
   const ids = [...new Set(rows.map((r) => r.fromQuoteId).filter((x): x is string => !!x))]
   if (!ids.length) return {}
-  const qs = await db.select({ id: quotes.id, number: quotes.number, status: quotes.status }).from(quotes).where(inArray(quotes.id, ids))
-  return Object.fromEntries(qs.map((q) => [q.id, { number: q.number, status: q.status }]))
+  const qs = await db.select({ id: quotes.id, number: quotes.number, status: quotes.status, amountMinor: quotes.amountMinor, signedAmountMinor: quotes.signedAmountMinor }).from(quotes).where(inArray(quotes.id, ids))
+  return Object.fromEntries(qs.map((q) => [q.id, { number: q.number, status: q.status, amountMinor: q.signedAmountMinor ?? q.amountMinor }]))
 }
 
 /**
@@ -247,7 +249,7 @@ export async function signingPdfFile(token: string): Promise<{ fileId: string; n
 export type StudioContractRow = Contract & { leadName: string; /** (UX audit C1) Mark as signed's next step */ leadStage: string }
 export type StudioContractsData = {
   contracts: StudioContractRow[]; leads: { id: string; name: string }[]; viewer: ContractViewer; /** (REG-634) Send together's WhatsApp draft */ studioName: string
-  /** (UX audit C2) the quotes the contracts name, by id, and Settings' quote approval — the list's send checks */ quotes: Record<string, QuoteForSend>; approvalRequired: boolean
+  /** (UX audit C2) the quotes the contracts name, by id, and Settings' quote approval — the list's send checks (C4: with the amount each signs) */ quotes: Record<string, NamedQuote>; approvalRequired: boolean
   /** (S44Q — row 334) the member approves quotes: their send approves a Draft quote a contract names */ canApprove: boolean
   /** (pending modules S03) the Signing links window and how many standard PDFs the library holds */ linkDays: number; standardDocs: number
   now: number

@@ -9,10 +9,12 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DatePicker } from '@/components/om/date-picker'
+import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { decimalTyped } from '@/lib/format'
+import { decimalTyped, inputDate, parseInputDate } from '@/lib/format'
+import { MSG } from '@/lib/forms'
 import { useSnackbar } from '@/components/om/snackbar'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { couldnt, useRun } from '@/components/leads/tasks/use-run'
 import { Chips } from '@/components/om/chips'   // (parity map, MI-021) the first payment's % · S$ switch
@@ -21,7 +23,7 @@ import { money2 } from '@/lib/quotes/math'
 import { FEE_FIRST_ALONE, FEE_FIRST_STAYS, asFixedFirst, asSharesFirst, blankRow, dueLabel, findSplit, fixedFeeOf, isFixedRow, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, splitWord, toRows, type PaymentRow, type PaymentSplit, type ScheduleAnchors } from '@/lib/quotes/payments'
 import { usePathname, useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
-import { Dialog } from '@/components/om/dialog'
+import { Dialog, FootStart } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { saveQuoteScheduleAsTemplate } from '@/app/company/payment-templates-actions'
 import { createQuotePayment, deleteQuotePayment, readPaymentFeeFirst, reorderQuotePayments, replaceQuotePayments, updateQuotePayment, type PaymentPatch } from '@/app/quotes/payments-actions'
@@ -53,6 +55,8 @@ const PAY_HEADS: { key: string; label: string }[] = [{ key: 'name', label: 'Paym
 const fmtPct = (p: number) => `${Number.isInteger(p) ? p : Number(p.toFixed(2))}%`
 /** Whole dollars ("S$10,000") — the over-balance message's figures (1271:38240). */
 const money0 = (minor: number) => money2(Math.round(minor / 100) * 100).replace(/\.00$/, '')
+/** Dollars as a money box types them ("4983.81"). */
+const dollars = (minor: number) => (minor / 100).toFixed(2)
 
 /**
  * Payment Schedule (1238:29290 · base 1271:37370 · edit 1271:37609 · over-balance 1271:38240 · hover 1271:38624 · banner
@@ -60,6 +64,9 @@ const money0 = (minor: number) => money2(Math.round(minor / 100) * 100).replace(
  * name · description / trigger · % · amount · due), the over-balance error, "Add a Payment". Amounts are the quote's live
  * total × each row's share (REG-403); every edit writes at once and stamps the quote's "Saved …". Presets and a removed row
  * can be undone.
+ * (quotes on the move 2026-10-22, B-01 · B-11 · B-22 · P-08) ≤1024 every row is a CARD — name over description, the amount over "10% ·
+ * On Approval" — and the whole card opens the payment's own sheet (name · description · share and amount side by side · due · Remove ·
+ * Done); the handle keeps the drag. The desktop's cells and inline boxes are untouched above 1024.
  */
 export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalMinor, today, onSaved, onRows, locked = false }: {
   seed: PaymentsSeed
@@ -82,6 +89,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const [saveSplit, setSaveSplit] = useState<string | null>(null)   // the Save-as dialog's name (null = closed)
   const anchors: ScheduleAnchors = { start: new Date(seed.anchors.start), weeks: seed.anchors.weeks }
   const phone = useMediaQuery(MOBILE)
+  const compact = useMediaQuery(TABLET_DOWN)   // (quotes on the move, B-11) ≤1024 the rows are cards that open the payment's sheet
   const colWidths = useColumnWidths(PAY_TABLE)
   const tracks = gridTracks(PAY_TRACKS, colWidths)
   // The rows' floor (REG-430): the mock's 40 + 319 + 120 + 140 × 3, each column at its dragged width instead — the table scrolls sideways past it.
@@ -101,6 +109,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const presetRef = useRef<HTMLSpanElement>(null)
   const moreRef = useRef<HTMLSpanElement>(null)
   const previous = useRef<PaymentRow[] | null>(null)
+  /* (B-11) the card's sheet: the row it opened on is kept for the sheet's exit, open and closed apart */
+  const [sheetRow, setSheetRow] = useState<QuotePayment | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   /* (parity map, MI-021 — 1.0's fee first, behind the studio's switch) Settings › Finance › Invoices › *May open with a fixed fee*: read once, so the
      first payment's `% · S$` switch shows only when the studio allows it (or the row already is a fee — it can always go back to a share) */
   const [feeFirst, setFeeFirst] = useState(false)
@@ -180,7 +191,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     void run('add the payment', async () => {
       const r = await orThrow(createQuotePayment(quoteId, blankRow(anchors)))
       setRows((rs) => [...rs, r.row]); onSaved(r.updatedAt)
-      setEdit({ id: r.row.id, field: 'name', draft: r.row.name })
+      if (compact) { setSheetRow(r.row); setSheetOpen(true) }   // (B-11) a new payment opens its sheet, as the desktop opens its name box
+      else setEdit({ id: r.row.id, field: 'name', draft: r.row.name })
     })
   }
   const removeRow = (row: QuotePayment) => {
@@ -249,6 +261,11 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       </>
     )
   }
+
+  /* ── the payment's sheet (≤1024, B-11): one press on the card; Done writes the fields that changed as one patch; Remove with its Undo ── */
+  const openSheet = (row: QuotePayment) => { if (locked) return; setSheetRow(row); setSheetOpen(true) }
+  const saveSheet = (patch: PaymentPatch) => { if (sheetRow && Object.keys(patch).length) patchRow(sheetRow.id, patch); setSheetOpen(false) }
+  const removeFromSheet = () => { if (sheetRow) removeRow(sheetRow); setSheetOpen(false) }
 
   /* ── toolbar (1271:37377) ── */
   /* (REG-664) The splits as Templates › Payments files them: the ones at the top first, then each folder's under its name. */
@@ -325,6 +342,13 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     </div>
   )
 
+  /* (parity map, MI-021) the first payment: a share of the quote, or a fixed fee — the house Chips */
+  const feeSwitch = (row: QuotePayment, i: number) => (
+    <Chips className={styles.feeSwitch} label={`Bill ${row.name} as`} testId="payment-fee-switch" value={isFee(row, i) ? 'fixed' : 'pct'} onChange={(v) => setFirstFee(v === 'fixed')}
+           options={[{ value: 'pct', label: '%' }, { value: 'fixed', label: 'S$', disabled: !feeFirst && !isFee(row, i) }]} />
+  )
+  const offersFee = (row: QuotePayment, i: number) => i === 0 && !locked && (feeFirst || isFee(row, i)) && rows.length > 1
+
   const dueRow = dueFor ? rows.find((r) => r.id === dueFor) ?? null : null
   return (
     <SectionCard id="section-payment" title="Payment Schedule" open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
@@ -349,13 +373,34 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
             <Reorder.Group as="div" axis="y" values={rows.map((r) => r.id)} onReorder={reorder} className={styles.rows}>
               {rows.map((row, i) => (
                 <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragStart={() => { orderBefore.current ??= rowsRef.current.map((x) => x.id) }} onDragEnd={persistOrder} locked={locked}>
+                  {compact ? (
+                    /* (quotes on the move, B-11 · P-08) the card: name 16 over the description 14; the amount 20 tabular over "10% · On Approval" 14 */
+                    <div role="cell" className={styles.cardCell}>
+                      {locked ? (
+                        <div className={styles.cardBtn} data-locked="" data-testid="payment-card">
+                          <span className={styles.cardName}>{row.name}</span>
+                          <span className={styles.cardDesc}>{row.description ?? ''}</span>
+                          <span className={styles.cardAmount}>{money2(amounts[i] ?? 0)}</span>
+                          <span className={styles.cardShare}>{isFee(row, i) ? (row.fixedLabel ?? 'Fixed fee') : fmtPct(live[i]!.pct)} · {dueLabel(row)}</span>
+                        </div>
+                      ) : (
+                        <button type="button" className={styles.cardBtn} data-testid="payment-card" aria-haspopup="dialog" aria-expanded={sheetOpen && sheetRow?.id === row.id} onClick={() => openSheet(row)}>
+                          <span className={styles.cardName}>{row.name}</span>
+                          <span className={styles.cardDesc} data-empty={row.description ? undefined : ''}>{row.description ?? 'Add a description'}</span>
+                          <span className={styles.cardAmount}>{money2(amounts[i] ?? 0)}</span>
+                          <span className={styles.cardShare}>{isFee(row, i) ? (row.fixedLabel ?? 'Fixed fee') : fmtPct(live[i]!.pct)} · {dueLabel(row)}</span>
+                        </button>
+                      )}
+                      {offersFee(row, i) ? <span className={styles.cardFee}>Bill as{feeSwitch(row, i)}</span> : null}
+                    </div>
+                  ) : (
+                  <>
                   <div role="cell" className={`${styles.cell} ${styles.cName}`} data-editing={editing(row.id, 'name') || undefined}>
-                    {editing(row.id, 'name') ? editBox(row, 'name', i) : i === 0 && !locked && (feeFirst || isFee(row, i)) && rows.length > 1 ? (
+                    {editing(row.id, 'name') ? editBox(row, 'name', i) : offersFee(row, i) ? (
                       /* (parity map, MI-021) the first payment: a share of the quote, or a fixed fee — the house Chips beside its name */
                       <span className={styles.nameRow}>
                         <button type="button" className={styles.cellBtn} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>
-                        <Chips className={styles.feeSwitch} label={`Bill ${row.name} as`} testId="payment-fee-switch" value={isFee(row, i) ? 'fixed' : 'pct'} onChange={(v) => setFirstFee(v === 'fixed')}
-                               options={[{ value: 'pct', label: '%' }, { value: 'fixed', label: 'S$', disabled: !feeFirst && !isFee(row, i) }]} />
+                        {feeSwitch(row, i)}
                       </span>
                     ) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
                   </div>
@@ -382,6 +427,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
                     <IconButton icon="delete" label={`Remove ${row.name}`} iconSize={20} className={styles.del} onClick={() => removeRow(row)} />
                   </Tooltip>
                   )}
+                  </>
+                  )}
                 </PaymentRowView>
               ))}
             </Reorder.Group>
@@ -405,6 +452,10 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       </div>
       <DatePicker open={!!dueRow} anchorRef={dueAnchor} anchorKey={dueFor ?? ''} value={dueRow?.dueAt ?? null} today={today} label="Due date"
                   onSelect={(d) => { if (dueFor) patchRow(dueFor, { dueKind: 'fixed', dueAt: d }); setDueFor(null) }} onClose={() => setDueFor(null)} />
+      {compact ? (
+        <PaymentSheet open={sheetOpen} row={sheetRow} fee={!!sheetRow && isFee(sheetRow, rows.indexOf(sheetRow))} amountMinor={sheetRow ? amounts[rows.indexOf(sheetRow)] ?? 0 : 0}
+                      shareBase={shareBase} totalMinor={totalMinor} feeOnQuote={fee > 0} today={today} locked={locked} onClose={() => setSheetOpen(false)} onSave={saveSheet} onRemove={removeFromSheet} />
+      ) : null}
     </SectionCard>
   )
 }
@@ -427,5 +478,81 @@ function PaymentRowView({ row, amount, onDragStart, onDragEnd, locked, children 
       </div>
       {children}
     </Reorder.Item>
+  )
+}
+
+/** What the payment's sheet edits — the fields as typed; `dueTouched` says the day was picked here (an estimate left alone stays one). */
+type SheetDraft = { name: string; description: string; pct: string; amount: string; word: string; due: 'approval' | 'date'; dueAt: string; dueTouched: boolean }
+const draftOf = (r: QuotePayment, fee: boolean, amountMinor: number): SheetDraft => ({
+  name: r.name, description: r.description ?? '', pct: String(Number(r.pct.toFixed(2))), amount: dollars(fee ? (r.fixedMinor ?? 0) : amountMinor), word: r.fixedLabel ?? '',
+  due: r.dueKind === 'approval' ? 'approval' : 'date', dueAt: r.dueAt ? inputDate(new Date(r.dueAt)) : '', dueTouched: false,
+})
+
+/**
+ * (quotes on the move 2026-10-22, B-11 · B-01) The payment's sheet — a bottom sheet on a phone, a 400 dialog on a tablet: the name, the
+ * description, the share and the amount side by side (typing one gives the other, of what the quote — or what the fixed fee leaves —
+ * is worth), the fee's own amount and printed word in their place, Due as "On approval · On a date" with the day, Remove at the foot's
+ * start with the schedule's Undo, Done the one filled button. Nothing writes until Done; an estimate left alone stays an estimate.
+ */
+function PaymentSheet({ open, row, fee, amountMinor, shareBase, totalMinor, feeOnQuote, today, locked, onClose, onSave, onRemove }: {
+  open: boolean; row: QuotePayment | null; fee: boolean; amountMinor: number; shareBase: number; totalMinor: number; feeOnQuote: boolean; today: Date; locked: boolean
+  onClose: () => void; onSave: (patch: PaymentPatch) => void; onRemove: () => void
+}) {
+  const [draft, setDraft] = useState<SheetDraft>(() => (row ? draftOf(row, fee, amountMinor) : { name: '', description: '', pct: '', amount: '', word: '', due: 'approval', dueAt: '', dueTouched: false }))
+  const [touched, setTouched] = useState(false)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) { setWasOpen(open); if (open && row) { setDraft(draftOf(row, fee, amountMinor)); setTouched(false) } }   // every opening starts from the row as it stands (render-phase adjust)
+  const set = (p: Partial<SheetDraft>) => setDraft((d) => ({ ...d, ...p }))
+  /* the share and the amount are one number seen two ways: of what the quote (or what the fee leaves) is worth */
+  const setPct = (v: string) => { const n = Number(v); setDraft((d) => ({ ...d, pct: v, amount: Number.isFinite(n) && shareBase > 0 ? dollars(Math.round((shareBase * n) / 100)) : d.amount })) }
+  const setAmount = (v: string) => { const n = Number(v); setDraft((d) => ({ ...d, amount: v, pct: fee ? d.pct : Number.isFinite(n) && shareBase > 0 ? String(Number(((n * 100) / shareBase * 100).toFixed(2))) : d.pct })) }
+  const nameOk = draft.name.trim().length > 0
+  const feeOk = !fee || Number(draft.amount) > 0
+  const dateOk = draft.due === 'approval' || !!parseInputDate(draft.dueAt)
+  const done = () => {
+    if (!row) return
+    if (!nameOk || !feeOk || !dateOk) { setTouched(true); return }
+    const patch: PaymentPatch = {}
+    const name = draft.name.trim(); if (name !== row.name) patch.name = name
+    const desc = draft.description.trim() || null; if (desc !== (row.description ?? null)) patch.description = desc
+    if (fee) {
+      const minor = Math.round(Number(draft.amount) * 100); if (Number.isFinite(minor) && minor > 0 && minor !== row.fixedMinor) patch.fixedMinor = minor
+      const w = draft.word.replace(/\s+/g, ' ').trim().slice(0, 30); const next = w && w.toLowerCase() !== 'fixed fee' ? w : null; if (next !== (row.fixedLabel ?? null)) patch.fixedLabel = next   // (S44T — row 310) empty = "Fixed fee"
+    } else {
+      const n = Number(draft.pct); if (Number.isFinite(n) && n >= 0 && Math.abs(n - row.pct) > 0.004) patch.pct = Number(n.toFixed(2))
+    }
+    if (draft.due === 'approval') { if (row.dueKind !== 'approval') { patch.dueKind = 'approval'; patch.dueAt = null } }
+    else if (draft.dueTouched || row.dueKind === 'approval') { const d = parseInputDate(draft.dueAt)!; if (row.dueKind !== 'fixed' || !row.dueAt || inputDate(new Date(row.dueAt)) !== inputDate(d)) { patch.dueKind = 'fixed'; patch.dueAt = d } }
+    onSave(patch)
+  }
+  return (
+    <Dialog open={open} onClose={onClose} title={row?.name || 'Payment'} size="form" width={400} portal closeOnScrim={false}
+            footer={<>
+              {locked ? null : <FootStart><Button variant="secondary" appearance="text" className={styles.removeBtn} onPress={onRemove} data-testid="payment-sheet-remove">Remove</Button></FootStart>}
+              <Button onPress={done} data-testid="payment-sheet-done">Done</Button>
+            </>}>
+      <div className={styles.sheet} data-testid="payment-sheet">
+        <TextField label="Payment name" required value={draft.name} onChange={(v) => set({ name: v })} error={touched && !nameOk ? MSG.required : undefined} />
+        <TextField label="Description / trigger" value={draft.description} onChange={(v) => set({ description: v })} />
+        {fee ? (
+          <div className={styles.pair}>
+            <TextField label="Amount (S$)" required numeric="money" value={draft.amount} onChange={setAmount} error={touched && !feeOk ? MSG.amount : undefined} />
+            {/* (S44T — row 310) the word printed where a share prints its %, the studio's own — empty prints "Fixed fee" */}
+            <TextField label="Printed as" value={draft.word} onChange={(v) => set({ word: v })} maxLength={30} placeholder="Fixed fee" />
+          </div>
+        ) : (
+          <div className={styles.pair}>
+            <TextField label="Share (%)" required numeric="decimal" value={draft.pct} onChange={setPct} />
+            <TextField label="Amount (S$)" numeric="money" value={draft.amount} onChange={setAmount} disabled={shareBase <= 0} />
+          </div>
+        )}
+        {fee ? null : <p className={styles.sheetHint}>{shareBase > 0 ? (feeOnQuote ? `Of ${money2(shareBase)} — what the fixed fee leaves` : `Of the quote total, ${money2(totalMinor)}`) : 'Amounts follow the quote total — add items first'}</p>}
+        <Chips label="Due" testId="payment-due-chips" value={draft.due} onChange={(v) => set({ due: v === 'date' ? 'date' : 'approval' })} options={[{ value: 'approval', label: 'On approval' }, { value: 'date', label: 'On a date' }]} />
+        {draft.due === 'date' ? (
+          <DateField label="Due date" required value={draft.dueAt} onChange={(v) => set({ dueAt: v, dueTouched: true })} today={today} error={touched && !dateOk ? MSG.date : undefined}
+                     helper={row?.dueKind === 'estimate' && !draft.dueTouched ? 'An estimate from the start date — pick a day to fix it' : undefined} />
+        ) : null}
+      </div>
+    </Dialog>
   )
 }

@@ -63,6 +63,53 @@ Mobile rules layer ON TOP of tablet rules: put shared shrinkage in 1024 and mobi
 - **File viewer**: panels become full overlays at mobile; the zoom bar compacts.
 - **Two-column field rows** (move-stage pairs, forms): single column at mobile.
 
+## On the move: a data-heavy record on a phone or a touch tablet (the Quotes module first, 2026-10-22)
+
+The owner's rule after the Quotes audit (`design-source/context/responsive/quotes-on-the-move-2026-10-22/`, his picks on its review page):
+**a phone or a touch tablet is not a squeezed desktop; it is an on-the-move screen.** The desktop (≥1025) stays the mock, byte-identical.
+On ≤1024:
+
+- **Read first, edit second.** A record with heavy data (a quote) opens as the thing the client gets — a hero (status · amount · validity ·
+  the client with Call and WhatsApp), one *Next* line, the document as reading cards, the other parts as folded rows — with a sticky foot
+  holding **Edit** and the state's one primary. The editor comes only on Edit (`components/quotes/screen/*`, `lib/quotes/next-step.ts`).
+- **One thing at a time.** Edit is a list of sections, each with a one-line summary; a row opens the section as a screen (a 56 bar with ←,
+  the title and the section's actions; the body scrolls; one filled button in its foot). The address carries it (`?edit=<key>`), so Back
+  works. A landscape tablet holds the list as a 360 pane beside the open section (`SectionCard`'s screen mode, `screen-context.ts`).
+- **The scale: 16 · 14 · 44.** Text people read is 16, secondary 14, never under 14 for a value, a name or a sentence (a 12 uppercase eyebrow
+  may label a group); amounts 18–26 tabular; every target 44, the foot's buttons 48; 16 gutters, 12 inside cards; inputs type at 16.
+- **A table on a touch tablet shows what fits, never twelve columns.** A grid shows the four or five columns a finger edits (Item · Qty ·
+  Unit price · Total) with the rest in a pane or Column settings remembered per breakpoint (`om.columns.<table>.tablet`); a list table opens
+  with a tablet default set (`tabletHidden`, `useTableColumns(…, tablet)`), its ⋮ frozen, View dropped (the title opens).
+- **Paper is a viewer.** An A4 is never scaled to a phone's width (4px type); the client's reflowed quote is the default and the paper opens
+  in a viewer (fit to width, pinch, pages) behind "As printed" / "Paper".
+- **The icon button's touch box is the house one.** Never `button::after { inset … }` in a module stylesheet (it keeps the house
+  translate(−50%, −50%) and moves the 44 box by (−22, −22)); the design-lint rule `icon-button-overlay` ratchets it down. A DS Button grows
+  with `min-height` / padding.
+- **A client's page is always a phone page** (the confirmation link, the view-only link): the total first, the cards, a sticky bar with the one
+  action at 48, the paper only in a tablet's landscape.
+- **Nothing runs off the screen and nothing covers a foot.** An anchored menu at ≤1024 measures itself before paint against the document's
+  width and shifts inside an 8px edge (`components/leads/dropdown.tsx` `--menu-shift` · `data-align`); a sheet with a pinned foot lifts the
+  snackbar above that foot (`useSheetFootLift`, `--sheet-foot`); a Send ▾ mounted in a foot opens upward (`SendButton side · align`). A phone's
+  send sheet fits: the message box grows with its words, the link row gives way to Copy link in the foot.
+  A floating button (Maison AI) never sits where a pane's or a foot's button is: on a tablet it steps out of a section screen whose toolbar
+  carries it (REG-2587); on a phone it slides away on scroll and the pane is a sheet above it.
+- **Measure against the device, not the window.** Under touch emulation `innerWidth` and `scrollWidth` grow with overflowing content; a probe
+  reads `documentElement.clientWidth` / `screen.width`, takes tablet shots viewport-only, and moves a menu by layout (margin), never by a
+  transform, when it asserts the width while the menu is open.
+
+### Contracts on the move (REG-2588…2639, 2026-10-23) — what the second module added to the rule
+- **A document is clauses.** A contract (and a contract template) on ≤1024 reads as its clauses as cards split at the headings, the signature
+  boxes as the last card; editing the paper is one screen (the Document frame) with ONE row of tools at a 44 pitch and the rest under + ▾.
+  Signed reads only — no toolbar, greyed or not.
+- **A finger never aims.** Anything placed in a text by a mouse at the caret (a signature field) is placed on touch by choosing *where* from
+  the outline, lands as its own block, scrolls into view with the fresh pulse and says so with Undo.
+- **The client's page reads first and walks.** Paper first at 16; one sticky bar says how far they are and then does the next thing; the
+  rest (ticks, the code, the signature) is a short sheet in steps, one filled button each; the code boxes autofill; a drawn signature keeps
+  its shape; a copy is the signed page they can share, never a print dialog on a phone.
+- **A photo is a document on site.** Where a phone uploads what a client signed on paper, Take a photo comes first and the photo is kept
+  as the copy.
+- **A tooltip is a pointer's.** A finger's press leaves no bubble and no key hint (`components/om/tooltip.tsx`).
+
 ## Touch ergonomics (REG-273 — the owner's clarification, 2026-09-01)
 
 "Mirror desktop as-is" means the **design language and every feature** carry to mobile and tablet — NOT that

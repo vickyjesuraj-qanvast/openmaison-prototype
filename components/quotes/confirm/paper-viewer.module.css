@@ -1,0 +1,34 @@
+/* (Quotes on the move, K4 — P-12 · A-17) The "As printed" viewer over the client's page: one bar, the pages fitted to the width under it;
+   the printed copy is the document inside it (the bar, the dots and the hint never print).
+   (K3 — P-05, the studio's Preview shares it) The pages lie side by side, one per swipe: the body snaps page by page at fit and pans both ways
+   once zoomed in (the viewer's own pinch, paper-viewer.tsx — `pan-x pan-y` keeps the browser's pinch and double-tap off this box, so the bar
+   never scales, C-16); dots under the pages say where you are. */
+.viewer { position: fixed; inset: 0; z-index: 115; display: flex; flex-direction: column; background: var(--om-color-surface-bg); outline: none; padding-top: env(safe-area-inset-top, 0px); }
+.bar { flex-shrink: 0; background: var(--om-color-surface-default); }   /* the house head (SurfaceHead): 64, the rule inside it, the 20/24 title */
+.barBtn.barBtn { width: 44px; height: 44px; margin: -10px; }   /* the 24 glyph in a finger's 44, the extra paid back so the head keeps its measure (REG-312) */
+.body { position: relative; flex: 1; min-height: 0; display: flex; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.body::-webkit-scrollbar { display: none; }
+.body[data-zoomed] { scroll-snap-type: none; }
+/* centred while the page is shorter than the body, at the top once taller (margin auto in a flex box); the edge gutters grow with the zoom so
+   every page keeps one body-width to itself */
+.box { margin: auto; flex-shrink: 0; padding: 0 var(--edge, 16px); transform-origin: 0 0; }
+/* the document's pages side by side (its own stylesheet stacks them): the gap between two is the two gutters met, in the document's own px
+   (paper-viewer.tsx sets `--gap-z` from the zoom it drew at) */
+.box div:has(> [data-page]) { flex-direction: row; align-items: flex-start; gap: var(--gap-z, 24px); width: max-content; }
+.box [data-page] { scroll-snap-align: center; scroll-snap-stop: always; }
+.foot { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 var(--om-spacing-4) env(safe-area-inset-bottom, 0px); }
+.dots { display: flex; align-items: center; justify-content: center; min-height: 44px; }
+/* a dot is an 8px mark in a 44 target */
+.dot { width: 44px; height: 44px; padding: 0; border: 0; background: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--om-radius-1); }
+.dot::before { content: ''; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); transition: background var(--motion-toggle), transform var(--motion-toggle); }
+.dot[aria-current]::before { background: var(--om-color-primary-default); transform: scale(1.25); }
+.dot:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; min-height: 44px; display: inline-flex; align-items: center; }
+.hint { margin: 0; padding: var(--om-spacing-1) 0 var(--om-spacing-2); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media print {
+  .viewer { position: static; display: block; padding: 0; background: none; }
+  .bar, .foot { display: none !important; }
+  .body { overflow: visible; padding: 0; display: block; }
+  .box { padding: 0; }
+  .box div:has(> [data-page]) { flex-direction: column; gap: 0; width: auto; }
+}

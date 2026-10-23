@@ -3,3 +3,24 @@
 @media print {
   .noPrint { display: none !important; }
 }
+/* (Contracts on the move, P-01 — the Preview's B-09 · B-10, 2026-10-22) The touch widths: a phone's stage holds the reflowed paper (the
+   client's own view) and, under it, the signing record; a tablet's stage draws the paper at 1:1 (816) and scrolls its margins; inside the
+   house viewer (components/quotes/confirm/paper-viewer.tsx) the paper is one page, drawn at its print size and scaled whole — the desk's
+   letterhead row and margins, not the phone's reflow. */
+@media (max-width: 1024px) {
+  .phoneStage, .tabletStage { flex-direction: column; align-items: center; gap: var(--om-spacing-4); }
+  .tabletStage { overflow-x: auto; scrollbar-width: none; align-items: flex-start; }
+  .tabletStage::-webkit-scrollbar { display: none; }
+  .tabletStage > article { width: 816px; max-width: none; flex-shrink: 0; margin: 0 auto; }
+  .tabletStage > :not(article) { width: 100%; max-width: 816px; }
+}
+.viewerDoc { display: block; }
+.viewerPage { position: relative; overflow: hidden; }
+.viewerInner { transform-origin: 0 0; }
+.viewerInner > article { padding: 64px; max-width: none; }
+.viewerInner > article > header { flex-direction: row; align-items: center; }
+.viewerInner > article > header > span { align-items: flex-end; text-align: right; }
+.viewerInner [data-sign] { width: 280px; }
+
+/* (contracts on the move, B-17) the deposit help at 14 on the move; the preview shares the editor send sheet */
+@media (max-width: 1024px) { .sendHelp { font: var(--om-type-body-m); } }

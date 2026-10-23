@@ -120,7 +120,7 @@ const STRIP = `
       /* a tooltip that only names its control ("Undo" on the Items table's greyed Undo) is no reason — a tap says nothing */
       as('dane')
       const T = await b.newContext({ viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true }); const t = await page(T, 'undo-768')
-      await go(t, `/quotes/${sql(`select id from quotes where number = 'OM-10001'`)}`, 2600)
+      await go(t, `/quotes/${sql(`select id from quotes where number = 'OM-10001'`)}?edit=items`, 2600)   // (quotes on the move, a deliberate change of this rule) the Items toolbar is on the Items screen on a touch tablet
       const undo = t.getByRole('button', { name: 'Undo', exact: true }).first()
       if (await undo.count() && await undo.isVisible()) {
         await undo.scrollIntoViewIfNeeded(); const ub = await undo.boundingBox()

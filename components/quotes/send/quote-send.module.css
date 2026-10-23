@@ -3,3 +3,7 @@
 .followHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-width: 0; }
 /* (pending modules S02) The view-only link's dialog: who can open it, and Stop the link beside it (under it on a phone) — the follow-up row's shape. */
 .viewStop { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (quotes on the move 2026-10-22, P-08) the two help lines read at 14 on a phone or a touch tablet — a sentence is never 12 there */
+@media (max-width: 1024px) {
+  .followHelp, .viewStop { font: var(--om-type-body-m); }
+}

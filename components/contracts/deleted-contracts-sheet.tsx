@@ -63,8 +63,8 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
       {/* (REG-727) The trio's head: the crumb as the eyebrow, Empty Trash the one action before the close; no foot. */}
       <Dialog open={open} onClose={onClose} title="Deleted Contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
               actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Empty Trash</Button>}>
-        <span className={styles.note}>Deleted contracts stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a contract.</span>
-        <div className={styles.table} role="table" aria-label="Deleted contracts" data-testid="deleted-contracts" data-lead={showLead || undefined} data-by="" data-select="">
+        <span className={`${styles.note} ${styles.noteMove}`}>Deleted contracts stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a contract.</span>
+        <div className={styles.table} role="table" aria-label="Deleted contracts" data-testid="deleted-contracts" data-lead={showLead || undefined} data-by="" data-select="" data-card="">
           <div className={styles.head} role="row">
             <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label="Select all deleted contracts" /></span>
             <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Title</span></span>
@@ -80,10 +80,11 @@ export function DeletedContractsSheet({ open, onClose, load, crumb, showLead, on
             <div key={c.id} className={styles.row} role="row" data-testid="deleted-contract" data-selected={selected.has(c.id) || undefined}>
               <span role="cell" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={selected.has(c.id)} isDisabled={!c.mine} onChange={() => toggle(c.id)} aria-label={`Select ${c.title}`} /></span>
               <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="contract" size={20} weight={300} />{c.title}</span>
-              {showLead ? <span role="cell" className={styles.cell}>{c.leadName}</span> : null}
-              <span role="cell" className={styles.cell}>{c.status}</span>
-              <span role="cell" className={styles.cell}>{c.deletedAt ? displayDate(c.deletedAt) : '--'}</span>
-              <span role="cell" className={styles.cell}>{c.deletedByName ?? '--'}</span>
+              {/* (Contracts on the move, C4 — A-14) on a phone the facts read as one labelled line under the title; the desk keeps its columns */}
+              {showLead ? <span role="cell" className={styles.cell} data-fact="Lead">{c.leadName}</span> : null}
+              <span role="cell" className={styles.cell} data-fact="Status">{c.status}</span>
+              <span role="cell" className={styles.cell} data-fact="Deleted">{c.deletedAt ? displayDate(c.deletedAt) : '--'}</span>
+              <span role="cell" className={styles.cell} data-fact="Deleted by">{c.deletedByName ?? '--'}</span>
               <span role="cell" className={`${styles.cell} ${styles.actions}`}>
                 <Tooltip label={c.mine ? `Put it back on ${c.leadName}` : CONTRACT_DELETE_RULE}>
                   <span><Button variant="secondary" appearance="outlined" isDisabled={busy || !c.mine} onPress={() => { void run('restore the contract', () => onRestore([c.id])) }}>Restore</Button></span>

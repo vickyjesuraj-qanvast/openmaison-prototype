@@ -119,3 +119,18 @@
    sheet, with the sheet's own head, grabber and scrim. */
 .sheetPanel { display: flex; flex-direction: column; width: 256px; margin: 0 auto; padding-bottom: var(--om-spacing-4); }
 .sheetPanel[data-time] { width: 296px; }
+
+/* (Contracts on the move 2026-10-22, B-24 — REG-312's target in the one picker that drew 32) ≤767 the sheet's day cells are 44 at a 44 pitch
+   (7 × 44 + the 16 gutters = 340, inside a 358 sheet), 40 at 320 where seven must share 288; the drawn disc keeps its 30 — the mark stays the
+   mock's size, the target grows. The anchored desk card above 767 is untouched. */
+@media (max-width: 767px) {
+  .sheetPanel { --cell: 44px; width: calc(7 * var(--cell) + 2 * var(--om-spacing-4)); }
+  .sheetPanel[data-time] { width: calc(7 * var(--cell) + 2 * var(--om-spacing-4)); }
+  .sheetPanel .weekdays, .sheetPanel .grid { grid-template-columns: repeat(7, var(--cell)); padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .sheetPanel .grid { grid-auto-rows: var(--cell); }
+  .sheetPanel .day { width: var(--cell); height: var(--cell); }
+  .sheetPanel .day::before { inset: calc((var(--cell) - 30px) / 2); }
+}
+@media (max-width: 359px) {
+  .sheetPanel { --cell: 40px; }
+}

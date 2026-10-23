@@ -27,7 +27,7 @@ export default async function SignPage({ params }: { params: Promise<{ id: strin
   if (!data) {
     const bundle = await bundleIdForToken(id); if (bundle) redirect(`/sign/bundle/${bundle}`)
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14 · F111) deleted for good, or never made: the link says so, never a 404 */
+    return <LinkGone studio={brand.details.name} brand={brand.kit} phone={brand.details.phone} />   /* (sweep S2 #14 · F111) deleted for good, or never made: the link says so, never a 404 · (C3 — A-25) with the way to ask */
   }
   /* (REG-633, parity Q-17) the client opened it — (pending modules S02) not WhatsApp drawing the card on the sender's phone as the link is pasted */
   if (data.state === 'open' && !data.contract.viewedAt && !(await fetchedForPreview()) && !(await isStudioVisit())) await stampViewed(data.contract.id)

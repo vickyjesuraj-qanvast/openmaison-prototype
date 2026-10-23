@@ -50,8 +50,8 @@ export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, o
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
     <Dialog open={open} onClose={onClose} title="Archived Contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
-      <span className={styles.note}>Archived contracts leave the contract lists and keep everything they hold — a signed one keeps its signed copy. Unarchive puts one back on its lead.</span>
-      <div className={styles.table} role="table" aria-label="Archived contracts" data-testid="archived-contracts" data-lead={showLead || undefined} data-select="" data-kind="archived">
+      <span className={`${styles.note} ${styles.noteMove}`}>Archived contracts leave the contract lists and keep everything they hold — a signed one keeps its signed copy. Unarchive puts one back on its lead.</span>
+      <div className={styles.table} role="table" aria-label="Archived contracts" data-testid="archived-contracts" data-lead={showLead || undefined} data-select="" data-kind="archived" data-card="">
         <div className={styles.head} role="row">
           <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!all.length} onChange={() => setSelected(allOn ? new Set() : new Set(all.map((r) => r.id)))} aria-label="Select all archived contracts" /></span>
           <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Contract</span></span>
@@ -66,9 +66,10 @@ export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, o
             <div key={q.id} className={styles.row} role="row" data-testid="archived-contract" data-selected={selected.has(q.id) || undefined}>
               <span role="cell" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={selected.has(q.id)} onChange={() => toggle(q.id)} aria-label={`Select ${q.title}`} /></span>
               <span role="cell" className={`${styles.cell} ${styles.title}`}><Icon name="contract" size={20} weight={300} />{q.title}</span>
-              {showLead ? <span role="cell" className={styles.cell}>{q.leadName}</span> : null}
-              <span role="cell" className={styles.cell}>{q.status}</span>
-              <span role="cell" className={styles.cell}>{displayDate(new Date(q.archivedAt))}</span>
+              {/* (Contracts on the move, C4 — A-14) on a phone the facts read as one labelled line under the title; the desk keeps its columns */}
+              {showLead ? <span role="cell" className={styles.cell} data-fact="Lead">{q.leadName}</span> : null}
+              <span role="cell" className={styles.cell} data-fact="Status">{q.status}</span>
+              <span role="cell" className={styles.cell} data-fact="Archived">{displayDate(new Date(q.archivedAt))}</span>
               <span role="cell" className={`${styles.cell} ${styles.actions}`}>
                 <Tooltip label={`Put it back on ${q.leadName}`}>
                   <span><Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void unarchive([q.id]) }}>Unarchive</Button></span>

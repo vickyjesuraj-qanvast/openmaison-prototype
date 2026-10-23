@@ -144,7 +144,7 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const pp = await phone.newPage(); pp.setDefaultTimeout(12000)
   await step('phone: the card says how many comments', async () => {
-    await pp.goto(`${BASE}/quotes/${OM6}`); await pp.getByTestId('item-cards').waitFor(); await ready(pp)
+    await pp.goto(`${BASE}/quotes/${OM6}?edit=items`); await pp.getByTestId('item-cards').waitFor(); await ready(pp)   // (quotes on the move, a deliberate change of this rule) a phone / touch tablet opens the Quote screen; the Items cards are the Items screen
     const card = pp.locator(`[data-testid="item-card"][data-item-id="${l1[0]}"]`); await card.scrollIntoViewIfNeeded()
     ok('“1 comment” on the card', /1 comment/i.test(await card.getByTestId('line-comment-count').innerText()))
     await pp.screenshot({ path: `${S}/shots-qe5/07-phone-card.png` })

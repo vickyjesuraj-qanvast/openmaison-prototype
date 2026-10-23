@@ -5,6 +5,7 @@ import { Line, Words, deskOnly } from '@/components/shell/ghost-kit'
 import { AiBriefGhost } from '@/components/leads/detail/ai-brief'
 import card from '@/components/leads/detail/card.module.css'
 import overview from '../project-overview.module.css'
+import { DocumentsGhost } from './documents-card'   // (Contracts on the move, C4 — P-11 · C-23)
 
 /** One Overview card's ghost: its head in its own words, then `rows` of the LEAD STAGES row (`two`: the Needs you row's two lines). */
 export function CardGhost({ title, rows, two, fold = 0, phone }: { title: string; rows: number; two?: boolean; /** (simplify round 3) the first rows fold on a phone (Progress's stage rows), a rule under them */ fold?: number
@@ -34,7 +35,8 @@ export function CardGhost({ title, rows, two, fold = 0, phone }: { title: string
 }
 
 /** What the Overview draws, for its ghost (REG-708 · fix-A A-22): set up or running, a schedule, money, a closing summary. */
-export type OverviewGhostShape = { setup: boolean; schedule: boolean; money: boolean; closing?: boolean; briefMore?: boolean }
+export type OverviewGhostShape = { setup: boolean; schedule: boolean; money: boolean; closing?: boolean; briefMore?: boolean
+  /** (Contracts on the move, C4 — P-11 · C-23) the Documents card (≤1024 only) — drawn unless the project has no document at all */ documents?: boolean }
 
 /**
  * (simplify S-01 · REG-708) The Overview body's ghost, drawn from its own layout: the brief (one card — no Show more), then the two columns,
@@ -55,6 +57,7 @@ export function OverviewGhost({ shape: s }: { shape: OverviewGhostShape }) {
         </div>
         <div className={`${overview.column} ${overview.glance}`}>
           <span data-card="progress"><CardGhost title="Progress" rows={s.setup ? 3 : 6} fold={s.setup ? 0 : 3} /></span>
+          {s.documents !== false ? <DocumentsGhost /> : null}
           {s.closing ? <span data-card="closing-summary"><CardGhost title="Closing summary" rows={5} /></span>
             : s.money ? <span data-card="money"><CardGhost title="Money" rows={4} /></span> : null}
           <span data-card="recent-activity" className={overview.activityFold} data-folded=""><CardGhost title="Recent activity" rows={3} /></span>

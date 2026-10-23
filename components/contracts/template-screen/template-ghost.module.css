@@ -1,0 +1,11 @@
+/* (REG-708 · Contracts on the move, P-10) The template's two ghosts, picked by width: the desk editor's from 1025 up (its own box, as it always
+   was — this wrapper draws nothing), the reading screen's at ≤1024 (the quote editor's ghost classes, editor-skeleton.module.css, reused). */
+.desk { display: contents; }
+.touch { display: none; }
+@media (max-width: 1024px) {
+  .desk { display: none; }
+  .touch { display: contents; }
+}
+.page { flex: 1; }
+.rows { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.pdf { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }

@@ -11,14 +11,8 @@
 .body { composes: body from '../../om/empty-card.module.css'; }
 .buttons { composes: buttons from '../../om/empty-card.module.css'; }
 
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The two CTAs are DS buttons at the mock's 36. On a touch pointer each keeps its drawn size and gains a
-   transparent 4px ring, so the target is 44px, the pair stays centred on the mock's 12px gap (4px clear
-   between targets) and the card is unchanged. A mouse never sees this rule. */
-@media (hover: none) {
-  .buttons button { position: relative; }
-  .buttons button::after { content: ''; position: absolute; inset: -4px; }
-}
+/* ── Touch ergonomics (REG-273): the CTAs are DS buttons at the mock's 36; (Quotes on the move, K2's lint `icon-button-overlay`) the
+   `::after` ring that grew them here displaced a button's own box and is gone — the house pieces carry their targets. */
 
 /* (REG-377, canvas 2g / 3i) The two CTAs stack full-width on a phone instead of sharing a row at 36px — a pair of
    half-width buttons under a centred illustration reads as a desktop dialog, and the canvas draws them stacked. */

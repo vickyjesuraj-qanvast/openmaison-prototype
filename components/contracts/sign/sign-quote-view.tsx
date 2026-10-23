@@ -1,34 +1,34 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Icon } from '@/components/om/icon'
-import { mm, PAPER_MM } from '@/lib/templates/model'
 import { fallbackDesignClient } from '@/lib/templates/presets'
+import { docTotals } from '@/lib/templates/data'
 import type { ClientQuote } from '@/lib/quotes/client-quote'
 import type { LinkState } from '@/lib/contracts/policy'
-import { TemplateDocument } from '@/components/templates/render/document'
+import { QuoteStage } from '@/components/quotes/confirm/quote-stage'
 import { LinkNotice } from './link-notice'
+import { QuoteTotalCard } from './quote-total-card'
 import styles from './signing-page.module.css'
+import ph from './sign-phone.module.css'
 
 /**
  * (REG-633, contracts parity Q-20) The quote an agreement signs, as the client view prints it — the confirmation page's document
  * (REG-587) without its card: the letterhead bar, "Back to the agreement", the quote fitted to the page. Nothing here changes anything.
+ *
+ * (Contracts on the move, C3 — A-16 · A-17) On the phone model (a phone, a tablet held upright — the confirmation page's `QuoteStage`) the
+ * quote reads as the total card and the reading cards, "View as printed" opening the house paper viewer — never an A4 zoomed to 4px type;
+ * a tablet held sideways and the desk keep the paper at 1:1. The bar's link reads "← Agreement" on a phone. On a phone the signing page
+ * itself opens the quote in place (quote-layer.tsx); this page is the direct link's and the desk's.
  */
-export function SignQuoteView({ token, issuer, logo, data, state }: { /** (pending modules S03) the agreement's link token */ token: string; issuer: string; logo: string | null; /** (pending modules S04) the quote as the print reads it */ data: ClientQuote | null; state: LinkState }) {
+export function SignQuoteView({ token, issuer, logo, data, state, phone = null }: { /** (pending modules S03) the agreement's link token */ token: string; issuer: string; logo: string | null; /** (pending modules S04) the quote as the print reads it */ data: ClientQuote | null; state: LinkState
+  /** (C3 — A-25) the studio's number on record, for a dead link's "Message {studio}" */ phone?: string | null }) {
   const [fallback] = useState(fallbackDesignClient)
   const design = data?.design ?? fallback
-  const areaRef = useRef<HTMLDivElement>(null)
-  const [areaW, setAreaW] = useState(0)
-  useEffect(() => {
-    const el = areaRef.current
-    if (!el) return
-    const ro = new ResizeObserver((es) => { for (const e of es) setAreaW(e.contentRect.width) })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  const zoom = areaW ? Math.min(1, Math.max(0.3, areaW / mm(PAPER_MM[design.page.paper].w))) : 0.9
-  const onPaginated = useCallback(() => {}, [])
+  const [printed, setPrinted] = useState(false)
+  const onPrinted = useCallback((v: boolean) => setPrinted(v), [])
+  const totalMinor = useMemo(() => (data ? docTotals(data.data).totalMinor : 0), [data])
   return (
     <div className={styles.page} data-testid="sign-quote-view">
       <header className={styles.top}>
@@ -37,15 +37,14 @@ export function SignQuoteView({ token, issuer, logo, data, state }: { /** (pendi
           {logo ? <img className={styles.logo} src={logo} alt="" /> : null}
           <span className={styles.studio}>{issuer}</span>
         </span>
-        <Link href={`/sign/${token}`} className={styles.quoteLink}><Icon name="arrow_back" size={20} />Back to the agreement</Link>
+        <Link href={`/sign/${token}`} className={styles.quoteLink} data-testid="sign-quote-back"><Icon name="arrow_back" size={20} /><span className={ph.backLong}>Back to the agreement</span><span className={ph.backShort}>Agreement</span></Link>
       </header>
       {data && (state === 'open' || state === 'signed') ? (
-        <div className={styles.body}>
-          <div className={`${styles.stage} ${styles.column}`} ref={areaRef}>
-            <TemplateDocument design={design} brand={data.brand} data={data.data} view={data.view} zoom={zoom} onPaginated={onPaginated} />
-          </div>
+        <div className={`${styles.body} ${ph.quoteBody}`}>
+          <QuoteTotalCard data={data} onPrinted={() => setPrinted(true)} />
+          <QuoteStage design={design} brand={data.brand} data={data.data} view={data.view} totalMinor={totalMinor} show printed={printed} onPrinted={onPrinted} viewerTitle={`As printed · ${data.quote.number}`} />
         </div>
-      ) : <LinkNotice state={state === 'not-sent' || state === 'expired' || state === 'quote-updating' ? state : 'inactive'} studio={issuer} />}   {/* (S42 B-01) never the draft of a revision */}
+      ) : <LinkNotice state={state === 'not-sent' || state === 'expired' || state === 'quote-updating' ? state : 'inactive'} studio={issuer} contact={phone ? { phone } : null} />}   {/* (S42 B-01) never the draft of a revision · (C3 — A-25) */}
     </div>
   )
 }

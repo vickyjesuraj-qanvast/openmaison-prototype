@@ -22,6 +22,8 @@ function Section({ title, help, cols, rows, phone, tools = 1, list }: { title: s
 }
 
 const stack = (w: number[]) => (r: number) => [cycle(w, r), 60] as [number, number]
+/** (Contracts on the move, C4 — C-14) a tile's help line is 16 tall on a desk and 20 where a finger reads it at 14 (money.module.css `--tile-help-lh`) */
+const HELP_LH = { height: 'var(--tile-help-lh, 16px)' }
 
 /**
  * (REG-708, Projects round 5) The Money tab's ghost — the tab's own layout, drawn through components/projects/project-ghost.tsx by the route's
@@ -56,8 +58,10 @@ export function MoneyGhost({ band = false }: { /** (fix-D, D-39) the tab opens w
             <Line w={cycle([72, 56, 48], i)} lh={16} h={10} />
             <Line w={cycle([132, 120, 40], i)} lh={24} h={20} />
             {i === 0 ? <Bone w="100%" h={8} r="var(--om-radius-full)" /> : null}
-            <Line w={cycle(['78%', '64%', '70%'], i)} lh={16} h={10} />
-            {i === 0 ? <Line w="86%" lh={16} h={10} /> : null}
+            <Line w={cycle(['78%', '64%', '70%'], i)} lh={16} h={10} style={HELP_LH} />
+            {i === 0 ? <Line w="86%" lh={16} h={10} style={HELP_LH} /> : null}
+            {/* (Contracts on the move, C4 — C-24) the To collect tile's contract line, ≤1024 only — not for a Designer, whose Contract value tile says it */}
+            {i === 0 && (costs || books) ? <Line w="80%" lh={16} h={10} style={HELP_LH} className={styles.contractGhost} /> : null}
           </div>
         ))}
       </StatTiles>

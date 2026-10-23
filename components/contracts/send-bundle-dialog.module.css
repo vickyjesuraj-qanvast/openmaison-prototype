@@ -13,3 +13,13 @@
 .row[data-blocked] .rowTitle { color: var(--om-color-on-surface-disabled); }
 .row[data-blocked] .rowMeta { flex-shrink: 1; max-width: 55%; text-align: right; }
 .row + .listHead { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (pending modules S03) the standard documents' own head */
+
+/* (Contracts on the move, C4 — A-15 · P-13, 2026-10-22) ≤767 a document row is two lines — the title whole, its status (or the reason it stays
+   out) under it at 14 — instead of "Interior Design Service Agreem…" against a 12px status; the count line reads 14 too. */
+@media (max-width: 767px) {
+  .row { flex-wrap: wrap; align-items: center; row-gap: 0; padding-block: var(--om-spacing-2); min-height: 56px; }
+  .rowTitle { flex: 1 0 0; white-space: normal; overflow-wrap: anywhere; font: var(--om-type-body-l); }
+  .rowMeta { flex: 1 0 100%; padding-left: calc(24px + var(--om-spacing-3)); font: var(--om-type-body-m); text-align: left; max-width: none; }
+  .row[data-blocked] .rowMeta { max-width: none; text-align: left; }
+  .listHead { font: var(--om-type-body-m); text-transform: none; }
+}

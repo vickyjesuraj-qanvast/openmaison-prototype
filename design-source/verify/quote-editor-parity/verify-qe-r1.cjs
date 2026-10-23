@@ -209,13 +209,14 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const pp = await phone.newPage(); pp.setDefaultTimeout(12000)
   await step('phone: the card and the line sheet', async () => {
-    await pp.goto(`${BASE}/quotes/${OM1}`); await pp.getByTestId('item-cards').waitFor(); await ready(pp)
+    await pp.goto(`${BASE}/quotes/${OM1}?edit=items`); await pp.getByTestId('item-cards').waitFor(); await ready(pp)   // (quotes on the move, a deliberate change of this rule) a phone opens the Quote screen; the cards are the Items screen
     const card = pp.locator(`[data-testid="item-card"][data-item-id="${L.tv}"]`); await card.scrollIntoViewIfNeeded()
     ok('the TV console card says Below cost', (await card.getByTestId('below-cost').count()) === 1)
     await pp.screenshot({ path: `${S}/shots-qe/07-phone-card.png` })
     const el = pp.locator(`[data-testid="item-card"][data-item-id="${L.elec}"]`); await el.scrollIntoViewIfNeeded()
     await el.getByRole('button', { name: 'Edit Electrical point, new' }).click()
     const sheet = pp.getByTestId('line-sheet'); await sheet.waitFor(); await pp.waitForTimeout(400)
+    await sheet.getByTestId('line-more').click(); await pp.waitForTimeout(300)   // (quotes on the move, a deliberate change of this rule) the vendor, the link and the description sit under the sheet's More
     await sheet.getByLabel('Website Link').scrollIntoViewIfNeeded()
     const vendorVal = await sheet.getByRole('combobox', { name: /^Vendor\/Sub/ }).innerText().catch(() => '')
     ok('the sheet has Vendor/Sub (Hafary) and Website Link', /Hafary/.test(vendorVal) && (await sheet.getByLabel('Website Link').count()) === 1, vendorVal)
@@ -226,17 +227,20 @@ const waitSave = (page) => page.waitForTimeout(1600)   // the 600 ms autosave + 
   const narrow = await browser.newContext({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true })
   const np = await narrow.newPage()
   await step('320: no sideways scroll', async () => {
-    await np.goto(`${BASE}/quotes/${OM1}`); await np.getByTestId('item-cards').waitFor(); await ready(np)
+    await np.goto(`${BASE}/quotes/${OM1}?edit=items`); await np.getByTestId('item-cards').waitFor(); await ready(np)   // (quotes on the move, a deliberate change of this rule)
     const w = await np.evaluate(() => document.documentElement.scrollWidth)
     ok('page width ≤ 320', w <= 320, String(w))
   })
-  const tab = await browser.newContext({ viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true })
+  /* (quotes on the move, a deliberate change of this rule) a tablet held sideways shows the working grid on its own column set — Item · Qty · Unit ·
+     Unit price · Total, remembered per browser; the desktop's Vendor/Sub and Website Link choice stays the desktop's. Held upright it shows the cards. */
+  const tab = await browser.newContext({ viewport: { width: 1024, height: 768 }, isMobile: true, hasTouch: true })
   const tp = await tab.newPage()
-  await step('768 touch: the table with the new columns', async () => {
-    await tp.goto(`${BASE}/quotes/${OM1}`); await tp.locator('#section-items').waitFor(); await ready(tp)
+  await step('1024 touch: the working grid on the tablet’s own columns', async () => {
+    await tp.goto(`${BASE}/quotes/${OM1}?edit=items`); await tp.locator('#section-items').waitFor(); await ready(tp)   // (quotes on the move, a deliberate change of this rule) a touch tablet opens the Quote screen; Items is its own screen, opened by ?edit=items
     await tp.locator(`[data-item-id="${L.haul}"]`).first().scrollIntoViewIfNeeded()
     await tp.screenshot({ path: `${S}/shots-qe/09-tablet.png` })
-    ok('tablet renders the grid', (await tp.locator(`[data-item-id="${L.haul}"] [data-col="website"]`).count()) === 1)
+    const heads = await tp.locator('[data-touch-grid] [role="columnheader"]').allInnerTexts()
+    ok('tablet renders the touch grid with Qty · Unit · Unit Price, no Website Link', heads.some((h) => /Unit Price/i.test(h)) && !heads.some((h) => /Website/i.test(h)), heads.join(' · '))
   })
   await browser.close()
   const failed = results.filter((r) => !r.pass)

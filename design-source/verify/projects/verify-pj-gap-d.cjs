@@ -334,7 +334,8 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     ok(await sq.locator(`[data-choice-id="${TILES}"] [data-testid="choice-answer"]`).isVisible() && await noOverflow(sq), '390: the studio’s band for a no, no sideways scroll')
     await shot(sq, 'studio-choice-declined-390', true)
     await go(sq, `/confirm/${VO2}`)
-    ok(await sq.locator('[data-testid="vo-declined"]').isVisible() && await noOverflow(sq), '390: the declined variation order’s card')
+    /* (quotes on the move, a deliberate change of this rule) on a phone the declined state is the sticky bar's line, with the client's reason (K4, P-12) */
+    ok(await sq.locator('[data-testid="vo-declined-bar"]').isVisible() && /keep the study lights/.test(await sq.locator('[data-testid="confirm-bar"]').innerText()) && await noOverflow(sq), '390: the declined variation order’s bar, with the reason')
     await shot(sq, 'vo-declined-390', true)
     await SP.close()
     await R.close(); await S.close(); await B1.close()

@@ -30,7 +30,11 @@
 @media (max-width: 767px) {
   .banner { flex-wrap: wrap; padding: var(--om-spacing-2) var(--om-spacing-4); }
   .bannerActions { width: 100%; justify-content: flex-end; }
-  .card { flex-direction: column; }
+  /* (Quotes on the move, B-24 — 2026-10-22) on a phone the card is its words: the name with its chips, one meta line and Change — no 72×100
+     page, no second row of actions (Edit template and Save as template live in the Quote screen's ⋮ › Change, one tap further) */
+  .cardThumb, .deskAction { display: none; }
+  .cardName { font: var(--om-type-subheading-l); }
+  .cardMeta { font: var(--om-type-body-m); }
 }
 /* Touch (REG-273): the text actions take 44px boxes on the phone and on touch tablets. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {

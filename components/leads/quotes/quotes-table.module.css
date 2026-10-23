@@ -160,92 +160,108 @@
   .dueBtn { display: inline-flex; align-items: center; }  /* the date centres in the taller box */
 }
 
-/* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls. On a touch
-   pointer each keeps its drawn size and gains a transparent 4px ring — a 44px target that takes no space,
-   so the float, its shadow and the 12px gap between the two stay pixel-exact (4px still clear between the
-   two targets). A mouse never sees this rule. */
-@media (hover: none) {
-  .float button { position: relative; }
-  .float button::after { content: ''; position: absolute; inset: -4px; }
-}
+/* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls; on a touch pointer the house IconButton's own
+   centred 44 box carries the target (components/om/icon-button.module.css) — (Quotes on the move, K2's lint `icon-button-overlay`) no override
+   here, which displaced that box. */
 
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
-   the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
-@media (hover: none) and (max-width: 1024px) {
-  /* The user's tracks — order, visibility, dragged widths, Valid until and the actions trail (REG-454 · REG-733) — plus the band, as the
-     Contracts table has since sweep S2 #11; a fixed template here put the columns out of step with their heads on a touch tablet. */
-  .card, .card[data-no-approval], .card[data-client], .card[data-client][data-no-approval] { grid-template-columns: var(--tracks) 150px; }
+   the scroll, so the row gains a band past its last cell — the float lands on empty space. A mouse keeps the mock.
+   (Quotes on the move, K4 — P-11 · A-02, supersedes the 150px band on THIS table) 768–1024 on a touch pointer the row's ⋮ is a FROZEN
+   cell at the right instead: the trail track (48, ACTIONS_TRAIL.kebab) holds it, the head draws its empty cell over it, both carry the
+   row's fill and a 1px left rule, and the mirrored frozen shadow while columns still hide under them (`data-at-end` off). View is
+   dropped — the title opens, and so does the menu's first row. The desk keeps the mock's parked pair (REG-430 · REG-733). */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .card, .card[data-no-approval], .card[data-client], .card[data-client][data-no-approval] { grid-template-columns: var(--tracks); }
+  /* (A-03) 12 inside every cell (the mock's 24 right is a desk's measure): with the tracks in quotes-table.tsx, Title · Client · Status · Total stand
+     on a 768 frame's first screen. A status cell never lets its words run under the Total: it clips (every status fits its 168 anyway). */
+  .cell, .head .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .cell.colSel, .head .colSel { padding-left: var(--om-spacing-4); padding-right: 0; }
+  .cell.colStatus { overflow: hidden; }
+  .statusWrap { max-width: 100%; }
+  .statusBtn { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .hActions, .actions { position: sticky; right: 0; grid-column: -2 / -1; grid-row: 1; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .hActions { z-index: 3; padding: 0; }
+  .actions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; display: flex; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .row[data-selected] .actions { background: var(--om-color-primary-variant); }
+  .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }   /* View is dropped: the title opens */
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph in a column that always shows it — not a stack of outlined squares */
+  .frame[data-overflow]:not([data-at-end]) .hActions, .frame[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
 }
 
-/* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
-   Nine desktop columns inside a 358px card meant a 1030px row behind a horizontal scroll: the title cut to
-   "Whole-h…", the number clipped mid-value, the amount sliced by the card's right edge and the row's own
-   controls off-screen. The canvas draws each quote as a CARD instead — title and kebab on line 1, the
-   "OM-10001 · Private" line under it, then the status pill left and the amount right. Same markup, same actions: the two
-   grids collapse together (a card track would otherwise win the row's subgrid), every per-cell `grid-column`
-   pin is released and re-placed onto those three lines, and the columns the canvas does not draw step out.
-   Declared after the ≤1024 blocks above, so the tablet scroller and ≥1025 are untouched. */
+/* The phone card's own pieces (quotes-table.tsx): the name line, the title at the number's end, the chip row — none of them on a desk or a tablet. */
+.cardName, .cardStatus, .subTitle { display: none; }
+
+/* ── ≤767: the card (Quotes on the move, K4 — P-06 · A-01 · A-05 · A-06 · A-07 · A-08 · A-20; supersedes REG-377's lines and REG-389's pill) ──
+   Line 1: the client's name leads (the title where the list is one lead's) — 16 bold, the press that opens — with the amount at the right,
+   20 tabular, clear of the ⋮ in the corner (the FAB no longer covers a figure, A-06). Line 2: number · title, 14 secondary. Line 3: the
+   READ-ONLY status chip (a lock while private; "Expired {date}" while the client holds a quote past its Valid until) · its "since" · the
+   chevron that says the whole card opens. No checkbox: a hold selects (use-long-press.ts), a selected card wears the primary stroke and the
+   house fill, and the bulk bar comes up as before. 12 inside the card, 16 at the page's edge, every word at 14 or more (P-08).
+   (REG-520) `!important`: the column-layout hook writes each cell's grid-column / grid-row inline for the desk's grid; every column the card
+   does not draw steps out. Declared after the ≤1024 blocks above, so the tablet scroller and ≥1025 are untouched. */
 @media (max-width: 767px) {
-  /* (REG-520) `!important`: the column-layout hook (REG-454) writes each cell's grid-column / grid-row as an INLINE style for the desktop
-     grid, and an inline style beats this stylesheet — every cell landed on line 1 and the card's two lines collapsed. */
   .colCreator { display: none; }   /* (REG-471) the phone card keeps the mock's lines */
   .head { display: none; }
   .frame { background: none; border: 0; border-radius: 0; overflow: visible; }
   .frame::after { content: none; }
-  .row::after { content: none; }   /* (pending modules S03) the core's trailing row rule (REG-733) has no place on a card — it drew a line through each card's title (the deleted sheet's E-26, Plan's G-46) */
-  .card, .card[data-no-approval] {
+  .row::after { content: none; }   /* (pending modules S03) the core's trailing row rule (REG-733) has no place on a card */
+  .card, .card[data-no-approval], .card[data-client], .card[data-client][data-no-approval] {
     display: flex; flex-direction: column; gap: var(--om-spacing-3);
     grid-template-columns: 1fr; overflow-x: visible;
     background: none; border: 0; box-shadow: none; border-radius: 0;
   }
   /* The card layout places every cell itself: the frozen block and the parked actions give way. */
   .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
-  .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; }   /* grid-area auto: an absolute child placed in a grid area is contained by that area (the title line); released, the card's own box contains it */
+  .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; top: var(--om-spacing-2); right: var(--om-spacing-2); opacity: 1; pointer-events: auto; }
   .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }   /* View is the card's own press; the ⋮ opens with Open as its first row */
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph on a card that always shows it */
   .row {
-    display: grid; grid-column: 1 / -1; height: auto; grid-auto-rows: auto;   /* the desktop's 100% is of a fixed row; against this auto-height card it made every stacked line a whole card tall (REG-431) */
-    grid-template-columns: auto 1fr auto;
-    padding: var(--om-spacing-4);
-    row-gap: var(--om-spacing-2); column-gap: var(--om-spacing-3);
-    grid-template-rows: auto auto;   /* two content-sized lines — an implicit track was inheriting the desktop row's height */
-    align-content: start; align-items: center;
+    display: grid; grid-column: 1 / -1; height: auto; grid-auto-rows: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    padding: var(--om-spacing-3);
+    row-gap: var(--om-spacing-1); column-gap: var(--om-spacing-3);
+    align-content: start; align-items: start;
     background: var(--om-color-surface-default);
     border: var(--om-border-1) solid var(--om-color-surface-variant);
     border-radius: var(--om-radius-2);
+    cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;   /* a hold selects; the browser's own callout must not */
   }
   .row:hover { background: var(--om-color-surface-default); }   /* a finger has no hover; the fill only muddied the card */
-  .cell { padding: 0; border-top: 0; border-right: 0; min-width: 0; }
-  /* (REG-348's lesson) The select column stays — hidden, multi-select and the bulk bar's actions have no entry
-     point at all on a phone. It leads the card and spans the two text lines. */
-  .cell.colSel { grid-column: 1 !important; grid-row: 1 / span 2 !important; align-items: flex-start; padding: 0; }
-  /* The whole padding, not just the right: `.cell.colTitle` carries the desktop 23/24 at specificity 0,2,0 and
-     beat the `.cell { padding: 0 }` above it, leaving 47px of dead height inside the card. 40 on the right
-     clears the kebab pinned to the card's top corner. */
-  .cell.colTitle { grid-column: 2 / -1 !important; grid-row: 1 !important; padding: 0 40px 0 0; }
-  .cell.colStatus { grid-column: 2 !important; grid-row: 2 !important; }
-  .cell.colTotal { grid-column: 3 !important; grid-row: 2 !important; justify-content: flex-end; font: var(--om-type-heading-h5); }
+  .row[data-selected], .row[data-selected]:hover { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); }
+  .cell { padding: 0; border-top: 0; border-right: 0; min-width: 0; min-height: 0; }
+  .cell.colSel { display: none; }   /* (A-20) the hold selects; the bulk bar still comes up */
+  .cell.colTitle { grid-column: 1 !important; grid-row: 1 / span 2 !important; padding: 0; }
+  /* 40 clear at the right: past the ⋮ in the corner, and past the Maison AI button's disc (48 at right 16) for whichever card's first line meets it (A-06) */
+  .cell.colTotal { grid-column: 2 !important; grid-row: 1 !important; justify-content: flex-end; padding: 0 calc(var(--om-spacing-8) + var(--om-spacing-2)) 0 0; min-height: 24px; font: var(--om-type-heading-h3); font-variant-numeric: tabular-nums; }
+  .cell.colStatus { grid-column: 1 / -1 !important; grid-row: 3 !important; padding-top: var(--om-spacing-1); }
   .colDue, .colCreated, .colSent, .colValid, .colUpdated, .colApproval, .colClient { display: none; }
-  .subClient { display: inline; }
-  /* (REG-422) The Client column's desktop pins (one track along) must not reach the card: status and total keep the card's own lines. */
-  .card[data-client] .colStatus { grid-column: 2 !important; }
-  .card[data-client] .colTotal { grid-column: 3 !important; }
-  /* A finger cannot hover, so the row's controls are always up, pinned to the card's top-right corner. */
-  .actions { opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
-  .actions { position: absolute; }
-  /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a
-     `.menuWrap` and is the first `.float` of THAT, so a descendant selector hides both (the REG-346 lesson). */
-  .actionsInner > .float:first-child { display: none; }
-  /* (REG-389, canvas 2n / 3i) The card's kebab is a BARE glyph, as it is on the tasks list: the hover pill's
-     white fill, its shadow and the outlined button's border all belong to a row that reveals its actions on
-     hover, and a card that always shows them reads as a boxed button floating over the title. */
-  .float { box-shadow: none; background: transparent; }
-  .actions button[class*='icon-button'] { border-color: transparent; }
-  /* …and the status is the canvas' bordered pill, not a bare label with a chevron. */
-  .statusBtn {
-    border: var(--om-border-1) solid var(--om-color-surface-variant);
-    border-radius: var(--om-radius-1);
-    padding-inline: var(--om-spacing-3);
-  }
+  .titleData { gap: 2px; }
+  /* line 1 — the press that opens: a bare button, the name's own ink and weight, one line */
+  .cardName { display: block; width: 100%; min-height: 24px; border: 0; background: none; padding: 0; margin: 0; cursor: pointer; text-align: left; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }
+  .cardName:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+  .title { display: none; }
+  /* line 2 — number · title at 14, one line, ellipsised as one; the desk's Private / Shared and Expired words step out (the chip says them) */
+  .sub { display: block; font: var(--om-type-body-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub > span + span { margin-left: var(--om-spacing-2); }
+  .desk, .expired { display: none; }
+  .subTitle { display: inline; }
+  /* line 3 — the chip, the since, the chevron at the end of the last line */
+  .statusWrap { display: none; }   /* (Q-04) the status changes on the quote; the ⋮'s Change status opens the same menu as a sheet */
+  .cardStatus { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-2); width: 100%; min-height: 24px; }
+  .cardChip.cardChip { height: 24px; padding: 0 var(--om-spacing-2); text-transform: none; font: var(--om-type-subtitle-m); }
+  .cardChip.cardChip[data-icon] { padding-left: var(--om-spacing-1); }
+  .cardChip.cardChip > span { font: inherit; }
+  .since { display: inline-flex; flex-wrap: wrap; align-items: center; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+  .sinceWord { display: inline-flex; align-items: center; white-space: nowrap; }
+  .sinceWord[data-tone='red'] { color: var(--om-color-tertiary-red-default); }
+  .sinceDot { margin: 0 var(--om-spacing-2); }
+  .cardChev { display: inline-flex; margin-left: auto; color: var(--om-color-on-surface-secondary); }
+  .card[data-select-mode] .cardChev { visibility: hidden; }   /* while picking cards, a press selects — the card does not open */
 }
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
@@ -253,8 +269,6 @@
 /* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
    own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
 @media (min-width: 768px) { .cell.colSel + .cell, .head .colSel + .hCell { padding-left: var(--om-spacing-3); } }
-/* (pending modules S04) the client's open under the Sent to client day — the Contracts list's Sent cell (REG-633); on a phone, in the title's line */
+/* (pending modules S04) the client's open under the Sent to client day — the Contracts list's Sent cell (REG-633); on a phone, in the card's third line */
 .sentCell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .viewed { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.subViewed { display: none; }
-@media (max-width: 767px) { .subViewed { display: inline; } }

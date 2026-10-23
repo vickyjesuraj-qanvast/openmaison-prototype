@@ -109,6 +109,12 @@
 @media (max-width: 767px) {
   .aside { display: none; }
 }
+/* (Quotes on the move, K4 — P-11 · A-18) A tablet held upright is a phone held wide: on the lead's Quotes tab the strip's 72 left the table
+   570 wide (3.4 screens of sideways scroll), so the strip hides there at 768–1024 portrait as it does on a phone — every create lives in the
+   tab, and the FAB stays. Landscape keeps the glyph rail. The centre names its tab (`data-tab`, app/leads/[id]/overview.tsx). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  [data-tab='quotes'] + .aside, [data-tab='contracts'] + .aside { display: none; }   /* (Contracts on the move, C4 — A-06) the Contracts tab too */
+}
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    The strip is hidden ≤767, so its touch pass belongs to the tablet query: 768–1024 is the collapsed glyph

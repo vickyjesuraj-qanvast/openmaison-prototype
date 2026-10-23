@@ -1,8 +1,8 @@
 'use client'
 
 import { usePlanLock } from '@/components/credits/credits-client'
-import { printPaper } from '@/lib/paper-print'   // (pending modules S34) every paper's Download PDF, one call
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { PDF_DOWNLOADS, paperPath, printPaper } from '@/lib/paper-print'   // (pending modules S34) every paper's Download PDF, one call
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -14,54 +14,59 @@ import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
 import { useSnackbar } from '@/components/om/snackbar'
 import { withFrom } from '@/lib/nav'
-import { mm, PAPER_MM, ITEM_COLUMN_LABEL, type ItemsColumnKey } from '@/lib/templates/model'
+import { mm, PAPER_MM } from '@/lib/templates/model'
 import { docTotals } from '@/lib/templates/data'
 import { money2, pct } from '@/lib/quotes/math'
 import { displayDate } from '@/lib/format'
 import { readiness, type ReadinessIssue, type ReadinessSection } from '@/lib/templates/readiness'
-import { clientViewDiff, type ClientView, AMOUNTS_LABEL } from '@/lib/templates/client-view'
+import { clientViewDiff, type ClientView } from '@/lib/templates/client-view'
 import { fallbackDesignClient } from '@/lib/templates/presets'
 import type { QuotePreviewData } from '@/lib/templates/queries'
 import { saveQuoteClientView, setQuoteTemplate } from '@/app/company/templates-actions'
 import { Dialog } from '@/components/om/dialog'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
+import { useSheetLayout } from '@/components/om/sheet'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
 import { SendButton } from '@/components/quotes/send/send-button'
 import { useQuoteSend } from '@/components/quotes/send/use-quote-send'
+import { ReadingCards } from '@/components/quotes/confirm/reading-cards'
+import { PaperViewer } from '@/components/quotes/confirm/paper-viewer'   // (K3) the house "As printed" viewer — the client's page's (K4), shared
+import { readingSections } from '@/components/templates/render/slices'
 import type { QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
 import header from '@/components/quotes/editor/editor-header.module.css'
-import { setQuoteTextVisible } from '@/app/quotes/text-actions'
-import { orThrow } from '@/lib/company/template-rules'   // (S44Z) an action's refusal into the caller's own failure line
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PreviewSkeleton } from './preview-skeleton'
+import { ClientViewPanel } from './client-view-panel'
 import { signedMoney } from '@/lib/projects/money'
 import styles from './quote-preview.module.css'
 
 /** (S44F — NB-01) The client view's Changes: since the last version (REG-595, as always) · every version since the first. */
 const CHANGES_SINCE: Record<ClientView['changesSince'], string> = { last: 'Since the last version', all: 'Every version' }
 const SECTION_ANCHOR: Record<ReadinessSection, string> = { general: 'general', items: 'items', payments: 'payment', terms: 'terms', notes: 'notes', signature: 'signature', bank: 'general' }
-const VIEW_ROWS: { key: keyof Omit<ClientView, 'columns' | 'hiddenItems' | 'amounts' | 'changesSince'>; label: string; help: string }[] = [
-  { key: 'descriptions', label: 'Item descriptions', help: 'The lines under each item name' },
-  { key: 'photos', label: 'Item photos', help: 'Thumbnails beside the items' },
-  { key: 'optionalWorks', label: 'Optional works', help: 'Lines marked optional, in their own section' },
-  { key: 'subtotalBreakdown', label: 'Subtotal and discounts', help: 'Off shows only the grand total' },
-  { key: 'paymentSchedule', label: 'Payment schedule', help: '' },
-  { key: 'terms', label: 'Terms and Conditions', help: '' },
-  { key: 'notes', label: 'Additional notes', help: '' },
-  { key: 'signature', label: 'Signature block', help: '' },
-  { key: 'branding', label: '“Powered by OpenMaison”', help: 'The line at the foot of the last page' },
-]
+/* true once hydrated: the viewer is a portal that only the client can mount — `?paper=1` opens it on the first client render, never on the server's */
+const noop = () => () => {}
+const useMounted = () => useSyncExternalStore(noop, () => true, () => false)
 
 /**
  * Preview (REG-490): the quote exactly as its client will see it — through its template at the pinned version, with the
  * quote's own "What your client sees" switches — plus what is still missing before it is sent, an internal copy with the
  * cost and margin the client never sees, Copy link, Download PDF (the same pages, printed) and Send. `?print=1` prints.
+ *
+ * (Quotes on the move, K3 — P-05 · Q-06, absorbing C-16 C-17 C-18 C-20 C-21 B-08; his "please go ahead" 2026-10-22) On a phone the page is the
+ * client's reflowed quote (the confirmation page's `ReadingCards`, from the print's own sections) under one 56px bar — back · Preview · ⋮ — with
+ * "As printed" over the cards: it opens the house paper viewer (the client's page's, `components/quotes/confirm/paper-viewer.tsx`) — the A4 fit to
+ * the width, one page per swipe, pinch to zoom, Download in its bar — and `?paper=1` lands on it (the Quote screen's "As printed"); Send ▾ is the
+ * foot's one filled button. A touch tablet keeps the same bar with Download and Send in it and draws the A4 at 1:1, the margins scrolling (its text
+ * was 8.5–10px at zoom 0.85). Copy link ("for the team"), Share PDF, Internal copy, What your client sees and Change template live under ⋮ at
+ * those widths. The desk (≥1025) is as it was.
  */
-export function QuotePreview({ data, from, print, send: sendCtx, readOnly = false, costs = true, openPanel = false }: { data: QuotePreviewData; from?: string; print: boolean;
+export function QuotePreview({ data, from, print, send: sendCtx, readOnly = false, costs = true, openPanel = false, paper: paperAsked = false }: { data: QuotePreviewData; from?: string; print: boolean;
   /** (S44I — row 352) `?panel=client`: arrive with What your client sees open (the Items' Column settings link here) */ openPanel?: boolean;
+  /** (K3 — P-05) `?paper=1`: a phone arrives on the paper viewer (the Quote screen's "As printed") */ paper?: boolean;
   /** (pending modules S41b-1) the member sees costs — else no Internal copy (its cost and margin): the lines came without them */ costs?: boolean; /** (UX audit Q2) what the quote's Send needs: the studio's approval rule and whether this member approves */ send: { approval: QuoteApproval; canApprove: boolean }
   /** (pending modules S06 — the Accounting role's open question 9, as recommended) a viewer who reads it only (Accounting, from a project's
       Money): Back returns to Money, the crumbs lead only where they open, and nothing changes or sends the quote — Copy link and Download PDF stay */
@@ -81,6 +86,15 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
   const [internal, setInternal] = useState(false)
   const [panel, setPanel] = useState(openPanel && !data.kept && !readOnly)
   const tabletDown = useMediaQuery(TABLET_DOWN)
+  const sheet = useSheetLayout()
+  /* (K3 — P-05) the phone's reading layout and the touch widths' one-line bar; printing always draws the paper as the desk does */
+  const phone = sheet && !print
+  const touch = tabletDown && !print
+  const [paper, setPaper] = useState(paperAsked)
+  const mounted = useMounted()
+  /* the house viewer fits the pages to its own body and asks for the zoom the fingers want (K4 · K3): the width to draw at → the document's zoom */
+  const [fitW, setFitW] = useState(0)
+  const onFit = useCallback((w: number) => setFitW(w), [])
   const [pickerOpen, setPickerOpen] = useState(false)   /* (REG-496) the template chip opens the picker; a change re-pins and re-renders */
   const [status, setStatus] = useState(quote.status)
   const [busy, setBusy] = useState(false)
@@ -92,6 +106,21 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
   const shownView = useMemo<ClientView>(() => (compare ? { ...view, changes: true, changesSince: 'last' } : view), [compare, view])
   const compareHref = (against: number | null) => { const q = [kept ? `version=${kept.version}` : '', against ? `against=${against}` : ''].filter(Boolean).join('&'); return withFrom(`/quotes/${quote.id}/preview${q ? `?${q}` : ''}`, from) }
   const { copied, copy } = useCopy(link, { done: 'Preview link copied' })
+  /* (K3 — P-05) the phone's reading cards: the print's own sections (as the confirmation page reads them); null = the template prints no Items block */
+  const reading = useMemo(() => (phone ? readingSections(design, data.data, shownView) : null), [phone, design, data.data, shownView])
+  const lineCount = reading ? reading.sections.reduce((n, s) => n + s.lines.length, 0) : 0
+  /* the phone's viewer: over the cards, after hydration (a portal); a template with no Items block to read draws its paper in the column instead */
+  const viewerOpen = phone && !!reading && paper && mounted
+  /* "As printed" writes `?paper=1` into the address without a round trip, so a reload lands where the person was (REG-465); closing a viewer
+     the person ARRIVED on (the Quote screen's "As printed") goes back to the quote — the viewer's arrow says so — never to a page they never saw */
+  const [openedHere, setOpenedHere] = useState(false)
+  const togglePaper = (on: boolean) => {
+    setPaper(on)
+    if (on) setOpenedHere(true)
+    const u = new URL(window.location.href)
+    if (on) u.searchParams.set('paper', '1'); else u.searchParams.delete('paper')
+    window.history.replaceState(window.history.state, '', u.toString())
+  }
 
   /* The quote's switches autosave 600ms after the last change, as the difference from the template's own view.
      (S44Q — row 352) …and a change still waiting when the page is left (Back, a crumb, the editor, closing the tab) is written then — it was
@@ -119,8 +148,9 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
     return () => { window.removeEventListener('beforeunload', ask); flushView() }   // leaving inside the app: write what waits
   }, [flushView])
 
-  /* Fit the page to the column, never above 1:1. */
+  /* Fit the page to the column, never above 1:1. (K3 — C-18) A touch tablet draws it at 1:1 and the stage scrolls its margins, centred. */
   const areaRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const [areaW, setAreaW] = useState(0)
   useEffect(() => {
     const el = areaRef.current
@@ -130,9 +160,24 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
     return () => ro.disconnect()
   }, [])
   const pageW = mm(PAPER_MM[design.page.paper].w)
-  const zoom = print ? 1 : areaW ? Math.min(1, Math.max(0.3, (areaW - 48) / pageW)) : 0.9
+  const zoom = print ? 1 : touch ? 1 : areaW ? Math.min(1, Math.max(0.3, (areaW - 48) / pageW)) : 0.9
   const [pages, setPages] = useState(0)
   const onPaginated = useCallback((p: Paginated) => setPages(p.pages), [])
+  /* centred as it lays out (the stage can still be hidden under the ghost when the pages land, so a size change recentres it) — until the
+     person scrolls it themselves */
+  const scrolledByHand = useRef(false)
+  useEffect(() => {
+    const el = stageRef.current
+    if (!touch || phone || !el) return
+    scrolledByHand.current = false
+    const centre = () => { if (!scrolledByHand.current) el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2) }   // the text in the middle, the two margins cut evenly
+    const byHand = () => { scrolledByHand.current = true }
+    const ro = new ResizeObserver(centre)
+    ro.observe(el)
+    for (const child of Array.from(el.children)) ro.observe(child)
+    el.addEventListener('touchstart', byHand, { passive: true }); el.addEventListener('wheel', byHand, { passive: true }); el.addEventListener('pointerdown', byHand, { passive: true })
+    return () => { ro.disconnect(); el.removeEventListener('touchstart', byHand); el.removeEventListener('wheel', byHand); el.removeEventListener('pointerdown', byHand) }
+  }, [touch, phone])
   const printed = useRef(false)
   /* (pending modules S11) the document fonts load when first used: the print waits for them, so the PDF is set in the template's face */
   const printTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -142,6 +187,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
   const moneyHref = quote.project ? `/projects/${quote.project.id}/money` : null
   const back = readOnly ? (from ?? moneyHref ?? '/company/finance') : withFrom(`/quotes/${quote.id}`, from)
   const here = withFrom(`/quotes/${quote.id}/preview`, from)
+  const closeViewer = () => { if (paperAsked && !openedHere) router.push(back); else togglePaper(false) }
   /* (UX audit S1) An issue fixed outside the quote opens its own page (Company › Profile), with the way back here; the rest open the editor at the section. */
   const openIssue = (i: ReadinessIssue) => router.push(i.href ? withFrom(i.href, here) : `${back}${back.includes('?') ? '&' : '?'}section=${SECTION_ANCHOR[i.section]}`)
   /* (UX audit Q2, extends REG-657) Preview's main button is the editor's Send ▾ — the same menu, the same dialogs; "Mark as sent" is its
@@ -171,15 +217,183 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
       ) : null}
     </>
   ) : null
-  const columns = (Object.keys(view.columns) as ItemsColumnKey[]).filter((k) => baseView.columns[k] || view.columns[k])
 
   /* (REG-518) The picker's selection lives here; the dialog footer acts on it. */
   const [pickedTpl, setPickedTpl] = useState<string | null>(null)
   const pickerSel = defaultPick(data.picker, pickedTpl, template?.id ?? null)
   const applyTemplate = (id: string) => { setPickerOpen(false); setPickedTpl(null); setBusy(true); void setQuoteTemplate(quote.id, id).then(() => { snackbar({ message: 'Template changed' }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }
+  const openPicker = () => { if (tplLock.locked) { tplLock.open(); return } setPickerOpen(true) }
+
+  /* (K3 — C-20) Share PDF on a phone: the file through the system share sheet once a PDF renderer is plugged in (lib/services/pdf.ts, the S34
+     registry); until then the print sheet, which shares the PDF on iOS and saves it on Android — the same stand-in as Download. */
+  const sharePdf = async () => {
+    if (PDF_DOWNLOADS && typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+      const path = paperPath(`${window.location.pathname}${window.location.search}`)
+      if (path) {
+        try {
+          const blob = await (await fetch(`/papers/pdf?path=${encodeURIComponent(path)}`)).blob()
+          const file = new File([blob], `${quote.number}.pdf`, { type: 'application/pdf' })
+          if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: quote.number }); return }
+        } catch { /* the sheet was closed, or the file could not be made — the print sheet below still can */ }
+      }
+    }
+    printPaper()
+  }
+  /* (K3 — C-17 · C-20) the touch widths' ⋮: what the desk's bar lays out as four buttons and a switch */
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menu = (
+    <span className={header.anchor}>
+      <Tooltip label="More"><IconButton icon="more_vert" label="More" size={36} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)} data-testid="preview-more" /></Tooltip>
+      <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={MENU_WIDTH.detail} sheetTitle="Preview" sheetSubtitle={quote.number}>
+        <DropdownItem onSelect={() => { setMenuOpen(false); void copy() }} help="For the team — it opens with a sign-in, never for the client">Copy preview link</DropdownItem>
+        <DropdownItem onSelect={() => { setMenuOpen(false); void sharePdf() }} help="Through WhatsApp, mail or AirDrop">Share PDF</DropdownItem>
+        {(costs || (!fixed && !readOnly)) ? <DropdownDivider /> : null}
+        {costs ? <DropdownItem role="menuitemcheckbox" checked={internal} onSelect={() => { setMenuOpen(false); setInternal((v) => !v) }} help="Cost and margin on the page — never printed for the client">Internal copy</DropdownItem> : null}
+        {!fixed && !readOnly ? <DropdownItem onSelect={() => { setMenuOpen(false); setPanel(true) }} help={changed ? `${changed} setting${changed === 1 ? '' : 's'} differ from the template` : 'Columns, descriptions, the schedule, the terms'}>What your client sees</DropdownItem> : null}
+        {!fixed && !readOnly ? <DropdownItem onSelect={() => { setMenuOpen(false); openPicker() }} help={template ? `${template.name} · v${template.version}` : 'Studio default'}>Change template</DropdownItem> : null}
+        {fixed && !readOnly && !(compare && !kept) ? <DropdownItem onSelect={() => { setMenuOpen(false); router.push(withFrom(`/quotes/${quote.id}/preview`, from)) }} help={kept ? `This is version ${kept.version} of ${kept.current}` : undefined}>Open the current version</DropdownItem> : null}
+      </Dropdown>
+    </span>
+  )
+  const backLabel = readOnly ? 'Back' : 'Back to the quote'
+  const barTitle = kept ? `Version ${kept.version}` : compare ? `Version ${compare.version}` : 'Preview'
+  const barSub = kept ? `Read-only · ${quote.number}` : compare ? `Compared with version ${compare.against}` : [quote.number, status, pages ? `${pages} page${pages === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ')
+  /* the quote's Send ▾ — in the bar on a tablet, in the foot on a phone (the thumb's reach, as the Quote screen's) */
+  const sendSlot = readOnly || (compare && !kept) ? null /* (S44F) comparing the current version: the card's Stop comparing is the way back */ : fixed ? <Button onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Current version</Button>
+    /* (sweep S1) this press sends nothing — no link, no WhatsApp — it records that the quote went out; the editor's Send ▾ sends */
+    : <SendButton kind={quoteSend.kind} canSend={quoteSend.canSend && !busy} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={quote.kind === 'variation'} />
+  const touchBar = (
+    <header className={styles.touchBar} data-testid="preview-bar">
+      <Tooltip label={backLabel}><IconButton icon="arrow_back" label={backLabel} size={36} variant="bare" iconSize={24} iconWeight={300} onClick={() => router.push(back)} data-kb="back" /></Tooltip>
+      <div className={styles.touchTitle}>
+        <h1 className={styles.touchH}>{barTitle}</h1>
+        <span className={styles.touchSub} data-testid="preview-sub">{barSub}</span>
+      </div>
+      {!phone ? <Tooltip label="Download PDF"><IconButton icon="download" label="Download PDF" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={() => printPaper()} data-testid="preview-download" /></Tooltip> : null}   {/* a phone downloads from the viewer's own bar */}
+      {menu}
+      {!phone && sendSlot ? <span className={`${header.anchor} ${styles.barSend}`}>{sendSlot}</span> : null}
+    </header>
+  )
+  const cards = (
+    <>
+      {kept ? (
+        /* (REG-565) A kept version: what it was when Revise moved the quote on, and the way to the current one. */
+        <section className={styles.readiness} aria-label="Kept version" data-testid="kept-version">
+          <div className={styles.readyHead}>
+            <Icon name="history" size={20} weight={300} />
+            <span className={styles.readyTitle}>Version {kept.version} of {kept.current} — read-only</span>
+          </div>
+          <ul className={styles.issues}>
+            <li className={styles.issue}>
+              <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was {kept.status} at {money2(kept.amountMinor)}{kept.note ? ` · the client’s request: ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
+              <Button appearance="text" onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Open version {kept.current}</Button>
+            </li>
+          </ul>
+        </section>
+      ) : null}
+      {compare ? (
+        /* (S44F — NB-02 (c)) one version against an earlier one: what moved, which version to compare with, and the way out */
+        <section className={styles.readiness} aria-label="Comparison" data-testid="compare-version">
+          <div className={styles.readyHead}>
+            <Icon name="compare" size={20} weight={300} />
+            <span className={styles.readyTitle}>Version {compare.version} compared with version {compare.against}</span>
+          </div>
+          <ul className={styles.issues}>
+            <li className={`${styles.issue} ${styles.compareRow}`}>
+              <span className={styles.issueText}><b data-testid="compare-counts">{compare.counts.added} added · {compare.counts.removed} removed · {compare.counts.changed} changed{compare.counts.schedule ? ` · ${compare.counts.schedule} in the payment schedule` : ''}</b> <span className={styles.issueDetail}>Removed lines are struck through, new and changed ones marked — here only. Your client sees the quote as What your client sees says.</span></span>
+              {compare.options.length > 1 ? (
+                <span className={styles.compareWith}>
+                  <TextField label="Compare with" mode="select" value={`Version ${compare.against}`} options={compare.options.map((v) => `Version ${v}`)}
+                             onChange={(v) => { const n = Number(v.replace(/\D+/g, '')); if (n && n !== compare.against) router.push(compareHref(n)) }} />
+                </span>
+              ) : null}
+              <Button appearance="text" onPress={() => router.push(compareHref(null))} data-testid="stop-comparing">Stop comparing</Button>
+            </li>
+          </ul>
+        </section>
+      ) : null}
+      {ready.issues.length && !fixed && !readOnly ? (   /* (pending modules S06) "before you send" is for whoever sends it */
+        <section className={styles.readiness} data-blocking={!ready.ready || undefined} aria-label="Before you send">
+          <div className={styles.readyHead}>
+            <Icon name={ready.ready ? 'warning' : 'error'} size={20} weight={300} />
+            <span className={styles.readyTitle}>{ready.ready ? 'Worth a look before you send' : 'Not ready to send yet'}</span>
+          </div>
+          <ul className={styles.issues}>
+            {ready.issues.map((i) => (
+              <li key={i.key} className={styles.issue} data-blocking={i.blocking || undefined}>
+                <span className={styles.issueText}><b>{i.label}</b> <span className={styles.issueDetail}>{i.detail}</span></span>
+                <Button appearance="text" onPress={() => openIssue(i)}>Open</Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {internal && costs ? (
+        <section className={styles.internalCard} aria-label="Internal summary">
+          <span className={styles.internalEyebrow}>Internal — never printed for the client</span>
+          <div className={styles.internalGrid}>
+            <span><span className={styles.internalLabel}>Cost</span><span className={styles.internalValue}>{money2(totals.costMinor)}</span></span>
+            <span><span className={styles.internalLabel}>Selling</span><span className={styles.internalValue}>{money2(totals.subtotalMinor - totals.additionalMinor)}</span></span>
+            <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>{money2(totals.marginMinor)} · {pct(Math.round(totals.marginPct))}</span></span>
+            <span><span className={styles.internalLabel}>Lines</span><span className={styles.internalValue}>{totals.itemCount}</span></span>
+          </div>
+        </section>
+      ) : null}
+    </>
+  )
+  const overlays = (
+    <>
+      {quoteSend.dialogs}
+      <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print."
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) applyTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (template?.id ?? null)}>{pickerSel && pickerSel === template?.id ? 'On this quote' : 'Use this template'}</Button></>}>
+        <TemplatePicker data={data.picker} picked={pickerSel} onPick={setPickedTpl} currentId={template?.id ?? null} now={data.now} onUse={applyTemplate} />
+      </Dialog>
+      {tabletDown ? (
+        /* (REG-525) ≤1024 the panel is the house Drawer (scrim, Esc, focus), as the template editor's panes are — not a hand-rolled fixed column. */
+        <Drawer open={panel} onClose={() => setPanel(false)} title="What your client sees" label="What your client sees">
+          <div className={styles.drawerBody}>
+            <ClientViewPanel quoteId={quote.id} view={view} setView={setView} baseView={baseView} changed={changed} changesRows={changesRows} chips />   {/* (K3 — C-19) the Columns as chips, the rows at 48 */}
+          </div>
+        </Drawer>
+      ) : null}
+    </>
+  )
 
   /* (sweep S1 #27) The page's own ghost holds the first beat, like every page (PageReveal); printing skips it — a ghost is never printed. */
-  const page = (
+  const page = touch ? (
+    /* (K3 — P-05) the touch widths: the one-line bar; a phone reads the cards or the viewer and sends from the foot; a tablet reads the A4 at 1:1 */
+    <div className={styles.page} data-touch="" data-testid="quote-preview">
+      <style>{`@page { size: ${design.page.paper}; margin: 0 }`}</style>
+      {touchBar}
+      {overlays}
+      <div className={styles.body}>
+        <div ref={areaRef} className={styles.column}>
+          {cards}
+          {phone && reading ? (
+            <div className={styles.reading}>
+              {/* the cards' head: the count, and the way to the paper — the confirmation page's own row (quote-stage.tsx) and the Quote screen's */}
+              <div className={styles.readHead}>
+                <span className={styles.readCount}>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
+                <Button appearance="text" iconStart={<Icon name="description" size={20} />} onPress={() => togglePaper(true)} data-testid="view-as-printed">As printed</Button>
+              </div>
+              <ReadingCards sections={reading.sections} optional={reading.optional} amounts={reading.amounts} totalMinor={totals.totalMinor} after={reading.after} afterTitle={reading.afterTitle} schedule={reading.schedule} />
+            </div>
+          ) : (
+            <div ref={stageRef} className={styles.stage}>
+              <TemplateDocument design={design} brand={brand} data={data.data} view={shownView} zoom={zoom} onPaginated={onPaginated} watermark={internal && costs ? 'Internal copy' : null} print={print} />
+            </div>
+          )}
+        </div>
+      </div>
+      {phone && sendSlot ? <div className={styles.foot} data-testid="preview-foot"><span className={header.anchor}>{sendSlot}</span></div> : null}
+      {/* (K3 — P-05 · Q-06) the house "As printed" viewer over the cards: the A4 fit to the width, one page per swipe, pinch to zoom, Download in its bar */}
+      {phone && reading ? (
+        <PaperViewer open={viewerOpen} onClose={closeViewer} title="As printed" subtitle={`${quote.number}${pages ? ` · ${pages} ${pages === 1 ? 'page' : 'pages'}` : ''}`} onDownload={() => printPaper()} onFit={onFit}>
+          <div className={styles.viewerDoc}><TemplateDocument design={design} brand={brand} data={data.data} view={shownView} zoom={fitW ? Math.max(0.3, fitW / pageW) : 0.45} onPaginated={onPaginated} watermark={internal && costs ? 'Internal copy' : null} /></div>
+        </PaperViewer>
+      ) : null}
+    </div>
+  ) : (
     <div className={styles.page} data-print={print || undefined} data-testid="quote-preview">
       <style>{`@page { size: ${design.page.paper}; margin: 0 }`}</style>
       <header className={styles.bar}>
@@ -193,7 +407,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
               {fixed ? <MetaChip>Read-only</MetaChip> : null}
               {/* (REG-729) The template as the house tag (MetaChip), a press that opens the picker — the editor header's contract chip. */}
               {readOnly ? <MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip> : <Tooltip label="Change template">
-                <button type="button" className={styles.chipBtn} onClick={() => { if (tplLock.locked) { tplLock.open(); return } setPickerOpen(true) }} aria-haspopup="dialog" aria-label={tplLock.locked ? 'Change template, Pro feature' : 'Change template'}><MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip></button>
+                <button type="button" className={styles.chipBtn} onClick={openPicker} aria-haspopup="dialog" aria-label={tplLock.locked ? 'Change template, Pro feature' : 'Change template'}><MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip></button>
               </Tooltip>}
               <MetaChip>{status}</MetaChip>
               {pages ? <MetaChip>{pages} page{pages === 1 ? '' : 's'}</MetaChip> : null}
@@ -210,76 +424,10 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
             : <span className={header.anchor}><SendButton kind={quoteSend.kind} canSend={quoteSend.canSend && !busy} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={quote.kind === 'variation'} /></span>}
         </div>
       </header>
-      {quoteSend.dialogs}
-      <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print."
-              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) applyTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (template?.id ?? null)}>{pickerSel && pickerSel === template?.id ? 'On this quote' : 'Use this template'}</Button></>}>
-        <TemplatePicker data={data.picker} picked={pickerSel} onPick={setPickedTpl} currentId={template?.id ?? null} now={data.now} onUse={applyTemplate} />
-      </Dialog>
+      {overlays}
       <div className={styles.body}>
         <div ref={areaRef} className={styles.column}>
-          {kept ? (
-            /* (REG-565) A kept version: what it was when Revise moved the quote on, and the way to the current one. */
-            <section className={styles.readiness} aria-label="Kept version" data-testid="kept-version">
-              <div className={styles.readyHead}>
-                <Icon name="history" size={20} weight={300} />
-                <span className={styles.readyTitle}>Version {kept.version} of {kept.current} — read-only</span>
-              </div>
-              <ul className={styles.issues}>
-                <li className={styles.issue}>
-                  <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was {kept.status} at {money2(kept.amountMinor)}{kept.note ? ` · the client’s request: ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
-                  <Button appearance="text" onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Open version {kept.current}</Button>
-                </li>
-              </ul>
-            </section>
-          ) : null}
-          {compare ? (
-            /* (S44F — NB-02 (c)) one version against an earlier one: what moved, which version to compare with, and the way out */
-            <section className={styles.readiness} aria-label="Comparison" data-testid="compare-version">
-              <div className={styles.readyHead}>
-                <Icon name="compare" size={20} weight={300} />
-                <span className={styles.readyTitle}>Version {compare.version} compared with version {compare.against}</span>
-              </div>
-              <ul className={styles.issues}>
-                <li className={`${styles.issue} ${styles.compareRow}`}>
-                  <span className={styles.issueText}><b data-testid="compare-counts">{compare.counts.added} added · {compare.counts.removed} removed · {compare.counts.changed} changed{compare.counts.schedule ? ` · ${compare.counts.schedule} in the payment schedule` : ''}</b> <span className={styles.issueDetail}>Removed lines are struck through, new and changed ones marked — here only. Your client sees the quote as What your client sees says.</span></span>
-                  {compare.options.length > 1 ? (
-                    <span className={styles.compareWith}>
-                      <TextField label="Compare with" mode="select" value={`Version ${compare.against}`} options={compare.options.map((v) => `Version ${v}`)}
-                                 onChange={(v) => { const n = Number(v.replace(/\D+/g, '')); if (n && n !== compare.against) router.push(compareHref(n)) }} />
-                    </span>
-                  ) : null}
-                  <Button appearance="text" onPress={() => router.push(compareHref(null))} data-testid="stop-comparing">Stop comparing</Button>
-                </li>
-              </ul>
-            </section>
-          ) : null}
-          {ready.issues.length && !fixed && !readOnly ? (   /* (pending modules S06) "before you send" is for whoever sends it */
-            <section className={styles.readiness} data-blocking={!ready.ready || undefined} aria-label="Before you send">
-              <div className={styles.readyHead}>
-                <Icon name={ready.ready ? 'warning' : 'error'} size={20} weight={300} />
-                <span className={styles.readyTitle}>{ready.ready ? 'Worth a look before you send' : 'Not ready to send yet'}</span>
-              </div>
-              <ul className={styles.issues}>
-                {ready.issues.map((i) => (
-                  <li key={i.key} className={styles.issue} data-blocking={i.blocking || undefined}>
-                    <span className={styles.issueText}><b>{i.label}</b> <span className={styles.issueDetail}>{i.detail}</span></span>
-                    <Button appearance="text" onPress={() => openIssue(i)}>Open</Button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-          {internal && costs ? (
-            <section className={styles.internalCard} aria-label="Internal summary">
-              <span className={styles.internalEyebrow}>Internal — never printed for the client</span>
-              <div className={styles.internalGrid}>
-                <span><span className={styles.internalLabel}>Cost</span><span className={styles.internalValue}>{money2(totals.costMinor)}</span></span>
-                <span><span className={styles.internalLabel}>Selling</span><span className={styles.internalValue}>{money2(totals.subtotalMinor - totals.additionalMinor)}</span></span>
-                <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>{money2(totals.marginMinor)} · {pct(Math.round(totals.marginPct))}</span></span>
-                <span><span className={styles.internalLabel}>Lines</span><span className={styles.internalValue}>{totals.itemCount}</span></span>
-              </div>
-            </section>
-          ) : null}
+          {cards}
           <div className={styles.stage}>
             <TemplateDocument design={design} brand={brand} data={data.data} view={shownView} zoom={zoom} onPaginated={onPaginated} watermark={internal && costs ? 'Internal copy' : null} print={print} />
           </div>
@@ -290,68 +438,8 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
               <span className={styles.panelTitle}>What your client sees</span>
               <Tooltip label="Close"><IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={() => setPanel(false)} /></Tooltip>   {/* (REG-729) the house close: the 24 outlined glyph (the Drawer's) */}
             </div>
-
-            <div className={styles.panelBody}>
-              <span className={styles.panelNote}>Applies to this quote only. The template decides the starting point.</span>
-              <div className={styles.group}>
-                <span className={styles.groupTitle}>Columns</span>
-                {columns.map((k) => (
-                  <label key={k} className={styles.row}><span>{ITEM_COLUMN_LABEL[k]}</span><Switch size="sm" isSelected={view.columns[k]} onChange={(v: boolean) => setView((x) => ({ ...x, columns: { ...x.columns, [k]: v } }))} aria-label={ITEM_COLUMN_LABEL[k]} /></label>
-                ))}
-              </div>
-              <div className={styles.group}>
-                <span className={styles.groupTitle}>Content</span>
-                {VIEW_ROWS.map((r) => (
-                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => { setView((x) => ({ ...x, [r.key]: v })); if (r.key === 'terms' || r.key === 'notes') void orThrow(setQuoteTextVisible(quote.id, r.key, v)).catch(() => snackbar({ message: 'Couldn’t save the setting — please try again' })) }} aria-label={r.label} /></label>
-                ))}
-                {changesRows}
-                <div className={styles.hidden}>
-                  <TextField label="Hidden items" mode="select" value={view.hiddenItems === 'no-price' ? 'Shown without a price' : 'Left out'} options={['Left out', 'Shown without a price']}
-                             helper="Lines the editor hides from the client" onChange={(v) => setView((x) => ({ ...x, hiddenItems: v === 'Shown without a price' ? 'no-price' : 'omit' }))} />
-                </div>
-                <div className={styles.hidden}>
-                  {/* (REG-585) Amounts: every line · one per section (the lump sum) · the total only. */}
-                  <TextField label="Amounts" mode="select" value={AMOUNTS_LABEL[view.amounts]} options={Object.values(AMOUNTS_LABEL)} helper="What the client sees priced"
-                             onChange={(v) => setView((x) => ({ ...x, amounts: (Object.keys(AMOUNTS_LABEL) as ClientView['amounts'][]).find((k) => AMOUNTS_LABEL[k] === v) ?? 'lines' }))} />
-                </div>
-              </div>
-            </div>
-            <div className={styles.panelFoot}><Button appearance="outlined" variant="secondary" isDisabled={!changed} onPress={() => setView(baseView)}>Reset to template</Button></div>
+            <ClientViewPanel quoteId={quote.id} view={view} setView={setView} baseView={baseView} changed={changed} changesRows={changesRows} />
           </aside>
-        ) : null}
-        {tabletDown ? (
-          /* (REG-525) ≤1024 the panel is the house Drawer (scrim, Esc, focus), as the template editor's panes are — not a hand-rolled fixed column. */
-          <Drawer open={panel} onClose={() => setPanel(false)} title="What your client sees" label="What your client sees">
-            <div className={styles.drawerBody}>
-
-            <div className={styles.panelBody}>
-              <span className={styles.panelNote}>Applies to this quote only. The template decides the starting point.</span>
-              <div className={styles.group}>
-                <span className={styles.groupTitle}>Columns</span>
-                {columns.map((k) => (
-                  <label key={k} className={styles.row}><span>{ITEM_COLUMN_LABEL[k]}</span><Switch size="sm" isSelected={view.columns[k]} onChange={(v: boolean) => setView((x) => ({ ...x, columns: { ...x.columns, [k]: v } }))} aria-label={ITEM_COLUMN_LABEL[k]} /></label>
-                ))}
-              </div>
-              <div className={styles.group}>
-                <span className={styles.groupTitle}>Content</span>
-                {VIEW_ROWS.map((r) => (
-                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => { setView((x) => ({ ...x, [r.key]: v })); if (r.key === 'terms' || r.key === 'notes') void orThrow(setQuoteTextVisible(quote.id, r.key, v)).catch(() => snackbar({ message: 'Couldn’t save the setting — please try again' })) }} aria-label={r.label} /></label>
-                ))}
-                {changesRows}
-                <div className={styles.hidden}>
-                  <TextField label="Hidden items" mode="select" value={view.hiddenItems === 'no-price' ? 'Shown without a price' : 'Left out'} options={['Left out', 'Shown without a price']}
-                             helper="Lines the editor hides from the client" onChange={(v) => setView((x) => ({ ...x, hiddenItems: v === 'Shown without a price' ? 'no-price' : 'omit' }))} />
-                </div>
-                <div className={styles.hidden}>
-                  {/* (REG-585) Amounts: every line · one per section (the lump sum) · the total only. */}
-                  <TextField label="Amounts" mode="select" value={AMOUNTS_LABEL[view.amounts]} options={Object.values(AMOUNTS_LABEL)} helper="What the client sees priced"
-                             onChange={(v) => setView((x) => ({ ...x, amounts: (Object.keys(AMOUNTS_LABEL) as ClientView['amounts'][]).find((k) => AMOUNTS_LABEL[k] === v) ?? 'lines' }))} />
-                </div>
-              </div>
-            </div>
-            <div className={styles.panelFoot}><Button appearance="outlined" variant="secondary" isDisabled={!changed} onPress={() => setView(baseView)}>Reset to template</Button></div>
-            </div>
-          </Drawer>
         ) : null}
       </div>
     </div>

@@ -1,10 +1,17 @@
 'use client'
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useShortcutsHere } from '@/lib/keys/store'
 import { DOC_KEYS } from '@/lib/keys/registry'
-import { isBlankDoc } from '@/lib/contracts/tokens'
+import { useMediaQuery } from '@/lib/breakpoint'
+import { insertSignFieldAfter, isBlankDoc, SIGN_LABEL, TOKEN_LABEL, type SignKey, type SignPlace, type TokenKey } from '@/lib/contracts/tokens'
 import { hideTooltipFor, showTooltipFor } from '@/components/om/tooltip'
+import { IconButton } from '@/components/om/icon-button'
+import { useSnackbar } from '@/components/om/snackbar'
+import { ChipSheet } from '../document/chip-sheet'
+import { liveDocChanged, registerLiveDoc } from '../document/live-doc'
+import { TOUCH, tokenSource } from '../document/model'
+import doc from '../document/document.module.css'
 import styles from './contract-editor.module.css'
 
 /**
@@ -13,6 +20,10 @@ import styles from './contract-editor.module.css'
  * eSignature fields (both `contenteditable="false"` atoms the caret jumps over and Backspace removes whole). Uncontrolled
  * while focused; external changes land through the effect; paste is plain text; the toolbar mirrors the selection
  * through `DocState` (block · marks · alignment · list).
+ * (contracts on the move 2026-10-22, P-03 · P-04 · B-19 · C-15 · C-17) On touch the paper answers a finger: a tap on a Smart Text chip
+ * opens its sheet (what it prints here · where it fills in from · Remove), a placed signature box carries its own ✕, both removes answer
+ * with Undo, and `insertSignFieldAt` lands a field as its own block after a clause and scrolls it to mid-screen with the fresh pulse —
+ * the desk's caret rules stand. The paper registers itself for the pieces that place a field (live-doc.ts).
  */
 export type BlockKind = 'p' | 'h1' | 'h2' | 'h3'
 export type Align = 'left' | 'center' | 'right'
@@ -20,6 +31,9 @@ export type DocState = { block: BlockKind; bold: boolean; italic: boolean; under
 export const IDLE_STATE: DocState = { block: 'p', bold: false, italic: false, underline: false, strike: false, highlight: false, align: 'left', ul: false, ol: false }
 export const HIGHLIGHT = '#EEE5FF'   /* primary-variant — the only highlight, the DS tint */
 const INERT = 'data-om-inert'   /* a chip on its way in: made contenteditable="false" once it is in place (emit) */
+const FRESH_MS = 1500   /* the fresh pulse's life (the Items grid's, REG-570…576) */
+/** The paper's HTML as the record sees it: the fresh pulse's mark is the screen's alone and never reaches the host or the record. */
+const clean = (html: string) => html.replace(/ data-fresh=""/g, '')
 
 export type DocEditorHandle = {
   exec: (cmd: string, value?: string) => void
@@ -29,6 +43,9 @@ export type DocEditorHandle = {
   /** Inserts HTML at the caret (a chip, a field, an image) — the paper's last caret when a menu, a dialog or the eSignatures drawer
       holds focus — or at the end when the paper has never had one. */
   insertHtml: (html: string) => void
+  /** (contracts on the move, P-04) The field as its own block after a clause (`insertSignFieldAfter`), scrolled to mid-screen with the
+      fresh pulse; returns the paper as it was, for Undo — null while the paper is read-only. */
+  insertSignFieldAt: (place: SignPlace, key: SignKey) => { prev: string } | null
   /** A link on the selection, or the URL itself when nothing is selected. */
   link: (href: string) => void
   focus: () => void
@@ -54,18 +71,24 @@ export const DocEditor = forwardRef<DocEditorHandle, {
   placeholder: string
   label: string
   readOnly?: boolean
-  /** (UX audit C7) What a Smart Text chip prints on this document — the house tooltip over the chip ("Prints as: Harpreet Kaur"). */
+  /** (UX audit C7) What a Smart Text chip prints on this document — the house tooltip over the chip ("Prints as: Harpreet Kaur"), and on
+      touch the chip sheet's first line. */
   chipTip?: (token: string) => string | null
 }>(function DocEditor({ value, onChange, onState, placeholder, label, readOnly, chipTip }, ref) {
   const body = useRef<HTMLDivElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
   useShortcutsHere(readOnly ? [] : DOC_KEYS)   // (REG-714) the ? panel lists the paper's keys while it is open
   const [, setTick] = useState(0)
+  const snackbar = useSnackbar()
+  const touch = useMediaQuery(TOUCH)
+  const touchRef = useRef(touch); useEffect(() => { touchRef.current = touch })
 
   useEffect(() => {
     const el = body.current
     if (!el) return
-    if (document.activeElement !== el && el.innerHTML !== value) el.innerHTML = value
+    if (document.activeElement !== el && clean(el.innerHTML) !== value) el.innerHTML = value   // compared without the pulse's mark, or a fresh block would be redrawn and lose it
     el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML))
+    liveDocChanged(clean(el.innerHTML))
   }, [value])
 
   const onChangeRef = useRef(onChange); useEffect(() => { onChangeRef.current = onChange })
@@ -86,7 +109,10 @@ export const DocEditor = forwardRef<DocEditorHandle, {
       if (n.hasAttribute(INERT)) { n.removeAttribute(INERT); n.removeAttribute('style') }   // the computed style Chrome copies onto an inserted inline — the chip's class draws it
       n.setAttribute('contenteditable', 'false')
     })
-    el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML)); onChangeRef.current(el.innerHTML)
+    el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML))
+    const html = clean(el.innerHTML)   // the pulse's mark never reaches the record
+    liveDocChanged(html)
+    onChangeRef.current(html)
   }, [])
 
   /* (Dane UAT 8.03) The paper's last selection: a menu, a dialog or a drawer that takes focus (Insert a field ▾ moves it to its first
@@ -137,8 +163,25 @@ export const DocEditor = forwardRef<DocEditorHandle, {
     document.execCommand(cmd, false, value)
     emit(); readState(); setTick((t) => t + 1)
   }
+  /** (P-04) The new block's moment — scrolled to mid-screen, the fresh pulse — the Items grid's `attention()` for a paper. */
+  const attention = (node: HTMLElement) => {
+    node.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    node.setAttribute('data-fresh', '')
+    window.setTimeout(() => node.removeAttribute('data-fresh'), FRESH_MS)
+  }
+  /** (B-19 · C-17) An inert atom taken out on touch — a chip from its sheet, a box by its ✕ — with Undo, which puts the paper back as it was. */
+  const removeAtom = (node: HTMLElement, what: string) => {
+    const el = body.current; if (!el || readOnly) return
+    const prev = clean(el.innerHTML)
+    const holder = node.parentElement
+    node.remove()
+    /* a box placed as its own block leaves its paragraph behind, empty — that goes with it (never the paper itself, never a block with words) */
+    if (holder && holder !== el && /^(P|DIV)$/.test(holder.tagName) && !holder.textContent?.trim() && !holder.querySelector('img, .om-token, .om-sign, br')) holder.remove()
+    emit(); setTick((t) => t + 1)
+    snackbar({ message: `${what} removed`, actionLabel: 'Undo', onAction: () => { const b = body.current; if (!b) return; b.innerHTML = prev; emit(); setTick((t) => t + 1) } })
+  }
 
-  useImperativeHandle(ref, () => ({
+  const api = useMemo<DocEditorHandle>(() => ({
     exec: run,
     formatBlock: (kind) => run('formatBlock', kind === 'p' ? 'p' : kind),
     align: (a) => run(a === 'center' ? 'justifyCenter' : a === 'right' ? 'justifyRight' : 'justifyLeft'),
@@ -150,8 +193,26 @@ export const DocEditor = forwardRef<DocEditorHandle, {
     /* (Dane UAT 8.03) Chrome lifts a non-editable inline inserted at a paragraph's end out of the paragraph, onto a line of its own after
        it: a chip goes in editable — marked — and turns inert in place (`emit`), so it sits where the caret was, end of a clause included.
        (Its trailing space also keeps Chrome from unwrapping a lone span as a style span.) A signature field keeps that line of its own
-       at a paragraph's end — a box under the words it follows — and sits in the text anywhere else. */
-    insertHtml: (html) => run('insertHTML', /class="om-token"/.test(html) ? html.replace(/ contenteditable="false"/g, ` ${INERT}=""`) : html),
+       at a paragraph's end — a box under the words it follows — and sits in the text anywhere else.
+       (C-16) On touch the sheet that picked the field blurred the paper, so the caret it lands at is the saved range; the line it landed on
+       is brought into view when it is off the screen. */
+    insertHtml: (html) => {
+      run('insertHTML', /class="om-token"/.test(html) ? html.replace(/ contenteditable="false"/g, ` ${INERT}=""`) : html)
+      if (!touchRef.current) return
+      const n = window.getSelection()?.anchorNode
+      const at = n instanceof Element ? n : n?.parentElement
+      if (at && body.current?.contains(at)) { const r = at.getBoundingClientRect(); if (r.top < 0 || r.bottom > window.innerHeight) at.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+    },
+    insertSignFieldAt: (place, key) => {
+      const el = body.current; if (!el || readOnly) return null
+      const prev = clean(el.innerHTML)
+      const next = insertSignFieldAfter(prev, place, key)
+      el.innerHTML = next.html
+      emit(); setTick((t) => t + 1)
+      const node = topNodes(el)[next.index]
+      if (node instanceof HTMLElement) attention(node)
+      return { prev }
+    },
     link: (href) => {
       const el = body.current; if (!el) return
       refocus()   // (Dane UAT 8.03) the selection the Link dialog was opened on
@@ -161,7 +222,7 @@ export const DocEditor = forwardRef<DocEditorHandle, {
       else run('createLink', full)
     },
     focus: () => body.current?.focus(),
-    getHtml: () => body.current?.innerHTML ?? '',
+    getHtml: () => clean(body.current?.innerHTML ?? ''),
     partAt: () => {
       const el = body.current
       if (!el) return { blocks: [], selection: null, caret: null }
@@ -189,28 +250,81 @@ export const DocEditor = forwardRef<DocEditorHandle, {
       for (let i = from; i <= to && i < nodes.length; i++) nodes[i]!.remove()
       emit()
     },
-    replaceAll: (html) => { const el = body.current; if (!el || readOnly) return; el.innerHTML = html; emit() },
+    replaceAll: (html) => { const el = body.current; if (!el || readOnly) return; el.innerHTML = html; emit(); setTick((t) => t + 1) },
     scrollToHeading: (index) => {
       const el = body.current; if (!el) return
       const h = el.querySelectorAll('h1, h2, h3')[index] as HTMLElement | undefined
       h?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     },
-  }), [emit, readState, readOnly])   // eslint-disable-line react-hooks/exhaustive-deps -- `run`, `refocus` and `focusEnd` close over refs only
+  }), [emit, readState, readOnly])   // eslint-disable-line react-hooks/exhaustive-deps -- `run`, `refocus`, `focusEnd` and `attention` close over refs only
+  useImperativeHandle(ref, () => api, [api])
+  /* (P-04) the one paper on the page, for the pieces that place a field without a prop from the host (the eSignatures panel) */
+  useEffect(() => { registerLiveDoc(api, clean(body.current?.innerHTML ?? '')); return () => registerLiveDoc(null) }, [api])
+
+  /* ── Touch (B-19 · C-15 · C-17): a chip's tap opens its sheet; each placed box wears its own ✕ on its top-right corner. The ✕ are drawn
+     from the paper's HTML (one per field, in order) and set on their boxes by a layout read — never inside the contenteditable, so the
+     record never carries a button. ── */
+  const [chip, setChip] = useState<{ key: TokenKey; el: HTMLElement } | null>(null)
+  const [chipOpen, setChipOpen] = useState(false)
+  const signKeys = useMemo(() => (touch && !readOnly ? [...value.matchAll(/data-sign="([a-z-]+)"/g)].map((m) => m[1] as SignKey).filter((k) => !!SIGN_LABEL[k]) : []), [touch, readOnly, value])
+  const xs = useRef<(HTMLSpanElement | null)[]>([])
+  const placeXs = useCallback(() => {
+    const el = body.current, w = wrap.current
+    if (!el || !w) return
+    const wr = w.getBoundingClientRect()
+    const boxes = el.querySelectorAll<HTMLElement>('.om-sign[data-sign]')
+    xs.current.forEach((x, i) => {
+      if (!x) return
+      const box = boxes[i]
+      if (!box) { x.style.display = 'none'; return }
+      const r = box.getBoundingClientRect()
+      x.style.display = ''
+      x.style.top = `${Math.round(r.top - wr.top + 4)}px`
+      x.style.left = `${Math.round(r.right - wr.left - 28)}px`
+    })
+  }, [])
+  useLayoutEffect(() => {
+    if (!signKeys.length) return
+    placeXs()
+    const el = body.current; if (!el) return
+    const ro = new ResizeObserver(placeXs)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [signKeys, placeXs, value])
+  const onTap = (e: React.MouseEvent) => {
+    if (!touchRef.current) return
+    const c = chipOf(e.target)
+    const key = c?.dataset.token as TokenKey | undefined
+    if (c && key && TOKEN_LABEL[key]) { e.preventDefault(); setChip({ key, el: c }); setChipOpen(true) }
+  }
+  const tip = chip ? (chipTip?.(chip.key) ?? null) : null
+  const prints = tip?.startsWith('Prints as: ') ? tip.slice('Prints as: '.length) : null
+  const note = tip && !prints ? tip : null
 
   return (
-    <div ref={body} className={styles.doc} contentEditable={!readOnly} suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
-         aria-readonly={readOnly || undefined} data-placeholder={placeholder} data-testid="contract-doc"
-         onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState} onPointerOver={onChipOver} onPointerOut={onChipOut}
-         onKeyDown={(e) => {
-           if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); document.execCommand('redo'); return }   // (REG-714) ⌘Y redoes, as in the other editors
-           /* Cmd/Ctrl+B/I/U are the browser's. (sweep S2 #10) Tab indents a list item and Shift+Tab brings it back; anywhere else Tab moves
-              on, as on every other field — it inserted spaces, and a keyboard could never leave the page. */
-           if (e.key === 'Tab') {
-             const at = window.getSelection()?.anchorNode
-             const inList = !!(at && (at instanceof Element ? at : at.parentElement)?.closest('li'))
-             if (inList) { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent') }
-           }
-         }}
-         onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />
+    <div ref={wrap} className={doc.docWrap} data-touch={touch || undefined}>
+      <div ref={body} className={styles.doc} contentEditable={!readOnly} suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
+           aria-readonly={readOnly || undefined} data-placeholder={placeholder} data-testid="contract-doc"
+           onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState} onPointerOver={onChipOver} onPointerOut={onChipOut} onClick={onTap}
+           onKeyDown={(e) => {
+             if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); document.execCommand('redo'); return }   // (REG-714) ⌘Y redoes, as in the other editors
+             /* Cmd/Ctrl+B/I/U are the browser's. (sweep S2 #10) Tab indents a list item and Shift+Tab brings it back; anywhere else Tab moves
+                on, as on every other field — it inserted spaces, and a keyboard could never leave the page. */
+             if (e.key === 'Tab') {
+               const at = window.getSelection()?.anchorNode
+               const inList = !!(at && (at instanceof Element ? at : at.parentElement)?.closest('li'))
+               if (inList) { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent') }
+             }
+           }}
+           onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />
+      {signKeys.map((k, i) => (
+        <span key={`${k}-${i}`} ref={(n) => { xs.current[i] = n }} className={doc.boxX}>
+          <IconButton icon="close" label={`Remove ${SIGN_LABEL[k]}`} size={24} variant="bare" iconSize={20} iconFamily="outlined" data-testid="sign-field-remove"
+                      onClick={() => { const box = body.current?.querySelectorAll<HTMLElement>('.om-sign[data-sign]')[i]; if (box) removeAtom(box, SIGN_LABEL[k]) }} />
+        </span>
+      ))}
+      <ChipSheet open={chipOpen} onClose={() => setChipOpen(false)} label={chip ? TOKEN_LABEL[chip.key] : ''} prints={prints} note={note} source={chip ? tokenSource(chip.key) : ''} locked={!!readOnly}
+                 onRemove={() => { setChipOpen(false); if (chip && chip.el.isConnected) removeAtom(chip.el, TOKEN_LABEL[chip.key]) }} />
+    </div>
   )
 })

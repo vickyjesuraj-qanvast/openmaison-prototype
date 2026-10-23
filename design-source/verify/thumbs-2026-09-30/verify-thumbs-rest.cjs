@@ -43,7 +43,7 @@ let pass = 0, fail = 0; const ok = (c, n) => { if (c) { pass++; console.log('  �
   const it = await p.evaluate(() => [...document.querySelectorAll('[class*="items-table-module"][class*="thumbBtn"] > span')].map((e) => { const r = e.getBoundingClientRect(), ic = e.querySelector('.msr, .mso'); return `${Math.round(r.width)}×${Math.round(r.height)} r${getComputedStyle(e).borderRadius} ${ic && !e.hasAttribute('data-empty') ? getComputedStyle(ic).fontSize : ''}` }))
   ok(it.length && it.every((x) => x.startsWith('48×48 r4px')), `quote Items: ${it.length} square 48 thumbs (${[...new Set(it)].join(' · ')})`)
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage()
-  await ph.goto(`${BASE}/quotes/${Q}`, { waitUntil: 'networkidle' }); await ph.waitForTimeout(1200)
+  await ph.goto(`${BASE}/quotes/${Q}?edit=items`, { waitUntil: 'networkidle' }); await ph.waitForTimeout(1200)   // (quotes on the move, a deliberate change of this rule) a phone / touch tablet opens the Quote screen; the Items cards are the Items screen
   const pc = await ph.evaluate(() => [...document.querySelectorAll('[class*="item-cards-module"][class*="thumb"]')].map((e) => { const r = e.getBoundingClientRect(), ic = e.querySelector('.msr, .mso'); return `${Math.round(r.width)} ${ic ? getComputedStyle(ic).fontSize : 'pic'}` }))
   ok(pc.length && pc.every((x) => /^40 (20px|pic)$/.test(x)), `phone item cards: ${pc.length} squares 40, icons 20 (${[...new Set(pc)].join(' · ')})`)
   /* the Quotes tables' first column after the box starts where the listing's does */

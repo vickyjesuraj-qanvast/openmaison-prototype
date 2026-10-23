@@ -1,0 +1,1755 @@
+{
+ "title": "Contracts on the Move",
+ "intro": {
+  "quote": "“Think a different experience in mobile and tablet screens which don’t have to be the same experience as it is in desktop. This will reduce the cognitive load and improve the usability for the studios on the move.” — and Q-08 of the Quotes page: the next module is Contracts.",
+  "method": "A read-only audit of every Contracts screen at 390 (phone), 768 (tablet, portrait) and 1024 (tablet, landscape) with touch emulation, on a production build of tonight’s main — the Quotes-on-the-move build landed. Three lanes measured touch boxes, type sizes, truncation and sideways scroll, read the code behind each screen and sent, signed and deleted their own test records on a scratch database. Nothing of this is built. Your picks save as you make them.",
+  "facts": [
+   "<b>62</b> shared shots + the lanes’ own at 390 · 768 · 1024",
+   "<b>3</b> audit lanes",
+   "Desktop <b>unchanged</b>",
+   "Build: main + Quotes on the move (REG-2525…2586)",
+   "22 Oct 2026, evening"
+  ],
+  "answer": [
+   "<b>Yes — the same answer Quotes gave, with one surface that matters more than all the others.</b> A contract on a phone opens as the thing the client gets (who it is for, which quote it names, where the link stands, the clauses as reading cards, one primary in a sticky foot); the editor comes on Edit as a short list, and the paper as a full-screen Document screen with one row of tools. A signature field is placed by choosing <em>where</em>, never by a thumb’s caret.",
+   "The surface that matters most is the client’s: today the signing page puts the form above the paper, the ticks 3,400px from the end of the reading, a code field without autofill, a pad that warps the stroke and a 4px thumbnail of the quote they are agreeing to. It should read like the confirmation page Quotes built — paper first, one bar that walks them to the signature in under two minutes. The pieces for most of this exist since this afternoon: the Quote screen’s shape, the section list, the paper viewer, the send sheet that fits, the picker as a list."
+  ]
+ },
+ "navProposal": "The proposal",
+ "proposalTitle": "The proposal: a contract you read first, edit second, and sign in one hand",
+ "proposalIntro": "Six rules, then the screens drawn with OpenMaison’s own tokens, then each change as a card you can mark. Desktop stays exactly as it is; the data, rules and signing record are the same code behind a different order of screens. Where Quotes built the piece this afternoon, the card names it.",
+ "principles": [
+  {
+   "title": "Read first, edit second",
+   "body": "A contract opens as the document the client gets, with who it is for, which quote it names and where the link stands on top. Edit is a deliberate step."
+  },
+  {
+   "title": "One primary per screen",
+   "body": "The filled button is the one thing this state needs next (Send · Remind · Download signed copy · Move to Won). Everything else sits behind ⋮ or in a sheet."
+  },
+  {
+   "title": "One thing at a time",
+   "body": "Edit is a short list — Details, Document, Signature fields, Before the client signs, Automation — each its own screen, instead of a header, a meta row, a tool bar and 3,000px of prose in one scroll."
+  },
+  {
+   "title": "A finger never places a field",
+   "body": "A signature field goes after a clause you choose, never at a thumb’s caret. A thumb reads, picks and signs; it does not aim."
+  },
+  {
+   "title": "The client’s two minutes",
+   "body": "Paper first at 16px, a bar that says how far they are and what is next, the code autofilled, the signature typed or drawn at a fixed ratio, a signed page they can keep."
+  },
+  {
+   "title": "Nothing is lost, it is one tap further",
+   "body": "Every desktop action stays reachable on a phone. Rare things move behind ⋮; the four things that change on site — the recipient, the date, the quote, a sentence — come to the thumb."
+  }
+ ],
+ "proposals": [
+  {
+   "id": "P-01",
+   "size": "L",
+   "refs": "B-lane · screen 1",
+   "title": "A contract opens as its document on a phone and a touch tablet",
+   "today": "Opening a contract lands on the editor: a header of 184px (the title on two lines, chips, Saved, the status, Send), a meta row of four stacked blocks, a two-row tool bar — 520px before the first word, 80% of the first screen with the Sent banner. A Signed contract shows the same, with the bar greyed. Send is at the top of a 3,920px page.",
+   "proposed": "A <b>Contract screen</b> (the Quote screen’s shape, `components/quotes/screen/*`, generalised): back · the client’s name with the title and the quote as the sub-line · ⋮ (grouped Look · Change · Share · Export). A hero: the status chip, From template, the contract date, the quote row (number · amount · status), the client row with Call · WhatsApp · Edit recipient. One <b>Next</b> line that says the link’s state (“With Olivia for signature — sent 20 min ago · not opened yet · link open until 29 Oct”). The clauses as reading cards split at the headings, the signature boxes as the last card. Folded rows: Signature fields · Before the client signs · Automation · Files · Activity. A sticky foot with <b>Edit</b> and the state’s one primary — Draft → Send · Sent → Remind (Send again once the link expired) · Signed → Download signed copy / Move to Won while the lead is not Won. “As printed” opens the house paper viewer; the Preview page at ≤767 is the reflowed paper under one bar with a Paper toggle (K3’s pattern).",
+   "why": "the person opening a contract on site wants to know who it is for, whether it was opened and what to do next. The editor is for the desk. The pieces are built: the screen, the hero, the Next line, the folds, the foot and the viewer came with Quotes this afternoon; `lib/contracts/next-step.ts` is the quote’s on the contract’s states.",
+   "shots": [
+    [
+     "m390-05-editor-draft-top",
+     "Today · 390"
+    ],
+    [
+     "m390-08-editor-signed-top",
+     "Today · Signed"
+    ],
+    [
+     "B-390-50-sent-top",
+     "Today · Sent"
+    ]
+   ]
+  },
+  {
+   "id": "P-02",
+   "size": "M",
+   "refs": "B-lane · screen 2 · tablet",
+   "title": "Edit is a short list, and Details is one form",
+   "today": "The meta row stacks title · recipient · quote · date as four 44–56 blocks on a phone; at 768 it gives the title 0px and the recipient’s name 1px; at 1024 the title input is 140px for a 252px title. Everything is editable at once, under 192px of sticky chrome while typing.",
+   "proposed": "Edit opens a <b>section list</b> (the quote’s `SectionList`): <b>Details</b> (title · recipient and their number · contract date · the quote · issued by — one form sheet, the four things that change on site) · <b>Document</b> (the paper, full-screen) · Signature fields · Before the client signs · Automation · Files — each with its one-line summary, so most rows never need opening. The address carries the step (`?edit=details`), so Back works. At 1024 landscape the list is a 300 pane beside the open section; held upright, a tablet follows the phone.",
+   "why": "one thing at a time. The desk’s meta row is a desk piece: a phone gives each field its own line in a form and the hero shows the values.",
+   "shots": [
+    [
+     "B-768-01-draft-top",
+     "Today · 768: no title, “( · 9134 3428”"
+    ],
+    [
+     "m390-05-editor-draft-full",
+     "Today · 390 (full page)"
+    ]
+   ]
+  },
+  {
+   "id": "P-03",
+   "size": "L",
+   "refs": "B · C lanes · screen 3",
+   "title": "The Document screen: the paper full-screen with one row of tools",
+   "today": "The paper is a 3,000–3,800px contenteditable in the middle of the page under a two-row bar whose tools scroll sideways with no cut-off (seven of twelve hidden at 390); the Maison button covers the last 31px of every line; a chip’s “prints as” is hover-only; Insert a field is two levels deep. The same in the template editor.",
+   "proposed": "Document (and a template’s clause) opens as the <b>full-screen editor</b> Quotes built for Terms (REG-2574, `Dialog phoneFull`): a 56 bar (← Document · the clause · Done) and <b>one 44-pitch tool row</b> — Undo · Text style ▾ · B · I · U · List · <b>+ ▾</b> (a sheet: Insert a field with its sample values · Add a signature field › · Link · Image · Highlight · Alignment · Numbered list). Nothing scrolls sideways, nothing hidden; the Outline (≡) jumps to a clause; no Maison button on this screen. A tap on a Smart Text chip opens “Client name · prints as Harpreet Kaur · Remove”. 768–1024: the same screen; the Outline is a pane.",
+   "why": "a thumb can edit a sentence when the tools are one row at 44 and nothing covers the text. Hidden tools and a hover-only answer break “nothing is hover-only, nothing is cut” (REG-273).",
+   "shots": [
+    [
+     "m390-05-editor-draft-top",
+     "Today · 390: the bar ends at I"
+    ],
+    [
+     "B-390-03-chip-tap",
+     "Today · a chip’s tap says nothing"
+    ],
+    [
+     "m390-04-template-editor-top",
+     "Today · a template at 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-04",
+   "size": "M",
+   "refs": "B-lane · screen 4",
+   "title": "A signature field is placed by choosing where, never by a thumb’s caret",
+   "today": "eSignatures is an 88dvh sheet over the paper; Insert puts the field at the caret — with no caret, at the very end of the document, off-screen, with no message (a second press adds a second field); with a thumb’s caret, mid-word (“The con [CLIENT INITIAL] tract sum”) under the sheet. At 768 the drawer covers the place the field lands.",
+   "proposed": "<b>Add a signature field</b> asks <em>which</em> (Studio · Client · initials, with “placed” marks) then <em>where</em> — the document’s clauses from the Outline (“After 11. Governing law and disputes” · “Under Signatures”, picked for you · “At the end”). It lands as its own block after that clause; the sheet closes, the box scrolls to mid-screen with the fresh pulse, the snackbar says “Client signature added under Signatures · Undo”. On touch a box has its own ✕. The eSignatures sheet splits into two folds on the Contract screen: <b>Signature fields</b> (placed / not placed · Add) and <b>Before the client signs</b> (the two switches as full-width label rows). At 1024 the pane is the placement list beside the paper, which slides left.",
+   "why": "the desk rule “insert at the caret” (Dane UAT 8.03) is right for a mouse and wrong for a finger; a block after a clause is where a signature field goes anyway.",
+   "shots": [
+    [
+     "B-390-52-insert-no-caret-after-close",
+     "Today · Insert with no caret: nothing visible"
+    ],
+    [
+     "B-390-08-esign-inserted-closed",
+     "Today · the field inside a word"
+    ],
+    [
+     "m390-05c-esignatures",
+     "Today · the sheet"
+    ]
+   ]
+  },
+  {
+   "id": "P-05",
+   "size": "L",
+   "refs": "A-lane · screen 5",
+   "title": "The client’s signing page: paper first, one bar that walks to the signature",
+   "today": "On a phone the body is `column-reverse`: the first screen is the form card (eyebrow, “Sign this agreement”, the quote link, the read gate, the accept tick, the code, the pad, Sign) and the paper is 3,400px below; “Go to the box” scrolls back up. A two-document bundle takes four passes. The quote they agree to opens as an A4 zoomed to 0.45 — 4px type — in a new tab whose Back lands on a second agreement page.",
+   "proposed": "The client page model Quotes built for the confirmation link: a 64 head (the studio · Secure signing); a 3-line hero card (the agreement · “Signs quotation OM-10008 · S$68,176 → As cards” · “Hi Vivien, read it, then sign with a one-time code”); the paper reflowed at 16px as today; a <b>sticky bar</b> — “Read to the end to sign · 3 of 11 sections” while reading, then <b>Accept and sign</b> (48, filled); the quote as the confirmation page’s reading cards in place, the A4 behind “As printed” in the paper viewer. After signing: the page lands on the signature box — “Signed · Save a copy · Pay the deposit · Signing record” — and the record is one tap away, not 3,800px down. A bundle walks its documents in order under the same bar.",
+   "why": "the client reads before they sign; the bar tells them how far they are and does the next thing. The gates (read to the end, tick to accept — REG-633) stay exactly as rules; only where they sit on the screen changes.",
+   "shots": [
+    [
+     "m390-10-sign-top",
+     "Today · 390: the form first"
+    ],
+    [
+     "m390-10-sign-full",
+     "Today · the whole page"
+    ],
+    [
+     "m390-10b-sign-quote-top",
+     "Today · the quote at 4px"
+    ]
+   ]
+  },
+  {
+   "id": "P-06",
+   "size": "M",
+   "refs": "A-lane · screen 5",
+   "title": "The signing sheet: ticks, six code boxes with autofill, type or a fixed-ratio pad",
+   "today": "The one-time code is a plain text field (no `autocomplete=\"one-time-code\"`, so the phone never offers the SMS); the pad is a 752×140 viewBox stretched to the card’s width — a square drawn at 390 is stored 1.97:1 and printed 62×34; Clear is a 36×20 text button in the pad’s corner; the NRIC field sits between the pad and Sign on every phone.",
+   "proposed": "<b>Accept and sign</b> opens a bottom sheet in three screens, one filled button each: (1) the words to tick and the CaseTrust box; (2) the <b>six code boxes</b> (the house `CodeBoxes`, autofill from the SMS; the demo’s “any six digits” said plainly); (3) <b>Type</b> first (the name prefilled, the serif preview) with <b>Draw</b> one tap away — a full-width pad at a fixed 2:1 that stores what was drawn, Clear under it, “Add NRIC / FIN” folded. The consent sentence at 16. On Sign the sheet closes onto the signature box.",
+   "why": "a signature a client cannot recognise as their own, and a code they must retype from another app, are the two moments a signing fails on a bus.",
+   "shots": [
+    [
+     "m390-10-sign-type",
+     "Today · the sign step"
+    ],
+    [
+     "m390-10-code",
+     "Today · the code field"
+    ],
+    [
+     "m390-10-sign-drawn",
+     "Today · a drawn signature"
+    ]
+   ]
+  },
+  {
+   "id": "P-07",
+   "size": "M",
+   "refs": "A-lane",
+   "title": "The lists as the phone card: the client first, what it signs, a read-only status",
+   "today": "Four cards read “Interior Design Service Agreement”; the client is a 14px purple link on line 2 (absent on the lead’s tab); no amount; “Created” unlabelled; the only thing that opens the contract is the 248×20 title text; the status pill is live — one mis-tap marks a Draft Sent to Client or stops a client’s link.",
+   "proposed": "The Quotes card (REG-2547): the <b>client’s name</b> 16/700 with the <b>amount</b> 18 at the right · “Signs OM-10008 · Interior Design Service Agreement” 14 · a read-only status chip with its since (“sent 2d ago · not opened” · “link expired” · “signed 12 Sep”) and a chevron. The whole card opens the contract; a long press selects. ⋮ = Open · Send a reminder (or Send the link again) · Copy link · Mark as signed… · Stop the signing link · Change status › · Share PDF · Archive · Delete. The to-do chips keep their words (“3 awaiting signature” · “1 link expired”). The lead’s tab: the same card with the title first. The Deleted and Archived sheets’ rows are the card.",
+   "why": "a designer thinks of a contract by the client and the quote it signs, not by its template’s title; the status changes on the contract, where the rule can say why (Q-04 of Quotes, as picked).",
+   "shots": [
+    [
+     "m390-01-list-top",
+     "Today · 390"
+    ],
+    [
+     "m390-01-row-menu",
+     "Today · the card’s ⋮"
+    ],
+    [
+     "m390-02-lead-tab",
+     "Today · the lead’s tab"
+    ]
+   ]
+  },
+  {
+   "id": "P-08",
+   "size": "S",
+   "refs": "A · C lanes",
+   "title": "Touch tablets open the tables with a default set, Title and ⋮ frozen",
+   "today": "Both tables open every desktop column with the 555px Title floor: at 768 the frame is 642 and the row 1,700 — Title is the only column in view, the row’s ⋮ at x 1,733. `contracts-table.module.css` overrides the table core’s sticky actions under `hover: none`. The lead’s tab keeps the quick-links strip at 768 portrait. The gallery’s list view hides three columns.",
+   "proposed": "The table core’s tablet default (`tabletHidden`, `useTableColumns(…, tablet)`, built for Quotes — REG-2549): Title · Lead · Status + since · Sent; Title and ⋮ frozen; View dropped (the title opens); the rest in Column settings remembered for the tablet. The module override of the sticky actions goes. No quick-links strip on the lead’s Contracts tab at 768 portrait (the Quotes rule). The templates gallery’s list takes the same default.",
+   "why": "a table on a touch tablet shows what fits, never twelve columns (responsive.md § On the move). The piece exists; Contracts declares its columns.",
+   "shots": [
+    [
+     "t768-01-list-top",
+     "Today · 768"
+    ],
+    [
+     "t1024-01-list-top",
+     "Today · 1024"
+    ]
+   ]
+  },
+  {
+   "id": "P-09",
+   "size": "S",
+   "refs": "A · C lanes",
+   "title": "New contract on a phone: who first, then the kind; the picker’s list on tablets too",
+   "today": "“Which lead is this contract for?” is a 400 form with the house select: every lead, alphabetical, 44 rows, no search, no recent, a 690px list over the sheet. The picker on a phone was rebuilt this afternoon as a radio list and holds; on a tablet it still shows 414×328 cards whose 300px “paper” holds an 8px excerpt.",
+   "proposed": "The Create Quote phone step (REG-2555): <b>Who is it for?</b> — recent leads first, a search — then the kind as rows: From the studio agreement · From a template (the list, the suggested one picked) · Import from file. The picker’s list goes to ≤1024 (the tablet’s cards are decoration that takes 70% of each card).",
+   "why": "the lead first is how a designer starts anything on site; the list is already built.",
+   "shots": [
+    [
+     "t768-13-contract-picker",
+     "Today · the picker at 768"
+    ],
+    [
+     "m390-13-contract-picker",
+     "Today · the picker at 390 (holds)"
+    ]
+   ]
+  },
+  {
+   "id": "P-10",
+   "size": "L",
+   "refs": "C-lane · screen 6",
+   "title": "A template is an outline you open one clause at a time; the gallery is a list",
+   "today": "The gallery card is a 150×195 paper scaled ×0.25 (16 → 4px) with 12px facts under it, two per row, the folders first (the first template at y 416). The template editor is the contract editor: 416px of chrome, seven hidden tools, the FAB on the text, a 3,168px text box with no Done once scrolled.",
+   "proposed": "The gallery on a phone is a <b>list</b> — Default and At handover pinned on top, each row name 16/600 · “13 headings · used by 5 · edited 14 Aug” 14 · chevron; the row opens the template’s <b>reading screen</b>: a 56 bar, a status row (“Default · used by 5 · fills 10 fields · client signs ✓”), the clauses as rows that open full-screen to fix a word (P-03’s Document screen), Signatures and Before the client signs as rows with switches. A standard PDF template keeps its picture with one Open the PDF (48). The row’s ⋮ = New contract from this template · Set as default · Use at handover · Rename · Move to folder · Duplicate · Delete.",
+   "why": "a template on a phone is read, checked and corrected in a word — never written from nothing. A shrunk A4 says nothing; an outline says everything.",
+   "shots": [
+    [
+     "m390-03-templates-top",
+     "Today · the gallery at 390"
+    ],
+    [
+     "m390-04-template-editor-top",
+     "Today · the editor at 390"
+    ],
+    [
+     "t768-03-templates-top",
+     "Today · 768"
+    ]
+   ]
+  },
+  {
+   "id": "P-11",
+   "size": "S",
+   "refs": "C-lane",
+   "title": "The contract inside the quote and the project",
+   "today": "The quote’s *Contract · Sent to Client* was a 10px chip with a 20px touch box, and the Quote screen’s Next line ignored a live contract (it still said “send … for signature”, and Send ▾ would have raised a second one). The project’s signed contract is the eighth row of “View Client Info”; the contract value shows only inside a tile’s 12px help.",
+   "proposed": "The Next line is the contract’s state once one exists and the primary is Open contract — <b>built tonight as REG-2586</b> while the audit ran. Still to do: a 44 row “Contract · Sent to Client ›” under the quote’s hero; a <b>Documents</b> fold on the project Overview (the signed quote, the contract, each a 48 row with its date and ↗); the contract total at 14 in the To collect tile with its source.",
+   "why": "knowing from the quote whether a contract is out, signed or missing is the question on site; a 10px chip does not answer it.",
+   "shots": [
+    [
+     "m390-14-quote-chip-top",
+     "Today · the quote’s chip"
+    ],
+    [
+     "m390-16-project-overview-top",
+     "Today · the project Overview"
+    ]
+   ]
+  },
+  {
+   "id": "P-12",
+   "size": "S",
+   "refs": "C-lane",
+   "title": "The Won step and Import take a photo of the paper the client just signed",
+   "today": "The Won step’s “Attach client signed contract › Upload” is a “Drop your file or browse · Supports: PDF” box with `accept=\".pdf\"` and no `capture`: a phone’s camera is excluded, so the lead cannot be won with its contract from the phone. Files › Import refuses a photo the same way.",
+   "proposed": "Two rows — <b>Take a photo</b> (capture) · <b>Choose a file</b> — on the Won step and on Import; the photo is kept as the signed copy (Files › Contract & VOs) and the lead moves to Won. The PDF stays what a desk uploads.",
+   "why": "on site the client signs the paper, the designer photographs it and wins the lead — the one job the step exists for on a phone.",
+   "shots": [
+    [
+     "m390-20c-won-upload",
+     "Today · the Won step’s upload at 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-13",
+   "size": "S",
+   "refs": "A · B · C lanes",
+   "title": "The scale 16 · 14 · 44 in every contract surface",
+   "today": "Chips 10px (the only place the signing date appears at 390), Saved 12, the Send sheet’s subtitle 12 on four lines, deposit help 12, Automation help 12, the card’s since 12, the consent sentence the client agrees to 12, the CaseTrust bullets 12, the Filters chips 12, the calendar’s 32px cells, the client’s 36 buttons.",
+   "proposed": "Quotes’ P-08 applied here: text people read at 16, secondary at 14, never under 14 for a value, a name or a sentence (a 12 uppercase eyebrow may label a group); amounts 18–26; every target 44, the foot’s and the client’s buttons 48; 16 gutters, 12 inside cards; inputs type at 16; the DateField’s calendar at 44 cells on a phone.",
+   "why": "his rule after Quotes (responsive.md § On the move); the contract surfaces were built before it.",
+   "shots": []
+  }
+ ],
+ "findingsTitle": "What is wrong today, screen by screen",
+ "findingsIntro": "Each finding names what was seen, where, and how bad. A finding the proposal already resolves says so and needs no pick. Severity: <b>Blocker</b> = can’t finish the job at that width · <b>Major</b> = hard, slow or error-prone · <b>Minor</b> = polish. The lanes’ full tables, measurements and shots are in the record folder.",
+ "findingsNote": "most are covered by the proposal above; the rest are quick fixes you can pick",
+ "surfaces": [
+  {
+   "key": "s-lists",
+   "title": "Tools › Contracts and the lead’s Contracts tab",
+   "intro": "The list is where a designer between site visits looks for what is waiting on a client. Today’s phone card is the desktop row re-placed, and a touch tablet opens every desktop column.",
+   "findings": [
+    {
+     "id": "A-01",
+     "title": "Four cards read the same title; the client is a small link",
+     "severity": "Major",
+     "width": "390",
+     "what": "Four cards read \"Interior Design Service Agreement\" (14/700, one line — \"…Service Agr…\" at 320); the client is line 2 as a 14px purple link (absent on the lead's tab); no amount anywhere; the date right is **Created**, unlabelled (a Signed card says \"22 Oct ’26\", not the signing day); no chevron. The card is the desktop row's cells re-placed, not the phone card Quotes built today.",
+     "shots": [
+      [
+       "m390-01-list-top",
+       "m390"
+      ],
+      [
+       "m320-01-list-top",
+       "m320"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the client leads the card, the amount beside it"
+    },
+    {
+     "id": "A-02",
+     "title": "Only the title text opens the card",
+     "severity": "Major",
+     "width": "390",
+     "what": "The only way to open a contract is its title text: a 248×20 button (hit map 248×20). A tap anywhere else on the 358×134 card lands on `div[role=row]` and does nothing (`cardWhitespaceTap`). The ⋮ sheet has no Open row (Preview and Share · Copy Link · Mark as signed… · Download as PDF · Print · Archive · Delete); the comment in `contracts-table.module.css` says \"View is in the kebab's own menu\" — it is not.",
+     "shots": [
+      [
+       "m390-01-row-menu",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the whole card opens"
+    },
+    {
+     "id": "A-03",
+     "title": "The card’s status pill is live under a thumb",
+     "severity": "Major",
+     "width": "390",
+     "what": "\"Draft ▾\" / \"Sent to Client ▾\" on every card is live: a tap opens a Status sheet (Draft · Sent to Client · Signed); \"Sent to Client\" marks a Draft sent from the list (`setContractStatus`, no WhatsApp, the link now live), \"Draft\" on a sent one stops the client's link. One mis-tap on a list card changes a client-facing state.",
+     "shots": [
+      [
+       "m390-01-status-menu",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the status is a read-only chip; the status changes on the contract"
+    },
+    {
+     "id": "A-04",
+     "title": "Every desktop column opens on a touch tablet",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "Every desktop column opens with the 555px Title floor: at 768 the frame is 642 and the row 1,700 — Title is the only column fully in view (Lead cut at 648+180), Status · Created · Signed Copy · Sent · Updated are off-screen; at 1024 (898 frame) Title · Lead · Status show, the rest not. The lead's tab at 768: frame 570, Title alone (Status starts at 648).",
+     "shots": [
+      [
+       "t768-01-list-top",
+       "t768"
+      ],
+      [
+       "t768-02-lead-tab",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "a tablet default set"
+    },
+    {
+     "id": "A-05",
+     "title": "The row’s View · ⋮ sit 1,100px to the right at 768",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "`contracts-table.module.css` `@media (hover: none)` overrides the table core's sticky `.actions` (parked at the visible edge) with `position: absolute; right: 0` plus a 150px band — the ⋮ sits at x 1733 of a 642 viewport at 768 (x 1553 on the lead's tab; x 1733 of 898 at 1024): a 1,090px sideways scroll to reach Copy link, Send a reminder, Stop the link, Mark as signed, Archive, Delete. REG-310 is the decision this copies (the listing's), but Quotes' tablet rule freezes ⋮ because the first screen must carry the actions.",
+     "shots": [
+      [
+       "t768-01-list-top",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "Title and ⋮ frozen, View dropped"
+    },
+    {
+     "id": "A-06",
+     "title": "The quick-links strip stays on the lead’s tab at 768 portrait",
+     "severity": "Major",
+     "width": "768 portrait",
+     "what": "The quick-links glyph strip stays (72×892 at x 688) and leaves the table 570 wide; Quotes hid it at 768 portrait.",
+     "shots": [
+      [
+       "t768-02-lead-tab",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "no quick-links strip at 768 portrait"
+    },
+    {
+     "id": "A-07",
+     "title": "The “Awaiting signature” chip collapses to a pencil and a number",
+     "severity": "Minor",
+     "width": "390 · 320 · 768",
+     "what": "On ≤1024 the chip collapses to a pencil glyph + \"3\" (62×36, `ScopePill short`; its words live only in `aria-label` — a tooltip never fires on touch) and pushes the section title to \"All Contr…\" at 390 (88px, TRUNC) and \"A.\" at 320 (18px). At 768 the row has 213px of title and still shows \"✎ 3\".",
+     "shots": [
+      [
+       "m390-01-new-menu",
+       "m390"
+      ],
+      [
+       "m320-01-list-top",
+       "m320"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the to-do chips keep their words"
+    },
+    {
+     "id": "A-08",
+     "title": "The card’s “since” line and the sheets’ status words read 12px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "\"Sent just now · not opened\" reads 12px (`.waiting` body-s); the Send-together rows' \"Sent to Client\" / \"Draft\" 12px; the Deleted sheet's note 12px.",
+     "shots": [
+      [
+       "m390-01-list-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the since line at 14"
+    },
+    {
+     "id": "A-09",
+     "title": "Three stylesheets re-declare the house touch overlay and displace every 44 target",
+     "severity": "Major",
+     "width": "all touch",
+     "what": "Three module stylesheets re-declare the house overlay: `contracts-toolbar.module.css` 23–28 (`.menuWrap > span > button::after { inset: -4px }`), `contracts-table.module.css` 119–122 (`.float button::after { inset: -4px }`), `contracts-filters-modal.module.css` (`.foot button::after`). The house `::after` keeps its `translate(−22,−22)`, so the 44 box is displaced up-left: hit map −26…+36 on both axes at 390 and 768 — a thumb 4px right of or below the 36 glyph misses, 26px left/above hits.",
+     "shots": [],
+     "fix": "Delete the three rules — `IconButton` and the DS md button already carry the centred 44 (REG-344, REG-2577)."
+    },
+    {
+     "id": "A-12",
+     "title": "Filters keep the desktop rail inside the bottom sheet; chips read 12px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The shared Filters shell keeps its 156px rail (Sort · Date · Status) beside a 234px pane inside the bottom sheet (panel 390×305); the Date chips read 12px (`Chips` label = subheading-s). A house piece (every Filters modal), said here because Contracts opens it.",
+     "shots": [
+      [
+       "m390-01-filters-sort",
+       "m390"
+      ],
+      [
+       "m390-01-filters-date",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the chips at 14; the Filters sheet in one column"
+    },
+    {
+     "id": "A-13",
+     "title": "“Download as PDF” and “Print” both open the browser’s print dialog",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Both call `printPaper()` → the browser's print dialog (no file on this build); \"Print\" is a desk verb on a phone.",
+     "shots": [
+      [
+       "m390-01-row-menu",
+       "m390"
+      ]
+     ],
+     "fix": "≤767 one row **Share PDF** (the Quotes phone ⋮'s Preview / Share), Print only where a mouse is."
+    },
+    {
+     "id": "A-14",
+     "title": "A deleted contract is a stack of seven unlabelled lines",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A deleted contract is a 344px stack of seven unlabelled lines — the selection box, the title, \"Serena Koh\", \"Draft\", \"22 Oct ’26\", \"Dane\" (who deleted it and when read as bare words), then Restore 84×36 · Delete Forever 130×36. The trio's stylesheet (`deleted-contracts-sheet.module.css`, also Deleted / Archived Quotes).",
+     "shots": [
+      [
+       "m390-16-deleted-sheet",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-07",
+     "absorbedNote": "the Deleted sheet’s row is the card"
+    },
+    {
+     "id": "A-15",
+     "title": "Send together: with four documents the tools row drops below the fold",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The sheet is REG-2578's (the link row hidden, Copy link in the foot — holds). With four documents the message grows to 292px and Reset message · Write with AI land at y 943 (below an 844 screen; the body scrolls 228px under the foot — REG-2578 accepts it); the document rows truncate \"Interior Design Service Agreem…\" against \"Sent to Client\" / \"Draft\" 12px on the right; a document already out (Sent to Client) is listed and ticked again.",
+     "shots": [
+      [
+       "m390-15-send-together",
+       "m390"
+      ],
+      [
+       "m390-15-send-together-end",
+       "m390"
+      ]
+     ],
+     "fix": "Rows wrap to two lines on ≤767 with the status under the title at 14; the message box folds to three lines with \"Show all\" on a phone."
+    }
+   ],
+   "measure": "Type: card title 14/700 · client 14 link · since 12 · chips 10 · the “Awaiting signature” chip 62×36 (a glyph + a number). Tablet: the Title floor 555, the row 1,700 in a 642 frame, ⋮ at x 1,733."
+  },
+  {
+   "key": "s-create",
+   "title": "New contract, Import, the picker",
+   "intro": "Starting a contract on a phone: the lead, then the kind. Today’s picker on a phone (rebuilt this afternoon as a radio list, REG-2579) holds; the tablet still shows the desktop cards, and the lead question is a 30-row select.",
+   "findings": [
+    {
+     "id": "A-10",
+     "title": "“Which lead is this contract for?” is a 30-row select with no search",
+     "severity": "Major",
+     "width": "390",
+     "what": "A 400 form dialog with the house select: the list of every lead (30+ rows, 44 each, alphabetical, no search, no recent) opens 690px tall over the sheet; Continue is a second press.",
+     "shots": [
+      [
+       "m390-01-pick-lead",
+       "m390"
+      ],
+      [
+       "m390-01-pick-lead-open",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "who first: recent leads, a search"
+    },
+    {
+     "id": "C-20",
+     "title": "The picker on a tablet still shows 414px cards with 8px previews",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The desktop cards stay: 328×414 (768) / 299×382 (1024) cards whose 300px grey \"paper\" holds an 8px excerpt — unreadable decoration taking 70% of each card; at 768 the dialog is 720×976 with the body scrolling (1,024 in 819) so the folders sit below the fold (y 851) under three cards; \"Start from the studio agreement\" + \"Use template\" are 36 in the foot.",
+     "shots": [
+      [
+       "t768-13-contract-picker",
+       "t768"
+      ],
+      [
+       "t768-26-picker-scrolled",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "the phone’s list goes to ≤1024"
+    }
+   ]
+  },
+  {
+   "key": "s-editor",
+   "title": "The contract editor: frame, meta row, dialogs",
+   "intro": "The editor is the desk editor squeezed: at 390 the first word of the contract is at y 561; at 768 the title field is 0px wide and the recipient’s name 1px. Send lives at the top of a 3,900px page.",
+   "findings": [
+    {
+     "id": "B-01",
+     "title": "The contract’s title field is 0px wide at 768",
+     "severity": "Blocker",
+     "width": "768",
+     "what": "The contract's title field is **0 px wide** (`titleField` w 0, its input 18 px): the meta row's `.titleInput { flex: 1; min-width: 0 }` gives everything to recipient (166) · quote (322) · date (200). The title cannot be read or changed at 768 — the header's title is the switch button, not an input. Signed at 768: the same 18 px.",
+     "shots": [
+      [
+       "B-768-01-draft-top",
+       "B"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the title is the Details form’s first field — and the hero’s"
+    },
+    {
+     "id": "B-02",
+     "title": "The recipient’s name collapses to 1px at 768",
+     "severity": "Major",
+     "width": "768",
+     "what": "The recipient chip shows **\"( · 9134 3428 ✎\"** — the name span is **1 px** wide (`nameScrollW` 93): the chip's `min-width: 0` lets the name collapse to its ellipsis while the phone keeps `nowrap`. Signed: \"Ryan D’…\" (72 px). The recipient is the field a designer on site changes most.",
+     "shots": [
+      [
+       "B-768-01-draft-top",
+       "B"
+      ],
+      [
+       "t768-05-editor-draft-top",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the recipient is the hero’s client row and the Details form’s field"
+    },
+    {
+     "id": "B-06",
+     "title": "520px of chrome before the first word of the contract",
+     "severity": "Major",
+     "width": "390",
+     "what": "**520 px of chrome before the paper**: header 184 (title on two lines, chip, Saved, status + Send) + meta row 224 (title · recipient · quote · date stacked) + bar 112 (two rows) → the first word of the contract is at y 561 of 844; with the Sent banner (116 px, five lines) at y 677 — **80 % of the first screen is chrome**. The person opens a contract and sees no contract.",
+     "shots": [
+      [
+       "m390-05-editor-draft-top",
+       "m390"
+      ],
+      [
+       "B-390-50-sent-top",
+       "B"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the Contract screen opens on the document"
+    },
+    {
+     "id": "B-07",
+     "title": "Send lives at the top of a 3,920px page; nothing is sticky but the tool bar",
+     "severity": "Major",
+     "width": "390",
+     "what": "**Send lives in the header at the top of a 3,920 px page**; the header is not sticky at ≤767 (only the bar is). After touching clause 9 the primary is ~3,000 px away; after typing in clause 1 it is already at y −391. The status pill (89×36) and Send (257×36) are 36 drawn (REG-2577 keeps the 44 overlay), not the foot's 48.",
+     "shots": [
+      [
+       "B-390-02-typing",
+       "B"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the sticky foot holds Edit and the state’s one primary"
+    },
+    {
+     "id": "B-08",
+     "title": "A Signed contract shows a greyed 112px formatting bar over a frozen copy",
+     "severity": "Major",
+     "width": "390",
+     "what": "A Signed contract shows the **full 112 px formatting bar greyed** (13 of 15 tools disabled, Outline live) above the kept copy, under a 132 px banner and a 184 px header; page 4,259 px. Dead controls fill a quarter of the first screen of a record nobody can edit.",
+     "shots": [
+      [
+       "m390-08-editor-signed-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "Signed is the reading screen: no toolbar"
+    },
+    {
+     "id": "B-11",
+     "title": "The editor overflows at 320 (the Quote select’s words)",
+     "severity": "Minor",
+     "width": "320",
+     "what": "The editor **overflows at 320** (scrollWidth 338): the Quote select's content \"OM-10006 · S$67,392.52 · APPROVED ▾\" has an intrinsic 322 px and `max-width: 100%` does not shrink it below its words. Preview and Signed pass.",
+     "shots": [
+      [
+       "B-320-editor",
+       "B"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the Quote field lives in the Details form, which wraps"
+    },
+    {
+     "id": "B-14",
+     "title": "The header is the desk header squeezed: “Interior Desi…”, “SIG”",
+     "severity": "Minor",
+     "width": "768",
+     "what": "The header is the desk header squeezed: the title capped at **45 %** (`.titleRow > .anchor`) reads \"Interior Desi…\" (176 px), the chip box is 104 px for 124 (\"FROM TEMPL\", the fade mask reads as a cut); Signed: the chips box is **31 px for 238** — \"SIG\" is all that is left of \"Signed 31 Jul ’26\". A decision (sweep S1 · T-02 for the quote header) that does not serve a contract's two chips.",
+     "shots": [
+      [
+       "t768-05-editor-draft-top",
+       "t768"
+      ],
+      [
+       "t768-08-editor-signed-top",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the hero carries the chips’ facts as text"
+    },
+    {
+     "id": "B-15",
+     "title": "192px pinned at the top while typing on a tablet",
+     "severity": "Minor",
+     "width": "768",
+     "what": "**192 px pinned at the top while typing**: header 76 + meta row 60 + bar 60 are all sticky (`.meta { top: 76 }`, `.bar { top: 132 }`). With an iPad keyboard (~400 px of 1024) about 430 px of paper remain. At 390 the bar alone (112) is sticky; with the iOS keyboard (~336) and Safari's bars about 400 px of paper remain.",
+     "shots": [
+      [
+       "B-768-02-typing",
+       "B"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "the Document screen pins a 56 bar and one tool row"
+    },
+    {
+     "id": "B-16",
+     "title": "The title input is 140px for a 252px title at 1024",
+     "severity": "Minor",
+     "width": "1024",
+     "what": "The title input is **140 px** for a 252 px title (\"Interior Design Se\", scrolling inside); `.barTools` is 619 for 623 (Image's edge clipped 4 px).",
+     "shots": [
+      [
+       "t1024-05-editor-draft-top",
+       "t1024"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the title has its own line in Details"
+    },
+    {
+     "id": "B-17",
+     "title": "Send for digital signature scrolls 68px; “Mark as signed” hides under the foot",
+     "severity": "Minor",
+     "width": "390 · 1024",
+     "what": "At 390 the sheet's body **scrolls 68 px** (602 in 534) and \"Signed in person? Mark as signed\" sits under the pinned foot until scrolled; the subtitle is four lines at 12 px (64 px); the deposit help is 12 px. At 1024×768 the body scrolls too (580 in 535) and the same line is below the fold. REG-2578 fitted the quote's dialog; the contract's extra rows (deposit 74, Mark as signed 36, standard documents) push it over.",
+     "shots": [
+      [
+       "B-390-12-send-top",
+       "B"
+      ],
+      [
+       "B-390-13-send-bottom",
+       "B"
+      ]
+     ],
+     "fix": "Subtitle to one line + \"How signing works\" as a fold; deposit help 14; Mark as signed moves to the sheet's head as a text action or the ⋮ (it is there already — drop the duplicate line on a phone)."
+    },
+    {
+     "id": "B-18",
+     "title": "Type under 14 wherever a person reads: chips 10, Saved 12, help 12",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "**Type under 14 where a person reads**: the header chips 10 px (`MetaChip` = the DS Tag's caption-xs, a mock decision — but at 390 the only place the signing date appears is a 10 px chip); Saved 12; the Send subtitle 12; deposit help 12; Automation help 12; Outline items (levels 2–3) 12; Insert-a-field sample values 12 (`menuSample`); the paper's letterhead line 12; the signature captions 12 uppercase; one Signing-record line 12.",
+     "shots": [],
+     "absorbed": "P-13",
+     "absorbedNote": "the scale in every contract surface"
+    },
+    {
+     "id": "B-21",
+     "title": "The snackbar lands over the ⋮ sheet’s last rows",
+     "severity": "Minor",
+     "width": "390",
+     "what": "After Send the snackbar \"Sent to Olivia Martinez for signature\" lands **over the sheet's last rows (Archive · Delete)**: REG-2580 lifts a snackbar above a sheet's *foot*; a menu sheet has none, and the editor group has no dock, so the band is 0.",
+     "shots": [
+      [
+       "m390-07-more-menu",
+       "m390"
+      ]
+     ],
+     "fix": "`useSheetFootLift` also for a menu sheet's last row (its body's bottom), or the snackbar waits while a sheet is open."
+    },
+    {
+     "id": "B-22",
+     "title": "The ⋮ sheet has no groups and shows a key hint on touch",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Ten to eleven rows with dividers but **no group labels**, and Preview still shows the **\"P\" key hint on touch**; the Quote screen's ⋮ grouped Look · Change · Share · Export and dropped key hints (Quotes B-09). The sheet is 598–642 px; Delete at y 792 is the last thing on screen.",
+     "shots": [
+      [
+       "B-390-11-more",
+       "B"
+      ],
+      [
+       "B-390-51-sent-more",
+       "B"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the ⋮ grouped Look · Change · Share · Export, no key hints"
+    },
+    {
+     "id": "B-23",
+     "title": "Two primaries on a Signed contract; the Sent state’s primary is “Send” again",
+     "severity": "Minor",
+     "width": "all",
+     "what": "**Two primaries on a Signed contract** (header: Download signed copy; banner: Move to Won filled), and the **Sent state's primary is \"Send\"** again (re-opens Send for digital signature, no reminder); the banner's \"Send again\" appears only once the link has expired. The quote's map gives Sent → Remind.",
+     "shots": [
+      [
+       "m390-08-editor-signed-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "one primary per state, from `lib/contracts/next-step.ts`"
+    },
+    {
+     "id": "B-24",
+     "title": "The Contract date’s calendar cells are 32px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The calendar sheet's day cells are **32×32 at a 32 pitch** (14 px digits); the sheet is 372 px. A shared piece, logged here because the date is one of the four things a designer changes on site.",
+     "shots": [
+      [
+       "B-390-20-date",
+       "B"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "44 calendar cells"
+    }
+   ],
+   "measure": "Chrome before the paper: 390 → 520px (header 184 · meta 224 · bar 112); 768 → 192px pinned while typing. Title input: 0px at 768, 140px at 1024. Header chips 10px, Saved 12px."
+  },
+  {
+   "key": "s-document",
+   "title": "The paper, the tools and placing a signature field",
+   "intro": "Editing prose with a thumb. Seven of twelve tools hide in a sideways row; a signature field is placed at the caret, which a thumb puts mid-word or nowhere at all; the Maison button sits on the text.",
+   "findings": [
+    {
+     "id": "B-03",
+     "title": "Seven of twelve tools hide in a sideways scroller with no cut-off",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "The tools scroll **sideways inside `.barTools { overflow-x: auto; scrollbar-width: none }`**: at 390 only Undo · Redo · Normal text · B · I are on screen — Underline, Highlight, Alignment, both lists, Link and Image sit at x 399…829 (`clippedX`); at 768 the row is 363 wide for 623 of tools (Alignment · lists · Link · Image `hit0`). Nothing says there is more. REG-2575 made the quote's text toolbar wrap at ≤1024; the contract bar never got it.",
+     "shots": [
+      [
+       "m390-05-editor-draft-top",
+       "m390"
+      ],
+      [
+       "B-768-01-draft-top",
+       "B"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "one 44-pitch tool row, the rest under + ▾"
+    },
+    {
+     "id": "B-04",
+     "title": "Insert with no caret drops the field at the end of the document, off-screen, silently",
+     "severity": "Major",
+     "width": "390",
+     "what": "With no caret ever placed in the paper, **Insert drops the field at the very end of the document** — page y 3,797 of 4,052, block 30 of 31 — off-screen behind the sheet, with no snackbar and the sheet still open. A designer sees nothing happen and presses Insert again (a second field).",
+     "shots": [
+      [
+       "B-390-52-insert-no-caret-after-close",
+       "B"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "a field is placed by choosing where; the box scrolls into view with a snackbar"
+    },
+    {
+     "id": "B-05",
+     "title": "Insert at a thumb’s caret splits a word; the sheet covers where it landed",
+     "severity": "Major",
+     "width": "390",
+     "what": "A thumb's tap lands **mid-word**; Insert puts a 324×72 box exactly there — \"The con **[CLIENT INITIAL]** tract sum is\" — while the 743 px sheet (88dvh) covers the paper, so the split is only seen after closing. The desk rule \"insert at the caret\" (Dane UAT 8.03) is right for a mouse, wrong for a finger.",
+     "shots": [
+      [
+       "B-390-07-esign-inserted-sheet-open",
+       "B"
+      ],
+      [
+       "B-390-08-esign-inserted-closed",
+       "B"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "never at a thumb’s caret"
+    },
+    {
+     "id": "B-12",
+     "title": "The eSignatures sheet is 88dvh over the paper and scrolls inside",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The sheet is **743 px (88dvh)**, covers the whole paper and its body scrolls (698 > 671) for the two gates; the four Insert buttons are 71×36 at the right (44 by overlay). Insert does not close it; the help \"Place the fields where the parties sign\" is 12 px. Fine as a settings panel, wrong as a placement tool.",
+     "shots": [
+      [
+       "m390-05c-esignatures",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "Signature fields and Before the client signs are two folds; the placement sheet is short"
+    },
+    {
+     "id": "B-13",
+     "title": "At 768 the eSignatures and Outline drawers cover half the paper",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "At 768 the eSignatures drawer is **400 of 768 (52 %)** and the Outline 360 (47 %), both over the paper; a field inserted at x 103–383 ends under the drawer's edge (368). At 1024 the drawer hides 296 px of the 816 paper and the paper does not shift.",
+     "shots": [
+      [
+       "B-768-03-esign-inserted",
+       "B"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "at 1024 the pane is the placement list beside the paper"
+    },
+    {
+     "id": "B-19",
+     "title": "A Smart Text chip’s “Prints as” is pointer-only",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "A chip's \"Prints as: Harpreet Kaur\" is **pointer-only** (`onChipOver` skips `pointerType === 'touch'`); a tap selects the chip's label and says nothing. The only second channel is Preview — a navigation away from the edit.",
+     "shots": [
+      [
+       "B-390-03-chip-tap",
+       "B"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "a tap on a chip opens its “prints as” sheet"
+    },
+    {
+     "id": "B-20",
+     "title": "The Maison AI button sits over the paper’s text column",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The FAB (48, x 326–374, y 780–828) sits **over the paper's text column** (x 33–357) in the bottom 64 px of the viewport: a caret tap at a line end there hits the FAB. The body's 96 px clearance helps only at the document's end.",
+     "shots": [
+      [
+       "m390-05-editor-draft-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "the Document screen has no Maison button"
+    },
+    {
+     "id": "C-13",
+     "title": "“Read to the end” and “Tick to accept” toggle only on their 36×20 track",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "\"Read to the end\" and \"Tick to accept\" toggle only on their 36×20 track: `.autoRow` is a `div`, the 306px of words do nothing on a tap (the input probe missed left and right). The Import dialog's switch row IS a `label` (the whole row toggles) — two behaviours for the same row. The gates are also last in a 743px sheet, under four Insert rows, although for a template they are what travels into every contract.",
+     "shots": [
+      [
+       "m390-04b-esign",
+       "m390"
+      ]
+     ],
+     "fix": "The row a `label` (as `import-contract-dialog.tsx`), words 16/14; in a template's drawer \"Before the client signs\" first."
+    }
+   ],
+   "measure": "The tool row at 390: Undo · Redo · Normal text · B · I visible, the rest at x 399…829. Insert with no caret: block 30 of 31, y 3,797 of 4,052. The eSignatures sheet 743px (88dvh)."
+  },
+  {
+   "key": "s-preview",
+   "title": "The contract’s Preview",
+   "intro": "The quote’s Preview got a one-line bar and the paper viewer this afternoon (REG-2564…2571); the contract’s kept the desk bar.",
+   "findings": [
+    {
+     "id": "B-09",
+     "title": "The Preview keeps the desk bar — 186px and three rows for a Signed one",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "The Preview keeps the **desk bar at a phone**: crumb 12 px + title (two lines) + chip, then Back to edit · link · download · Send — 138 px for a Draft, **186 px and three rows for a Signed one** (Download signed copy drops to its own row). K3 built the touch bar + 48 foot + `PaperViewer` for the quote's Preview the same day.",
+     "shots": [
+      [
+       "m390-09-preview-top",
+       "m390"
+      ],
+      [
+       "B-390-54-signed-preview-top",
+       "B"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "“As printed” opens the house paper viewer; the Preview reflows under one bar"
+    },
+    {
+     "id": "B-10",
+     "title": "The Preview scrolls sideways 4px with the “Sent to Client” chip",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The page **scrolls sideways by 4 px** when the status chip is \"Sent to Client\": the chip (98 wide, `nowrap`) ends at x 394 beside the title. Draft and Signed fit. (The shared capture's `log.json` overflow on 09 is this.)",
+     "shots": [
+      [
+       "B-390-53-sent-preview-top",
+       "B"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the one-line bar replaces the desk bar"
+    }
+   ]
+  },
+  {
+   "key": "s-client",
+   "title": "The client’s signing page — the one that must be perfect",
+   "intro": "The client is on a bus, in one hand, with two minutes. Today the form comes first and the ticks sit 3,400px from the reading’s end; the code field has no autofill; the drawn signature is warped; the quote they agree to is a 4px thumbnail.",
+   "findings": [
+    {
+     "id": "A-16",
+     "title": "The quote the client signs is an A4 zoomed to the phone — 4px type",
+     "severity": "Blocker",
+     "width": "390 768",
+     "what": "The A4 is zoomed to the phone's width: zoom 0.451, a page 358×506, the quote's 9.3px labels at 4.2px (line height 5.5px), body lines ~5px — 2,671px of thumbnail paper the client cannot read without pinching every line; at 768 zoom 0.907 → 8.5px text. The client is asked to agree to \"quotation OM-10008\" they cannot read.",
+     "shots": [
+      [
+       "m390-10b-sign-quote-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "the quote as the confirmation page’s reading cards + the paper viewer"
+    },
+    {
+     "id": "A-17",
+     "title": "The quote link opens a new tab and comes back to a second agreement page",
+     "severity": "Minor",
+     "width": "390",
+     "what": "\"It signs quotation OM-10008 — view the quote\" opens a **new tab** (`target=\"_blank\"`); its \"Back to the agreement\" is a link to `/sign/<token>` — the phone ends with two agreement tabs, the second at the review step again. The header truncates the studio to \"Demo Studio Pt…\" and the Back link wraps to two lines (173×40).",
+     "shots": [
+      [
+       "m390-10b-sign-quote-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "“As cards” opens in place, never a new tab"
+    },
+    {
+     "id": "A-18",
+     "title": "The signing form sits above the paper; the ticks are 3,400px from the reading’s end",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "`.body` is `column-reverse` ≤1024: the first screen is the form card (358×688 at 390 — eyebrow, \"Sign this agreement\", intro, quote link, the read gate, the accept tick, the 322px CaseTrust box, a disabled Send code) and the agreement starts at y 784. The ticks live in that top card while the reading ends 3,440px below: the client reads down, the bar says \"Tick that you accept, in the box at the top\", **Go to the box** scrolls them back up (scrollY 80), they tick twice, press Send code, type the code and sign — all at the top — and the box they signed is at y 3,618. Two full passes over the document before signing; a two-document bundle makes four (end of doc 1 → top → Continue → doc 2 starts at y 728 → its end → top). The page is 4,306px at 390 (5,118 at 320).",
+     "shots": [
+      [
+       "m390-10-review-top",
+       "m390"
+      ],
+      [
+       "m390-10-review-end",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "the paper first, one sticky bar that walks to the signature"
+    },
+    {
+     "id": "A-19",
+     "title": "The drawn signature is warped by the pad’s width",
+     "severity": "Major",
+     "width": "390 · 1024",
+     "what": "The pad is a 752×140 viewBox with `preserveAspectRatio=\"none\"` stretched to the card's width: at 390 (324×120) a 100×100 square is stored as 234×119 (aspect 1.97) and prints in the paper's 200×40 box as 62×34 — twice as wide as the client drew it; at 1024 (926×120) the same square stores 81×119 (0.69, squeezed); only 768 (0.95) is true. The paper, the signed PDF and the record keep the warped stroke.",
+     "shots": [
+      [
+       "m390-10-sign-drawn",
+       "m390"
+      ],
+      [
+       "m390-11-done-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "a fixed-ratio pad"
+    },
+    {
+     "id": "A-20",
+     "title": "The one-time code is a plain text field with no autofill",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "A plain `TextField` (\"One-time code*\", type text, `inputmode=numeric`, maxlength 6, **no `autocomplete=\"one-time-code\"`**): the phone never offers the SMS code, the six digits are typed into a 46px field, and Verify (73×36) is a second press. The house `CodeBoxes` (S30 — six 56px boxes, `one-time-code`, Enter submits) is what the portal's and the studio's sign-in use.",
+     "shots": [
+      [
+       "m390-10-code",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "the house code boxes with autofill"
+    },
+    {
+     "id": "A-21",
+     "title": "The consent sentence and the CaseTrust bullets read 12px",
+     "severity": "Minor",
+     "width": "390 · 768 · 1024",
+     "what": "Intro and every helper 14px grey (body-m); the CaseTrust bullets 12px; the **agreement sentence the client consents to** (\"I, Vivien Lee, agree to…\") 12px grey (`.fine`); the NRIC helper 12px; the signing record's note 12px; the bundle's \"Document 1 of 2 · …\" 12px; \"Secure signing\" 10px.",
+     "shots": [
+      [
+       "m390-10-sign-type",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the consent sentence and the bullets at 14"
+    },
+    {
+     "id": "A-22",
+     "title": "The client’s buttons are 36 drawn, not the client pages’ 48",
+     "severity": "Minor",
+     "width": "390 · 768 · 1024",
+     "what": "Send code 324×36, Verify 73×36, Sign agreement 324×36, Download a copy 324×36, the bar's Go to the box 122×36, Continue 324×36 — 36 drawn, 44 by the house overlay (REG-2577's decision). The Quotes client pages draw 48 (`confirm-page.module.css` `.card > button { min-height: 48px }` and the bar's 48 at ≤1024).",
+     "shots": [
+      [
+       "m390-10-review-gates",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "48 buttons on every client page"
+    },
+    {
+     "id": "A-23",
+     "title": "Clear is a 36×20 text button; the NRIC field sits between the pad and Sign",
+     "severity": "Minor",
+     "width": "390",
+     "what": "\"Clear\" is a 36×20 text button inside the pad's corner; the optional NRIC field (46 + a 32px helper) sits between the signature and Sign on every phone; the Type / Draw chips read 12px; the step runs 602px before Sign.",
+     "shots": [
+      [
+       "m390-10-sign-draw",
+       "m390"
+      ],
+      [
+       "m390-10-sign-nric",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "Type first, Draw with Clear under it, NRIC folded"
+    },
+    {
+     "id": "A-24",
+     "title": "“Download a copy” prints — nothing happens in WhatsApp’s browser",
+     "severity": "Major",
+     "width": "390",
+     "what": "Calls `printPaper()` = `window.print()` of a 4,426px page: on iOS Safari a print sheet, inside WhatsApp's in-app browser nothing happens (no print). The client gets no file; the Signed card says \"Both you and Demo Studio Pte Ltd keep a copy\". (`NEXT_PUBLIC_PDF_DOWNLOADS` is the developers' plug — the phone needs an answer on this build.)",
+     "shots": [
+      [
+       "m390-11-done-top",
+       "m390"
+      ]
+     ],
+     "fix": "≤767 \"Save a copy\" → `navigator.share` (the page's address, the studio's name) with \"Send me a copy on WhatsApp\" as the fallback; Download where a renderer exists."
+    },
+    {
+     "id": "A-25",
+     "title": "The dead-link notice says “ask the studio” with no way to ask",
+     "severity": "Minor",
+     "width": "all",
+     "what": "\"Please ask Demo Studio Pte Ltd for an updated link.\" with no way to ask: `LinkGone` and `SigningPage`'s `LinkNotice` get no `contact`, so K4's **Message {studio}** (A-23 of Quotes) never shows on a contract link while the quote links carry it.",
+     "shots": [
+      [
+       "m390-12-sign-notice",
+       "m390"
+      ],
+      [
+       "m390-12-not-sent",
+       "m390"
+      ]
+     ],
+     "fix": "Pass the studio's phone (`fetchBrand().details.phone`) from `app/sign/[id]/(sign)/page.tsx`, `/quote/page.tsx` and the states inside `SigningPage` / `BundleSigningPage`."
+    },
+    {
+     "id": "A-26",
+     "title": "The signing record sits under the whole paper; the Signed card does not point to it",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The record sits under the whole paper (y 3,820 of 4,426) and the Signed card at the top does not point to it; \"Device: Chrome on macOS · Asia/Calcutta\" and a 16-char fingerprint are the studio's words, not a client's receipt.",
+     "shots": [
+      [
+       "m390-11-done-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "Signed lands on the signature box with the record one tap away"
+    },
+    {
+     "id": "C-26",
+     "title": "The chat card’s eyebrow renders at 5px in a WhatsApp preview",
+     "severity": "Minor",
+     "width": "all",
+     "what": "1200×630: the eyebrow \"AGREEMENT TO SIGN\" is ~20px and \"For Olivia Martinez\" ~28px — in a WhatsApp preview (~300px wide) they render at 5px and 7px; only the studio's name and the title survive. **Module-wide** renderer (`lib/link-cards/card-image`), the contract's words are the kind's.",
+     "shots": [
+      [
+       "card-sign-sent",
+       "card"
+      ],
+      [
+       "card-sign-signed",
+       "card"
+      ]
+     ],
+     "fix": "Eyebrow and For-line ≥ 40px in the card (≥ 10px in the preview), or \"Interior Design Service Agreement — for Olivia Martinez\" as one title line."
+    }
+   ],
+   "measure": "The form card 358×688 at the top; the paper 4,306px; the pad 752×140 stretched to 324×120 (a square stored 1.97:1); buttons 36 drawn (44 by overlay); consent sentence 12px; the quote page zoom 0.451."
+  },
+  {
+   "key": "s-templates",
+   "title": "Company › Templates › Contracts and the template editor",
+   "intro": "A template on a phone is for reading a clause before a meeting and fixing a word, not for writing an agreement from nothing. Today it is a 4px paper in the gallery and a 3,200px text box in the editor.",
+   "findings": [
+    {
+     "id": "C-01",
+     "title": "The template card is a 4px paper nobody can read",
+     "severity": "Major",
+     "width": "390",
+     "what": "The card is a 150×195 paper thumbnail of the agreement scaled ×0.25 (body 16 → 4px, h1 28 → 7px): unreadable, and it takes 195 of the card's 314px. The words that identify the template sit under it at 12px (\"4 headings · Contract date Dear Client name…\", \"Not used yet · edited 7 Oct ’26 by Dane\"). **Module-wide** card; the contract thumb is `contract-templates-gallery.module.css .thumbScale`.",
+     "shots": [
+      [
+       "m390-03-gallery-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the gallery is a list"
+    },
+    {
+     "id": "C-02",
+     "title": "Two 173px cards per row break names and print field labels as prose",
+     "severity": "Major",
+     "width": "390",
+     "what": "Two 173px cards per row: names break to two lines, the meta clamps mid-sentence and reads as nonsense because the excerpt prints field labels (\"Contract date Dear Client name , We are pleased…\"). **Module-wide** grid (`quote-templates-gallery.module.css` ≤767 two columns).",
+     "shots": [
+      [
+       "m390-03-gallery-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "rows, not cards"
+    },
+    {
+     "id": "C-03",
+     "title": "The card’s checkbox and ⋮ fight for the same corner",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Checkbox 13×13 over the thumbnail (probe: right and bottom miss) and ⋮ 24×24 (probe: left and bottom miss): their 44 boxes collide with each other and with the card's open button, so a tap 21px off either lands elsewhere. **Module-wide.**",
+     "shots": [],
+     "absorbed": "P-10",
+     "absorbedNote": "a row has one ⋮; a long press selects"
+    },
+    {
+     "id": "C-04",
+     "title": "The state chips (At handover · Standard PDF) read 10px uppercase",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "`MetaChip` 10px uppercase, 20 tall (\"AT HANDOVER\", \"TEMPLATE\", \"USED BY 5 CONTRACTS\", \"STANDARD PDF\"): the state that decides what the Hand over sheet sends is the smallest text on the page. **Module-wide** chip; Quotes kept it at 10 in the hero today, so this is a cross-module call.",
+     "shots": [
+      [
+       "m390-03-gallery-full",
+       "m390"
+      ],
+      [
+       "m390-04h-handover-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-13",
+     "absorbedNote": "the state reads as 14 text; the chip stays a mark"
+    },
+    {
+     "id": "C-05",
+     "title": "The gallery’s list view hides three columns at 768 with no cut-off",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The list is a 1,158px table in a 642 (768) / 898 (1024) frame; Used by · Updated · Updated by are off-screen with no cut-off column showing (Starts with ends 4px before the frame's edge), no scrollbar at rest, no tablet default. The toggle offers a view worse than the grid. **Module-wide** table; the contract kind's columns are `contract-templates-gallery.tsx` `columns` (Starts with 320 · Used by 140).",
+     "shots": [
+      [
+       "t768-03f-list-view",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-08",
+     "absorbedNote": "the gallery’s list takes the tablet default set"
+    },
+    {
+     "id": "C-06",
+     "title": "The + keeps its “New · C” key hint pinned on a phone",
+     "severity": "Minor",
+     "width": "390",
+     "what": "After the press the tooltip \"New · C\" stays pinned under the + (focus shows it): a key hint on a phone. **Module-wide** (`Tooltip shortcut` on touch).",
+     "shots": [
+      [
+       "m390-22b-search-open",
+       "m390"
+      ]
+     ],
+     "fix": "`Tooltip` drops `shortcut` under `(hover: none)`."
+    },
+    {
+     "id": "C-07",
+     "title": "Folders first: the first template starts at y 416",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Two 171×96 folder cards with their own checkbox and ⋮ sit above the templates, so the first template starts at y 416 of 844; at 320 the folders alone fill the first screen. **Module-wide.**",
+     "shots": [
+      [
+       "m390-03-gallery-full",
+       "m390"
+      ],
+      [
+       "m320-gallery",
+       "m320"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "Default and At handover pinned; folders below"
+    },
+    {
+     "id": "C-08",
+     "title": "The template editor hides seven tools in a sideways row",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "7 of 12 tools are off-screen in a sideways-scrolling row with no visible cut-off: Underline · Highlight · Alignment · Bulleted list · Numbered list · Link · Image (Italic ends at x 387 of 390; the next tool starts at 399). At 768 the same for Alignment · the lists · Link · Image (the tools' row is 363px because Outline · Write with AI · Insert a field · eSignatures take the rest); at 1024 Image is cut by 18px. A designer cannot find \"make this a list\".",
+     "shots": [
+      [
+       "m390-04-template-editor-top",
+       "m390"
+      ],
+      [
+       "t768-04-template-editor-top",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "the same Document screen for a template’s clause"
+    },
+    {
+     "id": "C-09",
+     "title": "416px of chrome before the template’s first word",
+     "severity": "Major",
+     "width": "390 · 320",
+     "what": "416px of chrome before the first word: header 184 (title 20 on two lines · chips 10 · \"Saved 14 Aug ’26\" 12 · a full-width 36 Done · ⋮ · ✕) + meta row 104 (the title again as a 36 input with a pencil · \"How fields fill in\" 36) + toolbar 112 (two rows). The template's name appears twice within 200px. At 320 it is 480 of 568.",
+     "shots": [
+      [
+       "m390-04-template-editor-top",
+       "m390"
+      ],
+      [
+       "m320-template-editor",
+       "m320"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the outline is the screen"
+    },
+    {
+     "id": "C-10",
+     "title": "The Maison AI button covers the last 31px of every line",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "The 48 FAB at x 326–374 covers the last 31px of the paper's text column (doc right edge 357) for the whole 3,234px scroll; a tap near the end of a line at the bottom of the screen opens Maison AI instead of placing the caret. 7px at 768, none at 1024.",
+     "shots": [
+      [
+       "m390-04g-sign-boxes",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "no Maison button over the paper"
+    },
+    {
+     "id": "C-11",
+     "title": "Scrolled 900px there is no way to finish but 3,000px back up",
+     "severity": "Major",
+     "width": "390",
+     "what": "Scrolled 900px the header (Done · ⋮ · ✕) is gone (y −900) and only the 112px toolbar sticks: from clause 3 to the signatures there is no way to finish or leave except 3,000px of scrolling back.",
+     "shots": [
+      [
+       "m390-04a-editor-scrolled",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "Done is in the pinned bar"
+    },
+    {
+     "id": "C-12",
+     "title": "The agreement is one 3,168px contenteditable: reading and editing are one surface",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "The agreement is one 3,168px contenteditable (12 clauses + signatures): reading and editing are the same surface; a tap anywhere raises the keyboard and leaves one clause in view; the Outline (the one way to jump) is a `list` glyph in the toolbar nobody reads as \"clauses\", and at 768–1024 it is a 360 drawer over the paper's right half.",
+     "shots": [
+      [
+       "m390-04-template-editor-full",
+       "m390"
+      ],
+      [
+       "t1024-04d-outline",
+       "t1024"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "the template is an outline; a clause opens as the Document screen"
+    },
+    {
+     "id": "C-14",
+     "title": "Help and subtitles read 12px across the template surfaces",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "12px where P-08 says 14: the eSign rows' help (\"Your saved signature, from the quote editor\"), the gates' help, the PDF note, the picker's subtitle, the Import dialog's subtitle (48px = four lines of 12px), the Won window's subtitle, the dropzone helpers (\"PDF\", \"Supports: PDF\"), the New menu's help (\"Terms, a warranty — added to signings\"), the Money tile's \"collected of\" line, the gallery card's meta and usage lines, \"Saved 14 Aug ’26\". Several are **module-wide** (Dialog subtitle, dropzone, StatTile help, the card).",
+     "shots": [],
+     "absorbed": "P-13",
+     "absorbedNote": "14 for every help line"
+    },
+    {
+     "id": "C-15",
+     "title": "“How fields fill in” answers with a 4-second snackbar",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The one explanation of what \"Contract date\" / \"Quote total\" chips do is a text button whose answer is a 4-second snackbar; the chips themselves answer nothing on a tap (`user-select: all; cursor: default`).",
+     "shots": [
+      [
+       "m390-04-template-editor-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "a chip answers on its own tap"
+    },
+    {
+     "id": "C-16",
+     "title": "Insert a field is two levels — three taps per field",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The sheet is two levels (Fields from › Client · Project · Studio · Quote · Handover · Date › the field): three taps per field. Opening a bottom sheet blurs the contenteditable on iOS; the caret the field lands at is the saved range (Dane UAT 8.03 fixed a pointer press) — not verified for touch.",
+     "shots": [
+      [
+       "m390-04c-insert-field",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "Insert a field is one level under + ▾ with the sample values"
+    },
+    {
+     "id": "C-17",
+     "title": "The signature boxes look like buttons and do nothing on a tap",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Two 324×72 dashed boxes with 12px uppercase labels look like buttons and do nothing; a misplaced sign field is removed by placing the caret after it and pressing Backspace — hard with a finger (`user-select: all`, no ✕).",
+     "shots": [
+      [
+       "m390-04g-sign-boxes",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-04",
+     "absorbedNote": "a box on touch has its own ✕"
+    },
+    {
+     "id": "C-18",
+     "title": "A standard PDF template works as a phone page — but “Open” appears twice",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Works as a phone page (the file row, \"Before the client signs\" 207×36, Replace, the first page as a picture 324×457, the help 14) — but \"Open\" appears twice (the head's and \"Open the PDF\" under the picture), the name three times (header h1, the title input, the file row), and the header keeps the full-width Done (C-09).",
+     "shots": [
+      [
+       "m390-27c-pdf-editor-full",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "one Open the PDF (48)"
+    }
+   ],
+   "measure": "Card thumbnail ×0.25 (16 → 4px). Template editor at 390: 416px of chrome, the toolbar 112, the FAB over the text, no Done below y 0 once scrolled 900."
+  },
+  {
+   "key": "s-pieces",
+   "title": "The contract inside the quote, the project and the Won step",
+   "intro": "Where a contract shows up on other screens. One of these was fixed tonight: the Quote screen’s Next line now reads a live contract (REG-2586). The Won step still cannot take a photo of the paper the client just signed.",
+   "findings": [
+    {
+     "id": "C-21",
+     "title": "The quote’s Contract chip is 10px with a 20px touch box; the Next line ignored a live contract",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "The chip-link \"CONTRACT · SENT TO CLIENT\" is 10px uppercase, 20 tall; its touch box is 20px (probe: above and below miss). And the Quote screen ignores it: with the contract already *Sent to Client*, Next still reads \"approved — send it to Olivia for confirmation, or with the T&Cs for signature\" and the primary is Send ▾, whose *Send for signature* raises a second contract. (The Signed state does read the contract: \"The signed copy is on Interior Design Service Agreement\" · **Open contract**.) `lib/quotes/next-step.ts` reads `f.contract` only in the Signed branch (line 98).",
+     "shots": [
+      [
+       "m390-14-quote-chip-top",
+       "m390"
+      ],
+      [
+       "m390-14b-quote-signed-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the Next line is the contract’s state (REG-2586, built tonight); the chip becomes a 44 row"
+    },
+    {
+     "id": "C-22",
+     "title": "The contract’s Quote field is one of four stacked blocks on a phone",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Fine as a control (321×44, 14, the sheet's rows 56 with number · amount · status) — but it is one of four stacked 44–56 blocks (title · recipient · quote · date) that, with the sent banner, push the toolbar to y 530 and the first line of the contract a full screen down. Lane B owns the meta row; the quote's share is this row.",
+     "shots": [
+      [
+       "m390-15-contract-meta",
+       "m390"
+      ],
+      [
+       "m390-15b-quote-field-open",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "Details is one form"
+    },
+    {
+     "id": "C-23",
+     "title": "The project Overview hides the signed contract in the “View Client Info” sheet",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "The signed contract is the 8th row of \"Project info\" inside the **\"View Client Info\"** sheet (reached by a scroll inside it); a sheet named for the client is the last place a designer looks for the contract. The link \"Signed 31 Jul ’26 ↗\" is 14px, 134×17 (the overlay gives 44). At 768 the row sits at y 979 of the info column, below the fold. The lead's Overview has no such row; its Contract is ⋮ › CREATE › Contract (44, fine).",
+     "shots": [
+      [
+       "m390-23b-info-sheet-docs",
+       "m390"
+      ],
+      [
+       "t768-16-project-overview-top",
+       "t768"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "a Documents fold on the Overview"
+    },
+    {
+     "id": "C-24",
+     "title": "The contract value shows only inside a tile’s 12px help",
+     "severity": "Minor",
+     "width": "390",
+     "what": "For an Owner the contract value shows only inside the To collect tile's help, \"S$17,790.01 collected of S$81,355.42\", at 12px; the breakdown (\"Contract S$81,355 — signed quote + variation orders\") is a hover `Tooltip` on the value and never shows on touch. A Designer gets a \"Contract value\" tile; an Owner on a phone gets a 12px aside. **Module-wide** StatTile help; the contract line is the project piece.",
+     "shots": [
+      [
+       "m390-17-money-top",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the contract total at 14 in the tile"
+    },
+    {
+     "id": "C-25",
+     "title": "Files › Send for signature works; a photo of a signed page is refused",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "The flow works on a phone (the row with its help, a 554 sheet, the kept file tile 146×153 with a 24 trash under the overlay, the switch row toggles as a whole, Import 77×36 / Cancel 79×36). Weak points: the subtitle is 48px of 12px text repeating the title; the dropzone (file removed) reads \"Upload the contract PDF · PDF\" and accepts `application/pdf` only, so a phone's camera is excluded.",
+     "shots": [
+      [
+       "m390-25b-viewer-menu",
+       "m390"
+      ],
+      [
+       "m390-25c-import-dialog",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "the photo kept as the signed copy"
+    },
+    {
+     "id": "C-27",
+     "title": "The Won step’s “Attach client signed contract” excludes the phone’s camera",
+     "severity": "Blocker",
+     "width": "390",
+     "what": "The box reads \"Drop your file or browse · Supports: PDF\" (desk words) and the input is `accept=\".pdf,application/pdf\"` with no `capture`: a phone's camera and photos are excluded, so the one artefact a designer has on site — the paper the client just signed — cannot be attached and the lead cannot be won with its contract from the phone. \"From System\" offers \"Create Contract ›\", which leaves the step. (The stage rail also scrolls sideways, sw 533 in 390, \"New\" hidden — the window is Leads'.)",
+     "shots": [
+      [
+       "m390-20b-won-contract",
+       "m390"
+      ],
+      [
+       "m390-20c-won-upload",
+       "m390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "Take a photo · Choose a file"
+    }
+   ]
+  }
+ ],
+ "questionsIntro": "Where the proposal has more than one good answer. My recommendation is marked.",
+ "questions": [
+  {
+   "id": "Q-01",
+   "refs": "P-01 · P-02",
+   "title": "Does a tablet in portrait (768) get the phone model, as Quotes does?",
+   "opts": [
+    [
+     "phone",
+     "The phone model with room: the Contract screen, the section list, the Document screen (Quotes’ Q-01, as picked)",
+     true
+    ],
+    [
+     "desktop",
+     "The desktop editor with the meta-row and tool-bar fixes"
+    ],
+    [
+     "width",
+     "Phone model up to 1024 in portrait; desktop only on landscape tablets"
+    ]
+   ]
+  },
+  {
+   "id": "Q-02",
+   "refs": "P-06",
+   "title": "The client’s signature on a phone: which comes first?",
+   "opts": [
+    [
+     "type",
+     "Type first (the name prefilled, the serif preview), Draw one tap away at a fixed ratio",
+     true
+    ],
+    [
+     "draw",
+     "Draw first, as the desk does; Type as the alternative"
+    ],
+    [
+     "both",
+     "Two equal tabs, no default"
+    ]
+   ]
+  },
+  {
+   "id": "Q-03",
+   "refs": "P-07",
+   "title": "The status on a phone’s list card: read-only or live?",
+   "opts": [
+    [
+     "readonly",
+     "A read-only chip; the status changes on the contract itself, where the rule can say why (Quotes’ Q-04, as picked)",
+     true
+    ],
+    [
+     "live",
+     "The live pill as today, with a confirm on Sent to Client / Signed"
+    ],
+    [
+     "menu",
+     "Read-only on the card, Change status › in its ⋮ (as the Quotes card)"
+    ]
+   ]
+  },
+  {
+   "id": "Q-04",
+   "refs": "P-12",
+   "title": "The signed paper photographed on site — what is the signed copy?",
+   "opts": [
+    [
+     "photo",
+     "The photo itself, kept in Files › Contract & VOs as the signed copy; a PDF when the S34 PDF renderer lands (the developers’ seam)",
+     true
+    ],
+    [
+     "pdf",
+     "Wait for the PDF renderer: refuse photos until a server-side PDF exists"
+    ],
+    [
+     "both",
+     "Keep the photo and also print it into a PDF on the device (the browser print sheet — unreliable in WhatsApp’s browser)"
+    ]
+   ]
+  },
+  {
+   "id": "Q-05",
+   "refs": "P-05",
+   "title": "The client’s page: paper first with the sticky bar, or the form card first as today?",
+   "opts": [
+    [
+     "paper",
+     "Paper first; one bar that says how far they are and then Accept and sign",
+     true
+    ],
+    [
+     "form",
+     "The form card first, as today, with the fixes to its pieces"
+    ],
+    [
+     "split",
+     "A tabbed page: Read · Sign"
+    ]
+   ]
+  },
+  {
+   "id": "Q-06",
+   "refs": "P-05 · A-24",
+   "title": "“Download a copy” for the client, until the PDF renderer exists?",
+   "opts": [
+    [
+     "page",
+     "A signed page they can keep: “Save a copy” opens the phone’s share sheet where it exists, the signing record and the copy stay at their link; the PDF when the renderer lands",
+     true
+    ],
+    [
+     "print",
+     "Keep the print sheet (nothing happens inside WhatsApp’s browser)"
+    ],
+    [
+     "email",
+     "Email the copy from the studio (the house outbox) and say so on the page"
+    ]
+   ]
+  },
+  {
+   "id": "Q-07",
+   "refs": "P-01 · B-23",
+   "title": "The one primary per contract state — this map?",
+   "opts": [
+    [
+     "map",
+     "Draft → Send · Sent → Remind (Send again once the link expired) · Signed → Move to Won while the lead is not Won, else Download signed copy",
+     true
+    ],
+    [
+     "send",
+     "Send stays the primary in every unsigned state"
+    ],
+    [
+     "none",
+     "No primary on a Signed contract; Download and Move to Won both in ⋮"
+    ]
+   ]
+  },
+  {
+   "id": "Q-08",
+   "refs": "the next module",
+   "title": "After Contracts, which module next?",
+   "opts": [
+    [
+     "leads",
+     "Leads and Lead details — the module a designer lives in on the move (the listing is already right; the lead’s tabs and the Move stage window are not audited for the move yet)",
+     true
+    ],
+    [
+     "projects",
+     "Projects — the schedule, updates and money on site"
+    ],
+    [
+     "tasks",
+     "Tasks and Tickets"
+    ]
+   ]
+  }
+ ]
+}

@@ -47,7 +47,7 @@ function Drawing({ d, className }: { d: string; className?: string }) {
  * client's dashed block ("Client signs online · Requested when you send · signed on approval"; the lead's name; NRIC from
  * General Info or "Requested when you send"). The switch off never hides the client block (owner: "default: don't hide").
  */
-export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSaved, nric }: {
+export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSaved, nric, onRequired }: {
   seed: SignatureSeed
   open: boolean
   onToggle: () => void
@@ -55,6 +55,8 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
   onSaved: (updatedAt: number) => void
   /** Live from General Info. */
   nric: string
+  /** (quotes on the move 2026-10-22, K1's ask) The switch as it stands — the section list's one-line summary follows it live. */
+  onRequired?: (required: boolean) => void
 }) {
   const { run } = useRun()
   const [required, setRequired] = useState(seed.required)
@@ -63,9 +65,11 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
   const [settings, setSettings] = useState<SignatureDraft | null>(null)
   const [saving, setSaving] = useState(false)
 
+  /* (sweep S1 #10) an optimistic write the server refuses is put back — and said to the host both ways */
   const toggleRequired = (v: boolean) => {
-    setRequired(v)
+    setRequired(v); onRequired?.(v)
     void run('save the setting', async () => { const r = await orThrow(setClientSignatureRequired(seed.quoteId, v)); onSaved(r.updatedAt) })
+      .then((ok) => { if (!ok) { setRequired(!v); onRequired?.(!v) } })
   }
   const openSettings = (kind: SignatureKind) => setSettings({ kind, name: sig?.name || seed.memberName, data: sig && sig.kind === kind && sig.data ? sig.data : '' })
   /* (Dane UAT 6.23) The dialog closes once the save lands — a picture the server refuses keeps it open with the rule said. */

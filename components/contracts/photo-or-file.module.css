@@ -1,0 +1,24 @@
+/* (Contracts on the move, C4 — P-12 · C-27, 2026-10-22) Take a photo · Choose a file: the Create Quote phone step's 56 rows (components/quotes/
+   create-quote-modal.module.css), composed — the house list's frame, a 36 glyph tile, the title at 16, its meaning at 14, a chevron. Drawn on
+   touch only (the hosts render it under `useTouchPick()`); a desk keeps the Dropzone. */
+.list { composes: list from '../quotes/create-quote-modal.module.css'; background: var(--om-color-surface-default); }
+.phoneRow { composes: phoneRow from '../quotes/create-quote-modal.module.css'; }
+.phoneMain { composes: phoneMain from '../quotes/create-quote-modal.module.css'; }
+.glyph { composes: glyph from '../quotes/create-quote-modal.module.css'; }
+.rowText { composes: rowText from '../quotes/create-quote-modal.module.css'; }
+.rowTitle { composes: rowTitle from '../quotes/create-quote-modal.module.css'; }
+.rowDesc { composes: rowDesc from '../quotes/create-quote-modal.module.css'; }
+.trail { composes: trail from '../quotes/create-quote-modal.module.css'; }
+/* the phone step's 16 / 14 (the quote modal scopes them to its own .phoneRow) */
+.phoneRow .rowTitle { font: var(--om-type-subheading-l); }
+.phoneRow .rowDesc.rowDesc { font: var(--om-type-body-m); white-space: normal; overflow: visible; overflow-wrap: anywhere; }   /* (P-13) a sentence wraps, never cut at 390 */
+.phoneMain:disabled { cursor: default; color: var(--om-color-on-surface-secondary); }
+.phoneMain:disabled .rowTitle { color: var(--om-color-on-surface-secondary); }
+/* the pickers themselves: present for the press, never drawn */
+.input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.phoneRow { position: relative; }
+
+/* the kept photo's own picture in the Won step's file row (a PDF keeps the mock's badge) — 40 square, the house thumbnail's radius */
+.thumb { width: 40px; height: 40px; flex-shrink: 0; object-fit: cover; border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); }
+/* the file row's name reads 16 on touch (P-13) */
+.fileName.fileName { font: var(--om-type-body-l); white-space: normal; overflow-wrap: anywhere; }   /* doubled: wins over the step's own one-line name */

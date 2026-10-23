@@ -115,9 +115,13 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     await page.goto(`${BASE}/contracts/${DRAFT}`); await ready(page)
     await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: 'Automation' }).click(); await page.waitForTimeout(500)
-    ok('768: Automation from the kebab opens', await page.getByTestId('automation-dialog').isVisible())
+    // (contracts on the move, a deliberate change of this rule — C1's P-02: on ≤1024 the contract opens as its Contract screen, whose ⋮ › Automation
+    // opens the Automation section screen — the dialog is the desk's and a Signed contract's)
+    ok('768: Automation from the kebab opens', await page.getByTestId('automation-dialog').isVisible().catch(() => false) || await page.getByTestId('automation-screen').isVisible().catch(() => false))
     await page.keyboard.press('Escape'); await page.waitForTimeout(300)
-    await page.goto(`${BASE}/templates/contracts/${TPL}`); await ready(page)
+    // (contracts on the move, a deliberate change of this rule — C4's P-10: on ≤1024 a template opens as its reading screen; its paper and the
+    // Outline live on a clause's Document screen, whose ≡ is the button named "Outline")
+    await page.goto(`${BASE}/templates/contracts/${TPL}?edit=document`); await ready(page)
     await page.getByRole('button', { name: 'Outline' }).click(); await page.waitForTimeout(500)
     ok('768: the template editor’s Outline opens as a drawer', await page.getByRole('dialog', { name: 'Outline' }).isVisible().catch(() => false) || await page.getByLabel('Outline').filter({ has: page.locator('li, button') }).count() > 1)
     await shot(page, '05-template-outline-768')
@@ -134,10 +138,11 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     sql(`update quotes set status='Approved' where id = (select from_quote_id from contracts where id='${DRAFT}') and status in ('Draft','Sent for Approval')`)
     sql(`update contracts set status='Sent to Client', sent_at=strftime('%s','now'), requires_scroll=1 where id='${DRAFT}'`)
     await page.goto(`${BASE}/sign/${DRAFT}`); await ready(page)
-    ok('390: the bar at the foot says what is next', /Read to the end of the agreement/.test(await page.getByTestId('sign-next').innerText()))
-    await page.getByTestId('paper-end').scrollIntoViewIfNeeded(); await page.waitForTimeout(600)
-    await caseTrust(page); await page.getByTestId('paper-end').scrollIntoViewIfNeeded(); await page.waitForTimeout(400)
-    ok('read to the end, the bar carries Send code', await page.getByTestId('sign-next').getByRole('button', { name: 'Send code' }).isVisible())
+    /* (contracts on the move, a deliberate change of this rule) the paper comes first on a phone; the bar says how far they are, then carries
+       Accept and sign — the ticks (and the CaseTrust box) moved into the sheet it opens */
+    ok('390: the bar at the foot says what is next', /Read to the end to sign/.test(await page.getByTestId('sign-next').innerText()))
+    await page.getByTestId('paper-end').scrollIntoViewIfNeeded(); await page.waitForTimeout(700)
+    ok('read to the end, the bar carries Accept and sign', await page.getByTestId('sign-next').getByRole('button', { name: 'Accept and sign' }).isVisible())
     await shot(page, '06-sign-390')
     sql(`update contracts set status='Draft', sent_at=null, requires_scroll=0, viewed_at=null where id='${DRAFT}'`)
     if (qWas) sql(`update quotes set status='${qWas}' where id = (select from_quote_id from contracts where id='${DRAFT}')`)

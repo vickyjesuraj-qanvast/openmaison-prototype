@@ -182,26 +182,29 @@ const idFromUrl = (u) => (u.match(/\/contracts\/([0-9a-f-]{36})/) || [])[1]
     await p.goto(`${BASE}/sign/bundle/${BUNDLE}`); await ready(p)
     const bar = p.getByTestId('sign-next')
     ok('C3 a next bar at the paper’s foot on a phone', await bar.isVisible())
-    /* read to the end; where the document asks for a tick, it is in the card above */
-    const readDoc = async () => {
-      await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(600)
-      if (await p.getByTestId('gate-accept').count()) { await p.getByTestId('gate-accept').evaluate((e) => e.scrollIntoView()); await p.getByTestId('gate-accept').click(); await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(500) }
-      if (await p.getByTestId('gate-casetrust').count()) { await caseTrust(p); await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(500) }
-    }
+    /* (contracts on the move, a deliberate change of this rule) the paper comes first on a phone: the bar walks document by document (read to
+       the end → Next document), Accept and sign on the last opens the sheet where every document's tick, the CaseTrust box, the code boxes
+       and the one signature live — the card above the paper is gone */
+    const readDoc = async () => { await p.getByTestId('paper-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(700) }
     await readDoc()
     ok('C3 "Document 1 of 2 read · Next document"', /Document 1 of 2 read/.test(await bar.innerText()) && (await bar.getByRole('button', { name: 'Next document' }).isVisible()), await bar.innerText())
     await shot(p, 'c3-bundle-phone-next-document')
-    await bar.getByRole('button', { name: 'Next document' }).click(); await p.waitForTimeout(700)
+    await bar.getByRole('button', { name: 'Next document' }).tap(); await p.waitForTimeout(700)
     const top = await p.getByTestId('bundle-walk').evaluate((e) => Math.round(e.getBoundingClientRect().top))
-    ok('C3 the next document opens at its own top, under the letterhead bar', top >= 64 && top < 140, `top ${top}`)
+    ok('C3 the next document opens at its own top, under the letterhead bar', top >= 64 && top < 160, `top ${top}`)
     await shot(p, 'c3-bundle-phone-doc2-top')
     await readDoc()
-    ok('C3 then "Continue to sign"', /Document 2 of 2 read/.test(await bar.innerText()) && await bar.getByRole('button', { name: 'Continue to sign' }).isVisible())
+    ok('C3 then "Accept and sign"', await bar.getByRole('button', { name: 'Accept and sign' }).isVisible())
     await shot(p, 'c3-bundle-phone-continue')
-    await bar.getByRole('button', { name: 'Continue to sign' }).click(); await p.waitForTimeout(900)
-    ok('C3 …which leads to the code, the card in view', (await p.getByText('Enter the code').isVisible()) && (await p.getByTestId('sign-next').count()) === 0)
-    await p.getByLabel('One-time code').fill('123456'); await p.getByRole('button', { name: 'Verify' }).click()
-    await p.getByRole('button', { name: /^Sign 2 documents$/ }).click(); await p.getByText('Signed', { exact: true }).first().waitFor(); await p.waitForTimeout(600)
+    await bar.getByRole('button', { name: 'Accept and sign' }).tap(); await p.waitForTimeout(1100)
+    const sheet = p.getByRole('dialog', { name: 'Accept these documents' })
+    ok('C3 …which opens the sheet with each document’s tick', await sheet.isVisible())
+    for (const t of await sheet.getByTestId('sign-sheet-accept').all()) { await t.tap(); await p.waitForTimeout(200) }
+    await caseTrust(p)   // the sheet holds the only CaseTrust tick on a phone — the desk's card never mounts there
+    await sheet.getByTestId('sign-sheet-continue').tap(); await p.waitForTimeout(1200)
+    ok('C3 …then the code', await p.getByRole('dialog', { name: 'Enter the code' }).isVisible())
+    await p.getByTestId('sign-digit').first().focus(); await p.keyboard.type('123456', { delay: 40 }); await p.waitForTimeout(600)
+    await p.getByRole('button', { name: /^Sign 2 documents$/ }).tap(); await p.getByTestId('signed-card').waitFor(); await p.waitForTimeout(600)
     await phone.close()
     const n = sql(`select href || ' ¦ ' || body from notifications where kind = 'quote_signed' and lead_id = '${HARPREET}' order by created_at desc limit 1`)
     ok('C1 the “signed” notification leads on to Won with the contract picked', n.includes(`/leads/${HARPREET}?move=won&contract=${A}`) && /move it to Won/.test(n), n)

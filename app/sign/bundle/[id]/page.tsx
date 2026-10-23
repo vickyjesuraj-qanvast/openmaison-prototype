@@ -23,7 +23,7 @@ export default async function SignBundlePage({ params }: { params: Promise<{ id:
   const data = await fetchBundleSigning(id)
   if (!data) {
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14 · F111) deleted for good, or never made: never a 404 */
+    return <LinkGone studio={brand.details.name} brand={brand.kit} phone={brand.details.phone} />   /* (sweep S2 #14 · F111) deleted for good, or never made: never a 404 · (C3 — A-25) with the way to ask */
   }
   if (data.state === 'open' && !data.bundle.viewedAt && !(await fetchedForPreview()) && !(await isStudioVisit())) await stampBundleViewed(id)   // (REG-633, parity Q-17) · (S02) a person, not a chat's preview
   return <BundleSigningPage data={data} caseTrust={await fetchCaseTrust()} codeDemo={isStandInProvider()} />   // (S42 B-03)   // (gaps build D, item 6)

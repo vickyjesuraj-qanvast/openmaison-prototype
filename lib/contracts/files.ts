@@ -5,9 +5,10 @@ import { db } from '@/lib/db'
 import { contracts, leadFiles } from '@/lib/db/schema'
 import { sessionMemberId } from '@/lib/db/session'
 import { CONTRACT_FOLDERS, QUOTE_FOLDERS } from '@/lib/leads/file-model'
-import { DATA_URL, PICTURE_URL, dataUrlSize, keepBytes, keepThumb, storedBytes, storedThumb, thumbAddress } from '@/lib/leads/file-store'
+import { DATA_URL, PICTURE_URL, dataUrlSize, imageAddress, keepBytes, keepThumb, storedBytes, storedThumb, thumbAddress } from '@/lib/leads/file-store'
 import { hiddenMoneyFiles } from '@/lib/projects/money-visibility'
 import { checkPickedPdf, pdfNameOf, type PickedPdf } from './pdf'
+import { checkPickedPicture, pictureNameOf } from './picture'
 import { SIGN_NO_BYTES, SIGN_NOT_PDF, inContractFolder, signKeptLine } from './file-signing'
 
 /*
@@ -45,6 +46,30 @@ export async function keepContractPdf(w: W, leadId: string, f: PickedPdf, at: Da
   const problem = checkPickedPdf(f, dataUrlSize); if (problem) return { error: problem }
   const owner = by ?? await sessionMemberId()
   return keepPdfIn(w, leadId, f, at, await contractFolderOf(w, leadId, at, owner), undefined, owner)
+}
+
+/**
+ * (Contracts on the move, C4 — P-12 · C-25 · C-27, Q-04 as picked) A PHOTO of the paper the client signed, kept as a picture of the lead's in its
+ * contract folder (Files › Contract & VOs) — the signed copy itself: its bytes as every upload's (the Files tab shows a picture by its own
+ * address, `/files/img`), and its 480px picture kept as a PDF's first page is (`/files/thumb`), so the contract's card, which asks for a file's
+ * picture there, shows the photo. Answers the file's id, or the rule that refused it.
+ * A server-side PDF of the photo is the developers' S34 renderer seam (Q-04): the PDF renderer (`setPdfRenderer`, lib/services/pdf.ts — the
+ * registry's 'pdf') is where a PDF of this picture is made, here, and kept beside it once a real renderer is plugged in; until then the picture
+ * itself is the signed copy (no library on this build writes a PDF).
+ */
+export async function keepContractPicture(w: typeof db, leadId: string, f: PickedPdf, at: Date, by?: string): Promise<string | { error: string }>
+export async function keepContractPicture(w: W, leadId: string, f: PickedPdf, at: Date, by: string): Promise<string | { error: string }>
+export async function keepContractPicture(w: W, leadId: string, f: PickedPdf, at: Date, by?: string): Promise<string | { error: string }> {
+  const problem = checkPickedPicture(f, dataUrlSize); if (problem) return { error: problem }
+  const owner = by ?? await sessionMemberId()
+  const parentId = await contractFolderOf(w, leadId, at, owner)
+  const mime = DATA_URL.exec(f.data)![1]!.toLowerCase()
+  const id = randomUUID()
+  const small = typeof f.thumb === 'string' && PICTURE_URL.test(f.thumb) && f.thumb.length < 800_000 ? f.thumb : f.data.length < 800_000 ? f.data : null
+  await w.insert(leadFiles).values({ id, leadId, kind: 'image', name: pictureNameOf(f.name, f.data), thumb: imageAddress(id), createdAt: at, parentId, ownerId: owner, sizeBytes: dataUrlSize(f.data), mime, updatedAt: at })
+  await keepBytes(w, id, f.data)
+  if (small) await keepThumb(w, id, small)
+  return id
 }
 
 /** (pending modules S05) A checked PDF kept as a file of the lead's in `parentId` (null = the top of Files), under `name` (else its own):

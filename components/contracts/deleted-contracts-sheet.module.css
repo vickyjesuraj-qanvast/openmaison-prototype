@@ -65,3 +65,22 @@
   .cell { grid-row: auto; padding: var(--om-spacing-3) var(--om-spacing-4); border-top: 0; }
   .actions { justify-content: flex-start; }
 }
+
+/* (Contracts on the move, C4 — A-14 · P-13, 2026-10-22) The two contract sheets (`data-card`) read as the phone card on ≤767: the title 16/600,
+   then the facts as words at 14 that wrap like a sentence — each with its name ("Lead Serena Koh · Status Draft · Deleted 22 Oct ’26 · Deleted
+   by Dane"), never a stack of seven bare words — then the buttons on their own line. The row flows (flex, wrapping), the selection box held at
+   the title's first line in the left gutter. The quotes' two sheets on this stylesheet are untouched (they pass no `data-card`). */
+@media (max-width: 767px) {
+  .table[data-card] .row { display: flex; flex-wrap: wrap; align-items: baseline; position: relative; row-gap: var(--om-spacing-1); column-gap: 0; padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-3) calc(var(--om-spacing-4) + 24px + var(--om-spacing-3)); }
+  .table[data-card] .cell { padding: 0; }
+  .table[data-card] .sel { position: absolute; left: var(--om-spacing-4); top: var(--om-spacing-3); }
+  .table[data-card] .title { flex: 1 0 100%; font: var(--om-type-subheading-l); white-space: normal; overflow-wrap: anywhere; }
+  .table[data-card] .cell[data-fact] { flex: 0 1 auto; display: block; overflow: visible; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: normal; }
+  .table[data-card] .cell[data-fact]::before { content: attr(data-fact) ' '; color: var(--om-color-on-surface-secondary); }
+  .table[data-card] .cell[data-fact]:has(+ .cell[data-fact])::after { content: '\00a0·\00a0'; color: var(--om-color-on-surface-secondary); }   /* the dot ends its line when the words wrap */
+  .table[data-card] .actions { flex: 1 0 100%; padding-top: var(--om-spacing-2); justify-content: flex-start; flex-wrap: wrap; }
+}
+/* (C4 — A-08 · P-13) the two contract sheets' note reads 14 where a finger reads it (the quotes' sheets on this stylesheet pass no `noteMove`) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .noteMove.noteMove { font: var(--om-type-body-m); }
+}

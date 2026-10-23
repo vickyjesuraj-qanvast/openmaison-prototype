@@ -121,11 +121,11 @@
   .below { padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
   .tlabel, .tvalue, .tcontrols { flex-basis: 50%; }
 }
-/* Touch (REG-273 / REG-312): every 36px control in the toolbar, the 24px row kebab and unit / label picks, the 20px links and
-   the 24px mini select take a 44px box through an invisible overlay; nothing drawn changes. */
+/* Touch (REG-273 / REG-312): the 20px links and the 24px mini select take a 44px box through an invisible overlay; nothing drawn changes.
+   (C-03, Quotes on the move) The toolbar's icon buttons carry the house IconButton's own centred 44 (icon-button.module.css, REG-344) —
+   the `inset: -4px` override this block used to add moved that box by (−22, −22): the Create box covered the Maison AI glyph. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .tools button, .anchor > button, .roundLink { position: relative; }
-  .tools button::after, .anchor > button::after { content: ''; position: absolute; inset: -4px; }
+  .roundLink { position: relative; }
   .roundLink::after { content: ''; position: absolute; inset: -12px; }
   .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
   .share { height: 44px; }   /* (REG-532) a By-category row stands 44 under a finger; the two-column grid is already one column here */
@@ -202,3 +202,23 @@
 /* (S44I, B5) ⋮ › Add Item › Several…: the count on the house stepper, in the menu's own row rhythm */
 .menuStepper { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .swatchKit { background: var(--sw); }   /* (S44I, §12.14) the bulk bar's Highlight swatches: the kit colour through a custom property */
+
+/* ── Quotes on the move (2026-10-22) ── */
+/* (C-09) The totals card in the touch foot's Adjust form: it spans the form, and the additional discount and each named discount type in
+   the DS `s` field (14 — 16 on iOS) instead of the 12px mini box; a named discount's row is the word over its unit · value · amount · remove. */
+.totals[data-touch] { width: 100%; }
+.touchBox { flex: 1 1 120px; min-width: 96px; }
+.touchBox > * { width: 100%; }
+.discRowTouch { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+.discRowTouch > .touchBox { flex: 1 1 100%; }
+.discTouchRight { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1 1 100%; min-width: 0; }
+.discTouchRight > .touchBox { flex: 1 1 96px; }
+/* (C-22) On a phone the print note is one 44 row: the glyph, one line that ends in "…", the link — not three lines of 12 over the first card. */
+@media (max-width: 767px) {
+  .printNote[data-compact] { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; min-height: 44px; padding: 0 var(--om-spacing-4); font: var(--om-type-body-m); }
+  .printNote[data-compact] > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .printNote[data-compact] .printNoteLink { grid-column: 3; min-height: 44px; display: inline-flex; align-items: center; }
+}
+/* (P-07, C-15) The touch grid's caption under its head: which of the columns on screen never print for the client — the head's eye said it
+   only in a native tooltip, which a finger never sees. */
+.internalNote { position: sticky; left: 0; width: 100%; display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 32px; padding: 0 var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }

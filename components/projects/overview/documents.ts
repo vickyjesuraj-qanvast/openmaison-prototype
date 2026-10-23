@@ -22,3 +22,28 @@ export function projectInfoDocuments(d: ProjectDetail, o: { from: string; fileHr
       href: `/${x.kind === 'quote' ? 'quotes' : 'contracts'}/${x.id}?from=${back}`, testId: `doc-${x.kind}-other` })),
   ]
 }
+
+/** (Contracts on the move, C4 — P-11 · C-23) One row of the Overview's Documents card: the document's name, its date (or where it stands), and
+    where it opens — none when the document is not on record. */
+export type ProjectDocumentRow = { key: 'quote' | 'contract'; icon: string; name: string; when: string; href?: string; testId: string }
+
+/**
+ * (Contracts on the move, C4 — P-11 · C-23; his "please check and built accordingly" 2026-10-22) The Overview's **Documents** card on ≤1024: the
+ * signed quote and the contract, each a row with its date — the same records and the same addresses as the info column's Project info rows
+ * (`projectInfoDocuments`, which keeps them on the desk and inside View Client Info). Both rows always, so a missing contract is said, not
+ * hidden ("None yet"); no document at all → no card (`[]`).
+ */
+export function projectDocumentRows(d: ProjectDetail, o: { from: string; fileHref: (fileId: string) => string }): ProjectDocumentRow[] {
+  const back = encodeURIComponent(o.from)
+  const quote: ProjectDocumentRow = d.quote
+    ? { key: 'quote', icon: 'request_quote', name: `Quote ${d.quote.number}`, when: d.quote.signedAt ? `Signed ${displayDate(d.quote.signedAt)}` : d.quote.status, href: `/quotes/${d.quote.id}?from=${back}`, testId: 'project-doc-quote' }
+    : d.quoteFile ? { key: 'quote', icon: 'request_quote', name: 'Signed quote', when: 'Uploaded copy, in Files', href: o.fileHref(d.quoteFile.id), testId: 'project-doc-quote' }
+    : { key: 'quote', icon: 'request_quote', name: 'Signed quote', when: d.lead.direct ? 'Agreed outside a quote' : 'None yet', testId: 'project-doc-quote' }
+  const c = d.contract
+  const contract: ProjectDocumentRow = c
+    ? { key: 'contract', icon: 'contract', name: c.title, when: c.signedAt ? `Signed ${displayDate(c.signedAt)}` : c.status === 'Sent to Client' ? (c.sentAt ? `Sent ${displayDate(c.sentAt)} · not signed yet` : 'Sent · not signed yet') : c.status,
+        href: `/contracts/${c.id}?from=${back}`, testId: 'project-doc-contract' }
+    : d.contractFile ? { key: 'contract', icon: 'contract', name: 'Signed contract', when: 'Uploaded copy, in Files', href: o.fileHref(d.contractFile.id), testId: 'project-doc-contract' }
+    : { key: 'contract', icon: 'contract', name: 'Contract', when: 'None yet', testId: 'project-doc-contract' }
+  return quote.href || contract.href ? [quote, contract] : []
+}

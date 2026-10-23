@@ -1,9 +1,9 @@
 'use client'
 
 import { usePlanLock } from '@/components/credits/credits-client'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { withFrom } from '@/lib/nav'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { backLabel, withFrom } from '@/lib/nav'
 import { copyText } from '@/lib/clipboard'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
@@ -27,8 +27,16 @@ import { fallbackDesignClient } from '@/lib/templates/presets'
 /** The built-in client design a quote with no template prints through — one instance, so the pane's memo holds. */
 const FALLBACK_CLIENT_DESIGN = fallbackDesignClient()
 import { Dialog } from '@/components/om/dialog'
-import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { SendContractDialog } from '@/components/contracts/editor/dialogs'
+import { readingSections } from '@/components/templates/render/slices'
+import { QuoteScreen, type ScreenFolds, type ScreenMenuAction } from '@/components/quotes/screen/quote-screen'
+import { SectionList, type SectionRow } from '@/components/quotes/screen/section-list'
+import { SectionScreenContext, type SectionScreen } from '@/components/quotes/screen/screen-context'
+import { nextStep, reminderMessage, type NextPrimary } from '@/lib/quotes/next-step'
+import { htmlToPlain } from '@/lib/quotes/items-model'
+import { firstName } from '@/lib/contracts/model'
 import { docDataFromRecords, quoteGstRate, type DocData } from '@/lib/templates/data'
 import { clientColumnsOf, viewForTemplate } from '@/lib/templates/picker'
 import { updateItemsPrefs } from '@/app/quotes/items-actions'
@@ -45,18 +53,19 @@ import { readiness } from '@/lib/templates/readiness'
 import { canDeleteQuote, DELETE_RULE, offersQuoteSent, STATUS_BLOCK_META, statusBlock, validityPassed } from '@/lib/quotes/policy'
 import { confirmKeyOf, confirmLink } from '@/lib/quotes/confirm'
 import { useQuoteSend } from '@/components/quotes/send/use-quote-send'
+import { SendButton } from '@/components/quotes/send/send-button'
 import { useViewLink } from '@/components/quotes/send/view-link'
 import { useQuoteStatus } from '@/components/leads/quotes/use-quote-status'
 import { moveStageHref } from '@/lib/leads/move-link'
 import { lineChanges } from './items/line-change'
 import { ReviseDialog } from './revise-dialog'
 import { VersionHistoryDrawer } from './version-history'
-import { displayDate, inputDate, parseInputDate } from '@/lib/format'
+import { displayDate, displayDateLong, inputDate, money, parseInputDate } from '@/lib/format'
 import { duration } from '@/lib/motion'
 import { quoteStatuses, viewedSince, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteEditorData } from '@/lib/quotes/editor'
 import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
-import { SECTION_LABELS, isFixedSection, parseSections, pinFixed, type QuoteSectionState, type SectionKey } from '@/lib/quotes/sections'
+import { SECTION_KEYS, SECTION_LABELS, isFixedSection, parseSections, pinFixed, type QuoteSectionState, type SectionKey } from '@/lib/quotes/sections'
 import { EditorHeader, type HeaderMenuAction } from './editor-header'
 import { EditorTabs } from './editor-tabs'
 import { CreateStrip, useStripExpanded } from './create-strip'
@@ -72,10 +81,10 @@ import { FilesCard, type FilesSeed } from './files/files-section'
 import { TextCard, type TextSeed } from './text/text-section'
 import { SignatureCard, type SignatureSeed } from './signature/signature-section'
 import { ActivityBody } from './activity/activity-section'
-import { countedLines, flattenItems, money2, parseDiscounts } from '@/lib/quotes/math'
+import { countedLines, flattenItems, money2, parseDiscounts, pct } from '@/lib/quotes/math'
 import { changeSummary, snapshotState, summaryText, versionState } from '@/lib/quotes/diff'   // (S44F — NB-02 (b))
 import { LIVE_STUDIO_TOKENS, quoteTokenValues, type TextContext, type TextKind, type TokenValues } from '@/lib/quotes/text'
-import { toRows } from '@/lib/quotes/payments'
+import { isFixedRow, paymentAmounts, splitWord, toRows } from '@/lib/quotes/payments'
 import { scheduleAnchors } from '@/lib/quotes/payments'
 import { EditorSkeleton } from './editor-skeleton'
 import { VariationContext } from './items/variation-context'
@@ -91,6 +100,12 @@ import styles from './quote-editor.module.css'
 /** Header 76 + tab strip 48: what a section scrolls under when a tab selects it. */
 const STICKY = 76 + 48
 const AUTOSAVE_MS = 600
+/** (Quotes on the move, P-02) A touch tablet held sideways: the section list is the left pane, the open section the right. */
+const SPLIT = '(min-width: 768px) and (max-width: 1024px) and (orientation: landscape)'
+/** (P-02) The section list's words and the section screens' bars — the plain words the drawn screen 3 uses. */
+const SCREEN_LABELS: Record<SectionKey, string> = { general: 'General info', items: 'Items', payment: 'Payment schedule', files: 'Files', terms: 'Terms and conditions', notes: 'Additional notes', signature: 'Signature', activity: 'Activity' }
+/** The first line of a text, for a row's summary. */
+const firstLine = (plain: string, max = 56): string => { const l = plain.split('\n').map((x) => x.trim()).find(Boolean) ?? ''; return l.length > max ? `${l.slice(0, max - 1).trimEnd()}…` : l }
 
 /** "Saved 2 mins ago" (1201:33811) — the header's own wording, from the last write's stamp. */
 function savedLabel(updatedAt: number, now: number): string {
@@ -170,6 +185,40 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   const [texts, setTexts] = useState<Record<TextKind, string>>({ terms: quote.termsHtml ?? '', notes: quote.notesHtml ?? '' })
   const [writeCmd, setWriteCmd] = useState<Record<TextKind, WritingCommand | null>>({ terms: null, notes: null })
   const tabletDown = useMediaQuery(TABLET_DOWN)
+  /* ── (Quotes on the move, P-01 · P-02 · Q-01 · Q-02 — his "please go ahead" 2026-10-22) On a phone and a touch tablet (≤1024) the address
+     opens the QUOTE SCREEN (read first); Edit is the section list (`?edit=1`), a row its section's own screen (`?edit=<key>`), so Back works
+     (REG-465). The address moves by the browser's own history (no server round trip — the editor keeps every section mounted and live,
+     the hosts show one at a time); a landscape tablet holds the list as the left pane and the open section beside it. ── */
+  const searchParams = useSearchParams()
+  const editParam = searchParams.get('edit')
+  const split = useMediaQuery(SPLIT)
+  const isSectionKey = (k: string | null): k is SectionKey => !!k && (SECTION_KEYS as readonly string[]).includes(k) && k !== 'activity' && !(data.variation && k === 'payment')
+  const openKey: SectionKey | null = tabletDown && isSectionKey(editParam) ? editParam : null
+  const editing = tabletDown && editParam !== null
+  const shownKey: SectionKey | null = openKey ?? (editing && split ? 'general' : null)   // the landscape pane rests on General info until a row is picked
+  const mode: 'desk' | 'read' | 'list' | 'section' = !tabletDown ? 'desk' : openKey ? 'section' : editing ? 'list' : 'read'
+  const setEdit = useCallback((v: string | null, how: 'push' | 'replace') => {
+    const u = new URL(window.location.href)
+    if (v === null) u.searchParams.delete('edit'); else u.searchParams.set('edit', v)
+    u.searchParams.delete('section')
+    const url = `${u.pathname}${u.search}`
+    const st = { omEdit: v === null ? null : v === '1' ? 'list' : 'section' }   // our own mark on the entry (Next keeps its tree beside it), so Back knows what it undoes
+    if (how === 'push') window.history.pushState(st, '', url); else window.history.replaceState(st, '', url)
+  }, [])
+  const openEdit = () => { void flushRef.current(); setEdit('1', 'push') }
+  const openSection = useCallback((k: SectionKey) => { setEdit(k, split && window.history.state?.omEdit ? 'replace' : 'push') }, [setEdit, split])   // the pane swaps in place; a phone pushes, so ← is Back
+  const backToList = useCallback(() => { if (window.history.state?.omEdit === 'section') window.history.back(); else setEdit('1', 'replace') }, [setEdit])
+  const doneEditing = useCallback(() => { void flushRef.current(); if (window.history.state?.omEdit) window.history.back(); else setEdit(null, 'replace') }, [setEdit])
+  /* (REG-490) Preview's "Open" lands on a section: on the move that is the section's screen — the address says so from then on */
+  useEffect(() => { if (tabletDown && editParam === null && isSectionKey(section ?? null)) setEdit(section as SectionKey, 'replace') }, [tabletDown, editParam, section, setEdit])   // eslint-disable-line react-hooks/exhaustive-deps -- isSectionKey reads only the data's shape
+  useScrollLock(mode === 'list' || mode === 'section')   // the Quote screen behind keeps its place
+  /* (P-01) the Quote screen's foot: the FAB and the snackbar rest above it (the house offset, REG-302) */
+  useEffect(() => {
+    if (mode !== 'read') return
+    const root = document.documentElement.style
+    root.setProperty('--bottom-dock', '78px')   // 72 (12 + 48 + 12) + 6, the offset's own rule
+    return () => { root.removeProperty('--bottom-dock') }
+  }, [mode])
 
   /* ── state ── */
   const [status, setStatus] = useState(quote.status)
@@ -313,6 +362,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   }, [])
   const selectTab = (key: string) => {
     const k = key as SectionKey
+    if (tabletDown) { if (isSectionKey(k)) openSection(k); return }   // (P-02) on the move a section is its own screen
     // A collapsed section opens when its tab is chosen — there is nothing to scroll to otherwise.
     const wasCollapsed = !!sections.find((s) => s.key === k)?.collapsed
     if (wasCollapsed) { const next = sections.map((s) => (s.key === k ? { ...s, collapsed: false } : s)); setSections(next); persistSections(next) }
@@ -391,7 +441,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     if (action === 'rename') { setRenameOpen(true); return }
     if (action === 'duplicate') { void flushRef.current(); void run('duplicate the quote', async () => { const id = await duplicateQuote(quote.id); router.push(withFrom(`/quotes/${id}`, from)) }, 'Quote duplicated — this is the copy'); return }
     if (action === 'delete') { if (deleteWhy) { snackbar({ message: deleteWhy }); return } setDeleteOpen(true); return }   /* (REG-625, parity Q-28) */
-    if (action === 'export') { if (!openOf('items')) toggle('items'); setExportTick((t) => t + 1); return }   /* the Items export (REG-478) */
+    if (action === 'export') { reveal('items'); setExportTick((t) => t + 1); return }   /* the Items export (REG-478) */
     if (action === 'history') { void flushRef.current(); setHistoryOpen(true); return }   /* (REG-565) */
     if (action === 'revise') { void flushRef.current(); if (!canRevise) snackbar({ message: reviseHint }); else if (voReviseBlock) snackbar({ message: couldnt(`revise ${quote.number}`, voReviseBlock) }); else setReviseOpen(true); return }
     if (action === 'comments') { setCommentsView({ open: true, focus: null }); return }   /* (REG-627, parity Q-30) every line's thread */
@@ -564,17 +614,22 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   const tabs = sections.filter((s) => !(data.variation && s.key === 'payment')).map((s) => ({ key: s.key, label: s.key === 'items' ? `Items (${itemCount})` : s.key === 'files' ? `Files (${fileCount})` : SECTION_LABELS[s.key] }))
   const titleOf = (k: SectionKey) => (k === 'items' ? `Items (${itemCount})` : k === 'files' ? `Files (${fileCount})` : SECTION_LABELS[k])
   const openOf = (k: SectionKey) => !(sections.find((s) => s.key === k)?.collapsed ?? true)
+  /* A section something needs on screen: opened on the desk, its own screen on the move (P-02). */
+  const reveal = (k: SectionKey) => { if (tabletDown) { if (openKey !== k && isSectionKey(k)) openSection(k) } else if (!openOf(k)) toggle(k) }
   const maison = useQuoteMaison({
     lines,
-    onGoTo: (ids) => { if (!openOf('items')) toggle('items'); setItemsCommand((c) => ({ kind: 'focus', ids, n: (c?.n ?? 0) + 1 })) },
-    onSetMarkup: (ids) => { if (!openOf('items')) toggle('items'); setItemsCommand((c) => ({ kind: 'setMarkup', ids, n: (c?.n ?? 0) + 1 })) },
+    onGoTo: (ids) => { reveal('items'); setItemsCommand((c) => ({ kind: 'focus', ids, n: (c?.n ?? 0) + 1 })) },
+    onSetMarkup: (ids) => { reveal('items'); setItemsCommand((c) => ({ kind: 'setMarkup', ids, n: (c?.n ?? 0) + 1 })) },
     book: data.priceBook,   // (pending modules S12) the lines that match My Items — the review opens from the sheet
     costs: data.costs,   // (pending modules S41b-1) no cost or margin hint for a member who doesn't see costs
-    onMatch: () => { if (!openOf('items')) toggle('items'); setItemsCommand((c) => ({ kind: 'match', ids: [], n: (c?.n ?? 0) + 1 })) },
+    onMatch: () => { reveal('items'); setItemsCommand((c) => ({ kind: 'match', ids: [], n: (c?.n ?? 0) + 1 })) },
   })
 
   const bodyOf = (k: SectionKey) => {
-    if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} variation={!!data.variation} extra={<>{data.variation ? <VariationReasonField quoteId={quote.id} value={data.variation.reason ?? null} approved={status === 'Confirmed' || status === 'Signed'} /> : null}<TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} /></>} />   // (gaps build B, item 7) a VO’s reason for the change
+    if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} variation={!!data.variation} extra={<>{data.variation ? <VariationReasonField quoteId={quote.id} value={data.variation.reason ?? null} approved={status === 'Confirmed' || status === 'Signed'} /> : null}
+      {/* (P-02) on the move the template's newer version is offered where the template is — the General info screen (the desk keeps it under the tabs) */}
+      {mode !== 'desk' && templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} /> : null}
+      <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} /></>} />   // (gaps build B, item 7) a VO’s reason for the change
     if (k === 'activity') return <ActivityBody events={activity} />
     return (
       <div className={styles.soon} role="status">
@@ -587,7 +642,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   // studio's lifecycle (quoteStatuses), the current one marked as the tab's status menu marks it (910:36673).
   const statusPill = (
     <span className={styles.anchor}>
-      <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={statusOpen}
+      <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={statusOpen} className={styles.pill}
               iconEnd={<span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
               onPress={() => setStatusOpen((o) => !o)}>
         {data.variation ? variationLabel({ status }) : status}{/* (fix-D, D-24) a variation order reads the Money tab's word for its state */}
@@ -656,7 +711,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   /* (pending modules S29) Maison AI's writing suggestions for the Terms and Notes — each opens that section's proposal (it opens a folded section) */
   const textTemplates2 = useMemo(() => ({ terms: termsSeed.templates, notes: notesSeed.templates }), [termsSeed.templates, notesSeed.templates])
   const textMaison = useTextMaison({ texts, visible: textVisible, context: textContext, templates: textTemplates2, tokens,
-    onWrite: (kind: TextKind, action: WritingAction) => { if (!openOf(kind)) toggle(kind); setWriteCmd((c) => ({ ...c, [kind]: { action, n: (c[kind]?.n ?? 0) + 1 } })) } })
+    onWrite: (kind: TextKind, action: WritingAction) => { reveal(kind); setWriteCmd((c) => ({ ...c, [kind]: { action, n: (c[kind]?.n ?? 0) + 1 } })) } })
   const [signatureSeed, setSignatureSeed] = useState<SignatureSeed>(() => ({
     quoteId: quote.id, required: quote.clientSignatureRequired, memberName: me?.name ?? '', studioName: studio.name, clientName: lead.name, nric: quote.nric,
     signature: memberSignatureOf(me),   // (Dane UAT 6.23) drawn, typed or uploaded
@@ -670,46 +725,138 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
   const [pickedTpl, setPickedTpl] = useState<string | null>(null)
   const pickerSel = defaultPick(templateState.picker, pickedTpl, templateState.current?.id ?? null)
 
+  /* ── (Quotes on the move, P-01 · P-02 · Q-07) what the Quote screen and the section list read — from the editor's own live state ── */
+  const here = from ? withFrom(`/quotes/${quote.id}`, from) : `/quotes/${quote.id}`
+  const validUntilDate = general.validUntil ? parseInputDate(general.validUntil) : null
+  const validityEnded = validUntilDate && validityPassed({ status, validUntil: validUntilDate }, clock) ? displayDate(validUntilDate) : null
+  const openedSince = (() => { const seen = viewedSince({ status, sentAt: record.sentAt ? new Date(record.sentAt) : null, clientSentAt: record.clientSentAt ? new Date(record.clientSentAt) : null, clientLastViewedAt: quote.clientLastViewedAt }); return seen ? { at: seen.getTime(), count: quote.clientViewCount } : null })()
+  const changesAsked = status === 'Draft' && record.reviewNote && record.reviewedAt && (!record.submittedAt || record.reviewedAt > record.submittedAt) && !changesDismissed ? { by: nameOf(record.reviewedBy), at: record.reviewedAt, note: record.reviewNote } : null
+  const next = useMemo(() => nextStep({
+    status, variation: !!data.variation, version, approval: quoteApproval, canApprove, clientFirst, validityEnded, opened: openedSince,
+    at: status === 'Sent to Client' ? record.clientSentAt ?? record.sentAt : status === 'Confirmed' ? record.confirmedAt : status === 'Signed' ? quote.signedAt?.getTime() ?? record.confirmedAt ?? null : null,
+    waiting: status === 'Sent for Approval' ? { by: nameOf(record.submittedBy), at: record.submittedAt ?? record.sentAt } : null,
+    changes: changesAsked, confirmedBy: record.confirmedBy, markedBy: record.confirmedVia === 'marked' ? nameOf(record.confirmedMarkedBy) ?? 'the studio' : null,
+    contract: contract ? { title: contract.title, status: contract.status } : null, leadStage: lead.stage,
+    signedTotal: status === 'Signed' && !data.variation && movedSinceSigning({ amountMinor, signedAmountMinor: quote.signedAmountMinor }) ? money2(quote.signedAmountMinor!) : null,
+  }, clock), [status, data.variation, version, quoteApproval, canApprove, clientFirst, validityEnded, openedSince?.at, openedSince?.count, record, quote.signedAt, quote.signedAmountMinor, changesAsked?.by, changesAsked?.at, changesAsked?.note, contract, lead.stage, amountMinor, clock])   // eslint-disable-line react-hooks/exhaustive-deps -- nameOf reads members, which never change on a mounted editor
+  /* the document as the client reads it, from the live client view (REG-497's data, the print's own sections) */
+  const reading = useMemo(() => readingSections(clientPaneDesign, clientData, clientPaneView), [clientPaneDesign, clientData, clientPaneView])
+  const lineCount = useMemo(() => countedLines(flattenItems(lines)).filter((l) => l.kind === 'item').length, [lines])
+  const payRows = useMemo(() => toRows(scheduleRows), [scheduleRows])
+  const payAmounts = useMemo(() => paymentAmounts(payRows, amountMinor), [payRows, amountMinor])
+  const scheduleWord = splitWord(payRows).split('/').join(' / ')
+  const folds: ScreenFolds = {
+    payments: data.variation ? null : payRows.map((r, i) => ({ name: r.name, description: r.description, share: isFixedRow(r, i) ? money2(r.fixedMinor!) : pct(r.pct), amount: money2(payAmounts[i] ?? 0), due: r.dueAt ? displayDateLong(r.dueAt) : r.dueKind === 'approval' ? 'On approval' : null })),
+    scheduleWord,
+    files: { count: fileCount, names: filesSeed.files.map((f) => f.name) },
+    terms: { text: htmlToPlain(texts.terms).trim(), visible: textVisible.terms },
+    notes: { text: htmlToPlain(texts.notes).trim(), visible: textVisible.notes },
+    signature: { member: me?.name ?? 'You', studio: studio.name, client: lead.name, required: signatureSeed.required },
+    comments: comments.length, activity,
+  }
+  const templateName = templateState.current?.name ?? templateState.picker.templates.find((t) => t.isDefault)?.name ?? null
+  const sectionRows: SectionRow[] = sections.filter((s) => s.key !== 'activity' && !(data.variation && s.key === 'payment')).map((s) => {
+    const k = s.key
+    const summary = k === 'general' ? [general.title || quote.number, validUntilDate ? `valid until ${displayDate(validUntilDate)}` : 'no valid-until date', templateName ?? 'Studio default'].join(' · ')
+      : k === 'items' ? (() => { const n = lines.filter((l) => l.kind === 'group' && !l.parentId).length; return `S$${money(amountMinor)} · ${n ? `${n} ${n === 1 ? 'section' : 'sections'}` : 'no sections'}` })()   // the drawn screen's round figure; the hero keeps the document's cents
+      : k === 'payment' ? `${scheduleWord}${paymentsLocked ? ' · locked' : ''}`
+      : k === 'files' ? (fileCount ? `${fileCount} ${fileCount === 1 ? 'file' : 'files'} attached` : 'None attached')
+      : k === 'terms' || k === 'notes' ? (() => { const t = firstLine(folds[k].text); return `${t || 'Empty'} · ${folds[k].visible ? 'shown on the print' : 'not printed'}` })()
+      : `${me?.name ?? 'You'} · ${signatureSeed.required ? 'client signs online' : 'no client signature'}`
+    return { key: k, label: SCREEN_LABELS[k], count: k === 'items' ? itemCount : k === 'files' ? fileCount : null, summary }
+  })
+  /* the open section's screen: its bar's words (Items: "16 lines · S$49,838") and the way back to the list */
+  const openScreen: SectionScreen | null = useMemo(() => (shownKey ? { onBack: backToList, title: SCREEN_LABELS[shownKey], subtitle: shownKey === 'items' ? `${itemCount} ${itemCount === 1 ? 'line' : 'lines'} · S$${money(amountMinor)}` : undefined } : null), [shownKey, backToList, itemCount, amountMinor])
+  /* (Q-07) the foot's one primary, by state; Send and Send for signature are the quote's own Send button */
+  const [remindOpen, setRemindOpen] = useState(false)
+  const onPrimary = (p: NextPrimary) => {
+    if (p === 'approve') { approve(); return }
+    if (p === 'remind') { void flushRef.current(); setRemindOpen(true); return }
+    if (p === 'contract' && contract) { void flushRef.current(); router.push(withFrom(`/contracts/${contract.id}`, here)); return }
+    if (p === 'won') { void flushRef.current(); router.push(moveStageHref(lead.id, 'won', { quote: quote.id })); return }
+    if (p === 'revise') onMenu('revise')
+  }
+  const onScreenMenu = (a: ScreenMenuAction) => {
+    if (a === 'changeTemplate') { openPicker(); return }
+    if (a === 'editTemplate') { editTemplate(); return }
+    if (a === 'requestChanges') { setChangesOpen(true); return }
+    onMenu(a)
+  }
+  const sendRemind = ({ name, phone, message }: { name: string; phone: string; message: string }) => {
+    setRemindOpen(false)
+    window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')
+    snackbar({ message: `Reminder sent to ${name} on WhatsApp` })
+  }
+  const screenOf = (k: SectionKey) => (shownKey === k ? openScreen : null)
+
   return (
     <PageReveal skeleton={<EditorSkeleton />}>
-      <div className={styles.page} data-testid="quote-editor" data-strip={stripExpanded ? 'expanded' : 'collapsed'}>
-        <EditorHeader
-          deleteBlock={deleteWhy}
-          lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={version} status={status} siblings={siblings}
-          savedLabel={savedLabel(updatedAt, clock)}
-          canSend={quoteSend.canSend} sendKind={quoteSend.kind} sendHint={quoteSend.hint} statusSlot={statusPill}
-          onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
-          onSend={quoteSend.send} onMenu={onMenu} onClose={close}
-          clientViewOn={clientView} onClientView={() => setClientView((o) => !o)}
-          contract={contract} contractHref={contract ? withFrom(`/contracts/${contract.id}`, from ? withFrom(`/quotes/${quote.id}`, from) : `/quotes/${quote.id}`) : undefined}
-          variation={data.variation ?? null} from={from} viewLink={viewLinkUi.offered}
-        />
-        {data.variation ? <VariationBar v={data.variation} changeMinor={amountMinor} status={status} quoteId={quote.id} /> : null}
-        <EditorTabs items={tabs} active={active} onSelect={selectTab} className={styles.stickyTabs} />
-        {/* (REG-579) Only a Draft is offered the newer version — a sent quote keeps the version it was sent with; its card still says "v1 · v2 published". */}
-        {templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? (
-          <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} />
-        ) : null}
-        {/* (REG-624, parity Q-22) Waiting for approval — or sent back with a note, until the next send. */}
-        <ApprovalBar canApprove={canApprove} now={clock} busy={approvalBusy} onApprove={approve} onRequestChanges={() => setChangesOpen(true)} onDismiss={() => setChangesDismissed(true)}
-                     waiting={status === 'Sent for Approval' ? { by: nameOf(record.submittedBy), at: record.submittedAt ?? record.sentAt } : null}
-                     changes={status === 'Draft' && record.reviewNote && record.reviewedAt && (!record.submittedAt || record.reviewedAt > record.submittedAt) && !changesDismissed ? { by: nameOf(record.reviewedBy), at: record.reviewedAt, note: record.reviewNote } : null} />
-        {/* (REG-624, parity Q-04) No hard lock: a quote the client has says so and offers Revise. */}
-        {status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed' ? (
-          <SentBanner status={status} version={version} now={clock} confirmedBy={record.confirmedBy} markedBy={record.confirmedVia === 'marked' ? nameOf(record.confirmedMarkedBy) ?? 'the studio' : null} variation={!!data.variation} onRevise={() => { void flushRef.current(); if (voReviseBlock) snackbar({ message: couldnt(`revise ${quote.number}`, voReviseBlock) }); else setReviseOpen(true) }}
-                      onMove={offersQuoteSent(lead.stage, status) ? () => { void flushRef.current(); router.push(moveStageHref(lead.id, 'quote-sent', { quote: quote.id })) } : null}
-                      validityEnded={(() => { const d = general.validUntil ? parseInputDate(general.validUntil) : null; return d && validityPassed({ status, validUntil: d }, clock) ? displayDate(d) : null })()}
-                      at={status === 'Sent to Client' ? record.clientSentAt ?? record.sentAt : status === 'Confirmed' ? record.confirmedAt : null}
-                      opened={(() => { const seen = viewedSince({ status, sentAt: record.sentAt ? new Date(record.sentAt) : null, clientSentAt: record.clientSentAt ? new Date(record.clientSentAt) : null, clientLastViewedAt: quote.clientLastViewedAt }); return seen ? { at: seen.getTime(), count: quote.clientViewCount } : null })()}   /* (pending modules S04) */
-                      signedTotal={status === 'Signed' && !data.variation && movedSinceSigning({ amountMinor, signedAmountMinor: quote.signedAmountMinor }) ? money2(quote.signedAmountMinor!) : null} />
-        ) : null}
+      <div className={styles.page} data-testid="quote-editor" data-strip={stripExpanded ? 'expanded' : 'collapsed'} data-shell={mode === 'desk' ? undefined : split ? 'split' : 'phone'} data-mode={mode}>
+        {mode === 'desk' ? (
+          <>
+            <EditorHeader
+              deleteBlock={deleteWhy}
+              lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={version} status={status} siblings={siblings}
+              savedLabel={savedLabel(updatedAt, clock)}
+              canSend={quoteSend.canSend} sendKind={quoteSend.kind} sendHint={quoteSend.hint} statusSlot={statusPill}
+              onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
+              onSend={quoteSend.send} onMenu={onMenu} onClose={close}
+              clientViewOn={clientView} onClientView={() => setClientView((o) => !o)}
+              contract={contract} contractHref={contract ? withFrom(`/contracts/${contract.id}`, here) : undefined}
+              variation={data.variation ?? null} from={from} viewLink={viewLinkUi.offered}
+            />
+            {data.variation ? <VariationBar v={data.variation} changeMinor={amountMinor} status={status} quoteId={quote.id} /> : null}
+            <EditorTabs items={tabs} active={active} onSelect={selectTab} className={styles.stickyTabs} />
+            {/* (REG-579) Only a Draft is offered the newer version — a sent quote keeps the version it was sent with; its card still says "v1 · v2 published". */}
+            {templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? (
+              <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} />
+            ) : null}
+            {/* (REG-624, parity Q-22) Waiting for approval — or sent back with a note, until the next send. */}
+            <ApprovalBar canApprove={canApprove} now={clock} busy={approvalBusy} onApprove={approve} onRequestChanges={() => setChangesOpen(true)} onDismiss={() => setChangesDismissed(true)}
+                         waiting={status === 'Sent for Approval' ? { by: nameOf(record.submittedBy), at: record.submittedAt ?? record.sentAt } : null}
+                         changes={changesAsked} />
+            {/* (REG-624, parity Q-04) No hard lock: a quote the client has says so and offers Revise. */}
+            {status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed' ? (
+              <SentBanner status={status} version={version} now={clock} confirmedBy={record.confirmedBy} markedBy={record.confirmedVia === 'marked' ? nameOf(record.confirmedMarkedBy) ?? 'the studio' : null} variation={!!data.variation} onRevise={() => { void flushRef.current(); if (voReviseBlock) snackbar({ message: couldnt(`revise ${quote.number}`, voReviseBlock) }); else setReviseOpen(true) }}
+                          onMove={offersQuoteSent(lead.stage, status) ? () => { void flushRef.current(); router.push(moveStageHref(lead.id, 'quote-sent', { quote: quote.id })) } : null}
+                          validityEnded={validityEnded}
+                          at={status === 'Sent to Client' ? record.clientSentAt ?? record.sentAt : status === 'Confirmed' ? record.confirmedAt : null}
+                          opened={openedSince}   /* (pending modules S04) */
+                          signedTotal={status === 'Signed' && !data.variation && movedSinceSigning({ amountMinor, signedAmountMinor: quote.signedAmountMinor }) ? money2(quote.signedAmountMinor!) : null} />
+            ) : null}
+          </>
+        ) : (
+          <>
+            {/* (Quotes on the move, P-01) the Quote screen — read first; the list and the section screens layer over it while editing */}
+            <QuoteScreen inert={editing}
+                         number={quote.number} title={general.title} version={version} status={status} variation={data.variation ? { projectName: data.variation.projectName } : null}
+                         client={{ name: lead.name, phone: lead.phone, company: lead.propertyType === 'Commercial' ? lead.companyName ?? null : null, first: clientFirst }}
+                         statusSlot={statusPill} templateName={templateName}
+                         contract={contract ? { href: withFrom(`/contracts/${contract.id}`, here), title: contract.title, status: contract.status } : null}
+                         amountText={data.variation ? signedMoney(amountMinor) : money2(amountMinor)} lineCount={lineCount} validUntil={validUntilDate}
+                         gst={{ on: gstOn, pct: quoteGstRate(countedLines(flattenItems(lines)), studio.gstPct) }}
+                         next={next} onPrimary={onPrimary}
+                         primarySlot={<SendButton kind={quoteSend.kind} canSend={quoteSend.canSend} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={!!data.variation} side="up" align="right" />}
+                         onEdit={openEdit} onBack={close} backLabel={backLabel(from, { leadName: lead.name, fallback: `Back to ${lead.name}` })}
+                         onMenu={onScreenMenu}
+                         menu={{ canApprove, waitingApproval: status === 'Sent for Approval', deleteBlock: deleteWhy, viewLink: viewLinkUi.offered, tplLocked: tplLock.locked, xrayLocked: xrayLock.locked, hasTemplate: !!templateState.current, templateDeleted: !!templateState.current?.deleted }}
+                         reading={reading} onAsPrinted={() => { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?paper=1`, from)) }}
+                         folds={folds} onComments={() => setCommentsView({ open: true, focus: null })} totalMinor={amountMinor} />
+            {/* (P-02 · Q-02) Edit is the section list, every time; a landscape tablet keeps it as the left pane */}
+            {editing ? <SectionList rows={sectionRows} number={quote.number} savedLabel={savedLabel(updatedAt, clock)} current={shownKey} onOpen={openSection} onDone={doneEditing} pane={split} inert={mode === 'section' && !split} /> : null}
+          </>
+        )}
         <NoteDialog open={changesOpen} title="Request changes" label="What should change?" help={`Goes back to ${nameOf(record.submittedBy) ?? 'whoever sent it'} at the top of the quote; the quote returns to Draft.`} action="Send back"
                     busy={approvalBusy} required maxLength={300} onClose={() => setChangesOpen(false)} onSubmit={requestChanges} />
         <div className={styles.body}>
           <div className={styles.main}>
-            <SectionCard id="section-general" title={titleOf('general')} open={openOf('general')} onToggle={() => toggle('general')}>
-              {bodyOf('general')}
-            </SectionCard>
+            {/* (P-02) every section stays mounted and live on every width; on the move its host shows it only as the open screen */}
+            <SectionHost screen={screenOf('general')}>
+              <SectionCard id="section-general" title={titleOf('general')} open={openOf('general')} onToggle={() => toggle('general')}>
+                {bodyOf('general')}
+              </SectionCard>
+            </SectionHost>
+            <SectionHost screen={screenOf('items')}>
             <VariationContext.Provider value={!!data.variation}>
             <ItemsCard key={`items-${seedNonce}`} seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')} exportTick={exportTick}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount} command={itemsCommand}
@@ -717,9 +864,11 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                        commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} changes={lineChangeMap}
                        printsBy={printsBy} onChangeTemplate={openPicker} onPreview={() => onMenu('preview')} />
             </VariationContext.Provider>
+            </SectionHost>
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
-                <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
+                <SectionHost key={s.key} screen={screenOf(s.key)}>
+                <MovableSection section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
                                 onDrop={() => persistSections(sectionsRef.current)}
                                 render={s.key === 'payment' ? (onHandle) => (
                                   <PaymentsCard key={`pay-${seedNonce}`} seed={paymentsSeed} open={!s.collapsed} onToggle={() => toggle('payment')} onHandlePointerDown={onHandle}
@@ -735,26 +884,29 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                                 ) : undefined}>
                   {bodyOf(s.key)}
                 </MovableSection>
+                </SectionHost>
               ))}
             </Reorder.Group>
-            <SectionCard id="section-activity" title={titleOf('activity')} open={openOf('activity')} onToggle={() => toggle('activity')}>
-              {bodyOf('activity')}
-            </SectionCard>
+            <SectionHost screen={null}>
+              <SectionCard id="section-activity" title={titleOf('activity')} open={openOf('activity')} onToggle={() => toggle('activity')}>
+                {bodyOf('activity')}
+              </SectionCard>
+            </SectionHost>
           </div>
-          {clientView && !tabletDown ? (
+          {mode === 'desk' && clientView ? (
             <aside className={styles.clientPane} aria-label="Client view">
               <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand} view={clientPaneView}
                               templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
             </aside>
           ) : null}
-          <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') openPicker(); else { if (!openOf('items')) toggle('items'); setBookTick((t) => t + 1) } }} />
+          {mode === 'desk' ? <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') openPicker(); else { if (!openOf('items')) toggle('items'); setBookTick((t) => t + 1) } }} /> : null}
         </div>
-        {tabletDown ? (
-          <Drawer open={clientView} onClose={() => setClientView(false)} title="Client view" label="Client view">
-            <ClientViewPane bare data={clientData} design={clientPaneDesign} brand={brand} view={clientPaneView}
-                            templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
-          </Drawer>
-        ) : null}
+        {/* (Q-07) Remind — a nudge on WhatsApp with the same confirmation link; nothing changes on the quote */}
+        <SendContractDialog open={remindOpen} onClose={() => setRemindOpen(false)} link={confirmLink(confirmKeyOf(quote))} defaults={{ name: lead.name, phone: lead.phone }}
+                            title="Send a reminder" subtitle={`A nudge on WhatsApp with the same link — the ${data.variation ? 'variation order' : 'quote'} stays as it is.`} copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)" sendLabel="Send via WhatsApp"
+                            draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: studio.name, number: quote.number, link: confirmLink(confirmKeyOf(quote)), variation: !!data.variation, validUntil: validUntilDate && !validityEnded ? displayDateLong(validUntilDate) : null })}
+                            onSend={sendRemind} />
+        {/* (REG-497) the live client view on a tablet went through a 400 drawer with a 328px paper (B-08); on the move the Preview page is the client's view — K3's */}
         <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal
                 subtitle="The quote keeps its lines; the template decides how they print and what the client sees."
                 footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) pickTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (templateState.current?.id ?? null)}>{pickerSel && pickerSel === templateState.current?.id ? 'On this quote' : 'Use this template'}</Button></>}>
@@ -804,9 +956,22 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                             onAdd={(itemId, body) => { void run('add the comment', async () => { const row = await orThrow(addLineComment(quote.id, itemId, body)); setComments((c) => [...c, row]); setClock(Date.now()) }) }}
                             onEdit={(id, body) => { const was = comments.find((x) => x.id === id); setComments((c) => c.map((x) => (x.id === id ? { ...x, body, updatedAt: new Date() } : x))); void run('edit the comment', () => editLineComment(id, body)).then((ok) => { if (!ok && was) setComments((c) => c.map((x) => (x.id === id ? was : x))) }) }}   /* (sweep S1 #10) a refused edit puts the words back */
                             onDelete={(id) => { const before = comments; setComments((c) => c.filter((x) => x.id !== id)); void run('delete the comment', () => deleteLineComment(id), 'Comment deleted').then((ok) => { if (!ok) setComments(before) }) }} />
-        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
+        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} raised={mode === 'read'} /></span>   {/* (P-01) above the Quote screen's foot */}
       </div>
     </PageReveal>
+  )
+}
+
+/**
+ * (Quotes on the move, P-02) A section's host: on the desk a box-less wrapper (`display: contents`); on the move it hides its section
+ * unless it is the open one, which the `SectionScreenContext` it provides turns into the section screen (section-card.tsx). Every section
+ * stays mounted either way, so its state — the lines as edited, the schedule, the texts — is live for the Quote screen and never re-seeded.
+ */
+function SectionHost({ screen, children }: { screen: SectionScreen | null; children: ReactNode }) {
+  return (
+    <div className={styles.host} data-screen={screen ? '' : undefined}>
+      <SectionScreenContext.Provider value={screen}>{children}</SectionScreenContext.Provider>
+    </div>
   )
 }
 

@@ -174,11 +174,11 @@ const openQuote = async (page, id) => { await page.goto(`${BASE}/quotes/${id}`);
   /* ── the phone ── */
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const pp = await phone.newPage(); pp.setDefaultTimeout(12000)
-  await step('phone: the sent banner wraps under the header', async () => {
-    await pp.goto(`${BASE}/quotes/${OM4}`); await pp.getByTestId('quote-editor').waitFor(); await ready(pp)
-    const b = await pp.getByTestId('sent-banner').boundingBox()
-    // REG-870 (Dane UAT 8.11): the editors' banners run full width — a band under the tabs, not an inset card
-    ok('the banner runs the full width', Math.round(b.x) === 0 && Math.round(b.x + b.width) === 390, `${Math.round(b.x)} … ${Math.round(b.x + b.width)}`)
+  await step('phone: the sent banner is the Quote screen’s Next line', async () => {
+    /* (quotes on the move, a deliberate change of this rule) a phone opens the Quote screen: the banner's words are its Next line (REG-870's full-width band is the desk's) */
+    await pp.goto(`${BASE}/quotes/${OM4}`); await pp.getByTestId('quote-next').waitFor(); await ready(pp)
+    const nextText = await pp.getByTestId('quote-next').locator('[class*="nextText"]').innerText()
+    ok('the signed words are the Next line', /signed/i.test(nextText) && /version 1/.test(nextText), nextText.slice(0, 80))
     await pp.screenshot({ path: `${S}/shots-qe2/10-phone-banner.png` })
     const w = await pp.evaluate(() => document.documentElement.scrollWidth)
     ok('no sideways scroll at 390', w <= 390, String(w))

@@ -22,7 +22,7 @@ export default async function QuoteViewRoute({ params }: { params: Promise<{ tok
   const data = await fetchQuoteView(token)
   if (!data) {
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />
+    return <LinkGone studio={brand.details.name} brand={brand.kit} phone={brand.details.phone} />   /* (K4 — A-23) the way to ask for a new link */
   }
   return <QuoteViewPage data={data} />
 }

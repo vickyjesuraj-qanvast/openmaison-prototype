@@ -9,8 +9,9 @@ import { signQuoteThrough } from '@/lib/quotes/sign'
 import { signedSnapshot } from './queries'
 import { actingMember, afterSigned } from './automation'
 import { newSignToken } from './link-server'
-import { keepContractPdf } from './files'
+import { keepContractPdf, keepContractPicture } from './files'
 import type { PickedPdf } from './pdf'
+import { isPictureData, titleOfFile } from './picture'
 
 /**
  * (REG-632, contracts parity Q-14) The Won step's "Upload" — a contract the client signed on paper — becomes a Signed contract on the
@@ -25,19 +26,24 @@ export async function recordWonUpload(leadId: string, payload: unknown, at: Date
   const [lead] = await db.select({ id: leads.id, name: leads.name, phone: leads.phone }).from(leads).where(eq(leads.id, leadId))
   if (!lead) return null
   const [existing] = await db.select({ id: contracts.id, fileId: contracts.fileId }).from(contracts).where(and(eq(contracts.leadId, leadId), eq(contracts.source, 'uploaded'), eq(contracts.fileName, file), isNull(contracts.deletedAt)))
-  /* (pending modules S03) the picked PDF itself, kept in Files › Contract & VOs — once; an older row made with the name alone takes it now */
-  const keep = async () => { if (!picked) return null; const k = await keepContractPdf(db, leadId, { ...picked, name: file }, at); return typeof k === 'string' ? k : null }
-  if (existing) { if (!existing.fileId) { const fileId = await keep(); if (fileId) await db.update(contracts).set({ fileId }).where(eq(contracts.id, existing.id)) } return existing.id }
+  /* (pending modules S03) the picked PDF itself, kept in Files › Contract & VOs — once; an older row made with the name alone takes it now.
+     (Contracts on the move, C4 — P-12, Q-04 as picked) …or a PHOTO of the signed paper, taken on site: kept there as a picture, and it is the
+     signed copy (`signed_file_id`) as well as the contract's own file — a server-side PDF of it is the developers' S34 renderer seam
+     (lib/contracts/files.ts `keepContractPicture`); the lead moves to Won exactly as with a PDF. */
+  const photo = !!picked && isPictureData(picked.data)
+  const keep = async () => { if (!picked) return null; const k = photo ? await keepContractPicture(db, leadId, { ...picked, name: file }, at) : await keepContractPdf(db, leadId, { ...picked, name: file }, at); return typeof k === 'string' ? k : null }
+  if (existing) { if (!existing.fileId) { const fileId = await keep(); if (fileId) await db.update(contracts).set({ fileId, ...(photo ? { signedFileId: fileId } : {}) }).where(eq(contracts.id, existing.id)) } return existing.id }
   const fileId = await keep()
   /* The quote the step names (by its title, a signed one first) — the contract reads it and signs it through. */
   const qs = p.wonQuoteTab === 'system' && p.wonQuote ? await db.select({ id: quotes.id, status: quotes.status, issuingEntity: quotes.issuingEntity }).from(quotes).where(and(eq(quotes.leadId, leadId), eq(quotes.title, p.wonQuote), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)) : []
   const quote = qs.find((q) => q.status === 'Signed') ?? qs[0] ?? null
   const id = randomUUID()
   await db.insert(contracts).values({
-    id, leadId, title: file.replace(/\.pdf$/i, ''), status: 'Signed', createdAt: at, updatedAt: at, sentAt: at, signedAt: at, signedCopy: file, fileName: file, source: 'uploaded',
+    id, leadId, title: titleOfFile(file), status: 'Signed', createdAt: at, updatedAt: at, sentAt: at, signedAt: at, signedCopy: file, fileName: file, source: 'uploaded',
     recipientName: lead.name, recipientPhone: phoneDigits(lead.phone).slice(-8), contractDate: at, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null, createdBy: await sessionMemberId(),
     markedBy: await actingMember(),   // (REG-634) a paper signature the studio recorded
     signToken: newSignToken(), fileId,   // (pending modules S03) its link's key; the PDF kept
+    ...(photo && fileId ? { signedFileId: fileId } : {}),   // (C4 — P-12, Q-04) a photo is the signed copy itself
   })
   const [c] = await db.select().from(contracts).where(eq(contracts.id, id))
   if (c) { await db.update(contracts).set(await signedSnapshot(c, at)).where(eq(contracts.id, id)); await signQuoteThrough(c, at); await afterSigned(c, at) }

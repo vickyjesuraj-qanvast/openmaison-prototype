@@ -214,8 +214,10 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await mp.goto(`${BASE}/contracts/${RYAN}`); await mp.getByTestId('contract-editor').waitFor(); await ready(mp)
     const over = await mp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     ok('the editor at 390 has no sideways scroll', over <= 0, `${over}px`)
-    const fit = await mp.evaluate(() => { const p = document.querySelector('[data-testid="contract-signed-copy"] [data-testid="contract-paper"]'); return p ? p.getBoundingClientRect().right <= window.innerWidth : false })
-    ok('the kept copy fits the phone', fit)
+    /* (contracts on the move, a deliberate change of this rule) ≤1024 a signed contract is the Contract screen: the kept copy reads as clause
+       cards (components/contracts/screen/contract-document.tsx) under the hero's signed line, not as the 816 paper */
+    const fit = await mp.evaluate(() => { const p = document.querySelector('[data-testid="contract-document"]'); return p ? p.getBoundingClientRect().right <= window.innerWidth && !!document.querySelector('[data-testid="hero-signed"]') : false })
+    ok('the kept copy fits the phone (as clause cards under the signed line)', fit)
     await mp.screenshot({ path: `${S}/shots-ct1/08-phone-editor.png` })
     await mp.goto(`${BASE}/sign/${AISHA}`); await ready(mp)
     await mp.screenshot({ path: `${S}/shots-ct1/09-phone-signed.png` })

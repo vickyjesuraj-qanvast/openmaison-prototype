@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/shell/page-header'
 import { ContractsListGhost } from '@/components/shell/list-ghosts'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { ContractsToolbar } from '@/components/leads/contracts/contracts-toolbar'
 import { ContractsTable, contractColumnDefs, type ContractRowAction } from '@/components/leads/contracts/contracts-table'
@@ -19,7 +20,7 @@ import { ContractsFiltersModal } from '@/components/leads/contracts/contracts-fi
 import { DeleteContractsDialog } from '@/components/leads/contracts/delete-dialog'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import type { Contract } from '@/lib/db/schema'
 import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters, nextHeadSort, searchContracts, sortByHead, type ContractFilters, type ContractHeadSort, type ContractStatus } from '@/lib/leads/contract-filters'
 import type { StudioContractsData } from '@/lib/contracts/queries'
@@ -42,6 +43,7 @@ import { ContractTemplatePicker } from '@/components/contracts/contract-template
 import { ImportContractDialog, type ImportPick } from '@/components/contracts/import-contract-dialog'
 import { DeletedContractsSheet } from '@/components/contracts/deleted-contracts-sheet'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
+import { NewContractSheet, type NewContractKind } from '@/components/contracts/new-contract-sheet'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from '@/components/quotes/list/quotes-workspace.module.css'
 
@@ -66,8 +68,16 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   // (Contracts on the move, C4 — P-08) a touch tablet opens with its own default set, remembered apart
   const defs = useMemo(() => contractColumnDefs(true), [])
-  const columnPrefs = useTableColumns('studio-contracts', defs, phone)
+  const columnPrefs = useTableColumns('studio-contracts', defs, phone, touchTablet)
+  /* (C4 — P-07) the quote a contract signs: its number and amount on the phone card */
+  const quoteOf = useCallback((c: Contract) => { const q = c.fromQuoteId ? data.quotes[c.fromQuoteId] : null; return q ? { number: q.number, amountMinor: q.amountMinor } : null }, [data.quotes])
+  /* (C4 — P-09 · A-10) New contract on a phone: who first — the leads with the newest contract activity lead the list — then the kind; the
+     picker and Import then make it for that lead without the desk's lead question. */
+  const [whoOpen, setWhoOpen] = useState(false)
+  const [whoLead, setWhoLead] = useState<string | null>(null)
+  const recentLeads = useMemo(() => [...contracts].sort((a, b) => (b.updatedAt ?? b.createdAt).getTime() - (a.updatedAt ?? a.createdAt).getTime()).map((c) => c.leadId).filter((id, i, all) => all.indexOf(id) === i).slice(0, 5), [contracts])
   const filterCount = activeContractFilterCount(filters)
   /* (REG-634, contracts parity E-125) the studio list searches the lead's name as well */
   /* (pending modules S03) a head's own order — ONE sort with Filters' (the projects table's rule) */
@@ -76,6 +86,11 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const applyFilters = (next: ContractFilters) => { if (next.sort !== filters.sort) setHeadSort(null); setFilters(next) }
   const visible = useMemo(() => sortByHead(searchContracts(applyContractFilters(contracts, filters, now), query, (c) => c.leadName), headSort), [contracts, filters, query, now, headSort])
   const nothingMatches = contracts.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
+  /* (Contracts on the move, C4 — P-07) a phone's selection: a hold on a card selects it, the bulk bar deletes; what leaves the view leaves it */
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const visibleIds = useMemo(() => new Set(visible.map((c) => c.id)), [visible])
+  if (selected.size && (!phone || [...selected].some((id) => !visibleIds.has(id)))) setSelected(new Set(phone ? [...selected].filter((id) => visibleIds.has(id)) : []))   // render-phase adjust
+  const toggleSelect = useCallback((id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n }), [])
   const [deleting, setDeleting] = useState<string[] | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
@@ -131,6 +146,12 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
     else if (kind === 'template') setPickerOpen(true)
     else setImportOpen(true)
   }
+  /* (C4 — P-09) the phone's steps: the lead is known before the kind, so a pick in the picker or the Import sheet makes the contract at once */
+  const startFor = (leadId: string, kind: NewContractKind) => {
+    if (kind === 'blank') { void createFor(leadId, { kind: 'blank' }); return }
+    setWhoOpen(false); setWhoLead(leadId)
+    if (kind === 'template') setPickerOpen(true); else setImportOpen(true)
+  }
   const openSignedCopy = useOpenSignedCopy('/contracts')
   const loadStandard = useCallback(() => fetchStandardDocsAction(), [])
   /* (pending modules S03 — 1.0's cancel) Stop the signing link: back to Draft, the address dead; Undo puts the same link back */
@@ -185,7 +206,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
       <div className={pageStyles.body} style={{ position: 'relative' }} data-testid="contracts-workspace">
         <PageHeader title="Contracts" />
         <div className={styles.frame}>
-          <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={contracts.length === 0} query={query} onQuery={setQuery} onNew={onNew} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
+          <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={contracts.length === 0} query={query} onQuery={setQuery} onNew={onNew} onWho={() => setWhoOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
                             onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'archived' ? setArchivedOpen(true) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundlePick(true) : a === 'settings' ? router.push(`${withFrom('/settings?section=quotes', from)}#contracts`) : comingSoon())}
                             bundleBlock={bundleBlock}   /* (UX audit C4) */
                             awaiting={{ count: awaitingCount, on: awaitingOn, onToggle: () => setFilters((f) => ({ ...f, status: awaitingOn ? [] : ['Sent to Client'] })) }} />
@@ -194,11 +215,12 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
           ) : nothingMatches ? (
             <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
           ) : (
-            <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} contracts={visible} onStatus={onStatus} onView={(c) => openEditor(c.id)} onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock} now={now} sort={headSort} onSort={onSort}
-                            leadOf={(c) => ({ name: leadName.get(c.id) ?? '', href: withFrom(`/leads/${c.leadId}/contracts`, from) })} />
+            <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} contracts={visible} quoteOf={quoteOf} onStatus={onStatus} onView={(c) => openEditor(c.id)} onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock} now={now} sort={headSort} onSort={onSort}
+                            leadOf={(c) => ({ name: leadName.get(c.id) ?? '', href: withFrom(`/leads/${c.leadId}/contracts`, from) })}
+                            selected={selected} onToggleSelect={phone ? toggleSelect : undefined} />
           )}
         </div>
-        <PickLeadDialog open={bundlePick} onClose={() => setBundlePick(false)} leads={bundleLeads} title="Send together — which lead?" onPick={(leadId) => { setBundlePick(false); setBundleLead(leadId) }} />
+        <PickLeadDialog open={bundlePick} onClose={() => setBundlePick(false)} leads={bundleLeads} title="Send together — which lead?" whoList={{ recent: recentLeads }} onPick={(leadId) => { setBundlePick(false); setBundleLead(leadId) }} />
         <SendBundleDialog open={!!bundleLead} onClose={() => setBundleLead(null)} contracts={bundleDocs} quoteBlock={quoteBlockOf} loadStandard={loadStandard}
                           defaults={{ name: bundleDocs[0]?.recipientName || bundleDocs[0]?.leadName || '', phone: bundleDocs[0]?.recipientPhone || '' }}
                           draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
@@ -235,12 +257,17 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <ContractsFiltersModal open={filtersOpen} value={filters} now={now} onApply={applyFilters} onClose={() => setFiltersOpen(false)}
                                headSort={headSort ? ({ status: 'Status', created: 'Created', sent: 'Sent', updated: 'Updated' } as const)[headSort.key] : null} onClearHead={() => setHeadSort(null)} />
+        {/* (C4 — P-07) the phone's bulk bar: the Quotes cards' — Delete through the same confirm */}
+        <DetailBulkBar count={phone ? selected.size : 0} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting([...selected]) }]} onClear={() => setSelected(new Set())} />
         <DeleteContractsDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}
-                               onYes={() => { const ids = deleting; setDeleting(null); if (ids) void run('delete', async () => { const r = await orThrow(deleteContracts(ids)); snackbar({ message: contractsDeletedLine(r) }) }) }} />
-        <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates}
-                                onUse={(templateId) => { setPickerOpen(false); setPending({ kind: 'template', templateId }) }} onStarter={() => { setPickerOpen(false); setPending({ kind: 'template', templateId: null }) }} />
-        <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={(o) => { setImportOpen(false); setPending({ kind: 'import', ...o }) }} />
-        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} busy={creating} onPick={(leadId) => { const p = pending; if (p && leadId) void createFor(leadId, p) }} />
+                               onYes={() => { const ids = deleting; setDeleting(null); setSelected(new Set()); if (ids) void run('delete', async () => { const r = await orThrow(deleteContracts(ids)); snackbar({ message: contractsDeletedLine(r) }) }) }} />
+        <ContractTemplatePicker open={pickerOpen} onClose={() => { setPickerOpen(false); setWhoLead(null) }} load={loadTemplates} busy={creating}
+                                onUse={(templateId) => { if (whoLead) { void createFor(whoLead, { kind: 'template', templateId }); return } setPickerOpen(false); setPending({ kind: 'template', templateId }) }}
+                                onStarter={() => { if (whoLead) { void createFor(whoLead, { kind: 'template', templateId: null }); return } setPickerOpen(false); setPending({ kind: 'template', templateId: null }) }} />
+        <ImportContractDialog open={importOpen} onClose={() => { setImportOpen(false); setWhoLead(null) }} onImport={(o) => { setImportOpen(false); if (whoLead) { void createFor(whoLead, { kind: 'import', ...o }); return } setPending({ kind: 'import', ...o }) }} />
+        {/* (C4 — P-09) the phone's New contract: who it is for, then how to start — the picker and Import above make it for that lead */}
+        <NewContractSheet open={whoOpen} onClose={() => setWhoOpen(false)} leads={leads} recent={recentLeads} busy={creating} onStart={startFor} />
+        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} busy={creating} whoList={{ recent: recentLeads }} onPick={(leadId) => { const p = pending; if (p && leadId) void createFor(leadId, p) }} />
         <DeletedContractsSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb="Tools / Contracts" showLead
                                onRestore={(ids) => run('restore', () => restoreContracts(ids), ids.length === 1 ? 'Contract restored' : `${ids.length} contracts restored`)}
                                onDeleteForever={(ids) => run('delete', () => deleteContractsForever(ids), 'Contract deleted forever')}

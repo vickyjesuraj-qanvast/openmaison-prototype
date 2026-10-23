@@ -25,6 +25,8 @@ import { WithClientCard } from './overview/with-client-card'
 import { ComingUpCard } from './overview/coming-up-card'
 import { ProgressCard } from './overview/progress-card'
 import { MoneyCard } from './overview/money-card'
+import { DocumentsCard } from './overview/documents-card'   // (Contracts on the move, C4 — P-11 · C-23) ≤1024 only
+import { projectDocumentRows } from './overview/documents'
 import { Row } from './overview/row'
 import { useNeedActions } from './overview/use-need-actions'
 import { NeedAnswerDialogs } from './overview/answer-dialogs'
@@ -161,6 +163,9 @@ export function ProjectOverview({ d, href, onSetup, onOpenTab, onVisualizer, onH
         </div>
         <div className={`${styles.column} ${styles.glance}`}>
           <ProgressCard d={d} onStep={onStep} onSetup={onSetup} onOpenSchedule={() => onOpenTab('schedule')} />
+          {/* (Contracts on the move, C4 — P-11 · C-23) the signed quote and the contract where a designer on site looks — drawn ≤1024 only (the desk's
+              info column carries them as Project info rows) */}
+          <DocumentsCard rows={projectDocumentRows(d, { from: here, fileHref: (id) => href(`files/${id}`) })} />
           {completed && closing ? closing : <MoneyCard d={d} h={h} onOpenMoney={() => onOpenTab('money')} stageHref={(id) => href('money', id ? `open=${encodeURIComponent(id)}` : undefined)} onChangeValue={() => onSetup('value')} />}
           <div data-card="recent-activity" className={styles.activityFold} data-folded={activityOpen ? undefined : ''}><ActivityCard items={d.activity.slice(0, 3).map((e) => ({ at: e.at, text: e.text }))} now={now} onOpenTab={() => onOpenTab('activity')} headExtra={activityToggle} /></div>
         </div>

@@ -102,6 +102,10 @@ export function Tooltip({
   }, [spec])
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clear = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null } }
+  /* (Contracts on the move, C4 — C-06) A finger's press leaves focus on the control, and the focus-visible branch below used to pin the bubble
+     under it ("New · C" under the +, on a phone, after the press) — and a key hint means nothing to a finger. The pointer type is kept from the
+     press, so the focus it leaves shows no bubble, and a touch pointer never shows the keys. */
+  const touched = useRef(false)
 
   const hide = () => { clear(); if (state?.owner === owner) commit(null) }
   const show = (wrapper: HTMLElement) => {
@@ -109,7 +113,7 @@ export function Tooltip({
     clear()
     const el = (wrapper.firstElementChild as HTMLElement | null) ?? wrapper
     if (whenCut && el.scrollWidth <= el.clientWidth + 1) return
-    const next = { owner, label, keys: keys ?? (shortcut ? keysOf(shortcut) : undefined), ...place(el, side) }
+    const next = { owner, label, keys: touched.current ? undefined : keys ?? (shortcut ? keysOf(shortcut) : undefined), ...place(el, side) }
     if (state || Date.now() - lastHiddenAt < WARM_WINDOW_MS) commit(next)
     else timer.current = setTimeout(() => commit(next), SHOW_DELAY_MS)
   }
@@ -126,11 +130,11 @@ export function Tooltip({
 
   return (
     <span ref={anchor} className={styles.anchor}
-          onPointerEnter={(e) => { if (e.pointerType !== 'touch') show(e.currentTarget) }}   // no hover on touch — a tap must not leave a bubble behind
+          onPointerEnter={(e) => { touched.current = e.pointerType === 'touch'; if (e.pointerType !== 'touch') show(e.currentTarget) }}   // no hover on touch — a tap must not leave a bubble behind
           onPointerLeave={hide}
-          onPointerDown={(e) => { hide(); if (e.pointerType === 'touch' && label && !disabled && refused(e.currentTarget, label)) say({ message: label, key: REFUSED_KEY }) }}   // a press cancels a pending show, so nothing pops over what the press opened — (S43E W1-01) and a finger on a refused control hears its reason
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') hide() }}
-          onFocus={(e) => { if ((e.target as HTMLElement).matches?.(':focus-visible')) show(e.currentTarget) }}
+          onPointerDown={(e) => { touched.current = e.pointerType === 'touch'; hide(); if (e.pointerType === 'touch' && label && !disabled && refused(e.currentTarget, label)) say({ message: label, key: REFUSED_KEY }) }}   // a press cancels a pending show, so nothing pops over what the press opened — (S43E W1-01) and a finger on a refused control hears its reason
+          onKeyDown={(e) => { touched.current = false; if (e.key === 'Enter' || e.key === ' ') hide() }}
+          onFocus={(e) => { if (!touched.current && (e.target as HTMLElement).matches?.(':focus-visible')) show(e.currentTarget) }}   // (C-06) the focus a tap leaves shows nothing
           onBlur={hide}>
       {children}
     </span>

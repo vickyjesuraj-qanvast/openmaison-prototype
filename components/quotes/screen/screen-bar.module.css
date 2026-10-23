@@ -1,0 +1,23 @@
+/* (Quotes on the move, P-01 · P-02 · P-09) The 56px bar every on-the-move quote screen wears: a leading control, the title over one
+   secondary line, the trailing controls — on the surface, the 1px rule inside its bottom edge, sticky at the top under the safe area.
+   Only ever drawn at ≤1024 (the desk keeps its own header), so its measures are the phone scale: title 16/600, the line 14, 44 boxes. */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--om-spacing-2); row-gap: var(--om-spacing-1);
+  min-height: 56px;
+  padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1);
+  padding-top: calc(var(--om-spacing-2) + env(safe-area-inset-top, 0px));
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+}
+/* The leading / trailing icon controls: the house 36 (or 24) icon button, which brings its own 44 touch box (REG-312), centred in a 44 seat. */
+.ctl { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; }
+.text { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; justify-content: center; min-height: 44px; }
+.bar > .text:first-child { padding-left: var(--om-spacing-3); }
+.title { margin: 0; min-width: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The section's own controls (its toolbar) — they shrink to their content and wrap under the title when the row is too narrow for both. */
+.trailing { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-2); flex: 0 1 auto; min-width: 0; max-width: 100%; margin-left: auto; }
+.trailing > .ctl { margin-right: calc(-1 * var(--om-spacing-1)); }
+/* a DS 36 text button in the bar (the list's Done) grows to the 44 box with min-height, never with an ::after inset — that override would
+   also land on the section actions' IconButtons and displace their own centred box (C-03, the icon-button-overlay lint rule) */

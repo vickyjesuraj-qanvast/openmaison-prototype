@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from '@/components/om/surface'
 import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
+import { TABLET_DOWN } from '@/lib/breakpoint'
 import { Keys } from '@/components/om/keys'
 import { ariaKeys } from '@/lib/keys/spec'
 import { keysOf } from '@/lib/keys/registry'
@@ -46,11 +47,25 @@ export function Dropdown({
   /* (REG-347) A menu opened low on a phone ran past the viewport and its last items were drawn under the fixed
      dock — the ≤767 cap in menus.module.css was a constant that could not know where the anchor sat. The menu
      reports its own top once it is on screen; the stylesheet subtracts that and the dock from the cap. Layout is
-     read in an effect, after paint, never during render. */
-  useEffect(() => {
+     read in a layout effect — the menu is in the DOM, the browser has not painted it yet — never during render. */
+  useLayoutEffect(() => {
     const el = ref.current
     if (!open || !el || sheet) return   // a sheet is bottom-anchored: it has no anchor top to measure (REG-353)
     el.style.setProperty('--menu-top', `${Math.max(0, Math.round(el.getBoundingClientRect().top))}px`)
+    /* (quotes on the move 2026-10-22, B-02) ≤1024 the menu never runs past the viewport's edge: a 320 menu under a Send at x 557 of a 768
+       screen ended 12px off-screen, gave the page a sideways scroll and cut its rows' help. Measured from the anchor's box and the menu's
+       layout width (its own rect is mid-scale on the first frame), the overflow past an 8px edge becomes `--menu-shift` (menus.module.css).
+       The edge is the document's own width (`documentElement.clientWidth`), never `innerWidth`: a mobile browser that has just laid out an
+       overflowing menu reports the widened layout viewport there (865 on a 768 screen) and hides the very overflow this looks for. Written
+       before the first paint, so the menu never shows off-screen for a frame. Not written above 1024, where the mock's layout holds. */
+    if (!window.matchMedia(TABLET_DOWN).matches) return
+    const host = el.offsetParent instanceof HTMLElement ? el.offsetParent : null
+    const left = (host ? host.getBoundingClientRect().left : 0) + el.offsetLeft
+    const right = left + el.offsetWidth
+    const EDGE = 8
+    const edge = document.documentElement.clientWidth
+    const shift = right > edge - EDGE ? edge - EDGE - right : left < EDGE ? EDGE - left : 0
+    el.style.setProperty('--menu-shift', `${Math.round(shift)}px`)
   }, [open, sheet])
   useEffect(() => {
     if (!open || sheet) return   // the sheet owns Esc and its own scrim press (components/om/sheet.tsx)
@@ -90,6 +105,7 @@ export function Dropdown({
           ref={ref}
           className={styles.menu}
           role="menu"
+          data-align={align}   /* (B-02) which margin the ≤1024 clamp moves it by (menus.module.css) */
           variants={anchoredSurface}
           initial="initial" animate="animate" exit="exit"
           style={{

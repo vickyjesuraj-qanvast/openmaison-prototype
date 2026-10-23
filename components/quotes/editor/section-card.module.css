@@ -64,6 +64,25 @@
   .actions { margin-left: auto; }
 }
 
+/* (Quotes on the move, P-02 — 2026-10-22) The section SCREEN (≤1024 only — the editor's host provides it): the card is a full-height
+   surface fixed over the section list, from the top of the viewport (`--screen-left` = the list's width on a landscape tablet, 0 on a
+   phone), its bar the one every on-the-move screen wears, its body the scroller. The sticky offsets a section's own heads use are 0 here:
+   the bar sits above the scroller, not inside it. Under every overlay (the menus 95, a drawer 100, a dialog 110, a sheet 115, the
+   snackbar 135) and the FAB (90); level with the Items table's Expand frame (40), which it never shows at once. */
+.screen {
+  position: fixed; inset: 0; left: var(--screen-left, 0px); z-index: 40;
+  display: flex; flex-direction: column;
+  background: var(--om-color-surface-default);
+  outline: none;
+  --editor-sticky: 0px; --items-head-top: 0px;
+}
+.screenBar { flex-shrink: 0; }
+.screenBody { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom, 0px); --items-head-top: 0px; }   /* the body scrolls itself: the Items section's sticky cards, head bar and pinned foot take their top from here (K2) */
+/* (P-08) inside a screen every text box types at 16 (body-l), so iOS never zooms the page on focus */
+@media (max-width: 1024px) {
+  .screenBody input, .screenBody textarea { font: var(--om-type-body-l); }
+}
+
 /* (REG-570) A card whose top holds while its body scrolls (the Items section, `sticky`): sticky under the editor's header + tab strip,
    above the rows it covers; while held it squares its corners and casts the held rule + shadow. Its measured height feeds
    `--section-top-h` on the card, so the column heads under it know where to hold (a wrapping toolbar makes it taller than 69). */

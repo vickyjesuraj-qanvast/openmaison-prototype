@@ -18,17 +18,8 @@
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   Create Quote, Filters and the kebab are the mock's 36px controls. On a touch pointer each keeps its drawn
-   size and gains a transparent 4px ring: the target is 44px, the ring takes no space, so the wrapped row,
-   the 12px gaps (4px still clear between targets) and the filter badge do not move. The two selectors are
-   the DS Button (a direct child of its wrapper) and the om IconButton (inside the Tooltip's anchor span);
-   both stop short of the Dropdown's own rows, which are the shared menu's business. */
-@media (hover: none) {
-  .menuWrap > button, .menuWrap > span > button, .filterWrap button { position: relative; }
-  .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
-    content: ''; position: absolute; inset: -4px;
-  }
-}
+   Create Quote, Filters and the kebab are the mock's 36px controls; on a touch pointer the house IconButton's own centred 44 box carries the
+   target — (Quotes on the move, K2's lint `icon-button-overlay`) no override here, which displaced that box. */
 
 /* (REG-354) The mobile canvas' toolbar is ONE row — the section title and the glyphs (2b · 2n · 3f · 3i · 3d).
    The 280px search box folds into one of those glyphs (components/om/toolbar-search.tsx) and, when it is asked
@@ -38,7 +29,10 @@
      section title ("All Cont…" at 390, "All …" at 320) even though the row had space for both. */
   .actions { flex: 0 0 auto; min-width: 0; justify-content: flex-end; }
   .bar:has([data-om-search-open]) .title { display: none; }
-  .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
+  /* (REG-375) the open box shares the row — (Quotes on the move, K4 — A-09) and GIVES WAY: with text typed the box grew for its clear ✕
+     and pushed the ⋮ 8px off the screen; the cluster now takes the row and the box shrinks inside it (toolbar-search's `flex: 1 1 0`). */
+  .bar:has([data-om-search-open]) .actions { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
+  .bar:has([data-om-search-open]) .todos { display: none; }   /* the search has the row; the chips come back with the title when it folds */
 }
 
 /* (REG-384) The folded search shares the row at 768–1024 exactly as it does at ≤767 (om/toolbar-search.module.css). */

@@ -30,15 +30,25 @@
 }
 .soonTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }   /* (REG-729) the token, not heading-h3 re-typed to 20/24/600 */
 .anchor { position: relative; display: inline-flex; }
-/* Touch (REG-273 / REG-312): the status pill is a 36px DS Button; the invisible ::after grows its box to 44 without moving the mark. */
+/* Touch (REG-273 / REG-312): the status pill is a 36px DS Button; the invisible ::after grows its box to 44 without moving the mark.
+   (Quotes on the move, K2's `icon-button-overlay` rule) On the pill's own class, never on `button` under the anchor — a house IconButton
+   brings its own centred box, and an inset laid over it displaced that box. */
 @media (hover: none) and (max-width: 1024px), (max-width: 767px) {
-  .anchor > button { position: relative; }
-  .anchor > button::after { content: ''; position: absolute; inset: -4px; }
+  .pill { position: relative; }
+  .pill::after { content: ''; position: absolute; inset: -4px; }
 }
 .chev { display: inline-flex; transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }
 
-@media (max-width: 1024px) { .page[data-strip] { --bulk-bar-shift: -36px; } }
+/* (Quotes on the move, P-02 — 2026-10-22) A section's host: no box of its own on the desk. On the move (`data-shell`) the editor's frame
+   gives way — the body, the column and the reorder group lose their boxes too — and a host shows its section only as the open screen
+   (section-card.tsx draws it fixed over the list); every other host is hidden, its section still mounted. A landscape tablet (`split`)
+   keeps the list as a 360 pane: the screen starts beside it. ≤1024 nothing sits beside the sections, so the bulk bar centres on the screen. */
+.host { display: contents; }
+.page[data-shell] .body, .page[data-shell] .main, .page[data-shell] .group, .page[data-shell] .item { display: contents; }
+.page[data-shell] .host:not([data-screen]) { display: none; }
+.page[data-shell='split'] { --screen-left: 360px; }
+@media (max-width: 1024px) { .page[data-strip] { --bulk-bar-shift: 0px; } }
 @media (max-width: 767px) {
   .page[data-strip] { --bulk-bar-shift: 0px; }
   .stickyTabs.stickyTabs { top: 0; }   /* the header leaves the sticky stack ≤767 (editor-header.module.css) */

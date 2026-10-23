@@ -194,9 +194,11 @@ async function sw(scope, name) { const input = scope.getByRole('switch', { name 
     sql(`update quote_items set name='Masonry', description=NULL, description_html=NULL where quote_id='${OM1}' and kind='group' and name='Bedrooms'`)   // a section with no note of its own
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const p = await phone.newPage(); p.setDefaultTimeout(12000)
-    await p.goto(`${BASE}/quotes/${OM1}`); await ready(p)
-    await p.getByRole('button', { name: 'Edit Masonry' }).first().tap(); await p.getByTestId('line-sheet').waitFor()
-    await p.getByTestId('line-sheet').getByText('Description').first().tap()
+    await p.goto(`${BASE}/quotes/${OM1}?edit=items`); await ready(p)   // (quotes on the move, a deliberate change of this rule) a phone / touch tablet opens the Quote screen; the Items cards are the Items screen
+    // (quotes on the move, a deliberate change of this rule) a section card folds on its tap (C-04); its note opens from the card's ⋮ › Section note…
+    await p.getByRole('button', { name: 'More options for Masonry' }).first().tap(); await p.waitForTimeout(400)
+    await p.getByRole('menuitem', { name: /Edit section/ }).first().tap(); await p.getByTestId('line-sheet').waitFor(); await p.waitForTimeout(400)
+    await p.getByTestId('line-sheet').getByText('Section note').first().tap()
     const hint = p.getByTestId('trade-note-hint'); await hint.waitFor()
     ok('section note dialog quotes the trade note', (await hint.innerText()).includes('To supply labour and materials'))
     await p.screenshot({ path: `${S}/shots-tpl/19-phone-section-note.png` })

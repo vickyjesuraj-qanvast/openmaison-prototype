@@ -109,7 +109,7 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
         </div>
         {/* (UX audit C12) the Send dialog's own recipient and message pieces */}
         <RecipientFields name={name} phone={phone} onName={setName} onPhone={setPhone} nameError={touched && !nameOk ? MSG.required : undefined} phoneError={err} />
-        <MessageField value={message} onChange={(v) => setText(v)} onReset={() => setText(null)} canReset={text !== null && text !== auto} names={[name]} />
+        <MessageField value={message} onChange={(v) => setText(v)} onReset={() => setText(null)} canReset={text !== null && text !== auto} names={[name]} fold />   {/* (C4 — A-15) three lines and Show all on a phone: the tools row stays in view under the documents */}
         <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div>
       </div>
     </Dialog>

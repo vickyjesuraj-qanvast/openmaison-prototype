@@ -3,7 +3,7 @@
 import { useSeedFlag } from '@/lib/ghost-shape'   // (pending modules S41b-1) whether this member sees costs — the help says what they can do
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, TextArea } from '@/components/ds'
+import { Button, SearchBar, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
@@ -47,6 +47,9 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { ki
   | { kind: 'choose' }
   /* (pending modules S04) Draft with Maison AI: the brief as typed, the plan read for it (null while reading), and the brief it was read for */
   | { kind: 'draft' }
+  /* (Quotes on the move, K4 — P-10 · A-10) The phone's first step, studio-wide: "Who is this quote for?" — the lead, picked from a list
+     (recent first), before any way to start is offered, so nothing can be refused silently */
+  | { kind: 'who' }
 
 /**
  * Create Quote modal (REG-412 — the 1.0 "Start a quote for {lead}" screen on the 2.0 DS, chosen from the design
@@ -58,7 +61,7 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { ki
  * ≤767 it is the canvas' bottom sheet (REG-353). (pending modules S04) Draft with Maison AI is a rule-built first cut from the price book
  * (lib/quotes/draft.ts) — the brief, the lines it drafts as you type, Create the quote; Upload's chip names what it truly reads.
  */
-export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, priceBookCount, render, preselect, opensOn = null, onUpload, onDraft }: {
+export function CreateQuoteModal({ open, leadName, leadId = null, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, recent = [], priceBookCount, render, preselect, opensOn = null, onUpload, onDraft }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
@@ -75,6 +78,8 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   defaultBlock?: string | null
   /** Tools › Quotes (REG-422): the studio's leads — the modal opens with a Client field on top and a tile waits for a pick. */
   clients?: { id: string; name: string }[]
+  /** (Quotes on the move, K4 — P-10) The leads with the newest quote activity first — the phone's "Who is this quote for?" lists them before the rest. */
+  recent?: string[]
   /** The studio's My Items count — the 1.0 row's "your 8-item price book" (REG-412), from the record. */
   priceBookCount?: number
   /** (REG-489) With the brand kit and the sample quote, every tile draws the template's real first page. */
@@ -98,17 +103,30 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [clientError, setClientError] = useState(false)
-  /* (REG-495) opened on a template: the picker first — (S46A) opened to upload: Upload a quote */
-  const firstMode = (): Mode => (preselect ? { kind: 'all', selectedId: preselect } : opensOn === 'upload' && onUpload ? { kind: 'choose' } : { kind: 'rail' })
+  /* (REG-495) opened on a template: the picker first — (S46A) opened to upload: Upload a quote — (K4, P-10) on a phone, studio-wide: who it is for */
+  const firstMode = (): Mode => (preselect ? { kind: 'all', selectedId: preselect } : opensOn === 'upload' && onUpload ? { kind: 'choose' } : sheet && clients ? { kind: 'who' } : { kind: 'rail' })
   const [mode, setMode] = useState<Mode>(firstMode)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setMode(firstMode()) } }   // every opening starts afresh (render-phase adjust)
+  const [whoQuery, setWhoQuery] = useState('')
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setWhoQuery(''); setMode(firstMode()) } }   // every opening starts afresh (render-phase adjust)
   const client = clients?.find((c) => c.id === clientId) ?? null
   /* (Dane UAT 6.41) Studio-wide the Client decides everything after it: the field takes the focus as the modal opens (its active stroke
-     says "start here", and typing searches it), and a press that needs a client first brings the caret back to it with its error. */
+     says "start here", and typing searches it), and a press that needs a client first brings the caret back to it with its error.
+     (K4 — A-10) …and brings the field into view where the body scrolls (a tablet): the error used to land off-screen. On a phone the pick is
+     its own first step, so nothing is ever refused there. */
   const clientBox = useRef<HTMLDivElement>(null)
-  const focusClient = () => clientBox.current?.querySelector<HTMLElement>('button[role="combobox"]')?.focus({ preventScroll: true })
-  const needsClient = () => { if (!clients || clientId) return false; setClientError(true); focusClient(); return true }
+  const focusClient = () => { const box = clientBox.current; if (!box) return; box.scrollIntoView({ block: 'nearest' }); box.querySelector<HTMLElement>('button[role="combobox"]')?.focus({ preventScroll: true }) }
+  const needsClient = () => { if (!clients || clientId) return false; if (sheet) { setMode({ kind: 'who' }); return true } setClientError(true); focusClient(); return true }
+  /* (P-10) The phone's lead list: the ones with recent quote activity first, then the rest by name; a search narrows both. */
+  const whoRows = useMemo(() => {
+    if (!clients) return { recent: [] as { id: string; name: string }[], rest: [] as { id: string; name: string }[] }
+    const q = whoQuery.trim().toLowerCase()
+    const match = (c: { name: string }) => !q || c.name.toLowerCase().includes(q)
+    const byId = new Map(clients.map((c) => [c.id, c]))
+    const recentRows = recent.map((id) => byId.get(id)).filter((c): c is { id: string; name: string } => !!c && match(c))
+    const seen = new Set(recentRows.map((c) => c.id))
+    return { recent: recentRows, rest: clients.filter((c) => !seen.has(c.id) && match(c)) }
+  }, [clients, recent, whoQuery])
   /* (pending modules S19 — 1.0's plan gating: picking one of the studio's own templates is Pro) on Free a template's press opens the lock
      card over the window; Blank Quote is every plan's (the studio's default prints, as it always has) */
   const tplLocked = usePlanLock('template_editor').locked
@@ -171,13 +189,14 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
   useEscapeLayer(open && menuFor === null, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
   useDialogFocus(open, panel)
-  /* (Dane UAT 6.41) …after the dialog has taken the focus: the Client field, while none is picked (Tools › Quotes) */
+  /* (Dane UAT 6.41) …after the dialog has taken the focus: the Client field, while none is picked (Tools › Quotes) — on a desk; a phone's first
+     step is the list itself (K4, P-10) */
   const hasClients = !!clients
   useEffect(() => {
-    if (!open || !hasClients) return
+    if (!open || !hasClients || sheet) return
     const r = requestAnimationFrame(() => clientBox.current?.querySelector<HTMLElement>('button[role="combobox"]')?.focus({ preventScroll: true }))
     return () => cancelAnimationFrame(r)
-  }, [open, hasClients])
+  }, [open, hasClients, sheet])
   const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow follows the body's scroll (REG-322)
   /* (REG-489) Only published templates can start a quote; drafts and archived ones stay in Company › Templates. */
   const picker: PickerData | null = useMemo(() => (render ? { ...render.extras, templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
@@ -186,6 +205,9 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
   const forName = clients ? client?.name ?? '' : leadName
   const title = forName ? `Start a quote for ${forName}` : 'Start a quote'
   const pickedId = mode.kind === 'all' && picker ? defaultPick(picker, mode.selectedId) : null   /* (REG-518) the picker's selection; the footer acts on it */
+  /* (K4 — P-10) The phone's four rows: the studio's default template (or its first published one) leads; Blank quote; Upload; Draft. */
+  const defaultTpl = published.find((t) => t.isDefault) ?? published[0] ?? null
+  const phoneBack = () => { if (mode.kind === 'rail' && clients) setMode({ kind: 'who' }); else setMode({ kind: 'rail' }) }
   /* (verify round 3 · the sweep's rule, REG-656) Set as default waits with its reason in the row — the viewer's rule first, as Company ›
      Templates' row says it — never a native title, never a refusal after the press. */
   const defaultWhy = (t: { isDefault: boolean }) => defaultBlock ?? (t.isDefault ? 'Already the default' : null)
@@ -200,18 +222,75 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel: Back leads the head off the rail */}
             <SurfaceHead className={styles.heading} onClose={onClose}
-                         leading={mode.kind !== 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : undefined}
-                         title={mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' || mode.kind === 'choose' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : mode.kind === 'draft' ? `Draft with Maison AI${forName ? ` for ${forName}` : ''}` : title} />
+                         leading={mode.kind !== 'rail' && mode.kind !== 'who' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip>
+                           : sheet && clients && mode.kind === 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to who it is for" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={phoneBack} /></Tooltip> : undefined}
+                         title={mode.kind === 'who' ? 'Who is this quote for?' : mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' || mode.kind === 'choose' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : mode.kind === 'draft' ? `Draft with Maison AI${forName ? ` for ${forName}` : ''}` : title} />
             <div ref={scrollRef} className={styles.body}>
-              {clients ? (
-                /* (REG-422) Studio-wide: the Client field decides which lead the quote belongs to; a tile pressed before a pick shows the field's error. */
+              {clients && !(sheet && (mode.kind === 'who' || mode.kind === 'rail')) ? (
+                /* (REG-422) Studio-wide: the Client field decides which lead the quote belongs to; a tile pressed before a pick shows the field's error.
+                   (K4 — P-10) On a phone the pick is the first step (below) and the rows say who the quote is for in the head. */
                 <section className={styles.block} aria-label="Client">
                   <TextField label="Client" mode="select" searchable boxRef={clientBox} required value={client?.name ?? ''} options={clients.map((c) => c.name)}
                              error={clientError ? 'Choose a client first' : undefined}
                              onChange={(name) => { setClientId(clients.find((c) => c.name === name)?.id ?? null); setClientError(false) }} />
                 </section>
               ) : null}
-              {mode.kind === 'draft' ? (
+              {mode.kind === 'who' && clients ? (
+                /* (Quotes on the move, K4 — P-10 · A-10) The phone's first step: the lead, from a list — recent quote activity first, the rest by
+                   name, a search over both. A press moves on to the ways to start; the head's Back returns here. */
+                <section className={styles.block} aria-label="Who is this quote for?" data-testid="create-quote-who">
+                  <SearchBar appearance="outlined" size="md" placeholder="Search leads" aria-label="Search leads" value={whoQuery} onChange={setWhoQuery} className={styles.whoSearch} />
+                  {whoRows.recent.length ? <span className={styles.eyebrow}>Recent</span> : null}
+                  {whoRows.recent.length ? <div className={styles.list}>{whoRows.recent.map((c) => <WhoRow key={c.id} name={c.name} current={c.id === clientId} onPick={() => { setClientId(c.id); setClientError(false); setMode({ kind: 'rail' }) }} />)}</div> : null}
+                  {whoRows.rest.length ? <span className={styles.eyebrow}>{whoRows.recent.length ? 'Everyone else' : 'Leads'}</span> : null}
+                  {whoRows.rest.length ? <div className={styles.list}>{whoRows.rest.map((c) => <WhoRow key={c.id} name={c.name} current={c.id === clientId} onPick={() => { setClientId(c.id); setClientError(false); setMode({ kind: 'rail' }) }} />)}</div> : null}
+                  {!whoRows.recent.length && !whoRows.rest.length ? <p className={styles.uploadHelp} role="status">{whoQuery ? `No lead matches “${whoQuery}”.` : 'No leads yet — add one on Leads first.'}</p> : null}
+                </section>
+              ) : mode.kind === 'rail' && sheet ? (
+                /* (Quotes on the move, K4 — P-10 · A-11) On a phone a choice is a list, not a gallery: four 56px rows — the default template (its full
+                   name, what it starts with, Change for another), Blank quote, Upload a quote (the file sheet at once), Draft with Maison AI. The
+                   picker keeps the thumbnails behind Change. */
+                <section className={styles.block} aria-label="Ways to start" data-testid="create-quote-rows">
+                  <div className={styles.list}>
+                    {defaultTpl ? (
+                      <div className={styles.phoneRow} data-testid="create-row-default">
+                        <button type="button" className={styles.phoneMain} onClick={() => start(defaultTpl.id)} aria-label={`Use ${defaultTpl.name}`}>
+                          <span className={styles.glyph}><Icon name="description" size={20} weight={300} /></span>
+                          <span className={styles.rowText}>
+                            <span className={styles.rowTitle}>{defaultTpl.name}{defaultTpl.isDefault ? <MetaChip>Default</MetaChip> : null}{tplLocked ? <ProTag /> : null}</span>
+                            <span className={styles.rowDesc}>{'defaults' in defaultTpl ? startsLine(defaultTpl) : meta(defaultTpl)}</span>
+                          </span>
+                        </button>
+                        <span className={styles.phoneTrail}><Button appearance="text" onPress={() => (picker ? setMode({ kind: 'all', selectedId: defaultTpl.id }) : comingSoon())} data-testid="create-row-change">Change</Button></span>
+                      </div>
+                    ) : null}
+                    <div className={styles.phoneRow} data-testid="create-row-blank">
+                      <button type="button" className={styles.phoneMain} onClick={() => start(null)} aria-label="Blank quote — the default template’s settings, an empty table">
+                        <span className={styles.glyph}><Icon name="add" size={20} weight={300} /></span>
+                        <span className={styles.rowText}><span className={styles.rowTitle}>Blank quote</span><span className={styles.rowDesc}>The default template’s settings, an empty table</span></span>
+                        <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
+                      </button>
+                    </div>
+                    <div className={styles.phoneRow} data-testid="upload-quote-row">
+                      <button type="button" className={styles.phoneMain} onClick={onUpload ? chooseFile : comingSoon}>
+                        <span className={styles.glyph}><Icon name="upload_file" size={20} weight={300} /></span>
+                        <span className={styles.rowText}><span className={styles.rowTitle}>Upload a quote</span><span className={styles.rowDesc}>{`${UPLOAD_KINDS} · ${costOf('quote_digitize')} AI credits`}</span></span>
+                        <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
+                      </button>
+                    </div>
+                    {onDraft ? (
+                      <div className={styles.phoneRow} data-testid="draft-quote-row">
+                        <button type="button" className={styles.phoneMain} onClick={openDraft}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <span className={styles.glyph}><img src="/figma-assets/maison-ai-mark.svg" alt="" /></span>
+                          <span className={styles.rowText}><span className={styles.rowTitle}>Draft with Maison AI</span><span className={styles.rowDesc}>Describe the scope — a first cut from your {priceBookCount ? `${priceBookCount}-item ` : ''}price book</span></span>
+                          <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              ) : mode.kind === 'draft' ? (
                 <section className={styles.block} aria-label="Draft with Maison AI" data-testid="draft-quote">
                   <p className={styles.uploadHelp}>Describe the works in your own words. Maison AI drafts the quote from your price book — My Sections first, then My Items by trade. Anything it can’t price comes in at S$0 for you to price.</p>
                   <TextArea label="What’s the job?" value={brief} onChange={(v: string) => setBrief(v)} maxLength={BRIEF_MAX} autoFocus data-testid="draft-brief"
@@ -374,6 +453,16 @@ export function CreateQuoteModal({ open, leadName, leadId = null, templates, now
         </motion.div>
       ) : null}
     </AnimatePresence>
+  )
+}
+
+/** (Quotes on the move, K4 — P-10) A lead in the phone's "Who is this quote for?" list: a 56px row, the name at 16, a check on the one in hand. */
+function WhoRow({ name, current, onPick }: { name: string; current: boolean; onPick: () => void }) {
+  return (
+    <button type="button" className={styles.whoRow} onClick={onPick} aria-current={current || undefined} data-testid="create-quote-lead">
+      <span className={styles.whoName}>{name}</span>
+      {current ? <Icon name="check" size={20} /> : <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>}
+    </button>
   )
 }
 

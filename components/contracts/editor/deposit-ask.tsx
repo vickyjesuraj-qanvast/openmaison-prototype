@@ -14,12 +14,13 @@ import tick from '@/components/projects/schedule/moment.module.css'
  * editor's Send and Preview's: the house tick (the Hand over sheet's Tell row), what the client will be asked for under it — or why it can't be
  * asked for, in the row (never a silent greyed tick). Saved as it is ticked; a refusal puts it back and says why. (invented copy)
  */
-export function DepositAsk({ contractId, option, on, onChange, recipient, beforeSave }: {
+export function DepositAsk({ contractId, option, on, onChange, recipient, beforeSave, helpClassName }: {
   contractId: string
   /** the named quote's deposit, or null when no quote is named */ option: DepositOption | null
   on: boolean; onChange: (on: boolean) => void
   recipient: string
   /** the editor's pending autosave goes first (the quote it names may have just changed) */ beforeSave?: () => Promise<void>
+  /** (contracts on the move, B-17) the host's class on the help line — the send sheet reads it at 14 on a phone */ helpClassName?: string
 }) {
   const snackbar = useSnackbar()
   const [busy, setBusy] = useState(false)
@@ -34,7 +35,7 @@ export function DepositAsk({ contractId, option, on, onChange, recipient, before
   return (
     <div className={tick.tick} data-testid="send-deposit">
       <Checkbox isSelected={on && !why} isDisabled={!!why || busy} onChange={toggle}>Ask for the deposit</Checkbox>
-      <span className={tick.help} data-testid="send-deposit-help">{why ?? `Once ${firstName(recipient)} signs, the page asks for ${money2(option!.amountMinor)} — ${option!.stage} of ${option!.quoteNumber} — by PayNow to ${option!.entity}.`}</span>
+      <span className={helpClassName ? `${tick.help} ${helpClassName}` : tick.help} data-testid="send-deposit-help">{why ?? `Once ${firstName(recipient)} signs, the page asks for ${money2(option!.amountMinor)} — ${option!.stage} of ${option!.quoteNumber} — by PayNow to ${option!.entity}.`}</span>
     </div>
   )
 }

@@ -15,15 +15,17 @@
 .tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .menuWrap { position: absolute; right: var(--om-spacing-3); bottom: 17px; display: inline-flex; }
 
-/* ── Phone (≤767, REG-378's two-up folders): tiles two across, the dropzone full width; the switch row at 12/16 beside "Files (n)". */
+/* ── Phone (≤767, REG-378's two-up folders): tiles two across, the dropzone full width; the switch row beside "Files (n)" at 14 — the touch
+   scale's secondary size (quotes on the move 2026-10-22, B-15 · P-08: it read 12). */
 @media (max-width: 767px) {
   .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
-  .switchRow { font: var(--om-type-body-s); }
+  .switchRow { font: var(--om-type-body-m); }
   .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile { width: auto; }
 }
-/* ── Touch (REG-312): the 24 kebab takes a 44 box (the switch's label is its own 44-wide target). */
+/* ── Touch (REG-312): the 24 kebab's 44 box is the house icon button's own, centred on the mark (K2's rule, quotes on the move: an
+   `::after { inset }` here displaced it 22px up and left, so the caption took the taps — B-15); the anchor stands above the caption
+   it overlaps so the box is the kebab's at every pixel. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .menuWrap button { position: relative; }
-  .menuWrap button::after { content: ''; position: absolute; inset: -10px; }
+  .menuWrap { z-index: 1; }
 }

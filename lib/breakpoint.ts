@@ -23,6 +23,10 @@ export const MOBILE = '(max-width: 767px)'
 export const TABLET_DOWN = '(max-width: 1024px)'
 /** (REG-307/310) A touch pointer at tablet width or below — where hover-revealed controls are always on. */
 export const TOUCH_TABLET = '(hover: none) and (max-width: 1024px)'
+/** (Contracts on the move, P-02 · Q-01 — 2026-10-22) A tablet held sideways: the one width where an on-the-move edit keeps its section list as a
+ *  pane beside the open section (the quote editor's own `SPLIT`, named here so the contract's screens read the same literal). Held upright, a
+ *  tablet follows the phone. */
+export const TABLET_LANDSCAPE = '(min-width: 768px) and (max-width: 1024px) and (orientation: landscape)'
 
 /** One subscribe/getSnapshot pair per query, so `useSyncExternalStore` never re-subscribes on a re-render. */
 const cache = new Map<string, { subscribe: (cb: () => void) => () => void; get: () => boolean }>()

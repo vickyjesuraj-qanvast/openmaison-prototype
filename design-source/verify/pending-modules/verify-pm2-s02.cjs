@@ -283,13 +283,20 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
       if (w === 390) {
         await shot(m, 's02-07-view-390', true)
         await m.getByTestId('view-as-printed').click(); await settle(m, 1400)
-        ok(/As printed/.test(await m.locator('[class*="readCount"]').innerText()) && await sideways(m) <= 0, '390: View as printed shows the A4, still no sideways scroll')
+        /* (quotes on the move, a deliberate change of this rule) "As printed" opens the A4 in a viewer over the cards (K4, P-12 · A-17) */
+        ok(/As printed/.test(await m.getByTestId('paper-viewer').innerText()) && await m.getByTestId('paper-viewer').locator('[data-page="1"]').isVisible() && await sideways(m) <= 0, '390: View as printed opens the A4 in the viewer, still no sideways scroll')
       }
       await M.close()
     }
+    /* (quotes on the move, a deliberate change of this rule) a tablet held upright is the phone model — the cards under the total card (K4, A-15);
+       the print with the card stays for a tablet held sideways */
     { const T = await phoneCtx(768, 1024); const t = await page(T, 'tablet-768')
       await go(t, `/quote/${token}`)
-      ok(await t.locator('[data-testid="quote-view-page"] [class*="print"]').first().isVisible() && await sideways(t) <= 0, `768: the print with the card under it; no sideways scroll (${await sideways(t)})`)
+      ok(await t.getByTestId('quote-view-total-card').isVisible() && await t.getByTestId('reading-cards').isVisible() && await sideways(t) <= 0, `768 portrait: the total card and the reading cards; no sideways scroll (${await sideways(t)})`)
+      await T.close() }
+    { const T = await phoneCtx(1024, 768); const t = await page(T, 'tablet-1024')
+      await go(t, `/quote/${token}`)
+      ok(await t.locator('[data-testid="quote-view-page"] [class*="print"]').first().isVisible() && await sideways(t) <= 0, `1024 landscape: the print with the card; no sideways scroll (${await sideways(t)})`)
       await T.close() }
     for (const [w, h, touch] of [[1440, 1024, false], [390, 844, true]]) {
       const url = `${BASE}/quote/${token}`

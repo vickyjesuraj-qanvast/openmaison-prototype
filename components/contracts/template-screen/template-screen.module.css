@@ -1,0 +1,33 @@
+/* (Contracts on the move, P-10 · C-09 · C-12 · C-18 · P-13 — his "please check and built accordingly" 2026-10-22) A contract template's
+   reading screen on a phone and a touch tablet (≤1024): the Quote screen's frame (components/quotes/screen/quote-screen.module.css — the
+   canvas, the 752 column, the Next line) and the section list's rows (section-list.module.css — 64 cards, title 16/600, two lines at 14, a
+   chevron), composed, never copied. Only ever drawn at ≤1024: 16 for what is read, 14 for the line under it, 44+ targets, 16 gutters,
+   12 inside cards. */
+.screen { composes: screen from '../../quotes/screen/quote-screen.module.css'; }
+.body { composes: body from '../../quotes/screen/quote-screen.module.css'; }
+.anchor { composes: anchor from '../../quotes/screen/quote-screen.module.css'; }
+/* the status row: the Next line's card — what the template does, from the record */
+.status { composes: next from '../../quotes/screen/quote-screen.module.css'; }
+.statusIcon { composes: nextIcon from '../../quotes/screen/quote-screen.module.css'; }
+.statusText { composes: nextText from '../../quotes/screen/quote-screen.module.css'; }
+.status[data-tone='warn'] { background: var(--om-color-tertiary-yellow-variant); color: var(--om-color-on-surface-default); }
+.statusFix { display: flex; margin-top: var(--om-spacing-2); }
+.statusFix button { min-height: 44px; }   /* the DS text button grows by height on the move, never an ::after inset */
+/* the clauses, then the signing rows: two groups of the section list's cards */
+.rows { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.item { display: flex; }
+.row { composes: row from '../../quotes/screen/section-list.module.css'; }
+.text { composes: text from '../../quotes/screen/section-list.module.css'; }
+.title { composes: title from '../../quotes/screen/section-list.module.css'; overflow-wrap: anywhere; }
+.count { composes: count from '../../quotes/screen/section-list.module.css'; }
+.summary { composes: summary from '../../quotes/screen/section-list.module.css'; }
+.chev { composes: chev from '../../quotes/screen/section-list.module.css'; }
+/* a standard PDF: its first page, readable, and ONE way to open it (C-18) */
+.pdf { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.pdfPicture { display: block; width: 100%; max-height: 60dvh; object-fit: contain; object-position: top center; background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); }
+.pdfNone { display: flex; align-items: center; justify-content: center; min-height: 160px; color: var(--om-color-tertiary-red-default); background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); }
+.pdfOpen { display: flex; }
+.pdfOpen > * { flex: 1; }
+.pdfOpen button { width: 100%; min-height: 48px; }
+.pdfHelp { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.note { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }

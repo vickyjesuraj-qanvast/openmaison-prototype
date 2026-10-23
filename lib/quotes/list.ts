@@ -17,7 +17,7 @@ import { sentToClientDates } from './sent-to-client'
 /* Tools › Quotes (REG-422): every live quote in the studio with the lead it belongs to — the Quotes tab's table plus a
    Client column — and the leads the Create Quote modal's Client field can choose from. */
 
-export type StudioQuoteRow = Quote & { leadName: string; creator: Member | null; /** (UX audit Q5) the day it went to the client */ sentToClientAt: Date | null }   /* creator: REG-471 */
+export type StudioQuoteRow = Quote & { leadName: string; /** (Quotes on the move, K4 — P-06) the lead's phone: the phone card's Remind drafts a WhatsApp nudge */ leadPhone: string; creator: Member | null; /** (UX audit Q5) the day it went to the client */ sentToClientAt: Date | null }   /* creator: REG-471 */
 export type StudioQuotesData = {
   quotes: StudioQuoteRow[]
   leads: { id: string; name: string }[]
@@ -32,12 +32,14 @@ export type StudioQuotesData = {
   sample: DocData
   /** (REG-538) The picker's facts: the payment library's names and the text templates' titles. */
   extras: PickerExtras
+  /** (K4) The studio's name, as the phone card's nudge names it. */
+  studioName: string
   now: number
 }
 
 export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
   const [rows, clients, templates, approval, book, team, brand, extras] = await Promise.all([
-    db.select({ quote: quotes, leadName: leads.name }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
+    db.select({ quote: quotes, leadName: leads.name, leadPhone: leads.phone }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
       .where(and(isNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt), eq(quotes.kind, 'quote'))).orderBy(asc(quotes.createdAt)),   // (Projects round 5) not the variation orders
     db.select({ id: leads.id, name: leads.name }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.lastUsedAt), asc(quoteTemplates.createdAt)),
@@ -55,5 +57,5 @@ export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
   if (seen) { rows.splice(0, rows.length, ...rows.filter((r) => seen.has(r.quote.leadId))); clients.splice(0, clients.length, ...clients.filter((c) => seen.has(c.id))) }
   const canApprove = await isApprover(me?.id, me?.role)   // (REG-624)
   const sent = await sentToClientDates(rows.map((r) => r.quote))   // (UX audit Q5)
-  return { quotes: rows.map((r) => ({ ...r.quote, preparedJson: null /* (pending modules S04) the kept preparer stays out of the list */, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null, sentToClientAt: sent.get(r.quote.id) ?? null })), leads: await nameDirectClients(clients), templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: sampleFor(brand.details), now: Date.now() }
+  return { quotes: rows.map((r) => ({ ...r.quote, preparedJson: null /* (pending modules S04) the kept preparer stays out of the list */, leadName: r.leadName, leadPhone: r.leadPhone ?? '', creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null, sentToClientAt: sent.get(r.quote.id) ?? null })), leads: await nameDirectClients(clients), templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: sampleFor(brand.details), studioName: brand.details.name, now: Date.now() }
 }

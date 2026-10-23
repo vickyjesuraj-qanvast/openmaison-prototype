@@ -34,8 +34,11 @@ import { QuotesFiltersModal } from './quotes-filters-modal'
 import { DeleteQuotesDialog } from './delete-dialog'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { quoteColumnDefs, quoteShowApproval } from './quotes-table'
+import { remindMessage } from './quote-card-words'   // (Quotes on the move, K4 — P-06)
+import { confirmKeyOf, confirmLink } from '@/lib/quotes/confirm'
+import { firstName } from '@/lib/contracts/model'
 import styles from './lead-quotes.module.css'
 import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
 
@@ -63,9 +66,10 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   /* (Quotes on the move, K4 — P-11) a touch tablet opens with its own default set, remembered apart */
   const showApproval = quoteShowApproval(data.quotes, approval)
   const quoteDefs = useMemo(() => quoteColumnDefs(false, showApproval), [showApproval])
-  const columnPrefs = useTableColumns('lead-quotes', quoteDefs, phone)
+  const columnPrefs = useTableColumns('lead-quotes', quoteDefs, phone, touchTablet)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const filterCount = activeQuoteFilterCount(filters)
   /* (UX audit Q4 · Q5) The to-do chips: waiting for my approval (an approver's, while the studio asks for approval), waiting on the client,
@@ -130,6 +134,14 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
     } else if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`   /* (REG-625, E-117) the quote's own address — "?open=" was read by nothing */
       void copyText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
+    } else if (action === 'remind') {
+      /* (Quotes on the move, K4 — P-06) The phone card's Remind: a WhatsApp nudge with the confirmation link, drafted and opened on the press
+         (REG-534: a window opened after a round trip is eaten by a popup blocker); the designer finishes it. *(invented copy)* */
+      const digits = data.leadPhone.replace(/\D/g, ''), to = digits.length === 8 ? `65${digits}` : digits
+      if (!to) { snackbar({ message: 'No phone number on this lead — add one to send a reminder' }); return }
+      const text = remindMessage({ clientFirst: firstName(leadName), studio: data.studioName, number: quote.number, link: confirmLink(confirmKeyOf(quote)) })
+      window.open(`https://wa.me/${to}?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+      snackbar({ message: `Reminder drafted in WhatsApp for ${leadName}` })
     } else if (action === 'archive') {
       // The Undo snackbar rides with the success (RACE-03): a failed archive shows only "Couldn’t archive the quote".
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })

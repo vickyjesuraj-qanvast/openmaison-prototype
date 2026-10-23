@@ -63,7 +63,16 @@ export const DEFAULT_COLUMNS: ColumnSettings = {
   details: { description: true, images: true, autonumber: true },
   columns: COLUMN_KEYS.map((key) => ({ key, on: ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst'].includes(key) })),
 }
-export function parseColumns(json: string | null | undefined): ColumnSettings {
+/** (Quotes on the move — P-07, Q-03) The touch tablet's working grid: Item · Qty · Unit · Unit price · Total, no thumbnail, the number in the
+    Item cell. Remembered per browser under `TABLET_COLUMNS_KEY` (Column settings on a tablet edits this set), apart from the quote's own
+    desktop set — a tablet on site is a bigger phone, not a smaller desk. */
+export const TABLET_COLUMNS: ColumnSettings = {
+  details: { description: true, images: false, autonumber: true },
+  columns: COLUMN_KEYS.map((key) => ({ key, on: ['qty', 'unit', 'unitPrice'].includes(key) })),
+}
+export const TABLET_COLUMNS_KEY = 'om.items.tablet-columns'
+/** `base` = the set the stored one is read over: the quote's desktop default, or the tablet's. */
+export function parseColumns(json: string | null | undefined, base: ColumnSettings = DEFAULT_COLUMNS): ColumnSettings {
   let raw: unknown = null
   if (json) { try { raw = JSON.parse(json) } catch { raw = null } }
   const r = (raw ?? {}) as Partial<ColumnSettings>
@@ -72,8 +81,8 @@ export function parseColumns(json: string | null | undefined): ColumnSettings {
   for (const c of Array.isArray(r.columns) ? r.columns : []) {
     if (c && (COLUMN_KEYS as readonly string[]).includes(c.key) && !seen.has(c.key)) { seen.add(c.key); columns.push({ key: c.key, on: !!c.on }) }
   }
-  for (const d of DEFAULT_COLUMNS.columns) if (!seen.has(d.key)) columns.push({ ...d })
-  const d = r.details ?? DEFAULT_COLUMNS.details
+  for (const d of base.columns) if (!seen.has(d.key)) columns.push({ ...d })
+  const d = r.details ?? base.details
   return { details: { description: d.description !== false, images: d.images !== false, autonumber: d.autonumber !== false }, columns }
 }
 
@@ -127,6 +136,7 @@ export function shortLink(v: string | null | undefined): string {
     Skip the number (REG-558), Ungroup (REG-558), Save section to My Items (REG-566) and Label the sub-total (REG-555). */
 export type RowMenuAction = 'library' | /** (REG-653) */ 'libraryUpdate' | 'addFromBook' | /** (sweep S1) */ 'subtotalClear' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove' | 'noNumber' | 'ungroup' | 'saveSection' | 'subtotalLabel' | 'description' | 'oneLine' | 'comment' | /** (S44T — call C1) */ 'pricedAfter'
   | /** (S44I, B3 · B5) */ 'addSub' | 'addFromBookHere' | 'pasteHere'
+  | /** (Quotes on the move — P-03) a phone card's ⋮ › Edit…: the card opens its own sheet; the section never sees it */ 'edit'
 
 /**
  * (REG-555) Print as — what a line prints in place of its amount, and whether it counts (1.0's FOC / Inclusive / KIV words,

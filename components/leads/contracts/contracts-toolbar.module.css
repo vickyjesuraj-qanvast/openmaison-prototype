@@ -13,19 +13,10 @@
 .filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
 .filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
 
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The Quotes twin's rule (components/leads/quotes/quotes-toolbar.module.css): New Contract, Filters and
-   the kebab are the mock's 36px controls, so on a touch pointer each keeps its drawn size and gains a
-   transparent 4px ring — a 44px target that takes no space, leaving the wrapped row, the 12px gaps and
-   the filter badge exactly where they were. The selectors are the DS Button (a direct child of its
-   wrapper) and the om IconButton (inside the Tooltip's anchor span); neither reaches the Dropdown's own
-   rows, which are the shared menu's business. */
-@media (hover: none) {
-  .menuWrap > button, .menuWrap > span > button, .filterWrap button { position: relative; }
-  .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
-    content: ''; position: absolute; inset: -4px;
-  }
-}
+/* (Contracts on the move, C4 — A-09, 2026-10-22) The `(hover: none)` block that re-declared the house touch overlay as a 4px `::after` ring on
+   New Contract, Filters and the kebab left this sheet: the house IconButton and the DS md button carry the centred 44 box themselves
+   (REG-344, REG-2577; the design-lint rule `icon-button-overlay`) — the module's inset kept the house translate(−50%, −50%) and moved
+   that box by (−22, −22), so a thumb 4px right of or below the glyph missed. */
 
 /* (REG-354) The mobile canvas' toolbar is ONE row — the section title and the glyphs (2b · 2n · 3f · 3i · 3d).
    The 280px search box folds into one of those glyphs (components/om/toolbar-search.tsx) and, when it is asked
@@ -44,9 +35,17 @@
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
 
-/* (UX audit C5) The to-do chip "Awaiting signature (n)" leads the tools while something waits; when the search opens on a narrow row the chip
-   steps aside with the title, as the galleries' to-do chips do (library-gallery.module.css .todo). */
-.todo { display: inline-flex; flex-shrink: 0; }
+/* (UX audit C5) The to-do chip "Awaiting signature (n)" leads the tools while something waits. (Contracts on the move, C4 — A-07) It is a child
+   of the bar between the title and the tools (the Quotes toolbar's `.todos`): from 768 up a −4 margin keeps the desk's pixel (the chip stood
+   first inside the tools' 12 gap; the bar's gap is 16), and ≤767 it takes a line of its own under the row with its words whole — never a
+   pencil and a number. When the search opens on a narrow row the chip steps aside with the title, as the galleries' to-do chips do. */
+.todo { display: inline-flex; align-items: center; flex-shrink: 0; }
+@media (min-width: 768px) {
+  .todo { margin-right: -4px; }
+}
+@media (max-width: 767px) {
+  .todo { order: 3; flex: 1 0 100%; flex-wrap: wrap; }
+}
 @media (max-width: 1024px) {
   .bar:has([data-om-search-open]) .todo { display: none; }
 }

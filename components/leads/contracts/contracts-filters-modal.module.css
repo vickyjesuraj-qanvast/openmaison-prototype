@@ -18,17 +18,21 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The Quotes twin's rule. Each control keeps its drawn size and grows only its BOX, so the mock's 44px rows still measure the same:
-   · the footer's 36px DS buttons: a transparent ring, which takes no space;
    · the Sort radios — a DS Radio's label is only as big as its mark plus its text, so it is stretched
      over the whole 44px row (the row's padding moves onto the label; nothing shifts).
    The status rows already answer a press anywhere on their 44px box; they only stop clamping their
    checkbox, which globals grows to 44 on touch. A mouse never sees any of this. (REG-725) The close is the
    house head's; (REG-729) the Date chips are the house chip group's, each with its own target. */
+/* (Contracts on the move, C4 — A-09, 2026-10-22) the footer's `::after` ring left this sheet: the DS md button carries its own centred 44
+   box under (hover: none) (app/globals.css, REG-344) — a module's inset moved it by (−22, −22). */
 @media (hover: none) {
-  .foot button { position: relative; }
-  .foot button::after { content: ''; position: absolute; inset: -4px; }   /* 36 → 44 */
   .sortRow { padding-block: 0; }
   .sortRow label { min-block-size: 44px; inline-size: 100%; }
   .row { height: auto; min-height: 44px; }
 }
 .headSort { composes: rowRole from '../../om/filters-modal.module.css'; }   /* (pending modules S03) the head's own order, said — the projects Filters' line */
+
+/* (Contracts on the move, C4 — A-12 · P-13; the Quotes Filters' K4 — A-21) The phone's one scrolling sheet: the groups 20 apart on the sheets'
+   16 gutter, each a title over its chips (the house Chips grow to 44 on touch); the Custom dates stack under their chips. */
+.sheetBody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-4); }
+.sheetGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }

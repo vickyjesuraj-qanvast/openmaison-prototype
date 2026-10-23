@@ -32,7 +32,7 @@ export function GhostFolderGroup({ count, min, check = false }: { count: number;
  * the bones stand where the page lands: two cards a row at 390, one at 320, the kebab-free body a phone gets. The host draws its header (and
  * an intro) around it; `loading.tsx` and the page's PageReveal draw the same thing.
  */
-export function LibraryGalleryGhost({ pill = false, filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1, newW, list, first = false }: {
+export function LibraryGalleryGhost({ pill = false, filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1, newW, list, first = false, rows = 0 }: {
   /** A scope pill leads the tools (the AI Visualizer's Kind). */
   pill?: boolean
   /** The Filters button (a library with facets). */
@@ -51,6 +51,9 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
   /** (UX audit build, REG-735's first run) The library holds nothing: the bar keeps the name and ⋮, the body is the start card
       (EmptyState's own classes) — what the page opens on (lib/ghost-shape.tsx says which). */
   first?: boolean
+  /** (Contracts on the move, P-10 — opt-in, Templates › Contracts) a phone and a tablet held upright land on ROWS — the gallery's `move` — so the
+      ghost draws that many rows (and the folders as rows) there, and the cards from 768 up held sideways; the stylesheet picks. */
+  rows?: number
 }) {
   if (first) return (
     <>
@@ -75,13 +78,19 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
             <Box cls={styles.gSearch!} />
             {filters ? <Box cls={styles.gIcon!} /> : null}
             {list ? <span className={`${styles.columnsTool} ${styles.gDeskOnly}`}><Box cls={styles.gIcon!} /></span> : null}
-            <Box cls={styles.gView!} />
+            {rows ? <span className={styles.gNoRows}><Box cls={styles.gView!} /></span> : <Box cls={styles.gView!} />}
             <Box cls={styles.gIcon!} />
           </div>
         </div>
       </div>
+      {rows ? (
+        <div className={`${styles.moveList} ${styles.gRows}`} aria-hidden>
+          <div className={styles.moveGroup}>{Array.from({ length: rows }, (_, i) => <GhostMoveRow key={i} i={i} />)}</div>
+          {folders > 0 ? <div className={styles.moveGroup}>{Array.from({ length: Math.min(folders, 6) }, (_, i) => <GhostMoveRow key={i} i={i + 1} folder />)}</div> : null}
+        </div>
+      ) : null}
       {list ? <span className={styles.gListOnly}><LibraryTableGhost {...list} folders={folders} /></span> : null}
-      <div className={`${styles.gridStack}${list ? ` ${styles.gGridOnly}` : ''}`} aria-hidden>
+      <div className={`${styles.gridStack}${list ? ` ${styles.gGridOnly}` : ''}${rows ? ` ${styles.gNoRows}` : ''}`} aria-hidden>
         {folders > 0 ? <GhostFolderGroup count={folders} min={248} /> : null}
         {cards > 0 ? (
           <div className={`${gallery.grid} ${styles.cards}`}>
@@ -99,6 +108,19 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
         ) : null}
       </div>
     </>
+  )
+}
+
+/** (P-10) A row on the move as a ghost, on the row's own classes: the name over the facts line (the folder glyph before a folder's name). */
+function GhostMoveRow({ i, folder = false }: { i: number; folder?: boolean }) {
+  return (
+    <div className={styles.moveRow}>
+      <div className={styles.moveOpen}>
+        <span className={styles.moveName}><Bone w={folder ? cycle([96, 120], i) : cycle(['72%', '56%', '64%', '48%'], i)} h={16} className={styles.gLine} /></span>
+        <span className={styles.moveFacts}><span className={styles.moveFactsText}><Bone w={cycle(['82%', '70%', '76%', '64%'], i)} h={12} className={styles.gLine} /></span><Bone w={24} h={24} /></span>
+      </div>
+      <span className={styles.moveKebab}><Bone w={36} h={36} r={4} /></span>
+    </div>
   )
 }
 

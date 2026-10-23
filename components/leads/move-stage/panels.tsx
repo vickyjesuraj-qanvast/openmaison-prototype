@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { ReadOnlyScope, useReadOnly } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
@@ -18,6 +18,10 @@ import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
 import { pickable } from '@/lib/leads/assign-policy'
 import { isPdfRefusal, readPickedPdf } from '@/components/contracts/read-pdf'
+import { PhotoOrFile, useTouchPick } from '@/components/contracts/photo-or-file'
+import { readPickedContractFile } from '@/components/contracts/read-picture'
+import { isPictureData } from '@/lib/contracts/picture'
+import photoStyles from '@/components/contracts/photo-or-file.module.css'
 import { NOT_A_PDF } from '@/lib/contracts/pdf'
 
 /** (pending modules S05) A quote's PDF refusal in a quote's words — the contracts' says a contract is kept as one. */
@@ -366,8 +370,13 @@ function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreat
 }
 
 export function AttachTabs({
-  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty, viewHref,
+  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty, viewHref, touchPick, uploadedPicture = null,
 }: {
+  /** (Contracts on the move, C4 — P-12 · C-27, Q-04 as picked) On touch the Upload tab is two rows — Take a photo · Choose a file (a PDF or a
+      picture) — in the drop box's place; given by the Won step's contract alone (a quote's upload stays a PDF). The desk keeps the box. */
+  touchPick?: { ids: { photo: string; file: string }; label: string }
+  /** (C4 — P-12) the kept photo's own picture (a small JPEG) for the file row, where the upload is a photo; a PDF keeps the mock's badge */
+  uploadedPicture?: string | null
   /** (pending modules S05 — the card's "Move stage › From System quote 'View' (1.0 opened the quote)") where a row's View opens it: the
       quote's or the contract's Preview, in a new tab, so the step and what was typed in it stay as they are */
   viewHref?: (row: SystemRow) => string
@@ -382,6 +391,8 @@ export function AttachTabs({
   empty?: ReactNode
 }) {
   const ro = useReadOnly()          // read-only stage: the uploaded file keeps its row but loses its delete (REG-126)
+  const touch = useTouchPick()
+  const rows = !!touchPick && touch   // (C4 — P-12) a finger: the two rows; a mouse: the box
   return (
     <div className={styles.tabCard}>
       <div className={styles.tabBar} role="tablist">
@@ -416,16 +427,23 @@ export function AttachTabs({
           })
         ) : (
           <>
-            {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row */}
-            <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" accept=".pdf,application/pdf" uploading={uploading} onPick={onUpload} />
+            {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row. (Contracts on the move, C4 — P-12 ·
+                C-27) On touch the box is two rows — Take a photo (the camera at once) · Choose a file (a PDF or a picture) — shown until a file
+                is kept; the kept file's row then stands alone, and its Remove brings the two rows back. */}
+            {rows && touchPick ? (uploaded ? null : <PhotoOrFile ids={touchPick.ids} label={touchPick.label} uploading={uploading} onPick={onUpload} />)
+              : <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" accept=".pdf,application/pdf" uploading={uploading} onPick={onUpload} />}
             {uploaded ? (
-              <div className={styles.quoteRow} data-selected="true" data-file-row="true">
+              <div className={styles.quoteRow} data-selected="true" data-file-row="true" data-picture={uploadedPicture ? '' : undefined}>
                 <span className={styles.quoteRadio}>
                   <Icon name="radio_button_checked" size={20} weight={300} fill />
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className={styles.pdfBadge} src="/figma-assets/file-pdf.svg" alt="PDF" width={24} height={24} />
-                <span className={`${styles.quoteName} ${styles.fileName}`}>{uploaded}</span>
+                {uploadedPicture ? <img className={photoStyles.thumb} src={uploadedPicture} alt="" width={40} height={40} data-testid="won-photo-thumb" />
+                  /* a photo kept before (the step read again — its bytes live in Files, not in the log) wears the picture glyph, never the PDF badge */
+                  : /\.(jpe?g|png|webp)$/i.test(uploaded) ? <span className={styles.pdfBadge} aria-label="Photo"><Icon name="image" size={24} weight={300} /></span>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  : <img className={styles.pdfBadge} src="/figma-assets/file-pdf.svg" alt="PDF" width={24} height={24} />}
+                <span className={`${styles.quoteName} ${styles.fileName}${rows ? ` ${photoStyles.fileName}` : ''}`}>{uploaded}</span>
                 {ro ? null : (
                   <Tooltip label="Remove file">
                     <IconButton icon="delete" label="Remove file" size={24} variant="bare" iconSize={20} iconWeight={300} onClick={onRemoveUpload} />
@@ -534,11 +552,23 @@ export function WonPanel({
   /* (pending modules S03) the signed contract's PDF itself is kept with the contract the step makes — read while the upload runs; a file that
      isn't a PDF, or is over 8 MB, is refused under the box */
   const [contractPickError, setContractPickError] = useState<string | null>(null)
+  /* (Contracts on the move, C4 — P-12 · C-27, Q-04 as picked) On touch a PHOTO of the paper the client just signed is taken too — read as a JPEG
+     (a HEIC turned first), kept as the signed copy under the same name with its own extension ("Contract_OliviaM_signed.jpg"); the lead moves
+     to Won exactly as with a PDF (lib/contracts/won.ts). A desk's drop stays a PDF. */
+  const touchPick = useTouchPick()
+  /* (C4 — P-12, the right default) on touch, a lead with no contract in the system opens the contract on Upload — From System could only
+     offer "Create Contract", which leaves the step; the photo of the paper just signed is the one thing at hand. Once, never on a kept step. */
+  const roWon = useReadOnly()
+  const noSystemContract = !!contracts && contracts.length === 0
+  useEffect(() => {
+    if (touchPick && !roWon && noSystemContract && data.wonContractTab === 'system' && !data.wonContractUploaded) update({ wonContractTab: 'upload' })
+  }, [touchPick, roWon, noSystemContract])   // eslint-disable-line react-hooks/exhaustive-deps -- once, when the documents land
   const pickContract = (f?: File) => {
     setContractPickError(null)
     if (!f) return   // (S43E, F3-02 W2-01) no file, no contract — the mock's simulated upload of a named file is gone, as the signed quote's
-    const read = readPickedPdf(f)
-    contractUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setContractPickError(r.error); return } update({ wonContractUploaded: contractName, wonContractFile: { ...r, name: contractName } }) }) })
+    const photoName = contractName.replace(/\.pdf$/i, '.jpg')
+    const read = touchPick ? readPickedContractFile(f, photoName) : readPickedPdf(f)
+    contractUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setContractPickError(r.error); return } const name = isPictureData(r.data) ? r.name : contractName; update({ wonContractUploaded: name, wonContractFile: { ...r, name } }) }) })
   }
   const [justUploaded, setJustUploaded] = useState(false)
   /* (pending modules S05) the signed quote's PDF itself — its own name on the row, kept with its bytes in the lead's Files with the project */
@@ -587,6 +617,8 @@ export function WonPanel({
           selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
           uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
           onUpload={pickContract}
+          touchPick={{ ids: { photo: 'won-take-photo', file: 'won-choose-file' }, label: 'Attach the client’s signed contract' }}   /* (C4 — P-12) */
+          uploadedPicture={data.wonContractFile && isPictureData(data.wonContractFile.data) ? data.wonContractFile.thumb ?? data.wonContractFile.data : null}
           onRemoveUpload={() => { setContractPickError(null); update({ wonContractUploaded: null, wonContractFile: null }) }}
           quotes={contracts} empty={<SystemEmpty noun="contracts" onCreate={onCreateContract} />}
           viewHref={(c) => `/contracts/${c.id}/preview`}   /* (pending modules S05) */

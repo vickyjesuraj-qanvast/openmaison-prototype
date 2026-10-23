@@ -8,7 +8,7 @@ import styles from './contract-pdf.module.css'
  * sent together (through the link's own address), a PDF template in the library. `src` null = no file was kept (a contract recorded
  * before files were): its glyph and name, and whatever the host offers (the editor's Attach the PDF).
  */
-export function ContractPdf({ name, src, thumb, help, actions, testId = 'contract-pdf' }: {
+export function ContractPdf({ name, src, thumb, help, actions, testId = 'contract-pdf', picture = false }: {
   name: string
   /** The PDF's address; null when none is kept. */
   src: string | null
@@ -19,7 +19,29 @@ export function ContractPdf({ name, src, thumb, help, actions, testId = 'contrac
   /** The host's presses in the file's row (Download · Replace · Attach the PDF). */
   actions?: ReactNode
   testId?: string
+  /** (Contracts on the move, C4 — P-12, Q-04 as picked) The kept file is a PHOTO of the signed paper (the Won step's or Import's, taken on
+      site): the photo itself in the paper's place, and "Open the photo" — never a PDF viewer over a picture. */
+  picture?: boolean
 }) {
+  if (src && picture) {
+    return (
+      <div className={styles.card} data-testid={testId} data-kept="1" data-picture="">
+        <div className={styles.head}>
+          <span className={styles.glyph}><Icon name="image" size={24} fill /></span>
+          <span className={styles.name} title={name}>{name}</span>
+          <span className={styles.actions}>
+            {actions}
+            <a className={styles.open} href={src} target="_blank" rel="noopener" data-testid="pdf-open"><Icon name="open_in_new" size={18} />Open</a>
+          </span>
+        </div>
+        <a className={styles.photo} href={src} target="_blank" rel="noopener" aria-label={`Open the photo — ${name}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={`The signed paper — ${name}`} />
+        </a>
+        {help ? <p className={styles.help}>{help}</p> : null}
+      </div>
+    )
+  }
   if (!src) {
     return (
       <div className={styles.card} data-testid={testId} data-kept="">

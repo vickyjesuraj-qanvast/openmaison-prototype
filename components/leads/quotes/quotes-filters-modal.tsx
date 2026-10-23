@@ -128,6 +128,39 @@ export function QuotesFiltersModal({
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
             <SurfaceHead title="Filters" onClose={onClose} />
+            {sheet ? (
+              /* (Quotes on the move, K4 — A-21) On a phone: ONE scrolling sheet, every group a row of the house Chips — Sort · Dates · Status · Due ·
+                 Valid until — instead of the desk's two panes (five tabs, each a press, inside a 390 screen). The same draft, applied live (REG-464). */
+              <div ref={scrollRef} className={styles.sheetBody} data-testid="quote-filters-sheet">
+                <section className={styles.sheetGroup} aria-label="Sort by">
+                  <span className={styles.sectionTitle}>Sort by</span>
+                  {headSort ? <span className={styles.headSort} data-testid="filters-head-sort">Sorted by the {headSort} column. Choose an order below to sort by it instead.</span> : null}
+                  <Chips label="Sort by" options={SORTS.map((s) => ({ value: s.key, label: s.label }))} value={headSort ? null : draft.sort} onChange={(v) => { onClearHead?.(); setDraft((d) => ({ ...d, sort: v as QuoteSort })) }} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Dates">
+                  <span className={styles.sectionTitle}>Dates</span>
+                  <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.date || null} onChange={(k) => pickPreset(k as Exclude<QuoteDatePreset, ''>)} />
+                  {custom ? (
+                    <div className={styles.dateRow}>
+                      <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined} onChange={(v) => setDraft((d) => ({ ...d, from: v }))} />
+                      <DateField label="To date" value={draft.to} today={today} error={rangeBad ? MSG.dateRange : undefined} onChange={(v) => setDraft((d) => ({ ...d, to: v }))} />
+                    </div>
+                  ) : null}
+                </section>
+                <section className={styles.sheetGroup} aria-label="Status">
+                  <span className={styles.sectionTitle}>Status</span>
+                  <Chips multiple label="Status" options={quoteStatuses(approval).map((s) => ({ value: s, label: s }))} value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v as QuoteStatus[] }))} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Due">
+                  <span className={styles.sectionTitle}>Due</span>
+                  <Chips label="Due" options={DUES.map((s) => ({ value: s.key, label: s.label }))} value={draft.due} onChange={(v) => setDraft((d) => ({ ...d, due: v as QuoteDue }))} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Valid until">
+                  <span className={styles.sectionTitle}>Valid until</span>
+                  <Chips label="Valid until" options={VALIDS.map((s) => ({ value: s.key, label: s.label }))} value={draft.valid} onChange={(v) => setDraft((d) => ({ ...d, valid: v as QuoteValid }))} />
+                </section>
+              </div>
+            ) : (
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -202,6 +235,7 @@ export function QuotesFiltersModal({
                 )}
               </div>
             </div>
+            )}
             <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_QUOTE_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}

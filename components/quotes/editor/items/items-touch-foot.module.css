@@ -1,0 +1,28 @@
+/* (Quotes on the move — P-03 · P-08, 2026-10-22) The Items section's pinned foot on a phone and a touch tablet (items-touch-foot.tsx):
+   sticky at the section body's bottom, the totals strip over the two 48 adds. Rendered ≤1024 only (items-layout.ts). */
+.foot { position: sticky; bottom: 0; z-index: 3; display: flex; flex-direction: column; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4) calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); box-shadow: var(--om-shadow-modal-footer); }
+/* Subtotal · Discount · GST on one 14 line that wraps rather than clips; under it the Total at 20 with Adjust · Breakdown at the right. */
+.strip { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.sums { display: contents; }
+.line { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; min-width: 0; }   /* 14 */
+.totalRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.totalLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.totalValue { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; }   /* the amount at 20 (P-08: 18–26, tabular) */
+.stripActions { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; margin-right: calc(-1 * var(--om-spacing-2)); }
+.stripActions button { min-height: 44px; }   /* a text button's box under a finger (REG-312) */
+.adds { display: flex; gap: var(--om-spacing-3); }
+.adds > * { flex: 1 1 0; min-width: 0; }
+/* while lines are ticked the bulk bar floats at the screen's bottom (detail-bulk-bar.module.css: 32 up on a tablet, the dock + 16 on a phone): the
+   adds step away (the selection's actions are the bar's) and the totals lift above the bar, so the figure is never under it */
+:global(body[data-om-bulk-bar]) .adds { display: none; }
+:global(body[data-om-bulk-bar]) .foot { bottom: calc(32px + var(--app-bulk-bar-height, 50px) + var(--om-spacing-2)); }
+@media (max-width: 767px) {
+  :global(body[data-om-bulk-bar]) .foot { bottom: calc(var(--app-mobile-dock-height, 0px) + 16px + var(--app-bulk-bar-height, 50px) + var(--om-spacing-2)); }
+}
+/* The Adjust form: the entity, then the desktop's totals card across the body (its 434 is the desktop's — `.totals[data-touch]` spans, items-section.module.css). */
+.adjustBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.breakdownBody { display: flex; flex-direction: column; }
+/* At 320 the two text buttons go under the Total rather than squeeze it. */
+@media (max-width: 359px) {
+  .totalRow { flex-wrap: wrap; }
+}

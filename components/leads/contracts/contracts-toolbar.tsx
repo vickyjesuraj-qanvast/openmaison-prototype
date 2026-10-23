@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
@@ -9,6 +9,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { ScopePill } from '@/components/om/scope-pill'
 import { useSheetLayout } from '@/components/om/sheet'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './contracts-toolbar.module.css'
 
 export type ContractsToolbarProps = {
@@ -20,6 +21,9 @@ export type ContractsToolbarProps = {
   /** New Contract menu — not mocked; the Quotes New Quote menu (910:36664) copied: From Blank · From Template · Import from File. (pending modules
    *  S03, as the card recommends) Create with AI is gone — 1.0 had none, and nothing behind it would write a contract. */
   onNew: (kind: 'blank' | 'template' | 'import') => void
+  /** (Contracts on the move, C4 — P-09 · A-10) Tools › Contracts on a phone: the + asks "Who is it for?" first (the Create Quote step), then
+      the kind — given, the phone's + opens that instead of the three-row menu. */
+  onWho?: () => void
   onFilter: () => void
   /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
   onColumns?: () => void
@@ -43,30 +47,61 @@ export type ContractsToolbarProps = {
  * Copied from components/leads/quotes/quotes-toolbar.tsx — same geometry, the contracts' copy.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0, bundleBlock, awaiting, bare = false }: ContractsToolbarProps) {
+export function ContractsToolbar({ query, onQuery, onNew, onWho, onFilter, onColumns, filterCount, onMenu, bundleCount = 0, bundleBlock, awaiting, bare = false }: ContractsToolbarProps) {
   const noBundle = bundleBlock !== undefined ? bundleBlock : bundleCount < 2 ? 'needs two documents ready to go' : null
   const [menu, setMenu] = useState<'new' | 'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
+  /* (Contracts on the move, C4 — A-07 · P-08; the Quotes toolbar's rule, K4 — A-04) A touch tablet folds New Contract into its glyph as the
+     phone does (the row is one line there, and the labelled button alone cost the to-do chip its words at 768); the chip keeps its words. */
+  const touchTablet = useMediaQuery(TOUCH_TABLET)
+  const folded = sheet || touchTablet
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
+  /* (A-07) The to-do chip keeps its words at every width; only when the row measures that the title, the chip and the tools don't fit side by
+     side (the Tasks page's rule, S46C · H4) does it say its glyph and count — its words stay its name and its tooltip — and the words come back
+     once the row has room. Never on a phone, where the chip takes a line of its own (REG-354). Measured, never guessed. */
+  const barRef = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(false)
+  const compactRef = useRef(false)
+  const needRef = useRef(0)
+  const todoKey = awaiting && awaiting.count > 0 ? `awaiting:${awaiting.count}` : ''
+  useLayoutEffect(() => {
+    const el = barRef.current
+    if (!el || !todoKey || sheet) { if (compactRef.current) { compactRef.current = false; setCompact(false) } return }
+    const fit = () => {
+      const kids = Array.from(el.children) as HTMLElement[]
+      const gap = 16 * Math.max(0, kids.length - 1)
+      const needOf = (k: HTMLElement) => { if (k.tagName === 'H2') { const r = document.createRange(); r.selectNodeContents(k); return r.getBoundingClientRect().width } return Math.max(k.scrollWidth, k.getBoundingClientRect().width) }
+      const need = kids.reduce((n, k) => n + needOf(k), 0) + gap
+      if (!compactRef.current) {
+        if (need > el.clientWidth + 1) { needRef.current = need; compactRef.current = true; setCompact(true) }
+      } else if (el.clientWidth >= needRef.current) { compactRef.current = false; setCompact(false) }
+    }
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [todoKey, sheet])
 
   return (
-    <div className={styles.bar}>
+    <div className={styles.bar} ref={barRef}>
       <h2 className={styles.title}>All Contracts</h2>
+      {/* (UX audit C5) What waits today, before the tools — on a phone its own line under the row (A-07: its words, never a pencil and a number) */}
+      {!bare && awaiting && awaiting.count > 0 ? (
+        <span className={styles.todo} data-testid="contracts-awaiting" data-compact={compact || undefined}>
+          <Tooltip label={`Awaiting signature (${awaiting.count})`} disabled={!compact}>
+            <ScopePill tone="attention" icon="draw" menu={false} label={`Awaiting signature (${awaiting.count})`} short={compact ? String(awaiting.count) : undefined} compact={compact} selected={awaiting.on} onClick={awaiting.onToggle} />
+          </Tooltip>
+        </span>
+      ) : null}
       <div className={styles.actions}>
         {bare ? null : (<>
-        {awaiting && awaiting.count > 0 ? (
-          <span className={styles.todo} data-testid="contracts-awaiting">
-            <ScopePill tone="attention" icon="draw" menu={false} label={`Awaiting signature (${awaiting.count})`} short={String(awaiting.count)} selected={awaiting.on} onClick={awaiting.onToggle} />
-          </span>
-        ) : null}
         <span className={styles.menuWrap}>
-          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
-              the menu, its title and every action behind it are the same. */}
-          {sheet ? (
+          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon — (C4) and on a touch tablet;
+              the menu, its title and every action behind it are the same. (P-09) Tools' phone + asks who it is for first. */}
+          {folded ? (
             <Tooltip shortcut="create" label="New Contract">
               <IconButton icon="add" label="New Contract" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New Contract"
-                          onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
+                          aria-haspopup={sheet && onWho ? 'dialog' : 'menu'} aria-expanded={sheet && onWho ? undefined : menu === 'new'} data-kb="create" data-kb-label="New Contract"
+                          onClick={() => { if (sheet && onWho) onWho(); else setMenu((m) => (m === 'new' ? null : 'new')) }} />
             </Tooltip>
           ) : (
             <Button

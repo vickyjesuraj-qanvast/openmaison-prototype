@@ -20,29 +20,82 @@
 .fileName { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fileLink { composes: link from '../../om/text-link.module.css'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (REG-729) the house text link — it was body-m, underlined on hover */
 @media (hover: none) { .optionalRow { min-height: 44px; } .fileRow { min-height: 44px; } }
-/* (UX audit Q6) A phone reads the lines as cards (reading-cards.tsx); "View as printed" swaps in the A4. Above 767 only the print shows.
-   The CSS decides from the first paint — the page's media query answers only once it has hydrated. */
+/* (UX audit Q6) A phone reads the lines as cards (reading-cards.tsx); "View as printed" opens the A4 in the viewer. Above the phone model only the
+   print shows. The CSS decides from the first paint — the page's media query answers only once it has hydrated.
+   (Quotes on the move, K4 — P-12 · A-15) The PHONE MODEL is a phone, and a tablet held upright (768–1024 portrait): client-layout.ts carries the
+   same query for the render. A tablet held sideways and a desk keep the paper beside the card. */
 .phoneRead { display: none; }
 .print { display: block; }
-.readHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 44px; }
-.readCount { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
   .phoneRead { display: flex; flex-direction: column; gap: var(--om-spacing-3); width: 100%; }
   .print[data-cards]:not([data-printed]) { display: none; }
 }
 @media print { .phoneRead { display: none !important; } .print { display: block !important; } }
-/* (UX audit Q6) The ghost (confirm-skeleton.tsx): the paper above 767, the reading cards on a phone — as the page itself. (pending modules S02)
-   Its body keeps the page's 1280 measure (signing-page.module.css .body), so the card sits where the page's does at 1440 — it ran 80px right. */
+/* (UX audit Q6) The ghost (confirm-skeleton.tsx): the paper above the phone model, the total card, the reading cards and the bar on it — as the
+   page itself. (pending modules S02) Its body keeps the page's 1280 measure (signing-page.module.css .body), so the card sits where the page's
+   does at 1440 — it ran 80px right. */
 .ghostBody { width: 100%; max-width: 1280px; margin: 0 auto; }
 .ghostPaper .ghostA4 { width: min(100%, 794px); }   /* (S02) the quote's A4 at 1:1 — the contract ghost's paper is 816 */
 .ghostPaper { flex: 1; min-width: 0; display: flex; justify-content: center; }
-.ghostCards { display: none; }
+.ghostCards, .ghostTotal, .ghostBar { display: none; }
 .ghostCardText { display: flex; flex-direction: column; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
 .ghostWords { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  .ghostBody.ghostBody { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); }   /* the contract ghost's stage reverses ≤1024; the phone model reads top-down */
   .ghostPaper { display: none; }
   .ghostCards { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+  .ghostTotal { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-4); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+  .ghostBar { position: sticky; bottom: 0; display: flex; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4) calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); margin: 0 calc(-1 * var(--om-spacing-4)) calc(-1 * var(--om-spacing-4)); background: var(--om-color-surface-default); box-shadow: var(--om-shadow-modal-footer); }
+  .ghostBar > * { flex: 1; }
+  .ghostCard { display: none; }
 }
 /* (gaps build D, item 2 — M-07) a variation order the client declined: the card's mark in the error tone, their reason quoted under it */
 .declinedMark { display: inline-flex; color: var(--om-color-tertiary-red-default); }
 .declinedNote { margin: 0; font: var(--om-type-body-m); font-style: italic; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+/* ── (Quotes on the move, K4 — P-12 · A-14 · A-16 · A-17) The phone model ──────────────────────────────────────────────────────────────────
+   Read first, then a sticky Confirm: the total card leads, the reading cards follow, the optional works and the files after them, and the bar
+   holds the one action at every scroll. The desk's card (`.card`) steps out there; everything else keeps the shell. Nothing here reaches a
+   desk or a tablet held sideways — the two pieces are `display: none` outside the model, so the first paint is right before the page hydrates. */
+.totalCard, .bar { display: none; }
+.pageBody { }
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  .pageBody.pageBody { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); padding-bottom: 0; }
+  .card.card { display: none; }
+  .totalCard { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-4); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); box-shadow: var(--om-elevation-level-1); }
+  .bigLabel { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+  .bigAmount { font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+  .totalLine { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+  .totalAction { display: flex; margin-top: var(--om-spacing-2); }
+  .totalAction > * { flex: 1; }
+  .phoneExtras { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-4); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+  .phoneExtras .files { border-top: 0; padding-top: 0; }
+  .phoneExtras .files:not(:first-child) { border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding-top: var(--om-spacing-4); }
+  .bar { position: sticky; bottom: 0; z-index: 9; display: flex; flex-direction: column; gap: var(--om-spacing-2); margin: auto calc(-1 * var(--om-spacing-4)) 0; padding: var(--om-spacing-3) var(--om-spacing-4) calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); background: var(--om-color-surface-default); box-shadow: var(--om-shadow-modal-footer); }
+  .barRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
+  .barRow > button:last-child { flex: 1; }
+  .barRow > button { min-height: 48px; }
+  .barNote { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+  .barNote:empty { display: none; }
+  .barState { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; font: var(--om-type-subheading-m); color: var(--om-color-tertiary-green-default); }
+  .barState > span { color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+  .bar[data-state='not-ready'] .barState, .bar[data-state='view'] .barState { color: var(--om-color-on-surface-secondary); }
+  .barState[data-tone='declined'] { color: var(--om-color-tertiary-red-default); }
+}
+/* the floor (REG-306's 320): the bar's two buttons stack — the one primary on top, full width — instead of running past the screen */
+@media (max-width: 359px) {
+  .barRow { flex-direction: column-reverse; align-items: stretch; }
+  .barRow > button { width: 100%; }
+}
+/* a tablet held upright pads its body 24 (the shell), so the bar reaches its edges from there */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .bar, .ghostBar { margin-left: calc(-1 * var(--om-spacing-6)); margin-right: calc(-1 * var(--om-spacing-6)); padding-left: var(--om-spacing-6); padding-right: var(--om-spacing-6); }
+  .ghostBar { margin-bottom: calc(-1 * var(--om-spacing-6)); }
+}
+.sheetBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* (A-16) A client is always on a phone: 48 under a finger for every button on the card, 16 in every field, up to a tablet's width */
+@media (max-width: 1024px) {
+  .card > button, .card .optionalAskPress button { min-height: 48px; }
+  .card input, .sheetBody input { font: var(--om-type-body-l); }
+}
+@media print { .totalCard, .bar, .phoneExtras { display: none !important; } }

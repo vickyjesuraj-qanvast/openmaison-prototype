@@ -76,56 +76,65 @@
 .menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
 
-/* ── Tablet (768–1024): the six columns tighten so the table fits the ~624px centre without scrolling sideways. */
+/* ── Phone and touch tablet (≤1024 — quotes on the move 2026-10-22, B-11 · B-22 · P-08; was REG-346 / REG-377's phone card at ≤767 and a
+   six-track grid at 768–1024 that cut "Upon sigr" and overlapped its heads): each payment is a CARD — the handle down the left edge, then
+   one press (the whole card) that opens the payment's own sheet. The card reads at the touch scale: the name 16/700 over the description
+   14, the amount 20/600 tabular over "10% · On Approval" 14 on the right. No head, no inline boxes, and no Remove pinned on the row —
+   it lives in the sheet with its Undo (the 56 the pinned delete reserved made the card 10px wider than its box, B-22). The Total row is
+   one line. Nothing above 1024 changes: the desktop keeps its cells, tracks, hover delete and inline edit. */
 @media (max-width: 1024px) {
-  .head, .row, .totalRow { grid-template-columns: 36px 132px minmax(80px, 1fr) 80px 112px 156px; min-width: 0;   /* the tablet's 596 centre: Due 156 = 120 + the delete's room at a 12 inset (REG-448); name, % and amount give the 36 back */ }   /* the desktop floor (--pay-min, the mock's tracks) is released with the tracks themselves (REG-430) */
-  .cell { padding: var(--om-spacing-3) var(--om-spacing-2); }
-  .cSel { padding-left: var(--om-spacing-2); }
-  .cDue { padding-right: 60px; }   /* 12 inset + 36 + 12 */
-  .del.del { right: var(--om-spacing-3); }
-  .card { height: 120px; }
-}
-/* ── Phone (≤767, REG-346 / REG-377 pattern): each milestone is a card — name and description on the left, share, amount and
-   due stacked on the right, the handle down the left edge, the delete pinned top-right; the head goes, the Total row is one line. */
-@media (max-width: 767px) {
-  .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .head { display: none; }
-  .head, .row, .totalRow { min-width: 0; }
+  .head, .row, .totalRow { min-width: 0; }   /* the desktop floor (--pay-min, the mock's tracks) is released with the tracks themselves (REG-430) */
   .cell.cSel, .cell.cName { position: static; clip-path: none; box-shadow: none; }   /* the doubled class above needs the same weight to be released */
-  /* (S44T — bug fix, found with UAT row 310's word) the right side clears the pinned delete — a touch's 44 box and its inset — so a share,
-     a fixed fee's word or an amount is never drawn under it */
-  .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel desc amount' 'sel desc due'; align-items: start; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) 56px var(--om-spacing-3) 0; }
+  .row { grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: 'sel card'; align-items: stretch; padding: 0; }
   .row .cell { padding: 0; }
   .cSel { grid-area: sel; padding-left: var(--om-spacing-2); align-self: center; }
-  .cName { grid-area: name; white-space: normal; }
-  .cDesc { grid-area: desc; white-space: normal; color: var(--om-color-on-surface-secondary); }
-  .cDesc .cellBtn { white-space: normal; }
-  .cPct { grid-area: pct; }
-  .cAmount { grid-area: amount; }
-  .cDue { grid-area: due; padding-right: 0; }
-  .cPct, .cAmount, .cDue { padding-left: var(--om-spacing-3); }
-  .del.del { opacity: 1; pointer-events: auto; right: var(--om-spacing-2); top: var(--om-spacing-2); transform: none; }
-  .totalRow { grid-template-columns: 36px 1fr auto; grid-template-areas: 'sel name pct' 'sel name amount'; padding: var(--om-spacing-3) 56px var(--om-spacing-3) 0; row-gap: var(--om-spacing-1); }   /* (S44T) its figures under the rows' */
-  .totalRow .cell { padding: 0; }
+  .cardCell { grid-area: card; min-width: 0; display: flex; flex-direction: column; white-space: normal; }
+  .cardBtn {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name amount' 'desc share'; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-0-5);
+    align-items: baseline; width: 100%; min-height: 72px; padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) 0;   /* P-08's 12 inside a card: the name's column keeps a word like "Commencement" whole beside "30% · ~ 20 Sep ’26" */
+    border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: var(--om-radius-1);
+  }
+  .cardBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+  .cardBtn[data-locked] { cursor: default; }   /* (REG-589) the studio keeps the schedule: the card reads, nothing opens */
+  .cardName { grid-area: name; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+  .cardDesc { grid-area: desc; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+  .cardDesc[data-empty] { color: var(--om-color-on-surface-disabled); }
+  .cardAmount { grid-area: amount; font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  .cardShare { grid-area: share; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  /* (parity map, MI-021) the first payment's % · S$ switch sits under its card, off the press */
+  .cardFee { display: flex; align-items: center; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-3) var(--om-spacing-3) 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+  .totalRow { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel name amount'; padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) 0; row-gap: var(--om-spacing-0-5); }
+  .totalRow .cell { padding: 0; white-space: normal; }
   .totalRow .cSel { grid-area: sel; }
-  .totalRow .cName { grid-area: name; align-self: center; }
+  .totalRow .cName { grid-area: name; align-self: center; font: var(--om-type-heading-h4); }
   .totalRow .cDesc, .totalRow .cDue { display: none; }
-  .totalRow .cPct { grid-area: pct; } .totalRow .cAmount { grid-area: amount; }
-  .editInput { position: relative; height: 44px; }
-  .editGhost { display: none; }
+  .totalRow .cPct { grid-area: pct; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+  .totalRow .cAmount { grid-area: amount; font: var(--om-type-subheading-xl); font-variant-numeric: tabular-nums; }
+  .totalRow[data-error] .cPct, .totalRow[data-error] .cAmount { color: var(--om-color-tertiary-red-default); }
+  .error { font: var(--om-type-subtitle-l); color: var(--om-color-tertiary-red-default); }   /* 16/500 — a sentence is never under 16 on a touch screen (P-08) */
+}
+@media (max-width: 767px) {
+  .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .foot > * { width: 100%; }
 }
-/* ── Touch (REG-273 / REG-312): the 24 handle, delete and confirm pair take 44 boxes; every value control stands 44 tall. */
+/* ── Touch (REG-273 / REG-312): the 24 handle takes a 44 box OF ITS OWN — `position: relative` (B-01, bug fix: the handle was never positioned,
+   so its box hung off the row and every tap on a value landed on the handle). The confirm pair and the hover delete are house icon buttons
+   and bring their own centred 44 (K2's rule: never `::after { inset }` over an icon button — it displaced the box by 22px); every value
+   control stands 44 tall. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .cancelBtn.cancelBtn, .okBtn.okBtn { position: relative; }   /* (REG-729) each 44 box on its own button — they both hung off the pair's frame, ✓'s over ✕ */
-  .handle::after, .cancelBtn::after, .okBtn::after { content: ''; position: absolute; inset: -10px; }
+  .handle, .cancelBtn.cancelBtn, .okBtn.okBtn { position: relative; }   /* (REG-729) each 44 box on its own button — they both hung off the pair's frame, ✓'s over ✕ */
+  .handle::after { content: ''; position: absolute; inset: -10px; }
   .del.del { opacity: 1; pointer-events: auto; }
-  .del::after { content: ''; position: absolute; inset: -4px; }
   .cellBtn { min-height: 44px; display: flex; align-items: center; margin: -12px 0; }
   .cPct .cellBtn, .cAmount .cellBtn, .cDue .cellBtn { justify-content: flex-end; }
-  .tools button { position: relative; }
-  .tools button::after { content: ''; position: absolute; inset: -4px; }
 }
+/* The payment's sheet (≤1024): the share and the amount side by side, the fee's two the same; Remove at the foot's start in the danger ink. */
+.sheet { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-3); }
+.sheetHint { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.removeBtn { color: var(--om-color-tertiary-red-default); }
+@media (max-width: 359px) { .pair { grid-template-columns: 1fr; } }
 
 /* (REG-589) A locked schedule: the cells read as text — no hover box, no caret. */
 .cellBtn:disabled { cursor: default; }
@@ -136,4 +145,3 @@
 .nameRow > .cellBtn { flex: 1 1 auto; width: auto; min-width: 0; }
 .feeSwitch { flex: none; flex-wrap: nowrap; gap: var(--om-spacing-1); }
 .feeWord { display: block; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-@media (max-width: 1024px) { .nameRow { flex-wrap: wrap; row-gap: var(--om-spacing-1); } }

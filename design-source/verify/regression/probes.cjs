@@ -37,4 +37,15 @@ add('first-run-full', 'first-run-2026-09-30/verify-first-run.cjs', { args: ['$L/
 add('panel-order', 'view-as/verify-panel-order.cjs')
 add('view-as', 'view-as/verify-view-as.cjs')
 for (const r of [1, 2, 3, 4]) add(`xr-r${r}`, `x-ray-parity/verify-xr-r${r}.cjs`)
+// Quotes on the move (2026-10-22): the five package probes and the pending-modules / projects probes the build touched — the pm2 shape
+// (args <scratch.db> [shotDir] [base], env BASE), run on a copy of base.db like every other.
+for (const k of [1, 2, 3, 4, 5]) add(`rq-k${k}`, `responsive-quotes/verify-rq-k${k}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+for (const s of ['s02', 's04', 's10', 's43e', 's44f', 's44i', 's44o', 's44q', 's44t', 's46a', 's46b', 's46c']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+add('pj-gap-d', 'projects/verify-pj-gap-d.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// Contracts on the move (2026-10-22, late): the four package probes (the rc-k5 shape) + the probes the build touched.
+for (const c of [1, 2, 3, 4]) add(`rc-c${c}`, `responsive-contracts/verify-rc-c${c}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+for (const s of ['s03', 's11', 's29', 's42b', 's44g', 's44r', 's46d']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+add('pm-f', 'parity-map-build/verify-pm-f.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+for (const r of [1, 5, 6]) add(`pj-r${r}`, `projects/verify-pj-r${r}.cjs`, { args: ['$DB', '$L/shots'] })   // the project Overview / Money that C4's Documents card and To collect line touch
+add('pj-gap-f2', 'projects/verify-pj-gap-f2.cjs', { args: ['$DB', '$L/shots'] })
 module.exports = P

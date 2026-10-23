@@ -1,0 +1,38 @@
+/* (Quotes on the move, P-02 · P-09) The section list — a full-height layer over the Quote screen (fixed, z 30: under a section screen at 40),
+   the bar, then the rows as cards on the 16 gutter: title 16/600 with its count, the one-line summary 14, a chevron; 44+ tall. On a
+   landscape tablet (`data-pane`) it is the 360 left pane with a rule on its right, the open section beside it. */
+.layer {
+  position: fixed; inset: 0; z-index: 30;
+  display: flex; flex-direction: column;
+  background: var(--om-color-surface-bg);
+  overflow: hidden;
+}
+.layer[data-pane] { right: auto; width: var(--list-pane, 360px); box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }   /* (Contracts on the move, P-02) a host may name its pane's width — the contract's is 300, the quote's stays 360 */
+.layer[inert] { visibility: hidden; }   /* under a section screen on a phone: out of reach, its scroll kept for ← */
+.rows {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; gap: var(--om-spacing-2);
+  list-style: none; margin: 0;
+  padding: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px));
+  width: 100%; max-width: 752px; align-self: center;   /* 720 of content on a tablet held upright */
+}
+.item { display: flex; }
+.row {
+  flex: 1; display: flex; align-items: center; gap: var(--om-spacing-3);
+  min-height: 64px; padding: var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  color: inherit; text-align: left; cursor: pointer;
+}
+.row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.row[aria-current='true'] { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.title { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.count { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); }
+.summary { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.chev { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+/* the bar's Done (a DS text button) takes a 44 box on touch by height, not by an ::after inset (C-03) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .done > button, .done button { min-height: 44px; }
+}

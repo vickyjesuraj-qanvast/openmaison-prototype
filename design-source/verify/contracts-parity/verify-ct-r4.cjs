@@ -175,11 +175,13 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     ok('the archive too', /archived the contract/.test(t))
     await shot('05-activity')
   })
-  await step('the Outline is a drawer at 1024', async () => {
+  await step('the Outline is a pane at 1024', async () => {
+    /* (contracts on the move, a deliberate change of this rule) ≤1024 opens the Contract screen; the paper is the Document screen
+       (`?edit=document`) and its Outline, on a tablet held sideways, is a pane at the paper's left — never a drawer over it (P-02 · B-13) */
     const t = await browser.newContext({ viewport: { width: 1024, height: 768 } }); const tp = await t.newPage()
-    await tp.goto(`${BASE}/contracts/probe-ct4-nosign`); await tp.getByTestId('contract-editor').waitFor(); await ready(tp)
-    await tp.getByRole('button', { name: 'Outline' }).click(); await tp.waitForTimeout(600)
-    ok('the Outline opens as a drawer', (await tp.getByRole('dialog', { name: 'Outline' }).count()) + (await tp.locator('[aria-label="Outline"][role="dialog"], [data-testid="contract-outline"]').count()) > 0 && await tp.getByTestId('contract-outline').isVisible())
+    await tp.goto(`${BASE}/contracts/probe-ct4-nosign?edit=document`); await tp.getByTestId('document-screen').waitFor(); await ready(tp)
+    await tp.getByTestId('document-outline').click(); await tp.waitForTimeout(600)
+    ok('the Outline opens as a pane beside the paper', await tp.getByTestId('document-outline-pane').count() === 1 && await tp.getByTestId('contract-outline').isVisible() && (await tp.getByRole('dialog', { name: 'Outline' }).count()) === 0)
     await tp.screenshot({ path: `${S}/shots-ct4/06-outline-drawer.png` })
     await t.close()
   })

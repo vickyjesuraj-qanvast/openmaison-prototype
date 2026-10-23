@@ -74,6 +74,8 @@ export type RowHandlers = {
   onComments: (item: QuoteItem) => void
   /** (REG-571) The handle pressed: the pointer drag starts (row-drag.ts). */
   onDragPointerDown: (id: string, e: ReactPointerEvent<HTMLButtonElement>) => void
+  /** (Quotes on the move — P-07) A touch tablet: the rest of a line's fields open in the pane — a tap on its Total, or ⋮ › Edit… */
+  onOpenLine?: (item: QuoteItem) => void
 }
 
 /**
@@ -84,8 +86,11 @@ export type RowHandlers = {
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
 export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors, comments = 0, change = null,
-  tree, carried = false, count, dropInto = false, chained = false, runCol = null, runEnd = false,
+  tree, carried = false, count, dropInto = false, chained = false, runCol = null, runEnd = false, touchGrid = false,
 }: {
+  /** (Quotes on the move — P-07) The touch tablet's working grid: no # column (the number rides in the Item cell), the Total a press that
+   *  opens the rest of the line in the pane, the ⋮ the phone's five rows. */
+  touchGrid?: boolean
   /** (UX audit Q10) On a revision: the line is new since the kept version, or its name, quantity, price or discount changed — tinted, tagged. */
   change?: LineChange | null
   /** (REG-627) How many comments the line's thread holds. */
@@ -301,12 +306,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           <Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on, shiftHeld.current)} aria-label={`Select ${item.name}`} />
         </span>
       </div>
-      {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{noNumber ? <Tooltip label={NO_NUMBER_WHY[noNumber]}><span className={styles.muted} aria-label="No number" tabIndex={0}>–</span></Tooltip> : number}</div> : null}
+      {details.autonumber && !touchGrid ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{noNumber ? <Tooltip label={NO_NUMBER_WHY[noNumber]}><span className={styles.muted} aria-label="No number" tabIndex={0}>–</span></Tooltip> : number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
         {/* (S44I, B11 — call C1 as recommended, his ask 2026-10-15; REVERSES REG-457 / REG-440's child half) a section keeps its 4px bar and its
             band; its lines sit on white and the tree's guides say whose they are */}
         {isGroup ? <span className={styles.groupBar} aria-hidden /> : null}
         {tree ? <Guides tree={tree} /> : null}
+        {/* (P-07) the number rides in the Item cell on the touch grid — on its own line, so no whitespace text node reaches the desktop's cell */}
+        {touchGrid && details.autonumber && number ? <span className={styles.numInline} data-testid="num-inline">{number}</span> : null}
         {count ? <span className={styles.liftCount} data-testid="lift-count"><MetaChip>{count} lines</MetaChip></span> : null}
         {/* (Dane UAT 6.11, g-photowell) A section or sub-section never prints a picture (slices.tsx prints line photos only) — no well on its
             row, so its name has the room; a line keeps the mock's well (1260:31253), as the phone's cards already do. */}
@@ -403,7 +410,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
       {/* (Dane UAT 6.15, g-expanded) A line selling under its cost: its Unit Price and Total figures turn the error red beside the tag (REG-623) —
           only while the Cost column is on, as the tag. */}
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`} data-below={under || undefined}>
-        {fromSection ? (
+        {h.onOpenLine ? (
+          /* (P-07) on the touch grid the amount is the press that opens the rest of the line in the pane (the name, the words, cost and
+             markup, the labels…); the words a line prints in place of its amount stay in the pane's own row */
+          <button type="button" className={styles.totalOpen} data-testid="total-open" aria-label={`Open ${item.name || (isGroup ? 'section' : 'item')} — every field`} onClick={() => h.onOpenLine?.(item)}>
+            <span className={styles.total} data-struck={fromSection ? '' : undefined}>{word && item.printAs !== 'behalf' ? word : money2(total)}</span>
+          </button>
+        ) : fromSection ? (
           /* (S44I — M17) a line in a section that prints a word: its figure stays the studio's, struck — the section's word stands for it */
           <Tooltip label={`In “${fromSection.name}”, which prints “${printAsWord(fromSection)}” — ${money2(total)} not counted`}>
             <span className={styles.totalWord} tabIndex={0} data-testid="line-under-word"><span className={styles.total} data-struck="">{money2(total)}</span><span className={styles.totalUnder}>{printAsWord(fromSection)}</span></span>
@@ -429,8 +442,8 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             </span>
           </Tooltip>
         </span>
-        <RowMenu open={menu === 'row'} anchor={kebabRef} item={item} groups={groups} all={all} selectedCount={selected ? selectedCount : 1} brandColors={brandColors}
-                 onClose={() => setMenu(null)} onAction={(a) => { if (a === 'description') setDescOpen(true); else h.onMenu(item, a) }} onChooseGroup={(g) => h.onChooseGroup(item, g)}
+        <RowMenu open={menu === 'row'} anchor={kebabRef} item={item} groups={groups} all={all} selectedCount={selected ? selectedCount : 1} brandColors={brandColors} compact={touchGrid}
+                 onClose={() => setMenu(null)} onAction={(a) => { if (a === 'description') setDescOpen(true); else if (a === 'edit') h.onOpenLine?.(item); else h.onMenu(item, a) }} onChooseGroup={(g) => h.onChooseGroup(item, g)}
                  onPrintAs={(v) => h.onPrintAs(item, v)} onHighlight={(v) => h.onHighlight(item, v)} onAddSeveral={(n, where) => h.onAddSeveral(item, n, where)} />
       </div>
     </div>

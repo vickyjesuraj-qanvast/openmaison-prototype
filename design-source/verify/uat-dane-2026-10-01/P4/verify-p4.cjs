@@ -110,7 +110,7 @@ function slowNextAction(ctx, ms = 1600) {
 
   /* ── g-tickwords (UAT 8.05): Tick to accept fills the words, a two-line box ── */
   await step('g-tickwords', async () => {
-    const sw = page.getByTestId('esign-gates').locator('label').filter({ has: page.getByRole('switch', { name: 'Tick to accept' }) })
+    const sw = page.getByTestId('esign-gates').locator('label').filter({ has: page.getByRole('switch', { name: 'Tick to accept' }) }).first()   // the whole row is a label now, round the DS switch's own (contracts on the move, a deliberate change of this rule — C-13)
     ok('g-tickwords starts off on Olivia’s draft', !(await page.getByRole('switch', { name: 'Tick to accept' }).isChecked()))
     await sw.click(); await page.waitForTimeout(300)
     const box = page.getByTestId('esign-accept-words').locator('textarea')
@@ -252,22 +252,28 @@ function slowNextAction(ctx, ms = 1600) {
     await p.goto(`${BASE}/contracts/${FRESH}`); await p.getByTestId('contract-editor').waitFor(); await ready(p)
     const send = p.getByRole('button', { name: 'Send', exact: true })
     await send.first().click(); await p.waitForTimeout(600)
-    const code = p.locator('[role="dialog"] code').first()
-    await code.waitFor()
-    const f = await code.evaluate((c) => { const s = getComputedStyle(c); return { ws: s.whiteSpace, us: s.userSelect || s.webkitUserSelect, cut: c.scrollWidth > c.clientWidth + 1, text: c.textContent, h: Math.round(c.getBoundingClientRect().height) } })
-    ok('12.10 the link shows whole, wrapped, and a press selects all of it', f.ws === 'normal' && f.us === 'all' && !f.cut && /\/sign\//.test(f.text), JSON.stringify(f))
-    await code.scrollIntoViewIfNeeded()
+    /* (quotes on the move, a deliberate change of this rule — REG-K5.7, B-17) a phone's Send window has NO link row: the sheet fits without
+       it, and Copy link in the foot is how a phone shares the link. The row — wrapped, select-all on a press (12.10) — stays on wider screens;
+       it is still in the DOM, hidden, so visibility is what is tested. */
+    const dlg = p.locator('[role="dialog"]').first(); await dlg.waitFor()
+    const copy = dlg.getByRole('button', { name: /Copy link|Copied/ }); await copy.waitFor()
+    const linkRowShown = await dlg.locator('code').first().isVisible().catch(() => false)
+    const copyInFoot = await copy.isVisible() && !!(await copy.evaluate((b) => b.closest('[data-surface-foot]')))
+    ok('12.10 (quotes on the move, a deliberate change of this rule) on a phone the Send window has no link row — Copy link in the foot shares it', !linkRowShown && copyInFoot, JSON.stringify({ linkRowShown, copyInFoot }))
     await p.screenshot({ path: path.join(OUT, '1210-phone-send-link.png') })
     /* the banners at 390 */
-    await p.goto(`${BASE}/contracts/${RYAN_C}`); await p.getByTestId('contract-banner').waitFor(); await ready(p)
-    const c = await bannerFacts(p.getByTestId('contract-banner'))
-    ok('g-banner 390: the signed contract’s banner is full width', fullBleed(c), JSON.stringify(c))
-    await p.getByTestId('contract-banner').scrollIntoViewIfNeeded()
+    /* (contracts on the move, a deliberate change of this rule — C1's P-01, met by C4's landing run) a phone opens the Contract screen: the signed
+       banner's words are its Next line, a card on the 16 gutter, as the quote's */
+    await p.goto(`${BASE}/contracts/${RYAN_C}`); await p.getByTestId('contract-next').waitFor(); await ready(p)
+    const cn = await p.getByTestId('contract-next').boundingBox()
+    ok('g-banner 390: the signed contract’s words are the Contract screen’s Next line', !!cn && Math.round(cn.x) === 16 && Math.round(cn.x + cn.width) === 390 - 16 && /signed/i.test(await p.getByTestId('contract-next').innerText()), JSON.stringify(cn))
+    await p.getByTestId('contract-next').scrollIntoViewIfNeeded()
     await p.screenshot({ path: path.join(OUT, 'g-banner-contract-signed-390.png') })
-    await p.goto(`${BASE}/quotes/${RYAN_Q}`); await p.getByTestId('sent-banner').waitFor(); await ready(p)
-    const q = await bannerFacts(p.getByTestId('sent-banner'))
-    ok('g-banner 390: the quote’s sent banner is full width', fullBleed(q), JSON.stringify(q))
-    await p.getByTestId('sent-banner').scrollIntoViewIfNeeded()
+    /* (quotes on the move, a deliberate change of this rule) a phone opens the Quote screen: the sent banner's words are its Next line, a card on the 16 gutter */
+    await p.goto(`${BASE}/quotes/${RYAN_Q}`); await p.getByTestId('quote-next').waitFor(); await ready(p)
+    const qn = await p.getByTestId('quote-next').boundingBox()
+    ok('g-banner 390: the quote’s sent words are the Quote screen’s Next line', !!qn && Math.round(qn.x) === 16 && Math.round(qn.x + qn.width) === 390 - 16 && /signed/i.test(await p.getByTestId('quote-next').innerText()), JSON.stringify(qn))
+    await p.getByTestId('quote-next').scrollIntoViewIfNeeded()
     await p.screenshot({ path: path.join(OUT, 'g-banner-quote-sent-390.png') })
     await phone.close()
   })

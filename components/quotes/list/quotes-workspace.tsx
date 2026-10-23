@@ -37,8 +37,11 @@ import type { StudioQuotesData } from '@/lib/quotes/list'
 import pageStyles from '@/app/leads/leads.module.css'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { quoteColumnDefs, quoteShowApproval } from '@/components/leads/quotes/quotes-table'
+import { remindMessage } from '@/components/leads/quotes/quote-card-words'   // (Quotes on the move, K4 — P-06)
+import { confirmKeyOf, confirmLink } from '@/lib/quotes/confirm'
+import { firstName } from '@/lib/contracts/model'
 import styles from './quotes-workspace.module.css'
 import { orThrow } from '@/lib/company/template-rules'   // (S45C) a refused action's rule becomes the caller's "Couldn’t …"
 
@@ -65,9 +68,13 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   /* (Quotes on the move, K4 — P-11) a touch tablet opens with its own default set, remembered apart */
   const showApproval = quoteShowApproval(data.quotes, approval)
   const quoteDefs = useMemo(() => quoteColumnDefs(true, showApproval), [showApproval])
-  const columnPrefs = useTableColumns('studio-quotes', quoteDefs, phone)
+  const columnPrefs = useTableColumns('studio-quotes', quoteDefs, phone, touchTablet)
+  const phoneOf = useMemo(() => new Map(quotes.map((q) => [q.id, q.leadPhone])), [quotes])
+  /* (K4 — P-10) The leads with the newest quote activity, first — the phone's "Who is this quote for?" lists them before the rest. */
+  const recentLeads = useMemo(() => [...new Set([...quotes].sort((a, b) => (b.updatedAt ?? b.createdAt).getTime() - (a.updatedAt ?? a.createdAt).getTime()).map((q) => q.leadId))].slice(0, 5), [quotes])
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const filterCount = activeQuoteFilterCount(filters)
   /* (UX audit Q4 · Q5) The to-do chips — waiting for my approval (an approver's), waiting on the client, expiring this week; a chip whose count
@@ -137,6 +144,15 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
     if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`
       void copyText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
+    } else if (action === 'remind') {
+      /* (Quotes on the move, K4 — P-06) The phone card's Remind: a WhatsApp nudge with the confirmation link, drafted and opened on the press
+         (REG-534: a window opened after a round trip is eaten by a popup blocker); the designer finishes it. *(invented copy)* */
+      const name = nameOf.get(quote.id) ?? 'there'
+      const digits = (phoneOf.get(quote.id) ?? '').replace(/\D/g, ''), to = digits.length === 8 ? `65${digits}` : digits
+      if (!to) { snackbar({ message: 'No phone number on this lead — add one to send a reminder' }); return }
+      const text = remindMessage({ clientFirst: firstName(name), studio: data.studioName, number: quote.number, link: confirmLink(confirmKeyOf(quote)) })
+      window.open(`https://wa.me/${to}?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+      snackbar({ message: `Reminder drafted in WhatsApp for ${name}` })
     } else if (action === 'archive') {
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })
     } else if (action === 'delete') {
@@ -185,7 +201,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={setFilters}   /* (REG-464) live — the modal closes on Done */ onClose={() => setFiltersOpen(false)}
                             headSort={headSort ? ({ status: 'Status', total: 'Total', due: 'Due', created: 'Created', sent: 'Sent to client', valid: 'Valid until', updated: 'Updated', approval: 'Approval Date' } as const)[headSort.key] : null} onClearHead={() => setHeadSort(null)} />
-        <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null); setCreateStart(null) }}
+        <CreateQuoteModal open={createOpen} leadName="" clients={leads} recent={recentLeads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null); setCreateStart(null) }}
                           render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect} opensOn={createStart}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}

@@ -1,0 +1,102 @@
+/* The Document screen's content on a phone and a touch tablet (contracts on the move 2026-10-22 — P-03 · P-04 · C-13 · C-15 · C-16, absorbing
+   B-03 B-04 B-05 B-12 B-13 B-19 B-20 C-08 C-10 C-11 C-17): the one tool row with + ▾, a signature field placed by choosing where, a box's own
+   ✕, a Smart Text chip's tap sheet, the Signature fields rows and the Before-the-client-signs label rows. Every rule that changes a look sits
+   under the ≤1024 queries; the desk's bar, paper and drawer (contract-editor.module.css) are untouched. P-13's scale: 16 · 14 · 44. */
+
+/* ── The one tool row (P-03, B-03 · C-08): Undo · Text ▾ · B · I · U · List · + ▾ — 44 boxes at a 44 pitch, nothing scrolls sideways; narrower
+   than its tools (320) the last wraps rather than hides. Sticky under the host's chrome: today's editor keeps the header and the meta row
+   above it on a tablet (76 + 56); the Document screen's frame sets `--doc-tools-top: 0px`. A tool composes the rich editor's (the house 24
+   glyph with its hover · pressed · focus · disabled) and grows the box, never the mark. */
+.tool { composes: tool from '../../quotes/editor/text/rich-editor.module.css'; }
+@media (max-width: 1024px) {
+  .row { position: sticky; top: var(--doc-tools-top, calc(76px + 56px)); z-index: 18; display: flex; flex-wrap: wrap; align-items: center; min-height: 44px; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-default); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .row .tool { width: 44px; height: 44px; flex-shrink: 0; }
+  .row .tool::after { content: none; }   /* the rich editor's tablet reach (±10) would overlap a touching neighbour: a 44 box is its own target */
+  .anchor { position: relative; display: inline-flex; min-width: 0; }
+  .styleBtn { display: inline-flex; align-items: center; height: 44px; min-width: 44px; max-width: 136px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+  .styleBtn:hover { background: var(--om-color-hover-08p); }
+  .styleBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+  .styleBtn[data-open] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+  .styleBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: none; }
+  .styleLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chev { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+  .chev[data-open] { transform: rotate(180deg); }
+  .rowEnd { display: inline-flex; align-items: center; margin-left: auto; margin-right: var(--om-spacing-2); }
+  .plusAnchor { margin-left: auto; }
+  .rowEnd + .plusAnchor { margin-left: 0; }
+  .plusBtn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--om-radius-1); background: none; color: var(--om-color-primary-default); cursor: pointer; }
+  .plusBtn:hover { background: var(--om-color-hover-08p); }
+  .plusBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+  .plusBtn[data-open] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+  .plusBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: none; }
+  .plusBtn .chev { color: inherit; }
+}
+@media (max-width: 767px) { .row { top: var(--doc-tools-top, 0px); } }
+
+/* ── The + ▾ sheet's rows (C-16): a field's label with what it prints here at the row's end — 14, a value is never under 14 (P-13); an empty
+   record says so in red, as the desk's menu does. */
+.rowText { flex: 1; min-width: 0; text-align: left; }
+.rowSample { margin-left: auto; padding-left: var(--om-spacing-4); max-width: 50%; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowSample[data-empty] { color: var(--om-color-tertiary-red-default); font-style: italic; }
+.rowIcon { display: inline-flex; margin-right: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); }
+.rowTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
+
+/* ── The paper on touch: a placed box's own ✕ (P-04 · C-17) sits on its top-right corner — the house bare close with its 44 reach — and the
+   box keeps that corner clear; the fresh pulse after a placement is the Items grid's (REG-570…576). A paper that is not on touch draws
+   nothing of this. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .docWrap { position: relative; } }   /* positioned only where a ✕ is drawn: at the desk the wrapper is a plain block, so the paper rasterises to the byte as before */
+.boxX { position: absolute; z-index: 2; display: inline-flex; }
+.docWrap[data-touch] :global(.om-sign) { padding-right: var(--om-spacing-8); font: var(--om-type-subtitle-m); }   /* (C-17) the box's label 14 on touch, its uppercase kept */
+.docWrap :global([data-fresh]) { position: relative; }
+.docWrap :global([data-fresh])::after { content: ''; position: absolute; inset: calc(-1 * var(--om-spacing-1)); z-index: 1; pointer-events: none; border-radius: var(--om-radius-1); background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .docWrap :global([data-fresh])::after { animation-duration: .01ms; } }
+
+/* ── Signature fields (P-04 · B-12): a row per field — the label 16, "Placed under Signatures" / "Not placed" 14, Add. */
+.fields { display: flex; flex-direction: column; }
+.fieldRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.fieldText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-0-5); }
+.fieldLabel { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.fieldMeta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.fieldMeta[data-placed] { color: var(--om-color-tertiary-green-default); }
+
+/* ── Before the client signs (C-13): the whole row is a label, so the words toggle the switch too — everywhere; at ≤1024 the row stands 56
+   with the label 16 over its help 14 (the desk keeps contract-editor.module.css' 14 / 12 look to the pixel). */
+.gateRow { cursor: pointer; }
+@media (max-width: 1024px) {
+  .gateRow { min-height: 56px; padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-2); }
+  .gateRow .gateLabel { font: var(--om-type-subheading-l); }
+  .gateRow .gateHelp { font: var(--om-type-body-m); }
+}
+
+/* ── Add a signature field (P-04): which — the house Chips, "· placed" on a chip whose field is in — then where, the clauses as DS radio rows
+   with the suggested one marked; the foot's one filled button is named after the pick. */
+.which { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.whichHelp { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.whereHead { margin: var(--om-spacing-5) 0 var(--om-spacing-1); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.places { display: flex; flex-direction: column; }
+.place { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 48px; padding: var(--om-spacing-1) 0; }
+.placeName { flex: 1; min-width: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.placeMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* ── A chip's tap sheet (B-19 · C-15): what it prints here at 16, where it fills in from at 14; Remove answers with Undo. */
+.prints { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.printsAs { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.printsValue { font: var(--om-type-body-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.printsNote { font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+.printsSource { margin-top: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── The Outline's rows on touch (B-13's pane, P-13): a clause's name 16, a sub-clause 14 — 44 tall by contract-editor.module.css' touch rule. */
+@media (max-width: 1024px) {
+  .outline .outlineItem[data-level='1'] { font: var(--om-type-subheading-l); }
+  .outline .outlineItem[data-level='2'] { font: var(--om-type-body-l); }
+  .outline .outlineItem[data-level='3'] { font: var(--om-type-body-m); }
+}
+
+/* ── (Contracts on the move, C4 — integrating C1's screens with these panels) A section screen's card for the two panels — the contract's
+   Signature fields / Before the client signs screens and the template's: white, 12 inside, the house card radius; the panel's last rule
+   gives way to the card's edge. `bare` drops the drawer's eyebrow and top rule (the screen's bar names it). Drawn only on ≤1024 screens. */
+.panelCard { display: flex; flex-direction: column; padding: 0 var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.panelCard > .fields > :last-child { border-bottom: 0; }
+.gatesBare.gatesBare { margin-top: 0; padding-top: 0; border-top: 0; }
+.panelCard > .gatesBare > :last-child:not(label) { padding-bottom: var(--om-spacing-3); }

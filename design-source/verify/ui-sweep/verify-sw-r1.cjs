@@ -174,28 +174,34 @@ const abortActions = (page) => page.route('**/*', (route) => { const r = route.r
     sql(`update quotes set deleted_at = null where id='${Q9}'`)
     await page.keyboard.press('Escape')
     // #15 By category never under the totals card; T-03 General Info one column
-    await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
+    await page.goto(`${BASE}/quotes/${Q1}?edit=general`); await ready(page)   // (quotes on the move, a deliberate change of this rule) a touch tablet opens the Quote screen; General info is its own screen
     const g = await page.locator('#section-general [class*="grid"]').first().evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(' ').length)
     ok('768: General Info is one column', g === 1, `${g} columns`)
-    const cat = page.getByTestId('items-by-category'), tot = page.getByTestId('quote-totals')
-    await tot.scrollIntoViewIfNeeded()
-    const cb = await cat.boundingBox().catch(() => null), tb = await tot.boundingBox().catch(() => null)
-    ok('768: By category sits clear of the totals card', !cb || !tb || cb.y >= tb.y + tb.height - 1 || tb.y >= cb.y + cb.height - 1, cb && tb ? `${Math.round(cb.y)} vs ${Math.round(tb.y + tb.height)}` : 'n/a')
+    await page.goto(`${BASE}/quotes/${Q1}?edit=items`); await ready(page)   // (quotes on the move, a deliberate change of this rule) …and Items its own
+    /* (quotes on the move, a deliberate change of this rule) ≤1024 the totals card and By category are no longer a block under the lines: the
+       totals are the section's pinned foot, the card opens under its Adjust, By category under its Breakdown — so neither can sit under the other */
+    const foot = page.getByTestId('items-touch-foot')
+    await foot.scrollIntoViewIfNeeded()
+    ok('768: the totals are the pinned foot, the card behind Adjust', await foot.isVisible() && (await page.getByTestId('quote-totals').count()) === 0)
+    await page.getByTestId('touch-adjust').click(); await page.waitForTimeout(600)
+    ok('768: Adjust opens the totals card', await page.getByTestId('quote-totals').isVisible())
+    await page.getByRole('button', { name: 'Done' }).click(); await page.waitForTimeout(300)
     await shot(page, '09-editor-768')
     await ctx.close()
   })
 
   await step('phone', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
-    await page.goto(`${BASE}/quotes/${Q1}`); await ready(page)
+    await page.goto(`${BASE}/quotes/${Q1}?edit=items`); await ready(page)   // (quotes on the move, a deliberate change of this rule) a phone / touch tablet opens the Quote screen; the Items cards are the Items screen
     // #1 the line sheet reads 1500 as S$1,500.00
     const card = page.getByTestId('item-card').filter({ hasText: TOPNAME }).first()
     await card.scrollIntoViewIfNeeded(); await card.getByRole('button', { name: `Edit ${TOPNAME}` }).click(); await page.waitForTimeout(500)
     const sheet = page.getByTestId('line-sheet')
     const was = sql(`select cost_minor || '|' || markup_minor || '|' || qty from quote_items where id='${TOP}'`)
+    await sheet.getByTestId('line-more').click(); await page.waitForTimeout(300)   // (quotes on the move, a deliberate change of this rule) Cost sits under the sheet's More; the quantity box reads "Quantity"
     const cost = sheet.getByLabel('Cost (S$)'); await cost.fill(''); await cost.pressSequentially('1500'); await cost.blur(); await page.waitForTimeout(1200)
     ok('Cost 1500 on a phone saves S$1,500.00', sql(`select cost_minor from quote_items where id='${TOP}'`) === '150000', sql(`select cost_minor from quote_items where id='${TOP}'`))
-    const qty = sheet.getByLabel('Qty'); await qty.fill(''); await qty.pressSequentially('1.5'); await qty.blur(); await page.waitForTimeout(1200)
+    const qty = sheet.getByLabel('Quantity'); await qty.fill(''); await qty.pressSequentially('1.5'); await qty.blur(); await page.waitForTimeout(1200)
     ok('Qty 1.5 stays 1.5', sql(`select qty from quote_items where id='${TOP}'`) === '1.5', sql(`select qty from quote_items where id='${TOP}'`))
     await shot(page, '10-line-sheet-390')
     const [c, m, q] = was.split('|'); sql(`update quote_items set cost_minor=${c}, markup_minor=${m}, qty=${q} where id='${TOP}'`)

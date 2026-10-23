@@ -1,0 +1,21 @@
+/* (Contracts on the move, C4 — P-09, 2026-10-22) New contract on a phone: the Create Quote phone step's pieces (components/quotes/
+   create-quote-modal.module.css), composed — the search, the eyebrows, the 56 rows (a lead's name at 16; a kind's glyph tile, title 16,
+   meaning 14, chevron). Nothing here is drawn on a desk: the sheet opens from a phone's + alone. */
+.block { composes: block from '../quotes/create-quote-modal.module.css'; }
+.eyebrow { composes: eyebrow from '../quotes/create-quote-modal.module.css'; }
+.list { composes: list from '../quotes/create-quote-modal.module.css'; }
+.search { composes: whoSearch from '../quotes/create-quote-modal.module.css'; }
+.whoRow { composes: whoRow from '../quotes/create-quote-modal.module.css'; }
+.whoName { composes: whoName from '../quotes/create-quote-modal.module.css'; }
+.trail { composes: trail from '../quotes/create-quote-modal.module.css'; }
+.phoneRow { composes: phoneRow from '../quotes/create-quote-modal.module.css'; }
+.phoneMain { composes: phoneMain from '../quotes/create-quote-modal.module.css'; }
+.glyph { composes: glyph from '../quotes/create-quote-modal.module.css'; }
+.rowText { composes: rowText from '../quotes/create-quote-modal.module.css'; }
+.rowTitle { composes: rowTitle from '../quotes/create-quote-modal.module.css'; }
+.rowDesc { composes: rowDesc from '../quotes/create-quote-modal.module.css'; }
+.help { composes: uploadHelp from '../quotes/create-quote-modal.module.css'; }
+/* the kind rows: the phone step's 16 / 14 (the quote modal scopes them to its own .phoneRow) */
+.phoneRow .rowTitle { font: var(--om-type-subheading-l); }
+.phoneRow .rowDesc.rowDesc { font: var(--om-type-body-m); white-space: normal; overflow: visible; overflow-wrap: anywhere; }   /* (P-13) a sentence wraps, never cut at 390 */
+.phoneMain:disabled { cursor: default; color: var(--om-color-on-surface-secondary); }

@@ -27,3 +27,12 @@
   .thumbPage { width: 150px; height: 195px; }
   .thumbScale { transform: scale(calc(150 / 600)); }
 }
+/* (Contracts on the move, C-04 · P-13) A template's standing — Default · At handover · PDF — is the desk's chip and, where a finger reads it
+   (a phone, a touch tablet), words at 14: the 10px uppercase chip was the smallest text on the page for the fact that decides what the Hand
+   over sheet sends. The desk's chips sit in a box that draws nothing (display: contents), exactly as before. */
+.chipsDesk { display: contents; }
+.chipsTouch { display: none; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .chipsDesk { display: none; }
+  .chipsTouch { display: inline; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+}

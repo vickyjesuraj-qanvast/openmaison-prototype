@@ -359,7 +359,7 @@ async function viewBy(page, label) {
     sql(`update quotes set items_columns = '${cols}' where id = '${Q}'`)
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const p = await phone.newPage(); p.setDefaultTimeout(12000)
-    await p.goto(EDITOR); await p.getByTestId('quote-editor').waitFor(); await ready(p)
+    await p.goto(EDITOR + (EDITOR.includes('?') ? '&' : '?') + 'edit=items'); await p.getByTestId('section-screen').waitFor(); await ready(p)   // (quotes on the move, a deliberate change of this rule) on a phone the quote opens as its document; the Items are their own screen at ?edit=items
     ok('g-sections-trade the note shows on a phone too', await p.getByTestId('print-note').isVisible())
     ok('the editor never scrolls sideways at 390', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
     await p.getByTestId('print-note').evaluate((el) => el.scrollIntoView({ block: 'center' })); await p.waitForTimeout(300)
@@ -367,6 +367,7 @@ async function viewBy(page, label) {
     const card = p.locator(`[data-testid="item-card"][data-item-id="${itemId('Haulage and debris disposal')}"]`)
     await card.scrollIntoViewIfNeeded(); await card.getByRole('button', { name: /^Edit / }).click()
     const sheet = p.getByTestId('line-sheet'); await sheet.waitFor(); await p.waitForTimeout(500)
+    await sheet.getByTestId('line-more').click(); await p.waitForTimeout(300)   // (quotes on the move, a deliberate change of this rule) Cost and Markup sit under the sheet's More
     const t = await sheet.innerText()
     ok('x-phonetabs with the Cost column off the sheet shows no Cost or Markup', !/Cost \(S\$\)/.test(t) && !/Markup \(S\$\)/.test(t) && /Unit price \(S\$\)/.test(t))
     await p.screenshot({ path: path.join(OUT, 'x-phonetabs-sheet-cost-off.png') })
@@ -374,16 +375,15 @@ async function viewBy(page, label) {
     sql(`update quotes set items_columns = null where id = '${Q}'`)
     await p.reload(); await p.getByTestId('quote-editor').waitFor(); await ready(p)
     await card.scrollIntoViewIfNeeded(); await card.getByRole('button', { name: /^Edit / }).click(); await p.getByTestId('line-sheet').waitFor(); await p.waitForTimeout(400)
+    await p.getByTestId('line-sheet').getByTestId('line-more').click(); await p.waitForTimeout(300)   // (quotes on the move, a deliberate change of this rule)
     const t2 = await p.getByTestId('line-sheet').innerText()
     ok('x-phonetabs with it on, they are back', /Cost \(S\$\)/.test(t2) && /Markup \(S\$\)/.test(t2))
-    /* the quote switcher's heading on a phone is the sheet's */
+    /* (quotes on the move, a deliberate change of this rule) on a phone the quote opens as the Quote screen and Edit is a list of
+       section screens: the editor header with its quote switcher (t-6.03's sheet) is a desk piece now, and the section tabs are the list.
+       The switcher's phone sheet is therefore not asserted here; the Signature section is its own screen at ?edit=signature. */
     await p.getByRole('button', { name: 'Done' }).click(); await p.waitForTimeout(300)
-    await p.getByRole('button', { name: /switch quote$/ }).click(); await p.waitForTimeout(500)
-    ok('t-6.03 on a phone the sheet is headed the same', await until(() => p.locator('body').innerText().then((t) => /Olivia Martinez’s quotes/.test(t))))
-    await p.screenshot({ path: path.join(OUT, 't-6-03-phone-sheet.png') })
-    await p.keyboard.press('Escape'); await p.waitForTimeout(400)
     /* Signature Settings on a phone: three choices, nothing runs past the sheet */
-    await p.getByRole('tab', { name: 'Signature' }).click(); await p.waitForTimeout(900)
+    await p.goto(EDITOR + (EDITOR.includes('?') ? '&' : '?') + 'edit=signature'); await p.getByTestId('section-screen').waitFor(); await ready(p)
     await p.locator('#section-signature').getByRole('button', { name: 'Edit' }).click()
     const dlg = p.getByRole('dialog', { name: 'Signature Settings' }); await dlg.waitFor(); await p.waitForTimeout(500)
     ok('g-signature on a phone the three choices fit the sheet', await dlg.getByRole('radio', { name: 'Upload' }).isVisible() && await dlg.evaluate((el) => [...el.querySelectorAll('*')].every((c) => c.getBoundingClientRect().right <= innerWidth + 1)))
@@ -393,9 +393,11 @@ async function viewBy(page, label) {
     await p.goto(`${BASE}/quotes`); await ready(p)
     await p.getByRole('button', { name: 'Create Quote' }).first().click()
     await p.getByTestId('create-quote').waitFor(); await p.waitForTimeout(700)
-    await p.getByTestId('create-quote').getByRole('combobox').click(); await p.waitForTimeout(300)
-    await p.keyboard.type('tan', { delay: 80 }); await p.waitForTimeout(300)
-    const phoneOpts = await p.locator('[data-om-menu] [role="option"]').allInnerTexts()
+    /* (quotes on the move, a deliberate change of this rule) on a phone Create Quote starts with "Who is this quote for?" — a list of leads
+       with a search box (K4, P-10) in place of the Client combobox; the search narrows the rows the same way */
+    await p.getByTestId('create-quote-who').locator('[class*="whoSearch"]').first().click(); await p.waitForTimeout(300)   // the house SearchBar's surface takes the press and focuses its input (the input itself is not the hit target)
+    await p.keyboard.type('tan', { delay: 80 }); await p.waitForTimeout(500)
+    const phoneOpts = await p.getByTestId('create-quote-lead').allInnerTexts()
     ok('g-createclient on a phone the Client list narrows as typed', phoneOpts.length > 0 && phoneOpts.every((o) => /tan/i.test(o)), phoneOpts.join(' · '))
     await p.screenshot({ path: path.join(OUT, 'g-createclient-phone.png') })
     await phone.close()

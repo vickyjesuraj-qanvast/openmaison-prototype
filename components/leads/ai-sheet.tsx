@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { duration, spring } from '@/lib/motion'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import { prototypeStudioCount, resetPrototype } from '@/app/leads/actions'
 import styles from './ai-sheet.module.css'
 
@@ -14,6 +15,8 @@ import styles from './ai-sheet.module.css'
  * (outlined purple suggestion buttons under a ✨ header). Springs from the
  * FAB's corner. (pending modules S10) Every page's and every editor's sheet is the shell's `MaisonAiSheet`
  * (components/shell/maison-ai.tsx) — the Ask box, the page's suggestions that act, Recent; nothing answers Coming soon.
+ * (Quotes on the move, B-23 — 2026-10-22) ≤767 it is the house bottom sheet (REG-353: every anchored surface is one on a phone), not a
+ * 302px card floating over the page — the same head, Ask box, suggestions, Recent and the reset in its foot.
  */
 export function AiSheet({
   open,
@@ -78,8 +81,9 @@ export function AiSheet({
       })
     }
   }, [open, anchorRef])
+  const phone = useSheetLayout()   // (B-23) ≤767 the house Sheet owns Esc, the scrim and the focus
   useEffect(() => {
-    if (!open || confirmReset) return
+    if (!open || confirmReset || phone) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
@@ -89,7 +93,36 @@ export function AiSheet({
     document.addEventListener('keydown', onKey)
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
     return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
-  }, [open, onClose, confirmReset, anchorRef])
+  }, [open, onClose, confirmReset, anchorRef, phone])
+
+  const resetRow = (
+    <button type="button" className={styles.reset} onClick={askReset}>
+      <Icon name="restart_alt" size={18} />
+      Reset prototype to base
+    </button>
+  )
+  const confirm = (
+    <ConfirmDialog open={confirmReset} title="Reset the prototype?" tone="danger"
+                   message={`Leads, imports, tasks and settings go back to the base state${studios ? ` — and the ${studios === 1 ? 'studio' : `${studios} studios`} started here ${studios === 1 ? 'is' : 'are'} removed` : ''}. Anything you tried in this session is lost.`}
+                   confirmLabel={resetting ? 'Resetting…' : 'Reset'} onCancel={() => { if (!resetting) setConfirmReset(false) }} onConfirm={() => { if (!resetting) void doReset() }} />
+  )
+  /* (B-23) the phone: the house bottom sheet — its grabber, head and foot; the middle is the card's own middle */
+  if (phone) {
+    return (
+      <>
+        <Sheet open={open} onClose={onClose} title="Maison AI" label="Maison AI suggestions" footer={resetRow}>
+          <div className={styles.sheetMiddle} data-testid="maison-sheet">
+            {ask}
+            {panel ? panel : suggestions.length > 0 ? <div className={styles.body}>
+              {suggestions.map((s) => <button key={s} type="button" className={styles.suggestion} onClick={() => onSelect(s)}>{s}</button>)}
+            </div> : null}
+            {panel ? null : recent}
+          </div>
+        </Sheet>
+        {confirm}
+      </>
+    )
+  }
 
   return (
     <AnimatePresence>
@@ -130,17 +163,10 @@ export function AiSheet({
           </div> : null}
           {panel ? null : recent}
           </div>
-          <div className={styles.foot}>
-            <button type="button" className={styles.reset} onClick={askReset}>
-              <Icon name="restart_alt" size={18} />
-              Reset prototype to base
-            </button>
-          </div>
+          <div className={styles.foot}>{resetRow}</div>
         </motion.div>
       ) : null}
-      <ConfirmDialog open={confirmReset} title="Reset the prototype?" tone="danger"
-                     message={`Leads, imports, tasks and settings go back to the base state${studios ? ` — and the ${studios === 1 ? 'studio' : `${studios} studios`} started here ${studios === 1 ? 'is' : 'are'} removed` : ''}. Anything you tried in this session is lost.`}
-                     confirmLabel={resetting ? 'Resetting…' : 'Reset'} onCancel={() => { if (!resetting) setConfirmReset(false) }} onConfirm={() => { if (!resetting) void doReset() }} />
+      {confirm}
     </AnimatePresence>
   )
 }

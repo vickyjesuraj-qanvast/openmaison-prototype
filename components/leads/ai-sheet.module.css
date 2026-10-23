@@ -51,6 +51,9 @@
   }
 }
 
+/* (Quotes on the move, B-23) ≤767 the card is the house bottom sheet: its middle keeps the card's inner rhythm on the sheet's 16 gutter. */
+.sheetMiddle { display: flex; flex-direction: column; padding-bottom: var(--om-spacing-2); }
+.sheetMiddle .body { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-3); }
 /* (REG-298) ≤767 the sheet keeps its 12px seat above the FAB, which now floats 16 above the bottom dock (FAB right 16 there). */
 @media (max-width: 767px) {
   /* (REG-347) A hard 320 anchored 16 from the right starts at x=-16 on a 320 screen. */

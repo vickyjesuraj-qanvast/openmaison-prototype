@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
+import { MOBILE } from '@/lib/breakpoint'
 import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
 import { copyText } from '@/lib/clipboard'
@@ -10,6 +11,8 @@ import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
 import { useSnackbar } from '@/components/om/snackbar'
+import { useSheetLayout } from '@/components/om/sheet'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Dropzone, FieldError, FileTile, useUploadSim } from '@/components/leads/move-stage/fields'
 import { isPdfRefusal, readPickedPdf } from '@/components/contracts/read-pdf'
@@ -26,7 +29,7 @@ import { signCodeLine } from '@/lib/contracts/model'
 
 /** Send: the signing card's fields (client name · phone for the code) over the message the link travels in. Send via
  *  WhatsApp opens the chat with the message and marks the contract Sent to Client; Copy link copies the signing page. */
-export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, extra, busy = false, title = 'Send for digital signature', subtitle, copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)', nameLabel, messageLabel, onMarkSigned, sendLabel = 'Send via WhatsApp' }: {
+export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, extra, busy = false, title = 'Send for digital signature', subtitle, subtitleShort, copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)', nameLabel, messageLabel, onMarkSigned, sendLabel = 'Send via WhatsApp' }: {
   open: boolean; onClose: () => void
   defaults: { name: string; phone: string }
   /** The address the message carries — Copy link and the link row show it. (REG-1076) Absent when there is none to give: a project's invoice
@@ -41,6 +44,10 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   notes?: string[]
   /** (REG-587) The quote's Send for confirmation reuses this dialog with its own words. (UX audit C5) So does Send a reminder. */
   title?: string; subtitle?: string; copyDone?: string; phoneLabel?: string; sendLabel?: string
+  /** (contracts on the move 2026-10-22, B-17) ≤1024 the head's line is this one sentence and the full `subtitle` waits under "How signing works",
+      a fold at the body's top — the four-line 12px subtitle and the extra rows pushed the contract sheet's foot over "Mark as signed" (it is in
+      ⋮ there). Only a host that passes it gets the fold: the quote's Send for confirmation keeps its one short subtitle and fits as K5 left it. */
+  subtitleShort?: string
   /** (simplify S-10 · F1 §6.9.1) Who it goes to, when it is not a client — a PO's send says "Vendor’s name" and "Message to the vendor". */
   nameLabel?: string; messageLabel?: string
   /** (UX audit C9) "Signed in person? Mark as signed" as the body's last line — the dialog closes and Mark as signed opens. */
@@ -73,14 +80,25 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   const phoneOk = isSgPhone(digitsOnly(phone))   // (REG-547)
   const nameOk = name.trim().length > 0
   const err = touched && !phoneOk ? MSG.phone : undefined   // (sweep S2 #25) the house words
+  /* (B-17) the touch widths: one line in the head, the rest one tap further */
+  const touch = useMediaQuery(TABLET_DOWN)
+  const [howOpen, setHowOpen] = useState(false)
+  const fullSubtitle = subtitle ?? `Your client reviews and signs in their browser. ${signCodeLine(codeDemo)}`
+  const folded = touch && subtitleShort !== undefined && subtitleShort !== fullSubtitle
   return (
     <Dialog open={open} onClose={onClose} title={title} size="modal" width={600}
-            subtitle={subtitle ?? `Your client reviews and signs in their browser. ${signCodeLine(codeDemo)}`}
+            subtitle={folded ? subtitleShort : fullSubtitle}
             footer={<>
               {link ? <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={copyLink}>{copied || sharedAt ? 'Copied' : 'Copy link'}</Button> : null}
               <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk || busy} onPress={() => { if (busy) return; setTouched(true); if (!phoneOk || !nameOk) return; void onSend({ name: name.trim(), phone: digitsOnly(phone), message: text }) }}>{sendLabel}</Button>
             </>}>
       <div className={styles.sendFields}>
+        {folded ? (
+          <div className={styles.howFold} data-open={howOpen || undefined} data-testid="send-how">
+            <button type="button" className={styles.howHead} aria-expanded={howOpen} onClick={() => setHowOpen((o) => !o)}><span>How signing works</span><Icon name="expand_more" size={24} /></button>
+            {howOpen ? <p className={styles.howBody}>{fullSubtitle}</p> : null}
+          </div>
+        ) : null}
         {notes?.length ? (
           <div className={styles.sendNotes} role="note" data-testid="send-notes">
             <span className={styles.sendNotesHead}><Icon name="info" size={18} />Before it goes</span>
@@ -94,7 +112,8 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
         {link ? <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div> : null}
         {/* (UX audit C9) the other way a contract comes back signed — the body's last line: the foot's Copy link and Send via WhatsApp leave
             no room for it at 600 without crowding them */}
-        {onMarkSigned ? <span className={styles.markSigned} data-testid="send-mark-signed"><span className={styles.footNote}>Signed in person?</span><Button appearance="text" onPress={onMarkSigned}>Mark as signed</Button></span> : null}
+        {/* (contracts on the move, B-17) …and not on a phone, where it is the ⋮'s row and sat under the pinned foot */}
+        {onMarkSigned ? <span className={styles.markSigned} data-phone-hidden="" data-testid="send-mark-signed"><span className={styles.footNote}>Signed in person?</span><Button appearance="text" onPress={onMarkSigned}>Mark as signed</Button></span> : null}
       </div>
     </Dialog>
   )
@@ -121,12 +140,39 @@ export function RecipientFields({ name, phone, onName, onPhone, nameError, phone
 }
 /** (UX audit C12) The message and its line under it — Reset message (it put the draft back; "Reset to draft" read like moving a contract back
     to Draft) and the count. (REG-729) The DS field with its own label and stroke. */
-export function MessageField({ value, onChange, onReset, canReset, label = 'Message to the client', names }: { value: string; onChange: (v: string) => void; onReset: () => void; canReset: boolean
+export function MessageField({ value, onChange, onReset, canReset, label = 'Message to the client', names, fold = false }: { value: string; onChange: (v: string) => void; onReset: () => void; canReset: boolean
   /** (simplify S-10 · F1 §6.9.1) "Message to the vendor" for a PO's send */ label?: string
-  /** (pending modules S29) Who it goes to — the writing help writes their name their way ("harpreet" → "Harpreet") */ names?: string[] }) {
+  /** (pending modules S29) Who it goes to — the writing help writes their name their way ("harpreet" → "Harpreet") */ names?: string[]
+  /** (Contracts on the move, C4 — A-15) Opt-in, a phone only: the message shows its first three lines and "Show all" until it is opened or
+      pressed, so a sheet with more above it (Send together's documents) keeps its tools row in view. A tap in the box opens it whole. */
+  fold?: boolean }) {
+  /* (quotes on the move 2026-10-22, B-17) ≤767 the box grows with its words: a 212px message scrolled inside a 168px box inside the sheet's own
+     scroll. The sheet scrolls, never a box in it. Measured here (Safari has no `field-sizing`); above 767 the DS box keeps its seven lines.
+     The character count stays on wider screens: on a phone the whole message is in view, and the count's 84px beside the tools cost
+     "Reset message · Write with AI" a second row — the difference between a sheet that fits a 390×844 phone and one that scrolls. */
+  const grow = useRef<HTMLDivElement>(null)
+  const phone = useSheetLayout()
+  const [whole, setWhole] = useState(false)
+  const folded = fold && phone && !whole
+  useEffect(() => {
+    const ta = grow.current?.querySelector('textarea')
+    if (!ta || !window.matchMedia(MOBILE).matches) return
+    ta.style.height = 'auto'
+    /* (C4 — A-15) a folded box is held at its three lines by its own height, never a taller height under a max-height (Chrome then lays the
+       text out past the box's edge) */
+    const max = parseFloat(getComputedStyle(ta).maxHeight)
+    ta.style.height = `${Number.isFinite(max) ? Math.min(ta.scrollHeight, max) : ta.scrollHeight}px`
+  }, [value, folded])
   return (
     <>
-      <TextArea className={styles.sendBox} label={label} value={value} onChange={(v: string) => onChange(v)} />
+      {fold && phone ? (
+        /* (C4 — A-15) the folded message: its first three lines under a fade with "Show all" — the tools row stays one row, right under it; a
+           tap into the box opens it whole too. The wrapper stays while the sheet is open, so the box keeps its focus when it opens. */
+        <div className={styles.sendFoldBox} onFocus={() => { if (folded) setWhole(true) }}>
+          <div ref={grow} className={styles.sendGrow}><TextArea className={`${styles.sendBox} ${folded ? styles.sendFolded : ''}`} label={label} value={value} onChange={(v: string) => onChange(v)} /></div>
+          {folded ? <span className={styles.sendFoldMore}><Button appearance="text" iconStart={<Icon name="unfold_more" size={18} />} onPress={() => setWhole(true)} data-testid="message-show-all">Show all</Button></span> : null}
+        </div>
+      ) : <div ref={grow} className={styles.sendGrow}><TextArea className={styles.sendBox} label={label} value={value} onChange={(v: string) => onChange(v)} /></div>}
       <div className={styles.sendUnder}>
         <span className={styles.sendTools}>
           <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={onReset} isDisabled={!canReset}>Reset message</Button>
@@ -135,7 +181,7 @@ export function MessageField({ value, onChange, onReset, canReset, label = 'Mess
           <WritingHelp label={label} kind="message" nested menuAlign="left" testId="message-writing" sources={{ names: names?.filter(Boolean) }}
                        read={() => ({ html: textToHtml(value) })} apply={(h) => onChange(htmlToText(h))} />
         </span>
-        <span>{value.length} characters</span>
+        {phone ? null : <span>{value.length} characters</span>}
       </div>
     </>
   )
@@ -232,7 +278,7 @@ export function AutomationDialog({ open, onClose, reminders, thankYou, onChange 
     </Dialog>
   )
 }
-function AutomationRows({ reminders, thankYou, onChange }: { reminders: boolean; thankYou: boolean; onChange: (patch: { reminders?: boolean; thankYou?: boolean }) => void }) {
+export function AutomationRows({ reminders, thankYou, onChange }: { reminders: boolean; thankYou: boolean; onChange: (patch: { reminders?: boolean; thankYou?: boolean }) => void }) {
   return (
       <>
         <div className={styles.autoRow}>

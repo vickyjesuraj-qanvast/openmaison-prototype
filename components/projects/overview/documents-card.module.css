@@ -1,0 +1,25 @@
+/*
+ * (Contracts on the move, C4 — P-11 · C-23, 2026-10-22) The Overview's Documents card — the signed quote and the contract, where a designer on
+ * site looks for them (they were the eighth row of View Client Info). Drawn ≤1024 only: from 1025 up the info column shows them as Project info
+ * rows, and the desk's Overview is unchanged. The card is the lead's card (components/leads/detail/card.tsx); its rows compose LEAD STAGES' row
+ * (stages-card.module.css, as every Overview row does) at the move's scale: 48 tall, the name 16, the date 14, the glyph 20, ↗ at the end.
+ */
+.documents { display: none; min-width: 0; }
+@media (max-width: 1024px) {
+  .documents { display: block; }
+}
+/* the phone's card order (project-overview.module.css): right after Progress, before Money */
+@media (max-width: 767px) {
+  .documents { order: 4; }
+}
+.body { composes: body from '../../leads/detail/stages-card.module.css'; }
+.group { composes: group from '../../leads/detail/stages-card.module.css'; }
+.row { composes: row from '../../leads/detail/stages-card.module.css'; }
+.icon { composes: icon from '../../leads/detail/stages-card.module.css'; }
+/* `.documents .row` outranks the stage row's own 36 and its touch padding (12 / 8): one 48 floor, two lines inside it */
+.documents .row { height: auto; min-height: 48px; padding: var(--om-spacing-1) var(--om-spacing-2); gap: var(--om-spacing-3); color: var(--om-color-on-surface-default); text-decoration: none; }
+.documents .row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name { font: var(--om-type-subtitle-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* (P-13) a document's name wraps, never cut */
+.when { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.go { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }

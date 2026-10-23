@@ -364,9 +364,15 @@ const restore = (d) => {
     await shot(m, 'c8-todo-390')
     /* the signed letter of appointment, its deposit on a phone */
     await go(m, `/sign/${SIGN_TOKEN}`)
-    await m.getByTestId('deposit-pay').scrollIntoViewIfNeeded().catch(() => {})
-    ok(await m.getByTestId('deposit-pay').count() === 1 && await sideways(m) <= 0, '390: the signing page ends on the deposit, no sideways scroll')
+    /* (contracts on the move, a deliberate change of this rule) on a phone the signed page lands on the Signed card, where the deposit is a row —
+       "Pay the deposit" — that opens the pay box as a sheet; the desk still ends on it inline */
+    const depRow = m.getByTestId('deposit-row')
+    await depRow.scrollIntoViewIfNeeded().catch(() => {})
+    ok(await depRow.count() === 1 && /Pay the deposit/.test(await depRow.innerText()) && await sideways(m) <= 0, '390: the Signed card carries "Pay the deposit", no sideways scroll')
+    await depRow.tap(); await settle(m, 900)
+    ok(await m.getByTestId('deposit-pay').count() === 1 && await m.getByRole('dialog', { name: 'Pay the deposit' }).isVisible(), '390: the row opens the pay box as a sheet')
     await shot(m, 'c7-signed-deposit-390')
+    await m.keyboard.press('Escape'); await settle(m, 400)
     /* the Hand over sheet as a phone's sheet: the letter's tick, its period and who signs, in one column */
     as('dane')
     await go(m, `/projects/${BEN_PID}`)

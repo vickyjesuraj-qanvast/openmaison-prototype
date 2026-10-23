@@ -119,6 +119,24 @@ const RULES = [
     },
   },
   {
+    id: 'icon-button-overlay',
+    title: 'An icon button\'s touch box is the house one',
+    fix: 'Delete the `button::after { inset … }` override: the house IconButton already carries a centred 44 box under (hover: none) (icon-button.module.css, REG-344) — a module\'s inset keeps the house translate(-50%, -50%) and moves that box by (−22, −22) (Quotes on the move, C-03). A DS Button grows with min-height / padding instead.',
+    applies: isCss,
+    /* a block whose selector reaches a bare `button` with ::after (the house IconButton has no class a module can name) and that sets the box's edges */
+    find: (t) => {
+      const out = []
+      const re = /([^{}]*)\{([^{}]*)\}/g
+      let m
+      while ((m = re.exec(t))) {
+        const sel = m[1].split(/[;\n]/).pop() ?? ''
+        if (!/\bbutton::?after\b/.test(sel)) continue
+        if (/(^|[;\s])(inset|top|left|right|bottom)\s*:/.test(m[2])) out.push(t.slice(0, m.index + m[0].indexOf('{')).split('\n').length)
+      }
+      return out
+    },
+  },
+  {
     id: 'copied-table',
     title: 'A table uses the table core, not a copy of its stylesheet',
     fix: 'Compose the table core (components/om/table-core.module.css, REG-727): `.hCell { composes: hCell from \'…/om/table-core.module.css\'; }` — a copied .hCell drifts (REG-723).',

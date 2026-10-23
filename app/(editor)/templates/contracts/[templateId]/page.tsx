@@ -4,7 +4,8 @@ import { fetchContractTemplateEditor } from '@/lib/contracts/queries'
 import { ContractTemplateEditor } from '@/components/contracts/editor/contract-template-editor'
 import { readFrom } from '@/lib/nav'
 import { AccessGate } from '@/components/shell/access-gate'
-import { refusesPath } from '@/lib/leads/visibility'
+import { fetchViewer, refusesPath } from '@/lib/leads/visibility'
+import { templateDefaultBlock } from '@/lib/company/template-rules'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ templateI
 export default async function ContractTemplateEditorPage({ params, searchParams }: { params: Promise<{ templateId: string }>; searchParams: Promise<{ from?: string }> }) {
   const { templateId } = await params
   if (await refusesPath(`/templates/contracts/${templateId}`)) return <AccessGate section="Templates" />   // (S44Z — S44O's note) the role's own list, before a record is read: Marketing's leads, Accounting's books
-  const sp = await searchParams
-  const data = await fetchContractTemplateEditor(templateId)
+  const [sp, data, viewer] = await Promise.all([searchParams, fetchContractTemplateEditor(templateId), fetchViewer()])
   if (!data) notFound()
-  return <ContractTemplateEditor data={data} from={readFrom(sp.from)} />
+  /* (Contracts on the move, P-10) the reading screen's ⋮ sets the default and the handover letter — an Owner's or an Admin's, the gallery's rule */
+  return <ContractTemplateEditor data={data} from={readFrom(sp.from)} defaultBlock={templateDefaultBlock(viewer)} />
 }

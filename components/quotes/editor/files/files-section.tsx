@@ -43,13 +43,15 @@ const kindIcon = (f: LeadFile) => (f.kind === 'pdf' || f.mime === 'application/p
  * Attach files modal (the lead's files plus a local upload), a dropped file uploads at once and lands in the lead's Files
  * tab as well. A tile's kebab: Open (the file viewer) · Rename · Download · Delete (the link only — the lead keeps the file).
  */
-export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, onCount }: {
+export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, onCount, onVisible }: {
   seed: FilesSeed
   open: boolean
   onToggle: () => void
   onHandlePointerDown: (e: PointerEvent<HTMLButtonElement>) => void
   onSaved: (updatedAt: number) => void
   onCount: (n: number) => void
+  /** (quotes on the move 2026-10-22, K1's ask) The switch as it stands — the section list's one-line summary follows it live. */
+  onVisible?: (visible: boolean) => void
 }) {
   const router = useRouter()
   const { run, fail } = useRun()
@@ -66,9 +68,9 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
 
   /* (sweep S1 #10) An optimistic write that the server refuses is put back — never a value on screen that was not kept. */
   const toggleVisible = (next: boolean) => {
-    setVisible(next)
+    setVisible(next); onVisible?.(next)
     void run('save the setting', async () => { const r = await orThrow(setQuoteFilesVisible(quoteId, next)); onSaved(r.updatedAt) })
-      .then((ok) => { if (!ok) setVisible(!next) })
+      .then((ok) => { if (!ok) { setVisible(!next); onVisible?.(!next) } })
   }
   /* The modal answers with the files newly ticked (its "Attach n Files" counts those) — they join the ones the quote already carries. */
   const attachSet = (ids: string[]) => {

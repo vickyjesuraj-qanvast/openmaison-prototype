@@ -8,7 +8,7 @@ import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
 import { useOverflow } from './use-overflow'
-import { useSheetLayout } from './sheet'
+import { useSheetFootLift, useSheetLayout } from './sheet'
 import { SurfaceFoot, SurfaceHead } from './surface-parts'
 import styles from './dialog.module.css'
 
@@ -69,7 +69,9 @@ export function Dialog({
   /* (REG-353) ≤767 the canvas draws the form / modal sizes as bottom sheets (1e Create New Lead, 1g Filters,
      2i…2m, 3e, 3g): they rise off the bottom edge instead of scaling in the middle, and wear the grabber.
      The compact / standard alerts stay centred cards (canvas 2e Delete Task). */
-  const asSheet = useSheetLayout() && !alert && !phoneFull && (size === 'form' || size === 'modal')
+  const phone = useSheetLayout()
+  const asSheet = phone && !alert && !phoneFull && (size === 'form' || size === 'modal')
+  useSheetFootLift(open && footer !== undefined && (asSheet || (phone && phoneFull)), panel)   // (quotes on the move, B-19) a sheet's foot lifts the snackbar
   const node = (
     <AnimatePresence>
       {open ? (

@@ -234,6 +234,11 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
     ...(m.toConfirmMinor ? [`${money2(m.toConfirmMinor)} to confirm`] : []),
     ...(m.uncheckedMinor ? [`${money2(m.uncheckedMinor)} not yet checked`] : []),
   ].join(' · ')
+  /* (Contracts on the move, C4 — P-11 · C-24) the tile's contract line on ≤1024: the total and its source in a few words — "Contract S$81,355.42 ·
+     signed quote OM-10004", "Contract S$81,355.42 · OM-10004 + 1 variation order", "… · the agreed value" */
+  const approvedVos = m.variations.filter((v) => v.approved).length
+  const baseWords = m.source === 'quote' ? (data.quote ? data.quote.number : 'the signed quote') : m.source === 'agreed' ? 'the agreed value' : 'no value agreed yet'
+  const contractLine = `Contract ${money2(m.contractMinor)} · ${approvedVos ? `${m.source === 'quote' && !data.quote ? 'signed quote' : baseWords} + ${approvedVos} variation order${approvedVos === 1 ? '' : 's'}` : m.source === 'quote' && data.quote ? `signed quote ${data.quote.number}` : baseWords}`
   const paidPct = m.contractMinor ? Math.min(100, (m.collectedContractMinor / m.contractMinor) * 100) : 0
   const s = costs?.summary ?? null
   const seesCosts = !!costs?.data.viewer.seesFigures
@@ -252,20 +257,23 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
     <StatTiles testId="money-tiles" className={styles.moneyTiles}>
       <StatTile label="To collect" value={<Tooltip label={collectHow}><span className={styles.tileValue}>{money2(m.outstandingMinor)}</span></Tooltip>} grade={overdue.length ? 'bad' : undefined} testId="tile-collect"
                 press={{ label: `To collect ${money2(m.outstandingMinor)}. ${collectHow}. Opens Billing`, onPress: () => goList('billing') }}
-                help={overdue.length ? `${money2(m.overdueMinor)} overdue` : m.toConfirmMinor ? `${money2(m.toConfirmMinor)} to confirm` : m.outstandingMinor ? 'Sent and not yet paid' : 'Nothing owed right now'}>
+                help={<span className={styles.touchHelp}>{overdue.length ? `${money2(m.overdueMinor)} overdue` : m.toConfirmMinor ? `${money2(m.toConfirmMinor)} to confirm` : m.outstandingMinor ? 'Sent and not yet paid' : 'Nothing owed right now'}</span>}>
         <span className={styles.collectBar} role="progressbar" aria-label="Collected of the contract" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(paidPct)}><span className={styles.collectFill} style={{ width: `${paidPct}%` }} /></span>
-        <span className={tile.help} data-testid="money-collected">{money2(m.collectedContractMinor)} collected of {money2(m.contractMinor)}</span>
-        <span className={tile.help} data-testid="money-next">{nextLine}</span>
+        <span className={`${tile.help} ${styles.touchHelp}`} data-testid="money-collected">{money2(m.collectedContractMinor)} collected of {money2(m.contractMinor)}</span>
+        {/* (Contracts on the move, C4 — P-11 · C-24) ≤1024 the contract total and where it comes from, at 14 — on a desk it is the value's hover
+            breakdown, which a finger never sees (money.module.css `.contractLine`, not drawn from 1025 up); a Designer's own Contract value tile says it */}
+        {seesCosts || books?.profit ? <span className={`${tile.help} ${styles.contractLine}`} data-testid="money-contract-line">{contractLine}</span> : null}
+        <span className={`${tile.help} ${styles.touchHelp}`} data-testid="money-next">{nextLine}</span>
       </StatTile>
       {seesCosts && s ? (
         <StatTile label="To pay" value={<Tooltip label={payHow}><span className={styles.tileValue}>{money2(s.owedMinor)}</span></Tooltip>}
                   grade={s.overdueMinor ? 'bad' : undefined} testId="tile-pay" press={{ label: `To pay ${money2(s.owedMinor)}. ${payHow}. Opens Costs`, onPress: () => goList('costs') }}
-                  help={[s.overdueMinor ? `${money2(s.overdueMinor)} overdue` : s.owedMinor ? 'To vendors, not yet due' : 'Nothing owed right now', waitingOk ? `${money2(waitingOk)} waiting for approval` : null].filter(Boolean).join(' · ')} />
+                  help={<span className={styles.touchHelp}>{[s.overdueMinor ? `${money2(s.overdueMinor)} overdue` : s.owedMinor ? 'To vendors, not yet due' : 'Nothing owed right now', waitingOk ? `${money2(waitingOk)} waiting for approval` : null].filter(Boolean).join(' · ')}</span>} />
       ) : null}
       {/* (simplify round 2) the Profit tile opens Costs, as To pay does */}
       {books?.profit ? <ProfitTile profit={books.profit} onPress={() => goList('costs')} /> : null}
       {/* a Designer: what the contract is beside what is owed (the server hands them no cost figures) */}
-      {!seesCosts && !books?.profit ? <StatTile label="Contract value" value={money2(m.contractMinor)} testId="tile-contract" help={m.variationsMinor ? `${m.source === 'quote' ? 'Signed quote' : 'Agreed value'} ${money2(m.baseMinor ?? 0)} ${m.variationsMinor < 0 ? '−' : '+'} variation orders ${money2(Math.abs(m.variationsMinor))}` : m.source === 'quote' ? `From the signed quote${data.quote ? ` ${data.quote.number}${data.quote.lines ? ` · ${linesWord(data.quote.lines)}` : ''}` : ''}` : 'The value agreed for the project'} /> : null}
+      {!seesCosts && !books?.profit ? <StatTile label="Contract value" value={money2(m.contractMinor)} testId="tile-contract" help={<span className={styles.touchHelp}>{m.variationsMinor ? `${m.source === 'quote' ? 'Signed quote' : 'Agreed value'} ${money2(m.baseMinor ?? 0)} ${m.variationsMinor < 0 ? '−' : '+'} variation orders ${money2(Math.abs(m.variationsMinor))}` : m.source === 'quote' ? `From the signed quote${data.quote ? ` ${data.quote.number}${data.quote.lines ? ` · ${linesWord(data.quote.lines)}` : ''}` : ''}` : 'The value agreed for the project'}</span>} /> : null}
     </StatTiles>
   )
 

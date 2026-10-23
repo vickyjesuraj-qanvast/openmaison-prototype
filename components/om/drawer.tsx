@@ -6,7 +6,7 @@ import { bottomSheet, duration, ease, overlayFade } from '@/lib/motion'
 import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useDialogFocus, useEscapeLayer } from './surface'
-import { useSheetLayout } from './sheet'
+import { useSheetFootLift, useSheetLayout } from './sheet'
 import { useOverflow } from './use-overflow'
 import { SurfaceFoot, SurfaceHead } from './surface-parts'
 import styles from './drawer.module.css'
@@ -56,6 +56,7 @@ export function Drawer({
   /* (REG-353) ≤767 the canvas draws this panel as a bottom sheet (2c Task · 2d Task comments): it comes up off the
      bottom edge under a scrim instead of sliding in from a right edge the phone does not have, and wears the grabber. */
   const sheet = useSheetLayout()
+  useSheetFootLift(sheet && open && !!footer, panel)   // (quotes on the move, B-19) as a sheet, its foot lifts the snackbar
   const px = PANEL_WIDTH[width]
   const slide = {
     initial: { x: px, opacity: 0.6 },

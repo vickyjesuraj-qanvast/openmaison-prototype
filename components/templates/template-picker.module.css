@@ -46,6 +46,13 @@
 .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); }
 @media (max-width: 1024px) { .detail { width: 300px; } }
 @media (max-width: 767px) {
+  /* (Quotes on the move, K4 — A-12) The list row at a phone's width: the name over its meta, both one line and ellipsised, the Default tag at
+     the name's end — the meta used to paint over a name that had wrapped beside the thumbnail. */
+  .rowTile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: var(--om-spacing-3); row-gap: 2px; align-items: center; }
+  .rowThumb { grid-column: 1; grid-row: 1 / span 2; }
+  .rowName { grid-column: 2; grid-row: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rowTile > span:not(.rowThumb):not(.rowName):not(.rowMeta) { grid-column: 3; grid-row: 1; }   /* the Default tag */
+  .rowMeta { grid-column: 2 / -1; grid-row: 2; margin-left: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .listHead { flex-wrap: wrap; }
   .picker { flex-direction: column; max-height: none; min-height: 0; }
   .list, .detail { flex: 0 0 auto; min-height: auto; }   /* (REG-521) stacked, nothing shrinks — the grid was squeezed to 0 inside a fixed-height host */

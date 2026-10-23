@@ -1,0 +1,1509 @@
+{
+ "title": "Quotes on the Move",
+ "intro": {
+  "quote": "“Anything with too heavy data is not pure responsive … is it really needed to show the editor as it is, or is it better to show the PDF preview and only when they need to edit they click Edit? Mobile and tablet need to be an on-the-move experience, not like the desktop.”",
+  "method": "A read-only audit of every Quotes screen at 390 (phone), 768 (tablet, portrait) and 1024 (tablet, landscape), with touch emulation, on a production build of today’s main. Three lanes measured touch boxes, type sizes, truncation and sideways scroll and read the code behind each screen. Nothing is built yet. Your picks save as you make them.",
+  "facts": [
+   "<b>52</b> shared + <b>210</b> lane screenshots at 390 · 768 · 1024",
+   "<b>73</b> findings · 3 blockers · 36 major",
+   "<b>12</b> proposals · <b>8</b> questions",
+   "Desktop <b>unchanged</b>",
+   "22 Oct 2026"
+  ],
+  "answer": [
+   "<b>Yes: on a phone a quote should open as the document, and the editor should come only on Edit.</b> Today the phone gets the desktop page folded into one scroll: a five-row header, an eight-card form, the Items as cards, the Preview as an A4 page shrunk to 310px that nobody can read. On a tablet the Items grid keeps all its columns at 768 and truncates the ones that matter.",
+   "The good news: the pieces for the right experience already exist. The client’s confirmation page is the model (one total, one action, then the lines as readable cards), the Items cards (REG-597) and the line sheet are built, the Send sheet is right. What changes is the <em>order</em> of what a designer meets, and the sizes."
+  ]
+ },
+ "navProposal": "The proposal",
+ "proposalTitle": "The proposal: a quote you read first and edit second",
+ "proposalIntro": "Six rules, then the screens drawn with OpenMaison’s own tokens, then each change as a card you can mark. Desktop stays exactly as mocked; the data, rules and flows are the same code behind a different order of screens.",
+ "principles": [
+  {
+   "title": "Read first, edit second",
+   "body": "A quote opens as the document the client gets, with its status, amount and validity on top. Edit is a deliberate step, never the default."
+  },
+  {
+   "title": "One primary per screen",
+   "body": "The filled button is the one thing this state needs next (Send · Remind · Mark signed · Open the contract). Everything else sits behind ⋮ or in a sheet."
+  },
+  {
+   "title": "One thing at a time",
+   "body": "Editing is a list of sections, each its own screen, instead of eight cards in one scroll. Each row says what is inside so most never need opening."
+  },
+  {
+   "title": "The numbers are big, the fields are few",
+   "body": "Amounts at 18–26px, body 16px, secondary 14px, nothing under 14px on site. Five fields a thumb can change on site; the other eleven one tap further."
+  },
+  {
+   "title": "Nothing is lost, it is one tap further",
+   "body": "Every desktop action stays reachable on a phone. Rare things move behind ⋮; frequent things come to the thumb."
+  },
+  {
+   "title": "A tablet is not a small desktop",
+   "body": "Portrait follows the phone with room for two columns; landscape holds the document beside one pane. The grid shows four editable columns, never twelve."
+  }
+ ],
+ "proposals": [
+  {
+   "id": "P-01",
+   "size": "L",
+   "refs": "B-lane · screens 2 · 3",
+   "title": "A quote opens as its document on a phone and a tablet",
+   "today": "Opening a quote lands on the editor: a five-row header (title, three chips, Saved, the status dropdown and Send), the tabs row, then General Info, Items, Payment Schedule, Files, Terms, Notes, Signature and Activity as cards in one scroll of about 6,000px. A Signed quote opens on the same editable form with a dead lilac Send button.",
+   "proposed": "A <b>Quote screen</b>: back · client name · ⋮; a hero with the status chip, the amount, validity and lines, and the client’s name with Call and WhatsApp; one “Next” line that says what this state needs; the document as reading cards (the confirmation page’s own component); a sticky foot with <b>Edit</b> and the state’s one primary (<b>Send ▾</b>). Nothing on this screen edits; it reads and acts.",
+   "why": "the person opening a quote at a site or in a car wants to know where it stands and do one thing. The editor is for the desk. The confirmation page already proves the reading layout works at 390; the hero and the foot are the house pieces.",
+   "shots": [
+    [
+     "m390-04-editor-draft-top",
+     "Today · 390"
+    ],
+    [
+     "m390-10-editor-signed-top",
+     "Today · Signed · 390"
+    ],
+    [
+     "m390-12-confirm-top",
+     "The client’s page: the pattern"
+    ]
+   ]
+  },
+  {
+   "id": "P-02",
+   "size": "M",
+   "refs": "screen 3",
+   "title": "Edit is a list of sections, each a screen",
+   "today": "Every section is a card on one page. To change the validity date you scroll past Items and Payments; the tabs row only jumps the scroll.",
+   "proposed": "<b>Edit quote</b> opens a list: General info · Items (16) · Payment schedule · Files (1) · Terms and conditions · Additional notes · Signature, each with a one-line summary of what is inside. A row opens that section as a full-screen sheet with Done; the dock steps back while editing. On a tablet the list is the left pane and the open section the right.",
+   "why": "one question per screen is the whole difference between a phone and a desk. The summaries mean most sections are never opened, and the ones that are never scroll past their Done.",
+   "shots": [
+    [
+     "m390-04-editor-draft-full",
+     "Today · the whole page at 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-03",
+   "size": "M",
+   "refs": "C-lane · screen 4",
+   "title": "The Items cards grow up: bigger names, kind on the line, sticky total, a foot with Add",
+   "today": "REG-597’s cards work, but the name clips at two lines and 14px, the kind (Labour · Purchase) is hidden, the section head scrolls away, the Add Item button is a small + in the card’s head, and the total is in the summary at the bottom of the page.",
+   "proposed": "Name at 15px that wraps; the quantity line reads “44 sqft × S$102 · Purchase”; a tap on a section card folds it (its sheet is behind ⋮ › Edit section); the section head is tinted and sticks while its lines scroll; depth drawn with a left bar, not a margin; the screen head shows “16 lines · S$49,838” and stays; a foot with <b>Add section</b> and <b>+ Add item</b> (48px). The totals are a pinned strip (Subtotal · GST · Total) with <b>Adjust</b> for entity, discounts and GST and <b>Breakdown</b> for By category. The row ⋮ is five rows (Duplicate · Mark as optional · Move to section › · Remove · More…); the bulk bar is the count + Clear, then Move · Delete · ⋯. Column settings, Row density and Expand don’t appear on a phone.",
+   "why": "on site the job is to add a line, change a number and see the total move; today each of those is two to four taps and a long scroll.",
+   "shots": [
+    [
+     "m390-05-editor-items",
+     "Today · 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-04",
+   "size": "S",
+   "refs": "C-lane · screen 5",
+   "title": "The line sheet in two layers: five fields first, the rest under More",
+   "today": "The line sheet lists every column the grid has (sixteen fields) in one scroll; Done is below the fold and the quantity opens the full keyboard.",
+   "proposed": "Item name · Quantity · Unit · Unit price · Kind, then a computed Total, then one row <b>More: description, cost and markup, print as, room, link…</b> that opens the rest. Numeric keypad for quantity and price; Delete and Done always visible.",
+   "why": "the five fields are what changes at a client’s home; cost and markup are desk work and should not sit between a thumb and Done.",
+   "shots": [
+    [
+     "m390-06-line-sheet",
+     "Today · a section’s sheet · 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-05",
+   "size": "M",
+   "refs": "C-lane · screen 6",
+   "title": "“As printed” is a viewer, not the main screen",
+   "today": "The Preview page draws the A4 at 310px wide at 390: 4px type, no zoom, five controls stacked in the header (Internal copy, What your client sees, Copy link, Download PDF, Send) before the first page.",
+   "proposed": "On a phone, Preview shows the client’s reflowed quote (the reading cards the confirmation page already draws at 390) under one 56px bar (Back · Preview · Send), with <b>Paper</b> as a toggle that opens the A4 as a viewer: fit to width, pinch to zoom, swipe between pages with page dots, Download in the bar. Copy link (“team only”), Share PDF, Internal copy, What your client sees and Change template move under ⋮. On a tablet the paper renders at its text width (zoom 1, the margins scrolling), so 768 reads. The editor’s Client view button at ≤1024 opens this Preview; the 400px drawer stays desktop-only.",
+   "why": "the paper is for checking the print, a few times a month; what a designer shows a client on a phone is the quote, and it has to read without a pinch.",
+   "shots": [
+    [
+     "m390-11-preview-top",
+     "Today · 390"
+    ],
+    [
+     "t768-11-preview-top",
+     "Today · 768"
+    ]
+   ]
+  },
+  {
+   "id": "P-06",
+   "size": "S",
+   "refs": "A-lane · screen 1",
+   "title": "The list card: who, how much, what is waiting",
+   "today": "The card (REG-377) carries a checkbox, the title, number · Shared · client, a status <em>dropdown</em>, the amount and ⋮. The client’s name is the third thing on the card; “Expired 16 Sep” is red but says nothing about what to do.",
+   "proposed": "The client’s name leads, the amount is big and right, the second line is number · title, and the status is a chip with its “since” beside it (“Sent to client · opened 3 Oct · expires in 4 days”). The dropdown, the checkbox and Shared/Private leave the card: the status changes on the quote, a long-press selects, Shared shows as a small lock on the chip only when private.",
+   "why": "a designer thinks “Serena’s quote”, not “OM-10007”; and the card’s job is to say which quote needs them today.",
+   "shots": [
+    [
+     "m390-01-list-top",
+     "Today · 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-07",
+   "size": "L",
+   "refs": "C-lane · screen 11",
+   "title": "Tablet: the Items grid shows four editable columns; the rest opens in a pane",
+   "today": "At 768 and 1024 the full desktop grid renders (drag handle, +, checkbox, #, Item, Type, Qty, Unit, Unit price, Total, ⋮ …) in a sideways scroller with a frozen first block. Item names truncate (“Hacking of existin…”), Type reads “Purcha”, and editing a cell needs a keyboard and a steady hand on a 20px target.",
+   "proposed": "At 768 portrait: the phone’s cards with a 400px line panel beside them, so the list stays in view while a line is edited (Qty and Unit price first). At 1024 landscape: a working grid — Item · Qty · Unit · Unit price · Total (642px in a 902px card, no pan), edited in place with 44px cells, sections as tinted rows with “+ Add to …” under each; the other columns behind Column settings remembered per breakpoint; tapping a line opens the rest in the pane. The head’s “internal” meaning gets a visible caption on touch. No sideways scroll on any tablet width; Expand goes.",
+   "why": "a tablet on site is a bigger phone, not a smaller desk: the twelve-column grid was designed for a mouse and a 1440 screen, and at 768 it leaves a 62px slit to edit through.",
+   "shots": [
+    [
+     "t768-05-editor-items",
+     "Today · 768"
+    ],
+    [
+     "t1024-05-editor-items",
+     "Today · 1024"
+    ]
+   ]
+  },
+  {
+   "id": "P-08",
+   "size": "M",
+   "refs": "all lanes",
+   "title": "One scale for the phone and the touch tablet: 16 · 14 · 44",
+   "today": "Body text in the editor is 14px and some captions 12px; several targets are under 44px (measured per screen below); amounts are the same size as labels.",
+   "proposed": "A phone type scale for the Quotes screens: body 16, secondary 14, amounts 18–26 tabular; every target 44px, foot buttons 48; 16px gutters, 12px inside cards. Applied through the existing media queries, so desktop stays byte-identical.",
+   "why": "a world-class phone screen is first a readable one; the numbers are the point of a quote.",
+   "shots": []
+  },
+  {
+   "id": "P-09",
+   "size": "S",
+   "refs": "B-lane",
+   "title": "The header on a phone is one line plus the state",
+   "today": "Title with a rename chevron, ⋮, ✕; three chips; a Saved line; the status dropdown beside Send; then the tabs: five rows, about 230px, before anything of the quote.",
+   "proposed": "With P-01 the editor’s header on a phone is: ✕ · “Edit quote” with the number and Saved as the sub-line · Done. The status and Send live on the Quote screen; the chips (version, contract) become one line in the hero.",
+   "why": "the header should cost one row; the state belongs where the actions are.",
+   "shots": [
+    [
+     "m390-09-editor-sent-top",
+     "Today · Sent · 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-10",
+   "size": "S",
+   "refs": "A-lane",
+   "title": "Create Quote on a phone: four big rows, templates behind one",
+   "today": "The sheet shows the template gallery as a two-column grid of thumbnails (names truncate to “Defa…”) above the three other ways to start, so the most common choice (the default template) competes with the others.",
+   "proposed": "Studio-wide, a first step on its own: <b>“Who is this quote for?”</b> (the lead picker, recent leads first), so nothing can be refused silently. Then four rows at 56px: <b>Default template</b> (its full name, “Starts with …”, with “change” to pick another), <b>Blank quote</b>, <b>Upload a quote</b> (opens the files / camera sheet at once), <b>Draft with Maison AI</b>. The gallery opens from “change”; the picker’s list view is fixed (A-12).",
+   "why": "on a phone a choice is a list, not a gallery; the default is right nine times in ten; and a refused tap must say why.",
+   "shots": [
+    [
+     "m390-03-create-quote",
+     "Today · 390"
+    ]
+   ]
+  },
+  {
+   "id": "P-11",
+   "size": "M",
+   "refs": "A-02 · A-03 · A-18",
+   "title": "Tablet lists: a default column set with the row’s ⋮ frozen",
+   "today": "At 768 the Quotes table is 2,108px wide (3.3 screens): Title · Client · Status · Creator fill the first screen, the Total starts off-screen, and the row’s View + ⋮ sit 1,466px to the right. At 1024 the Total is cut mid-figure. On the lead’s Quotes tab the quick-links strip takes another 72px, so the table has 570.",
+   "proposed": "At ≤1024 on touch the tables open with a tablet default set — Title · Client · Status · Total · Due — with Title and ⋮ frozen, View dropped (the title opens), the rest kept in Column settings. The lead tab hides the quick-links strip at 768 portrait as it does on a phone. The to-do chip keeps its words at every width.",
+   "why": "a column set chosen per browser (REG-454) won’t be set by a studio of ten; the first screen has to carry the amount and the actions by default.",
+   "shots": [
+    [
+     "t768-01-list-top",
+     "Today · 768"
+    ],
+    [
+     "t768-A11-frame-scrolled",
+     "Where the actions are · 768"
+    ]
+   ]
+  },
+  {
+   "id": "P-12",
+   "size": "M",
+   "refs": "A-14 · A-15 · A-16 · A-17",
+   "title": "The client’s confirmation page: read first, then a sticky Confirm",
+   "today": "The Confirm card (name field, Confirm quote, Ask for a change) is the first screen; the 19 lines follow for 2,100px and end with no Confirm in reach. The buttons are 36px. A tablet gets the A4 at 10px type with the reading cards hidden; the phone’s “View as printed” draws the A4 at 4px inline.",
+   "proposed": "A total card (“S$88,704.75 · 19 lines · valid until 16 Sep” + View as printed), then the reading cards, then a sticky bottom bar at every scroll: <b>Confirm quote</b> (48px) and Ask. Confirm opens a short sheet (name, the one line of fine print, Confirm). Cards at ≤1024 portrait; the paper beside the card only in landscape. “As printed” opens full-screen with pinch.",
+   "why": "the homeowner is always on a phone, usually from a WhatsApp link; the page’s own words say “please read the quote” and then put Confirm first. The signing page already has this sticky bar.",
+   "shots": [
+    [
+     "m390-12-confirm-top",
+     "Today · 390"
+    ],
+    [
+     "m390-D3-confirm-end",
+     "The end of the quote · no Confirm · 390"
+    ],
+    [
+     "t768-12-confirm-top",
+     "Today · 768"
+    ]
+   ]
+  }
+ ],
+ "findingsTitle": "What is wrong today, screen by screen",
+ "findingsNote": "most are covered by the proposal above; the rest are quick fixes you can pick",
+ "findingsIntro": "Each finding names what was seen, where, and how bad. A finding the proposal already resolves says so and needs no pick. Severity: <b>Blocker</b> = can’t finish the job at that width · <b>Major</b> = slow or error-prone · <b>Minor</b> = polish.",
+ "surfaces": [
+  {
+   "key": "s-list",
+   "title": "Tools › Quotes and the lead’s Quotes tab",
+   "intro": "The list is the phone’s best surface in the module (cards since REG-377), which is why its gaps show: the card was drawn before Due, Valid until and Viewed existed, and the tablet keeps the desktop table.",
+   "findings": [
+    {
+     "id": "A-01",
+     "title": "The card’s second line clips, and the client’s name is what goes",
+     "severity": "Major",
+     "width": "390",
+     "what": "“OM-10008 · Private · Expired 21 Sep ’26 · Vivien Lee” is cut with no ellipsis on three of seven cards (322–344px of text in a 248px box). Every demo title is “Whole-home renovation”, so the client is the only thing that tells the cards apart.",
+     "shots": [
+      [
+       "m390-01-list-top",
+       "390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "the client leads the card"
+    },
+    {
+     "id": "A-05",
+     "title": "The only way to open a quote is its 14px title",
+     "severity": "Major",
+     "width": "390",
+     "what": "A 248×20 touch box; the rest of the card is inert and the ⋮ sheet has no Open row (View is hidden on a phone).",
+     "shots": [
+      [
+       "m390-A2-row-menu",
+       "The row ⋮ sheet · 390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "the whole card is the press, with a chevron"
+    },
+    {
+     "id": "A-08",
+     "title": "The card’s biggest control changes the status",
+     "severity": "Major",
+     "width": "390",
+     "what": "A 96–139 × 44 bordered pill opens a six-row write menu (Draft … Signed), every row enabled even on a Signed quote. One mis-tap in a car opens a sheet whose first row is Draft.",
+     "shots": [
+      [
+       "m390-A3-status-menu",
+       "The status sheet · 390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "a read-only chip; Change status in the ⋮ (Q-04)"
+    },
+    {
+     "id": "A-07",
+     "title": "No date reaches the phone card",
+     "severity": "Major",
+     "width": "390",
+     "what": "Due, Valid until, Sent, Created and Viewed are all hidden on the card; the only time signal is a red “Expired 16 Sep ’26”. On the move the question is “sent when, viewed yet, due when”.",
+     "shots": [],
+     "absorbed": "P-06",
+     "absorbedNote": "the third line says it"
+    },
+    {
+     "id": "A-06",
+     "title": "The Maison AI button covers the amount",
+     "severity": "Major",
+     "width": "390",
+     "what": "The FAB (326–374 × 710–758) sits over card 4’s S$88,705 at rest; with a selection it rises and covers the next card’s figure.",
+     "shots": [
+      [
+       "m390-01-list-top",
+       "390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "the amount moves to the title line, right"
+    },
+    {
+     "id": "A-02",
+     "title": "On a tablet the row’s View + ⋮ are 1.2–1.5 screens to the right",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The 150px actions band (REG-310, an in-flow band on touch) starts at x = 2,063 inside a 642px frame at 768; nothing on the first screen says a row has actions.",
+     "shots": [
+      [
+       "t768-A11-frame-scrolled",
+       "Scrolled to the band · 768"
+      ]
+     ],
+     "absorbed": "P-11"
+    },
+    {
+     "id": "A-03",
+     "title": "The amount is not on the tablet’s first screen",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "At 768 the Total column starts at x = 918 in a frame that ends at 736; at 1024 it is cut mid-figure, “S$62,70”.",
+     "shots": [
+      [
+       "t1024-01-list-top",
+       "1024"
+      ]
+     ],
+     "absorbed": "P-11"
+    },
+    {
+     "id": "A-18",
+     "title": "The lead’s Quotes tab at 768 is 35% chrome before its one card",
+     "severity": "Major",
+     "width": "768",
+     "what": "The quick-links strip (72) + the rail (60) + gutters leave the tab 570px; the table is 1,928px (3.4 screens) and the tabs row scrolls with no pager cue.",
+     "shots": [
+      [
+       "t768-C1-lead-serena",
+       "Serena’s tab · 768"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the strip hides at 768 portrait"
+    },
+    {
+     "id": "A-04",
+     "title": "The to-do chip reads “⌛ 3” on a tablet",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The words “Waiting on client” live only in aria-label; on touch there is no tooltip, and pressed it reads “⌛ 3 ✕” with nothing saying what the list is narrowed to. The bar’s left half is empty.",
+     "shots": [
+      [
+       "t768-A1-chip-pressed",
+       "Pressed · 768"
+      ]
+     ],
+     "fix": "Keep the chip’s words at ≤1024; use the short form only when the toolbar measures that they don’t fit (as the Tasks page does)."
+    },
+    {
+     "id": "A-09",
+     "title": "A typed search pushes the toolbar 8px off the screen",
+     "severity": "Minor",
+     "width": "390",
+     "what": "With text typed the clear ✕ widens the field (210 → 238) and the ⋮ lands at 362–398, clipped.",
+     "shots": [
+      [
+       "m390-A10-search",
+       "Search open · 390"
+      ]
+     ],
+     "fix": "`min-width: 0` on the search box so it gives way, or fold the ⋮ while the box is open."
+    },
+    {
+     "id": "A-20",
+     "title": "Selection on the phone offers only Delete",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 44px checkbox on every card for a destructive-only bulk bar, which lands on the fourth card’s status pill.",
+     "shots": [
+      [
+       "m390-A4-bulk-bar",
+       "The bulk bar · 390"
+      ]
+     ],
+     "absorbed": "P-06",
+     "absorbedNote": "no checkbox; a long-press selects"
+    },
+    {
+     "id": "A-21",
+     "title": "Filters is the desktop two-pane modal inside a sheet",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 156px rail + a 218px pane inside a 401px sheet: five tabs, each a press, then Done. The common asks (status, due, valid until) are one chip row each.",
+     "shots": [
+      [
+       "m390-A5-filters",
+       "Filters · 390"
+      ]
+     ],
+     "fix": "One scrolling sheet with sections on the house Chips (Status · Due · Valid until · Dates · Sort)."
+    },
+    {
+     "id": "A-22",
+     "title": "Column settings on touch: 24px drag handles, and none on a phone",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "Row order by pointer-dragging 24px handles in a 400px drawer; the drawer is not offered ≤767, so nothing the phone card hides can be chosen there.",
+     "shots": [
+      [
+       "t768-A6-columns",
+       "Column settings · 768"
+      ]
+     ],
+     "absorbed": "P-11",
+     "absorbedNote": "the tablet default makes it rare; the phone card decides for itself"
+    }
+   ],
+   "measure": "Type: page title 20 · “All Quotes” 16 · card title 14 bold · second line 12 · status pill 14 · amount 14 bold · head caption 12 · sheet rows 14.\nTouch boxes: toolbar glyphs 36×36 (+4 ring) · to-do chip 193×36 at 390, 65×36 at 768 · card checkbox 44×44 · status pill 83–139×44 · card ⋮ 36×36 · card title 248×20 (no ring) · sheet rows 44.\nWidths: 390 cards 358×126, second-line box 248 vs content 322–344 on the Expired cards. 768 list frame 642, grid 2,108 (Total 918–1,038, View 2,063, ⋮ 2,141); lead tab frame 570, grid 1,928; tabs row 803 in 692. 1024 list frame 898 (Total cut at 992).\nFAB 48 at 326–374 × 710–758 (bulk bar up: 648) · dock 70 at y 774."
+  },
+  {
+   "key": "s-create",
+   "title": "Create Quote",
+   "intro": "REG-412’s xl modal became a sheet (REG-353) with its 2-up template grid intact; on a phone the thumbnails can’t be read and the rows that matter on the move are below the fold.",
+   "findings": [
+    {
+     "id": "A-11",
+     "title": "The first screen is four thumbnails nobody can read",
+     "severity": "Major",
+     "width": "390",
+     "what": "165×111 wells holding a 132px A4 (≈4px text), captions clipped (“Defa…”, “The default template’s s…”), while Upload a quote and Draft with Maison AI sit at y 796–1,017 in an 844 screen.",
+     "shots": [
+      [
+       "m390-03-create-quote",
+       "390"
+      ],
+      [
+       "m390-B2-create-bottom",
+       "Below the fold · 390"
+      ]
+     ],
+     "absorbed": "P-10"
+    },
+    {
+     "id": "A-10",
+     "title": "Studio-wide, a tile tapped before a client is chosen does nothing visible",
+     "severity": "Major",
+     "width": "390",
+     "what": "The Client field and its “Choose a client first” error are at the top of an 869px body inside a 671px sheet; after scrolling to the tiles the error lands off-screen. Upload and Draft refuse the same silent way.",
+     "shots": [
+      [
+       "m390-B3-create-no-client",
+       "After the tap · 390"
+      ]
+     ],
+     "absorbed": "P-10",
+     "absorbedNote": "“Who is this quote for?” is its own first step on a phone"
+    },
+    {
+     "id": "A-12",
+     "title": "The picker’s list view paints the meta over “Blank Quote”",
+     "severity": "Major",
+     "width": "390",
+     "what": "“Blank Quote” wraps to two lines beside the + and “Empty table, the studio default’s look and settings” is drawn over it.",
+     "shots": [
+      [
+       "m390-B5-picker",
+       "The picker · 390"
+      ]
+     ],
+     "fix": "Name over meta, the meta ellipsised, in the list row at ≤767."
+    },
+    {
+     "id": "A-13",
+     "title": "At 1024 landscape the tiles wrap 3 + 1 beside 630px of empty rail",
+     "severity": "Minor",
+     "width": "1024",
+     "what": "The panel is 672 tall; More ways to start is below the fold (body 895 in 608).",
+     "shots": [
+      [
+       "t1024-B2-create-bottom",
+       "1024"
+      ]
+     ],
+     "fix": "Four tiles across at 220 under 1,100, or the rows above the rail."
+    }
+   ],
+   "measure": "Create sheet 743 tall (max 88dvh); body 869 inside 671 (studio-wide), 797 (lead); tiles 165×167–187 at 390; tile ⋮ 24 (+10 ring); rows 356×124 (Upload) and 356×97 (Draft); picker 1,113 inside 602."
+  },
+  {
+   "key": "s-client",
+   "title": "The client’s pages",
+   "intro": "The homeowner is always on a phone. The confirmation page’s reading cards are the best phone pattern in the module; the page around them was laid out for a desk.",
+   "findings": [
+    {
+     "id": "A-14",
+     "title": "Confirm comes before the quote, and never again after it",
+     "severity": "Major",
+     "width": "390",
+     "what": "The Confirm card (442px) is the first screen; the 19 lines run from y 542 to 2,671 and end at the Terms table with no Confirm in reach. The card’s own words say “please read the quote”.",
+     "shots": [
+      [
+       "m390-12-confirm-top",
+       "390"
+      ],
+      [
+       "m390-D3-confirm-end",
+       "The end · 390"
+      ]
+     ],
+     "absorbed": "P-12"
+    },
+    {
+     "id": "A-15",
+     "title": "A tablet gets the A4 only, at 10px type",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "At 768 the print is drawn at 0.885 scale (body 10.1px, smallest 7.3px); the reading cards exist in the DOM but are hidden ≥768, and there is no “View as a list”.",
+     "shots": [
+      [
+       "t768-12-confirm-top",
+       "768"
+      ]
+     ],
+     "absorbed": "P-12"
+    },
+    {
+     "id": "A-16",
+     "title": "The page’s one action is 36px tall",
+     "severity": "Major",
+     "width": "390 · 768",
+     "what": "“Confirm quote” 324×36, “Ask for a change” 36, “View as printed” 36; the name field types at 14px on Android. The client pages carry no touch rule at all.",
+     "shots": [],
+     "absorbed": "P-12",
+     "absorbedNote": "48px buttons and 16px fields on every client page"
+    },
+    {
+     "id": "A-17",
+     "title": "“View as printed” draws the A4 inline at 4px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Scale 0.438: lines 5px, the smallest text 3.6px; pinching zooms the whole page.",
+     "shots": [
+      [
+       "m390-D1-confirm-as-printed",
+       "As printed · 390"
+      ]
+     ],
+     "absorbed": "P-12",
+     "absorbedNote": "a full-screen page view with pinch"
+    },
+    {
+     "id": "A-23",
+     "title": "A dead view-only link says “ask the studio” with no way to ask",
+     "severity": "Minor",
+     "width": "all",
+     "what": "“Please ask Demo Studio Pte Ltd for an updated link” and no button; the live page has “Message {designer}”.",
+     "shots": [
+      [
+       "m390-13-view-link-notice",
+       "390"
+      ]
+     ],
+     "fix": "A “Message the studio” WhatsApp button where a phone is on record."
+    }
+   ],
+   "measure": "Confirm page 2,671 tall at 390 (card 442, cards from 542); As printed 2,139. Print scale 0.438 at 390 (lines 5px, smallest 3.6), 0.885 at 768 (10.1 / 7.3), 0.975 at 1024 (11.1 / 8.0). Buttons 324×36 · name field 290×46 · Ask for a change: Cancel 79×36, Send 186×36."
+  },
+  {
+   "key": "s-frame",
+   "title": "The editor’s frame: header, tabs, Send, ⋮ and the banners",
+   "intro": "The desktop header stacked into five rows, a tab strip that scrolls with no cue, and a Send button that leaves on the first scroll: this is where the “squeezed, not designed” feeling starts. P-01, P-02 and P-09 replace the frame on a phone; the quick fixes below stand on their own.",
+   "findings": [
+    {
+     "id": "B-03",
+     "title": "The one primary action scrolls away",
+     "severity": "Major",
+     "width": "390",
+     "what": "At ≤767 the header leaves the sticky stack and only the 48px tab row holds. The Draft page is 6,832px tall as loaded (8,646 with every section open), so from Signature or Activity, Send and the status pill are about 6,000px up.",
+     "shots": [
+      [
+       "m390-10-scrolled",
+       "Scrolled · 390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "the Quote screen’s sticky foot holds Send; the editor’s header is one row (P-09)"
+    },
+    {
+     "id": "B-04",
+     "title": "184px of header, 424px of chrome on a Sent quote, before the first field",
+     "severity": "Major",
+     "width": "390",
+     "what": "Title 24 + four 10px chips wrapping to two lines (44) + Saved 20 + the status/Send row 36 + gaps; with the tabs 232px. On the Sent quote the 192px banner makes it 424px, half the screen.",
+     "shots": [
+      [
+       "m390-01-draft-head",
+       "Draft · 390"
+      ],
+      [
+       "m390-25-sent-head",
+       "Sent · 390"
+      ]
+     ],
+     "absorbed": "P-09"
+    },
+    {
+     "id": "B-10",
+     "title": "The Sent banner is six lines of 14px with its button on a seventh",
+     "severity": "Major",
+     "width": "390",
+     "what": "192px (50 words) on the Sent quote; 112px on Signed. REG-624’s words are a decision; their phone layout is not.",
+     "shots": [
+      [
+       "m390-25-signed-head",
+       "Signed · 390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "one line in the hero (“Sent 19 Aug · v1 with the client · validity ended 16 Sep ▾”), Revise inline"
+    },
+    {
+     "id": "B-05",
+     "title": "Five of eight sections are off the tab strip with no cue",
+     "severity": "Major",
+     "width": "390",
+     "what": "The strip is 876px in 390: Files, Terms, Notes, Signature and Activity are off-screen with no pager, fade or mask; the cut “Files (” is the only hint. A new user does not know Signature and Activity exist.",
+     "shots": [
+      [
+       "m390-01-draft-head",
+       "The tab row · 390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the section list replaces the strip"
+    },
+    {
+     "id": "B-09",
+     "title": "The ⋮ sheet holds 16 rows and still scrolls",
+     "severity": "Major",
+     "width": "390",
+     "what": "Version History and Delete are below the fold with no cue; three jobs (see as the client · change the record · get it out) are mixed in one list; keyboard hints (“P”) print on a touch sheet.",
+     "shots": [
+      [
+       "m390-08-more-menu",
+       "⋮ · 390"
+      ]
+     ],
+     "absorbed": "P-01",
+     "absorbedNote": "Preview, Client view and Comments move to the Quote screen; the sheet groups the rest (Look · Change · Share · Export) and hides key hints on touch"
+    },
+    {
+     "id": "B-20",
+     "title": "The header chips type at 10px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "“OM-10001”, “VERSION 1”, “CONTRACT · DRAFT” at 10/12; Saved at 12. REG-344 kept the mobile body at 14, which is a decision; 10px does not read in daylight.",
+     "shots": [],
+     "absorbed": "P-09",
+     "absorbedNote": "one 12px line “OM-10001 · Draft · v1”; a chip only for the contract"
+    },
+    {
+     "id": "B-21",
+     "title": "The title’s switch is a 24px-tall target",
+     "severity": "Minor",
+     "width": "all touch",
+     "what": "The title button (the lead’s other quotes) is 261×24, the only header control without a 44 overlay.",
+     "shots": [],
+     "fix": "The status pill’s `.anchor > button::after` rule on `.switch`."
+    },
+    {
+     "id": "B-02",
+     "title": "The Send ▾ menu runs past the viewport on a tablet",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "The 320px dropdown opens left-aligned under Send and ends 12px past the edge; the whole page gains a sideways scroll (scrollWidth 877 at 768, 1,133 at 1024) and each row’s help line is cut. The only sideways scroll in the lane.",
+     "shots": [
+      [
+       "t768-07-send-menu",
+       "768"
+      ]
+     ],
+     "fix": "`align=\"right\"` on the Send dropdown (as the ⋮ already is), or give `Dropdown` the ≤767 clamp at ≤1024 too. A bug fix."
+    },
+    {
+     "id": "B-07",
+     "title": "At 768 the title is cut to “Whole-home r…” and the chips to 83px",
+     "severity": "Major",
+     "width": "768",
+     "what": "The title keeps `max-width: 45%` (189px) and the chip row shrinks to 83px behind its fade: on the Sent and Approved quotes the number, version and status chips are all hidden (“OM-100(”), while the crumb, “Saved 28 Sep ’26” and four buttons keep their room.",
+     "shots": [
+      [
+       "t768-25-sent-head",
+       "Sent · 768"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "the tablet frame takes the phone’s one-row header with the crumb"
+    },
+    {
+     "id": "B-06",
+     "title": "At 768 the tab strip cuts “Signatu” with no pager",
+     "severity": "Minor",
+     "width": "768",
+     "what": "The same 876px strip in 768; the house ScrollPagers were never added to EditorTabs.",
+     "shots": [
+      [
+       "t768-04-editor-draft-top",
+       "768"
+      ]
+     ],
+     "absorbed": "P-02"
+    },
+    {
+     "id": "B-14",
+     "title": "The tablet’s right-hand strip has 27px-wide touch boxes and costs 72px of a 768 screen",
+     "severity": "Major",
+     "width": "768 · 1024",
+     "what": "`.glyphs { overflow-x: hidden }` clips the 44 overlay the stylesheet promises: Maison AI 27×35, Price book and Templates 27×43. The main column is left 596px wide.",
+     "shots": [
+      [
+       "t768-04-editor-draft-top",
+       "768"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "no strip ≤1024; Maison AI and Price book are in the Items toolbar, Templates on the template card"
+    },
+    {
+     "id": "B-26",
+     "title": "At 1024 landscape the ⋮ dropdown is capped at 548px and scrolls",
+     "severity": "Minor",
+     "width": "1024",
+     "what": "645px of rows in a 548px menu: Print, Version History and Delete need an inner scroll with no cue; the Dropdown does not flip.",
+     "shots": [
+      [
+       "t1024-15-more-menu",
+       "1024"
+      ]
+     ],
+     "absorbed": "P-09",
+     "absorbedNote": "fewer rows"
+    },
+    {
+     "id": "B-08",
+     "title": "The Client view drawer scales the A4 to 328px: 5–6px type",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "The live client view opens in a 400px drawer (a 743px sheet at 390) with three pages scrolling inside it at zoom ≈ 0.41. Unreadable, and on a phone it covers the editor it mirrors.",
+     "shots": [
+      [
+       "m390-21-client-view",
+       "390"
+      ],
+      [
+       "t768-21-client-view",
+       "768"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "≤1024 the row reads “Preview as client” and opens the viewer"
+    }
+   ],
+   "measure": "Header 390: 184 tall (Draft), 160 (Sent); title 20/24, a 261×24 button; chips 10/12; status pill 89×36 (→43); Send 257×36 (→43). Tabs 48 sticky, strip 876 wide, pagers 0. Page heights at 390: Draft 6,832 · Sent 6,326 · Signed 6,286 · Approved 6,134; Draft with every section open 8,646. Banners: Sent 390×192 (6 lines), 768×96, 1024×76; Signed 390×112.\nHeader 768: 76 sticky; title 189 (45%); chips box 83 (scrollWidth 355); strip 72 wide, glyph boxes 27×35 / 27×43; main column 696. ⋮ sheet at 390: 743 tall, 16 rows, scroller 757/671, 4 key hints. Send ▾ at 768: 320×213 at x 557 → 12px past the edge."
+  },
+  {
+   "key": "s-sections",
+   "title": "The sections: General Info, Payment Schedule, Files, Terms and Notes, Signature, Activity",
+   "intro": "Each desktop card was kept and stacked. One of them cannot be used at all on a phone.",
+   "findings": [
+    {
+     "id": "B-01",
+     "title": "On a phone nothing on a payment row can be tapped",
+     "severity": "Blocker",
+     "width": "390",
+     "what": "Every tap on “10%”, the amount, the due date, the description or the red Remove resolves to the drag handle: `.handle::after { position: absolute; inset: -10px }` on a `.handle` that is never positioned, and ≤767 `.cell.cSel { position: static }` lets the overlay span the whole row. A real tap on “10%” opens no editor (it does at 768). The schedule can’t be edited and a payment can’t be removed.",
+     "shots": [
+      [
+       "m390-03-payments",
+       "Payment Schedule · 390"
+      ]
+     ],
+     "fix": "`payments-section.module.css`: `.handle { position: relative }` (the fix REG-729 gave the Cancel / OK buttons), then a real-tap probe. A bug fix, independent of everything else here."
+    },
+    {
+     "id": "B-11",
+     "title": "At 768 the Payment Schedule cuts its words and overlaps its heads",
+     "severity": "Major",
+     "width": "768",
+     "what": "Six tracks in 596px: Description cells are 64px (“Upon sigr”, “Works co”, “50% com”) and the heads read “PERCENTAGE (%AMOUNT (S$)”.",
+     "shots": [
+      [
+       "t768-03-payments",
+       "768"
+      ]
+     ],
+     "fix": "≤1024 use the ≤767 card rows already built (once B-01 is fixed), heads “%” and “Amount”."
+    },
+    {
+     "id": "B-22",
+     "title": "The phone’s payment card nudges 10px sideways under a finger",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The inner table is 332px in a 322px box; the amount column is left 82px by the room reserved for the pinned Remove.",
+     "shots": [],
+     "fix": "Row padding-right 48 or Remove at 32; verify `scrollWidth === clientWidth`."
+    },
+    {
+     "id": "B-25",
+     "title": "General Info is eleven open fields in one 1,186px column",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Title · Client · Property · Ref · Address · Prepared by · Valid until · NRIC · Customer ID · a second client · Remarks, plus the template card; inputs type at 14px in Chromium (16 on iOS only).",
+     "shots": [
+      [
+       "m390-02-general",
+       "390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "a summary row (Client · Valid until · Prepared by · Site) opens the full sheet"
+    },
+    {
+     "id": "B-24",
+     "title": "The template card is 364px tall on a phone",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 72×100 thumb over five lines of 12px meta and three text actions on two rows.",
+     "shots": [
+      [
+       "m390-27-sent-template-card",
+       "390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "one row “Default Quote PDF · v1 · Default” + Change"
+    },
+    {
+     "id": "B-12",
+     "title": "The T&Cs are a 1,904px open editor mid-page, with a toolbar a tap can miss",
+     "severity": "Major",
+     "width": "390",
+     "what": "The section is 2,079px; Notes open makes the page 8,646px. The ten 24px tools sit 8px apart with 34×41 effective boxes: a real tap 2px right of Bold’s edge hits Italic.",
+     "shots": [
+      [
+       "m390-05-terms",
+       "Terms · 390"
+      ]
+     ],
+     "absorbed": "P-02",
+     "absorbedNote": "a collapsed row (“12 clauses · shown to client ✓”) opens a full-screen sheet editor with tools at a 44 pitch"
+    },
+    {
+     "id": "B-13",
+     "title": "On a tablet the toolbar’s 44 boxes are clipped to 35px",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "The `.tools` scroller (`overflow-x: auto`) clips the overlays to 35 tall and 29–43 wide.",
+     "shots": [],
+     "fix": "`.tools { overflow: visible }` at ≤1024 (it wraps ≤767 anyway), or inner padding."
+    },
+    {
+     "id": "B-15",
+     "title": "The Files tile’s ⋮ has a 24×27 box; its label is 12px",
+     "severity": "Minor",
+     "width": "390 · 768",
+     "what": "The caption span paints over the kebab’s overlay; “Show in client view” is 12px on the phone.",
+     "shots": [
+      [
+       "m390-04-files",
+       "Files · 390"
+      ]
+     ],
+     "fix": "`position: relative; z-index: 1` on the kebab’s anchor; the label at 14px."
+    },
+    {
+     "id": "B-27",
+     "title": "Every section keeps its drag handle on a phone",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Reordering sections by drag is not a job on a phone and costs 32px per head; Files and Signature keep a 12px switch label.",
+     "shots": [
+      [
+       "m390-07-signature",
+       "Signature · 390"
+      ]
+     ],
+     "absorbed": "P-02"
+    },
+    {
+     "id": "B-23",
+     "title": "Maison AI opens as a floating card over the Items list",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 302px card, not a sheet, overlapping the content, with six bordered suggestion buttons.",
+     "shots": [
+      [
+       "m390-23-maison",
+       "390"
+      ]
+     ],
+     "fix": "The house `Sheet` ≤767, as every other popover of the editor (REG-353)."
+    }
+   ],
+   "measure": "Payment Schedule 390: table 324×438, scrollWidth 332 / clientWidth 322; row 322×92; cells 148×44 (name, desc) · 82×44 (%, amount, due); Remove 36×36 covered by the handle (24 → 40×56). Real taps: pct / amount / due / desc / delete → handle. 768: cells 116 · 64 · 64 · 96 · 88 wide; a real tap on 10% opens the input.\nGeneral Info 390: 1,186 tall; 8 inputs 290×46 at 14/20; template card 324×364. Terms 390: section 2,079; toolbar 356×97, tools 24 → 34×41; body 356×1,904 at 16/24. Files: tile 154×183, ⋮ 24 → 24×27. Signature 390: panes stacked, “Client signs online” 12/16. Activity 390: rows 324×54."
+  },
+  {
+   "key": "s-send",
+   "title": "Send ▾ and its dialogs",
+   "intro": "The Send sheet is right. What follows it was laid out for a 600px modal.",
+   "findings": [
+    {
+     "id": "B-16",
+     "title": "Every button in a dialog or sheet foot is 36px with no 44 overlay",
+     "severity": "Minor",
+     "width": "all touch",
+     "what": "Copy link 119×36, Send via WhatsApp 189×36, Rename 87×36, Not now 88×36, Use template 121×36, Version History’s Close 70×36. Only the danger button and the header’s buttons got one.",
+     "shots": [
+      [
+       "m390-13-confirm-dialog",
+       "Send for confirmation · 390"
+      ]
+     ],
+     "fix": "One rule in `dialog.module.css`: `.foot button::after` under the touch query. Module-wide, because REG-725 made the foot the one place."
+    },
+    {
+     "id": "B-17",
+     "title": "The Send for confirmation sheet scrolls inside itself",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The 743px sheet scrolls 98px: the follow-up chip’s help and the link row sit below the fold; the message box is 168px for a 212px message (a scroll inside the scroll); “+65” takes a full row above a 166px phone box.",
+     "shots": [
+      [
+       "m390-13-confirm-dialog",
+       "390"
+      ]
+     ],
+     "fix": "Auto-grow the textarea ≤767; code + phone on one line as at 768; drop the link row (Copy link is in the foot)."
+    },
+    {
+     "id": "B-18",
+     "title": "Choose a contract template: the foot wraps and the cards’ previews are 8px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "“Start from the studio agreement” (248 wide) then “Use template” on a second row (96px foot); two 171px cards per row; “Manage Templates” wraps in the head.",
+     "shots": [
+      [
+       "m390-14-contract-picker",
+       "390"
+      ]
+     ],
+     "fix": "A list (name · last used) with a radio, “Use template” alone in the foot, “Start from the studio agreement” as the first row."
+    },
+    {
+     "id": "B-19",
+     "title": "The snackbar covers the Version History sheet’s Close",
+     "severity": "Minor",
+     "width": "390",
+     "what": "After “Revise — start version 2” the 344×48 snackbar lands over the sheet’s foot.",
+     "shots": [
+      [
+       "m390-18-history",
+       "390"
+      ]
+     ],
+     "fix": "A sheet with a foot lifts `--snackbar-bottom` by its foot, as the editor lifts it above the dock."
+    }
+   ],
+   "measure": "Send for confirmation 390×743, body 648/550 (scrolls), name 324×46, phone 166×46, textarea 358×168 (content 212), foot Copy link 119×36 · Send via WhatsApp 189×36. Contract picker 390×743, body 747/510, cards 171×270, foot two rows. Version History 390×402, Close 70×36 under the snackbar. Dialogs at 768 fit (confirmation 600×699)."
+  },
+  {
+   "key": "s-items-phone",
+   "title": "Items on a phone",
+   "intro": "REG-597’s cards are the right idea. Around them sit the desktop’s menus, bar and summary, and one broken rule puts every touch box 22px up and left of its glyph.",
+   "findings": [
+    {
+     "id": "C-03",
+     "title": "Every icon button in the Items module has its 44px touch box displaced by (−22, −22)",
+     "severity": "Major",
+     "width": "all touch",
+     "what": "Three module rules (`item-cards`, `items-table`, `items-section`) override only the edges of the house `.btn::after` overlay, whose translate(−50%, −50%) still applies: a card’s kebab box sits 32px up-left of its glyph with nothing below or right; the toolbar’s Create box covers the right third of the Maison AI glyph; a tap 6px above-left of a section’s fold chevron opened the kebab menu. The DS Button and the sheet close are correct.",
+     "shots": [
+      [
+       "m390-05p-tap-above-chevron",
+       "The mis-tap · 390"
+      ]
+     ],
+     "fix": "Delete the three `inset` overrides; the house `.btn::after` already gives a centred 44. Add a design-lint rule: no `::after { inset … }` on a `.btn`. A bug fix, one change for every Items control at every touch width."
+    },
+    {
+     "id": "C-04",
+     "title": "The two things a finger does most on a section are its smallest targets",
+     "severity": "Major",
+     "width": "390",
+     "what": "The fold chevron (24×24) and the kebab (24×24) sit 2px apart at the card’s edge; with C-03 neither has a usable grown box. The checkbox (44) and the text area (270×82) are right.",
+     "shots": [
+      [
+       "m390-05-editor-items",
+       "390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "a tap on the card folds it; the ⋮ is the house 36 kebab"
+    },
+    {
+     "id": "C-05",
+     "title": "The line sheet asks for cost and markup before the price",
+     "severity": "Major",
+     "width": "390",
+     "what": "14 controls in 12 rows on a 743px sheet whose body scrolls (558 of 810): Name → Description → Qty · Unit → Cost · Markup → Unit price · Discount → GST · Kind → Room → Category → Section label → Vendor → Link → Image. Nothing is folded, nothing is primary; type is 14px in every box.",
+     "shots": [
+      [
+       "m390-06-line-sheet-top",
+       "Top · 390"
+      ],
+      [
+       "m390-06-line-sheet-bottom",
+       "Bottom · 390"
+      ]
+     ],
+     "absorbed": "P-04"
+    },
+    {
+     "id": "C-06",
+     "title": "The row ⋮ is 16 rows and Remove is below the fold",
+     "severity": "Major",
+     "width": "390",
+     "what": "16 × 44 = 704px in a 743px sheet that still scrolls; the first two rows are Price-book maintenance; the section’s ⋮ has 15.",
+     "shots": [
+      [
+       "m390-06b-row-menu",
+       "The row ⋮ · 390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "five rows + More…"
+    },
+    {
+     "id": "C-07",
+     "title": "The bulk bar is 726px of buttons in 372 with no cue; Delete is off-screen",
+     "severity": "Major",
+     "width": "390",
+     "what": "Visible: “1 · Copy · Set value · Group into section · Move to sec”. Off-screen: Print as · Highlight · Hide from client · Delete · Clear selection. Copy, a spreadsheet action, is first.",
+     "shots": [
+      [
+       "m390-05k-bulk-bar",
+       "390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "count + Clear, then Move · Delete · ⋯"
+    },
+    {
+     "id": "C-08",
+     "title": "The total sits 1,300px below the first card, under 1,020px of summary",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "Price book · Export links → Issuing Entity → the totals card (327px with 12px mini inputs) → BY CATEGORY (11 rows × 44). The one number anyone on site wants is 500px above the block’s end.",
+     "shots": [
+      [
+       "m390-05i-summary",
+       "The summary · 390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "a pinned Subtotal · GST · Total strip with Adjust and Breakdown"
+    },
+    {
+     "id": "C-10",
+     "title": "Adding a line is two taps plus a scroll, and the typed box hides under the sticky head",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The “+” opens a three-row sheet; the typed Add Item box is at the bottom of a 1,297px list and `scrollIntoView` lands it under the 124px sticky stack.",
+     "shots": [
+      [
+       "m390-05j-add-item",
+       "Add item · 390"
+      ]
+     ],
+     "absorbed": "P-03"
+    },
+    {
+     "id": "C-11",
+     "title": "The Items ⋮ offers Column settings, Row density and Expand on a phone",
+     "severity": "Minor",
+     "width": "390",
+     "what": "A 19-switch drawer for a grid that isn’t there; a density with no effect on cards; Expand lays the card over the whole screen with ⋮ › Collapse as the only way back.",
+     "shots": [
+      [
+       "m390-05c-more-menu",
+       "390"
+      ]
+     ],
+     "absorbed": "P-03"
+    },
+    {
+     "id": "C-12",
+     "title": "An open section indents its lines with a margin, and the cards squeeze",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The nested card is 340 wide with a 202px text column: “374 sqft × S$12.00” wraps beside the total and the card grows from 108 to 123.",
+     "shots": [
+      [
+       "m390-05q-section-open",
+       "390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "depth as a left bar inside a full-width card"
+    },
+    {
+     "id": "C-13",
+     "title": "Three of the card’s five texts are under 14px",
+     "severity": "Minor",
+     "width": "390",
+     "what": "Number 12, “681 sqft × S$4.00” 12, description 12; name 14, total 14. Four cards per screen; the Items section is 2,410px of a 6,832px page.",
+     "shots": [],
+     "absorbed": "P-08"
+    },
+    {
+     "id": "C-09",
+     "title": "The discount box types at 12px inside a 44px field",
+     "severity": "Minor",
+     "width": "all touch",
+     "what": "The 24px “mini” fields grown for touch keep 12px type; iOS lifts them to 16 only in Safari.",
+     "shots": [],
+     "fix": "On touch, the DS `s` TextField (14px) in place of the grown mini."
+    },
+    {
+     "id": "C-22",
+     "title": "153px of chrome above the first card, and a 166px find box",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The sticky head (76) + the three-line print note (77) under the 48px tabs; with the find box open, “Items (16)” keeps 120px so the box is 166 wide.",
+     "shots": [
+      [
+       "m390-05e-find",
+       "Find · 390"
+      ]
+     ],
+     "absorbed": "P-03",
+     "absorbedNote": "the note as an info glyph; the find box takes the row"
+    },
+    {
+     "id": "C-23",
+     "title": "Items is one of seven accordion cards on a 6,832px page",
+     "severity": "Minor",
+     "width": "390",
+     "what": "The section the person came for is a third of a very long page; the tab strip only jumps the scroll.",
+     "shots": [
+      [
+       "m390-04-editor-draft-full",
+       "The whole page · 390"
+      ]
+     ],
+     "absorbed": "P-02"
+    }
+   ],
+   "measure": "Cards 356×108 (nested 340×123); name 14/600, number 12, “qty × price” 12, total 14/700, description 12, SECTION tag 10; checkbox 44×44; kebab glyph 24×24 at 342,576 with its overlay at 310–354 × 544–588; 4 cards per screen; cards block 1,297px; editor page 6,832px.\nLine sheet 390×743, body 558 of 810; inputs 46 tall at 14px; Done 67×36 (box 44, centred). Row ⋮ 16 rows, body 647 of 779. Bulk bar 372 visible / 726 scroll, 9 buttons. Summary block 356×1,020: totals card 324×327, mini input 236×44 at 12px, By category 484px."
+  },
+  {
+   "key": "s-items-tablet",
+   "title": "Items on a tablet",
+   "intro": "The desktop grid at a touch width. REG-417 narrowed ITEM “to leave a window at 768”; the window measures 62px.",
+   "findings": [
+    {
+     "id": "C-01",
+     "title": "At 768 the grid leaves a 62px window to edit through",
+     "severity": "Blocker",
+     "width": "768",
+     "what": "The frozen SELECT · # · ITEM block (396px) and the frozen TOTAL (188px) leave 62px of a 646px scroller for thirteen columns; the narrowest, Qty, is 68px, so no number cell is ever fully on screen. Editing a price is panning a 2,067px row through a slit. Expand widens it to 134.",
+     "shots": [
+      [
+       "t768-05-editor-items",
+       "At rest · 768"
+      ],
+      [
+       "t768-05g-grid-panned",
+       "Panned · 768"
+      ]
+     ],
+     "absorbed": "P-07"
+    },
+    {
+     "id": "C-02",
+     "title": "At 1024 a price edit is a 400–800px pan each way",
+     "severity": "Major",
+     "width": "1024",
+     "what": "Window 318px: at rest Type · Category · 68px of Section label; Cost shows 50px; Markup · Unit price · Discount · GST · Room are off-screen. With the keyboard up, two rows stay visible.",
+     "shots": [
+      [
+       "t1024-05-editor-items",
+       "At rest · 1024"
+      ],
+      [
+       "t1024-05f-grid-cell-focus",
+       "A cell focused · 1024"
+      ]
+     ],
+     "absorbed": "P-07"
+    },
+    {
+     "id": "C-14",
+     "title": "The active row’s name box renders 24px tall; “insert a line here” is three taps",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "The stylesheet asks 44, 24 renders; the handle’s box is 26×43 under the checkbox’s margin; the row’s + is hidden on touch (REG-417), so inserting is ⋮ › Add Item › Below.",
+     "shots": [],
+     "absorbed": "P-07"
+    },
+    {
+     "id": "C-15",
+     "title": "The head’s eye glyphs explain themselves only in a native tooltip",
+     "severity": "Minor",
+     "width": "768 · 1024",
+     "what": "ITEM · CATEGORY · ROOM · TOTAL carry “Internal — never printed” as a `title`; the resize handle and head drag are mouse affordances a finger starts by accident.",
+     "shots": [],
+     "absorbed": "P-07",
+     "absorbedNote": "a visible caption on touch"
+    },
+    {
+     "id": "C-24",
+     "title": "Expand at 768 widens the window to 134px and hides the way back",
+     "severity": "Minor",
+     "width": "768",
+     "what": "The header and tabs go; ⋮ › Collapse is the only return.",
+     "shots": [
+      [
+       "t768-05h-expand",
+       "Expand · 768"
+      ]
+     ],
+     "absorbed": "P-07"
+    }
+   ],
+   "measure": "768: card 646; columns Sel 80 · # 76 · Item 240 (frozen, 396) · Type 98 · Category 152 · Section 130 · Qty 68 · Unit 105 · Cost 121 · Markup 178 · Margin 85 · Unit price 121 · Discount 100 · GST 85 · Room 188 · + 52 · Total 188 (frozen); scroller 646 / 2,067; window 62; Expand window 134. 1024: card 902; scroller 902 / 2,067; window 318; Cost 50px visible."
+  },
+  {
+   "key": "s-preview",
+   "title": "The Preview and the Client view",
+   "intro": "The A4 is scaled to the screen, so the type scales with it.",
+   "findings": [
+    {
+     "id": "C-16",
+     "title": "On a phone the Preview draws the quote at 4.4px",
+     "severity": "Blocker",
+     "width": "390",
+     "what": "Zoom 0.39: “Dear Sir / Mdm” and every item line at 4.4px, the grand total about 6.5px, the page 310×438. Pinch is allowed, but the 234px sticky bar scales with it and the page pans both ways. A designer cannot check what the client will see from a phone.",
+     "shots": [
+      [
+       "m390-11-preview-top",
+       "390"
+      ]
+     ],
+     "absorbed": "P-05"
+    },
+    {
+     "id": "C-17",
+     "title": "The Preview’s sticky bar is 234px, 28% of the screen, with four outlined buttons and a switch beside one primary",
+     "severity": "Major",
+     "width": "390",
+     "what": "Crumb · back · “Preview” · three chips on two lines · Internal copy + What your client sees · Copy link + Download PDF · Send; 610px remain for a 438px page.",
+     "shots": [
+      [
+       "m390-11-preview-top",
+       "390"
+      ]
+     ],
+     "absorbed": "P-05"
+    },
+    {
+     "id": "C-18",
+     "title": "At 768 the paper reads at 8.5–10px",
+     "severity": "Major",
+     "width": "768",
+     "what": "Zoom 0.85: body 10.2px, the table 9.6px, the terms’ small role 8.5px; the bar is 170px and sticky; the document is 3,110px.",
+     "shots": [
+      [
+       "t768-11-preview-top",
+       "768"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "zoom to the text width"
+    },
+    {
+     "id": "C-21",
+     "title": "The editor’s Client view pane is the same 4.4px paper in a drawer at every touch width",
+     "severity": "Major",
+     "width": "390 · 768 · 1024",
+     "what": "A 390/400px drawer scrolling 1,332px of paper at zoom 0.38; the foot says “Redraws as you build” while the drawer covers the editor. At 1024 it overlays the grid.",
+     "shots": [
+      [
+       "m390-05l-client-view-pane",
+       "390"
+      ],
+      [
+       "t1024-05l-client-view-pane",
+       "1024"
+      ]
+     ],
+     "absorbed": "P-05",
+     "absorbedNote": "the button opens the Preview at ≤1024"
+    },
+    {
+     "id": "C-19",
+     "title": "What your client sees: 40px rows, the Amounts select below the fold",
+     "severity": "Minor",
+     "width": "390 · 768 · 1024",
+     "what": "Twelve switch rows at 40 (the switch’s own box is 44); at 390 the body scrolls (562 of 796) and Hidden items · Amounts · Show changes sit below the fold.",
+     "shots": [
+      [
+       "m390-11b-wycs",
+       "390"
+      ]
+     ],
+     "fix": "Rows at 48; Columns as one line of chips (# · Item · Total) to save 120px."
+    },
+    {
+     "id": "C-20",
+     "title": "“Copy link” copies the team-only preview URL next to Send",
+     "severity": "Minor",
+     "width": "390",
+     "what": "On a phone it reads as the link to WhatsApp the client; “Download PDF” is `window.print()` (the Print sheet on iOS, “Save as PDF” on Android), a stand-in.",
+     "shots": [],
+     "absorbed": "P-05",
+     "absorbedNote": "“Copy preview link · team only” under ⋮; Share PDF through the Web Share API is a developer item"
+    }
+   ],
+   "measure": "Preview 390: bar 234 sticky; zoom 0.3906; page 310×438; body 11.33px computed → 4.4px effective; grand total ≈ 6.5px; 610px left under the bar. 768: bar 170; zoom 0.8467; page 672×950; body 9.6–10.2px; small 8.5px. 1024: bar 122; zoom 1; body 12px. Client view pane: 390 drawer 390 wide, pane 358, zoom 0.39, text 4.4px; 768 / 1024 drawer 400, pane 352, zoom 0.38. What your client sees: rows 40; body 562 / 796 at 390."
+  }
+ ],
+ "questionsIntro": "Where the proposal has more than one good answer. My recommendation is marked.",
+ "questions": [
+  {
+   "id": "Q-01",
+   "refs": "P-01",
+   "title": "Does a tablet in portrait (768) get the phone model or the desktop model?",
+   "opts": [
+    [
+     "phone",
+     "The phone model with room: the document first, two-column fields, the Items grid at four columns (P-07)",
+     true
+    ],
+    [
+     "desktop",
+     "The desktop editor, as today, with the fixes"
+    ],
+    [
+     "width",
+     "Phone model up to 1024 in portrait; desktop only on landscape tablets"
+    ]
+   ]
+  },
+  {
+   "id": "Q-02",
+   "refs": "P-01 · P-02",
+   "title": "Where does Edit land?",
+   "opts": [
+    [
+     "list",
+     "On the section list, every time (predictable)",
+     true
+    ],
+    [
+     "last",
+     "On the section last edited on this phone"
+    ],
+    [
+     "items",
+     "Straight into Items, the most edited section"
+    ]
+   ]
+  },
+  {
+   "id": "Q-03",
+   "refs": "P-07",
+   "title": "Should a tablet ever show the full desktop grid?",
+   "opts": [
+    [
+     "no",
+     "No. Four columns and the pane on every touch tablet; a keyboard-and-mouse tablet at 1025+ gets desktop",
+     true
+    ],
+    [
+     "switch",
+     "Yes, behind a “Full table” switch in the Items ⋮, remembered per device"
+    ]
+   ]
+  },
+  {
+   "id": "Q-04",
+   "refs": "P-06",
+   "title": "Changing a quote’s status from the list on a phone",
+   "opts": [
+    [
+     "quote",
+     "Only on the quote (the chip on the card is read-only); fewer accidental changes",
+     true
+    ],
+    [
+     "card",
+     "Keep the dropdown on the card, as today"
+    ]
+   ]
+  },
+  {
+   "id": "Q-05",
+   "refs": "P-01",
+   "title": "Hide the bottom dock while editing a quote?",
+   "opts": [
+    [
+     "hide",
+     "Yes: the dock hides inside Edit and the line sheet, and comes back on Done (focus)",
+     true
+    ],
+    [
+     "keep",
+     "No: the dock stays on every screen"
+    ]
+   ]
+  },
+  {
+   "id": "Q-06",
+   "refs": "P-05",
+   "title": "What the “As printed” viewer opens at",
+   "opts": [
+    [
+     "fit",
+     "Fit to width, pinch to zoom",
+     true
+    ],
+    [
+     "readable",
+     "100% scale (readable, scrolls sideways within the viewer)"
+    ]
+   ]
+  },
+  {
+   "id": "Q-07",
+   "refs": "P-01",
+   "title": "The one primary button per state",
+   "note": "My proposed mapping: Draft → Send ▾ · Sent for Approval → Approve (approvers) / nothing (others) · Approved → Send ▾ · Sent to Client → Remind · Confirmed → Send for signature · Signed → Open contract / Move to Won · Expired → Revise.",
+   "opts": [
+    [
+     "map",
+     "Use this mapping",
+     true
+    ],
+    [
+     "send",
+     "Always Send ▾, as the desktop header does"
+    ],
+    [
+     "none",
+     "No primary on the Quote screen; actions only in ⋮"
+    ]
+   ]
+  },
+  {
+   "id": "Q-08",
+   "refs": "all",
+   "title": "After Quotes, which module next?",
+   "opts": [
+    [
+     "contracts",
+     "Contracts (the same document-first model applies)",
+     true
+    ],
+    [
+     "projects",
+     "Projects (the heaviest data after quotes)"
+    ],
+    [
+     "leads",
+     "Lead Details (the most used on site)"
+    ]
+   ]
+  }
+ ]
+}

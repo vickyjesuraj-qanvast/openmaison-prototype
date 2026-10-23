@@ -69,7 +69,7 @@ export function QuotesTabGhost({ studio = false, rows = 3 }: { studio?: boolean;
   return (
     <>
       <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Quotes"><Slot kind="btnFold" w={122} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>
-      <GhostTable head={56} row={64} rows={rows} phone={{ card: 126, lines: 3 }} cols={[
+      <GhostTable head={56} row={64} rows={rows} phone={{ card: 104, lines: 3 }} cols={[   /* (Quotes on the move, K4 — P-06) the phone card: name · number line · chip line, 104 tall */
         { basis: 40, head: null, cell: { slot: 'check' } },
         { basis: 317, grow: 1, head: 33, cell: (r) => [cycle([150, 128, 170], r), 96] },
         ...(studio ? [{ basis: 180, head: 44, cell: (r: number) => cycle([84, 96, 72, 88], r) }] : []),
@@ -90,7 +90,7 @@ export function ContractsTabGhost({ studio = false, rows = 3 }: { studio?: boole
   return (
     <>
       <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Contracts"><Slot kind="btnFold" w={149} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>
-      <GhostTable head={48} row={68} rows={rows} phone={{ card: studio ? 134 : 106, lines: studio ? 4 : 3 }} cols={[
+      <GhostTable head={48} row={68} rows={rows} phone={{ card: 104, lines: 2 }} cols={[   /* (Contracts on the move, C4 — P-07) the phone card: the name and the amount · the signs line · the chip line, 104 tall — the Quotes card's */
         { basis: 555, grow: 1, head: 33, cell: (r) => cycle([196, 168, 210], r) },
         ...(studio ? [{ basis: 180, head: 32, cell: (r: number) => cycle([84, 96, 72, 88], r) }] : []),
         { basis: 128, head: 46, cell: 56 },

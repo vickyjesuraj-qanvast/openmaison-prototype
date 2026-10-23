@@ -3,3 +3,12 @@
 .switchText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .switchLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .switchHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* (Contracts on the move, C4 — C-25 · C-14 · P-13, 2026-10-22) On touch the dialog's sentence is the body's first line at 14 (the house
+   subtitle reads 12 — the dialog passes none there), and the switch's help reads 14. A photo holds the switch on: its row stops looking pressable. */
+.lead { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.switchRow[data-held] { cursor: default; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .switchLabel { font: var(--om-type-subheading-l); }   /* C2's gate rows: 16 over 14 */
+  .switchHelp { font: var(--om-type-body-m); }
+}

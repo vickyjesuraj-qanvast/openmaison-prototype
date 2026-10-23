@@ -22,8 +22,9 @@ import { ItemRow, COL_CLASS, Guides, type ColWidths, type RowHandlers, type RowL
 import type { LineChanges } from './line-change'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
 import { useRowDrag, type DragRow, type DropSlot } from './row-drag'
-import { ItemCards } from './item-cards'
-import { useSheetLayout } from '@/components/om/sheet'
+import { ItemCards, LineFields, LinePane, type OpenLine } from './item-cards'
+import { useItemsLayout } from './items-layout'   // (Quotes on the move — P-03 · P-07) phone · cards · grid · desktop
+import { Drawer } from '@/components/om/drawer'
 import { SideScrollbar } from '@/components/om/side-scrollbar'   // (REG-570) moved to the house pieces — the Schedule's timeline scrolls on it too (fix-B, B-31)
 import styles from './items-table.module.css'
 
@@ -188,7 +189,15 @@ export function ItemsTable({
   items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, matchCount = 0, onMatch,
   query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes, onAddToBucket, onMoveBucket, onDropMany, sectionsFold = null, chainId = null,
+  openLine = null, showCost, showMarkup,
 }: {
+  /** (Quotes on the move — P-03 · P-07) The line to open now — an add press, the foot's Add item, ⋮ › Edit…: the phone's card opens its
+   *  sheet, a tablet opens its pane (beside the cards, or the drawer over the grid). Once per `n`. */
+  openLine?: OpenLine | null
+  /** The quote's Cost and Markup columns are on (Dane UAT 12.08): the sheet and the pane show those boxes only then. Defaults to the
+   *  visible columns — the tablet's grid keeps its own set, so the section says it outright. */
+  showCost?: boolean
+  showMarkup?: boolean
   /** (Dane UAT, Figma 1549:34 pt 1) View by › Category: the "+" on a bucket's row adds a line in that category. */
   onAddToBucket?: (key: string) => void
   /** (Dane UAT, Figma 1549:34 pt 4) View by › Category: a bucket dragged by its handle lands before another, or after one's lines. */
@@ -252,8 +261,33 @@ export function ItemsTable({
   chainId?: string | null
 }) {
   const comingSoon = useComingSoon()
-  const phone = useSheetLayout()   /* (REG-597) ≤767 the lines are cards with a sheet each; the grid stays for every wider screen */
+  /* (REG-597 · Quotes on the move — P-03 · P-07 · Q-03) ≤767 the lines are cards with a sheet each; a tablet held upright the cards with a pane
+     beside them; a tablet held sideways the working grid with the rest of a line in a drawer; the desktop keeps the mocked grid. */
+  const layout = useItemsLayout()
+  const phone = layout === 'phone', cards = layout === 'cards', touchGrid = layout === 'grid'
+  const autonumber = details.autonumber && !touchGrid   // the touch grid has no # column: the number rides in the Item cell
+  const costOn = showCost ?? columns.includes('cost'), markupOn = showMarkup ?? columns.includes('markup')
+  /* the line the pane holds (a tablet) — it closes with its line, and follows the next tap */
+  const [paneId, setPaneId] = useState<string | null>(null)
+  const [paneFocus, setPaneFocus] = useState(false)
+  const paneItem = paneId ? items.find((i) => i.id === paneId) ?? null : null
+  if (paneId && !paneItem) setPaneId(null)   // render-phase adjust: the line went
+  const [seenOpen, setSeenOpen] = useState<number | null>(null)
+  if (openLine && openLine.n !== seenOpen) { setSeenOpen(openLine.n); if (cards || touchGrid) { setPaneId(openLine.id); setPaneFocus(!!openLine.focusName) } }
+  const openInPane = (it: QuoteItem) => { setPaneId(it.id); setPaneFocus(false) }
   const wrap = useRef<HTMLDivElement>(null)
+  /* (P-07) the pane stands beside the cards only where the cards keep 320 (the section screen's 736 at 768); narrower — today's editor column
+     at 768 is 646 — it is the house drawer over the list's right edge, non-modal, the cards still live beside it */
+  const [wrapW, setWrapW] = useState(0)
+  useEffect(() => {
+    if (!cards) return
+    const el = wrap.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setWrapW(Math.round(el.getBoundingClientRect().width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [cards])
+  const inlinePane = cards && wrapW >= 736
   const scroller = useRef<HTMLDivElement>(null)
   const headBar = useRef<HTMLDivElement>(null)
   const sentinel = useRef<HTMLDivElement>(null)
@@ -325,7 +359,7 @@ export function ItemsTable({
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
-    if (!head) return
+    if (!head || touchGrid) return   // (P-07) the touch grid lays its five columns out by the stylesheet, the Item column fluid — nothing to fit
     const headCell = head.querySelector<HTMLElement>('[role="columnheader"]:last-child')
     const bodyCell = scroller.current?.querySelector<HTMLElement>('[role="row"][data-item-id] [role="cell"]') ?? null
     const fontOf = (el: HTMLElement | null, fallback: string) => { if (!el) return fallback; const cs = getComputedStyle(el); return `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}` }
@@ -338,14 +372,15 @@ export function ItemsTable({
       next[c] = Math.max(MIN_COL, Math.ceil(w) + 36)   // the cell's 32 of padding + the input's 2 of border + 2 of slack (the box rounds up past the canvas measure)
     }
     setFit((cur) => (columns.every((c) => cur[c] === next[c]) && Object.keys(cur).length === columns.length ? cur : next))
-  }, [columns, fullDisplay, items, sums, fontsReady])
+  }, [columns, fullDisplay, items, sums, fontsReady, touchGrid])
   // What every row lays its cells to: the user's width, else the fit, else the stylesheet's mocked width (item-row.tsx COL_CLASS).
   const colW: ColWidths = useMemo(() => {
     const w: ColWidths = {}
+    if (touchGrid) return w   // (P-07) the stylesheet's tight widths; a dragged desktop width never reaches the tablet
     for (const c of columns) { const px = stored[c] ?? fit[c]; if (px) w[c] = px }
     if (stored.item) w.item = stored.item
     return w
-  }, [columns, stored, fit])
+  }, [columns, stored, fit, touchGrid])
   const itemStyle: CSSProperties | undefined = colW.item ? { width: colW.item } : undefined
   const groups = items.filter((i) => i.kind === 'group')
   const D = useColumnDrag(columns.map((key) => ({ key })), (keys) => onReorder(keys as ColumnKey[]))   /* drag a head to reorder (REG-462); the frozen blocks and Total are not in the list */
@@ -381,6 +416,8 @@ export function ItemsTable({
     },
     /* (S44I, B4 — the team's sections prototype) a ticked row drags every ticked row with it (View by: None; one write, one ⌘Z) */
     onDragPointerDown: (id, e) => R.start(id, e, view === 'none' && !found && selected.has(id) && selected.size > 1 ? [...selected].filter((x) => x !== id) : []),
+    /* (P-07) the touch grid: a tap on a line's Total (or ⋮ › Edit…) opens the rest of it in the drawer */
+    onOpenLine: touchGrid ? openInPane : undefined,
   }
   const bucketNames = display.flatMap((d) => (d.kind === 'bucket' ? [d.key] : []))
   const foldedAll = view !== 'none' ? bucketNames.length > 0 && bucketNames.every((k) => collapsedBuckets.has(k)) : !!sectionsFold && !sectionsFold.anyOpen
@@ -538,19 +575,38 @@ export function ItemsTable({
     }
   }
 
-  if (phone) {
+  /* the fields of the line a tablet's pane holds — the same handlers the cards and the grid write through */
+  const paneFields = paneItem ? {
+    labels, brandColors, showCost: costOn, showMarkup: markupOn,
+    onPatch: (p: Parameters<typeof h.onPatch>[1]) => h.onPatch(paneItem.id, p), onAddLabel: h.onAddLabel, onNote: h.onNote, onUploadImage: () => h.onUploadImage(paneItem),
+    total: paneItem.kind === 'group' ? groupTotals(items, paneItem.id).totalMinor : lineTotalMinor(paneItem),
+  } : null
+  /* (P-07) the rest of a line in the house 400 drawer — non-modal at a tablet, so the grid or the cards stay live beside it */
+  const paneDrawer = touchGrid || (cards && !inlinePane) ? (
+    <Drawer open={!!paneItem} title={paneItem?.name || (paneItem?.kind === 'group' ? 'Section' : 'Item')} width="standard" onClose={() => setPaneId(null)} label={paneItem ? `Edit ${paneItem.name || 'item'}` : 'Edit item'}
+            footer={paneItem ? <><Button variant="secondary" appearance="outlined" onPress={() => h.onMenu(paneItem, 'remove')} data-testid="line-delete">{paneItem.kind === 'group' ? 'Remove' : 'Delete'}</Button><Button onPress={() => setPaneId(null)}>Done</Button></> : null}>
+      {paneItem && paneFields ? <div className={styles.drawerFields} data-testid="line-pane"><LineFields key={paneItem.id} item={paneItem} {...paneFields} mode={touchGrid ? 'rest' : 'all'} nested focusName={paneFocus} /></div> : null}
+    </Drawer>
+  ) : null
+  if (phone || cards) {
+    /* (P-03 · P-07) the cards; the adds live in the section's pinned foot (items-touch-foot.tsx), so the Add Item box and its links are gone here */
     return (
-      <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
+      <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" data-pane={paneItem && inlinePane ? '' : undefined} onPaste={onPaste}>
         <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : d.kind === 'bucket' ? { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }
           : d.kind === 'foot' ? { kind: 'foot' as const, section: d.section, empty: d.empty, top: d.top } : { kind: 'divider' as const, count: d.count }))}
-                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} showMarkup={columns.includes('markup')} commentCounts={commentCounts} changes={changes} />
-        {/* (wave E, phone-4) no "#n" before the field on a phone — the cards carry their own numbers, and a lone "2" floated at the edge */}
-        <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} matchCount={matchCount} onMatch={onMatch} />
+                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showCost={costOn} showMarkup={markupOn} commentCounts={commentCounts} changes={changes}
+                   openLine={openLine} openId={cards ? paneId : null} onOpenLine={cards ? openInPane : undefined} />
+        {inlinePane && paneItem && paneFields ? (
+          <LinePane key={paneItem.id} item={paneItem} {...paneFields} focusName={paneFocus} onClose={() => setPaneId(null)} onDelete={() => h.onMenu(paneItem, 'remove')} />
+        ) : null}
+        {paneDrawer}
       </div>
     )
   }
+  /* (P-07, C-15) the touch grid says which of the columns on screen never print for the client — the head's eye said it only in a native title */
+  const internal = touchGrid && clientColumns ? columns.filter((c) => !clientColumns.has(c)).map((c) => COLUMN_LABEL[c]) : []
   return (
-    <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-kb-own data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root=""
+    <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-kb-own data-nonum={autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root="" data-touch-grid={touchGrid || undefined}
          data-more={more || undefined} data-scrolled={scrolled || undefined} onKeyDown={onGridKey} onPaste={onPaste} onMouseDownCapture={onRunPress} onClickCapture={onRunClick}>
       <div ref={sentinel} className={styles.sentinel} aria-hidden />
       {/* (REG-570) The column heads: a sticky bar above the body's scroller, scrolled sideways in step with it. */}
@@ -568,11 +624,12 @@ export function ItemsTable({
               ) : null}
               <span className={styles.check}><Checkbox isSelected={allOn} isIndeterminate={!allOn && allIds.some((id) => selected.has(id))} isDisabled={allIds.length === 0} onChange={(on: boolean) => onSelectAll(on)} aria-label="Select all items" /></span>
             </div>
-            {details.autonumber ? <div role="columnheader" className={`${styles.cell} ${styles.colNum}`}>#</div> : null}
-            <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item{clientColumns ? <ClientEye /> : null}<ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} /></div>
+            {autonumber ? <div role="columnheader" className={`${styles.cell} ${styles.colNum}`}>#</div> : null}
+            {/* (P-07) on the touch grid the resize handles and the head drag — mouse affordances a finger starts by accident — are not drawn */}
+            <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item{clientColumns ? <ClientEye /> : null}{touchGrid ? null : <ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} />}</div>
             {columns.map((c) => (
-              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} data-col={c} data-client={clientColumns ? (clientColumns.has(c) ? 'yes' : 'no') : undefined} title={clientColumns && !clientColumns.has(c) ? 'Internal — never printed for the client' : undefined} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...D.style(c) }} {...D.head(c)}>
-                {COLUMN_LABEL[c]}{clientColumns?.has(c) ? <ClientEye /> : null}<ColumnResizer table={ITEMS_TABLE} column={c} label={COLUMN_LABEL[c]} min={MIN_COL} />
+              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} data-col={c} data-client={clientColumns ? (clientColumns.has(c) ? 'yes' : 'no') : undefined} title={clientColumns && !clientColumns.has(c) ? 'Internal — never printed for the client' : undefined} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...D.style(c) }} {...(touchGrid ? {} : D.head(c))}>
+                {COLUMN_LABEL[c]}{clientColumns?.has(c) ? <ClientEye /> : null}{touchGrid ? null : <ColumnResizer table={ITEMS_TABLE} column={c} label={COLUMN_LABEL[c]} min={MIN_COL} />}
               </div>
             ))}
             <div role="columnheader" className={`${styles.cell} ${styles.colAdd}`}>
@@ -582,31 +639,34 @@ export function ItemsTable({
             </div>
             <div role="columnheader" className={`${styles.cell} ${styles.colTotal}`}>Total{clientColumns ? <ClientEye /> : null}</div>
           </div>
+          {/* (P-07, C-15) inside the held head bar, so it stays with the heads it explains; sticky left, so a pan never carries it off */}
+          {internal.length ? <div className={sec.internalNote} data-testid="internal-note"><Icon name="visibility_off" size={16} weight={300} /><span>{internal.join(' · ')} — internal, never printed for the client</span></div> : null}
       </div>
       <div ref={scroller} className={styles.scroller}>
         <div className={styles.table} role="rowgroup">
           {shown.map((d) => d.kind === 'bucket' ? (
-            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)}
+            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} colStyle={D.style} autonumber={autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)}
                        fresh={fresh.has(`bucket:${d.key}`)} drag={byCategory ? R.rowProps(`bucket:${d.key}`) : undefined}
                        onAdd={byCategory && onAddToBucket ? () => onAddToBucket(d.key) : undefined}
                        onDragPointerDown={byCategory && onMoveBucket && d.key !== UNLABELLED.category && !found ? (e) => R.start(`bucket:${d.key}`, e) : undefined} />
           ) : d.kind === 'foot' ? (
-            <SectionFoot key={`f-${d.section.id}`} d={d} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} onFoot={h.onFoot} drag={R.rowProps(`foot:${d.section.id}`)} />
+            <SectionFoot key={`f-${d.section.id}`} d={d} columns={columns} colW={colW} colStyle={D.style} autonumber={autonumber} itemStyle={itemStyle} onFoot={h.onFoot} drag={R.rowProps(`foot:${d.section.id}`)} />
           ) : d.kind === 'divider' ? (
-            <DividerRow key="priced-after" count={d.count} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
+            <DividerRow key="priced-after" count={d.count} columns={columns} colW={colW} colStyle={D.style} autonumber={autonumber} itemStyle={itemStyle} />
           ) : (
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels} tree={d.tree} chained={chainId === d.item.id}
-                     {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)}
+                     {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)} touchGrid={touchGrid}
                      showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={startFill} h={rowH}
                      runCol={run && runSet.has(d.item.id) ? run.col : null} runEnd={runLast === d.item.id} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
           ))}
           {found && !shown.some((d) => d.kind === 'row') ? <div className={styles.findEmpty} role="row" data-testid="find-empty"><span role="cell">No items match “{query.trim()}”</span></div> : null}   {/* (sweep S1) */}
-          <SumRow sums={sums} priced={priced} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
-          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} matchCount={matchCount} onMatch={onMatch} />
+          <SumRow sums={sums} priced={priced} columns={columns} colW={colW} colStyle={D.style} autonumber={autonumber} itemStyle={itemStyle} />
+          <AddItemRow number={nextNumber} autonumber={autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} matchCount={matchCount} onMatch={onMatch} />
         </div>
       </div>
       <SideScrollbar scroller={scroller} />
+      {paneDrawer}
     </div>
   )
 }

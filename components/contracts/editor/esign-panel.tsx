@@ -1,34 +1,61 @@
 'use client'
 
-import { Button, Switch, TextArea } from '@/components/ds'
+import { Button } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
-import { SIGN_FIELDS, signField, type SignKey } from '@/lib/contracts/tokens'
-import { DEFAULT_ACCEPT_LABEL } from '@/lib/contracts/policy'
+import { useSnackbar } from '@/components/om/snackbar'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { placeWords, SIGN_FIELDS, SIGN_LABEL, signField, type SignKey, type SignPlaceRow } from '@/lib/contracts/tokens'
+import { BeforeSigningPanel, type SigningGates } from '../document/before-signing-panel'
+import { liveDoc, useLiveDocHtml } from '../document/live-doc'
+import { SignatureFieldsPanel } from '../document/signature-fields-panel'
 import styles from './contract-editor.module.css'
 
-export type SigningGates = { requiresScroll: boolean; requiresAccept: boolean; acceptLabel: string | null }
+export type { SigningGates } from '../document/before-signing-panel'
 
 /**
  * eSignatures (the reference's right panel, "Fillable Fields"): the four fields with Insert — each drops a signature box
  * into the document at the caret. On the signing page the studio's box prints your saved signature and the client's is
  * where they sign; initials print as small boxes. (REG-633, contracts parity Q-15) Then "Before the client signs": 1.0's per-document
  * gates — read to the end, tick your words (the words editable) — for this contract, or for every contract a template starts.
- * (Dane UAT 8.05) The words are written in the box, never a placeholder that shows only once it is focused: switching Tick to accept on
- * fills them with the default the signing page prints, and a document with none says that default too; a two-line box (the Send
- * dialog's message is the nearest house field), 160 at most, as the server keeps.
+ * (contracts on the move 2026-10-22, P-04 · B-04 · B-05 · B-12 · C-13) On a phone and a touch tablet the panel is two parts: **Signature
+ * fields** — each field placed / not placed, and Add, which asks WHICH then WHERE and lands the field as its own block after that clause
+ * (never at a thumb's caret; the panel closes and the box scrolls into view with Undo) — and **Before the client signs**, whose rows are
+ * labels the whole row toggles. The desk keeps Insert at the caret (Dane UAT 8.03). A host that holds the paper itself passes `html` and
+ * `onPlace`; today's editor passes neither, and the panel reads the mounted paper (live-doc.ts).
  */
-export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates, onGates, uploaded = false, locked = false }: {
+export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates, onGates, uploaded = false, locked = false, html, onPlace }: {
   open: boolean; onClose: () => void; onInsert: (html: string) => void; hasStudioSignature: boolean
   gates?: SigningGates; onGates?: (patch: Partial<SigningGates>) => void
   /** An uploaded PDF can be accepted, not scrolled. */
   uploaded?: boolean
   /** Signed: the gates stay as they were. */
   locked?: boolean
+  /** The paper as the host holds it (a section screen with no editor on the page); absent, the mounted paper is read. */
+  html?: string
+  /** The host applies a touch placement itself (`insertSignFieldAfter` on its state); absent, the mounted paper takes it. */
+  onPlace?: (key: SignKey, place: SignPlaceRow) => void
 }) {
+  const narrow = useMediaQuery(TABLET_DOWN)
+  const snackbar = useSnackbar()
+  const liveHtml = useLiveDocHtml()
+  const docHtml = html ?? liveHtml ?? ''
+  const place = (key: SignKey, row: SignPlaceRow) => {
+    onClose()
+    if (onPlace) { onPlace(key, row); return }
+    const api = liveDoc()
+    const r = api?.insertSignFieldAt(row.place, key) ?? null
+    if (!api || !r) { onInsert(signField(key)); return }   // no paper on the page to place in: at the caret, as the desk does
+    snackbar({ message: `${SIGN_LABEL[key]} added ${placeWords(row)}`, actionLabel: 'Undo', onAction: () => api.replaceAll(r.prev) })
+  }
   return (
     <Drawer open={open} onClose={onClose} title="eSignatures" label="eSignatures">
       {/* (pending modules S03) a PDF has no document to place a field in — its Insert pressed nothing; the client signs it on the page */}
-      {uploaded ? <p className={styles.signNote}>A PDF is read and signed on the page itself: the client ticks your words, then signs under it.</p> : <>
+      {uploaded ? <p className={styles.signNote}>A PDF is read and signed on the page itself: the client ticks your words, then signs under it.</p> : narrow ? (
+        <>
+          <div className={styles.signEyebrow}>Signature fields</div>
+          <SignatureFieldsPanel html={docHtml} hasStudioSignature={hasStudioSignature} locked={locked} nested onPlace={place} />
+        </>
+      ) : <>
       <div className={styles.signEyebrow}>Fillable fields</div>
       <div className={styles.signRows}>
         {SIGN_FIELDS.map((f) => (
@@ -43,25 +70,7 @@ export function ESignPanel({ open, onClose, onInsert, hasStudioSignature, gates,
       </div>
       <p className={styles.signNote}>Place the fields where the parties sign. The client’s field is where they sign online once you send the link.</p>
       </>}
-      {gates && onGates ? (
-        <div className={styles.gates} data-testid="esign-gates">
-          <div className={styles.signEyebrow}>Before the client signs</div>
-          <div className={styles.autoRow}>
-            <span className={styles.autoText}><span className={styles.autoLabel}>Read to the end</span><span className={styles.autoHelp}>{uploaded ? 'A PDF can’t be scrolled on the signing page' : 'They reach the last line before they can go on'}</span></span>
-            <Switch size="sm" isSelected={gates.requiresScroll && !uploaded} isDisabled={locked || uploaded} onChange={(v: boolean) => onGates({ requiresScroll: v })} aria-label="Read to the end" />
-          </div>
-          <div className={styles.autoRow}>
-            <span className={styles.autoText}><span className={styles.autoLabel}>Tick to accept</span><span className={styles.autoHelp}>They tick your words before they can go on</span></span>
-            <Switch size="sm" isSelected={gates.requiresAccept} isDisabled={locked} aria-label="Tick to accept"
-                    onChange={(v: boolean) => onGates(v && !gates.acceptLabel?.trim() ? { requiresAccept: v, acceptLabel: DEFAULT_ACCEPT_LABEL } : { requiresAccept: v })} />
-          </div>
-          {gates.requiresAccept ? (
-            <div className={styles.gateLabel} data-testid="esign-accept-words">
-              <TextArea className={styles.gateWords} label="The words they tick" value={gates.acceptLabel ?? DEFAULT_ACCEPT_LABEL} maxLength={160} isDisabled={locked} onChange={(v: string) => onGates({ acceptLabel: v })} />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {gates && onGates ? <BeforeSigningPanel gates={gates} onGates={onGates} uploaded={uploaded} locked={locked} /> : null}
     </Drawer>
   )
 }
