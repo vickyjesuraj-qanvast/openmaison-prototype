@@ -151,7 +151,7 @@ export function ThumbMenu({ open, anchor, icon, onClose, onUpload, onIcon }: {
 export const BookRuleContext = createContext<{ runsBook: boolean; bookItem: (id: string | null) => { name: string } | null }>({ runsBook: true, bookItem: () => null })
 /** (S44I, B8) The ticked rows — the row menu's *Section with n items* reads what it would make of them. */
 export const SelectedContext = createContext<ReadonlySet<string>>(new Set())
-export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight, onAddSeveral }: {
+export function RowMenu({ open, anchor, item, groups, all, selectedCount: _selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight, onAddSeveral, addOnly = false }: {
   open: boolean; anchor: Anchor; item: QuoteItem; groups: QuoteItem[]; all: QuoteItem[]; selectedCount: number
   /** The brand kit's colours by key — the Highlight swatches follow the kit (REG-556). */
   brandColors: Record<string, string>
@@ -159,18 +159,20 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
   onPrintAs: (v: PrintAs | null) => void; onHighlight: (v: Highlight | null) => void
   /** (S44I, B5) Add Item › Several…: n blank lines above or below (a section: at its top). */
   onAddSeveral: (n: number, where: 'above' | 'below') => void
+  /** (REG-2533) The row's leading +: the Add Item list on its own — no way back to the rest of the menu, Several… returns to it. */
+  addOnly?: boolean
 }) {
   const bookRule = useContext(BookRuleContext)
   const variation = !!useVariation()
   const sectionsLocked = usePlanLock('package_creation').locked   // (pending modules S19) My Sections are Pro
-  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | null>(null)
+  const home = addOnly ? 'add' : null
+  const [sub, setSub] = useState<'add' | 'several' | 'move' | 'group' | 'printAs' | 'highlight' | null>(home)
   const [several, setSeveral] = useState(5)
   const level = useLevelFocus(sub)
-  const close = () => { setSub(null); setSeveral(5); onClose() }
+  const close = () => { setSub(home); setSeveral(5); onClose() }
   const act = (a: RowMenuAction) => { close(); onAction(a) }
   const isItem = item.kind === 'item'
   const source = isItem ? bookRule.bookItem(item.priceBookItemId) : null
-  const n = Math.max(1, selectedCount)
   const hasSubs = !isItem && all.some((x) => x.parentId === item.id && x.kind === 'group')
   /* Where the row may move: a line into any section (a sub-section shown under its parent); a section without sub-sections into a top section.
      (S44T — call C1, S44I) a section priced after the contract stays at the top. */
@@ -185,37 +187,39 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
   const top = !isItem && !item.parentId
   /* (S44I — M17) a section prints a word for all its lines — every word but On behalf, which is a line's (the amount prints and counts) */
   const printChoices = isItem ? PRINT_AS : PRINT_AS.filter((v) => v !== 'behalf')
-  const back = (label: string) => <DropdownItem onSelect={() => setSub(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{label}</DropdownItem>
+  const ico = (name: string) => <span className={styles.menuIcon}><Icon name={name} size={20} /></span>
+  const back = (label: string, to: typeof sub = null) => <DropdownItem onSelect={() => setSub(to)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{label}</DropdownItem>
   const printAs = isPrintAs(item.printAs) ? item.printAs : null
   const highlight = isHighlight(item.highlight) ? item.highlight : null
   /* (REG-728) The scale's two widths: 240 for the row menu (key hints, a locked save's rule under it), 320 for Print as — its rows carry a
      description. A section or a highlight picked wears the Selected fill: those rows lead with a glyph, so `checked` alone drew nothing. */
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? MENU_WIDTH.detail : MENU_WIDTH.wide} align="right" sheetTitle={item.name}>
+    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? MENU_WIDTH.detail : MENU_WIDTH.wide} align={addOnly ? 'left' : 'right'} sheetTitle={addOnly ? 'Add Item' : item.name}>
       <div ref={level}>
         {sub === 'add' ? (
           <>
-            {back('Add Item')}
-            <DropdownItem onSelect={() => act('addAbove')}>Above</DropdownItem>
+            {addOnly ? null : back('Add Item')}
+            {/* (REG-2534) each row says what it adds, with a glyph (the team's sections prototype) */}
+            <DropdownItem onSelect={() => act('addAbove')}>{ico('vertical_align_top')}{isItem ? 'Add item above' : 'Add item before section'}</DropdownItem>
             {/* (S44I, B5) on a section, Below has always meant its first place — said so */}
-            <DropdownItem onSelect={() => act('addBelow')}>{isItem ? 'Below' : 'At the top of the section'}</DropdownItem>
-            <DropdownItem submenu onSelect={() => setSub('several')}>Several…<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            {top ? <DropdownItem onSelect={() => act('addSub')}>Add sub-section</DropdownItem> : null}   {/* (S44I, B3) the way to start a sub-section in a section */}
+            <DropdownItem onSelect={() => act('addBelow')}>{ico('vertical_align_bottom')}{isItem ? 'Add item below' : 'Add item inside section'}</DropdownItem>
+            <DropdownItem submenu onSelect={() => setSub('several')}>{ico('library_add')}Add several…<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+            {top ? <DropdownItem onSelect={() => act('addSub')}>{ico('create_new_folder')}Add sub-section</DropdownItem> : null}   {/* (S44I, B3) the way to start a sub-section in a section */}
             <DropdownDivider />
             {/* (S44I, B6 · B7) the Price book modal and Paste lines, landing where this row asks */}
-            <DropdownItem onSelect={() => act('addFromBookHere')}>From Price book…</DropdownItem>
-            <DropdownItem onSelect={() => act('pasteHere')}>Paste lines…</DropdownItem>
+            <DropdownItem onSelect={() => act('addFromBookHere')}>{ico('list_alt')}Add from Price book…</DropdownItem>
+            <DropdownItem onSelect={() => act('pasteHere')}>{ico('notes')}Paste lines…</DropdownItem>
           </>
         ) : sub === 'several' ? (
           <>
-            {back('Several lines')}
+            {back('Add several', home)}
             {/* (S44I, B5 — the team's sections prototype) 2 to 50 blank lines in one go, each ready to name */}
             <div className={styles.menuStepper} data-testid="several-stepper" data-menu-label="">   {/* data-menu-label: a sheet gives it its rows' gutter */}
               <span>Lines</span>
               <CountStepper value={several} min={2} max={50} onChange={setSeveral} less="Fewer lines" more="More lines" />
             </div>
-            <DropdownItem onSelect={() => { const k = several; close(); onAddSeveral(k, 'above') }}>{`Add ${several} above`}</DropdownItem>
-            <DropdownItem onSelect={() => { const k = several; close(); onAddSeveral(k, 'below') }}>{isItem ? `Add ${several} below` : `Add ${several} at the top`}</DropdownItem>
+            <DropdownItem onSelect={() => { const k = several; close(); onAddSeveral(k, 'above') }}>{ico('arrow_upward')}{isItem ? `Add ${several} above` : `Add ${several} before section`}</DropdownItem>
+            <DropdownItem onSelect={() => { const k = several; close(); onAddSeveral(k, 'below') }}>{ico('arrow_downward')}{isItem ? `Add ${several} below` : `Add ${several} inside section`}</DropdownItem>
           </>
         ) : sub === 'move' ? (
           <>
@@ -272,7 +276,7 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
             <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
             <DropdownItem onSelect={() => act('copyName')}>Copy Name</DropdownItem>
             {/* (S44I, B8) says what it makes — a sub-section in the one section the lines share — and, refused, why (in the row) */}
-            {isItem ? <DropdownItem onSelect={() => act('group')} disabled={typeof lvl === 'object'} title={typeof lvl === 'object' ? GROUP_DEPTH_RULE : undefined}>{lvl === 'sub-section' ? 'Sub-section' : 'Section'} with {n} item{n === 1 ? '' : 's'}</DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('group')} disabled={typeof lvl === 'object'} title={typeof lvl === 'object' ? GROUP_DEPTH_RULE : undefined}>{lvl === 'sub-section' ? 'Add Sub-section' : 'Add Section'}</DropdownItem> : null}   {/* (REG-2539) the words only: it still makes the section of this line, or of the ticked lines */}
             <DropdownDivider />
             {/* (S44I — call C2 · the triage's §12.6) the line's words — its name and description — or the section's note, in their dialog */}
             <DropdownItem onSelect={() => act('description')}>{isItem ? 'Words on this line…' : 'Section note…'}</DropdownItem>
