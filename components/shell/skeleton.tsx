@@ -164,25 +164,25 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
         <div className={`${styles.tableWrap} ${styles.touchTabletOnly}`}>
           <div className={styles.tableInner}>
           <div className={styles.headRow}>
-            <span className={`${styles.col} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '196 0 196px' }}><Bone w={18} h={18} className={styles.selSlot} /><Bone w={72} h={12} /></span>
-            <span className={styles.col} style={{ flex: '128 0 128px' }}><Bone w={40} h={12} /></span>
-            <span className={styles.col} style={{ flex: '168 0 168px' }}><Bone w={88} h={12} /></span>
-            <span className={styles.col} style={{ flex: '184 0 184px' }}><Bone w={104} h={12} /></span>
-            <span className={styles.col} style={{ flex: '144 0 144px' }}><Bone w={64} h={12} /></span>   {/* (responsive audit 2026-10-23, W2-03) Members 144, as table.tsx TABLET_WIDTHS */}
+            <span className={`${styles.col} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '173 0 173px' }}><Bone w={18} h={18} className={styles.selSlot} /><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '114 0 114px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '162 0 162px' }}><Bone w={88} h={12} /></span>
+            <span className={styles.col} style={{ flex: '178 0 178px' }}><Bone w={104} h={12} /></span>
+            <span className={styles.col} style={{ flex: '136 0 136px' }}><Bone w={64} h={12} /></span>   {/* (W2-03 · held calls 2026-10-24, K-12) the tablet's floors, as table.tsx TABLET_WIDTHS */}
             <span className={styles.frozenEnd} />
           </div>
           {Array.from({ length: rows }, (_, i) => {
             const j = i % NAME_W.length
             return (
             <div key={i} className={styles.row}>
-              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '196 0 196px' }}>
+              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '173 0 173px' }}>
                 <Bone w={18} h={18} className={styles.selSlot} />
                 <Bone w={NAME_W[j] ?? 128} h={14} /><Bone w={72} h={12} />
               </span>
-              <span className={styles.col} style={{ flex: '128 0 128px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
-              <span className={styles.col} style={{ flex: '168 0 168px' }}><span className={styles.twoBones}><Bone w={120} h={14} /><Bone w={96} h={12} /></span></span>
-              <span className={styles.col} style={{ flex: '184 0 184px' }}><span className={styles.twoBones}><Bone w={140} h={14} /><Bone w={64} h={12} /></span></span>
-              <span className={styles.col} style={{ flex: '144 0 144px' }}>
+              <span className={styles.col} style={{ flex: '114 0 114px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
+              <span className={styles.col} style={{ flex: '162 0 162px' }}><span className={styles.twoBones}><Bone w={120} h={14} /><Bone w={96} h={12} /></span></span>
+              <span className={styles.col} style={{ flex: '178 0 178px' }}><span className={styles.twoBones}><Bone w={140} h={14} /><Bone w={64} h={12} /></span></span>
+              <span className={styles.col} style={{ flex: '136 0 136px' }}>
                 <span className={styles.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>
               </span>
               <span className={styles.frozenEnd}><Bone w={64} h={36} r="var(--om-radius-1)" /><Bone w={36} h={36} r="var(--om-radius-1)" /></span>

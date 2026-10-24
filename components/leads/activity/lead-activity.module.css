@@ -1,6 +1,6 @@
 /* Lead Details › Activity — the timeline (REG-245, replacing the mock's boxed day groups 931:47991): one
-   continuous 1px rail with an 8px dot per row, rows plain and inline as the overview's RECENT ACTIVITY card.
-   The centre's 24 is the only inset (REG-251 — the boxed feed's extra 16 read as a deeper margin than the
+   continuous 1px rail, rows plain and inline as the overview's RECENT ACTIVITY card — (activity by date 2026-10-24) by day, each row its type
+   glyph on the rail (the house timeline, components/om/timeline.module.css). The centre's 24 is the only inset (REG-251 — the boxed feed's extra 16 read as a deeper margin than the
    other tabs); the toolbar is the tabs' shared bar. */
 .tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
 
@@ -14,42 +14,10 @@
   .bar:has([data-om-search-open]) .actions { flex: 1 1 auto; flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }
 
-.list { display: flex; flex-direction: column; }
-
-/* Row: rail 24 · when 200 · body (fluid). The cells carry the block padding, not the row, so the rail cell
-   spans every row edge-to-edge and the line reads as one unbroken stroke. */
-.row {
-  display: grid;
-  grid-template-columns: 24px 200px minmax(0, 1fr);
-  column-gap: var(--om-spacing-4);
-}
-
-/* The rail: line through the full row, trimmed to the dot at both ends of the list; dot centred on the
-   first text line (12 block pad + half the 20 line). */
-.rail { position: relative; display: block; }
-.rail::before {
-  content: ''; position: absolute; left: 50%; transform: translateX(-50%);
-  top: 0; bottom: 0; width: 1px;
-  background: var(--om-color-surface-variant);
-}
-.row:first-child .rail::before { top: 22px; }
-.row:last-child .rail::before { bottom: calc(100% - 22px); }
-.dot {
-  position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
-  width: 8px; height: 8px; border-radius: var(--om-radius-full);
-  background: var(--om-color-on-surface-border);
-}
-
-/* "Tue, 25 Aug ’26 · 09:00 AM" — the overview card's secondary date column, nowrap so rows align. */
-.when {
-  padding-block: var(--om-spacing-3);
-  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
-  white-space: nowrap;
-}
-
-/* The sentence; user text (task titles, file names) wraps rather than truncating, as every other
-   detail-page value (user 2026-08-30). */
-.body { padding-block: var(--om-spacing-3); font: var(--om-type-body-m); min-width: 0; overflow-wrap: anywhere; }
+/* (activity by date 2026-10-24 — his "group the activities by date and add type icons …") The desk's timeline is the house one
+   (components/om/timeline.module.css: the day's marker on the rail, the type glyph in the dot's place, the time, the sentence); this sheet keeps
+   the sentence's link and the pick's card. Before: REG-245's rows — 8px dot · "Tue, 25 Aug ’26 · 09:00 AM" in a 200 column · the sentence. */
+.timeline { display: flex; flex-direction: column; min-width: 0; }
 .text { color: var(--om-color-on-surface-default); }
 /* A linked event: the sentence IS the hyperlink (REG-248) — plain ink at rest, underlined on hover, so
    linked and plain rows read alike until pointed at. */
@@ -70,18 +38,6 @@
 .cardTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .cardLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
-/* Responsive (REG-269): mobile — each timeline row becomes rail 24 + ONE content column: the when-line sits ABOVE the sentence.
-   The rail cell spans both rows (grid-row: span 2) so the 1px stroke stays unbroken, and the when-line keeps
-   its 12px top pad so the dot's 18px alignment on the first text line holds untouched. Tablet keeps the
-   desktop three-column row (the audit measured it fine from 768 up). (REG-729) The toolbar's own ≤767 rules are the house tab
-   toolbar's. */
-@media (max-width: 767px) {
-  .row { grid-template-columns: 24px minmax(0, 1fr); }
-  .rail { grid-row: span 2; }
-  .when { padding-block: var(--om-spacing-3) 0; white-space: normal; }
-  .body { grid-column: 2; padding-block: var(--om-spacing-1) var(--om-spacing-3); }
-}
-
 /* ── (Leads on the move, L4 — P-12 · C-12 · C-17) A phone's and a tablet's feed (lead-activity.tsx `feed`): the day as a 14 header over its rows, each
    row the time (14, secondary) beside the sentence (16) — a row that leads somewhere is the whole 44 press with its chevron, a run of the same
    thing one line that opens. White cards on the page's ground, 12 inside, rules between the rows. Show older at the end. ── */
@@ -92,20 +48,25 @@
 .dayList { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
 .dayItem + .dayItem { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .runList { background: var(--om-color-surface-bg); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (activity by date 2026-10-24) each row led by its type glyph (the house timeline's, components/om/timeline.tsx) — glyph · time · sentence ·
+   chevron on a tablet; on a phone the time sits over the sentence beside the glyph, so the words keep their measure (at 320 a time column
+   beside a glyph would leave the sentence ~120 wide). The areas place the cells whatever their order. */
 .dayRow {
-  display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; column-gap: var(--om-spacing-3); align-items: start;
+  display: grid; grid-template-columns: 24px 72px minmax(0, 1fr) auto; grid-template-areas: 'glyph time text chev'; column-gap: var(--om-spacing-3); align-items: start;
   width: 100%; min-height: 44px; padding: var(--om-spacing-3);
   border: 0; background: none; text-align: left; color: inherit; text-decoration: none; cursor: pointer;
   font: var(--om-type-body-l);
 }
 .dayRow[data-static] { cursor: default; }
 .dayRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
-.dayTime { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding-top: 2px; white-space: nowrap; }
-.dayText { min-width: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; display: flex; flex-direction: column; }
-.dayChev { color: var(--om-color-on-surface-secondary); }
+.dayGlyph { grid-area: glyph; }
+.runList .dayGlyph { background: var(--om-color-surface-default); }   /* a run's lines sit on the soft ground: their glyphs on white (two classes — order-proof over the house glyph's ground) */
+.dayTime { grid-area: time; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding-top: 2px; white-space: nowrap; }
+.dayText { grid-area: text; min-width: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.dayChev { grid-area: chev; color: var(--om-color-on-surface-secondary); }
 .older { align-self: center; min-height: 48px; }
 @media (max-width: 767px) {
-  .dayRow { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .dayRow { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'glyph time chev' 'glyph text chev'; row-gap: var(--om-spacing-0-5); }
 }
 
 /* (REG-708) the feed's ghost (tab-ghosts.tsx): the desk's timeline, or by day where the page groups it */

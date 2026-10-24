@@ -11,33 +11,41 @@ import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'   // (parity P-15)
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
-import { displayDateLong, displayTime } from '@/lib/format'
+import { displayTime } from '@/lib/format'
 import type { ActivityGroup, LeadActivityData } from '@/lib/leads/activity'
+import { activityGlyph } from '@/lib/leads/activity-glyph'
+import { Timeline, TimelineGlyph, TimelineItem } from '@/components/om/timeline'
 import styles from './lead-activity.module.css'
 
 /** (Leads on the move, L4 — C-12) A phone's or a tablet's first screenful of the feed; Show older adds as many again. */
 const PAGE = 20
 const timeOf = (e: ActivityEvent) => displayTime(new Date(e.at))
 
-/** (L4 — P-12 · C-12) One row of the day-grouped feed: the time, the sentence at 16, and — where it leads somewhere — the whole row is the 44
- *  press with its chevron; the client's pick keeps its small card under the line. */
-function DayRow({ event: e, time }: { event: ActivityEvent; time: string }) {
-  const card = e.card ? (
+/** (Projects round 8) The client's pick files a small summary card under its line — the option, its price, the note. */
+function PickCard({ card }: { card: NonNullable<ActivityEvent['card']> }) {
+  return (
     <span className={styles.card} data-testid="activity-card">
-      <span className={styles.cardThumb} data-hex={!e.card.src && e.card.hex ? '' : undefined} style={!e.card.src && e.card.hex ? ({ '--swatch': e.card.hex } as CSSProperties) : undefined} aria-hidden>
+      <span className={styles.cardThumb} data-hex={!card.src && card.hex ? '' : undefined} style={!card.src && card.hex ? ({ '--swatch': card.hex } as CSSProperties) : undefined} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {e.card.src ? <img src={e.card.src} alt="" /> : null}
+        {card.src ? <img src={card.src} alt="" /> : null}
       </span>
       <span className={styles.cardText}>
-        <span className={styles.cardTitle}>{e.card.title}</span>
-        {e.card.lines.map((l, i) => <span key={i} className={styles.cardLine}>{l}</span>)}
+        <span className={styles.cardTitle}>{card.title}</span>
+        {card.lines.map((l, i) => <span key={i} className={styles.cardLine}>{l}</span>)}
       </span>
     </span>
-  ) : null
+  )
+}
+
+/** (L4 — P-12 · C-12) One row of the day-grouped feed: the time, the sentence at 16, and — where it leads somewhere — the whole row is the 44
+ *  press with its chevron; the client's pick keeps its small card under the line. (activity by date 2026-10-24) The line's type glyph leads it
+ *  (`activityGlyph`, the timeline's own). */
+function DayRow({ event: e, time }: { event: ActivityEvent; time: string }) {
   const body = (
     <>
+      <TimelineGlyph icon={activityGlyph(e)} className={styles.dayGlyph} />
       <span className={styles.dayTime}>{time}</span>
-      <span className={styles.dayText}>{e.text}{card}</span>
+      <span className={styles.dayText}>{e.text}{e.card ? <PickCard card={e.card} /> : null}</span>
     </>
   )
   return e.link ? (
@@ -62,6 +70,11 @@ const SHOW: { value: Show; label: string }[] = [
  * (lib/leads/activity.ts), so unfiltered it is never empty: the lead's creation is its last row.
  * (UX audit 2026-09-30, T10 — extends REG-191 · REG-245) Chips above the timeline keep one kind of line — All · Tasks · Files · Notes ·
  * Stage — and a task's lines name whoever made each change (the lead's event log).
+ * (activity by date 2026-10-24 — his "group the activities by date and add type icons for the ones we have (Tasks · Files · Notes · Stage)";
+ * brings back REG-190's two pieces on REG-245's timeline) At every width the feed reads by day through one grouping (`feedDays`): at a desk the
+ * house timeline (components/om/timeline.tsx) — each day opened by the mock's marker on the rail, each row its type glyph in the dot's place,
+ * its time ("4:42 PM") and its sentence; every row stays (no folding at a desk: the room is there, and a name is what a reader scans for). On a
+ * phone or a tablet L4's day cards keep their runs and Show older, each row led by the same glyph.
  */
 export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivityData; /** (fix-A, A-16) the chips above the timeline — a project passes its own (`PROJECT_ACTIVITY_CHIPS`) */ chips?: readonly { value: string; label: string }[]
   /** (simplify S-03 · Q-02) on a project: the Files & notes view switch in the title's place; the kinds' chips stay on the row below */ views?: ReactNode }) {
@@ -75,11 +88,13 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
   const events = q ? kept.filter((e) => e.text.toLowerCase().includes(q)) : kept
   /* (Leads on the move, L4 — P-12 · C-12) On a phone or a tablet the feed reads by day — "Today", "Yesterday", "Fri 23 Oct" over the rows, the time
      on each — a run of the same thing is one line that opens on a tap ("James uploaded 10 files."), a row that leads somewhere is the whole 44
-     press with its chevron, and the newest 20 come first with Show older after them. The desk keeps the one continuous timeline (REG-245). */
+     press with its chevron, and the newest 20 come first with Show older after them. The desk keeps the one continuous timeline (REG-245) —
+     (activity by date 2026-10-24) by day too, its rows unfolded. */
   const compact = useMediaQuery(TABLET_DOWN)
   const [limit, setLimit] = useState(PAGE)
   const [open, setOpen] = useState<Set<string>>(() => new Set())
-  const feed = compact ? feedDays(events, data.now, limit) : null
+  /* (activity by date 2026-10-24) one grouping for both: the desk's every row (no fold, no page), the phone's and tablet's runs and pages */
+  const feed = compact ? feedDays(events, data.now, limit) : feedDays(events, data.now, Infinity, { fold: false })
 
   return (
     <div className={styles.tab} data-testid="activity-feed">
@@ -98,7 +113,7 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
       {events.length === 0 ? (
         /* a search, or a chip, that keeps nothing — the tabs' shared No-results card ("No activities match this filter."), Clear All back to All */
         <TabSearchEmpty noun="activities" searching={!!q} onClearAll={() => { setQuery(''); setShow('all') }} />
-      ) : feed ? (
+      ) : compact ? (
         <div className={styles.days} data-testid="activity-days">
           {feed.days.map((d) => (
             <section key={d.key} className={styles.day} aria-label={d.label}>
@@ -110,6 +125,7 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
                   <li key={it.key} className={styles.dayItem} data-testid="activity-run">
                     <button type="button" className={styles.dayRow} aria-expanded={open.has(it.key)} data-testid="activity-run-toggle"
                             onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(it.key)) n.delete(it.key); else n.add(it.key); return n })}>
+                      <TimelineGlyph icon={activityGlyph(it.events[0]!)} className={styles.dayGlyph} />
                       <span className={styles.dayTime}>{it.time}</span>
                       <span className={styles.dayText}>{it.text}</span>
                       <Icon name={open.has(it.key) ? 'expand_less' : 'expand_more'} size={24} className={styles.dayChev} />
@@ -129,37 +145,21 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
           ) : null}
         </div>
       ) : (
-        <div className={styles.list} role="list" aria-label="Activity">
-          {events.map((e) => (
-            <div key={e.id} className={styles.row} role="listitem" data-testid="activity-row">
-              <span className={styles.rail} aria-hidden>
-                <span className={styles.dot} />
-              </span>
-              <span className={styles.when}>
-                {displayDateLong(new Date(e.at))} · {displayTime(e.at)}
-              </span>
-              <span className={styles.body}>
-                {e.link ? (
-                  <Link href={e.link.href} className={styles.textLink}>{e.text}</Link>
+        /* (activity by date 2026-10-24) the desk: the house timeline by day — the marker opens each day on the rail, each row is its type glyph,
+           its time and its sentence (the sentence IS the link, REG-248), the client's pick its card under the line */
+        <div className={styles.timeline} data-testid="activity-timeline">
+          <Timeline label="Activity">
+            {feed.days.flatMap((d) => d.items.flatMap((it, i) => it.kind === 'one' ? [
+              <TimelineItem key={it.event.id} day={i === 0 ? d.label : null} icon={activityGlyph(it.event)} time={it.time} data-testid="activity-row">
+                {it.event.link ? (
+                  <Link href={it.event.link.href} className={styles.textLink}>{it.event.text}</Link>
                 ) : (
-                  <span className={styles.text}>{e.text}</span>
+                  <span className={styles.text}>{it.event.text}</span>
                 )}
-                {/* (Projects round 8) the client's pick files a small summary card under its line — the option, its price, the note */}
-                {e.card ? (
-                  <span className={styles.card} data-testid="activity-card">
-                    <span className={styles.cardThumb} data-hex={!e.card.src && e.card.hex ? '' : undefined} style={!e.card.src && e.card.hex ? ({ '--swatch': e.card.hex } as CSSProperties) : undefined} aria-hidden>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {e.card.src ? <img src={e.card.src} alt="" /> : null}
-                    </span>
-                    <span className={styles.cardText}>
-                      <span className={styles.cardTitle}>{e.card.title}</span>
-                      {e.card.lines.map((l, i) => <span key={i} className={styles.cardLine}>{l}</span>)}
-                    </span>
-                  </span>
-                ) : null}
-              </span>
-            </div>
-          ))}
+                {it.event.card ? <PickCard card={it.event.card} /> : null}
+              </TimelineItem>,
+            ] : []))}
+          </Timeline>
         </div>
       )}
     </div>

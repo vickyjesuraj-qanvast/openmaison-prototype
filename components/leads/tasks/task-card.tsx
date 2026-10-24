@@ -59,7 +59,9 @@ export function TaskCard({ task, now, unseen, fresh, selected, selectMode, descr
     if ((e.target as HTMLElement).closest('button, a, input, [role="menu"], [role="dialog"]')) return
     if (selectMode) onToggleSelect(); else onOpen(task)
   }
-  const others = task.assignees.length + (outside ? 1 : 0) - 1   // the one shown, then +n for the rest
+  /* (held calls 2026-10-24) the first member, then the outside person's own badge — someone outside the studio is a fact the card shows, as the
+     desk's row does (gaps build C, M-03) — then +n for the other members */
+  const others = Math.max(0, task.assignees.length - 1)
   return (
     <div className={styles.card} role="listitem" data-kb-row data-kb-id={task.id} data-testid="task-card"
          data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined} data-fresh={fresh || undefined} data-done={task.done || undefined}
@@ -85,7 +87,7 @@ export function TaskCard({ task, now, unseen, fresh, selected, selectMode, descr
           {chip ? <span className={styles.due} data-tone={chip.tone} data-testid="task-card-due"><Icon name={chip.tone === 'late' ? 'schedule' : 'event'} size={16} weight={300} />{chip.text}</span> : null}
           {task.assignees.length || outside ? (
             <span className={styles.who} aria-label={[...task.assignees.map((m) => m.name), ...(outside ? [outside.name] : [])].join(', ')}>
-              {task.assignees[0] ? <Avatar name={task.assignees[0].name} color={task.assignees[0].color} size={24} tooltip={false} /> : outside ? <OutsideBadge o={outside} /> : null}
+              {task.assignees[0] ? <Avatar name={task.assignees[0].name} color={task.assignees[0].color} size={24} tooltip={false} /> : null}{outside ? <OutsideBadge o={outside} /> : null}
               {others > 0 ? <span className={styles.plus}>+{others}</span> : null}
             </span>
           ) : task.done ? null : (

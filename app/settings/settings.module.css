@@ -98,11 +98,14 @@
 .reasonGroup { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .reasonLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; }   /* (REG-729) no letter-spacing on an uppercase caption */
 .reasonGate { color: var(--om-color-on-surface-secondary); }
-.gateField { flex: 0 0 200px; }
+/* (held calls 2026-10-24, W6-04 — his "fix all of it") doubled: the house field's own `flex: 1` (text-field.module.css `.field`) won or lost by
+   the order the build put the two sheets in — production let the field fill the row, `next dev` held this 200. The 200 holds now in both (a
+   deliberate desk change) */
+.gateField.gateField { flex: 0 0 200px; }
 @media (max-width: 767px) {   /* (sweep S4 #4) the Lost add row wraps: the name takes the line, the gate field and Add share the next */
   .addTrade { flex-wrap: wrap; max-width: none; }
   .addTrade > :first-child { flex: 1 1 100%; }
-  .gateField { flex: 1 1 0; min-width: 0; }
+  .gateField.gateField { flex: 1 1 0; min-width: 0; }
 }
 
 /* (REG-612 · pending modules S17) Settings › Leads › Custom fields: the studio's definitions list (components/om/definition-list.module.css),

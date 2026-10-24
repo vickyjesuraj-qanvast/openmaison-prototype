@@ -21,7 +21,7 @@ export function Frame({ label, children }: { label: string; children: ReactNode 
             sections, then the bell's glyph, the name and Sign out as text (it goes to More on a phone, data-dock) */}
         <header className={styles.top} data-dock="">
           <span className={styles.brand}><Bone w={36} h={36} r={8} /><Line w={112} lh={24} h={16} /></span>
-          <span className={styles.nav}>{PORTAL_TABS.map((t) => <Line key={t.key} w={t.label.length * 7 + 2} lh={64} />)}</span>
+          <span className={styles.navWrap}><span className={styles.nav}>{PORTAL_TABS.map((t) => <Line key={t.key} w={t.label.length * 7 + 2} lh={64} />)}</span></span>
           <span className={styles.who}><span className={styles.ghostBell}><Bone w={20} h={20} r={4} /></span><Line w={110} className={styles.whoName} /><Line w={56} lh={36} className={styles.signOutTop} /></span>
         </header>
         <main className={styles.main}>{children}<PortalFootGhost /></main>

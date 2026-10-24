@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Button, Tag } from '@/components/ds'
 import type { Quote } from '@/lib/db/schema'
 import { money } from '@/lib/format'
@@ -32,6 +32,7 @@ export function QuoteCard({ quote, approval, onOpenTab, onFromScratch, onFromTem
 }) {
   const steps = quoteStatuses(approval)
   const stepIdx = quote ? quoteStepIndex(quote.status, approval) : 0
+  const hasQuote = !!quote
 
   /*
    * The track is ONE unbroken bar the full width of the card; the stage marks and the fill line up with where the
@@ -41,6 +42,11 @@ export function QuoteCard({ quote, approval, onOpenTab, onFromScratch, onFromTem
    */
   const labelRow = useRef<HTMLDivElement>(null)
   const [marks, setMarks] = useState<number[]>([])
+  /* (held calls 2026-10-24, B-06 — his "fix all of it"; the call as decided) ≤1024 a word never breaks: on a card too narrow for the six names
+     whole on one line ("Dra/ft", "Approv/ed" at 390 and 768) they give way to the current step's name alone, whole, under its own mark — the
+     bar and every mark stay, and the marks keep measuring the same left edges (the other names keep their slots, drawn 0 tall). A name that
+     would run past the card's right edge steps left by what it needs (`shift`). Never at ≥1025, whose markup stays the mock's. */
+  const [compact, setCompact] = useState<{ shift: number } | null>(null)
   useEffect(() => {
     const el = labelRow.current
     if (!el || typeof ResizeObserver === 'undefined') return
@@ -48,11 +54,26 @@ export function QuoteCard({ quote, approval, onOpenTab, onFromScratch, onFromTem
     const ro = new ResizeObserver(() => {
       const box = el.getBoundingClientRect()
       if (!box.width) return
-      setMarks([...el.children].map((c) => (c.getBoundingClientRect().left - box.left) / box.width))
+      const labels = [...el.children] as HTMLElement[]
+      setMarks(labels.map((c) => (c.getBoundingClientRect().left - box.left) / box.width))
+      if (!window.matchMedia('(max-width: 1024px)').matches) { setCompact(null); return }
+      /* each name's own width on one line, read off a hidden twin in the row's type (the names themselves may be wrapped or drawn 0 tall) */
+      const twin = document.createElement('span')
+      twin.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:0;top:0;pointer-events:none'
+      el.appendChild(twin)
+      const natural = labels.map((c) => { twin.textContent = c.textContent; return twin.getBoundingClientRect().width })
+      twin.remove()
+      const gap = parseFloat(getComputedStyle(el).columnGap) || 0
+      const whole = natural.reduce((s, w) => s + w, 0) + gap * Math.max(0, labels.length - 1)
+      if (whole <= box.width + 0.5) { setCompact(null); return }
+      const at = labels[stepIdx]
+      const left = at ? at.getBoundingClientRect().left - box.left : 0
+      const shift = Math.max(0, Math.ceil(left + (natural[stepIdx] ?? 0) - box.width))
+      setCompact((c) => (c && c.shift === shift ? c : { shift }))
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [steps.length])
+  }, [steps.length, stepIdx, hasQuote])   // (B-06) a quote made while the card is open mounts the row: measured then too
 
   // The fill reaches the next stage's mark — i.e. it covers the stage the quote is in — and fills the bar at the last.
   const fill = marks.length === steps.length
@@ -84,7 +105,8 @@ export function QuoteCard({ quote, approval, onOpenTab, onFromScratch, onFromTem
                 <span key={steps[i + 1]} className={styles.mark} style={{ left: `${m * 100}%` }} aria-hidden />
               ))}
             </div>
-            <div className={styles.labels} ref={labelRow}>
+            <div className={styles.labels} ref={labelRow} data-compact={compact ? '' : undefined}
+                 style={compact ? ({ '--shift': `${compact.shift}px` } as CSSProperties) : undefined}>
               {steps.map((s, i) => (
                 <span key={s} className={styles.stepLabel} data-current={i === stepIdx || undefined}>{s}</span>
               ))}

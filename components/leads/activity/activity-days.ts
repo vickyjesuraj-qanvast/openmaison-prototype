@@ -1,23 +1,23 @@
-import { displayTime, startOfDay } from '@/lib/format'
+import { displayDateLong, displayTime, startOfDay } from '@/lib/format'
 import type { ActivityEvent } from '@/lib/leads/activity'
 
 /*
- * (Leads on the move, L4 — P-12 · C-12, his marks 2026-10-23 "continue the leads") The Activity feed on a phone or a tablet, pure: the day as a
- * header ("Today", "Yesterday", "Fri 23 Oct") with the time on each row, and a run of the same thing folded into one line — ten "James uploaded
- * the file “Q-101”." in a row read "James uploaded 10 files." and open on a tap. Every word comes from the feed's own sentences.
+ * (Leads on the move, L4 — P-12 · C-12, his marks 2026-10-23 "continue the leads") The Activity feed, pure: the day as a header ("Today",
+ * "Yesterday", "Fri, 23 Oct ’26") with the time on each row, and — on a phone or a tablet — a run of the same thing folded into one line: ten
+ * "James uploaded the file “Q-101”." in a row read "James uploaded 10 files." and open on a tap. Every word comes from the feed's own sentences.
+ * (activity by date 2026-10-24 — his "group the activities by date …") The desk reads by day too, through this same grouping (`fold: false`:
+ * every line its own row, as REG-245's timeline had them), and the day is the house long date at every width.
  */
 
 const DAY = 86_400_000
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-/** The day's header: Today · Yesterday · "Fri 23 Oct" · "Fri 23 Oct ’25" in another year. */
+/** The day's header: Today · Yesterday · the house long date "Fri, 23 Oct ’26" (lib/format `displayDateLong` — the one the rows printed
+    before the days took the date off them; it always names the year). (activity by date 2026-10-24) ≤1024's "Fri 23 Oct" follows it. */
 export function dayLabel(d: Date, now: number): string {
   const days = Math.round((startOfDay(new Date(now)) - startOfDay(d)) / DAY)
   if (days === 0) return 'Today'
   if (days === 1) return 'Yesterday'
-  const same = d.getFullYear() === new Date(now).getFullYear()
-  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}${same ? '' : ` ’${String(d.getFullYear()).slice(2)}`}`
+  return displayDateLong(d)
 }
 
 /** What makes two lines "the same thing": the sentence with its quoted names taken out, and who did it. */
@@ -51,8 +51,9 @@ export function runWords(events: Pick<ActivityEvent, 'text' | 'link'>[]): string
 export type FeedItem = { kind: 'one'; event: ActivityEvent; time: string } | { kind: 'run'; key: string; events: ActivityEvent[]; text: string; time: string }
 export type FeedDay = { key: string; label: string; items: FeedItem[] }
 
-/** The feed (newest first) as days, each day's runs of three or more of the same thing folded; `limit` keeps the newest that many items. */
-export function feedDays(events: ActivityEvent[], now: number, limit = Infinity): { days: FeedDay[]; total: number; shown: number } {
+/** The feed (newest first) as days, each day's runs of three or more of the same thing folded (unless `fold` is false — the desk's rows); `limit`
+    keeps the newest that many items. */
+export function feedDays(events: ActivityEvent[], now: number, limit = Infinity, { fold = true }: { fold?: boolean } = {}): { days: FeedDay[]; total: number; shown: number } {
   const items: { day: string; label: string; item: FeedItem }[] = []
   let i = 0
   while (i < events.length) {
@@ -61,7 +62,7 @@ export function feedDays(events: ActivityEvent[], now: number, limit = Infinity)
     const day = String(startOfDay(at))
     let j = i + 1
     /* a run: the same thing, the same day, one after another — and only lines that open nothing of their own, or open the same place */
-    while (j < events.length && foldKey(events[j]!) === foldKey(e) && String(startOfDay(new Date(events[j]!.at))) === day && !events[j]!.card && !e.card) j++
+    while (fold && j < events.length && foldKey(events[j]!) === foldKey(e) && String(startOfDay(new Date(events[j]!.at))) === day && !events[j]!.card && !e.card) j++
     const time = displayTime(at)
     if (j - i >= RUN_MIN) items.push({ day, label: dayLabel(at, now), item: { kind: 'run', key: `${e.id}-run`, events: events.slice(i, j), text: runWords(events.slice(i, j)), time } })
     else { items.push({ day, label: dayLabel(at, now), item: { kind: 'one', event: e, time } }); j = i + 1 }   // too short to fold: this line alone, the next one next

@@ -137,3 +137,15 @@
   animation: fresh 1.4s ease-out forwards;
 }
 @keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+
+/* (held calls 2026-10-24, K-10 — his "fix all of it"; the call as decided) A phone held sideways (844 × 390, lib/breakpoint.ts PHONE_SIDEWAYS): the
+   sticky header (8 + 72) and the tab strip (48) took 128 of a 390 screen. There the header scrolls away with the page and only the strip stays
+   pinned, at the screen's top — the strip stays at every width (REG-2734). `.leadPage > header` is the L2 header (components/shell/
+   page-header-l2), more weight than its own `.header` rule wherever the sheets land; it keeps its layer (z 20, so its plates stay inside it) and
+   never reaches the strip below it. `.leadPage` is the lead's own (overview.tsx) — the pages that compose `.body` / `.stickyTabs` (a project, a
+   meeting) keep theirs. The Create strip and the info column's jump targets dock under the strip alone (quick-links / info-column). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .leadPage { --detail-pinned: 48px; }   /* the strip alone (48 under a finger) */
+  .leadPage > header { position: relative; top: auto; }
+  .leadPage > .stickyTabs.stickyTabs { top: 0; }
+}

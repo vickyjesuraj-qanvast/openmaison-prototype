@@ -38,7 +38,10 @@
 .name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
 
 .for { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); min-width: 0; }
-.forLink { color: inherit; text-decoration: none; display: inline-flex; min-height: 24px; align-items: center; }
+/* (held calls 2026-10-24, W2-06 — his "fix all of it"; the call as decided) On the rail's Tasks the lead's own line grows to the 44 a finger needs
+   (the link takes the whole height, at least 44 wide; it was 24) — no overlay reaching over the name above or the due line below, which keep
+   their taps. The card is 20 taller there; its ghost draws the same line (components/leads/detail/tab-ghosts.tsx). */
+.forLink { color: inherit; text-decoration: none; display: inline-flex; min-height: 44px; min-width: 44px; align-items: center; }
 .studio { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
 
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-3); min-height: 28px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

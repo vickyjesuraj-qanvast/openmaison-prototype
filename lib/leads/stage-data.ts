@@ -85,10 +85,8 @@ export function defaultMilestones(): WizardData['milestones'] {
   return DEFAULT_MILESTONES.map((m) => ({ ...m }))
 }
 
-/** Upload flow (780:92744): a signed quote we didn't issue carries no payment split — every milestone starts at 0%. */
-export function zeroMilestones(): WizardData['milestones'] {
-  return DEFAULT_MILESTONES.map((m) => ({ ...m, pct: 0 }))
-}
+/* (held calls 2026-10-24 — his "fix all of it") The upload flow's 0% split (780:92744, REG-149) is retired at every width: an uploaded signed
+   quote starts at the studio's usual (components/leads/move-stage/panels.tsx `uploadSplit`, `fetchUsualSplit` in app/leads/actions.ts). */
 
 /** "70,500" → minor units (7050000); anything unparsable → 0. */
 export function amountMinor(s: string): number {

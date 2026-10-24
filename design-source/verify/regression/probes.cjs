@@ -80,4 +80,14 @@ add('pm2-s27', 'pending-modules/verify-pm2-s27.cjs', { args: ['$DB', '$L/shots',
 add('rwd-w3', 'responsive-all/verify-rwd-w3.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
 // The whole-app responsiveness audit (2026-10-23), lane W6 — the closing lane: the hand-offs, the load order, the desk
 add('rwd-w6', 'responsive-all/verify-rwd-w6.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The held calls (2026-10-24, his "fix all of it"), lane C1 — Leads, the house pieces, the website, Qanvast Ops: B-06 · Won's split · K-9…K-12 ·
+// W2-06 · W2-13 · W1-20, each as the rule it keeps (puts back the default template's schedule and any composer draft it writes)
+add('rwd-c1', 'responsive-all/verify-rwd-c1.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The held calls (2026-10-24, his "fix all of it"), lane C2 — Projects, the client portal, Company, Settings: the Schedule upright, a report's
+// photo, the Floor plan's toolbar at 374, the portal's row fades, the floor-plan papers in the paper viewer, StatTiles at 320, Used by, the two pairs, K-10 on a project's page
+add('rwd-c2', 'responsive-all/verify-rwd-c2.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// Activity by date (2026-10-24, lane A — his "group the activities by date and add type icons for the ones we have (Tasks · Files · Notes · Stage)"):
+// the house timeline by day with a type glyph on every row — a lead's and a project's Activity, the quote's trail, the Overview card; reads only
+add('rwd-a', 'responsive-all/verify-rwd-a.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+add('pj-gap-c', 'projects/verify-pj-gap-c.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // the schedule's asks, outside people (their badge on a phone's task card — REG-2926)
 module.exports = P

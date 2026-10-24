@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
@@ -159,11 +159,36 @@ function SiteNav() {
   )
 }
 
+/**
+ * (held calls 2026-10-24, W1-20 — his "fix all of it"; the call as decided) Has the page's hero — the first section of `main` — scrolled up past
+ * the bottom bar's band (the bar and the raised Demo above it)? On a phone held sideways the bar waits until then (site-shell.module.css), so
+ * at rest it never covers the hero's buttons ("See pricing", "Take a photo", the pricing switch). Read on scroll and resize, again on each
+ * page; a page with no section has no hero to wait for.
+ */
+function useHeroPast(bar: RefObject<HTMLElement | null>, path: string) {
+  const [past, setPast] = useState(false)
+  useEffect(() => {
+    const read = () => {
+      const hero = document.querySelector('#main-content > section')
+      const band = (bar.current?.offsetHeight ?? 0) + 20   // the raised Demo stands 20 above the bar
+      setPast(!hero || hero.getBoundingClientRect().bottom <= window.innerHeight - band)
+    }
+    read()
+    const late = window.setTimeout(read, 400)   // the page's own content settling (fonts, the reveal)
+    window.addEventListener('scroll', read, { passive: true })
+    window.addEventListener('resize', read)
+    return () => { window.clearTimeout(late); window.removeEventListener('scroll', read); window.removeEventListener('resize', read) }
+  }, [bar, path])
+  return past
+}
+
 /** ≤1024 (1.0's lg:hidden): the bottom bar — Home · Platform · the raised Demo · Resources · Story — and the Platform sheet. */
 function PhoneBar() {
   const path = usePathname()
   const book = useBookDemo()
   const { hidden } = useScrollState()
+  const barRef = useRef<HTMLElement>(null)
+  const heroPast = useHeroPast(barRef, path)
   const [sheet, setSheet] = useState(false)
   const [at, setAt] = useState(path)
   if (path !== at) { setAt(path); setSheet(false) }
@@ -172,7 +197,7 @@ function PhoneBar() {
   )
   return (
     <>
-      <nav className={s.phoneBar} aria-label="Site" data-hidden={hidden || undefined} data-testid="site-phone-bar">
+      <nav ref={barRef} className={s.phoneBar} aria-label="Site" data-hidden={hidden || undefined} data-hero-past={heroPast || undefined} data-testid="site-phone-bar">
         <div className={s.phoneBarInner}>
           {tab('home', 'Home', site('/'), path === site('/'))}
           <button type="button" className={s.tab} data-active={sheet || path.startsWith(site('/platform')) || undefined} aria-expanded={sheet} onClick={() => setSheet(true)} data-testid="site-phone-platform">

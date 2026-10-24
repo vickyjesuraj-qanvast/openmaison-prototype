@@ -361,3 +361,6 @@
 
 /* (parity map, SC-056 · TD-023) the panel's task links — Add a task · Suggest tasks, side by side */
 .taskLinks { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); }
+/* (held calls 2026-10-24, landing) The ask band and the nudge compose the banner and then set their own padding and shadow at the same weight —
+   a CSS chunk re-split flipped which won (lane A's 1440 diff); order-proof: what this stylesheet asks for holds on every build. */
+.askBand.askBand, .nudge.nudge { padding: var(--om-spacing-3) var(--om-spacing-4); box-shadow: none; }

@@ -23,7 +23,10 @@
 .tileChip { align-self: flex-start; }
 
 /* the project's layouts — the Plan the space in 3D dialog's rows */
-.list { composes: list from '../../planner/project-layouts-dialog.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
+.list { composes: list from '../../planner/project-layouts-dialog.module.css'; }
+/* (held calls 2026-10-24, W6-04 — his "fix all of it") doubled: the dialog's `.list { padding: 0 }` (composed above) held only by the order the
+   build puts the two sheets in — production drew 0, `next dev` this. The padding asked here holds now in both (a deliberate desk change) */
+.list.list { padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
 .row { composes: row from '../../planner/project-layouts-dialog.module.css'; }
 .glyph { composes: glyph from '../../planner/project-layouts-dialog.module.css'; }
 .text { composes: text from '../../planner/project-layouts-dialog.module.css'; }
@@ -47,5 +50,5 @@
   .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile { width: auto; }
   .tileImg { width: 100%; height: auto; aspect-ratio: 1; }
-  .list, .saved { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
+  .list.list, .saved { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
 }

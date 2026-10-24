@@ -146,6 +146,18 @@
     border: 0; background: none; padding: 0; cursor: pointer;
     color: var(--om-color-on-surface-default);
   }
+  /* (held calls 2026-10-24, W2-13 — his "fix all of it") The three tools are one group that never shrinks: each keeps its 44. Under 390 the group
+     spends 4 between them instead of 16 (at 360 three 44s, Save and the Maison AI corner just fit); below 360 they fold into the + (below). */
+  .composerTools { display: inline-flex; align-items: center; gap: var(--om-spacing-4); flex-shrink: 0; }
+  .composerTools .composerTool { flex-shrink: 0; }
+  .composerMore.composerMore { display: none; }
+}
+@media (max-width: 389px) {
+  .composerTools { gap: var(--om-spacing-1); }
+}
+@media (max-width: 359px) {
+  .composerTools.composerTools { display: none; }
+  .composerMore.composerMore { display: inline-flex; flex-shrink: 0; }
 }
 
 /* (Leads on the move, L4 — C-14) A tablet held upright reads Notes as the phone does (the list, a note or a log in a sheet, the docked

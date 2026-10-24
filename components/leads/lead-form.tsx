@@ -17,7 +17,7 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
 import { SOURCES, PROPERTY_TYPES, DISTRICTS, STYLE_OPTIONS, KEY_COLLECTION_OPTIONS, CONDITION_OPTIONS, isCommercialType } from '@/lib/leads/enums'
 import { bottomSheet, modalPanel, overlayFade, ease, duration } from '@/lib/motion'
-import { useSheetLayout } from '@/components/om/sheet'
+import { usePhoneLayout } from '@/components/leads/log/use-move-layout'
 import { MSG, hasErrors } from '@/lib/forms'
 import { groupDigits, inputDate, phoneDigits, phoneTyped } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
@@ -305,8 +305,9 @@ export function LeadFormModal({
      PortalMenu and the date picker each render after this panel and own Esc first, which is what the hand-rolled
      `!e.defaultPrevented` listener this replaces was reaching for. */
   const panel = useRef<HTMLDivElement>(null)
-  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
-  const sheet = useSheetLayout()
+  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. (held calls 2026-10-24, K-9) A phone
+     held sideways is a phone: the same sheet and the phone's short new lead there (lead-form.module.css carries the same two queries). */
+  const sheet = usePhoneLayout()
   /* (Leads on the move, L3 — A-17) ✕, Cancel and Esc ask before typed words go: "Discard this lead?" — the import wizard's own care (user
      2026-08-28). Nothing typed, nothing asked. A save in flight is never cut short. */
   const dirty = open && seedKey !== '' && (files.length > 0 || JSON.stringify({ d: data, c: custom, p: project ? proj : null }) !== seedKey)

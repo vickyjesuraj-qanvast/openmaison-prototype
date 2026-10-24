@@ -12,7 +12,7 @@
 .tiles { composes: tiles from '../../om/stat-tile.module.css'; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
 .tiles3 { composes: tiles3 from '../finance.module.css'; }
 @media (max-width: 767px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 359px) { .tiles { grid-template-columns: minmax(0, 1fr); } }
+/* (held calls 2026-10-24, W3-16) two across down to 320, as the house StatTiles — one a row below 360 is gone there and here */
 
 /* a section's title and its line, above its tiles or banners (the tables carry their own head) */
 .head { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }

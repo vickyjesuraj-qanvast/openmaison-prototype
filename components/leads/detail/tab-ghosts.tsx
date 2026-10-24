@@ -17,6 +17,7 @@ import quest from '@/components/leads/questionnaire/lead-questionnaire.module.cs
 import qCard from '@/components/leads/questionnaire/question-card.module.css'
 import summary from '@/components/leads/questionnaire/summary-card.module.css'
 import activity from '@/components/leads/activity/lead-activity.module.css'
+import tl from '@/components/om/timeline.module.css'   // (activity by date 2026-10-24) the house timeline the desk's feed draws
 import chipRow from '@/components/om/chips.module.css'
 import rail from '@/components/om/chip-rail.module.css'   // (parity P-15)
 import emptyStyles from '@/components/om/empty-state.module.css'   // (pending modules S23)
@@ -79,7 +80,7 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
         {Array.from({ length: Math.min(rows, 5) }, (_, r) => (
           <div key={r} className={taskCard.card}>
             <span className={taskCard.ghostRing}><Bone w={22} h={22} r="50%" /></span>
-            <span className={taskCard.body}><Line w={cycle(['72%', '58%', '80%', '64%', '52%'], r)} lh={24} h={14} />{studio ? <Line w={cycle([96, 120, 84], r)} lh={24} h={12} /> : null}<span className={taskCard.meta}><Line w={cycle([118, 96, 132], r)} lh={20} h={12} /><Bone w={24} h={24} r={4} /></span></span>
+            <span className={taskCard.body}><Line w={cycle(['72%', '58%', '80%', '64%', '52%'], r)} lh={24} h={14} />{studio ? <Line w={cycle([96, 120, 84], r)} lh={44} h={12} /> : null}<span className={taskCard.meta}><Line w={cycle([118, 96, 132], r)} lh={20} h={12} /><Bone w={24} h={24} r={4} /></span></span>
             <span className={taskCard.menu}><Bone w={4} h={16} r={2} /></span>
           </div>
         ))}
@@ -226,6 +227,11 @@ export function QuestionnaireTabGhost({ title }: { title?: ReactNode } = {}) {
   )
 }
 
+/** (activity by date 2026-10-24) A line's type glyph as a bone: the house glyph's 24 circle (components/om/timeline.module.css). */
+function GhostGlyph({ className }: { className?: string }) {
+  return <span className={className ? `${tl.glyph} ${className}` : tl.glyph}><Bone w={24} h={24} r="var(--om-radius-full)" /></span>
+}
+
 export function ActivityTabGhost({ title }: { title?: ReactNode } = {}) {
   return (
     <>
@@ -234,23 +240,31 @@ export function ActivityTabGhost({ title }: { title?: ReactNode } = {}) {
       {/* (UX audit 2026-09-30, T10) the chips above the timeline — All · Tasks · Files · Notes · Stage (house Chips, 32 tall, 12 apart) */}
       {/* (parity P-15) the chips ride the house ChipRail — one row that never wraps, as the tab draws them */}
       <div><div className={rail.wrap}><div className={rail.rail}><div className={rail.track}><div className={chipRow.chips}>{[41, 60, 53, 60, 60].map((w, i) => <Slot key={i} kind="pill" w={w} />)}</div></div></div></div></div>   {/* the page's own nesting: a plain div holds the rail, so the rail's flex: 1 never stretches the row */}
-      {/* (L4 — P-12 · C-12) by day where the page groups it: the day's words over a card of rows — the time, the sentence */}
+      {/* (L4 — P-12 · C-12) by day where the page groups it: the day's words over a card of rows — (activity by date 2026-10-24) the type glyph,
+          the time, the sentence */}
       <div className={`${activity.days} ${activity.ghostDays}`}>
         {[3, 4, 2].map((n, d) => (
           <div key={d} className={activity.day}>
             <Line w={cycle([44, 72, 88], d)} lh={20} h={12} />
-            <div className={activity.dayList}>{Array.from({ length: n }, (_, i) => <div key={i} className={activity.dayRow}><Line w={56} lh={24} h={12} /><Line w={cycle(['82%', '64%', '90%', '70%'], i + d)} lh={24} h={14} /></div>)}</div>
+            <div className={activity.dayList}>{Array.from({ length: n }, (_, i) => <div key={i} className={activity.dayRow}><GhostGlyph className={activity.dayGlyph} /><span className={activity.dayTime}><Line w={56} lh={20} h={12} /></span><span className={activity.dayText}><Line w={cycle(['82%', '64%', '90%', '70%'], i + d)} lh={24} h={14} /></span></div>)}</div>
           </div>
         ))}
       </div>
-      <div className={`${activity.list} ${activity.ghostTimeline}`}>
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-          <div key={i} className={activity.row}>
-            <span className={activity.rail}><span className={activity.dot} /></span>
-            <span className={activity.when}><Line w={cycle([172, 164, 156, 170], i)} lh={20} h={12} /></span>
-            <span className={activity.body}><Line w={cycle([346, 474, 605, 400, 290, 520], i)} lh={20} h={12} /></span>
-          </div>
-        ))}
+      {/* (activity by date 2026-10-24) the desk: the house timeline by day — each day's marker on the rail (its chip's words are data), each row its
+          glyph on the rail, its time, its sentence */}
+      <div className={`${activity.timeline} ${activity.ghostTimeline}`}>
+        <ol className={tl.list}>
+          {[4, 5, 3].flatMap((n, d) => Array.from({ length: n }, (_, i) => (
+            <li key={`${d}-${i}`} className={tl.item}>
+              {i === 0 ? <div className={tl.mark}><span className={tl.rail} /><span className={tl.markRule}><span className={tl.chip}><Line w={cycle([40, 92, 96], d)} lh={16} h={10} /></span></span></div> : null}
+              <div className={tl.row}>
+                <span className={tl.rail}><GhostGlyph /></span>
+                <span className={tl.time}><Line w={cycle([56, 52, 60, 48], i + d)} lh={20} h={12} /></span>
+                <span className={tl.body}><Line w={cycle([346, 474, 605, 400, 290, 520], i + d * 4)} lh={20} h={12} /></span>
+              </div>
+            </li>
+          )))}
+        </ol>
       </div>
     </>
   )

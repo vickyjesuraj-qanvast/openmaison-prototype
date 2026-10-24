@@ -17,7 +17,7 @@ export function FloorPlanGhost({ first = false, title }: { first?: boolean; /** 
   if (first) {
     return (
       <div className={styles.tab} aria-hidden>
-        <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Floor plan</Words>}</div>
+        <div className={styles.bar} data-views={title ? '' : undefined}>{title ?? <Words as="h2" className={styles.title}>Floor plan</Words>}</div>
         <section className={empty.empty} data-tone="first">
           <span className={empty.glyph} />
           <Words as="h3" className={empty.title}>No floor plan yet</Words>
@@ -29,7 +29,7 @@ export function FloorPlanGhost({ first = false, title }: { first?: boolean; /** 
   }
   return (
     <div className={styles.tab} aria-hidden>
-      <div className={styles.bar}>
+      <div className={styles.bar} data-views={title ? '' : undefined}>
         {title ?? <Line w={220} lh={36} h={16} />}
         <span className={styles.actions}><Slot kind="chip" w={96} /><Slot kind="btnFold" w={132} /><Slot kind="icon" /><Slot kind="icon" /></span>
       </div>

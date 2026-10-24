@@ -255,7 +255,7 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
     /* (simplify round 2, R2-A — P3 §6.3) at 390: To collect takes the row (value, bar, next line); To pay · Profit side by side under it; a
        Designer's Contract value takes its own row (`moneyTiles`) */
     <StatTiles testId="money-tiles" className={styles.moneyTiles}>
-      <StatTile label="To collect" value={<Tooltip label={collectHow}><span className={styles.tileValue}>{money2(m.outstandingMinor)}</span></Tooltip>} grade={overdue.length ? 'bad' : undefined} testId="tile-collect"
+      <StatTile label="To collect" value={<Tooltip label={collectHow}><span className={styles.tileValue}>{money2(m.outstandingMinor)}</span></Tooltip>} figure={money2(m.outstandingMinor)} grade={overdue.length ? 'bad' : undefined} testId="tile-collect"
                 press={{ label: `To collect ${money2(m.outstandingMinor)}. ${collectHow}. Opens Billing`, onPress: () => goList('billing') }}
                 help={<span className={styles.touchHelp}>{overdue.length ? `${money2(m.overdueMinor)} overdue` : m.toConfirmMinor ? `${money2(m.toConfirmMinor)} to confirm` : m.outstandingMinor ? 'Sent and not yet paid' : 'Nothing owed right now'}</span>}>
         <span className={styles.collectBar} role="progressbar" aria-label="Collected of the contract" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(paidPct)}><span className={styles.collectFill} style={{ width: `${paidPct}%` }} /></span>
@@ -266,7 +266,7 @@ function MoneyTab({ data, books, costs }: { data: MoneyData; books: ProjectBooks
         <span className={`${tile.help} ${styles.touchHelp}`} data-testid="money-next">{nextLine}</span>
       </StatTile>
       {seesCosts && s ? (
-        <StatTile label="To pay" value={<Tooltip label={payHow}><span className={styles.tileValue}>{money2(s.owedMinor)}</span></Tooltip>}
+        <StatTile label="To pay" value={<Tooltip label={payHow}><span className={styles.tileValue}>{money2(s.owedMinor)}</span></Tooltip>} figure={money2(s.owedMinor)}
                   grade={s.overdueMinor ? 'bad' : undefined} testId="tile-pay" press={{ label: `To pay ${money2(s.owedMinor)}. ${payHow}. Opens Costs`, onPress: () => goList('costs') }}
                   help={<span className={styles.touchHelp}>{[s.overdueMinor ? `${money2(s.overdueMinor)} overdue` : s.owedMinor ? 'To vendors, not yet due' : 'Nothing owed right now', waitingOk ? `${money2(waitingOk)} waiting for approval` : null].filter(Boolean).join(' · ')}</span>} />
       ) : null}

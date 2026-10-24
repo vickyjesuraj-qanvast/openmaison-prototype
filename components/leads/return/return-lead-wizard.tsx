@@ -26,7 +26,7 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { renderLinksLine, useLiveRenderLinks } from '@/components/leads/use-render-links'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './return-lead-wizard.module.css'
-import { useSheetLayout } from '@/components/om/sheet'
+import { usePhoneLayout } from '@/components/leads/log/use-move-layout'
 
 /*
  * Return Lead wizard (931:48813 step 1 · 931:48882 reason form · 931:48930 filled · 931:49009 terms): the 800-wide l-modal.
@@ -117,7 +117,7 @@ export function ReturnLeadWizard({
   const [wasOpen, setWasOpen] = useState(false)
   const [allTips, setAllTips] = useState(false)   /* (pending modules S05) Tips › View all */
   /* (Leads on the move, L3 — A-29) on a phone the tips fold under their title — the fields and the foot meet; open, they read at 14 */
-  const phone = useSheetLayout()
+  const phone = usePhoneLayout()   // (held calls 2026-10-24, K-9) a phone held sideways is a phone
   const [tipsOpen, setTipsOpen] = useState(false)
   const [policyOpen, setPolicyOpen] = useState(false)   /* (pending modules S05) the info control's policy */
   /** Day-granular "today" for the picker's ring, derived from the host clock (never Date.now() in render). */

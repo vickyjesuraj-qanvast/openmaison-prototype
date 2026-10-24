@@ -1,0 +1,80 @@
+/* (activity by date 2026-10-24 — his "group the activities by date and add type icons for the ones we have (Tasks · Files · Notes · Stage)")
+   The house timeline: one continuous 1px rail (REG-245) down the feed, a type glyph on the rail in each row's dot's place, and each day opened
+   by the mock's day marker (REG-190, 931:47993 — a 1px rule with the date in a white chip, 12 secondary, centred) adapted to the rail: the rule
+   starts at the rail, so the day reads as a station on the line. Rows: rail 24 · time 72 · the sentence; the cells carry the block padding, so
+   the rail cell spans each row edge to edge and the stroke never breaks. Drawn by the lead's and the project's Activity at a desk
+   (components/leads/activity/lead-activity.tsx) and the quote's Activity (components/quotes/editor/activity/activity-section.tsx); the glyph
+   alone by the Overview's Recent activity card and the phone's day cards. */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; min-width: 0; --tl-rail: 24px; --tl-gap: var(--om-spacing-4); }
+.item { display: flex; flex-direction: column; min-width: 0; }
+
+.row {
+  display: grid;
+  grid-template-columns: var(--tl-rail) 72px minmax(0, 1fr);
+  column-gap: var(--tl-gap);
+}
+
+/* The rail cell: the line through the whole row; the glyph on it, centred on the first line of words (12 pad + half the 20 line). */
+.rail { position: relative; display: block; }
+.rail::before {
+  content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+  top: 0; bottom: 0; width: 1px;
+  background: var(--om-color-surface-variant);
+}
+.rail .glyph { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); }
+
+/* The type glyph: a 24 circle on the page's soft ground, the icon 16 in the secondary ink — the bell's event glyph (notifications-panel) at the
+   rail's size. Opaque, so the rail runs behind it and shows only between the glyphs. */
+.glyph {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 24px; height: 24px; border-radius: var(--om-radius-full);
+  background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary);
+}
+
+/* The time — "4:42 PM", the day says the rest. */
+.time {
+  padding-block: var(--om-spacing-3);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
+  white-space: nowrap;
+}
+/* The sentence — user words (task titles, file names) wrap rather than truncate, as every detail-page value. */
+.body { padding-block: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow-wrap: anywhere; }
+
+/* The day marker: rail · the rule with its chip. 48 tall, the rule at its middle — 34 of air to the glyphs above and below. */
+.mark { display: grid; grid-template-columns: var(--tl-rail) minmax(0, 1fr); column-gap: var(--tl-gap); height: 48px; }
+.markRule { position: relative; margin: 0; display: flex; align-items: center; justify-content: center; min-width: 0; font: inherit; }
+.markRule::before {
+  content: ''; position: absolute; top: 50%; right: 0; height: 1px;
+  left: calc(-1 * (var(--tl-gap) + var(--tl-rail) / 2));   /* from the rail's own line */
+  background: var(--om-color-surface-variant);
+}
+.chip {
+  position: relative; padding: 2px var(--om-spacing-6);
+  background: var(--tl-ground, var(--om-color-surface-default));
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap;
+}
+
+/* The ends: the rail begins at the first day's rule and stops at the last glyph. */
+.item:first-child > .mark .rail::before { top: 50%; }
+.item:first-child > .row:first-child .rail::before { top: 22px; }
+.item:last-child > .row .rail::before { bottom: calc(100% - 22px); }
+
+/* (Leads on the move, P-13's scale) on a phone or a tablet the sentence reads 16, the time and the day 14 — a value is never under 14 there. */
+@media (max-width: 1024px) {
+  .body { font: var(--om-type-body-l); }
+  .chip { font: var(--om-type-body-m); }
+  .time { padding-top: calc(var(--om-spacing-3) + 2px); }   /* the 14 on the 16's first line */
+  .rail .glyph { top: 12px; }   /* the 24 line's middle */
+  .item:first-child > .row:first-child .rail::before { top: 24px; }
+  .item:last-child > .row .rail::before { bottom: calc(100% - 24px); }
+}
+/* A phone: the time over the sentence, the rail beside both (the rail cell spans the two lines). */
+@media (max-width: 767px) {
+  .row { grid-template-columns: var(--tl-rail) minmax(0, 1fr); }
+  .rail { grid-row: span 2; }
+  .time { padding-block: var(--om-spacing-3) 0; }
+  .body { grid-column: 2; padding-block: var(--om-spacing-0-5) var(--om-spacing-3); }
+  .rail .glyph { top: 10px; }   /* the time's line, the row's first */
+  .item:first-child > .row:first-child .rail::before { top: 22px; }
+  .item:last-child > .row .rail::before { bottom: calc(100% - 22px); }
+}

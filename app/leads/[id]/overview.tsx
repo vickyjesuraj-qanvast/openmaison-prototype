@@ -576,7 +576,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
 
   return (
     <PageReveal skeleton={<DetailSkeleton wide={wide} tab={tab} tabs={tabItems.map((t) => t.label)} shape={{ onProject: !!project, locked: !desk && !convertPrimary && !!wonBlock, noPrimary: !deskPrimary }} />}>   {/* (REG-708) the tab's own body — the ghost its [tab]/loading.tsx drew; (one-home N-10) the strip it shows */}
-      <div className={styles.body}>
+      <div className={`${styles.body} ${styles.leadPage}`}>   {/* (held calls 2026-10-24, K-10) the lead's own page: its header steps out of the sticky pair on a phone held sideways */}
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
           backHref={origin ?? '/leads'}

@@ -12,7 +12,7 @@ import { displayDate, moneySGD } from '@/lib/format'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { LeadFile, Member } from '@/lib/db/schema'
 import { AutoFillNote, ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
-import { amountMinor, attachLabel, DEFAULT_MILESTONES, defaultMilestones, SYSTEM_CONTRACT, zeroMilestones } from '@/lib/leads/stage-data'
+import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
@@ -624,8 +624,11 @@ function signedContractName(leadName: string): string {
 }
 
 export function WonPanel({
-  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract, contractOptional = false, memberNames = [],
+  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract, contractOptional = false, memberNames = [], usualSplit = null,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string
+  /** (held calls 2026-10-24) the studio's usual split — its default payment schedule, read when the window opened; null until it lands
+   *  (the 10 · 30 · 30 · 30 it was seeded with stands in) */
+  usualSplit?: WizardData['milestones'] | null
   /** (pending modules S05) the studio wins a lead on its signed quote alone (Settings › Lead management › Lead stages) */
   contractOptional?: boolean
   /** (REG-340) The lead's quotes and contracts, read when the window opened; null until they land. */
@@ -663,10 +666,12 @@ export function WonPanel({
     contractUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setContractPickError(r.error); return } const name = isPictureData(r.data) ? r.name : contractName; update({ wonContractUploaded: name, wonContractFile: { ...r, name } }) }) })
   }
   const [justUploaded, setJustUploaded] = useState(false)
-  /* (Leads on the move, B-12 — his marks 2026-10-23; reverses REG-149's zeroing for an upload, on a phone and a tablet held upright) an uploaded
-     signed quote starts the split at the studio's usual 10 · 30 · 30 · 30 — the % boxes typed one by one from 0% and the refused Save were the
-     phone's whole Won step; change it where the signed paper says otherwise. The desk keeps REG-149's 0% until he says. */
-  const uploadSplit = () => (screen ? defaultMilestones() : zeroMilestones())
+  /* (Leads on the move, B-12 — his marks 2026-10-23; reverses REG-149's zeroing for an upload) an uploaded signed quote starts the split at the
+     studio's usual — the % boxes typed one by one from 0% and the refused Save were the phone's whole Won step; change it where the signed paper
+     says otherwise. (held calls 2026-10-24 — his "fix all of it"; the call as decided: one rule at every width) the desk too, and "the studio's
+     usual" is its default payment schedule (what a new quote starts on), the seeded 10 · 30 · 30 · 30 until it has been read. */
+  const usualRows = usualSplit?.length ? usualSplit : defaultMilestones()
+  const uploadSplit = () => usualRows.map((m) => ({ ...m }))
   /* (pending modules S05) the signed quote's PDF itself — its own name on the row, kept with its bytes in the lead's Files with the project.
      (Leads on the move, Q-03 — his pick 2026-10-23) on touch a photo of the signed paper too, kept as the quote's copy (C4's contract rows). */
   const [quotePickError, setQuotePickError] = useState<string | null>(null)
@@ -749,7 +754,7 @@ export function WonPanel({
 
   if (screen) {
     /* (Leads on the move, P-04 · B-11 · B-12) Won as a checklist — each settled row one line, the first still to do open */
-    const usual = data.milestones.length === DEFAULT_MILESTONES.length && data.milestones.every((m, i) => m.pct === DEFAULT_MILESTONES[i]!.pct)
+    const usual = data.milestones.length === usualRows.length && data.milestones.every((m, i) => m.pct === usualRows[i]!.pct && m.name === usualRows[i]!.name)
     const pcts = data.milestones.map((m) => m.pct || 0).join(' · ')
     const amount = amountMinor(data.wonQuoteAmount)
     const quoteDone = uploadedQuote ? !!data.wonQuoteUploaded && amount > 0 : !!pickedQuote && !pickedQuote.hold
@@ -770,12 +775,12 @@ export function WonPanel({
               : contractRow ? [contractRow.name, ...contractRow.meta].join(' · ') : contracts === null ? 'Reading the lead’s contracts…' : pickLine,
             body: contractTabs },
           { key: 'payments', title: 'Payments', done: !uploadedQuote || totalPct === 100, error: errors.milestones ?? null,
-            summary: !uploadedQuote ? splitLine : usual ? '10 · 30 · 30 · 30 — the studio’s usual' : totalPct === 100 ? pcts : `${pcts} · ${totalPct} of 100% assigned`,
+            summary: !uploadedQuote ? splitLine : usual ? `${usualRows.map((m) => m.pct).join(' · ')} — the studio’s usual` : totalPct === 100 ? pcts : `${pcts} · ${totalPct} of 100% assigned`,
             body: uploadedQuote ? (
               <>
                 <p className={styles.splitLine}>It starts at the studio’s usual split — change it where the signed quote says otherwise.</p>
                 {splitEditor}
-                {usual ? null : <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Back to the usual split</LinkButton>}
+                {usual ? null : <LinkButton onClick={() => update({ milestones: uploadSplit() })}>Back to the usual split</LinkButton>}
               </>
             ) : null },
         ]}
@@ -788,8 +793,8 @@ export function WonPanel({
     <>
       <div className={styles.stack12}>
         <SectionRow label="Attach client signed quote" />
-        {/* The split follows the signed quote's source (user 2026-08-29): a system quote carries the recorded
-            10/30/30/30; an uploaded one carries nothing we can trust, so every milestone drops to 0%. */}
+        {/* The split follows the signed quote's source (user 2026-08-29): a system quote carries its own schedule; an uploaded one starts at
+            the studio's usual split (held calls 2026-10-24 — REG-149's 0% retired at every width), to be changed where the paper differs. */}
         {quoteTabs}
         <FieldError message={quoteError} />
       </div>
@@ -810,7 +815,7 @@ export function WonPanel({
           <SectionRow label="Payment milestone"
                       action={
                         <span className={fieldStyles.rowActions}>
-                          <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
+                          <LinkButton onClick={() => update({ milestones: uploadSplit() })}>Reset to default</LinkButton>
                           <Tag color="green" appearance="outlined">{`${totalPct}%`}</Tag>
                         </span>
                       } />

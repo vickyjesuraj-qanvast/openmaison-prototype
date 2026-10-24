@@ -171,25 +171,27 @@
   .backBar { min-height: 44px; }
 }
 
-@media (max-width: 767px) {
+/* (held calls 2026-10-24, K-9 — his "fix all of it") The phone's full-screen sheet — also on a phone held sideways (PHONE_SIDEWAYS), where the
+   xxl window's 48 margins left a 294-tall panel; the rows and the merge table keep the width's own layout there. */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
   .overlay { padding: 0; height: 100dvh; }   /* xxl → full-screen sheet (responsive.md) */
-  .overlay .panel { border-radius: 0; }   /* (REG-725) doubled: the house panel's r12 must not win the tie */
+  .overlay .panel { border-radius: 0; padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }   /* (REG-725) doubled: the house panel's r12 must not win the tie · (K-9) a notched phone held sideways: out of the notch; 0 elsewhere */
   .panel .heading { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
-
+  /* The sheet is the screen: the bordered body goes edge to edge so the detail pane keeps every pixel. */
+  .body { margin: 0; border-left: 0; border-right: 0; border-bottom: 0; border-radius: 0; }
+  .detailBody { padding: var(--om-spacing-4); }
+  .panel .footer { padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
+  .panel .footer { padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 12 where env() is 0 */
+}
+@media (max-width: 767px) {
   /* Toolbar: the source ChipRail keeps a scrolling row of its own; the duplicates switch, its label and
      Approve All Clean share the row below it (the label wraps instead of the row overflowing). */
   .toolbar { flex-wrap: wrap; row-gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-3); }
   .toolbar > :first-child { flex: 1 1 100%; }
   .vdivider { display: none; }
   .toggleLabel { flex: 1; min-width: 0; white-space: normal; }
-
-  /* The sheet is the screen: the bordered body goes edge to edge so the detail pane keeps every pixel. */
-  .body { margin: 0; border-left: 0; border-right: 0; border-bottom: 0; border-radius: 0; }
-  .detailBody { padding: var(--om-spacing-4); }
   /* Reject New / Keep Both / Merge into Existing measure ~374 against 358 of footer, so the last one wraps;
      the house foot is right-aligned, so the buttons stay right-aligned on whichever line they land. */
-  .panel .footer { padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
-  .panel .footer { padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 12 where env() is 0 */
 
   /* Merge table at 390: 88 + 140 frozen leaves ~130 — exactly one data column, so one swipe moves from
      Existing to New and back. The label wraps rather than clipping ("Property type"). */

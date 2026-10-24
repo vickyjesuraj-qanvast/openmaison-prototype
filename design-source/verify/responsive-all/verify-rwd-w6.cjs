@@ -161,7 +161,9 @@ const LAYOUT = sql(`select id from space_layouts where deleted_at is null and co
       const create = await seen(p, '[role="menuitem"]', /Create New Lead/)
       if (create) await tap(p, create)
       const m = await p.evaluate(() => { const d = [...document.querySelectorAll('[role="dialog"]')].find((e) => /lead-form-module/.test(e.className) || e.querySelector('[class*="lead-form-module"]')); const panel = d && (/__panel/.test(d.className) ? d : d.querySelector('[class*="__panel"]') || d); if (!panel) return null; const r = panel.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height } })
-      ok(!!m && m.top >= 7 && m.top <= 9 && m.bottom <= 390 - 7, `844 × 390 · Create New Lead spends 8 above and below (${m && Math.round(m.top)}–${m && Math.round(m.bottom)}), as the house Dialog`, JSON.stringify(m))
+      /* (held calls 2026-10-24, a deliberate change of this rule) K-9: a phone held sideways is a phone — Create New Lead rises as the phone's bottom
+         sheet there (on the screen's foot, its head on the screen), where W6 had spent 8 above and below a centred card */
+      ok(!!m && m.top >= 0 && Math.abs(m.bottom - 390) <= 1, `844 × 390 · Create New Lead rises as the phone’s bottom sheet (${m && Math.round(m.top)}–${m && Math.round(m.bottom)})`, JSON.stringify(m))
       await shot(p, '2-lead-form-844'); await c.close()
     }
     {

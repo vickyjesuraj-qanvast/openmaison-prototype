@@ -34,8 +34,9 @@ ok(pickedLabel(null, NOW) === 'Pick a day' && pickedLabel(at(24, 10), NOW) === '
 ok(pickedLabel(at(30, 9), NOW) === 'Fri 30 Oct · 9:00 AM', 'then it names the day picked')
 
 // ── the feed by day ──
-ok(dayLabel(at(23, 9), NOW) === 'Today' && dayLabel(at(22, 9), NOW) === 'Yesterday' && dayLabel(at(20, 9), NOW) === 'Tue 20 Oct', 'Today · Yesterday · the day')
-ok(dayLabel(new Date(2025, 9, 20), NOW) === 'Mon 20 Oct ’25', 'another year names its year')
+/* (activity by date 2026-10-24, a deliberate change of this rule) the day is the house long date at every width — "Tue, 20 Oct ’26", its year always */
+ok(dayLabel(at(23, 9), NOW) === 'Today' && dayLabel(at(22, 9), NOW) === 'Yesterday' && dayLabel(at(20, 9), NOW) === 'Tue, 20 Oct ’26', 'Today · Yesterday · the day')
+ok(dayLabel(new Date(2025, 9, 20), NOW) === 'Mon, 20 Oct ’25', 'another year names its year')
 type Ev = { id: string; at: Date; icon: string; text: string; actor: string; link?: { label: string; href: string }; group?: 'files' }
 const up = (i: number, name: string, h: number): Ev => ({ id: `f${i}`, at: at(22, h, i), icon: 'image', text: `James uploaded the file “${name}”.`, actor: 'James', link: { label: 'See', href: `/f/${i}` }, group: 'files' })
 const ten = Array.from({ length: 10 }, (_, i) => up(10 - i, 'Q-101', 11))
@@ -48,12 +49,15 @@ ok(runWords(done3) === '3 tasks were completed.', '"The task “X” was complet
 ok(feedDays(ten.slice(0, 2), NOW).days[0]!.items.length === 2, 'two of the same thing stay two lines — a run folds from three')
 const mixed = [...ten.slice(0, 3), { id: 'x', at: at(22, 9), icon: 'task', text: 'Dane created the task “Measure”.', actor: 'Dane' } as Ev, { id: 'y', at: at(20, 9), icon: 'task', text: 'Dane created the task “Order”.', actor: 'Dane' } as Ev]
 const feed = feedDays(mixed, NOW)
-ok(feed.days.length === 2 && feed.days[0]!.label === 'Yesterday' && feed.days[1]!.label === 'Tue 20 Oct', 'days in order, newest first')
+ok(feed.days.length === 2 && feed.days[0]!.label === 'Yesterday' && feed.days[1]!.label === 'Tue, 20 Oct ’26', 'days in order, newest first')   // (activity by date 2026-10-24, a deliberate change of this rule)
 ok(feed.days[0]!.items[0]!.kind === 'run' && feed.days[0]!.items.length === 2, 'a run folds; a different line stays its own')
 ok(feed.days[1]!.items[0]!.kind === 'one', 'the same words on another day never join yesterday’s run')
 const long = Array.from({ length: 30 }, (_, i) => ({ id: `n${i}`, at: at(22, 8, i), icon: 'x', text: `Line ${i} by ${i % 2 ? 'Dane' : 'Sarah'}.`, actor: i % 2 ? 'Dane' : 'Sarah' }) as Ev)
 const page1 = feedDays(long, NOW, 20)
 ok(page1.shown === 20 && page1.total === 30, 'the newest 20 first, then Show older')
+/* (activity by date 2026-10-24) the desk reads the same days with every line its own row */
+const desk = feedDays(mixed, NOW, Infinity, { fold: false })
+ok(desk.days.length === 2 && desk.days[0]!.items.length === 4 && desk.days[0]!.items.every((x) => x.kind === 'one') && desk.shown === 5, 'fold off: the same days, every line its own row')
 
 console.log(`rl-l4-pure: ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

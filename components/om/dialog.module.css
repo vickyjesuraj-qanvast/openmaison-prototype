@@ -113,14 +113,6 @@
     max-height: min(88dvh, calc(100dvh - 56px));
     border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
-  /* Grabber: 56x4 on the surface-variant rule, 8 above / 4 below — the same mark the anchored surfaces' sheet wears
-     (components/om/sheet.module.css). It is decoration: the close, the scrim and Esc dismiss the sheet. */
-  .grabber {
-    flex-shrink: 0; align-self: center;
-    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
-    border-radius: var(--om-radius-full);
-    background: var(--om-color-surface-variant);
-  }
   /* (REG-308) The sheet reaches the home indicator (viewport-fit=cover): the pinned footer pads past it — a no-op where env() is 0.
      The head no longer clears a status bar: the sheet starts below it, and the grabber sits where that padding was. */
   .dialog[data-size='form']:not([data-alert]) .head, .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
@@ -133,6 +125,18 @@
   /* (REG-376 · REG-725) Every centred card — the compact / standard sizes and an alert — keeps the canvas' 24px margins (2e); the
      compact size used to take 16. */
   .dialog[data-alert], .dialog[data-size='compact'], .dialog[data-size='standard'] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
+}
+
+/* Grabber: 56x4 on the surface-variant rule, 8 above / 4 below — the same mark the anchored surfaces' sheet wears
+   (components/om/sheet.module.css). It is decoration: the close, the scrim and Esc dismiss the sheet. Drawn only where a surface's own code
+   renders it (its phone sheet). (held calls 2026-10-24, K-9) …which is also a phone held sideways for the lead form and Return Lead. */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .grabber {
+    flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full);
+    background: var(--om-color-surface-variant);
+  }
 }
 
 /* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────

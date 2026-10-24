@@ -299,7 +299,7 @@
    (REG-310's in-flow cell sat 850px of sideways scroll away) — the head's band frozen with them so the column reads as one; the mirrored frozen
    shadow only while there is more table to its left (`data-at-end` on the scroller). The phone under a name reads 14 there. */
 @media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
-  .table[data-tablet] .cell, .table[data-tablet] .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .table[data-tablet] .cell, .table[data-tablet] .hCell { padding-left: var(--om-spacing-2); padding-right: var(--om-spacing-2); }   /* (held calls 2026-10-24, K-12) 8 inside — was 12: the five tablet columns stand beside the frozen band on a 1024 (table.tsx TABLET_WIDTHS) */
   .table[data-tablet][data-selectable] .nameCell, .table[data-tablet][data-selectable] .hCell:first-of-type { padding-left: 40px; }
   .table[data-tablet] .phone, .table[data-tablet] .holdLine, .table[data-tablet] .sub { font: var(--om-type-body-m); }
   /* (A-12) one 64 row: the whole name cell opens the lead (REG-349), so the name needs no 44 box of its own; the copy glyph keeps its 44, paid

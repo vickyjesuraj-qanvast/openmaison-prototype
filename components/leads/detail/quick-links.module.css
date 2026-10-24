@@ -8,8 +8,8 @@
      visible band — the shell rail's own rule. */
   align-self: flex-start;
   position: sticky;
-  top: calc(var(--om-spacing-2) + 72px + 44px);
-  height: calc(100dvh - 72px - 44px - var(--om-spacing-2) * 2);
+  top: var(--detail-pinned, calc(var(--om-spacing-2) + 72px + 44px));
+  height: calc(100dvh - var(--detail-pinned, calc(var(--om-spacing-2) + 72px + 44px)) - var(--om-spacing-2));   /* (held calls 2026-10-24, K-10) `--detail-pinned`: what stays pinned above it — the header and the strip, or on the lead's page on a phone held sideways the strip alone (app/leads/[id]/overview.module.css) */
   display: flex; flex-direction: column; align-items: flex-start;
   gap: var(--om-spacing-6);                       /* V g24 (collapsed) */
   padding: var(--om-spacing-6);                   /* p24 */

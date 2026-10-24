@@ -12,12 +12,15 @@
 .anchor { position: relative; display: inline-flex; }
 
 /* the client's confirmation, and what the studio is waiting for */
-.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; border-radius: var(--om-radius-2); padding: var(--om-spacing-3) var(--om-spacing-4); box-shadow: none; }
+.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; }
+/* (held calls 2026-10-24 — the load order, W6-04's rule) doubled: the band's own corners, padding and no rule over the quote banner's held only by
+   the order the build put the two sheets in, and this lane's build flipped them (the band grew 4px, its rule came back) — order-proof now */
+.banner.banner { border-radius: var(--om-radius-2); padding: var(--om-spacing-3) var(--om-spacing-4); box-shadow: none; }
 .bannerIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; align-self: flex-start; padding-top: 2px; }
 .bannerText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .bannerSub { font: var(--om-type-body-s); opacity: .85; }
 .bannerActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
-.banner[data-tone='changes'] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
+.banner.banner[data-tone='changes'] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--om-spacing-6); align-items: start; }
 .canvasCol { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
@@ -106,6 +109,14 @@
   .toolChips { flex-basis: 100%; }
   .toolEnd { width: 100%; justify-content: flex-start; }
   .cardBody { padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+}
+/* (held calls 2026-10-24, W3-13 — his "fix all of it") ≤374 a project's view switch takes the toolbar's first line and the tools (Main plan,
+   Add a plan, Download, ⋮) the second, at its end: on one row the views had 44px and the view you are on was out of sight. REG-353's one row
+   holds from 375 up. (`data-views`: the bar carries the Design group's switch in the title's place.) */
+@media (max-width: 374px) {
+  .bar[data-views] { flex-wrap: wrap; }
+  .bar[data-views] > :not(.actions) { flex: 1 1 100%; }
+  .bar[data-views] > .actions { margin-inline-start: auto; }
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .markHead { min-height: 56px; }

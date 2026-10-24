@@ -57,7 +57,8 @@ function projectEdits(fields: { label: string; from: string; to: string }[]): st
 export type ActivityEvent = {
   id: string
   at: Date
-  /** Material icon for the row glyph (the mock draws "ballot" for task events; the others follow the tab icons). */
+  /** Material icon for the row glyph (the mock draws "ballot" for task events; the others follow the tab icons). (activity by date 2026-10-24)
+      The row draws `activityGlyph(e)` (lib/leads/activity-glyph.ts): a line of the four chips' kinds wears its kind's icon, any other this one. */
   icon: string
   text: string
   /** Trailing link ("See Task" in the mock) — label + href; absent when nothing to open. */

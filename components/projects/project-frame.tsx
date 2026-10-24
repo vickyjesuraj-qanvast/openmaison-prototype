@@ -392,7 +392,7 @@ export function ProjectFrame({ d, tab, body, origin }: { d: ProjectDetail; tab: 
 
   return (
     <PageReveal skeleton={<ProjectGhost tab={tab} shape={shape} siteBar={siteBar} />}>
-      <div className={styles.body} data-testid="project-page">
+      <div className={`${styles.body} ${styles.projectPage}`} data-testid="project-page">   {/* (held calls 2026-10-24, K-10) the header steps out of the sticky pair on a phone held sideways */}
         <PageHeaderL2
           scrollShadow={false}
           backHref={from ?? home.href}

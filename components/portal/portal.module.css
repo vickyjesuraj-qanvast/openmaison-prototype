@@ -26,6 +26,10 @@
 .mark img { width: 100%; height: 100%; object-fit: contain; padding: var(--om-spacing-1); }
 .studio { font: var(--om-type-subheading-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav { display: flex; align-items: stretch; gap: var(--om-spacing-6); align-self: stretch; }
+/* (held calls 2026-10-24, W3-14) the sections' row and its edge fades (the house ScrollPagers, ChipRail's) — the wrap stands where the row stood;
+   a fade stops at the bar's 1px rule, so the rule runs whole under it */
+.navWrap { position: relative; display: flex; align-self: stretch; }
+.navWrap > span[aria-hidden] { bottom: var(--om-border-1); }
 .navLink { display: inline-flex; align-items: center; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); text-decoration: none; border-bottom: 4px solid transparent; padding-top: 4px; transition: color var(--motion-hover); }
 .navLink:hover { color: var(--om-color-on-surface-default); }
 .navLink[aria-current='page'] { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-bottom-color: var(--brand); }
@@ -169,6 +173,7 @@
      own row (the page itself never scrolls sideways); the studio's name ellipsises; the bell and Sign out keep their size */
   .whoName { display: none; }
   .brand { flex: 0 1 auto; }
+  .navWrap { flex: 0 1 auto; min-width: 0; }
   .nav { flex: 0 1 auto; min-width: 0; gap: var(--om-spacing-4); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
   .navLink { flex: none; white-space: nowrap; }
@@ -179,7 +184,7 @@
   .mark { width: 32px; height: 32px; font: var(--om-type-subheading-m); }
   .markLarge { width: 56px; height: 56px; border-radius: var(--om-radius-3); font: var(--om-type-heading-h2); }   /* (fix-F, F-41) board 5's 56 mark keeps its size on a phone */
   .studio { font: var(--om-type-subheading-m); }
-  .nav, .whoName { display: none; }
+  .nav, .navWrap, .whoName { display: none; }
   .who { flex: none; }   /* (REG-1064) the bell and Sign out keep their size; the studio's name and welcome line give way (320: Sign out ran 12px off the edge) */
   .main { padding: var(--om-spacing-5) var(--om-spacing-4) calc(var(--om-spacing-6) + 70px + env(safe-area-inset-bottom, 0px)); gap: var(--om-spacing-4); }
   .h1 { font: var(--om-type-heading-h2); }

@@ -18,11 +18,35 @@
 
 /* (parity P-30 · C-04 · Q-15) The house row of tiles (StatTiles): one row from 1025 up; at 768–1024 never a tile under ~176px
    (`--tiles-mid`, from the count: ≤3 stay one row, 4 → 2 + 2, 5–6 → 3 + 2 / 3 + 3); two per row on a phone, an odd last tile taking the
-   row; one per row below 360. */
+   row — down to 320 (held calls 2026-10-24, W3-16, his "fix all of it": one a row below 360 filled a 320 screen, or a phone held sideways,
+   before the page's own list began; a long figure is set to fit its half, below). */
 .tiles { display: grid; grid-template-columns: repeat(var(--tiles, 3), minmax(0, 1fr)); gap: var(--om-spacing-3); min-width: 0; }
 @media (min-width: 768px) and (max-width: 1024px) { .tiles { grid-template-columns: repeat(var(--tiles-mid, 3), minmax(0, 1fr)); } }
 @media (max-width: 767px) {
-  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); container: stat-tiles / inline-size; }
   .tiles[data-odd] > :last-child { grid-column: 1 / -1; }
+  /* (W3-16) a long figure (StatTile's `data-fit` = its longest word in characters, 8–14) steps down the type scale until it fits its tile —
+     h3, then h4 (16, the same 24 line), then h5 (14): it ran 20–54px past its tile at 320 – 390 ("S$121,087.50" on the Dashboard, a project's
+     Money, Reports' Sales and Finance). Each step is the tile's own width (a container) against ~0.6em a character. */
+  .tile[data-fit] { container: stat-tile / inline-size; }
 }
-@media (max-width: 359px) { .tiles { grid-template-columns: minmax(0, 1fr); } }
+@container stat-tile (max-width: 95.98px) { .tile[data-fit='8'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 76.78px) { .tile[data-fit='8'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 107.98px) { .tile[data-fit='9'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 86.38px) { .tile[data-fit='9'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 119.98px) { .tile[data-fit='10'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 95.98px) { .tile[data-fit='10'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 131.98px) { .tile[data-fit='11'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 105.58px) { .tile[data-fit='11'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 143.98px) { .tile[data-fit='12'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 115.18px) { .tile[data-fit='12'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 155.98px) { .tile[data-fit='13'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 124.78px) { .tile[data-fit='13'] .value { font: var(--om-type-heading-h5); } }
+@container stat-tile (max-width: 167.98px) { .tile[data-fit='14'] .value { font: var(--om-type-heading-h4); } }
+@container stat-tile (max-width: 134.38px) { .tile[data-fit='14'] .value { font: var(--om-type-heading-h5); } }
+/* (W3-16) …but a row too narrow for two tiles that each keep ~126 (a caption's longest word, "CONTRACTORS", and the tile's 16 + 16) reads one a
+   row: inside a card's insets at 320 (the Dashboard's Where it stands, Qanvast Ops › Studios — a 248 row) two across broke "CONTRACTO / RS".
+   By the row's own width, so a ghost on the same row reads the same. */
+@container stat-tiles (max-width: 263px) {
+  .tiles > * { grid-column: 1 / -1; }
+}

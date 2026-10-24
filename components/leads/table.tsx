@@ -11,7 +11,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
-import { displayDate, displayDateLong, displayDateTimeDot, displayDue, dueDistance, isOverdue, money, phoneLocal } from '@/lib/format'
+import { displayDate, displayDateLong, displayDateTimeDot, displayDue, displayTime, dueDistance, isOverdue, money, phoneLocal } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { BLANK, daysInStage, stageAge, stageSinceText } from '@/lib/leads/row-text'
 import { canReturnLead, projectHoldsDelete } from '@/lib/leads/stage-policy'
@@ -41,6 +41,14 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 /** (Leads on the move, L3 — P-06 · A-12, his marks 2026-10-23) A touch tablet's first screen: Name · Stage · Last contact · Next follow-up ·
  *  Members — who to call and when — the rest one switch away in Column settings, remembered for the tablet apart (`om.columns.leads.tablet`). */
+/** (held calls 2026-10-24, K-12) A touch tablet's day and time in a narrow cell — "Mon 19 Oct · 10:00 AM", the year only when it is not this
+    one (the phone's short day, `dayLabel`'s) — so Next follow-up stands whole beside the frozen Edit · ⋮ at 1024 (Last contact's own short form already fits). */
+const TABLET_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const TABLET_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+function tabletWhen(d: Date, now: number): string {
+  const year = d.getFullYear() === new Date(now).getFullYear() ? '' : ` ’${String(d.getFullYear()).slice(2)}`
+  return `${TABLET_DAYS[d.getDay()]} ${d.getDate()} ${TABLET_MONTHS[d.getMonth()]}${year} · ${displayTime(d)}`
+}
 const TABLET_SET: readonly ColumnKey[] = ['name', 'stage', 'lastContact', 'nextFollowUp', 'assignees']
 export const TABLET_COLUMNS: ColumnConfig[] = [
   ...TABLET_SET.map((k) => ({ ...DEFAULT_COLUMNS.find((c) => c.key === k)!, visible: true })),
@@ -74,9 +82,14 @@ const ACTIONS_BAND = 116
  *  first screen beside the frozen Edit and ⋮, and all five on a 1024 one. */
 /*  (responsive audit 2026-10-23, W2-03) Members 144: two avatars, the +n box and the Assign glyph are 120 inside the cell's 12 + 12 — at 128 a lead
  *  with three members had its Assign cut ("D +1" and half the glyph). The tablet ghost's Members column says the same (components/shell/skeleton.tsx). */
+/*  (held calls 2026-10-24, K-12 — his "fix all of it"; the call as decided) …and all five DO stand beside the frozen Edit · ⋮ on a 1024 held sideways
+ *  (they were 56 past it, Members under the band): 8 inside each cell (table.module.css) and each of the five at its content's own width — Name
+ *  to its "On hold · Till …" line, Stage to "Quote Sent ▾", Last contact to its day and time, Members to two avatars, +n and Assign — with Next
+ *  follow-up taking the rest (its longest day-and-time still loses its last letters, as it did at 184; less than before). Nothing that read whole
+ *  is cut. The tablet ghost's columns say the same (components/shell/skeleton.tsx). */
 const TABLET_WIDTHS: Record<ColumnKey, number> = {
-  name: 196, stage: 128, inStage: 150, tasks: 260, assignees: 144,
-  source: 120, budget: 120, propertyType: 140, created: 108, address: 200, lastContact: 168, district: 112, nextFollowUp: 184,
+  name: 173, stage: 114, inStage: 150, tasks: 260, assignees: 136,
+  source: 120, budget: 120, propertyType: 140, created: 108, address: 200, lastContact: 162, district: 112, nextFollowUp: 178,
 }
 const colStyle = (key: ColumnKey, dragged: number | undefined, widths: Record<ColumnKey, number> = WIDTHS) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${widths[key]} 0 ${widths[key]}px` })
 
@@ -425,7 +438,7 @@ export function LeadsTable({
           <div key={col.key} {...cellProps(col, styles.cell)}>
             {t?.dueAt ? (
               <span className={styles.twoLine}>
-                <span className={styles.plain} style={late ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(displayDue(t.dueAt))}</span>
+                <span className={styles.plain} style={late ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(touchTablet ? tabletWhen(t.dueAt, now) : displayDue(t.dueAt))}</span>
                 <span className={styles.sub} style={late ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{dueDistance(t.dueAt, now)}</span>
               </span>
             ) : <span className={styles.plain}>{BLANK}</span>}

@@ -27,3 +27,9 @@
 .pill[data-compact] .label { display: none; }
 .pill[data-compact] .short { display: inline; }
 .pill[data-compact] { padding-left: var(--om-spacing-3); }
+/* (held calls 2026-10-24) A phone's narrowest toolbars (the Projects listing at 320): the pill shrinks inside its row and its label ellipsizes
+   rather than running under the folded search glyph beside it; the desk and wider phones keep the whole label. */
+@media (max-width: 767px) {
+  .pill.pill { min-width: 0; max-width: 100%; }
+  .label.label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}

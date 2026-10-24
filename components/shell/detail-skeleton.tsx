@@ -20,6 +20,7 @@ import qn from '@/components/leads/detail/questionnaire-card.module.css'
 import sc from '@/components/leads/detail/stages-card.module.css'
 import fc from '@/components/leads/detail/files-card.module.css'
 import ac from '@/components/leads/detail/activity-card.module.css'
+import tl from '@/components/om/timeline.module.css'   // (activity by date 2026-10-24) the card's type glyph
 
 /*
  * Ghost for Lead Details (858-24770). (REG-708 · parity P-07, the owner's pick 2026-10-08: one ghost family) The page's own layout drawn on the
@@ -166,6 +167,21 @@ export function QuickLinksGhost({ count = 8 }: { count?: number }) {
 }
 
 /** An Overview card's head on the card's own classes: the title in its own words, a meta line, a head link, the ↗. */
+/** The RECENT ACTIVITY card's ghost (858:24970): (activity by date 2026-10-24) each row led by its type glyph, as the card draws it — the
+    date, the event. `rows`: the lead's four; a project's Overview shows three. */
+export function RecentActivityGhost({ rows = 4 }: { rows?: number }) {
+  return (
+    <section className={card.card}>
+      <CardHead title="Recent activity" />
+      <div className={ac.body}>
+        {[164, 120, 184, 140].slice(0, rows).map((w, i) => (
+          <div key={i} className={ac.row}><span className={`${tl.glyph} ${ac.glyph}`}><Bone w={24} h={24} r="var(--om-radius-full)" /></span><span className={ac.main}><span className={ac.date}><Line w={96} lh={20} h={12} /></span><span className={ac.text}><Line w={w} lh={20} h={12} /></span></span></div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function CardHead({ title, meta, metaRight, link }: { title: string; meta?: number; metaRight?: number; link?: number }) {
   return (
     <div className={card.head} style={{ gap: 8 }}>
@@ -268,16 +284,7 @@ function OverviewGhost({ onProject, quotes = true }: { onProject: boolean; /** (
               </section>
             </div>
           )}
-          <div data-card="recent-activity">
-            <section className={card.card}>
-              <CardHead title="Recent activity" />
-              <div className={ac.body}>
-                {[164, 120, 184, 140].map((w, i) => (
-                  <div key={i} className={ac.row}><span className={ac.date}><Line w={96} lh={20} h={12} /></span><span className={ac.text}><Line w={w} lh={20} h={12} /></span></div>
-                ))}
-              </div>
-            </section>
-          </div>
+          <div data-card="recent-activity"><RecentActivityGhost /></div>
         </div>
       </div>
     </>

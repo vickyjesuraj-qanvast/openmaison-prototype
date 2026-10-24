@@ -43,6 +43,10 @@
    that, `overflow-wrap: anywhere` guarantees the row still cannot outgrow the card. All five stay legible and
    the current one stays in its primary colour — no abbreviating, no hiding steps. */
 @media (max-width: 1024px) {
+  /* (held calls 2026-10-24, found beside B-06 — a bug fix) The number · visibility unit never shrinks under its words, so on a card too narrow for
+     it beside the status tag (768: "OM-10007 · Shared" ran 2px under SENT TO CLIENT) the tag takes the next line instead. */
+  .amountRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .amountText { min-width: min-content; }
   .labels { gap: var(--om-spacing-1); }
   /* (REG-394) `break-word`, not `anywhere`: `anywhere` also drops each label's min-content contribution to one
      character, so the flex row happily sized "Draft" at 24px and the card read "Dra / ft" · "Appro / ved" at 768.
@@ -50,4 +54,10 @@
      their spaces ("Sent for / Approval") and single words stay whole — with the same left edges, which is what
      quote-card.tsx measures for the marks. */
   .stepLabel { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: break-word; }
+  /* (held calls 2026-10-24, B-06 — his "fix all of it"; where REG-394's wrapping still broke words) A card too narrow for the
+     names whole (quote-card.tsx `compact`): only the current step's name is drawn — whole, on one line, from its own mark (stepped left by
+     `--shift` where it would pass the card's edge). The other names keep their slots, so every mark stays where it was, and stay readable to a
+     screen reader: 0 tall, never `display: none`. */
+  .labels[data-compact] .stepLabel:not([data-current]) { height: 0; overflow: hidden; }
+  .labels[data-compact] .stepLabel[data-current] { white-space: nowrap; overflow-wrap: normal; transform: translateX(calc(-1 * var(--shift, 0px))); }
 }

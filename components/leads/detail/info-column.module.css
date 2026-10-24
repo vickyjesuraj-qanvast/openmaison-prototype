@@ -86,7 +86,7 @@
 /* Section pattern: V g16 · head H g12 (title fills · link · chevron) 20 tall · body = key/value list. */
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 /* (REG-304) A strip glyph scrolls its section to the top: land it under the sticky header + tabs (+ the column's padding). */
-.section { scroll-margin-top: calc(var(--om-spacing-2) + 72px + 44px + var(--om-spacing-6)); }
+.section { scroll-margin-top: calc(var(--detail-pinned, calc(var(--om-spacing-2) + 72px + 44px)) + var(--om-spacing-6)); }   /* (K-10) `--detail-pinned`: app/leads/[id]/overview.module.css */
 .sectionHead { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
 .sectionIcon { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-default); }   /* (REG-342) the strip's glyph beside the title, at the head's 20 */
 .sectionTitle {

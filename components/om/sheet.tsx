@@ -11,9 +11,14 @@ import { useSnackbarDismiss } from './snackbar'
 import { useOverflow } from './use-overflow'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
+import { PHONE_SIDEWAYS } from '@/lib/breakpoint'
 import styles from './sheet.module.css'
 
 const QUERY = '(max-width: 767px)'
+/* (held calls 2026-10-24, K-9 — his "fix all of it") Where a sheet's or a step screen's foot lifts the snackbar: a phone, held either way — the
+   sheets and step screens a phone held sideways takes (PortalMenu's and the Dropdown's, the Move stage window's step, the log and On Hold / Lost
+   sheets) — lib/breakpoint.ts PHONE_SIDEWAYS. */
+const LIFT_QUERY = `${QUERY}, ${PHONE_SIDEWAYS}`
 
 const subscribe = (cb: () => void) => {
   if (typeof window === 'undefined') return () => {}
@@ -53,7 +58,7 @@ export function useSheetFootLift(on: boolean, panel: RefObject<HTMLElement | nul
      (`lowOnly`, below) is not a sheet opening: it withdraws nothing. */
   const dismiss = useSnackbarDismiss()
   const lowOnly = opts?.lowOnly
-  const query = opts?.query ?? QUERY
+  const query = opts?.query ?? LIFT_QUERY
   useEffect(() => { if (on && lowOnly === undefined) dismiss(REFUSED_KEY) }, [on, dismiss, lowOnly])
   useEffect(() => {
     if (!on || !window.matchMedia(query).matches) return

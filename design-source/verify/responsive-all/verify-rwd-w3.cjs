@@ -5,7 +5,8 @@
 //   2 · a Needs you row with buttons keeps its words readable at 320 (W3-02); the desk's row keeps its one line; the Money tab's rows at an
 //       upright tablet too (W3-18)
 //   3 · a paper page's title row never pushes a phone sideways (W3-03)
-//   4 · the Schedule under a finger: the grip and the who-sees line are 44, a press just above a bar opens its milestone (W3-05); the desk's grip is drawn as before
+//   4 · the Schedule under a finger: the grip and the who-sees line are 44, a press just above a bar opens its milestone (W3-05) — on a tablet held
+//       sideways, where the timeline lives under a finger since the held calls' W3-04 (2026-10-24); the desk's grip is drawn as before
 //   5 · the milestone sheet's four statuses are whole words and 44 tall on a phone (W3-09)
 //   6 · Workload › Contractors at 320: the caption's tools stay on the screen, a contractor's name keeps its room (W3-06)
 //   7 · the portal under a finger: sections ≥ 44 wide, Sign out 44 tall, a Receipt link takes a press above its line (W3-07); the section you
@@ -63,6 +64,9 @@ const PHONE_320 = { viewport: { width: 320, height: 640 }, isMobile: true, hasTo
 const PHONE_390 = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
 const SIDEWAYS = { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }
 const TABLET = { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true }
+/* (held calls 2026-10-24, W3-04 — a deliberate change of this rule) a tablet held upright reads the Schedule as the phone's rows; the timeline's
+   touch checks run where the timeline now lives under a finger, a tablet held sideways */
+const TABLET_SIDE = { viewport: { width: 1024, height: 768 }, isMobile: true, hasTouch: true }
 const DESK = { viewport: { width: 1440, height: 1024 } }
 
 ;(async () => {
@@ -167,12 +171,12 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
     // ── 4 · the Schedule under a finger (W3-05) ───────────────────────────────────────────────────────────────────────────────────────
     console.log('4 · the Schedule under a finger')
     {
-      const c = await ctxOf(TABLET); const p = await c.newPage(); watch(p, 'schedule-768')
+      const c = await ctxOf(TABLET_SIDE); const p = await c.newPage(); watch(p, 'schedule-1024')   // (held calls 2026-10-24, W3-04 — a deliberate change of this rule: was 768 upright)
       await go(p, `/projects/${BEN}/schedule`)
       const g = await box(p, '[data-testid="milestone-grip"]')
-      ok(g.w >= 44 && g.h >= 44, `768 touch: the grip is a 44 press (${Math.round(g.w)}×${Math.round(g.h)})`)
+      ok(g.w >= 44 && g.h >= 44, `1024 sideways touch: the grip is a 44 press (${Math.round(g.w)}×${Math.round(g.h)})`)
       const s = await box(p, '[data-testid="client-sees"]')
-      ok(s.h >= 44, `768 touch: the who-sees line is a 44 press (${Math.round(s.h)})`)
+      ok(s.h >= 44, `1024 sideways touch: the who-sees line is a 44 press (${Math.round(s.h)})`)
       /* a press 9px above a bar's drawn top, on a bar inside the timeline's window (between the frozen name and actions columns): the bar
          takes it and opens its milestone */
       await p.locator('[data-testid="milestone-bar"]').first().scrollIntoViewIfNeeded()
@@ -185,15 +189,15 @@ const DESK = { viewport: { width: 1440, height: 1024 } }
         }
         return null
       })
-      ok(!!target, '768 touch: a bar shows inside the timeline’s window')
+      ok(!!target, '1024 sideways touch: a bar shows inside the timeline’s window')
       if (target) {
         const hit = await p.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[data-testid="milestone-bar"]'), target)
-        ok(hit, `768 touch: 9px above a bar is still the bar (${target.name})`)
+        ok(hit, `1024 sideways touch: 9px above a bar is still the bar (${target.name})`)
         await p.touchscreen.tap(target.x, target.y); await settle(p, 1200)
         const sheet = await p.locator('[role="dialog"]').last().innerText().catch(() => '')
-        ok(sheet.includes(target.name.slice(0, 12)), '768 touch: that press opens the bar’s milestone', target.name)
+        ok(sheet.includes(target.name.slice(0, 12)), '1024 sideways touch: that press opens the bar’s milestone', target.name)
       }
-      await shot(p, '04-schedule-bar-press-768')
+      await shot(p, '04-schedule-bar-press-1024')
       await c.close()
       const d = await ctxOf(DESK); const q = await d.newPage()
       await go(q, `/projects/${BEN}/schedule`)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { activityGlyph } from '@/lib/leads/activity-glyph'   // (Activity by date, 2026-10-24) the card's rows lead with the tab's own glyph
 import { useState } from 'react'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
@@ -167,7 +168,7 @@ export function ProjectOverview({ d, href, onSetup, onOpenTab, onVisualizer, onH
               info column carries them as Project info rows) */}
           <DocumentsCard rows={projectDocumentRows(d, { from: here, fileHref: (id) => href(`files/${id}`) })} />
           {completed && closing ? closing : <MoneyCard d={d} h={h} onOpenMoney={() => onOpenTab('money')} stageHref={(id) => href('money', id ? `open=${encodeURIComponent(id)}` : undefined)} onChangeValue={() => onSetup('value')} />}
-          <div data-card="recent-activity" className={styles.activityFold} data-folded={activityOpen ? undefined : ''}><ActivityCard items={d.activity.slice(0, 3).map((e) => ({ at: e.at, text: e.text }))} now={now} onOpenTab={() => onOpenTab('activity')} headExtra={activityToggle} /></div>
+          <div data-card="recent-activity" className={styles.activityFold} data-folded={activityOpen ? undefined : ''}><ActivityCard items={d.activity.slice(0, 3).map((e) => ({ at: e.at, text: e.text, icon: activityGlyph(e) }))} now={now} onOpenTab={() => onOpenTab('activity')} headExtra={activityToggle} /></div>
         </div>
       </div>
       {/* (simplify round 2, S-20 · P2 §6.7) Send back / Decline answered in place — the tabs' own dialogs */}

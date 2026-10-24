@@ -22,9 +22,22 @@
 .words { display: block; font-style: italic; }
 .said { display: block; color: var(--om-color-on-surface-secondary); }
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+/* (held calls 2026-10-24, W3-15) A phone: each paper drawn at its size and scaled whole to the stage's width — `--fit` the scale, `--fit-w` ·
+   `--fit-h` its box (plan-print.tsx `FitPaper`) — so nothing scrolls sideways; on the page a press opens it in the house paper viewer, where
+   the same box is a page. Printing takes the scale off (below). */
+.fit { position: relative; flex-shrink: 0; width: var(--fit-w); height: var(--fit-h); overflow: hidden; }
+.fitInner { width: 297mm; transform: scale(var(--fit)); transform-origin: 0 0; }
+.fitPress { cursor: zoom-in; border-radius: var(--om-radius-0-5); }
+.fitPress:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.fitGhost { width: calc(100vw - 2 * var(--om-spacing-4)); aspect-ratio: 297 / 210; display: flex; align-items: center; justify-content: center; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); }   /* the loader's fitted paper */
 @media print {
   @page { size: A4 landscape; margin: 0; }
   .papers { gap: 0; display: block; }
   .paper { box-shadow: none; break-after: page; }
   .paper:last-child { break-after: auto; }
+  /* (W3-15) a phone's fitted papers print at their size, a page each; while the viewer is open its copy prints, not the page's */
+  .fit { width: auto; height: auto; overflow: visible; break-after: page; }
+  .fit:last-child { break-after: auto; }
+  .fitInner { transform: none; }
+  .papers[data-under] { display: none; }
 }

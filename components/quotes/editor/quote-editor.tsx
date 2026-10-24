@@ -664,7 +664,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
       {/* (P-02) on the move the template's newer version is offered where the template is — the General info screen (the desk keeps it under the tabs) */}
       {mode !== 'desk' && templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} /> : null}
       <TemplateCard state={templateState} busy={templateBusy} locked={tplLock.locked} onChange={openPicker} onEdit={editTemplate} onSaveAs={openSaveAs} /></>} />   // (gaps build B, item 7) a VO’s reason for the change
-    if (k === 'activity') return <ActivityBody events={activity} />
+    if (k === 'activity') return <ActivityBody events={activity} now={now} />
     return (
       <div className={styles.soon} role="status">
         <span className={styles.soonTitle}>{SECTION_LABELS[k]}</span>
@@ -786,7 +786,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     terms: { text: htmlToPlain(texts.terms).trim(), visible: textVisible.terms },
     notes: { text: htmlToPlain(texts.notes).trim(), visible: textVisible.notes },
     signature: { member: me?.name ?? 'You', studio: studio.name, client: lead.name, required: signatureSeed.required },
-    comments: comments.length, activity,
+    comments: comments.length, activity, activityNow: now,   // (activity by date 2026-10-24) the trail's days read from the server's time
   }
   const templateName = templateState.current?.name ?? templateState.picker.templates.find((t) => t.isDefault)?.name ?? null
   const sectionRows: SectionRow[] = sections.filter((s) => s.key !== 'activity' && !(data.variation && s.key === 'payment')).map((s) => {

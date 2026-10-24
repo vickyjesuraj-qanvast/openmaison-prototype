@@ -32,6 +32,8 @@ export type ScreenFolds = {
   signature: { member: string; studio: string; client: string; required: boolean }
   comments: number
   activity: QuoteEvent[]
+  /** (activity by date 2026-10-24) the server's time, for the trail's "Today" · "Yesterday" */
+  activityNow: number
 }
 
 /**
@@ -201,7 +203,7 @@ export function QuoteScreen({
             <span className={styles.foldChev} aria-hidden><Icon name="chevron_right" size={24} /></span>
           </button>
           <Fold title="Activity" meta={folds.activity[0]?.text ?? 'nothing yet'} testId="fold-activity">
-            <div className={styles.activity}><ActivityBody events={folds.activity} /></div>
+            <div className={styles.activity}><ActivityBody events={folds.activity} now={folds.activityNow} /></div>
           </Fold>
         </div>
       </div>

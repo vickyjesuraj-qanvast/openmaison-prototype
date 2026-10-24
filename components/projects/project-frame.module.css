@@ -9,6 +9,17 @@
 .row { composes: row from '../../app/leads/[id]/overview.module.css'; }
 .centre { composes: centre from '../../app/leads/[id]/overview.module.css'; }
 .anchor { composes: anchor from '../../app/leads/[id]/overview.module.css'; }
+/* (held calls 2026-10-24, K-10 on a project's page — the orchestrator's addition to his "fix all of it") A phone held sideways (844 × 390,
+   lib/breakpoint.ts PHONE_SIDEWAYS): the lead page's rule (app/leads/[id]/overview.module.css `.leadPage`) on the project's own page — the sticky
+   header (8 + 72) and the tab strip (48) took 128 of a 390 screen; the header now scrolls away with the page and only the strip stays pinned, at
+   the screen's top (the strip stays at every width, REG-2734). `.projectPage > header` is the L2 header, more weight than its own `.header` rule
+   wherever the sheets land; `--detail-pinned` docks the Create strip and the info column's jump targets under the strip alone
+   (quick-links.module.css · info-column.module.css). ≤767 the header already scrolls away (REG-301). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .projectPage { --detail-pinned: 48px; }
+  .projectPage > header { position: relative; top: auto; }
+  .projectPage > .stickyTabs.stickyTabs { top: 0; }
+}
 /* (parity P-08) fix-A A-25's stage chip in the ≤1024 action row is gone: the lead's Stage button stands there at every width
    (components/projects/stage-menu.module.css). (parity P-03) The row's right carries the lead's Create strip (quick-links.module.css). */
 /* (REG-359) On a phone the header's action row is one line: "Stage: X" hugs its text and the stage's one filled action fills the rest

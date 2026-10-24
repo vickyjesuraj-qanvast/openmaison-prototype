@@ -53,7 +53,7 @@ import { SHARE_SHAPE_KEY } from './schedule-ghost'
 import { isPausedStage, pausedLine } from '@/lib/portal/schedule-model'   // (simplify S-25 (1)) · (parity map, CP-064) P-F's paused line
 import { recordTaskSentOutside, setTaskAssignees, setTaskOutside, setTasksDone, undoTaskOutside, updateTask } from '@/app/leads/tasks-actions'
 import { ScheduleTimeline, type RowAction, type Zoom } from './schedule-timeline'
-import { SchedulePhone } from './schedule-phone'
+import { SCHEDULE_ROWS, SchedulePhone } from './schedule-phone'
 import { AskDialog, MilestonePanel, type PanelAsks, type PanelTaskEdits } from './milestone-panel'
 import { completedBlock } from '@/lib/projects/handover-model'   // (fix-E, E-17)
 import { ShareDialog } from './share-dialog'
@@ -86,6 +86,9 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
   const snackbar = useSnackbar()
   const { run } = useRun()
   const phone = useMediaQuery(MOBILE)
+  /* (held calls 2026-10-24, W3-04) a phone and a tablet held upright read the rows, not the timeline — the scale, Today, full screen and the
+     legend are the timeline's, so they go with it; the phone keeps its own bar, summary and dock (`phone`) */
+  const asRows = useMediaQuery(SCHEDULE_ROWS)
   const wide = useMediaQuery(WIDE)
   const today = dayOf(new Date(data.now))
   const client = data.clientFirst
@@ -134,6 +137,7 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
   if (draftAi && !seenDraft) { setSeenDraft(true); if (list.length) setRebuilding(true) }
   if (!draftAi && seenDraft) setSeenDraft(false)
   const [full, setFull] = useState(false)
+  if (full && asRows) setFull(false)   // (W3-04) a tablet turned upright leaves full screen — the rows have none (render-phase adjust)
   const fullRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(full, fullRef, () => setFull(false))
   const [nudge, setNudge] = useState<{ kind: 'started' | 'done'; id: string } | null>(null)
@@ -661,8 +665,8 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
 
       {/* (B-41) on a phone: who sees it and the schedule's ⋮, under the summary */}
       {phone ? <div className={styles.phoneBar}>{seesButton}<span className={styles.toolActs}>{shareButton}{scheduleMenu}</span></div> : (
-        <div className={styles.toolbar}>
-          {toolbarStart}
+        <div className={styles.toolbar} data-rows={asRows || undefined}>
+          {asRows ? null : toolbarStart}
           <div className={styles.toolEnd}>
             {/* (parity map, SC-094 — 1.0's "+3d" VO chip) the days approved variation orders add; while one waits for an answer, it opens its dialog */}
             {voDays && voDays.total > 0 ? (
@@ -685,7 +689,7 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
       )}
 
       <div className={styles.body} data-pane={pane && wide && !phone ? '' : undefined}>
-        {phone
+        {asRows
           ? <SchedulePhone list={list} today={today} was={was} payments={data.payments} waitingWho={waitingWho} client={clientLayer} onOpen={openRow} moreTo={moreTo} crewLine={crew.has ? crew.lineFor : undefined}
                            onDone={data.mayChange ? (m) => setDoneFor(m.id) : undefined} />
           : full ? null : timeline}
@@ -700,10 +704,10 @@ export function ProjectSchedule({ data, crew: crewData = null }: { data: Schedul
           </aside>
         ) : null}
       </div>
-      {phone ? null : <p className={styles.legend}>{legend}</p>}
+      {asRows ? null : <p className={styles.legend}>{legend}</p>}
 
       {/* (gaps build, package C — 13) full screen: the scale, Today and the list to the window's edges, above the page and under its menus and panel */}
-      {full && !phone ? (
+      {full && !asRows ? (
         <div ref={fullRef} className={styles.full} data-om-surface="" role="region" aria-label={`Schedule — full screen`} data-testid="schedule-full-view">
           <div className={styles.fullBar}>
             <span className={styles.fullTitle}>{`Schedule · ${data.clientName}`}</span>

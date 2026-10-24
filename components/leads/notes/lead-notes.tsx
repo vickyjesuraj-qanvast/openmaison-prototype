@@ -10,6 +10,8 @@ import { useMediaQuery } from '@/lib/breakpoint'
 /** (Leads on the move, L4 — C-14) A tablet held upright — the phone's Notes (Q-01's model for every lead screen). */
 const TABLET_UPRIGHT = '(min-width: 768px) and (max-width: 1024px) and (orientation: portrait)'
 import { Tooltip } from '@/components/om/tooltip'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
 import { LinkButton } from '@/components/leads/move-stage/fields'
@@ -503,6 +505,28 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
      stepped OVER it — which put the button on the list's last visible card, over its ⋮ (Leads on the move, L4 — C-08). The composer's tool
      row now keeps that corner clear and the button rests in it (lead-notes.module.css), as the Tasks quick add does. */
   const composerRef = useRef<HTMLDivElement>(null)
+  /* (held calls 2026-10-24, W2-13 — his "fix all of it"; the call as decided) Below 360 the three tools would squeeze to 24 wide beside Save and the
+     Maison AI corner: they fold into one + (the composer's own menu, the house PortalMenu — a sheet on a phone), each tool a row. A list command
+     needs the caret it had in the note: kept on the press, put back once the menu has closed, then run. */
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const toolsAnchor = useRef<HTMLSpanElement>(null)
+  const caret = useRef<Range | null>(null)
+  const keepCaret = () => {
+    const sel = window.getSelection()
+    const box = composerRef.current?.querySelector('[role="textbox"]')
+    caret.current = sel && sel.rangeCount && box && sel.anchorNode && box.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null
+  }
+  const listFromMenu = (command: 'insertUnorderedList' | 'insertOrderedList') => {
+    setToolsOpen(false)
+    requestAnimationFrame(() => {
+      const box = composerRef.current?.querySelector<HTMLElement>('[role="textbox"]')
+      if (!box) return
+      box.focus()
+      const r = caret.current, sel = window.getSelection()
+      if (r && sel) { sel.removeAllRanges(); sel.addRange(r) }
+      document.execCommand(command)
+    })
+  }
 
   return (
     /* data-pane drives the ≤767 master-detail push (REG-269): the list is the screen until an item is
@@ -632,21 +656,37 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
             />
           </div>
           <div className={styles.composerBar}>
-            <Tooltip label="Bulleted list">
-              <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertUnorderedList')} aria-label="Bulleted list">
-                <Icon name="format_list_bulleted" size={20} weight={300} />
-              </button>
-            </Tooltip>
-            <Tooltip label="Numbered list">
-              <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertOrderedList')} aria-label="Numbered list">
-                <Icon name="format_list_numbered" size={20} weight={300} />
-              </button>
-            </Tooltip>
-            <Tooltip label="Attach file">
-              <button type="button" className={styles.composerTool} onClick={() => setAttachFor(DRAFT_ID)} aria-label="Attach file">
-                <Icon name="attach_file_add" size={20} weight={300} />
-              </button>
-            </Tooltip>
+            <span className={styles.composerTools}>
+              <Tooltip label="Bulleted list">
+                <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertUnorderedList')} aria-label="Bulleted list">
+                  <Icon name="format_list_bulleted" size={20} weight={300} />
+                </button>
+              </Tooltip>
+              <Tooltip label="Numbered list">
+                <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertOrderedList')} aria-label="Numbered list">
+                  <Icon name="format_list_numbered" size={20} weight={300} />
+                </button>
+              </Tooltip>
+              <Tooltip label="Attach file">
+                <button type="button" className={styles.composerTool} onClick={() => setAttachFor(DRAFT_ID)} aria-label="Attach file">
+                  <Icon name="attach_file_add" size={20} weight={300} />
+                </button>
+              </Tooltip>
+            </span>
+            {/* (W2-13) below 360: the three as one + (lead-notes.module.css shows one or the other) */}
+            <span className={styles.composerMore} ref={toolsAnchor}>
+              <Tooltip label="Lists and files" disabled={toolsOpen}>
+                <button type="button" className={styles.composerTool} aria-label="Lists and files" aria-haspopup="menu" aria-expanded={toolsOpen}
+                        onPointerDown={keepCaret} onClick={() => setToolsOpen((o) => !o)} data-testid="composer-tools">
+                  <Icon name="add" size={20} weight={300} />
+                </button>
+              </Tooltip>
+              <PortalMenu open={toolsOpen} anchor={toolsAnchor} onClose={() => setToolsOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Lists and files">
+                <DropdownItem onSelect={() => listFromMenu('insertUnorderedList')}>Bulleted list</DropdownItem>
+                <DropdownItem onSelect={() => listFromMenu('insertOrderedList')}>Numbered list</DropdownItem>
+                <DropdownItem onSelect={() => { setToolsOpen(false); setAttachFor(DRAFT_ID) }}>Attach file</DropdownItem>
+              </PortalMenu>
+            </span>
             {/* The mock's hairline between the tools and Save (995:23429), drawn by the gap itself. */}
             <span className={styles.composerRule} aria-hidden />
             <Button onPress={() => { void save(DRAFT_ID) }} isDisabled={savingId === DRAFT_ID || !draftDirty(composerDraft)}>Save</Button>

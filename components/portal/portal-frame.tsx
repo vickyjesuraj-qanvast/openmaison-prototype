@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
 import { useSnackbar } from '@/components/om/snackbar'
+import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { signOut } from '@/app/portal/actions'
 import { MoreSheet } from '@/components/shell/mobile-nav'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -95,11 +96,16 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
             <span className={styles.brandText}><span className={styles.studio}>{look.studio}</span><span className={styles.welcome} data-testid="portal-welcome">{look.welcome}</span></span>
           ) : <span className={styles.studio}>{look.studio}</span>}
         </span>
-        <nav ref={navRef} className={styles.nav} aria-label="Sections" data-testid="portal-nav">
-          {tabs.map((t) => (
-            <Link key={t.key} href={portalTabHref(slug, t)} className={styles.navLink} data-key={t.key} aria-current={t.key === tab ? 'page' : undefined}>{t.label}</Link>
-          ))}
-        </nav>
+        {/* (held calls 2026-10-24, W3-14) the row says it scrolls: the house ChipRail's edge fades (ScrollPagers) at whichever end has more —
+            a row with room (a desk) shows none */}
+        <span className={styles.navWrap}>
+          <nav ref={navRef} className={styles.nav} aria-label="Sections" data-testid="portal-nav">
+            {tabs.map((t) => (
+              <Link key={t.key} href={portalTabHref(slug, t)} className={styles.navLink} data-key={t.key} aria-current={t.key === tab ? 'page' : undefined}>{t.label}</Link>
+            ))}
+          </nav>
+          <ScrollPagers scrollRef={navRef} />
+        </span>
         <span className={styles.who}>
           <PortalBell slug={slug} preview={visitor.preview} studio={look.studio} brand={look.colour} />
           <span className={styles.whoName}>{visitor.name}</span>

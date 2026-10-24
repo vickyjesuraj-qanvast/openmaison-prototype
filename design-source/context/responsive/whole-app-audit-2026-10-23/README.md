@@ -107,3 +107,38 @@ zoom, layers, off-screen menus, squeezed tables, ghosts — and builds no new sc
   rl-l3 · rl-l4 · rl-fixes · pm2-s17 · rq-k4 · rc-c4 — **16 / 16 green, 1,357 ✓ 0 ✗**; `design:anatomy` 90 pages · 1,971 measures hold;
   tsc clean; eslint the three known; design-lint clean. CLAUDE.md (the header line + the Map entry), `responsive.md` § *The whole-app audit*.
   Nothing committed. **Done.**
+- 2026-10-24 — his "got it can you please fix all of it and commit and push to all the branches": the verified state (Leads on the move,
+  the Lead screen's revert, the whole-app audit, the Floorplan session's tool) **committed `06b9485f` and pushed** to main and
+  uat-dane-2026-10-01 on both remotes (nobody had pushed since `f85e0e94`). The held calls decided as recommended — `calls-2026-10-24.md`
+  (kept: the Move stage window's steps, the three desk changes, the tablet FAB rule, the Marketplace ribbon) — and launched as two lanes
+  from the clean commit: **C1** Leads · the house pieces · the website · Qanvast Ops (B-06, the Won split at every width — REG-149
+  reversed, a sideways phone is a phone for the lead's dialogs, the sideways lead header, the task card's lead link, the Notes composer at
+  320, Reviews' title, the tablet table at 1024, the website's bar held sideways) on :3211; **C2** Projects · the portal · Company ·
+  Settings (the Schedule's list on an upright tablet, report photos at 64, the floor plan's toolbar at ≤374, the portal row's fades,
+  floor-plan papers in the paper viewer, StatTiles two across at ≤374, "Used by" 44, W6-04's two pairs) on :3212. Rows from REG-2899.
+- **C1 landed** (3-way clean over `06b9485f`; main type-checks, design-lint clean): all nine calls (REG-C1.1…10) — B-06 the narrow QUOTES
+  card names the current step only; **the Won split at every width** (an uploaded signed quote starts at the studio's default schedule —
+  `fetchUsualSplit`; REG-149 reversed, the desk's one deliberate change); a phone held sideways takes the phone's step screen and sheets
+  for the Move stage window, On Hold / Lost, the lead form, Edit Lead, Return Lead and Review; the lead's header scrolls away held
+  sideways; the task card's lead link a 44 line; the Notes composer's tools fold into "+" below 360 ("Lists and files" — invented copy,
+  for him); the house header keeps a phone's title on one line (Reviews · Your profile · Floorplan to 3D); the five tablet columns fit at
+  1024 (Next follow-up was already ellipsized, still is); the website's bar waits for the hero on a sideways phone; and a bug on the way —
+  the QUOTES card's tag over "OM-10007 · Shared" at 768. Probe `verify-rwd-c1.cjs` 148/148 (80/126 on the base); 1440 41/43 identical (the
+  two = the Won upload states); 35 regression probes green after one Members-width fix and `rwd-w6`'s sideways-form assertion updated.
+  K-10 for the project page passed to C2. **Lane A launched** (his new ask, the feedback across the Activity tabs: group by date + a type
+  icon on every row — REG-190's mocked day marker and glyph brought onto REG-245's timeline; the lead's / project's tab, the quote editor's
+  Activity, the Overview card's icons) from a WIP base with C1 (`rwd-calls/setup-lane-a.sh`), port 3213.
+- **C2 landed** (all eight calls + K-10 on a project's page): the Schedule as the phone's rows on an upright tablet, a report's photo
+  order-proof at 64, the Floor plan's views on their own line at ≤374, the portal row's ScrollPagers on 768–1024, floor-plan papers fitted
+  and opened in the house PaperViewer on a phone (`paper-viewer.tsx` `backLabel` · `startPage`; "Back to the marked plan" — invented copy),
+  StatTiles two across to 320 (a long figure steps down a size; a row under 264 one a row), "Used by" a 46 press, W6-04's two pairs
+  (Designs ×2 · Settings › Lead management — the desk now draws what `next dev` drew); 1440 57/60 (the 3 = W6-04); 38 probes green.
+  **Lane A landed** (his Activity feedback): every Activity reads by day ("Today" · "Yesterday" · "Fri, 2 Oct ’26", the mock's day marker on
+  the rail at the desk, REG-190) with a type glyph in the dot's place (Tasks `task_alt` · Files `folder` · Notes `sticky_note_2` · Stage
+  `swap_horiz`, every other kind its own — `lib/leads/activity-glyph.ts`), one house `components/om/timeline.tsx` for the lead's and the
+  project's tab and the quote's trail (and the Quote screen's fold); the lead Overview card's rows lead with the same glyph; ghosts follow;
+  REG-245's dots reversed. Its probe 121/121. **The landing's own:** the project Overview card's glyphs + ghost (lane A's hand-off), the
+  Schedule's ask band / nudge order-proof (a flip lane A's diff found), the tablet table's short day ("Mon 19 Oct · 10:00 AM" — C1's K-12
+  left Next follow-up 16px short), the phone task card's outside-person badge beside the first member (Leads on the move had folded it into
+  "+1"; `pj-gap-c` 105/105, now registered), the scope pill shrinking on a phone (the Projects listing at 320). Rows **REG-2899…2929**
+  (C1 2899–2908 · C2 2909–2917 · A 2918–2924 · the landing 2925–2929; `reg-map-calls.json`).

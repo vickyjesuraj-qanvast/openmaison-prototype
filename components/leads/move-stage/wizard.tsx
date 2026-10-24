@@ -26,7 +26,7 @@ import { fetchAttachLibrary } from '@/app/leads/files-actions'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { FILL_ORDER, fillWords, readContactFile, type ContactFill } from '@/lib/leads/contact-fill'   // (S43B · F1-01)
-import { fetchQuoteSendRule, fetchStageAsks } from '@/app/leads/actions'
+import { fetchQuoteSendRule, fetchStageAsks, fetchUsualSplit } from '@/app/leads/actions'
 import { fetchHeldMeetingForMet } from '@/app/meetings/actions'   // (S42G)
 import type { LeadFile, Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
@@ -153,6 +153,8 @@ export function MoveStageWizard({
   const [rule, setRule] = useState<SendRule | null>(null)
   /* (pending modules S05 — Manage Stages) what the studio set the steps to ask for, read with the documents; the defaults until it lands */
   const [stageAsks, setStageAsks] = useState<StageAsks>({})
+  /* (held calls 2026-10-24) the studio's usual split — where Won's uploaded signed quote starts, at every width (panels.tsx `uploadSplit`) */
+  const [usualSplit, setUsualSplit] = useState<WizardData['milestones'] | null>(null)
   /* (pending modules S05 — REG-149's 'Q-101' stand-in retired) the lead's files, for the steps' Attach rows: the house Attach files modal over
      the window — pick from Files or upload (the Files tab's own upload) — and the tiles are the files themselves */
   const [library, setLibrary] = useState<LeadFile[]>([])
@@ -174,6 +176,7 @@ export function MoveStageWizard({
           : { ...cur, meetings: cur.meetings.length === 1 && isBlankMeeting(unstampedRef.current(cur.meetings[0])) ? [met] : [...cur.meetings.map((x) => ({ ...x, collapsed: true })), met] })
       }, () => {})
     }
+    void fetchUsualSplit().then((rows) => { if (live && rows) setUsualSplit(rows) }, () => {})
     void Promise.all([fetchStageDocuments(lead.id), fetchQuoteSendRule().catch(() => null), fetchStageAsks().catch(() => ({}))]).then(
       ([d, r, asks]) => {
         if (!live) return
@@ -472,7 +475,7 @@ export function MoveStageWizard({
       case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} rule={rule} onCreateQuote={createQuote}
                                                 onAttach={(w) => setAttachFor({ kind: w === 'meeting' ? 'quoteMeeting' : 'quoteRender' })} fileOf={fileOf} leadName={lead.name} />
       case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} docs={docs} onCreateQuote={createQuote} onCreateContract={createContract} contractOptional={stageAsks.wonContract === false}   // (pending modules S05)
-                                    memberNames={lead.assignees.map((m) => m.name)} />
+                                    memberNames={lead.assignees.map((m) => m.name)} usualSplit={usualSplit} />
       default: return null
     }
   }

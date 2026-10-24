@@ -1,6 +1,7 @@
 'use client'
 
 import { Bone } from '@/components/shell/skeleton'
+import { RecentActivityGhost } from '@/components/shell/detail-skeleton'   // (Activity by date, 2026-10-24) the card's glyphs
 import { Line, Words, deskOnly } from '@/components/shell/ghost-kit'
 import { AiBriefGhost } from '@/components/leads/detail/ai-brief'
 import card from '@/components/leads/detail/card.module.css'
@@ -60,7 +61,7 @@ export function OverviewGhost({ shape: s }: { shape: OverviewGhostShape }) {
           {s.documents !== false ? <DocumentsGhost /> : null}
           {s.closing ? <span data-card="closing-summary"><CardGhost title="Closing summary" rows={5} /></span>
             : s.money ? <span data-card="money"><CardGhost title="Money" rows={4} /></span> : null}
-          <span data-card="recent-activity" className={overview.activityFold} data-folded=""><CardGhost title="Recent activity" rows={3} /></span>
+          <span data-card="recent-activity" className={overview.activityFold} data-folded=""><RecentActivityGhost rows={3} /></span>
         </div>
       </div>
     </>

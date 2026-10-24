@@ -8,9 +8,16 @@ import styles from './schedule.module.css'
 
 const STATUS_ICON = { done: 'check_circle', in_progress: 'radio_button_checked', blocked: 'pending', not_started: 'radio_button_unchecked' } as const
 
+/** (held calls 2026-10-24, W3-04 — his "fix all of it") The widths that read the schedule as these rows, not the timeline: a phone, and a
+ *  tablet held upright — there the frozen name (360) and actions (140) left the timeline a 70px window of a 570 frame, and a narrower name
+ *  column cut every milestone's name (tried at 240 · 280 · 300). Contracts' Q-01: held upright, a tablet follows the phone. A tablet held
+ *  sideways keeps the timeline (a 328px window). */
+export const SCHEDULE_ROWS = '(max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait)'
+
 /**
  * (Projects round 2 · Phone.dc.html) The schedule on a phone: the same rows, each with its thin bar drawn to scale across the whole job and
  * today's line through it; a row opens its milestone (the panel rises as a sheet). No dragging on a phone — the dates move in the panel.
+ * (held calls 2026-10-24, W3-04) A tablet held upright reads these rows too (`SCHEDULE_ROWS`); its milestone opens in the panel's drawer.
  */
 export function SchedulePhone({ list, today, was, payments, waitingWho, client, onOpen, moreTo, onDone, crewLine }: {
   /** (S45B · H-UHD-2) a milestone's crew words for its line, or its gap */

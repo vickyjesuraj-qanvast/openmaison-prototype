@@ -46,6 +46,11 @@
   .header { top: var(--app-mobile-bar-height); }
   .header::before { top: 0; }
   .actions { flex-wrap: wrap; }
+  /* (held calls 2026-10-24, K-11 — his "fix all of it"; the call as decided) The title keeps ONE line: its own width decides whether the actions
+     fit beside it, and where they don't they take the next line (the rule above) — never a title broken over two lines beside a button
+     ("Qanvast / Ops" beside Request reviews at 320, "Your / profile" beside Discard · Save at 360). A title wider than the screen on its own ends
+     in an ellipsis. A header whose title and actions fit draws as before. */
+  .title { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* (REG-401) …and it leaves with the top bar: its own height plus the bar's puts it fully off the screen,
      so the two read as one block sliding away rather than a header stranded at the top edge. */

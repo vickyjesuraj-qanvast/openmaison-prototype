@@ -85,6 +85,12 @@
   }
   .phoneBar[data-hidden] { transform: translateY(calc(100% + 48px)); }
 }
+/* (held calls 2026-10-24, W1-20 — his "fix all of it"; the call as decided) A phone held sideways (lib/breakpoint.ts PHONE_SIDEWAYS): the bar waits,
+   tucked, until the hero has scrolled up past its band (site-shell.tsx `useHeroPast`) — at rest on a 390-tall screen it sat on the hero's
+   buttons. From the server's first paint, so it never shows and slides away. Then it comes and goes as everywhere (1.0's). */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .phoneBar:not([data-hero-past]) { transform: translateY(calc(100% + 48px)); }   /* every phone held sideways — a 667 × 375 one too */
+}
 @media (prefers-reduced-motion: reduce) { .phoneBar { transition: none; } }
 .phoneBarInner { display: flex; align-items: stretch; justify-content: space-between; max-width: 480px; margin: 0 auto; padding: 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-4); background: var(--site-surface); box-shadow: var(--site-shadow-bar); }
 .tab { flex: 1 1 0; min-width: 0; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 0; border: 0; background: none; color: var(--site-muted); font: var(--site-type-tab); text-decoration: none; cursor: pointer; }

@@ -316,7 +316,7 @@ export function ProjectFloorPlan({ data, views }: { data: FloorPlanData; /** (si
 
   return (
     <div className={styles.tab} data-testid="project-floor-plan">
-      <div className={styles.bar}>
+      <div className={styles.bar} data-views={views ? '' : undefined}>   {/* (W3-13) ≤374 the views take the first line, the tools the second */}
         {views ?? <h2 className={styles.title}>{plan ? plan.name : 'Floor plan'}</h2>}
         {first ? null : (
           <div className={styles.actions}>

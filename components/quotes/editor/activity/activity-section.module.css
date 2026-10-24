@@ -1,24 +1,10 @@
-/* Activity (1254:3769): p24; rows 44 = [rail 11 · when] in a 200 group, then 16 to the text (216 from the dot's left edge); the
-   rail's 1px rule links the dots. */
-.list { list-style: none; margin: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; }
-.row { display: grid; grid-template-columns: 11px 181px minmax(0, 1fr); column-gap: var(--om-spacing-3); align-items: center; min-height: 44px; }
-.rail { position: relative; width: 11px; height: 44px; display: flex; align-items: center; justify-content: center; }
-.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--om-color-surface-variant); }
-.row[data-first] .dot { background: var(--om-color-primary-default); }
-.row:not(:last-child) .rail::after { content: ''; position: absolute; left: 5px; top: 27.5px; height: 33px; width: 1px; background: var(--om-color-surface-variant); }
-.when { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; }
+/* Activity (1254:3769): p24 around the trail. (activity by date 2026-10-24) The rows are the house timeline's (components/om/timeline.module.css:
+   the day's marker on the rail, the line's glyph, its time, its sentence — 16 over 14 on a phone or a tablet, as P-08 set them); this sheet keeps
+   the section's inset, the empty line, and the time's and the sentence's own names (`when` · `text`, what a probe reads). */
+.feed { padding: var(--om-spacing-6); min-width: 0; }
+.when { display: block; }   /* a name only — the house cell sets the rest (no property both set, so no load order decides one) */
+.text { display: block; }
 .empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-/* (quotes on the move 2026-10-22, P-08) On a phone or a touch tablet the trail reads at the touch scale: the line 16, its time 14. */
-@media (max-width: 1024px) {
-  .text { font: var(--om-type-body-l); }
-  .when { font: var(--om-type-body-m); }
-}
 @media (max-width: 767px) {
-  .list { padding: var(--om-spacing-4); }
-  .row { grid-template-columns: 11px minmax(0, 1fr); grid-template-areas: 'rail when' 'rail text'; row-gap: var(--om-spacing-0-5); padding: var(--om-spacing-2) 0; }
-  .rail { grid-area: rail; align-self: stretch; height: auto; align-items: flex-start; padding-top: 6px; }
-  .row:not(:last-child) .rail::after { top: 17px; height: calc(100% - 6px); }
-  .when { grid-area: when; }
-  .text { grid-area: text; }
+  .feed { padding: var(--om-spacing-4); }
 }

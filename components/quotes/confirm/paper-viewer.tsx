@@ -26,8 +26,10 @@ const DOUBLE_TAP_MS = 320, DOUBLE_TAP_PX = 28, TAP_PX = 10, TAP_MS = 400
  * where you are and jump to a page; a pinch or a double-tap zooms in — the page then pans both ways inside the body and the bar never scales
  * (C-16) — and *Fit to width* brings it back. `onFit` = the width the document should be drawn at: the body's inner width at fit, times the
  * zoom the fingers asked for; the host draws its pages at `fit / the paper's width` and may clamp it.
+ * (held calls 2026-10-24, W3-15) A project's floor-plan papers open in it too: `backLabel` names where ← goes (the quote's words by default) and
+ * `startPage` lands on the page that was pressed.
  */
-export function PaperViewer({ open, onClose, title, subtitle, onDownload, children, onFit }: {
+export function PaperViewer({ open, onClose, title, subtitle, onDownload, children, onFit, backLabel = 'Back to the quote', startPage = 0 }: {
   open: boolean
   onClose: () => void
   title: string
@@ -37,6 +39,10 @@ export function PaperViewer({ open, onClose, title, subtitle, onDownload, childr
   children: ReactNode
   /** The width the document should be drawn at — the body's inner width (less the gutters), times the zoom, measured as it opens and whenever either changes. */
   onFit: (width: number) => void
+  /** (W3-15) ←'s words — its tooltip and its name */
+  backLabel?: string
+  /** (W3-15) the page it opens on, from 0 */
+  startPage?: number
 }) {
   const panel = useRef<HTMLDivElement>(null)
   const body = useRef<HTMLDivElement>(null)
@@ -90,6 +96,15 @@ export function PaperViewer({ open, onClose, title, subtitle, onDownload, childr
   }
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current) }, [])
   const goTo = (i: number) => { const el = body.current; if (el) el.scrollTo({ left: i * el.clientWidth * scaleRef.current, behavior: 'smooth' }) }
+  /* (W3-15) opened on a later page: once that page is drawn, the body starts there (the scroll then says which page is in view) */
+  const started = useRef(false)
+  useLayoutEffect(() => {
+    if (!open) { started.current = false; return }
+    const el = body.current
+    if (started.current || !el || !w || startPage <= 0 || pages <= startPage) return
+    started.current = true
+    el.scrollLeft = startPage * el.clientWidth
+  })
 
   /* A zoom lands with the point under the fingers kept in place: once the host has drawn at the new width, the scroll is set in the same frame. */
   const pending = useRef<{ s0: number; fx: number; fy: number; ox: number; oy: number; page: number } | null>(null)
@@ -176,7 +191,7 @@ export function PaperViewer({ open, onClose, title, subtitle, onDownload, childr
     <div ref={panel} className={styles.viewer} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} data-testid="paper-viewer" data-scale={scale.toFixed(2)} data-page-at={at + 1}>
       {/* (REG-725) the house head: the back arrow leading, the title, Download as its one action — no close, the arrow is the way back */}
       <SurfaceHead className={styles.bar} title={title} subtitle={subtitle}
-                   leading={<Tooltip label="Back to the quote"><IconButton icon="arrow_back" label="Back to the quote" size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.barBtn} onClick={onClose} data-testid="paper-viewer-back" /></Tooltip>}
+                   leading={<Tooltip label={backLabel}><IconButton icon="arrow_back" label={backLabel} size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.barBtn} onClick={onClose} data-testid="paper-viewer-back" /></Tooltip>}
                    actions={<Tooltip label="Download a copy"><IconButton icon="download" label="Download a copy" size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.barBtn} onClick={onDownload} data-testid="paper-viewer-download" /></Tooltip>} />
       <div ref={body} className={styles.body} data-zoomed={zoomed || undefined} onScroll={onScroll} style={vars}>
         <div ref={box} className={styles.box}>{children}</div>

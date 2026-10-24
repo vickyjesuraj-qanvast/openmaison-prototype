@@ -29,3 +29,12 @@
   .row { flex-wrap: wrap; }
   .text { flex: 1 1 160px; }
 }
+
+/* (activity by date 2026-10-24 — his "add type icons …") A row with its type glyph: the house timeline's 24 circle (components/om/timeline.tsx)
+   leads, held inside the mock's 36 row (2 out above and below the 20 line, so the row keeps its height), then the date and the event as
+   before — which still wrap under each other on a tablet's narrow card, beside the glyph. */
+.glyph { margin-block: -2px; }
+.main { display: flex; align-items: flex-start; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
+@media (max-width: 1024px) {
+  .main { flex-wrap: wrap; }
+}

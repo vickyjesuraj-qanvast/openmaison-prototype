@@ -35,9 +35,15 @@
 /* (REG-729) the house text link (the DS Link look — the hover ink, no underline), in the foot line's 12px size (inline, a DS Link takes the
    copy's size) */
 .usedLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
-/* (responsive audit 2026-10-23, W4-12) under a finger the link takes REG-273's padding, paid back — inside the foot line's own clip (its 4 above,
-   16 below), so it reaches ~32 there and never over the card's name; the card above it opens the template */
-@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .usedLink { padding-block: 12px; margin-block: -12px; } }
+/* (responsive audit 2026-10-23, W4-12 → held calls 2026-10-24, his "fix all of it") Under a finger "Used by n quotes" is a 44 press: the
+   link's press reaches 15 above and below its line (REG-273's padding, given back as margin — an inline-block, so the padding takes presses
+   and the line keeps its height), and the foot line's clip makes room for it above — its box starts 12 higher (16 in, given back as margin),
+   so the drawn line, one line cut with an ellipsis, stays where it was; it stands over the card's open press (positioned, as that press is),
+   and lets presses through except on its link, so beside the link the 12 it shares with the card's open press stays the card's. */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) {
+  .usage:has(> .usedLink) { position: relative; padding-top: var(--om-spacing-4); margin-top: calc(-1 * var(--om-spacing-3)); pointer-events: none; }
+  .usedLink { display: inline-block; padding-block: 15px; margin-block: -15px; pointer-events: auto; }
+}
 .kebab { position: absolute; right: var(--om-spacing-3); top: calc(220px + var(--om-spacing-3)); height: 44px; display: inline-flex; align-items: center; }
 /* (REG-735) the house empty state (components/om/empty-state.module.css), composed — one copy */
 .empty { composes: empty from '../../om/empty-state.module.css'; }

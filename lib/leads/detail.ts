@@ -24,6 +24,7 @@ import { liveSourceNames } from '@/lib/settings/types'
 import { calendarDaysBetween, displayDate, parseInputDateTime } from '@/lib/format'
 import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
 import type { Viewer } from '@/lib/leads/assign-policy'
+import { activityGlyph } from '@/lib/leads/activity-glyph'   // (activity by date 2026-10-24)
 
 /* Lead Details › Overview (858-24770) — everything the page reads, derived on the server so the client never touches Date.now(). */
 
@@ -50,7 +51,10 @@ export type StageStep = {
 }
 /** (REG-607) `reason` and `detail` come from the parking log's payload — the reason chosen, then "Competitor: X" or "Restart expected 3 Mar ’27". */
 export type ParkedStep = { stage: 'On Hold' | 'Lost'; days: number; till: string | null; reason: string | null; detail: string | null }
-export type ActivityItem = { at: Date; text: string }
+export type ActivityItem = { at: Date; text: string
+  /** (activity by date 2026-10-24) the line's type glyph — the Activity tab's own for the same line (lib/leads/activity-glyph.ts); a card handed
+      no glyph draws its rows as before */
+  icon?: string }
 /**
  * QUESTIONNAIRE card counts (858:25077), derived from the `questions` rows (REG-286).
  *
@@ -185,7 +189,10 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
      ("Lead created from {source}", "Quote created", "Updated contact log", "Lead returned"); the rest are logged as invented. */
   const ret = retRows
   const quote = quoteRows.at(-1) ?? null
-  const activity: ActivityItem[] = [{ at: lead.createdAt, text: `Lead created from ${lead.source}` }]
+  /* (activity by date 2026-10-24) each line wears the Activity tab's glyph for the same line: the lead's creation its own (person), a stage move,
+     a hold, a loss, a contact log's correction and the project's creation the Stage kind's, a quote its docs, a return its undo */
+  const stageGlyph = activityGlyph({ icon: 'swap_horiz', group: 'stage' })
+  const activity: ActivityItem[] = [{ at: lead.createdAt, text: `Lead created from ${lead.source}`, icon: activityGlyph({ icon: 'person' }) }]
   for (const log of logs) {
     // "Updated contact log" is a correction (fromStage === toStage, written by updateStageDetails) — the same test the
     // Activity tab makes. Without it a real New → Contacted move read as an edit here and the move itself never showed.
@@ -193,11 +200,11 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
       : log.toStage === 'On Hold' ? 'Put on hold'
       : log.toStage === 'Lost' ? 'Marked as lost'
       : `Moved to ${log.toStage}`
-    activity.push({ at: log.createdAt, text })
+    activity.push({ at: log.createdAt, text, icon: stageGlyph })
   }
-  if (quote) activity.push({ at: quote.createdAt, text: 'Quote created' })
-  if (ret) activity.push({ at: ret.returnedAt, text: 'Lead returned' })
-  if (projectRow) activity.push({ at: new Date(projectRow.createdAt.getTime() + 1000), text: `Project ${projectRow.number} created` })   /* (REG-911) the next chapter, after the Won move */
+  if (quote) activity.push({ at: quote.createdAt, text: 'Quote created', icon: activityGlyph({ icon: 'docs' }) })
+  if (ret) activity.push({ at: ret.returnedAt, text: 'Lead returned', icon: activityGlyph({ icon: 'undo' }) })
+  if (projectRow) activity.push({ at: new Date(projectRow.createdAt.getTime() + 1000), text: `Project ${projectRow.number} created`, icon: activityGlyph({ icon: 'business_center', group: 'stage' }) })   /* (REG-911) the next chapter, after the Won move */
   activity.sort((a, b) => b.at.getTime() - a.at.getTime())
 
   /* (parity P-06 · Q-01) The strip's counts — what waits on you there. Quotes count for an approver only, while the studio asks for approval

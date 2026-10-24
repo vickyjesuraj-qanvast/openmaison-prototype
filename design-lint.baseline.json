@@ -89,7 +89,6 @@
       "components/leads/quotes/quotes-table.module.css": 2,
       "components/leads/tasks/tasks-table.module.css": 1,
       "components/om/segmented.module.css": 1,
-      "components/quotes/editor/activity/activity-section.module.css": 1,
       "components/quotes/editor/items/items-table.module.css": 2,
       "components/quotes/editor/section-card.module.css": 1,
       "components/quotes/editor/version-history.module.css": 1,

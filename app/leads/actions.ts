@@ -216,6 +216,19 @@ export async function fetchStageAsks(): Promise<{ contactNextStep: boolean; wonC
   return fetchLeadStageRules()
 }
 
+/** (held calls 2026-10-24 — his "fix all of it") The studio's usual split — its default payment schedule, what a new quote starts on (Settings ›
+ *  Quotes & pricing › New quotes start with; the "Default" payment template else) — where the Won step's uploaded signed quote starts, at every
+ *  width. Null when the studio has none; the step then keeps the seeded 10 · 30 · 30 · 30. */
+export async function fetchUsualSplit(): Promise<{ name: string; meta: string; pct: number }[] | null> {
+  const { fetchNewQuoteDefaults } = await import('@/lib/settings/queries')
+  const { fetchPaymentSplits } = await import('@/lib/company/payment-templates')
+  const [{ split }, splits] = await Promise.all([fetchNewQuoteDefaults(), fetchPaymentSplits()])
+  if (!split || !split.rows.length) return null
+  /* the rows' own lines ("Upon signing") — the defaults read carries names and shares only */
+  const full = splits.find((s) => s.name === split.name)?.rows ?? []
+  return split.rows.map((r, i) => ({ name: r.name, meta: full[i]?.name === r.name ? full[i]?.description ?? '' : '', pct: r.pct }))
+}
+
 export async function fetchQuoteSendRule(): Promise<{ approvalRequired: boolean; approver: boolean }> {
   const [approval, viewer] = await Promise.all([fetchQuoteApproval(), fetchViewer()])
   return { approvalRequired: approval === 'required', approver: await isApprover(viewer.id, viewer.role) }
