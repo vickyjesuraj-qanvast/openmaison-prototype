@@ -41,8 +41,18 @@ const newStep = (): Step => ({ id: '', key: `s${Date.now().toString(36)}${Math.r
 /** (Dane UAT 3.20) The Tags picker opens fixed at its own 352 under its button, as the Tasks tab's tags cell places it (lead-tasks.tsx
     `tagsPos`): the field, the list (8 rows before it scrolls) and Manage Tags, kept inside the window. */
 const tagsPlace = (el: HTMLElement, tagCount: number) => {
-  const r = el.getBoundingClientRect(), h = 48 + 16 + Math.min(tagCount * 36, 288) + 1 + 44
+  /* (responsive audit 2026-10-23, W4-24) a finger's rows are the picker's 44, not the mouse's 36 — counted at 36, the picker kept 32px too
+     little room and ran past the bottom of a phone held sideways */
+  const row = window.matchMedia('(hover: none)').matches ? 44 : 36
+  const r = el.getBoundingClientRect(), h = 48 + 16 + Math.min(tagCount * row, 8 * row) + 1 + 44
   return { top: Math.max(8, Math.min(r.bottom + 4, window.innerHeight - h - 20)), left: Math.max(8, Math.min(r.left, window.innerWidth - 352 - 20)) }
+}
+/** (responsive audit 2026-10-23, W4-24) The Assign Member card (400 wide, up to 440 tall) opens under its button, kept inside the window as the Tags
+    picker is — at 768 and 1024 it opened 92px past the right edge. (A window under 456 tall still needs the card's own height capped — its
+    stylesheet, components/leads/assign-popover.module.css.) */
+const assignPlace = (el: HTMLElement) => {
+  const r = el.getBoundingClientRect(), h = Math.min(440, window.innerHeight - 16)
+  return { top: Math.max(8, Math.min(r.bottom + 4, window.innerHeight - h - 8)), left: Math.max(8, Math.min(r.left, window.innerWidth - 400 - 8)) }
 }
 
 /**
@@ -216,7 +226,7 @@ function StepRow({ step, index, team, tags, keepMembers, keepDescription, onPatc
           {/* (REG-729) the house compact select trigger — one of the seven hand-rolled ones it replaced */}
           <SelectTrigger label="Team members" placeholder="Members" open={assignOpen} disabled={!keepMembers}
                          value={members.length ? <span className={styles.pickValue}><span className={styles.avatars}>{members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} tooltip={false} />)}</span>{members.length > 3 ? `+${members.length - 3}` : null}</span> : ''}
-                         onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setAssignPos({ top: r.bottom + 4, left: r.left }); setAssignOpen((o) => !o) }} />
+                         onClick={(e) => { setAssignPos(assignPlace(e.currentTarget)); setAssignOpen((o) => !o) }} />
         </Tooltip>
         <AssignPopover open={assignOpen} team={team} value={step.memberIds} position={assignPos} onClose={() => setAssignOpen(false)} onApply={(ids) => { onPatch({ memberIds: ids }); setAssignOpen(false) }} />
       </span>

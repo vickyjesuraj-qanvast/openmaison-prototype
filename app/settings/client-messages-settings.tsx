@@ -4,7 +4,7 @@ import { usePlanLock } from '@/components/credits/credits-client'
 import { ProTag } from '@/components/credits/pro-tag'
 import { useRef, useState, type SyntheticEvent } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
-import { Dialog } from '@/components/om/dialog'
+import { Dialog, FootStart } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -108,8 +108,8 @@ export function ClientMessagesSettings({ rules: initial, readOnly, studio = 'Dem
       <Dialog open={!!draft} onClose={() => setDraft(null)} title={draft ? `To the client · ${label(draft.event)} · ${draft.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}` : 'Message'} size="modal" width={600}
               subtitle="The fields fill themselves when the message goes — the preview shows a sample client."
               footer={<>
-                <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} isDisabled={!draft || (draft.body === houseClientTemplate(draft).body && draft.subject === houseClientTemplate(draft).subject)} onPress={() => { if (draft) setDraft({ ...draft, ...houseClientTemplate(draft) }) }}>Reset to the house draft</Button>
-                <span className={styles.footSpacer} />
+                {/* (responsive audit 2026-10-23, W4-23) the house FootStart, not a spacer: at 320 the reset ran 71px off the foot's left edge */}
+                <FootStart><Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} isDisabled={!draft || (draft.body === houseClientTemplate(draft).body && draft.subject === houseClientTemplate(draft).subject)} onPress={() => { if (draft) setDraft({ ...draft, ...houseClientTemplate(draft) }) }}>Reset to the house draft</Button></FootStart>
                 <Button variant="secondary" appearance="outlined" onPress={() => setDraft(null)}>Cancel</Button>
                 <Button isDisabled={!draft?.body.trim()} onPress={() => { void save() }} data-testid="client-message-save">Save</Button>
               </>}>

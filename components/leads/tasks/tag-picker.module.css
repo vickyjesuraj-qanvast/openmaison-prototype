@@ -54,6 +54,10 @@
   box-shadow: var(--om-elevation-level-3);
 }
 .rows { display: flex; flex-direction: column; max-height: 288px; overflow-y: auto; }   /* 8 rows before scrolling — the mock lists four; cap invented */
+/* (responsive audit 2026-10-23, W6 — a bug fix, W4-24's hand-off) A phone held sideways (390 tall): the field, 288 of rows and Manage Tags ask
+   ~400 of the screen, so with a studio's longer tag list the foot ran off its bottom whatever the placement. Where the screen is that short
+   the rows give way first (they scroll); a taller screen never matches. */
+@media (max-height: 500px) { .rows { max-height: calc(100dvh - 176px); } }
 /* Menu row 350×36, p8/12/8/8, g8: check_box_outline_blank 20/Regular #666666 + name 14/Regular #1a1a1a. Hover as menus.module.css .item. */
 .row {
   display: flex; align-items: center; gap: var(--om-spacing-2);

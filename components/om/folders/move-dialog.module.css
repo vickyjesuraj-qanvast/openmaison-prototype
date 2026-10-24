@@ -133,3 +133,10 @@
   .panel .heading, .body, .panel .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
   .panel .heading { padding-top: var(--om-spacing-3); }
 }
+
+/* (responsive audit 2026-10-23, W1 — a bug fix) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below left a 294 panel for the
+   folder list; there it spends 8 above and below, off a notched phone's home indicator (env() is 0 everywhere else). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) calc(var(--om-spacing-6) + env(safe-area-inset-right, 0px)) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) calc(var(--om-spacing-6) + env(safe-area-inset-left, 0px)); }
+  .panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

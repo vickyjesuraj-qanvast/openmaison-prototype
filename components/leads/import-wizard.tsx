@@ -24,6 +24,10 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { Dialog, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { Tooltip } from '@/components/om/tooltip'
+import { useMediaQuery } from '@/lib/breakpoint'
+import { useSheetLayout } from '@/components/om/sheet'
+import { fileGlyph } from '@/lib/leads/file-model'
+import { phoneLocal } from '@/lib/format'
 
 export const TEMPLATE_HREF = '/templates/leads-import-template.csv'
 
@@ -40,6 +44,21 @@ const CHANGES_SHOWN = 6
 const NO_SOURCES: readonly string[] = []
 
 type Parsed = { name: string; headers: string[]; rows: string[][] }
+
+/** (Leads on the move, L3 — P-09) The phone model: a phone, or a tablet held upright (Q-01) — the steps read as lists there; a tablet held sideways
+ *  and the desk keep the mock's tables. */
+const PHONE_MODEL = '(max-width: 767px), (max-width: 1024px) and (orientation: portrait)'
+
+/** (Leads on the move, L3 — A-21, a bug fix at every width) The toast's badge is the picked file's own kind: the CSV and PDF badges, and the
+ *  Files tab's kind glyph for a sheet — it drew the CSV badge for every file, an XLSX and a PDF included. */
+function FileBadge({ name }: { name: string }) {
+  const ext = name.split('.').pop()?.toLowerCase()
+  /* eslint-disable @next/next/no-img-element */
+  if (ext === 'csv') return <img src="/figma-assets/file-csv.svg" alt="" width={40} height={40} data-kind="csv" />
+  if (ext === 'pdf') return <img src="/figma-assets/file-pdf.svg" alt="" width={40} height={40} data-kind="pdf" />
+  /* eslint-enable @next/next/no-img-element */
+  return <span className={styles.kindBadge} data-kind={ext ?? 'file'} aria-hidden><Icon name={fileGlyph({ kind: 'other', mime: null, name })} size={24} /></span>
+}
 
 /** (REG-317) `usedBy`: OpenMaison field → the imported column that already holds it. A taken field is disabled here and
  *  says which column has it; Ignore is never taken, and the row's own current value stays selectable.
@@ -113,6 +132,12 @@ export function ImportWizard({
   const [batchSource, setBatchSource] = useState<string | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  /* (Leads on the move, L3 — P-09 · A-21 · A-22 · A-23) The phone model: tips fold, matched columns fold to a line, the preview is a list that
+     says what won't land; on a phone the toast is the upload column's own row. */
+  const phoneModel = useMediaQuery(PHONE_MODEL)
+  const sheetLayout = useSheetLayout()
+  const [tipsOpen, setTipsOpen] = useState(false)
+  const [matchesOpen, setMatchesOpen] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const busyRef = useRef(false)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -122,6 +147,7 @@ export function ImportWizard({
     if (open) {
       setStep(1); setParsed(null); setToast(null); setToastCollapsed(false); setOver(false)
       setConfirmClose(false); setDestOpen(false); setDestination(null); setMapping([]); setAutoMapped([]); setAutoCount(0); setErrorRow(null); setMapErrors(false); setBusy(false); setResult(null); setBatchSource(null)
+      setTipsOpen(false); setMatchesOpen(false)
     }
   }
   // Reset the in-flight guard on open; kill a pending upload timer on close.
@@ -265,6 +291,26 @@ export function ImportWizard({
     return v
   }
   const changeOf = (i: number, field: ImportField) => { const r = readRows[i]; return r && r.typed['Lead Name'] ? r.changes.find((c) => c.field === field) ?? null : null }
+  /* (Leads on the move, L3 — P-09 · A-23 · A-27) What won't land, said before the press and after it: a row with no Lead Name is skipped (the
+     server's own rule, importLeads), a second row with the same phone in this file goes to Review. Row numbers are the file's (1 = the first lead). */
+  const typedRows = useMemo(() => (parsed ? parsed.rows.map((row) => toRecord(parsed.headers, mapping, row)) : []), [parsed, mapping])
+  const noNameRows = typedRows.flatMap((t, i) => (String(t['Lead Name'] ?? '').trim() ? [] : [i + 1]))
+  const twinOf = useMemo(() => {
+    const seen = new Map<string, number>(), out = new Map<number, number>()
+    typedRows.forEach((t, i) => {
+      const d = String(t['Lead Phone Number'] ?? '').replace(/\D/g, '').slice(-8)
+      if (!String(t['Lead Name'] ?? '').trim() || d.length < 8) return
+      const first = seen.get(d)
+      if (first !== undefined) out.set(i + 1, first); else seen.set(d, i + 1)
+    })
+    return out
+  }, [typedRows])
+  const landing = (parsed?.rows.length ?? 0) - noNameRows.length
+  const rowList = (rows: number[]) => (rows.length <= 4 ? rows.join(', ') : `${rows.slice(0, 4).join(', ')} and ${rows.length - 4} more`)
+  const skipWords = noNameRows.length ? `${noNameRows.length} row${noNameRows.length === 1 ? '' : 's'} with no lead name won’t import (row${noNameRows.length === 1 ? '' : 's'} ${rowList(noNameRows)})` : ''
+  /* (A-22) step 2's fold: every column matched → one line; the unmatched ones stay open as cards */
+  const unmatched = (parsed?.headers ?? []).map((_, i) => i).filter((i) => (mapping[i] ?? null) === null || (errorRow === i && nameMissing))
+  const matchedCount = (parsed?.headers.length ?? 0) - unmatched.length
   /* (UX audit L4 · L5) The last step: what changed, and the next move. */
   const adjustedTotal = result ? result.adjusted.reduce((n, a) => n + a.count, 0) : 0
   const reviewCount = result ? (result.destination === 'listing' ? result.duplicates + result.flagged : result.imported) : 0
@@ -289,7 +335,14 @@ export function ImportWizard({
                             transition={{ duration: duration.step, ease: ease.standard }}>
                   {step === 1 ? (
                     <div ref={scrollRef} className={styles.step1}>
-                      <div className={styles.tips}>
+                      {/* (Leads on the move, L3 — A-21) on a phone the tips fold under one line: the first screen is the file */}
+                      {phoneModel ? (
+                        <button type="button" className={styles.tipsToggle} aria-expanded={tipsOpen} onClick={() => setTipsOpen((o) => !o)} data-testid="import-tips-toggle">
+                          How to prepare the file
+                          <Icon name={tipsOpen ? 'keyboard_arrow_up' : 'expand_more'} size={20} />
+                        </button>
+                      ) : null}
+                      <div className={styles.tips} hidden={phoneModel && !tipsOpen}>
                         <div className={styles.tipBlock}>
                           <span className={styles.tipTitle}>Tips on Importing</span>
                           <ul className={styles.tipList}>
@@ -328,10 +381,18 @@ export function ImportWizard({
                               </span>
                             </div>
                             <div className={styles.successGroup}>
-                              <Icon name="draft" size={20} fill weight={300} />
+                              {sheetLayout ? <FileBadge name={parsed.name} /> : <Icon name="draft" size={20} fill weight={300} />}
                               <span className={styles.fileName}>{parsed.name}</span>
                               <button type="button" className={styles.reupload} onClick={() => fileRef.current?.click()}>Re-upload File</button>
                             </div>
+                          </div>
+                        ) : sheetLayout && toast?.state === 'uploading' ? (
+                          /* (Leads on the move, L3 — A-21) on a phone the upload's status is the column's own row, never a card over the success card */
+                          <div className={styles.uploadRow} role="status" data-testid="import-upload-row">
+                            <FileBadge name={toast.name} />
+                            <span className={styles.toastFile}>{toast.name}</span>
+                            <span className={styles.toastStatus}>Uploading…</span>
+                            <span className={`${styles.toastIcon} ${styles.spin}`}><Icon name="progress_activity" size={20} /></span>
                           </div>
                         ) : (
                           <div className={styles.dropzone} data-over={over || undefined} role="button" tabIndex={0}
@@ -353,7 +414,7 @@ export function ImportWizard({
                         <div className={styles.stepDesc}>
                           Ensure your columns align with the correct OpenMaison fields, especially assigning one to “Lead Name”. Only columns matched to a OpenMaison field name will be imported.
                         </div>
-                        {autoCount > 0 ? (
+                        {autoCount > 0 && !(phoneModel && !matchesOpen) ? (   /* (A-22) the folded line says it on a phone */
                           <div className={styles.autoNote}><Icon name="check_circle" size={16} fill />{autoCount} column{autoCount === 1 ? '' : 's'} auto-matched</div>
                         ) : null}
                       </div>
@@ -366,6 +427,15 @@ export function ImportWizard({
                                    onChange={(v) => setBatchSource(v === FROM_FILE ? null : v)}
                                    helper={!sourceMapped && !batchSource ? 'Without one, these leads import as Others' : sourceMapped && batchSource ? 'Replaces the file’s own source for every lead' : undefined} />
                       </div>
+                      {/* (Leads on the move, L3 — P-09 · A-22) the phone model folds what matched: one line and Review; only the columns still to map
+                          stay open as cards */}
+                      {phoneModel && !matchesOpen && matchedCount > 0 ? (
+                        <div className={styles.matchLine} data-testid="import-matched-line">
+                          <span className={styles.matchText}><Icon name="check_circle" size={20} fill />{matchedCount} of {parsed.headers.length} columns matched</span>
+                          <Button appearance="text" onPress={() => setMatchesOpen(true)} data-testid="import-matched-review">Review</Button>
+                        </div>
+                      ) : null}
+                      {phoneModel && !matchesOpen && unmatched.length === 0 ? null : (
                       <div className={styles.mapTable} onScroll={(e) => { e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0) }}>
                         <div className={styles.mapHead}>
                           <div className={`${styles.mapCell} ${styles.colName} ${styles.hLabel}`}>Imported Column Name</div>
@@ -373,6 +443,7 @@ export function ImportWizard({
                           <div className={`${styles.mapCell} ${styles.colSelect} ${styles.hLabel}`}>Select OpenMaison Field Name</div>
                         </div>
                         {parsed.headers.map((h, i) => {
+                          if (phoneModel && !matchesOpen && !unmatched.includes(i)) return null
                           const samples = parsed.rows.map((r) => r[i] ?? '').filter((v) => v.trim()).slice(0, 3)
                           return (
                             <div key={`${h}-${i}`} className={styles.mapRow} data-map-row={i}>
@@ -404,6 +475,7 @@ export function ImportWizard({
                           )
                         })}
                       </div>
+                      )}
                     </div>
                   ) : step === 3 && parsed ? (
                     <div className={styles.stepBody}>
@@ -419,9 +491,42 @@ export function ImportWizard({
                             {changeCount} value{changeCount === 1 ? '' : 's'} won’t import as typed — each is marked with what it becomes.
                           </div>
                         ) : null}
+                        {/* (Leads on the move, L3 — P-09 · A-23) the rows that won't land, named before the press */}
+                        {noNameRows.length ? (
+                          <div className={styles.adjustNote} role="status" data-testid="import-skip-note">
+                            <Icon name="error" size={16} fill />
+                            {skipWords}.
+                          </div>
+                        ) : null}
                       </div>
-                      {/* data-scrolled = down (sticky head shadow); data-scrolled-x = sideways (the frozen
-                          SL No column's shadow below 1025, REG-269/REG-144). */}
+                      {phoneModel ? (
+                        /* (Leads on the move, L3 — P-09 · A-23) The phone model's preview: the leads as a list — the name, the number, the source —
+                           a red line on a row that won't land (no name) or goes to Review (the same phone twice in this file), and what a cell
+                           becomes; the desk's 12-column sheet stays from a tablet held sideways up. */
+                        <ol className={styles.previewList} aria-label="Import preview" data-testid="import-preview-list">
+                          {parsed.rows.map((_, i) => {
+                            const t = typedRows[i] ?? {}
+                            const name = String(t['Lead Name'] ?? '').trim()
+                            const twin = twinOf.get(i + 1)
+                            const meta = [t['Lead Phone Number'] ? phoneLocal(String(t['Lead Phone Number'])) : null, batchSource ?? t['Lead Source'] ?? null, t['Property Type'] ?? null].filter(Boolean).join(' · ')
+                            const changes = name ? readRows[i]?.changes ?? [] : []
+                            return (
+                              <li key={i} className={styles.pItem} data-skip={!name || undefined} data-twin={twin ? '' : undefined}>
+                                <span className={styles.pNum}>{i + 1}</span>
+                                <span className={styles.pMain}>
+                                  <span className={styles.pName}>{name || 'No name'}</span>
+                                  {meta ? <span className={styles.pMeta}>{meta}</span> : null}
+                                  {!name ? <span className={styles.pProblem}>No lead name — won’t import</span>
+                                    : twin ? <span className={styles.pProblem}>Same phone as row {twin} — goes to Review</span> : null}
+                                  {changes.map((c) => <span key={c.field} className={styles.pChange} data-adjusted="">{CHANGE_LABEL[c.field] ?? c.field}: “{c.typed}” imports as {c.landed || 'blank'}</span>)}
+                                </span>
+                              </li>
+                            )
+                          })}
+                        </ol>
+                      ) : (
+                      /* data-scrolled = down (sticky head shadow); data-scrolled-x = sideways (the frozen
+                         SL No column's shadow below 1025, REG-269/REG-144). */
                       <div className={styles.previewWrap}
                            onScroll={(e) => {
                              e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0)
@@ -453,6 +558,7 @@ export function ImportWizard({
                           ))}
                         </div>
                       </div>
+                      )}
                     </div>
                   ) : step === 4 && result ? (
                     <div className={styles.done}>
@@ -471,6 +577,12 @@ export function ImportWizard({
                               : `${result.approved} lead${result.approved === 1 ? '' : 's'} added to your listing${result.duplicates + result.flagged > 0 ? ` · ${result.duplicates + result.flagged} possible duplicate${result.duplicates + result.flagged === 1 ? '' : 's'} sent to review` : ''}`)
                           : `${result.imported} lead${result.imported === 1 ? '' : 's'} waiting in Review imported leads`}
                       </span>
+                      {/* (Leads on the move, L3 — P-09 · A-23) the end names what was skipped and why */}
+                      {result.skipped > 0 ? (
+                        <span className={styles.doneSkip} data-testid="import-skipped">
+                          {result.skipped} row{result.skipped === 1 ? '' : 's'} skipped — no lead name{noNameRows.length ? ` (row${noNameRows.length === 1 ? '' : 's'} ${rowList(noNameRows)})` : ''}
+                        </span>
+                      ) : null}
                       {result.changes.length > 0 ? (
                         <ul className={styles.changeList} aria-label="What was adjusted" data-testid="import-changes">
                           {result.changes.slice(0, CHANGES_SHOWN).map((c) => (
@@ -488,7 +600,7 @@ export function ImportWizard({
               </AnimatePresence>
 
               <AnimatePresence>
-                {toast && step === 1 ? (
+                {toast && step === 1 && !sheetLayout ? (
                   <motion.div className={styles.toast} data-collapsed={toastCollapsed || undefined} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
                               transition={{ duration: duration.snackbar, ease: ease.decelerate }} role="status">
                     <div className={styles.toastHead}>
@@ -505,8 +617,7 @@ export function ImportWizard({
                     </div>
                     {toastCollapsed ? null : (
                     <div className={styles.toastRow}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/figma-assets/file-csv.svg" alt="" width={40} height={40} />
+                      <FileBadge name={toast.name} />
                       <span className={styles.toastFile}>{toast.name}</span>
                       {toast.state === 'uploading' ? <span className={styles.toastStatus}>Uploading...</span> : null}
                       <span className={`${styles.toastIcon} ${toast.state === 'uploading' ? styles.spin : ''}`}>
@@ -528,7 +639,9 @@ export function ImportWizard({
                       <Button onPress={() => { void runImport() }} isDisabled={busy || destination === null}>Import</Button>
                     </>}>
               {/* Count = rows in the file about to be imported (821:23969 shows "these 320 leads"). */}
-              <span className={styles.destQuestion}>Where should {parsed ? `${parsed.rows.length === 1 ? 'this' : 'these'} ${parsed.rows.length} lead${parsed.rows.length === 1 ? '' : 's'}` : 'these leads'} go?</span>
+              {/* (Leads on the move, L3 — A-23) it counts what will land; the rows with no name are said under it */}
+              <span className={styles.destQuestion}>Where should {parsed ? `${landing === 1 ? 'this' : 'these'} ${landing} lead${landing === 1 ? '' : 's'}` : 'these leads'} go?</span>
+              {noNameRows.length ? <span className={styles.destSkip} data-testid="import-dest-skip">{skipWords}.</span> : null}
               <div className={styles.destList} role="radiogroup" aria-label="Where should these leads go?">
                 {([
                   { key: 'listing', title: 'Add to my lead listing', help: 'Leads are added to your listing right away as New. Anything that looks like a duplicate of an existing lead still goes to Review imported leads.' },

@@ -68,7 +68,7 @@ export function QuestionCard({
         {question.required && !answered ? <Tag appearance="outlined" className={styles.tag} data-testid="question-required">Required</Tag> : null}   {/* (REG-647) the bank's Required */}
         {askedAt && !answered ? <Tag appearance="outlined" color="blue" className={styles.tag} data-testid="question-asked">{`Asked · ${displayDayShortMonth(new Date(askedAt))}`}</Tag> : null}   {/* (T12) */}
         {mode === 'view' && !answered ? <Link variant="primary" onPress={onAnswer}>Answer</Link> : null}
-        {answered ? <Tag appearance="outlined" className={styles.tag}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
+        {answered ? <Tag appearance="outlined" className={`${styles.tag} ${styles.byTag}`}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
       </div>
 
       {mode === 'answer' ? (
@@ -83,7 +83,8 @@ export function QuestionCard({
       ) : answered ? (
         <div className={styles.answer}>
           <p className={styles.a}><span className={styles.aLabel}>A: </span>{answerText(question)}</p>
-          <span className={styles.when}>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
+          {/* (Leads on the move, L4 — C-25) on a finger who answered is a 14 line beside the when — the head's 10px "By Studio" tag steps out */}
+          <span className={styles.when}><span className={styles.by} data-testid="question-by">{question.answeredBy === 'client' ? 'By Client · ' : 'By Studio · '}</span>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
           {/* (gaps build D, item 9 — 1.0's clock icon) an answer changed since it was first given keeps every version: old → new, who, when */}
           {changes > 0 && onHistory ? (
             <Tooltip label="Answer history">

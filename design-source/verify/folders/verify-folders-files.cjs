@@ -91,10 +91,13 @@ const folderOf = (name) => sql(`select id from lead_files where lead_id='${LEAD}
   await step('phone', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const page = await ctx.newPage(); page.setDefaultTimeout(12000)
     await page.goto(`${BASE}/leads/${LEAD}/files?folder=${KITCHEN}`); await ready(page)
-    await page.getByRole('button', { name: 'Actions for Kitchen' }).first().click(); await page.waitForTimeout(500)
+    /* (leads on the move, a deliberate change of this rule — L4, C-15) a phone's folder keeps ONE toolbar row and ONE ⋮: the folder's Move ·
+       Rename · Delete ride in that ⋮, whose sheet is named for the folder (the crumb's own kebab is the desk's) */
+    await page.getByTestId('files-phone-more').click(); await page.waitForTimeout(500)
     const named = await page.getByRole('menu', { name: 'Kitchen' }).isVisible().catch(() => false)
     const wrong = await page.getByRole('menu', { name: 'New Folder' }).count()
-    ok('390: the folder menu’s sheet is named for the folder, not "New Folder"', named && wrong === 0)
+    const rows = await page.getByRole('menu', { name: 'Kitchen' }).innerText().catch(() => '')
+    ok('390: the folder menu’s sheet is named for the folder, not "New Folder"', named && wrong === 0 && /Rename folder/.test(rows))
     await page.keyboard.press('Escape'); await page.waitForTimeout(300)
     const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     ok('390: the crumb row and toolbar fit', over <= 0, `${over}px`)

@@ -67,3 +67,16 @@
   background: var(--om-color-surface-variant);
 }
 .avatarPhoto { width: 100%; height: 100%; object-fit: cover; }
+
+/* (Leads on the move, L4 — P-13 · C-17) The scale on a finger: the thread's count, the comment's time and the privacy line at 14 (the 10px
+   "Clients can’t see these comments" was a sentence under the floor), a comment at 16. The desk keeps the mock's sizes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .count, .time, .privacy { font: var(--om-type-body-m); }
+  .body { font: var(--om-type-body-l); }
+}
+/* (L4 — P-13 · C-18) a phone's composer: Submit at 48 beside the privacy line, the field typing at 16 */
+@media (max-width: 767px) {
+  .composerRow { height: auto; min-height: 48px; }
+  .composerRow > button { min-height: 48px; }
+  .composerField textarea { font: var(--om-type-body-l); }
+}

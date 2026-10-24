@@ -315,6 +315,7 @@ export const PAGES: SearchPage[] = [
   { id: 'marketplace', title: 'Marketplace', sub: 'Brands and deals from Qanvast’s partners', icon: 'storefront', href: '/marketplace', words: 'brands brand deals deal suppliers supplier partners furniture lighting flooring kitchen bathroom paint curtains blinds smart home promotions offers' },
   /* (pending modules S25) (invented copy) Tools › Market Insights */
   { id: 'market-insights', title: 'Market Insights', sub: 'Tools · articles from OpenMaison’s editors', icon: 'trending_up', href: '/market-insights', words: 'articles article trends reports case studies industry news insights market reading' },
+  { id: 'floorplan-3d', title: 'Floorplan to 3D Isometric', sub: 'Tools · a 3D view from a floor-plan photo', icon: 'view_in_ar', href: '/floorplan-3d', words: 'floorplan floor plan 3d isometric dollhouse top-down top down render 3d floor plan photo beta' },   // (REG-2800) 1.0's module, its own page again
   { id: 'planner', title: '3D Space Planner', sub: 'Tools · every 3D layout', icon: 'space_dashboard', href: '/planner', words: '3d layout floor plan furniture room planner space 3d space planner isometric floorplan' },   // (gaps build J) · (S46A — N-4) 1.0's hyphenated "3D Space Planner" (read as 3d by `termsOf`)
   /* (S46A — the findability audit's N-1 · M1, his "fix everything" 2026-10-19) (invented copy) 1.0's Escalations: Projects › Tickets, every
      ticket on the projects you see — (S46 — REG-2524) a rail place of its own, /tickets, as Tasks is; here it is found by every word 1.0 called it */

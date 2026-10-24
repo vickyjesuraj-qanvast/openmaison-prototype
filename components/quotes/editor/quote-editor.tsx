@@ -40,7 +40,7 @@ import { firstName } from '@/lib/contracts/model'
 import { docDataFromRecords, quoteGstRate, type DocData } from '@/lib/templates/data'
 import { clientColumnsOf, viewForTemplate } from '@/lib/templates/picker'
 import { updateItemsPrefs } from '@/app/quotes/items-actions'
-import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { ItemsView } from '@/lib/quotes/items-model'
 import { approveQuote, requestQuoteChanges, restoreQuoteVersion, reviseQuote, saveQuoteGeneral, saveQuoteSections, undoReviseQuote, type GeneralPatch } from '@/app/quotes/actions'
 import { ApprovalBar, SentBanner } from './quote-bars'
@@ -219,6 +219,40 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
     root.setProperty('--bottom-dock', '78px')   // 72 (12 + 48 + 12) + 6, the offset's own rule
     return () => { root.removeProperty('--bottom-dock') }
   }, [mode])
+  /* (responsive audit 2026-10-23, W5-06) A phone's Items screen pins its foot (the totals over Add section · Add item): the FAB and the
+     snackbar rest above it as above the Quote screen's foot (the house offset, REG-302) — the FAB sat on Add item and an Undo on the two
+     adds. The offset follows the foot (it wraps at 320, grows with a discount line); a foot that does not reach the screen's bottom with
+     the FAB's room below it, or does not pin (a phone held sideways), leaves the house places. While lines are ticked the bulk bar and
+     the lifted totals own the bottom (the FAB's own bulk-bar step would land on the totals), so the FAB steps out until the bar goes — and on
+     a phone so short its foot does not pin (sideways), where it would rest on the adds at the section's end. The list's end keeps the
+     button's room (items-touch-foot.module.css), so the last line's ⋮ scrolls clear of it. */
+  const phoneWidth = useMediaQuery(MOBILE)
+  const overFoot = mode === 'section' && !split && openKey === 'items' && phoneWidth
+  const [footLift, setFootLift] = useState(0)
+  const [ticking, setTicking] = useState(false)
+  const [footStill, setFootStill] = useState(false)   // the foot does not pin (a short phone held sideways): the button would rest on it at the end
+  useEffect(() => {
+    if (!overFoot) return
+    const foot = document.querySelector<HTMLElement>('[data-testid="items-touch-foot"]')
+    if (!foot) return
+    const root = document.documentElement.style
+    const place = () => {
+      const r = foot.getBoundingClientRect()
+      const pinned = getComputedStyle(foot).position === 'sticky'
+      const lift = pinned && r.bottom > window.innerHeight - 80 ? Math.round(window.innerHeight - r.top) : 0   // 80 = the FAB's 16 + 48 + 16
+      setFootStill(!pinned)
+      if (lift) root.setProperty('--bottom-dock', `${lift + 6}px`); else root.removeProperty('--bottom-dock')
+      setFootLift(lift)
+      setTicking(document.body.hasAttribute('data-om-bulk-bar'))
+    }
+    const ro = new ResizeObserver(place)
+    ro.observe(foot)
+    if (foot.parentElement) ro.observe(foot.parentElement)
+    const mo = new MutationObserver(place)
+    mo.observe(document.body, { attributes: true, attributeFilter: ['data-om-bulk-bar'] })
+    window.addEventListener('resize', place)
+    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', place); root.removeProperty('--bottom-dock') }   // the state goes stale harmlessly: it is read only while overFoot
+  }, [overFoot])
 
   /* ── state ── */
   const [status, setStatus] = useState(quote.status)
@@ -956,7 +990,7 @@ export function QuoteEditor({ data, from, section, apply, restored, drafted = fa
                             onAdd={(itemId, body) => { void run('add the comment', async () => { const row = await orThrow(addLineComment(quote.id, itemId, body)); setComments((c) => [...c, row]); setClock(Date.now()) }) }}
                             onEdit={(id, body) => { const was = comments.find((x) => x.id === id); setComments((c) => c.map((x) => (x.id === id ? { ...x, body, updatedAt: new Date() } : x))); void run('edit the comment', () => editLineComment(id, body)).then((ok) => { if (!ok && was) setComments((c) => c.map((x) => (x.id === id ? was : x))) }) }}   /* (sweep S1 #10) a refused edit puts the words back */
                             onDelete={(id) => { const before = comments; setComments((c) => c.filter((x) => x.id !== id)); void run('delete the comment', () => deleteLineComment(id), 'Comment deleted').then((ok) => { if (!ok) setComments(before) }) }} />
-        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} raised={mode === 'read'} /></span>   {/* (P-01) above the Quote screen's foot */}
+        {overFoot && (ticking || footStill) ? null : <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} raised={mode === 'read' || (overFoot && footLift > 0)} /></span>}   {/* (P-01) above the Quote screen's foot · (W5-06) above the phone's Items foot */}
       </div>
     </PageReveal>
   )

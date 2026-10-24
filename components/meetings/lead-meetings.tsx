@@ -14,7 +14,7 @@ import { SendContractDialog } from '@/components/contracts/editor/dialogs'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
 import { LibraryDeletedSheet } from '@/components/company/templates/library-deleted-sheet'
 import { useRememberShape } from '@/lib/ghost-shape'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { withFrom } from '@/lib/nav'
 import { displayDate, displayDue, parseInputDateTime, startOfDay, titleCaseName } from '@/lib/format'
 import { meetingStepHref, meetingStepLabel } from '@/lib/meetings/next-step'   // (S42G) the stage the studio's rule allows
@@ -75,8 +75,9 @@ export function LeadMeetings({ leadId, lead, leads, rows, team, viewer, mayChang
   const [query, setQuery] = useState('')
   const [todo, setTodo] = useState<MeetingTodo | null>(null)
   const phone = useMediaQuery(MOBILE)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   /* (Leads on the move, L4 — C-07) the tablet's own default set, remembered apart */
   const defs = useMemo(() => meetingColumnDefs(studio), [studio])
-  const columns = useTableColumns(studio ? 'studio-meetings' : 'meetings', defs, phone)
+  const columns = useTableColumns(studio ? 'studio-meetings' : 'meetings', defs, phone, touchTablet)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const counts = useMemo(() => ({ save: rows.filter((r) => standingOf(r, now).waits === 'save').length, write: rows.filter((r) => standingOf(r, now).waits === 'write').length }), [rows, now])
   if (todo && counts[todo] === 0) setTodo(null)   // render-phase adjust: a chip with nothing left lets go

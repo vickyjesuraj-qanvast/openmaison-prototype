@@ -14,7 +14,8 @@
 .amount { composes: total from '../editor/items/item-cards.module.css'; }
 .caption { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-1); }
 .captionName { composes: bucketName from '../editor/items/item-cards.module.css'; }
-.captionAmount { composes: bucketMeta from '../editor/items/item-cards.module.css'; font-variant-numeric: tabular-nums; }
+.captionAmount { composes: bucketMeta from '../editor/items/item-cards.module.css'; }
+.captionAmount.captionAmount { font-variant-numeric: tabular-nums; }   /* (responsive audit 2026-10-23, W6 — load order) doubled: the composed `font` shorthand resets the digits at the same weight, and which held changed from page to page */
 .captionHint { composes: bucketMeta from '../editor/items/item-cards.module.css'; }
 .total { composes: total from './confirm-page.module.css'; }
 /* (S44T — UAT row 332) The payment schedule at the cards' end: one grid for every milestone, so the shares and the amounts stand in columns. */

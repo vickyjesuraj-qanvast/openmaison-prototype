@@ -46,3 +46,10 @@
   .column { width: 300px; }
   .card { width: 100%; }
 }
+
+/* (Leads on the move, L3 — P-06 · A-15) the card's foot: on a touch tablet the stage pill leads it, as the real card's does */
+.foot { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+.touchPill { display: none; }
+@media (hover: none) and (max-width: 1024px) {
+  .touchPill { display: inline-flex; }
+}

@@ -12,7 +12,11 @@ import styles from './help-link.module.css'
  * link to that page, and the page it opens has the way back here (`?from=`, REG-465: the L2 header's Back and crumb). Inline in the
  * sentence, at the sentence's own size, in the house link's ink.
  */
-export function HelpLink({ href, children, testId }: { href: string; children: ReactNode; testId?: string }) {
+export function HelpLink({ href, children, testId, standalone }: { href: string; children: ReactNode; testId?: string
+  /** (responsive audit 2026-10-23, W4-06) a link that stands on its own — a page head's *Reports ›* — not inside a sentence: under a finger it
+      takes a 44 box (a link inside a sentence keeps the sentence's line, REG-273's inline exemption) */
+  standalone?: boolean }) {
+  const cls = standalone ? `${styles.link} ${styles.alone}` : styles.link
   const path = usePathname()
   const q = useSearchParams().toString()
   const here = q ? `${path}?${q}` : path
@@ -32,9 +36,9 @@ export function HelpLink({ href, children, testId }: { href: string; children: R
       if (to) to.focus({ preventScroll: true })
       else { if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }) }
     }
-    return <a className={styles.link} href={href} onClick={land} data-testid={testId}>{children}</a>
+    return <a className={cls} href={href} onClick={land} data-testid={testId}>{children}</a>
   }
   /* a hash stays last: /company/profile?from=…#entities */
   const [base, hash] = href.split('#')
-  return <Link className={styles.link} href={`${withFrom(base || href, here)}${hash ? `#${hash}` : ''}`} data-testid={testId}>{children}</Link>
+  return <Link className={cls} href={`${withFrom(base || href, here)}${hash ? `#${hash}` : ''}`} data-testid={testId}>{children}</Link>
 }

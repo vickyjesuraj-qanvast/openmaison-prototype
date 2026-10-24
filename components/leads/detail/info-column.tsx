@@ -135,7 +135,7 @@ export function InfoColumn({
         <Row k="Target end" text={project.end ? displayDate(project.end) : DASH} testId="info-project-end" />
         {(project.documents ?? []).map((doc) => (
           <Row key={doc.key} k={doc.label} testId={doc.testId}>
-            {doc.href && doc.value ? <Link href={doc.href} className={textLink.link}>{doc.value} <Icon name="arrow_outward" size={16} /></Link> : <span className={styles.text}>{doc.value ?? DASH}</span>}
+            {doc.href && doc.value ? <Link href={doc.href} className={`${textLink.link} ${styles.docLink}`}>{doc.value} <Icon name="arrow_outward" size={16} /></Link> : <span className={styles.text}>{doc.value ?? DASH}</span>}
           </Row>
         ))}
       </KVList>

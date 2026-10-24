@@ -293,3 +293,33 @@
 .twoLine { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .muted { color: var(--om-color-on-surface-secondary); }
+
+/* ── Leads on the move (L3 — P-06 · A-12 · A-13 · A-14, his marks 2026-10-23) ─────────────────────────────────────────────────────────────
+   A touch tablet (`data-tablet`, table.tsx): 12 inside every cell, the tablet's own floors, and Edit + ⋮ frozen at the right edge of every row
+   (REG-310's in-flow cell sat 850px of sideways scroll away) — the head's band frozen with them so the column reads as one; the mirrored frozen
+   shadow only while there is more table to its left (`data-at-end` on the scroller). The phone under a name reads 14 there. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .table[data-tablet] .cell, .table[data-tablet] .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .table[data-tablet][data-selectable] .nameCell, .table[data-tablet][data-selectable] .hCell:first-of-type { padding-left: 40px; }
+  .table[data-tablet] .phone, .table[data-tablet] .holdLine, .table[data-tablet] .sub { font: var(--om-type-body-m); }
+  /* (A-12) one 64 row: the whole name cell opens the lead (REG-349), so the name needs no 44 box of its own; the copy glyph keeps its 44, paid
+     back with margin — 10 rows a screen at 1024 where the 105 rows held 7 */
+  .table[data-tablet] .nameCell { gap: var(--om-spacing-1); }
+  .table[data-tablet] .name { padding-block: 0; }
+  .table[data-tablet] .phoneRow { min-height: 0; }
+  .table[data-tablet] .copyBtn { margin: -12px -12px -12px -8px; }
+  .table[data-tablet] .rowActions {
+    position: sticky; right: 0; z-index: 3; align-self: stretch;
+    background: var(--om-color-surface-default);
+    border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .table[data-tablet] .headRow::after {
+    position: sticky; right: 0; z-index: 4; align-self: stretch;
+    background: var(--om-color-surface-default);
+    border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .table[data-tablet] .row[data-selected='true'] .rowActions { background: var(--om-color-primary-variant); }
+  .scroller:not([data-at-end]) .table[data-tablet] .rowActions,
+  .scroller:not([data-at-end]) .table[data-tablet] .headRow::after { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}

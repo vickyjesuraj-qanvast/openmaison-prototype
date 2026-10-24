@@ -110,3 +110,13 @@
 @media (hover: none) {
   .radio { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }
+
+/* (Leads on the move, L3 — P-05 · A-09 · P-13) A finger's composer: the due chips under the field and the day they mean at 14; the field types at
+   16 and the rows' due lines read 14 (the uppercase "Open tasks" eyebrow keeps its 12, the one size a group's label may keep). */
+.dueRow { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.dueLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .addArea input, .addArea textarea { font: var(--om-type-body-l); }
+  .rowMeta { font: var(--om-type-body-m); }
+  .empty { font: var(--om-type-body-m); }
+}

@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import { useSheetLayout } from '@/components/om/sheet'
 import { Checkbox, Tag } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
@@ -49,15 +51,19 @@ export type FilesTableProps = {
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
 /** The card's mocked tracks (files-table.module.css) — the user's dragged widths replace them (REG-427). */
 /** The list's columns (931:40168, spec 01): Title locked first; the user's order, visibility and pins come from Column settings (REG-454). */
+/* (Leads on the move, L4 — C-07) `tabletHidden`: a touch tablet's list opens with Title · Owner · Updated and the ⋮ frozen at the right (the Quotes
+   tables' way); File type, File size, Attached to and Client wait in Column settings, remembered per breakpoint. */
 export const FILE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: 'minmax(418px, 1fr)', locked: true },
   { key: 'owner', label: 'Owner', track: '240px' },
   { key: 'updated', label: 'Updated', track: '116px' },
-  { key: 'type', label: 'File type', track: '119px' },
-  { key: 'size', label: 'File size', track: '114px' },
-  { key: 'attached', label: 'Attached to', track: '195px' },
-  { key: 'client', label: 'Client', track: '120px' },   // (Projects r4a) Shown to client — the portal's Files lists only these
+  { key: 'type', label: 'File type', track: '119px', tabletHidden: true },
+  { key: 'size', label: 'File size', track: '114px', tabletHidden: true },
+  { key: 'attached', label: 'Attached to', track: '195px', tabletHidden: true },
+  { key: 'client', label: 'Client', track: '120px', tabletHidden: true },   // (Projects r4a) Shown to client — the portal's Files lists only these
 ]
+/** (L4, C-07) A touch tablet's tracks: Title from 200, the owner's name at 160 — Title · Owner · Updated and the ⋮ fit a 570 frame. */
+const TABLET_TRACKS: Record<string, string> = { title: 'minmax(200px, 1fr)', owner: '160px', updated: '116px', type: '104px', size: '96px', attached: '160px', client: '104px' }
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
 const SORTABLE: Record<string, boolean> = { owner: false, type: false, attached: false, client: false }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, owner: styles.colOwner, updated: styles.colUpdated, type: styles.colType, size: styles.colSize, attached: styles.colAttached }
@@ -95,8 +101,12 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
   const colWidths = useColumnWidths('lead-files')
+  /* (Leads on the move, L4 — C-07) a touch tablet: its tracks, and the row's ⋮ as a frozen cell at the right (the head draws its column) */
+  const phone = useSheetLayout()
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
+  const shownColumns = useMemo(() => (touchTablet ? columns.map((c) => ({ ...c, track: TABLET_TRACKS[c.key] ?? c.track })) : columns), [columns, touchTablet])
   /* (pending modules S06) a viewer who reads only has nothing to do in bulk — no selection column (the folder pieces' rule) */
-  const tracks = gridTemplateFor(columns, colWidths, readOnly ? undefined : '40px', ACTIONS_TRAIL.kebab)
+  const tracks = gridTemplateFor(shownColumns, colWidths, readOnly ? undefined : '40px', ACTIONS_TRAIL.kebab)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow, { leading: readOnly ? 0 : 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
@@ -105,7 +115,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
   return (
     <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Files" data-kb-list="file" data-cols="lead-files" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
-         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+         onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) }}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
       <div ref={headRow} className={styles.head} role="row">
         {readOnly ? null : <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
@@ -130,6 +140,8 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           </div>
           )
         })}
+        {/* (L4, C-07) the ⋮ column's head on a touch tablet — frozen right with the rows' cell */}
+        {touchTablet ? <div className={`${styles.hCell} ${styles.hActions}`} role="columnheader" aria-label="Actions" data-col="actions" data-testid="files-actions-head" /> : null}
       </div>
 
       {rows.map((row) => (

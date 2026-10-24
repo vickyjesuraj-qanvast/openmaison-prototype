@@ -24,6 +24,8 @@
 .scaleTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .scaleText { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
 
+/* (responsive audit 2026-10-23, W3-08) the zoom bar's "100%" fits the plan — under a finger it is a 44 press like its − and + (it was 52 × 36) */
+@media (hover: none) and (max-width: 1024px) { .zoomLabel { min-height: 44px; } }
 @media (max-width: 767px) {
   .zoom { right: var(--om-spacing-2); bottom: var(--om-spacing-2); }
   .scale { padding: var(--om-spacing-3); }

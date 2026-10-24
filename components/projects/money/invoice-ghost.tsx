@@ -30,7 +30,7 @@ export function InvoiceGhost({ shape }: { /** the reveal's knowledge — the loa
         <div className={frame.bar}>
           <div className={frame.titleBlock}>
             <Line w={200} lh={16} h={10} />
-            <div className={frame.titleRow}><Line w={150} lh={32} h={20} /><span className={frame.chips}><Slot kind="chip" w={64} /><Slot kind="chip" w={150} /></span></div>
+            <div className={`${frame.titleRow} ${paper.headWrap}`}><Line w={150} lh={32} h={20} /><span className={frame.chips}><Slot kind="chip" w={64} /><Slot kind="chip" w={150} /></span></div>
           </div>
           <div className={frame.actions}><Slot kind="btn" w={132} />{s.copy ? <Slot kind="icon" /> : null}<Slot kind="icon" />{s.next ? <Slot kind="btn" w={64} /> : null}{s.record ? <Slot kind="btn" w={148} /> : null}</div>
         </div>

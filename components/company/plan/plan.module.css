@@ -13,6 +13,9 @@
 .m { color: var(--om-color-on-surface-secondary); }
 .num { font-variant-numeric: tabular-nums; }
 .link { composes: link from '../../om/text-link.module.css'; }   /* (REG-729) the DS Link look — primary, 600, no underline; the hover ink */
+/* (responsive audit 2026-10-23, W4-11) a card line's link (an activity's lead or sketch, Billing details' *Edit in Profile*) stands 44 under a
+   finger — REG-273's link padding, paid back, so no line moves */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .link { padding-block: 12px; margin-block: -12px; } }
 
 /* the asks waiting for the Owner (Q-34) */
 .asks { display: flex; flex-direction: column; gap: var(--om-spacing-2); }

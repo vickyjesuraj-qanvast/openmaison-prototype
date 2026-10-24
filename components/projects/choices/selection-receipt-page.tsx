@@ -16,6 +16,7 @@ import { PageReveal } from '@/components/shell/page-reveal'
 import { receiptStateLabel, type SelectionReceiptData } from '@/lib/projects/choice-receipt-model'
 import { SelectionReceiptGhost, SelectionReceiptPaper } from './selection-receipt'
 import styles from '@/components/quotes/preview/quote-preview.module.css'
+import receipt from './selection-receipt.module.css'
 
 /**
  * (gaps build D, item 7) A confirmed pick's selection receipt as a page — the payment receipt's frame (the quote preview's bar and stage): the
@@ -35,12 +36,12 @@ export function SelectionReceiptPage({ d, from, print }: { d: SelectionReceiptDa
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
             <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.projectId}` }, { label: 'Choices', href: tabHref }]} />
-            <div className={styles.titleRow}>
+            <div className={`${styles.titleRow} ${receipt.headWrap}`}>
               <h1 className={styles.title}>Selection receipt</h1>
               <span className={styles.chips}>
                 {/* (parity map, TD-044) a no's receipt says which answer it records */}
                 <MetaChip color={d.answer ? 'default' : 'green'}>{receiptStateLabel(d)}</MetaChip>
-                <MetaChip>{`${d.choice.title}${picked ? ` · ${picked.name}` : ''}`}</MetaChip>
+                <MetaChip className={receipt.chipFit}>{`${d.choice.title}${picked ? ` · ${picked.name}` : ''}`}</MetaChip>
               </span>
             </div>
           </div>
@@ -67,7 +68,7 @@ export function SelectionReceiptPageGhost() {
         <div className={styles.bar}>
           <div className={styles.titleBlock}>
             <Line w={220} lh={16} h={10} />
-            <div className={styles.titleRow}><Line w={200} lh={32} h={20} /><span className={styles.chips}><Slot kind="chip" w={76} /><Slot kind="chip" w={190} /></span></div>
+            <div className={`${styles.titleRow} ${receipt.headWrap}`}><Line w={200} lh={32} h={20} /><span className={styles.chips}><Slot kind="chip" w={76} /><Slot kind="chip" w={190} /></span></div>
           </div>
           <div className={styles.actions}><Slot kind="btn" w={140} /><Slot kind="icon" /></div>
         </div>

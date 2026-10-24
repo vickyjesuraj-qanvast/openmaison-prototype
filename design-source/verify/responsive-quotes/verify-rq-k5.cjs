@@ -340,6 +340,7 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     await pct.scrollIntoViewIfNeeded(); await pct.click(); await settle(d, 500)
     ok(await d.getByRole('textbox', { name: /Percentage of / }).isVisible(), 'a click on "10%" opens the inline box')
     await d.keyboard.press('Escape'); await settle(d, 300)
+    await openSection(d, 'section-terms')   // (closing regression) the baseline keeps this quote's Terms folded — the fold is the quote's own, saved per quote
     ok(await d.locator('#section-terms [contenteditable="true"]').count() === 1 && await d.getByTestId('text-row').count() === 0, 'Terms is the open editor on the desktop, not a row')
     await D.close()
 

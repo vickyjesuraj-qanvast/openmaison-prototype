@@ -53,6 +53,17 @@
 /* (pending modules S22) A two-line row that only opens (no buttons, its chevron at the end — the Dashboard's Workload, Site updates, Coming up):
    the words give way and the meta and the chevron keep the row's line — only buttons ever take a line of their own. */
 .row[data-two]:not([data-split]) { flex-wrap: nowrap; }
+/* (responsive audit 2026-10-23, W3-02) …a row WITH buttons that only acts (a payment to confirm: Confirm · See the bank's confirmation) still
+   lets its buttons take their line when the row is short — kept on one line at 320 its words were squeezed to nothing, one letter a line,
+   1,300px tall, under the buttons and the amount. ≤1439, so the desk's rows keep their line exactly as drawn. */
+@media (max-width: 1439px) {
+  .row[data-two]:not([data-split]):has(> .rowActions) { flex-wrap: wrap; }
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W4-15) …and a two-line row that wraps its meta (`two wrap` — Reports › Meetings' coaching
+     rows): the words started from no width at all (`flex: 1`), so the evidence beside them took the line and, at 320, left them 16px — one
+     letter a line, 450px tall. The words now start from 160 (the stage row's own wrap rule, stages-card `.nameGroup`) and the evidence takes
+     the next line when the two don't fit. ≤1439, so the desk's rows are as drawn. */
+  .row[data-two][data-wrap] .two { flex: 1 1 160px; }
+}
 
 /* A card's group label inside its body ("Needs your OK · 2") — MY TASKS' group label (my-work-card .groupLabel), set on the body's own inset. */
 .groupLabel { composes: groupLabel from '../leads/detail/my-work-card.module.css'; }

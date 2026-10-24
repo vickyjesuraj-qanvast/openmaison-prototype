@@ -72,7 +72,7 @@ export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }:
   return (
     <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Item by item" data-cols="xray-items" data-overflow={overflowing || undefined} data-actions={rowActions ? '' : undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
-         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+         onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) }}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>

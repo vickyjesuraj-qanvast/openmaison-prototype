@@ -28,6 +28,14 @@
   transition: left var(--motion-modal);
 }
 .strip[data-stuck] { display: block; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A notched phone held sideways: the shell now pads the home indicator and the
+   sides (W1-13), but the stuck banner kept its 16 from the screen's very foot — its lower edge on the indicator — and the white skirt began
+   at the rail's edge under the sensor housing. Both add the insets; env() is 0 on every other screen, so nothing else moves. (The phone's
+   rules above ride on the dock, which carries the indicator already.) */
+@media (min-width: 768px) {
+  .banner { bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  .strip { height: calc(16px + env(safe-area-inset-bottom, 0px)); left: calc(var(--rail-w, 52px) + 16px + env(safe-area-inset-left, 0px)); right: calc(var(--om-spacing-2) + env(safe-area-inset-right, 0px)); }
+}
 .sentinel { display: block; height: 1px; margin-top: -1px; pointer-events: none; }
 .banner:hover { background: var(--om-color-tertiary-yellow-variant1); box-shadow: var(--om-elevation-level-2); }
 .banner:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

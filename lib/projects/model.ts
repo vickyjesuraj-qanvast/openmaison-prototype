@@ -64,7 +64,11 @@ export function formatProjectNumber(n: ProjectNumbering, seq: number, date: Date
 }
 
 /** (fix-A, A-15) The Won step's uploaded signed quote, filed in the lead's Files under this name — Key documents names and opens it. */
-export const signedQuoteFileName = (uploaded: string) => `Signed quote — ${uploaded.replace(/\.pdf$/i, '').trim().slice(0, 120)}.pdf`
+export const signedQuoteFileName = (uploaded: string) => {
+  /* (Leads on the move, Q-03) a photo of the signed paper keeps its picture's extension — the name the file is kept and looked up under */
+  const pic = /\.(jpe?g|png|webp)$/i.exec(uploaded.trim())
+  return `Signed quote — ${uploaded.replace(/\.(pdf|jpe?g|png|webp)$/i, '').trim().slice(0, 120)}.${pic ? pic[1]!.toLowerCase().replace('jpeg', 'jpg') : 'pdf'}`
+}
 
 /* ── The agreed payment split outside a system quote ─────────────────────────────────────────────────────────────────────────── */
 

@@ -15,7 +15,9 @@
   /* xl width as mocked; the height follows the trash (the modal rule: height to content, viewport-capped). The mock's
      ~13 rows still measure 928 (heading 80 + body p48 + head 56 + n × 60); an empty or 3-row trash hugs instead of
      standing 928 tall, and .body keeps scrolling once the cap bites. */
-  width: var(--om-modal-xl); height: auto; min-height: 480px; max-height: calc(100dvh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it */
+  width: var(--om-modal-xl); height: auto; min-height: min(480px, calc(100dvh - 96px)); max-height: calc(100dvh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it.
+     (responsive audit 2026-10-23, W2-17) …never past the screen: on a phone held sideways (390 tall) the floor beat the 294 cap, the sheet stood 480
+     tall and its head scrolled away with the overlay; the floor gives way where the screen is under 576, the body scrolls inside */
 }
 
 /* modal-body "Filter content" V g24 p24 */
@@ -169,3 +171,11 @@
 /* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
    own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
 @media (min-width: 768px) { .cell.colTitle, .hCell.colTitle { padding-left: var(--om-spacing-3); } }
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) calc(var(--om-spacing-6) + env(safe-area-inset-right, 0px)) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) calc(var(--om-spacing-6) + env(safe-area-inset-left, 0px)); }
+  .panel { min-height: min(480px, calc(100dvh - 16px - env(safe-area-inset-bottom, 0px))); max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

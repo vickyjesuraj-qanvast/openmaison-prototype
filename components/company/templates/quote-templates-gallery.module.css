@@ -35,6 +35,9 @@
 /* (REG-729) the house text link (the DS Link look — the hover ink, no underline), in the foot line's 12px size (inline, a DS Link takes the
    copy's size) */
 .usedLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
+/* (responsive audit 2026-10-23, W4-12) under a finger the link takes REG-273's padding, paid back — inside the foot line's own clip (its 4 above,
+   16 below), so it reaches ~32 there and never over the card's name; the card above it opens the template */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .usedLink { padding-block: 12px; margin-block: -12px; } }
 .kebab { position: absolute; right: var(--om-spacing-3); top: calc(220px + var(--om-spacing-3)); height: 44px; display: inline-flex; align-items: center; }
 /* (REG-735) the house empty state (components/om/empty-state.module.css), composed — one copy */
 .empty { composes: empty from '../../om/empty-state.module.css'; }

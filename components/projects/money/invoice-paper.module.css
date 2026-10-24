@@ -65,3 +65,12 @@
 .acceptLine { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-on-surface-default); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .acceptLines { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); } }
 /* end P-D */
+
+/* (responsive audit 2026-10-23, W3-03) A paper page's title row on a phone: the title and its chips share the bar's quote-preview row, which
+   never wraps — "Receipt RCT-2026-005 · REVERSED" ran 4px past a 320 screen and the selection receipt's "KITCHEN COUNTERTOP · CALACATTA
+   QUARTZ" 49px. ≤767 the chips take the next line when they don't fit, and a chip longer than the line ends in an ellipsis. */
+@media (max-width: 767px) {
+  .headWrap.headWrap { flex-wrap: wrap; row-gap: var(--om-spacing-1); }   /* (W6 — load order) doubled over the quote preview's `gap` (12), the same weight */
+  .chipFit.chipFit { flex-shrink: 1; min-width: 0; max-width: 100%; }
+  .chipFit > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}

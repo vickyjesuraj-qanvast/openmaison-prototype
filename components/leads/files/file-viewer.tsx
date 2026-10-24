@@ -36,6 +36,9 @@ import { downloadBlob } from '@/lib/leads/export'
 import type { FileViewData } from '@/lib/leads/files'
 import { downloadName, fileGlyph, folderPath, paperKindOf } from '@/lib/leads/file-model'
 import { FILE_VIEWER_KEYS } from '@/lib/keys/registry'
+import { Sheet } from '@/components/om/sheet'
+import { useMediaQuery } from '@/lib/breakpoint'
+import { FIT as FIT_VIEW, transformOf, usePinchSwipe, type View } from './use-pinch-swipe'
 import { markUsed, useShortcutsHere } from '@/lib/keys/store'
 import { isTyping, layerOpen, ownsArrows } from '@/components/shell/shortcuts/dom'
 import styles from './file-viewer.module.css'
@@ -45,8 +48,10 @@ import styles from './file-viewer.module.css'
  * state reads like the mock — remove #999999 · arrows_output #999999 · add #1a1a1a; arrows_output puts the image back to fit.
  */
 const ZOOM_STEPS = [1, 1.5, 2, 3]
-const FIT = 0
 const LAST = ZOOM_STEPS.length - 1
+/** (L4, C-23) The bar's steps from wherever a pinch left the picture: the next step up, the next step down. */
+const stepUp = (s: number) => ZOOM_STEPS.find((z) => z > s + 0.001) ?? ZOOM_STEPS[LAST]!
+const stepDown = (s: number) => [...ZOOM_STEPS].reverse().find((z) => z < s - 0.001) ?? 1
 
 type Panel = 'comments' | 'info' | null
 
@@ -70,7 +75,14 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
   const { run, fail, refresh } = useRun()
   const share = useFileShare({ lead, sender: me.name })   // (UX audit 2026-09-30, T9) the client's read-only link
 
-  const [zoomIdx, setZoomIdx] = useState(FIT)
+  /* (Leads on the move, L4 — P-11 · C-23) the picture's zoom and pan: the bar's steps on a desk (scale only, as before), and on a finger a
+     pinch, a pan, a double-tap — and a swipe at fit for the folder's next file. A new file opens at fit. */
+  const [view, setView] = useState<View>(FIT_VIEW)
+  const [viewOf, setViewOf] = useState(file.id)
+  if (viewOf !== file.id) { setViewOf(file.id); setView(FIT_VIEW) }   // render-phase adjust
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const touch = useMediaQuery('(hover: none)')
   // `?panel=comments` opens the panel with the page — the listings' comment chips land here (REG-253).
   const landing = useSearchParams().get('panel')
   const [panel, setPanel] = useState<Panel>(landing === 'comments' ? 'comments' : null)
@@ -89,7 +101,6 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
   const [trashing, setTrashing] = useState(false)
   const [moving, setMoving] = useState(false)
 
-  const zoom = ZOOM_STEPS[zoomIdx] ?? 1
   /* Back to the Files tab — inside the open folder when the file sits in one (the tab reads `?folder=`). */
   const from = readFrom(useSearchParams().get('from'))   // (REG-465) the tab URL the file was opened from, folder and origin included
   const backHref = from ?? (folder ? `${base}/files?folder=${folder.id}` : `${base}/files`)
@@ -152,6 +163,10 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
   useShortcutsHere(FILE_VIEWER_KEYS)
   const prevHref = prev ? withFrom(`${base}/files/${prev.id}`, from) : null
   const nextHref = next ? withFrom(`${base}/files/${next.id}`, from) : null
+  /* (L4, C-23) a finger's gestures on the picture; a swipe that opens the next file leaves the old picture where it was — the new one is set at fit */
+  usePinchSwipe({ canvas: canvasRef, target: imgRef, enabled: touch && zoomable && !!src, view, onCommit: setView,
+    onSwipe: (dir) => { const to = dir === 1 ? nextHref : prevHref; if (!to) return false; markUsed('file.step'); router.push(to); return true } })
+  useEffect(() => { const t = imgRef.current; if (t) { t.style.transition = ''; t.style.transform = transformOf(FIT_VIEW) } }, [file.id])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -259,14 +274,14 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
         {/* Section container (931:39853): image area + optional 400px panel (931:39912) */}
         <div className={styles.stage}>
           <div className={styles.column}>   {/* (gaps build E, item 3) the file over the strip of the folder's files */}
-          <div className={styles.canvas} data-panel={panel ? '' : undefined}>
+          <div ref={canvasRef} className={styles.canvas} data-panel={panel ? '' : undefined} data-gestures={touch && zoomable && src ? '' : undefined}>
             {playsVideo ? (
               <video className={styles.media} src={bytes!} poster={file.thumb ?? undefined} controls playsInline preload="metadata" data-testid="viewer-video" />
             ) : showsPdf ? (
               <iframe className={styles.doc} src={bytes!} title={file.name} data-testid="viewer-pdf" />
             ) : src ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.image} src={src} alt={file.name} style={{ transform: `scale(${zoom})` }} data-testid="viewer-image" />
+              <img ref={imgRef} className={styles.image} src={src} alt={file.name} style={{ transform: transformOf(view) }} data-testid="viewer-image" data-scale={view.s.toFixed(2)} draggable={touch ? false : undefined} />
             ) : bytes ? (
               <div className={styles.docCard} data-testid="viewer-doc"><Icon name={fileGlyph(file)} size={48} weight={300} /><span>{file.name}</span>
                 {playsAudio ? <audio className={styles.audio} src={bytes!} controls preload="metadata" data-testid="viewer-audio" /> : null}
@@ -296,20 +311,20 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
             {/* Zoom bar (931:39855) 130×50, H g16 p12, bottom inset 22 */}
             {zoomable ? (<div className={styles.zoomBar} role="group" aria-label="Zoom">
               <Tooltip label="Zoom out" side="top">
-                <button type="button" className={styles.zoomBtn} aria-label="Zoom out" aria-disabled={zoomIdx === 0} onClick={() => setZoomIdx((i) => Math.max(0, i - 1))}>
+                <button type="button" className={styles.zoomBtn} aria-label="Zoom out" aria-disabled={view.s <= 1} onClick={() => setView((v) => ({ s: stepDown(v.s), x: 0, y: 0 }))}>
                   <Icon name="remove" size={24} />
                 </button>
               </Tooltip>
               {/* (REG-273) arrows_output is the one glyph here whose meaning lives only in its tooltip, and a tooltip
                   never fires for a touch pointer — so ≤767 the tooltip's own words become a visible label beside it. */}
               <Tooltip label="Fit to screen" side="top">
-                <button type="button" className={`${styles.zoomBtn} ${styles.zoomFit}`} aria-label="Fit to screen" aria-disabled={zoomIdx === FIT} onClick={() => setZoomIdx(FIT)}>
+                <button type="button" className={`${styles.zoomBtn} ${styles.zoomFit}`} aria-label="Fit to screen" aria-disabled={view.s <= 1} onClick={() => setView(FIT_VIEW)}>
                   <Icon name="arrows_output" size={24} />
                   <span className={styles.zoomLabel}>Fit to screen</span>
                 </button>
               </Tooltip>
               <Tooltip label="Zoom in" side="top">
-                <button type="button" className={styles.zoomBtn} aria-label="Zoom in" aria-disabled={zoomIdx === LAST} onClick={() => setZoomIdx((i) => Math.min(LAST, i + 1))}>
+                <button type="button" className={styles.zoomBtn} aria-label="Zoom in" aria-disabled={view.s >= ZOOM_STEPS[LAST]!} onClick={() => setView((v) => ({ s: stepUp(v.s), x: 0, y: 0 }))}>
                   <Icon name="add" size={24} />
                 </button>
               </Tooltip>
@@ -351,13 +366,21 @@ export function FileViewer({ data, base: baseProp }: { data: FileViewData; base?
                 onEdit={(id, body) => { void run('save the comment', () => editFileComment(id, body)) }}
                 onDelete={setDeletingComment}
                 onClose={() => setPanel(null)} readOnly={readOnly}
+                fileName={sheet ? file.name : undefined}   /* (L4, C-23) a phone's full-screen comments name the file they are about */
               />
             </aside>
-          ) : panel === 'info' ? (
+          ) : panel === 'info' && !sheet ? (
             <aside ref={panelRef} className={styles.panel} aria-label="Information" tabIndex={-1}>
               <FileInfoPanel file={file} folder={folder} me={me} onClose={() => setPanel(null)}
                              origin={render ? { render, href: liveOrigin(render) ? withFrom(renderHref(render), here()) : null } : null} />
             </aside>
+          ) : null}
+          {/* (Leads on the move, L4 — C-23) a phone's Information is a short sheet, as tall as its six lines — not a screen of air */}
+          {sheet ? (
+            <Sheet open={panel === 'info'} title="Information" subtitle={file.name} onClose={() => setPanel(null)}>
+              <FileInfoPanel file={file} folder={folder} me={me} onClose={() => setPanel(null)} headless
+                             origin={render ? { render, href: liveOrigin(render) ? withFrom(renderHref(render), here()) : null } : null} />
+            </Sheet>
           ) : null}
         </div>
       </div>

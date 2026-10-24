@@ -4,5 +4,9 @@
 .code { border: 0; margin: 0; padding: 0; min-width: 0; }
 .digits { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--om-spacing-2); }
 .digit { height: 56px; min-width: 0; box-sizing: border-box; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); text-align: center; font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); outline: none; }
+/* (responsive audit 2026-10-23, W1 — a bug fix) REG-306's iOS rule types every input at 16 on a phone, at a weight of (0,2,1): the code's digits —
+   24, above the zoom floor — shrank to 16 in their 56 boxes on an iPhone (sign-in, the portal's sign-in, the signing code). The digit keeps its
+   face at the rule's weight and one more; nothing changes anywhere else. */
+.digit:not([type='checkbox']):not([type='radio']) { font: var(--om-type-heading-h2); }
 .digit:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
 .digit[aria-invalid='true'] { border-color: var(--om-color-tertiary-red-default); }

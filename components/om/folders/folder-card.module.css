@@ -63,4 +63,21 @@
 }
 @media (hover: none) and (max-width: 1024px) {
   .pick { display: inline-flex; align-items: center; flex-shrink: 0; }
+  /* (responsive audit 2026-10-23, W1 — a bug fix) The open button's band (`.folderMain::after`, 12 above and below) is positioned and comes
+     after the checkbox, so it lay over the box's own 44 target — on a phone, where the box sits over the name, a tap on its lower half opened the
+     folder instead of selecting it. The checkbox rises above the band: its 44 answers first, the rest of the card still opens the folder. */
+  .pick { position: relative; z-index: 1; }
+}
+/* …on a phone the card is a column, where the box's wrapper stretched the card's width and, risen, lay over the kebab in the top-right corner:
+   it hugs its box there, and the kebab stays above both. */
+@media (hover: none) and (max-width: 767px) {
+  .pick { align-self: flex-start; }
+  .folder .menuWrap { z-index: 2; }
+}
+
+/* (Leads on the move, L4 — P-13 · C-17, every library's folders) On a finger a folder's name reads at 16 and its count at 14 — the 10px "4 items"
+   was under the scale's floor for a value. The desk keeps the mock's 14 and 10. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .folderName { font: var(--om-type-subheading-l); }
+  .folderCount { font: var(--om-type-body-m); }
 }

@@ -63,7 +63,7 @@ quote revisions as separate rows (427) and signing any lead file (426).
 | Its reads and rules | `lib/<module>/` (`queries.ts` for reads; the pure rules sit beside it) |
 | Its writes | server actions in `app/**/actions.ts` and `app/**/*-actions.ts` |
 | The schema | `lib/db/schema.ts`; migrations in `drizzle/` (additive only) |
-| Every stand-in for a real service | `lib/services/registry.ts` (43 entries) |
+| Every stand-in for a real service | `lib/services/registry.ts` (44 entries) |
 | 1.0's old addresses | `lib/links/old-addresses.ts` |
 | Who is signed in | `sessionMemberId()` in `lib/db/session.ts` |
 | Where each module lives, file by file | `CLAUDE.md` › *Map* |
@@ -89,7 +89,7 @@ URLs leave out route groups: `app/(editor)/quotes/[quoteId]` is `/quotes/<id>`.
 | Tools › Quote Digitizer | Create Quote › Upload a quote, from a lead's Quotes or Tools › Quotes; the empty Quotes list and ⌘K ("digitizer") open it directly | `/quotes?upload=1` |
 | Tools › Quote X-Ray | Tools › Quote X-Ray | `/quote-x-ray` |
 | Tools › AI Visualizer | Tools › AI Visualizer | `/visualizer` |
-| Tools › Floorplan to 3D Isometric | Tools › Floorplan to 3D Isometric (part of the 3D Space Planner) | `/planner?view=iso&photo=1` |
+| Tools › Floorplan to 3D Isometric | Tools › Floorplan to 3D Isometric (its own page again, Beta as in 1.0) | `/floorplan-3d` |
 | Tools › 3-D Space Planner | Tools › 3D Space Planner | `/planner` |
 | Tools › Market Insights | Tools › Market Insights | `/market-insights` |
 | Tools › Compliance Navigator | Tools › Compliance Navigator | `/compliance` |
@@ -188,7 +188,7 @@ Every old 1.0 address, on all three branches, lands on its 2.0 page (card A10). 
 | Inbox (Chats), the portal's Project Chat | Messages `/chat`, Project › Client › Messages | Renamed and split | P13 |
 | Escalations, support tickets | Tickets on the rail (studio), Issues (client) | Renamed | P14 |
 | Floor Plan (mark-up) | Project › Design › Floor plan | Same in substance | P15 |
-| 3-D Space Planner, Floorplan to 3D | Tools › 3D Space Planner | Reshaped | P16 |
+| 3-D Space Planner, Floorplan to 3D | Tools › 3D Space Planner · Tools › Floorplan to 3D Isometric | Reshaped | P16 |
 | Compliance Navigator | Tools › Compliance Navigator, Project › Tasks › Compliance | Reshaped | P17 |
 
 ### AI, plans and the platform
@@ -489,7 +489,7 @@ Search 2.0's code and screens for the 2.0 word. The 1.0 word won't be there.
 ## 7. Stand-ins: the integration checklist
 
 2.0 runs with no outside services. Each one is stood in for, and each stand-in says so where a studio meets it ("Simulated on
-this prototype"). **`lib/services/registry.ts` is the source**, with 43 entries. A **provider** is plugged in with its
+this prototype"). **`lib/services/registry.ts` is the source**, with 44 entries. A **provider** is plugged in with its
 `set…` call in `lib/services/install.ts`. A **rule** (where 1.0 asked an AI model) is swapped by replacing the one function
 named. Keep the charge before the work, the refund on failure, the proposal-first answer and the Undo where they exist.
 
@@ -519,6 +519,7 @@ named. Keep the charge before the work, the refund on failure, the proposal-firs
 | trial-bot-check | Every visitor is let through | `setBotCheck` · `lib/visualizer/trial/server.ts` | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Turnstile (plg) |
 | trial-workspaces | A `<db>.trial.db` file beside the demo's | `setTrialStore` · `lib/trial/store.ts` | `TRIAL_TOOLS_ENABLED` | `anon_workspaces` (plg) |
 | trial-limit-store | One server's memory | `setLimitStore` · `lib/visualizer/trial/server.ts` | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | in memory |
+| floorplan-3d | A studio's own plan is straightened, then the page says it isn't read or drawn here; a sample plan carries views made ahead | `setFloorplanRenderer` · `lib/floorplan-3d/service.ts` | `OPENROUTER_API_KEY` | `render/floorplan-3d-sandbox`, `lib/render/floorplan-pipeline.ts` |
 | ai-ask | About 45 questions answered by rule | `readQuestion` · `lib/maison-ai/answer.ts` | `OPENROUTER_API_KEY` | `api/buddy/` |
 | ai-drafts | Messages drafted by rule | `stageDraft` · `lib/maison-ai/drafts.ts` | `OPENROUTER_API_KEY` | the `draft_client_message` tool |
 | meeting-reading | Notes and the brief by rule | `readMeeting`, `briefOf` · `lib/meetings/engine.ts` | `OPENROUTER_API_KEY` | `api/copilot/` |
@@ -1642,16 +1643,22 @@ One card per 1.0 module. Short names used on the cards:
 - **1.0:** `/tools/floor-plan`, `/tools/floorplan-3d-isometric`, `/tools/floorplan-3d-sandbox`, `/floor-plan/view/[token]`; API
   `floor-plans/**`, `render/floorplan-3d-sandbox`; tables `floor_plans`, `floor_plan_versions`.
 - **2.0:**
-  - screens: Tools › 3D Space Planner `/planner` (editor `/planner/<layoutId>`); Floorplan to 3D Isometric; public `/space/<token>`;
+  - screens: Tools › 3D Space Planner `/planner` (editor `/planner/<layoutId>`); Tools › Floorplan to 3D Isometric `/floorplan-3d`; public `/space/<token>`;
     the client's `/my/<address>/layout/<shareId>`;
-  - code: `app/planner/*`, `app/(editor)/planner/[layoutId]`, `components/planner/*`, `lib/planner/*`;
+  - code: `app/planner/*`, `app/(editor)/planner/[layoutId]`, `components/planner/*`, `lib/planner/*`; the tool `app/floorplan-3d/*`,
+    `components/floorplan-3d/*`, `lib/floorplan-3d/*` (sample plans `scripts/floorplan-3d/sample-plans.mts`, `public/floorplan-3d/`);
   - tables: `space_layouts`, `space_layout_versions`, `space_layout_shares`, `floor_plan_photos`.
 - **Changed:**
   - 42 drawn pieces instead of about 390 models;
-  - the photo-to-3D picture is drawn from the rooms the studio places, with no credits;
+  - Floorplan to 3D Isometric is 1.0's tool on its own page (REG-2800): photo → its rooms → Dollhouse or Top-down, drawn by the image
+    model at `setFloorplanRenderer`, no credits as in 1.0; on the prototype a sample plan carries views made ahead (the HDB 4-Room in
+    Dollhouse; the HDB 3-Room, the Condo 3-Bedroom and Top-down show once their views exist) and a studio's own plan stops after it is
+    straightened, said so;
+  - the planner's Make a 3D picture draws from the rooms the studio places, with no credits;
   - a lead's layouts move to its project on Won.
 - **Left out:** Render Tour, HD mode and sun angle. 1.0's furniture models wait for a content port (§9 #8).
-- **Plug in:** `describePiece`, `arrangeRoom`, `roomsForType`, `findPaper`.
+- **Plug in:** `setFloorplanRenderer` (1.0's `detectInventory` + `generateWithGate`, its two locked prompts), `describePiece`, `arrangeRoom`,
+  `roomsForType`, `findPaper`.
 - **Read:** `parity/projects-gaps-build/j-read.md`; map 28's `build/outcome-P-J.md`; outcomes S15, S28.
 
 #### P17 · Compliance (1.0: Tools › Compliance Navigator, "[Compliance]" tasks)

@@ -45,6 +45,44 @@ const isCss = (p) => p.endsWith('.module.css')
 const isTsx = (p) => p.endsWith('.tsx') || p.endsWith('.ts')
 const inOm = (p) => p.startsWith('components/om/') || p.startsWith('components/ds/')
 
+/**
+ * (Leads on the move, L4 — C-02) Which classes of which module stylesheet are handed to the house IconButton: every `.tsx` under app/ and
+ * components/ that imports a `*.module.css` as a name and writes `<IconButton … className={name.cls}` (or `${name.cls}` inside a template) —
+ * stylesheet path → the classes. Read once, on the first CSS file the overlay rule meets.
+ */
+let ICON_BUTTON_CLASSES = null
+function iconButtonClasses() {
+  if (ICON_BUTTON_CLASSES) return ICON_BUTTON_CLASSES
+  const map = new Map()
+  for (const dir of DIRS) {
+    for (const abs of walk(join(ROOT, dir))) {
+      if (!abs.endsWith('.tsx')) continue
+      const text = stripTs(readFileSync(abs, 'utf8'))
+      if (!text.includes('<IconButton')) continue
+      const sheets = new Map()   // import name → stylesheet path
+      for (const im of text.matchAll(/import\s+(\w+)\s+from\s+['"]([^'"]+\.module\.css)['"]/g)) {
+        const spec = im[2]
+        const target = spec.startsWith('@/') ? join(ROOT, spec.slice(2)) : spec.startsWith('.') ? join(abs, '..', spec) : null
+        if (target) sheets.set(im[1], rel(target))
+      }
+      if (!sheets.size) continue
+      for (const at of text.matchAll(/<IconButton\b/g)) {
+        const end = text.indexOf('/>', at.index)   // the house IconButton is always written self-closing; its props may hold `=>`
+        const tag = /className=\{([^}]*)\}/.exec(text.slice(at.index, end < 0 ? undefined : end))
+        if (!tag) continue
+        for (const ref of tag[1].matchAll(/\b(\w+)\.(\w+)\b/g)) {
+          const sheet = sheets.get(ref[1])
+          if (!sheet) continue
+          if (!map.has(sheet)) map.set(sheet, new Set())
+          map.get(sheet).add(ref[2])
+        }
+      }
+    }
+  }
+  ICON_BUTTON_CLASSES = map
+  return map
+}
+
 /** (REG-734) The stylesheets that draw a table's rows without composing the table core. */
 const TABLE_SHEETS = ['components/om/table-core.module.css', 'components/leads/table.module.css', 'components/quotes/editor/payments/payments-section.module.css', 'components/quotes/editor/items/items-table.module.css']
 
@@ -121,16 +159,21 @@ const RULES = [
   {
     id: 'icon-button-overlay',
     title: 'An icon button\'s touch box is the house one',
-    fix: 'Delete the `button::after { inset … }` override: the house IconButton already carries a centred 44 box under (hover: none) (icon-button.module.css, REG-344) — a module\'s inset keeps the house translate(-50%, -50%) and moves that box by (−22, −22) (Quotes on the move, C-03). A DS Button grows with min-height / padding instead.',
+    fix: 'Delete the `button::after { inset … }` override (or the `.cls::after` on a class handed to an <IconButton>): the house IconButton already carries a centred 44 box under (hover: none) (icon-button.module.css, REG-344) — a module\'s inset keeps the house translate(-50%, -50%) and moves that box by (−22, −22) (Quotes on the move, C-03). A DS Button grows with min-height / padding instead.',
     applies: isCss,
-    /* a block whose selector reaches a bare `button` with ::after (the house IconButton has no class a module can name) and that sets the box's edges */
-    find: (t) => {
+    /* a block whose selector reaches a bare `button` with ::after (the house IconButton has no class a module can name) and that sets the box's
+       edges — (Leads on the move, L4 — C-02) or reaches, with ::after, a class this module hands to an <IconButton className={…}> (the Tasks
+       toolbar's `.touchTarget::after { inset: -4px }` moved every target 22–24px left and the rule never saw it) */
+    find: (t, p) => {
       const out = []
+      const handed = iconButtonClasses().get(p) ?? new Set()
       const re = /([^{}]*)\{([^{}]*)\}/g
       let m
       while ((m = re.exec(t))) {
         const sel = m[1].split(/[;\n]/).pop() ?? ''
-        if (!/\bbutton::?after\b/.test(sel)) continue
+        const bare = /\bbutton::?after\b/.test(sel)
+        const named = !bare && [...handed].some((c) => new RegExp(`\\.${c}(?![\\w-])[^\\s,>+~]*::?after\\b`).test(sel))
+        if (!bare && !named) continue
         if (/(^|[;\s])(inset|top|left|right|bottom)\s*:/.test(m[2])) out.push(t.slice(0, m.index + m[0].indexOf('{')).split('\n').length)
       }
       return out

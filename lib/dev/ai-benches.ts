@@ -78,11 +78,12 @@ export const V1_BENCHES: V1Bench[] = [
     key: 'floorplan-3d', name: 'Floor Plan → 3D Sandbox (the calibration bench)', path: '/tools/floorplan-3d-sandbox',
     said: 'Upload a floor plan photo → it’s straightened and cleaned instantly with zero AI (deterministic deskew) → candidate models compete on the 3D render, scored for fidelity against the plan.',
     tried: ['Finding the sheet of paper and taking out its perspective', 'The deskew, quarter turns and Back to auto', 'Dragging the sheet’s four corners by hand', 'A soft scan or line art as the input', 'An AI redraw of the scan', 'The room inventory, editable, added to the prompt', 'Vectorize and extrude the rooms (a 3D scaffold)', 'A style reference', 'Isometric dollhouse or photoreal top-down prompts', 'A fidelity score against the plan, Improve the prompt from its misses, the prompt’s history'],
-    homes: [{ label: '3D Space Planner › Make a 3D picture', href: '/planner?view=iso&photo=1', what: 'The photo straightened by 1.0’s own deskew (the sheet found by rule), Turn a quarter, the rooms by rule and editable, its size, Place the rooms, then Dollhouse or Top-down drawn from the planner — the scaffold is built natively, so the picture matches the plan by construction (S28).' }],
+    homes: [{ label: 'Tools › Floorplan to 3D Isometric', href: '/floorplan-3d', what: '1.0’s tool itself (REG-2800): the photo straightened by 1.0’s own deskew, its rooms, Dollhouse or Top-down drawn by the image model at the floorplan-3d seam — on the prototype, three sample plans whose views were made ahead.' },
+      { label: '3D Space Planner › Make a 3D picture', href: '/planner?view=iso&photo=1', what: 'The photo straightened by 1.0’s own deskew (the sheet found by rule), Turn a quarter, the rooms by rule and editable, its size, Place the rooms, then Dollhouse or Top-down drawn from the planner — the scaffold is built natively, so the picture matches the plan by construction (S28).' }],
     here: [{ view: 'corners', label: 'Plan corners', line: '1.0’s corner editor: drag the sheet’s four corners and the slant comes out.' }],
     harness: ['npx tsx scripts/planner/straighten-test.mts <outDir>', 'npx tsx scripts/viz/spatial-test.mts <outDir>'],
-    seams: ['floor-plan-rooms'],
-    kept: ['The AI redraw, the style reference, the prompts and the prompt gym — a model’s; the fidelity score’s job is Make a 3D picture’s guide (every room placed).', 'The soft scan — there is no model to feed it to.'],
+    seams: ['floorplan-3d', 'floor-plan-rooms'],
+    kept: ['The AI redraw, the style reference and the prompt gym — a model’s (1.0’s two locked prompts are named at the floorplan-3d seam); the fidelity score’s job is Make a 3D picture’s guide (every room placed).', 'The soft scan — there is no model to feed it to.'],
   },
   {
     key: 'quote-template', name: 'Quote Template Sandbox (Owners only)', path: '/tools/quote-template-sandbox',
@@ -139,4 +140,4 @@ export const EXPERIMENTS: Experiment[] = [
 ]
 
 /** The seams this bench names (lib/services/registry.ts) — the Seams view lists them, the probe checks each exists. */
-export const BENCH_SEAMS = ['depth', 'reangle', 'outpaint', 'orbit-video', 'room-reading', 'image-model', 'floor-plan-rooms', 'pdf'] as const
+export const BENCH_SEAMS = ['depth', 'reangle', 'outpaint', 'orbit-video', 'room-reading', 'image-model', 'floorplan-3d', 'floor-plan-rooms', 'pdf'] as const

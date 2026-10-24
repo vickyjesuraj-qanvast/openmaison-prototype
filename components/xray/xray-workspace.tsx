@@ -12,6 +12,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ChoiceCard } from '@/components/om/choice-card'
+import { ProgressCard } from '@/components/om/progress-card'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -262,21 +263,9 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
                 the comparisons already made stay listed beside it, kept for Pro */}
             {xrayLock.locked ? <ProLocked feature="quote_xray" kept={recents.length ? `Your ${recents.length} ${recents.length === 1 ? 'comparison is' : 'comparisons are'} kept` : null} testId="xray-locked" /> : (
             <section className={styles.card} aria-label="New comparison" data-testid="xray-setup">
+              {/* (REG-2801) the house's progress card, moved from here */}
               {running !== null ? (
-                <div className={styles.progress} role="status" aria-live="polite" data-testid="xray-progress">
-                  <span className={styles.progressGlyph}><Icon name="scan" size={28} weight={300} /></span>
-                  <span className={styles.progressTitle}>Comparing the two quotes…</span>
-                  <span className={styles.progressHelp}>A moment — please keep this page open.</span>
-                  <span className={styles.bar} aria-hidden><span className={styles.barFill} style={{ width: `${Math.round(((running + 1) / STEPS.length) * 100)}%` }} /></span>
-                  <ol className={styles.steps}>
-                    {STEPS.map((s, i) => (
-                      <li key={s} className={styles.step} data-state={i < running ? 'done' : i === running ? 'now' : 'todo'}>
-                        <span className={styles.stepGlyph}>{i < running ? <Icon name="check_circle" size={18} weight={300} /> : i === running ? <Icon name="progress_activity" size={18} weight={300} className={styles.spin} /> : <span className={styles.dot} />}</span>
-                        {s}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                <ProgressCard glyph="scan" title="Comparing the two quotes…" help="A moment — please keep this page open." steps={STEPS} at={running} testId="xray-progress" />
               ) : (
                 <>
                   <SegmentedButton aria-label="Compare" selectedKeys={[mode]} onSelectionChange={(keys) => { const k = [...keys][0]; if (k === 'lead' || k === 'upload') { setMode(k); setErrors({}) } }}>

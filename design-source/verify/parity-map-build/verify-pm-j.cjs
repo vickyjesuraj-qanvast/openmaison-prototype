@@ -76,16 +76,12 @@ const inRoom = (q, r) => q.x >= r.x && q.x <= r.x + r.w && q.z >= r.z && q.z <= 
     const D = await desk(); const d = await D.newPage(); watch(d, 'desk')
 
     // ── TD-098 · Floorplan to 3D Isometric ───────────────────────────────────────────────────────────────────────────────────────
-    console.log('TD-098 · The Isometric tile opens the planner, and a layout opens isometric')
-    await go(d, '/leads')
-    await d.getByRole('button', { name: /^Tools/ }).first().click().catch(() => {}); await settle(d, 500)
-    const tile = d.getByRole('menuitem', { name: 'Floorplan to 3D Isometric', exact: true })
-    ok(await tile.count() === 1 && await tile.getAttribute('data-soon') === null, 'the Floorplan to 3D Isometric tile is live (no Soon)')
-    await tile.click(); await d.waitForURL(/\/planner\?view=iso/, { timeout: 10000 }).catch(() => {}); await settle(d, 2500)
-    /* (pending modules S28, a deliberate change of this rule) the tile opens on Make a 3D picture — 1.0's tool's first step, its upload —
-       over the planner's isometric gallery; closed, the gallery and its line are as before */
-    if (await d.locator('[role="dialog"][aria-label="Make a 3D picture"]').count()) { await d.keyboard.press('Escape'); await settle(d, 600) }
-    ok(/\/planner\?view=iso/.test(d.url()) && await d.getByTestId('planner-iso-note').count() === 1, 'it opens the 3-D Space Planner, saying layouts open in the isometric view')
+    console.log('TD-098 · The planner\'s isometric view: ?view=iso, and a layout opens isometric')
+    /* (REG-2800, a deliberate change of this rule) Tools › Floorplan to 3D Isometric is 1.0's module on its own page again (/floorplan-3d,
+       verify-fp3d.cjs); the planner's ?view=iso is still where ⌘K's Make a 3D picture lands */
+    await go(d, '/planner?view=iso')
+    await settle(d, 1500)
+    ok(/\/planner\?view=iso/.test(d.url()) && await d.getByTestId('planner-iso-note').count() === 1, 'the 3D Space Planner with ?view=iso says layouts open in the isometric view')
     await shot(d, '01-iso-home')
     await d.getByText('Showroom — HDB 4-Room', { exact: true }).first().click()
     await d.waitForURL(/\/planner\/[^/?]+\?view=iso/, { timeout: 15000 }).catch(() => {}); await settle(d, 3000)

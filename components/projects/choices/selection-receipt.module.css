@@ -26,3 +26,6 @@
 .fingerprint { margin: 0; display: flex; flex-direction: column; gap: 2px; }
 .hash { font: var(--om-type-body-s); font-variant-numeric: tabular-nums; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 @media print { .pickBlock { background: none; border: var(--om-border-1) solid var(--om-color-surface-variant); } }
+/* (responsive audit 2026-10-23, W3-03) the page's title row on a phone — the money papers' one rule (invoice-paper.module.css), composed */
+.headWrap { composes: headWrap from '../money/invoice-paper.module.css'; }
+.chipFit { composes: chipFit from '../money/invoice-paper.module.css'; }

@@ -4,7 +4,7 @@
    (F156) The frame keeps clear of a notch: the top bar takes the top inset, the frame the sides, the dock the bottom — and every white
    row (the top bar, a note, the rooms, the versions, the tray, the go bar and the dock, the rail) reaches under the side insets in its own
    colour (`.bleed`'s rule), so a notch never shows the grey frame beside them. */
-.editor { --viz-rail: 372px; --viz-strip-end: 96px; position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); background: var(--om-color-surface-bg); }
+.editor { --viz-rail: 372px; --viz-strip-end: 96px; position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: var(--om-color-surface-bg); }   /* (responsive audit 2026-10-23, W6 — W1's hand-off) …and the home indicator: on a notched phone held sideways the versions strip sat 4 above the screen's foot, on the indicator; 0 everywhere else */
 /* (F016) Between the tablet and 1280 the rail gives the photo room — 336 keeps the style cards two-up with readable captions. */
 @media (max-width: 1279px) { .editor:not([data-narrow]) { --viz-rail: 336px; } }
 .body { flex: 1; min-height: 0; display: flex; }
@@ -37,6 +37,9 @@
 /* (F152) the wash only where there is a pointer to hover — a tap never leaves it stuck */
 @media (hover: hover) { .compareBtn:hover:not(:disabled) { background: var(--om-color-hover-08p); } }
 .compareBtn[aria-pressed='true'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, found by the closing sweep) Compare was a 36-tall press under a finger in a toolbar whose
+   other tools take the house 44: the same centred box, the drawn button unchanged */
+@media (hover: none) { .compareBtn { position: relative; } .compareBtn::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max(100%, 44px); height: 44px; } }
 .compareBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }
 .compareBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 /* The FAB keeps clear of the rail and the versions (the house FAB sits bottom-right, which the rail's Generate owns here). With no rail
@@ -53,8 +56,8 @@
    the versions a slim row (versions-strip.module.css), the rail at 300 with the Describe box on top and the compact go line at its foot.
    The Maison AI button rides at the slim strip's end (its reserved end, `--viz-strip-end`), clear of the photo; its sheet opens above it. */
 .editor[data-short] { --viz-rail: 300px; --viz-strip-end: 76px; }
-.editor[data-short][data-rail] .fab { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: 0; }
-.editor[data-short][data-rail] [aria-label='Maison AI suggestions'] { bottom: calc(48px + 12px); }
+.editor[data-short][data-rail] .fab { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: env(safe-area-inset-bottom, 0px); }   /* (responsive audit W6) at the strip's end, which now clears the home indicator */
+.editor[data-short][data-rail] [aria-label='Maison AI suggestions'] { bottom: calc(48px + 12px + env(safe-area-inset-bottom, 0px)); }
 
 /* ≤1024 portrait and phones: the camera-app model. */
 .fold { flex-shrink: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
@@ -97,6 +100,10 @@
 .editor[data-narrow] [aria-label='Maison AI suggestions'] { top: calc(var(--viz-stage-top, 120px) + 12px + 48px + 8px); bottom: auto; right: calc(16px + env(safe-area-inset-right, 0px)); max-height: calc(100dvh - var(--viz-stage-top, 120px) - 88px); overflow-y: auto; }
 .editor[data-narrow]:has([data-pin-bounds]:not([data-mode='view'])) .fab, .editor[data-narrow][data-card] .fab { display: none; }
 .editor[data-tray] .fab, .editor[data-tray-leaving] .fab { display: none; }
+/* (responsive audit 2026-10-23, W5-11) …and while the photo fills the stage's top (a short phone — 320, 360×640, 375×667 with the first-visit
+   hint up: the stage's `low` / `over` fit, the version chip stepped aside): the button's corner is then the photo's own, and it sat on the
+   top-right marker (the TV wall) and took its tap. It comes back as soon as the stage has its chip row again. */
+.editor[data-narrow]:has([data-fit='low']) .fab, .editor[data-narrow]:has([data-fit='over']) .fab { display: none; }
 @media (max-width: 767px) { .note { align-items: flex-start; padding: var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-right, 0px)) var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-left, 0px)); font: var(--om-type-body-s); } .empty { width: calc(100% - 24px); padding: var(--om-spacing-5) var(--om-spacing-4); } .stageChip { max-width: calc(100vw - 48px); } }
 
 /* (audit 2026-09-26, round 3) a snackbar resting after the versions' tiles over the Maison AI button's place — the button steps aside while it shows */

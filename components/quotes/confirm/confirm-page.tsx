@@ -270,7 +270,7 @@ export function ConfirmPage({ token, data, extras }: { /** (pending modules S04)
           {state === 'open' ? (
             <>
               {asked ? <p className={styles.barNote} data-testid="ask-sent-bar">You asked for a change — {extras.designer.name} will get back to you.</p> : null}
-              <div className={styles.barRow}>
+              <div className={`${styles.barRow} ${styles.barPair}`}>
                 <Button variant="secondary" appearance="outlined" size="lg" iconStart={<Icon name="chat" size={20} />} onPress={() => { setAskNote(''); setAskOpen(true) }} data-testid="ask-change-bar">Ask for a change</Button>
                 <Button size="lg" onPress={() => setConfirmOpen(true)} data-testid="confirm-bar-primary">{vo ? 'Approve the changes' : 'Confirm quote'}</Button>
               </div>

@@ -141,6 +141,9 @@
   .feed { gap: var(--om-spacing-4); }
   .homeHead { font: var(--om-type-subheading-l); }
   .confirmActions .go { height: 48px; }
+  /* (responsive audit 2026-10-23, W3-19) F-40's one line holds at 390; at 320 "Something is not right" ran past its half of the row — an answer
+     that doesn't fit takes a second line inside its button, which stays at least 48 */
+  .confirmActions .go, .confirmActions .goOutline { white-space: normal; height: auto; min-height: 48px; padding-block: var(--om-spacing-1); }
   .standsPhone { display: flex; flex-direction: column; gap: 10px; }
   .standsDesk { display: none; }
   .viewerImg { max-width: 100%; max-height: 100%; }
@@ -166,6 +169,9 @@
 .stagePay[data-state='due'] { color: var(--om-color-on-tertiary-yellow-variant); }
 .stagePay a { color: inherit; }
 .stagePay a:hover { text-decoration: underline; }
+/* (responsive audit 2026-10-23, W3-07) a stage's payment line opens its invoice — under a finger its press reaches 15 above and below the
+   line (the portal's text links' rule, portal.module.css), the line itself unmoved */
+@media (hover: none) and (max-width: 1024px) { .stagePay a { padding-block: 15px; margin-block: -15px; } }
 .homeHold { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 /* (gaps build D, item 10) the Updates search past three (the column's width), and the invoice chip under an update tied to an invoiced stage */
 .feedSearch { width: 100%; max-width: 760px; }

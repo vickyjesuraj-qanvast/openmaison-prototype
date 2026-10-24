@@ -16,7 +16,7 @@ export function FinanceFrame({ tab, runs, todoCount, asks, children }: { tab: st
   /** (S43D, F2-01) Commission: whether the page opens with its asks band — the reveal's ghost draws it then */
   asks?: boolean; children: ReactNode }) {
   const tabs = financeTabsFor(runs).map((t) => ({ label: t.label, href: t.href, count: t.key === 'todo' && todoCount > 0 ? todoCount : undefined }))
-  const actions = runs ? <HelpLink href="/company/reports/finance" testId="finance-reports-door">Reports ›</HelpLink> : null
+  const actions = runs ? <HelpLink href="/company/reports/finance" testId="finance-reports-door" standalone>Reports ›</HelpLink> : null
   return (
     <CompanyShell title="Finance" tabs={tabs} crumb="Finance" actions={actions} skeleton={<FinanceGhost tab={tab} runs={runs} asks={asks} />}>
       {children}

@@ -278,14 +278,17 @@ async function snack(page, re, timeout = 8000) { const t0 = Date.now(); while (D
   const p = await phone.newPage()
   p.setDefaultTimeout(12000)
   await step('b-quickfilters 390', async () => {
+    /* (leads on the move, a deliberate change of this rule — A-11) a phone's Filters is one sheet of chip groups; the Quick filters repeated the
+       pill's To do scopes and live on the pill there (they show in the sheet only while one is on, so it can be let go) */
     await p.goto(`${BASE}/leads`); await ready(p)
     await p.getByRole('button', { name: /^Filters/ }).click(); await p.waitForTimeout(600)
-    await p.getByRole('tab', { name: 'Quick filters' }).click(); await p.waitForTimeout(300)
-    const rows = await p.$$eval('[data-testid^="quick-"]', (els) => els.map((e) => { const r = e.getBoundingClientRect(); const lines = e.querySelectorAll('[class*="rowName"], [class*="rowRole"]'); return { top: r.top, bottom: r.bottom, h: r.height, two: lines.length === 2, overflow: e.scrollHeight > e.clientHeight + 1 } }))
-    ok('b-quickfilters each row is two lines — the name, then its meaning', rows.length === 3 && rows.every((r) => r.two))
-    ok('b-quickfilters the rows grow with their words — nothing runs over the next', rows.every((r, i) => !r.overflow && (i === 0 || r.top >= rows[i - 1].bottom - 0.5)), JSON.stringify(rows.map((r) => Math.round(r.h))))
+    ok('b-quickfilters a phone\'s Filters is one sheet of chip groups — no Quick filters tab to read', await p.getByTestId('lead-filters-sheet').isVisible() && await p.getByRole('tab', { name: 'Quick filters' }).count() === 0)
     await shot(p, 'b-quickfilters-390')
-    await p.getByRole('button', { name: 'Done' }).click(); await p.waitForTimeout(400)
+    await p.getByTestId('filters-done').click(); await p.waitForTimeout(400)
+    await p.locator('[class*="left"] button[aria-haspopup="menu"]').first().click(); await p.waitForTimeout(600)
+    const rows = await p.locator('[role="menu"]').last().locator('[role^="menuitem"]').allInnerTexts()
+    ok('b-quickfilters …the To do scopes are the pill\'s rows (Overdue follow-ups · Unassigned · Unseen)', ['Overdue follow-ups', 'Unassigned', 'Unseen'].every((k) => rows.some((r) => r.startsWith(k))), JSON.stringify(rows.slice(0, 7)))
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300)
   })
   await step('g-taskback 390', async () => {
     await p.goto(`${BASE}/leads/${FARAH}`); await ready(p)

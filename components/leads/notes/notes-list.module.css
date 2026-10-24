@@ -109,7 +109,8 @@
    The mobile canvas draws each note and contact log as its own card on the page's ground (3d), not a
    100px row in a ruled column: white, radius 8, a 1px stroke, 12 apart, height to its own content. The
    selected item keeps its 4px primary band, now inside the card's rounded left edge. */
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   /* No pane beside the column here, so its right rule (the divider between the two halves) has nothing to divide. */
   .column { box-shadow: none; }
   /* (REG-377) 16 down the page, 0 across: the tab's own centre already pays the 16 side gutter, so padding it
@@ -127,7 +128,16 @@
 /* (REG-402) ≤767 a row does not "stay selected": tapping one opens it in a sheet and the list is what you come
    back to. The desktop's fill and its 4px band are master-detail furniture — on a phone they left a row lit up
    with nothing beside it, which read as a stuck state. */
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .item[data-selected] { background: var(--om-color-surface-default); }
   .item[data-selected]::before { display: none; }
+}
+
+/* (Leads on the move, L4 — P-13 · C-17) The scale on a finger: a note's or a log's title at 16, its line and its day at 14, the kind chips at
+   14. At 320 the three chips still fit the head (All · Notes · Contact Log ≈ 280). The desk keeps the mock's 14 / 12. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .title { font: var(--om-type-heading-h4); }
+  .date { font: var(--om-type-body-m); }
+  .chip { font: var(--om-type-subheading-m); }
 }

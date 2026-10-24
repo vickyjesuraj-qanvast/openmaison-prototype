@@ -62,6 +62,8 @@ const readCarried = (): Carried | null => { try { const v = JSON.parse(sessionSt
  */
 const SHORT_MS = 4000
 const LONG_MS = 8000
+/** (Leads on the move, B-15) A phone or a tablet — where one snackbar shows at a time (REG-315's tablet end, 1024). Read on the press, never in render. */
+const oneAtATime = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1024px)').matches
 const AFTER_HOLD_MS = 2000
 type Hold = 'hover' | 'press' | 'focus'
 
@@ -82,6 +84,14 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
     const id = was ?? nextId.current++
     const rev = nextRev.current++
     if (s.key !== undefined) keyed.current.set(s.key, id)
+    /* (Leads on the move, B-15 — his marks 2026-10-23, a house rule) On a phone and a tablet (≤1024) ONE snackbar shows at a time: a new one
+       replaces the one on screen, and its Undo goes with it — two stacked bars were 112px over the page, and the older Undo undid a move that
+       was already over. The desk keeps the mock's stack of three. */
+    if (oneAtATime()) {
+      for (const [k, v] of keyed.current) if (v !== id) keyed.current.delete(k)
+      setSnacks([{ ...s, id, rev }])
+      return
+    }
     /* the same id keeps its place (and its motion) — only its words, its action and its clock change; one dropped off the stack comes back as new */
     setSnacks((prev) => (prev.some((x) => x.id === id) ? prev.map((x) => (x.id === id ? { ...s, id, rev } : x)) : [...prev.slice(-2), { ...s, id, rev }]))
   }, [])

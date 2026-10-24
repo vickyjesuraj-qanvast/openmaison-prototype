@@ -166,3 +166,28 @@
   .stackButtons { flex-direction: column; align-items: stretch; width: 100%; }
   .stackButtons > * { width: 100% !important; }
 }
+
+/* ── Leads on the move (L3 — P-05 · P-06, the listing's ghost: LeadsSkeleton) ──────────────────────────────────────────────────────────────
+   The phone card as it now reads (lead-cards.module.css): the name row and the info line one block 4 apart, Last · Next two 20 lines 2 apart, the
+   foot led by the pill; the "to call today" pill its own line under the toolbar. A touch tablet draws the tablet's table (its five columns and the
+   frozen Edit · ⋮ band) in place of the desk's. */
+.cardIdentity { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.cardLines { display: flex; flex-direction: column; gap: 2px; }
+.cardFootLead { justify-content: flex-start; gap: var(--om-spacing-3); }
+.toolbarTodo { display: none; }
+@media (max-width: 767px) {
+  .toolbarTodo { display: inline-flex; flex: 1 0 100%; }
+}
+.touchTabletOnly.touchTabletOnly { display: none; }
+.twoBones { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.frozenEnd { display: none; }
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .deskTable.deskTable { display: none; }
+  .touchTabletOnly.touchTabletOnly { display: block; }
+  .touchTabletOnly .col { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .frozenEnd {
+    display: inline-flex; align-items: center; gap: var(--om-spacing-3); flex: 0 0 134px; padding: 0 var(--om-spacing-4) 0 var(--om-spacing-2);
+    position: sticky; right: 0; align-self: stretch;
+    background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+}

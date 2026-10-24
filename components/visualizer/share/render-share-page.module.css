@@ -31,6 +31,9 @@
 .photo, .fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; -webkit-user-drag: none; }
 .pin { position: absolute; z-index: 3; translate: -50% -50%; min-width: 26px; height: 26px; padding: 0 6px; border: 2px solid var(--om-color-surface-default); border-radius: var(--om-radius-full); background: var(--om-color-primary-default); color: var(--om-color-surface-default); font: var(--om-type-caption-s); font-weight: 700; cursor: pointer; box-shadow: var(--om-elevation-level-3); display: inline-flex; align-items: center; justify-content: center; }
 .pin::before { content: ''; position: absolute; inset: -8px; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W3's hand-off) …which hangs off the 22 inside the pin's 2px ring: 38, not 44. Under a finger
+   it reaches 11 past it, 44; the pin keeps its drawn 26. */
+@media (hover: none) { .pin::before { inset: -11px; } }
 .pin[data-role='client'] { background: var(--om-color-tertiary-blue-default); }
 .pin[data-resolved] { background: var(--om-color-tertiary-green-default); }
 .pin[data-active] { box-shadow: 0 0 0 4px rgba(85, 0, 255, 0.28), var(--om-elevation-level-3); }

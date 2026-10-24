@@ -17,6 +17,9 @@
   overflow: hidden;
   outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
   padding-bottom: env(safe-area-inset-bottom, 0px);   /* the sheet reaches the home indicator (viewport-fit=cover) */
+  /* (responsive audit 2026-10-23, W1) a phone held sideways opens menus as this sheet (PHONE_SIDEWAYS): its rows stay out of the notch and the
+     rounded corners — 0 everywhere else */
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
 }
 /* Grabber: 56x4 on the surface-variant rule, 8 above / 4 below (canvas 1d…3k). It is decoration — the sheet is
    dismissed by the close, the scrim or Esc, so nothing is dragged. */

@@ -19,6 +19,9 @@
 .photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); margin-top: var(--om-spacing-1); }
 .photo { composes: thumb from '../../om/thumb.module.css'; width: 64px; height: 64px; padding: 0; border: 0; cursor: zoom-in; }
 .photo:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W3-10) as the ticket's photos (tickets.module.css): the house thumb's 36 wins the cascade over the 64 above;
+   under a finger the photo takes the 64 drawn here */
+@media (hover: none) and (max-width: 1024px) { .photo.photo { width: 64px; height: 64px; } }
 
 /* A state line — "Germaine marked it resolved · 3 Oct" — in the thread's left edge, under the avatar's column. */
 .event { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-2); }

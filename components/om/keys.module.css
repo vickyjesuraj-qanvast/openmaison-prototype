@@ -16,3 +16,6 @@
 .keys[data-tone='inverse'] .word { color: color-mix(in srgb, var(--om-color-on-inverse-surface-default) 70%, transparent); }
 /* No keyboard, no keys (Q-21): a touch screen draws none until a real keyboard has pressed one (the key layer marks the page). */
 @media (hover: none) { :global(html:not([data-hw-keyboard])) .keys { display: none; } }
+/* (responsive audit 2026-10-23, W1 — a bug fix) …except where the keys are the content: the ? panel (reached on a tablet from search's "Keyboard
+   shortcuts") listed "Search the studio · Go to Dashboard…" with nothing beside them. Its rows keep their keys (`always`). */
+@media (hover: none) { :global(html:not([data-hw-keyboard])) .keys[data-always] { display: inline-flex; } }

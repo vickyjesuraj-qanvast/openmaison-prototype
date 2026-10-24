@@ -1,0 +1,25 @@
+/* (Leads on the move, P-04 — his marks 2026-10-23; drawn screen 4) Won as a checklist on a phone and a tablet held upright: one card per row, a 56
+   head (the mark, the title 16 over its one line 14, the chevron), the row's controls under it while open. Drawn only on the move (≤1024
+   upright); tokens only. */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.row { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.row[data-done] { border-color: var(--om-color-tertiary-green-default); }
+.row[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.head { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3); background: none; border: 0; text-align: left; color: var(--om-color-on-surface-default); cursor: pointer; }
+.head:disabled, .head[data-static] { cursor: default; }
+.head:focus-visible { outline-offset: -2px; }
+.mark { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-disabled); }
+.row[data-done] .mark { color: var(--om-color-tertiary-green-default); }
+.row[data-error] .mark { color: var(--om-color-tertiary-red-default); }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.title { font: var(--om-type-subheading-l); }
+.summary { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.row[data-error] .summary { color: var(--om-color-tertiary-red-default); }
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: 0 var(--om-spacing-3) var(--om-spacing-4); }
+.chips { gap: var(--om-spacing-2); }
+.closing { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.closing > :first-child { flex-shrink: 0; color: var(--om-color-tertiary-green-default); }
+
+@media (max-width: 1024px) {
+  .chips :global(button) { font: var(--om-type-subheading-m); }   /* (P-13) a chip's words at 14 on the move */
+}

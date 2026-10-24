@@ -22,6 +22,20 @@
 /* The Adjust form: the entity, then the desktop's totals card across the body (its 434 is the desktop's — `.totals[data-touch]` spans, items-section.module.css). */
 .adjustBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .breakdownBody { display: flex; flex-direction: column; }
+/* (responsive audit 2026-10-23, W5-04) While the foot is pinned it rides above the Items table's sideways bar (the house SideScrollbar, z 10,
+   also sticky at the bottom): at 844×390 the bar sat over Add section · Add item and took their lower half. A finger swipes the table
+   sideways, and the bar shows again at the table's foot once its end is on screen. */
+.foot { z-index: 11; }
+/* (W5-03) A phone held sideways (≤540 tall): the pinned foot took 180 of 390 and left one line of the list in view — there the foot stops
+   pinning and closes the section instead (the totals and the two adds after the last line), so the lines get the screen. */
+@media (max-height: 540px) {
+  .foot { position: static; }
+}
+/* (W5-06) A phone whose foot pins: the Maison AI button rests 32 above the foot (quote-editor.tsx), so the list ends 80 above it — the last
+   line's ⋮ and figure scroll clear of the button, as every page ends on the house clearance. */
+@media (max-width: 767px) and (min-height: 541px) {
+  .foot { margin-top: calc(var(--om-spacing-2) + 80px); }
+}
 /* At 320 the two text buttons go under the Total rather than squeeze it. */
 @media (max-width: 359px) {
   .totalRow { flex-wrap: wrap; }

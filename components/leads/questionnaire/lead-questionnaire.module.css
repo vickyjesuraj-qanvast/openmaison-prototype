@@ -53,8 +53,7 @@
    the press: nothing about the disabled state changes. The lock's reason is not tooltip-only — the empty
    card directly below says "No questions yet" and explains who adds them — so touch loses nothing. */
 @media (hover: none) {
-  .anchor > button { position: relative; }
-  .anchor > button::after { content: ''; position: absolute; inset: -4px; }
+  .anchor > button { min-height: 44px; }   /* (Leads on the move, L4 — C-02's rule) a DS button grows by its own height, never an overlay */
 }
 
 /* (gaps build D, item 9) the answer history: one row per change, newest first — who and when over what it was and what it became */
@@ -64,3 +63,17 @@
 .historyWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .historyChange { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .historyChange s { color: var(--om-color-on-surface-secondary); }
+
+/* (Leads on the move, L4 — P-12 · C-25) A phone's and a tablet's Questionnaire reads first: the count line at 16 and the two chips over the
+   cards (the tab's frame keeps the Maison AI button's band at the page's end, overview.module.css). */
+.readFirst { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.counts { margin: 0; font: var(--om-type-subtitle-l); color: var(--om-color-on-surface-default); }
+
+/* (REG-708) the read-first block's ghost (tab-ghosts.tsx), only where the page draws it */
+.ghostReadFirst { display: none; }
+@media (max-width: 1024px) { .ghostReadFirst { display: flex; } }
+
+/* (L4 — P-13) the read-first chips at 14 on a finger */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .readFirst [role='radio'] { font: var(--om-type-subheading-m); }
+}

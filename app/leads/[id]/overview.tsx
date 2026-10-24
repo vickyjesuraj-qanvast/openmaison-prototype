@@ -9,7 +9,8 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tabs } from '@/components/om/tabs'
-import { Tooltip } from '@/components/om/tooltip'
+import { REFUSED_KEY, Tooltip } from '@/components/om/tooltip'
+import { STAGE_MOVE_KEY } from '@/components/leads/move-stage/screen-context'   // (Leads on the move, B-15)
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
@@ -178,6 +179,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
     const { logId } = r
     snackbar({
       message: `Moved to ${stage}`,
+      key: STAGE_MOVE_KEY,   // (Leads on the move, B-15) the newest move's words and Undo replace the last one's
       actionLabel: 'Undo',
       onAction: () => { void run(async () => { await undoMove(logId, lead.stage) }, 'Couldn’t undo the move — please try again') },
     })
@@ -274,9 +276,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
   /** The refusal snackbar. Its action reaches the stage request through a ref (set after each commit): the request refuses, and the
       refusal requests — a loop the React Compiler reads as a render-time call when the two name each other. */
   const stageRequest = useRef<((stage: Stage) => void) | null>(null)
+  /* (Leads on the move, B-14) a refusal carries the house's refusal key — the sheet that opens next withdraws it, and a second refusal replaces it */
   const refusal = (message: string) => {
     const w = wayOn()
-    return w ? { message, actionLabel: w.label, onAction: () => { if (w.stage) stageRequest.current?.(w.stage); else assignByKey() } } : { message }
+    return w ? { message, key: REFUSED_KEY, actionLabel: w.label, onAction: () => { if (w.stage) stageRequest.current?.(w.stage); else assignByKey() } } : { message, key: REFUSED_KEY }
   }
   /** Every stage change on this page — pill, stages card, quick links — comes through here.
       The branch set is `stageIntent` in lib/leads/stage-policy, the one copy the listing runs too (REG-286);
@@ -812,31 +815,35 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
           /* (REG-340) The From System empty states hand off the way the Create column does, keeping the Qanvast origin. */
           onCreateQuote={() => { closeWizard(); onNewQuote() }}
           onCreateContract={() => { closeWizard(); if (tab === 'contracts') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.contracts)); else router.push(href('contracts', 'new=1')) }}
-          onUpdate={({ stage, data }) => {
-            closeWizard()
-            void run(async () => {
-              if (stage === 'New') { await assignMembers(lead.id, data.assignees); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+          /* (Leads on the move, P-04 — "a refusal stays in the foot and nothing typed is lost") the window waits for the server: a refusal is
+             answered back to it as a sentence and said in its foot, the step as typed; only a landed save closes it */
+          onUpdate={async ({ stage, data }) => {
+            try {
+              if (stage === 'New') { await assignMembers(lead.id, data.assignees); closeWizard(); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
               else {
                 const r = await updateStageDetails({ leadId: lead.id, stage, data })
-                snackbar({ message: 'error' in r ? couldnt('save the stage details', refusalOf(r.error)) : `${stage} details updated` })   // (S43B · F1-07) the server's own check
+                if ('error' in r) return couldnt('save the stage details', refusalOf(r.error))   // (S43B · F1-07) the server's own check
+                closeWizard(); snackbar({ message: `${stage} details updated` })
               }
               refresh()
-            }, 'Couldn’t save the stage details — please try again')
+              return null
+            } catch (e) { return couldnt('save the stage details', refusalOf(e)) }
           }}
-          onSave={({ toStage, data, tasks }) => {
-            closeWizard()
-            void run(async () => {
+          onSave={async ({ toStage, data, tasks }) => {
+            try {
               const moved = await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
-              if ('error' in moved) { snackbar({ message: couldnt('move the lead', refusalOf(moved.error)) }); refresh(); return }   // (fix-E, A-01)
+              if ('error' in moved) return couldnt('move the lead', refusalOf(moved.error))   // (fix-E, A-01)
+              closeWizard()
               const { stamped, projectId, projectNumber } = moved
               // (REG-911) View opens the project Won made. (REG-1052) One sentence with New project's: the project's own number.
               if (toStage === 'Won') { if (projectId) router.push(withFrom(`/projects/${projectId}?created=1`, `${window.location.pathname}${window.location.search}`)); else { snackbar({ message: projectNumber ? `Project ${projectNumber} created` : 'Project created' }); openProject(projectId) } }   // (simplify Q-16) Won opens the new project, which says "Project P-… created" (`?created=1`)
               /* (UX audit 2026-09-30, Q1) The move marks its system quote sent to the client — the snackbar says which one. */
               /* (Dane's UAT 5.19) Moved from another tab, the reader stays where they are; View takes them to the Overview with the LEAD STAGES
                  card pulsing once. A move with Undo keeps Undo — the snackbar carries one action. */
-              else snackbar({ message: stamped ? `Moved to ${toStage} · ${stamped} marked sent to the client` : moved.planned ? `Moved to ${toStage} · a meeting is planned for ${displayDue(new Date(moved.planned.at))}` : `Moved to ${toStage}`, ...viewStages })   // (pending modules S23) the in-person next step planned it
+              else snackbar({ message: stamped ? `Moved to ${toStage} · ${stamped} marked sent to the client` : moved.planned ? `Moved to ${toStage} · a meeting is planned for ${displayDue(new Date(moved.planned.at))}` : `Moved to ${toStage}`, key: STAGE_MOVE_KEY, ...viewStages })   // (pending modules S23) the in-person next step planned it
               refresh()
-            }, 'Couldn’t move the lead — please try again')
+              return null
+            } catch (e) { return couldnt('move the lead', refusalOf(e)) }
           }}
         />
       ) : null}
@@ -860,10 +867,11 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
             const { logId } = moved
             /* (REG-607, parity Q-33) Undo lives as long as the snackbar, as a quick move's does — the lead returns to where it was and the log goes.
                (parity P-14, the owner's pick 2026-10-08) One sentence per action kind on both records: "{name} is on hold", the project's words. */
-            snackbar({ message: `${lead.name} is on hold`, actionLabel: 'Undo', onAction: () => { void run(async () => { await undoMove(logId, from) }, 'Couldn’t undo the move — please try again') } })
+            snackbar({ message: `${lead.name} is on hold`, key: STAGE_MOVE_KEY, actionLabel: 'Undo', onAction: () => { void run(async () => { await undoMove(logId, from) }, 'Couldn’t undo the move — please try again') } })
             refresh()
           }, 'Couldn’t move the lead — please try again')
         }}
+        leadName={lead.name}   /* (Leads on the move, P-04) the sheet on the move names whose hold it is */
       />
       <LostDialog
         open={lost}
@@ -879,10 +887,11 @@ export function LeadOverview({ detail, tab, body, wide = false, origin, taskData
             const moved = await moveStage({ leadId: lead.id, fromStage: from, toStage: 'Lost', payload: { reason: d.otherReason ? `Others: ${d.otherReason}` : lostReason, ...(d.competitor ? { competitor: d.competitor } : {}), ...(d.restartAt ? { restartAt: d.restartAt } : {}) }, tasks: [] })
             if ('error' in moved) { snackbar({ message: couldnt('move the lead', refusalOf(moved.error)) }); refresh(); return }   // (fix-E, A-01)
             const { logId } = moved
-            snackbar({ message: 'Moved to Lost', actionLabel: 'Undo', onAction: () => { void run(async () => { await undoMove(logId, from) }, 'Couldn’t undo the move — please try again') } })
+            snackbar({ message: 'Moved to Lost', key: STAGE_MOVE_KEY, actionLabel: 'Undo', onAction: () => { void run(async () => { await undoMove(logId, from) }, 'Couldn’t undo the move — please try again') } })
             refresh()
           }, 'Couldn’t move the lead — please try again')
         }}
+        leadName={lead.name}   /* (Leads on the move, P-04) */
       />
       <AssignPopover
         open={!!assign}

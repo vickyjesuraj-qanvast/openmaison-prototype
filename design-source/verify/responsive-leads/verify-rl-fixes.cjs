@@ -77,8 +77,10 @@ const go = async (p, url) => { await p.goto(BASE + url, { waitUntil: 'networkidl
     ok(af === 'on top', `Auto Fill opens above the log's sheet (${af}) — C-01`)
     await m.screenshot({ path: path.join(dir, 'c01-390-autofill.png') })
     await m.getByRole('dialog', { name: 'Auto Fill' }).getByRole('button', { name: 'Cancel' }).tap(); await settle(m, 700)
-    // the log's own Attach link (REG-324), inside the contact log's sheet — not the docked composer's attach glyph
-    const attach = m.locator('[role="dialog"]').filter({ hasText: /Contact Log/i }).getByRole('button', { name: /^Attach$/ }).locator('visible=true').first()
+    // the log's own Attach link (REG-324), inside the contact log's sheet — not the docked composer's attach glyph.
+    // (leads on the move, a deliberate change of this rule) since L2 New › Contact Log on a phone is the log sheet: its "From {first}'s files"
+    // opens the lead's files (the same Attach files modal), Take a photo · Choose a file above it
+    const attach = m.getByTestId('log-from-files').locator('visible=true').first()
     if (await attach.count()) {
       await attach.tap(); await settle(m, 900)
       const at = await top('Attach files')

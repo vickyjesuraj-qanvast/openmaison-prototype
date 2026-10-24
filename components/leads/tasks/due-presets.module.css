@@ -1,0 +1,6 @@
+/* (Leads on the move, L4 — P-10 · C-20) The due presets: the house chips (components/om/chips.module.css), wrapping in a panel, or kept on
+   one line inside a row that scrolls sideways (the quick add's) — `.inline` never wraps and never shrinks. */
+.wrap { position: relative; min-width: 0; }
+.inline { position: relative; display: inline-flex; flex-shrink: 0; }
+.row { flex-wrap: nowrap; gap: var(--om-spacing-2); }
+.row > * { flex-shrink: 0; }

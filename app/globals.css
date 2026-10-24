@@ -52,8 +52,14 @@
    and every layout token stay as drawn; only the typed text steps up, so a tap into Search never zooms the demo. Pinch
    zoom is untouched (no `maximum-scale` clamp). Playwright cannot exercise this; verify on a device. */
 @supports (-webkit-touch-callout: none) {
-  @media (max-width: 767px) {
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W2's hand-off) …and a phone held sideways (844 wide, lib/breakpoint.ts PHONE_SIDEWAYS): over
+     767, it zoomed on focus. */
+  @media (max-width: 767px), (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
     input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px; }
+    /* (responsive audit 2026-10-23, W1 — a bug fix) In a selector list each selector weighs its own: `input:not():not()` is (0,2,1) and beats
+       a field's module class, but a bare `textarea` / `select` is (0,0,1) and lost to every one — the house TextField's multi-line box, the DS
+       TextArea and the composers typed at 14 and the page still zoomed on focus. The same two :not()s give them the input's weight. */
+    textarea:not([type='checkbox']):not([type='radio']), select:not([type='checkbox']):not([type='radio']) { font-size: 16px; }
   }
 }
 
@@ -259,6 +265,10 @@ label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; mar
      -10 its box laid out 24 wide, the track spilled 8px past both sides — over its row's edge and into its words. Its 44 target gives back
      what the track doesn't fill: 2 a side, 12 above and below. */
   label:has(input[role='switch']):not(:has(label)) { margin: -12px -2px; }
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W4-26) The DS Radio's label (its 24 circle and its words — Export's "All invoices", the
+     plans, a setting's choice) was a 24 line under a finger: it stands 44, given back as margin, so no row moves. Only the block axis — a radio
+     carries its words, so it is wide already. */
+  label:has(input[type='radio']):not(:has(label)) { min-block-size: 44px; margin-block: -10px; }
 }
 
 /*
@@ -322,6 +332,18 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
      every tap — the shell is not focusable, so "Search leads" could not be typed into on a phone. The overlay lets taps through: the input
      already fills the shell (above), so the finger's target is the shell itself. */
   [class*='_searchBar_']::after { pointer-events: none; }
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W5-29) …which left the finger the 36 shell of an md bar (New contract's "Search leads", every
+     house menu's search): the input itself stands 44, 4 past the shell above and below, given back as margin — the drawn bar is unchanged. */
+  [class*='_searchBar_'][data-size='md'] input { block-size: 44px; margin-block: -4px; }
+  /* (responsive audit 2026-10-23, W1 — a bug fix) The DS SegmentedButton's own classes are `_group_` / `_item_`, so `[class*='segmented']`
+     above never reached it: every DS segmented control (the website's Monthly · Annual, the toggles on the studio's pages) drew its 36
+     with no 44 under a finger. Its md items take the same centred overlay; the lg size is 48 already. */
+  [role='radiogroup'][data-size='md'] > button[role='radio']::after {
+    content: '';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px); height: max(100%, 44px);
+  }
   /* NOT lifted, deliberately: an inline link inside a sentence (the Activity timeline's whole row text, a
      brief's inline action). Growing those would break the prose line rhythm, and WCAG 2.2's target-size rule
      exempts links in a block of text for exactly that reason. */

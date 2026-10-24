@@ -476,6 +476,9 @@
 @container itemcell (max-width: 260px) {
   .groupCount { display: none; }
   .row[data-group] .thumbBtn:has(.thumb[data-empty]) { display: none; }
+  /* (responsive audit 2026-10-23, W5-15) …and the SECTION tag: in the touch grid's 160–208 cell (a phone held sideways, a tablet's split) the
+     tag's 60 left the name 13–15 wide — "B." · "Bathro…". The band, the fold and the bold name say it is a section, as the phone's cards do. */
+  .groupTag { display: none; }
 }
 /* (wave E, tablet-12) Up to 1024 the Expand button rides INSIDE the description box as its end button instead of hanging under it: the
    hanging one sat on the next row's name (a 44px finger box made it worse). The box keeps 26px clear at its end for it. */

@@ -63,6 +63,9 @@
 .more { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }
 .more:hover { color: var(--om-color-on-primary-variant); }
 .more:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, found by the closing sweep) a review's *Read more* was a 20 line under a finger: REG-344's
+   invisible overlay, 12 above and below (the button and its line unchanged) */
+@media (hover: none) { .more { position: relative; } .more::after { content: ''; position: absolute; inset: -12px 0; } }
 .meta { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
 .photos { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; }
 .photo { composes: thumb from '../../om/thumb.module.css'; width: 64px; height: 48px; padding: 0; border: 0; cursor: pointer; overflow: hidden; background: var(--om-color-surface-bg); }
@@ -166,4 +169,13 @@
   .cardTop { flex-direction: column; align-items: stretch; }
   .press > * { flex: 1; }
   .filters { align-items: stretch; }
+}
+
+/* (responsive audit 2026-10-23, W2-10) Under a finger: the month that opens its rows and "See every review on Qanvast" are 20 lines — each takes a
+   44 box, its line kept; the side's two presses stand 24 apart so their boxes meet instead of overlapping (the text button under it already has
+   the house 44 overlay, app/globals.css REG-344) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  a.leadLink, a.link { position: relative; }
+  a.leadLink::after, a.link::after { content: ''; position: absolute; inset: -12px 0; }   /* REG-344's overlay: the box (and the ghost's words) unchanged */
+  .sideLinks { gap: var(--om-spacing-6); }
 }

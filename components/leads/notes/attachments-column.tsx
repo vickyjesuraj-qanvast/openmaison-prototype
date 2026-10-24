@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateTimeDot } from '@/lib/format'
+import { displayDate, displayDateTimeDot } from '@/lib/format'
 import styles from './attachments-column.module.css'
 
 export type AttachmentsColumnProps = {
@@ -43,7 +43,7 @@ export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumn
         const open = menu === f.id
         return (
           <div key={f.id} className={styles.tile} data-testid="note-attachment">
-            <button type="button" className={styles.tileMain} aria-label={`Open ${f.name}`} onClick={() => onOpen(f)}>
+            <button type="button" className={styles.tileMain} aria-label={`Open ${f.name}, uploaded ${displayDateTimeDot(f.createdAt)}`} onClick={() => onOpen(f)}>
               {f.thumb ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={f.thumb} alt="" className={styles.tileImg} width={142} height={108} />
@@ -55,7 +55,9 @@ export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumn
                 <Icon name={kindIcon(f)} size={20} className={styles.kindIcon} />
                 <span className={styles.tileText}>
                   <span className={styles.tileName}>{f.name}</span>
-                  <span className={styles.tileTime}>{displayDateTimeDot(f.createdAt)}</span>   {/* (REG-600) when it was uploaded, at a glance */}
+                  {/* (REG-600) when it was uploaded, at a glance — (Leads on the move, L4 — C-10, a bug fix at every width) the day only, ellipsised: the
+                      whole stamp ran under the tile's ⋮ ("11⋮30 AM"); the time stays one hover away and in the tile's name for a reader */}
+                  <Tooltip label={displayDateTimeDot(f.createdAt)}><span className={styles.tileTime} data-testid="note-attachment-day">{displayDate(f.createdAt)}</span></Tooltip>
                 </span>
               </span>
             </button>

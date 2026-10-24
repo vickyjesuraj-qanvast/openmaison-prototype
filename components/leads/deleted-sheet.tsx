@@ -13,6 +13,11 @@ import { displayDate, money, titleCaseName, phoneLocal } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
 import type { DeletedLead } from '@/lib/leads/queries'
 import styles from './deleted-sheet.module.css'
+import { useMediaQuery } from '@/lib/breakpoint'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { useLongPress } from '@/components/leads/quotes/use-long-press'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 
@@ -39,6 +44,37 @@ function sortValue(l: Lead, key: Key): string | number {
     case 'created': return l.createdAt.getTime()
     case 'deleted': return l.deletedAt?.getTime() ?? 0
   }
+}
+
+/** (Leads on the move, L3 — P-05 · A-26) A deleted lead on a phone: the listing card's head — the name, the number — "Deleted 5 Oct ’26 · {stage}",
+ *  Restore as its one button and Delete forever in its ⋮ (refused in the row while its project exists); a hold selects it for the bulk bar. */
+function DeletedCard({ lead, selected, selecting, pending, heldWhy, onToggle, onRestore, onForever }: {
+  lead: DeletedLead; selected: boolean; selecting: boolean; pending: boolean; heldWhy: string | null
+  onToggle: () => void; onRestore: () => void; onForever: () => void
+}) {
+  const [menu, setMenu] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const hold = useLongPress(onToggle)
+  return (
+    <li className={styles.dCard} data-selected={selected || undefined} data-testid="deleted-lead-card" {...hold.handlers}
+        onClick={(e) => { if (hold.swallowClick()) return; if (selecting && !(e.target as HTMLElement).closest('button')) onToggle() }}>
+      <span className={styles.dMain}>
+        <span className={styles.dName}>{titleCaseName(lead.name)}</span>
+        <span className={styles.dMeta}>{[phoneLocal(lead.phone), lead.stage].filter(Boolean).join(' · ')}</span>
+        <span className={styles.dMeta}>{lead.deletedAt ? `Deleted ${displayDate(lead.deletedAt)}` : 'Deleted'}</span>
+      </span>
+      <span className={styles.dActs}>
+        <Button variant="primary" appearance="outlined" isDisabled={pending} onPress={onRestore} data-testid="deleted-lead-restore">Restore</Button>
+        <span ref={anchor} className={styles.dMenu}>
+          <IconButton icon="more_vert" label={`More actions for ${titleCaseName(lead.name)}`} variant="bare" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((o) => !o)} />   {/* a card's ⋮ is a bare glyph, as the Quotes card's */}
+          <PortalMenu open={menu} anchor={anchor} onClose={() => setMenu(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={titleCaseName(lead.name)}>
+            <DropdownItem onSelect={() => { setMenu(false); onToggle() }}>{selected ? 'Unselect' : 'Select'}</DropdownItem>
+            <DropdownItem tone="danger" disabled={pending || !!heldWhy} title={heldWhy ? `Can’t delete forever — ${heldWhy}` : undefined} onSelect={() => { setMenu(false); onForever() }}>Delete Forever</DropdownItem>
+          </PortalMenu>
+        </span>
+      </span>
+    </li>
+  )
 }
 
 export function DeletedLeadsSheet({
@@ -93,6 +129,11 @@ export function DeletedLeadsSheet({
   const panelRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panelRef, onClose)
   useDialogFocus(open, panelRef)
+  /* (Leads on the move, L3 — A-26) On a phone the trash is a list of cards — REG-378 gave Deleted Files the list; Deleted Leads was still the
+     8-column table (1,316 wide in 356, Restore ~960px to the right). Empty Trash moves under the head's ⋮. */
+  const phone = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (orientation: portrait)')   // the phone model: a phone, or a tablet held upright (Q-01)
+  const [headMenu, setHeadMenu] = useState(false)
+  const headMenuRef = useRef<HTMLSpanElement>(null)
 
   const rows = useMemo(() => {
     if (!sort) return deleted
@@ -141,12 +182,20 @@ export function DeletedLeadsSheet({
                         tabIndex={-1}>
               {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot. */}
               <SurfaceHead title="Deleted Leads" eyebrow="Leads /" className={styles.heading} onClose={onClose}
-                           actions={
+                           actions={phone ? (
+                             /* (A-26) the destructive one, one press further: the head's ⋮ — never an outlined button beside ✕ */
+                             <span ref={headMenuRef} className={styles.dMenu}>
+                               <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={headMenu} onClick={() => setHeadMenu((o) => !o)} data-testid="deleted-head-menu" />
+                               <PortalMenu open={headMenu} anchor={headMenuRef} onClose={() => setHeadMenu(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Deleted Leads">
+                                 <DropdownItem tone="danger" disabled={deleted.length === 0} onSelect={() => { setHeadMenu(false); setConfirm({ kind: 'empty' }) }}>Empty Trash</DropdownItem>
+                               </PortalMenu>
+                             </span>
+                           ) : (
                              <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
                                      isDisabled={deleted.length === 0}>
                                Empty Trash
                              </Button>
-                           } />
+                           )} />
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
                 {bannerOpen ? (
@@ -160,8 +209,20 @@ export function DeletedLeadsSheet({
                   </div>
                 ) : null}
 
-                {/* One scroller for both axes: data-scrolled = sideways (frozen-column shadow, REG-144),
-                    data-scrolled-y = down (sticky header's level-1 shadow, as the import wizard's tables). */}
+                {phone ? (
+                  rows.length === 0 ? <div className={styles.emptyRow}>No deleted leads.</div> : (
+                    <ul className={styles.dList} aria-label="Deleted leads" data-testid="deleted-leads-cards">
+                      {rows.map((l) => (
+                        <DeletedCard key={l.id} lead={l} selected={liveSelected.has(l.id)} selecting={liveSelected.size > 0} pending={pending.has(l.id)} heldWhy={heldWhy(l)}
+                                     onToggle={() => toggle(l.id)}
+                                     onRestore={() => { prune([l.id]); void run([l.id], () => onRestore([l.id])) }}
+                                     onForever={() => setConfirm({ kind: 'forever', ids: [l.id] })} />
+                      ))}
+                    </ul>
+                  )
+                ) : (
+                /* One scroller for both axes: data-scrolled = sideways (frozen-column shadow, REG-144),
+                    data-scrolled-y = down (sticky header's level-1 shadow, as the import wizard's tables). */
                 <div className={styles.tableWrap}
                      onScroll={(e) => {
                        e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)
@@ -231,6 +292,7 @@ export function DeletedLeadsSheet({
                     ))}
                   </div>
                 </div>
+                )}
 
                 <span className={styles.note}>
                   Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.

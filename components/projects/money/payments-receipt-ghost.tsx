@@ -35,7 +35,7 @@ export function ReceiptGhost() {
         <div className={frame.bar}>
           <div className={frame.titleBlock}>
             <Line w={200} lh={16} h={10} />
-            <div className={frame.titleRow}><Line w={150} lh={32} h={20} /><span className={frame.chips}><Slot kind="chip" w={84} /><Slot kind="chip" w={170} /></span></div>
+            <div className={`${frame.titleRow} ${paper.headWrap}`}><Line w={150} lh={32} h={20} /><span className={frame.chips}><Slot kind="chip" w={84} /><Slot kind="chip" w={170} /></span></div>
           </div>
           <div className={frame.actions}><Slot kind="btn" w={132} /><Slot kind="icon" /></div>
         </div>

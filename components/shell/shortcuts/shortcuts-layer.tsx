@@ -247,6 +247,10 @@ export function ShortcutsLayer({ editor = false }: { editor?: boolean }) {
       const row = t.closest('[data-kb-row]')
       const list = row?.closest<HTMLElement>('[data-kb-list]')
       if (list) keepTrail(list)
+      /* (responsive audit 2026-10-23, W6 — a bug fix, W2 · W4-28) a tap is a click with detail 1: on a phone and a touch tablet the tips
+         ("Next time, press C for New") came after a few taps, for keys there are none to press. A tip only where a key can be pressed —
+         the house Keys' own rule (components/om/keys.module.css): a pointer that hovers, or a real keyboard already used. */
+      if (!window.matchMedia('(hover: hover)').matches && !document.documentElement.hasAttribute('data-hw-keyboard')) return
       const tabEl = t.closest<HTMLElement>('[data-kb-tabs] [role="tab"]')
       if (tabEl) {
         const tabs = tabsOf(tabEl.closest<HTMLElement>('[data-kb-tabs]')!)

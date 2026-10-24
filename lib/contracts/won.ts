@@ -74,12 +74,15 @@ export const splitWonFile = (payload: unknown): { payload: unknown; file: Picked
 export async function keepQuoteSentUpload(leadId: string, payload: unknown, picked: PickedPdf | null, at: Date): Promise<string | null> {
   const p = (payload && typeof payload === 'object' ? payload : {}) as { quoteTab?: string; quoteUploaded?: string | null }
   if (p.quoteTab !== 'upload' || !p.quoteUploaded || !picked) return null
-  const { keepPdfIn, quoteFolderOf } = await import('./files')
+  const { keepPdfIn, keepPictureIn, quoteFolderOf } = await import('./files')
   const { pdfNameOf } = await import('./pdf')
-  const name = pdfNameOf(String(p.quoteUploaded))
+  const { pictureNameOf } = await import('./picture')
+  /* (Leads on the move, Q-03) a photo of the quote taken on a phone is kept as that picture, under its own name — the step's row names it */
+  const photo = isPictureData(picked.data)
+  const name = photo ? pictureNameOf(String(p.quoteUploaded), picked.data) : pdfNameOf(String(p.quoteUploaded))
   const folder = await quoteFolderOf(db, leadId, at)
   const [have] = await db.select({ id: leadFiles.id }).from(leadFiles).where(and(eq(leadFiles.leadId, leadId), eq(leadFiles.parentId, folder), eq(leadFiles.name, name), isNull(leadFiles.deletedAt))).limit(1)
   if (have) return have.id
-  const k = await keepPdfIn(db, leadId, picked, at, folder, name)
+  const k = photo ? await keepPictureIn(db, leadId, picked, at, folder, name) : await keepPdfIn(db, leadId, picked, at, folder, name)
   return typeof k === 'string' ? k : null
 }

@@ -125,7 +125,7 @@ const APP: OldAddress[] = rows('app', [
   { from: '/tools/quote-digitizer', by: 'proxy', lands: 'Tools › Quotes; a visitor who never signed in here (or signed out) → the website’s Upload a quote trial, while it is on' },
   { from: '/tools/quote-xray', by: 'proxy', lands: 'Quote X-Ray; a visitor → the website’s Quote X-Ray trial, while it is on' },
   { from: '/tools/ai-visualizer', by: 'proxy', lands: 'the AI Visualizer; a visitor → the website’s AI Visualizer trial (/site/try), while it is on' },
-  { from: '/tools/floorplan-3d-isometric', to: '/planner?view=iso&photo=1' },
+  { from: '/tools/floorplan-3d-isometric', to: '/floorplan-3d' },   // (REG-2800) its own page again
   { from: '/tools/market-insights', to: '/market-insights' },
   { from: '/tools/market-insights/:id', to: '/market-insights/mi-:id' },   // S25: an article's 2.0 id is `mi-<1.0's id>`
   { from: '/tools/compliance-navigator', to: '/compliance' },
@@ -138,7 +138,7 @@ const APP: OldAddress[] = rows('app', [
   { from: '/tools/relight-sandbox', to: '/visualizer' },
   { from: '/tools/style-transfer-sandbox', to: '/visualizer' },
   { from: '/tools/visualizer-sandbox', to: '/visualizer' },
-  { from: '/tools/floorplan-3d-sandbox', to: '/planner?view=iso&photo=1' },
+  { from: '/tools/floorplan-3d-sandbox', to: '/floorplan-3d' },   // (REG-2800) the tool its calibration bench became
   { from: '/tools/quote-template-sandbox', to: '/company/templates/quotes' },
   /* the studio's mock preview of its portal → Company › Client portal (Open as a test client) */
   { from: '/my/:slug/preview/:view', to: '/company/portal' },

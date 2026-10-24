@@ -19,7 +19,7 @@ export const usePlatform = (): Platform => useSyncExternalStore(noSubscribe, pla
 /** A spec in words for the computer in front of you ("⌘Z" · "Ctrl+Z") — for a sentence, e.g. a snackbar. Browser only. */
 export const keysText = (spec: string): string => keysPlain(spec, platformNow())
 
-export function Keys({ spec, shortcut, tone = 'default', className }: {
+export function Keys({ spec, shortcut, tone = 'default', className, always = false }: {
   /** The keys as a spec ('mod+k', 'g l', 'j|down'). */
   spec?: string
   /** …or a shortcut's id in the one list (`lib/keys/registry.ts`). */
@@ -27,12 +27,14 @@ export function Keys({ spec, shortcut, tone = 'default', className }: {
   /** 'inverse' on the dark tooltip, the snackbar and the G hint. */
   tone?: 'default' | 'inverse'
   className?: string
+  /** (responsive audit 2026-10-23, W1) Drawn on a touch screen too — where the keys ARE the content (the ? panel's rows), not a hint beside a control. */
+  always?: boolean
 }) {
   const platform = usePlatform()
   const s = spec ?? (shortcut ? keysOf(shortcut) : undefined)
   if (!s) return null
   return (
-    <span className={className ? `${styles.keys} ${className}` : styles.keys} data-tone={tone} aria-hidden>
+    <span className={className ? `${styles.keys} ${className}` : styles.keys} data-tone={tone} data-always={always || undefined} aria-hidden>
       {alternatives(s).map((one, a) => (
         <span key={one} className={styles.group}>
           {a > 0 ? <span className={styles.word}>or</span> : null}

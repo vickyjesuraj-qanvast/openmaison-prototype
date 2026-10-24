@@ -1,9 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
+import { Sheet } from '@/components/om/sheet'
+import { useOnTheMove } from '@/components/leads/log/use-move-layout'
+import logStyles from '@/components/leads/log/log.module.css'
 import { MSG } from '@/lib/forms'
 import { displayDate, inputDate, parseInputDate, startOfDay } from '@/lib/format'
 import { DEFAULT_HOLD_DURATION, HOLD_DURATIONS, holdDurationLabel, holdFollowUpAt } from '@/lib/leads/enums'
@@ -50,8 +53,8 @@ export function AutoFillDialog({
   }
   return (
     <Dialog open={open} onClose={onClose} title={title} width={width} size={notes ? 'modal' : 'compact'} nested={!notes || layered}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={!!busy}>Cancel</Button>
-                     <Button onPress={() => input.current?.click()} isDisabled={!!busy}>{busy ? 'Reading…' : 'Upload'}</Button></>}>
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={!!busy} className={styles.touchBtn}>Cancel</Button>
+                     <Button onPress={() => input.current?.click()} isDisabled={!!busy} className={styles.touchBtn}>{busy ? 'Reading…' : 'Upload'}</Button></>}>
       <Dropzone
         title={busy ? <>Reading <b>{busy}</b>…</> : <>Drop in the conversation or <b>browse</b></>}
         helper={kind === 'meeting'
@@ -94,8 +97,9 @@ export function SuggestedTasksDialog({
   variant?: SharedDialogVariant
 }) {
   const notes = variant === 'notes'
-  const footer = <><Button variant="secondary" appearance="outlined" onPress={onSkip ?? onClose}>{skipLabel}</Button>
-                   <Button onPress={onSave}>Save</Button></>
+  /* (Leads on the move, B-23) the feet's buttons take the 48 target on a finger — the label and the desk untouched (wizard.module.css .touchBtn) */
+  const footer = <><Button variant="secondary" appearance="outlined" onPress={onSkip ?? onClose} className={styles.touchBtn}>{skipLabel}</Button>
+                   <Button onPress={onSave} className={styles.touchBtn}>Save</Button></>
   if (notes) {
     return (
       <Dialog open={open} onClose={onClose} title={title} width={width} size="modal" footer={footer}>
@@ -148,9 +152,38 @@ export function SuggestedTasksDialog({
  * selects the custom then only reveal the date selection input"). The date the helper line promises is the date saved
  * (REG-286), measured from `openedAt` — the instant the dialog opened.
  */
+/**
+ * (Leads on the move, P-04 · B-13 · B-14 — his marks 2026-10-23, "continue the leads") On a phone and a tablet held upright On Hold and Lost
+ * share ONE SHEET: the lead's name under the title, the studio's reasons as chips (Settings › Lead management › Reasons), the follow-up's
+ * chips or the competitor, one filled Save & move at 48 across the foot (✕ is Cancel); the host's snackbar carries the Undo, as before. The
+ * house Sheet, so a refusal said just before it opened is withdrawn (B-14). The desk and a tablet held sideways keep the two dialogs.
+ * *(invented copy: "Mark as lost", "Why", "Follow up in")*
+ */
+function ParkSheet({ open, onClose, title, leadName, onSave, testId, children }: {
+  open: boolean; onClose: () => void; title: string; leadName?: string; onSave: () => void; testId: string; children: ReactNode
+}) {
+  return (
+    <Sheet open={open} onClose={onClose} title={title} subtitle={leadName} label={leadName ? `${title} — ${leadName}` : title}
+           footer={<div className={logStyles.foot}><Button className={logStyles.footBtn} onPress={onSave} data-testid={`${testId}-save`}>Save &amp; move</Button></div>}>
+      <div className={logStyles.body} data-sheet="" data-testid={testId}>{children}</div>
+    </Sheet>
+  )
+}
+function ReasonChips({ options, value, onChange, error, hint }: { options: readonly string[]; value: string; onChange: (v: string) => void; error?: string; hint?: string }) {
+  return (
+    <div className={logStyles.group} data-error={error ? '' : undefined}>
+      <span className={logStyles.label}>Why</span>
+      <Chips label="Reason" options={options} value={value || null} onChange={onChange} className={logStyles.chips} testId="park-reasons" />
+      {error ? <span className={logStyles.error} role="alert">{error}</span> : hint ? <span className={logStyles.label}>{hint}</span> : null}
+    </div>
+  )
+}
+
 export function OnHoldDialog({
-  open, onClose, onSave, reason, setReason, openedAt, options = DEFAULT_HOLD_REASONS.map((r) => r.name), followUpOn = null,
+  open, onClose, onSave, reason, setReason, openedAt, options = DEFAULT_HOLD_REASONS.map((r) => r.name), followUpOn = null, leadName,
 }: {
+  /** (Leads on the move, P-04) the lead's name — the sheet on the move says whose hold it is */
+  leadName?: string
   open: boolean; onClose: () => void
   /** `followUpAt` is the ISO date the dialog shows; `duration` the preset it matches or "Until …" — store both (REG-286 / REG-453). */
   onSave: (otherReason: string | undefined, followUpAt: string, duration: string) => void
@@ -162,6 +195,7 @@ export function OnHoldDialog({
   /** (Dane's UAT 9.08) Opened from the Lost dialog's "Put On Hold instead": the dialog opens on Custom with this date (REG-453's field). */
   followUpOn?: Date | null
 }) {
+  const screen = useOnTheMove()
   // "Other reason" and the date live here — the parent only knows `reason`.
   const [other, setOther] = useState('')
   const [when, setWhen] = useState('')   // d/m/yyyy, the DateField's canonical string
@@ -188,6 +222,20 @@ export function OnHoldDialog({
     const v = reason === 'Others' ? other.trim() : undefined
     setOther(''); setShowErrors(false)
     onSave(v, picked.toISOString(), holdDurationLabel(picked, openedAt))
+  }
+  if (screen) {
+    return (
+      <ParkSheet open={open} onClose={close} title="Put on hold" leadName={leadName} onSave={save} testId="hold-sheet">
+        <ReasonChips options={options} value={reason} onChange={setReason} error={showErrors ? errors.reason : undefined} />
+        {reason === 'Others' ? <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} /> : null}
+        <div className={logStyles.group}>
+          <span className={logStyles.label}>Follow up in</span>
+          <Chips label="Follow up in" options={[...HOLD_DURATIONS, 'Custom']} value={preset} onChange={pick} className={logStyles.chips} testId="hold-durations" />
+        </div>
+        {custom ? <DateField label="Follow up on" required value={when} onChange={setWhen} today={today} error={showErrors ? errors.when : undefined} /> : null}
+        <span className={logStyles.label} data-testid="hold-next">Next follow up date will be {picked ? displayDate(picked) : '—'}</span>
+      </ParkSheet>
+    )
   }
   /* (parity P-10, the owner's pick 2026-10-08) The project's Put on hold dialog's twin: the same 400 `form` size — so on a phone both rise as a
      bottom sheet (REG-353; this one was a centred card) — and the same title; the line under it still says it is a stage move. */
@@ -219,8 +267,10 @@ export type LostDetail = { otherReason?: string; competitor?: string; restartAt?
  * block (the owner's call, 2026-09-24): Save never waits on it.
  */
 export function LostDialog({
-  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today, competitorHint = null, onHoldInstead,
+  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today, competitorHint = null, onHoldInstead, leadName,
 }: {
+  /** (Leads on the move, P-04) the lead's name — the sheet on the move says whose it is */
+  leadName?: string
   open: boolean; onClose: () => void; onSave: (detail: LostDetail) => void
   reason: string; setReason: (v: string) => void
   /** The live reason names the select offers. */
@@ -236,6 +286,7 @@ export function LostDialog({
   /** (Dane's UAT 9.08) The nudge's "Put On Hold instead": the host closes this dialog and opens On Hold with the follow-up on `restart`. */
   onHoldInstead?: (restart: Date) => void
 }) {
+  const screen = useOnTheMove()
   const [other, setOther] = useState('')
   const [competitor, setCompetitor] = useState(competitorHint?.studio ?? '')
   const [wasOpen, setWasOpen] = useState(open)
@@ -277,6 +328,36 @@ export function LostDialog({
     }
     reset(); onSave(detail)
   }
+  const nudge = reason === LOST_POSTPONED && soon ? (
+    <div className={styles.nudge} role="note" data-testid="lost-hold-nudge">
+      <Icon name="warning" size={16} />
+      <span className={styles.nudgeBody}>
+        <span>Under 6 months away — consider On Hold instead.</span>
+        {canHold ? (
+          <button type="button" className={styles.nudgeAction} onClick={() => { const d = restartDate; if (!d) return; reset(); onHoldInstead?.(d) }}>
+            Put On Hold instead
+          </button>
+        ) : null}
+      </span>
+    </div>
+  ) : null
+  if (screen) {
+    return (
+      <ParkSheet open={open} onClose={close} title="Mark as lost" leadName={leadName} onSave={save} testId="lost-sheet">
+        <ReasonChips options={options} value={reason} onChange={setReason} error={showErrors ? errors.reason : undefined} hint={contactHint} />
+        {reason === 'Others' ? <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} /> : null}
+        {reason === LOST_COMPETITOR ? (
+          <TextField label="Competitor (optional)" value={competitor} onChange={setCompetitor} maxLength={80} trailingIcon={null}
+                     helper={competitorHint && competitor === competitorHint.studio ? `From the Quote X-Ray of ${displayDate(new Date(competitorHint.at))}` : undefined} />
+        ) : null}
+        {reason === LOST_COMPETITOR && rivals.length ? (
+          <Chips label="Your competitors" options={rivals} value={rivals.find((n) => n.toLowerCase() === competitor.trim().toLowerCase()) ?? null} onChange={setCompetitor} testId="lost-competitor-chips" className={logStyles.chips} />
+        ) : null}
+        {reason === LOST_POSTPONED ? <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} /> : null}
+        {nudge}
+      </ParkSheet>
+    )
+  }
   return (
     <Dialog open={open} onClose={close} title="Move stage" width={400}
             subtitle={<span className={styles.subtitle}>Moving to Lost</span>}
@@ -299,19 +380,7 @@ export function LostDialog({
         <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />
         {/* (Dane's UAT 9.08) The nudge in the house warning tone — the grey helper line went unread — with the move it suggests. Save & Move
             is unchanged: it still never blocks (REG-607). */}
-        {soon ? (
-          <div className={styles.nudge} role="note" data-testid="lost-hold-nudge">
-            <Icon name="warning" size={16} />
-            <span className={styles.nudgeBody}>
-              <span>Under 6 months away — consider On Hold instead.</span>
-              {canHold ? (
-                <button type="button" className={styles.nudgeAction} onClick={() => { const d = restartDate; if (!d) return; reset(); onHoldInstead?.(d) }}>
-                  Put On Hold instead
-                </button>
-              ) : null}
-            </span>
-          </div>
-        ) : null}
+        {nudge}
       </>) : null}
     </Dialog>
   )

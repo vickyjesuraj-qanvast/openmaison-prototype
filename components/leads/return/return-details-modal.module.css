@@ -183,3 +183,11 @@
 @media (max-width: 767px) {
   .panel .heading, .body { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

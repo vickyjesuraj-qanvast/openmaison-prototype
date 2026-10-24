@@ -7,7 +7,8 @@
 .award { display: grid; grid-template-columns: 1fr 120px 36px; gap: var(--om-spacing-3); align-items: start; }
 .photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
 .photo { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 120px; }
-.pic { composes: thumb from '../om/thumb.module.css'; width: 120px; height: 90px; }
+.pic { composes: thumb from '../om/thumb.module.css'; }
+.pic.pic { width: 120px; height: 90px; }   /* (responsive audit 2026-10-23, W6 — load order) doubled: the house thumb's 36 is the same weight — the production builds drew 120 × 90, `next dev` drew 36 */
 .coverMark { font: var(--om-type-caption-s); color: var(--om-color-primary-default); }
 .photoTools { display: flex; gap: var(--om-spacing-1); align-items: center; }
 .fileInput { display: none; }

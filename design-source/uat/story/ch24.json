@@ -102,5 +102,57 @@
   "as": "Dane",
   "covers": [],
   "files": []
+ },
+ {
+  "step": "24.09",
+  "chapter": 24,
+  "scene": "Floorplan to 3D Isometric",
+  "module": "Floorplan to 3D Isometric",
+  "try": "Open Floorplan to 3D Isometric from Tools",
+  "how": "1. \"Tools\" in the side navigation — find \"Floorplan to 3D Isometric\" (it wears \"Beta\")\n2. Press it and read the page",
+  "expect": "Its own page, \"Floorplan to 3D Isometric\" with BETA beside the title: \"Turn any floor plan photo into a marketing-ready 3D view\", the three steps, the box \"Drop the floor plan here or browse\", \"What you’ll get\" (Dollhouse · Top-down) and \"Or try a sample plan\" with the HDB 4-Room. Tools is lit in the side navigation.",
+  "in10": "Same as 1.0: its own page in Tools, marked Beta",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "24.10",
+  "chapter": 24,
+  "scene": "Floorplan to 3D Isometric",
+  "module": "Floorplan to 3D Isometric",
+  "try": "Take the HDB 4-Room sample to a dollhouse view",
+  "how": "1. Press \"HDB 4-Room\" under \"Or try a sample plan\"\n2. Read \"Your plan, straightened\" and \"We found\"\n3. Press \"Generate dollhouse view\"",
+  "expect": "\"Reading your floor plan…\" with the steps Read the plan · Confirm the rooms · 3D render. The photo of the printed plan sits square: \"Straightened by 7.0° and cleaned\", with \"Turn a quarter\" and \"Square it by its corners\". \"We found\": 3 bedrooms … 11 rooms in all, \"The sample’s own rooms, as its plan has them.\" \"Opening the HDB 4-Room’s dollhouse view…\" then the view — the flat's rooms where the plan has them — with \"Sample · HDB 4-Room — its views were made ahead with the image model the live app uses.\"",
+  "in10": "Same as 1.0, with a sample plan: the prototype has no image model",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "24.11",
+  "chapter": 24,
+  "scene": "Floorplan to 3D Isometric",
+  "module": "Floorplan to 3D Isometric",
+  "try": "Regenerate and download",
+  "how": "1. Press \"Regenerate\", then again\n2. Press \"Download\"\n3. Press \"Start a new plan\"",
+  "expect": "Regenerate shows the sample’s other take, then the first again. The file saves as \"HDB 4-Room — Dollhouse.jpg\" with the message \"Dollhouse view downloaded\". \"Start a new plan\" returns to the first page.",
+  "in10": "Same as 1.0 (1.0 saved every view as 3d-floor-plan.png; its Switch style waits here for the sample’s top-down views)",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "24.12",
+  "chapter": 24,
+  "scene": "Floorplan to 3D Isometric",
+  "module": "Floorplan to 3D Isometric",
+  "try": "Upload a floor plan of your own",
+  "how": "1. Press \"Drop the floor plan here or browse\" and pick sophia-floor-plan.pdf\n2. Read \"We found\"\n3. Press \"HDB 4-Room\" in its list",
+  "expect": "The plan is read and straightened as with the sample, then: \"This is the prototype, so your own plan isn’t read or drawn in 3D — in the live app, the image model lists its rooms and draws it in about half a minute. Try a sample plan to see the whole way through.\" No Generate button; the HDB 4-Room is listed instead and opens with its own rooms.",
+  "in10": "Different from 1.0: on the prototype your own plan stops after it is straightened",
+  "as": "Dane",
+  "covers": [],
+  "files": ["uat-files/sophia-floor-plan.pdf"]
  }
 ]

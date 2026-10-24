@@ -17,7 +17,9 @@
   position: relative;   /* the inset bulk bar's anchor */
   /* Height to content, viewport-capped (CLAUDE.md's modal rule) — 928 was the mock frame's height, which left an
      empty or short trash three-quarters blank. */
-  width: var(--om-modal-xl); height: auto; min-height: 480px; max-height: calc(100dvh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it */
+  width: var(--om-modal-xl); height: auto; min-height: min(480px, calc(100dvh - 96px)); max-height: calc(100dvh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it.
+     (responsive audit 2026-10-23, W2-17) …never past the screen: on a phone held sideways (390 tall) the floor beat the 294 cap, the sheet stood 480
+     tall and its head scrolled away with the overlay; the floor gives way where the screen is under 576, the body scrolls inside */
 }
 
 .body {
@@ -158,3 +160,33 @@
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
 /* (REG-525) A finger cannot hover: the row keeps its fill after a tap — the frozen cells inherit it, a selected row's included. */
 @media (hover: none) and (max-width: 1024px) { .row:hover { background: var(--om-color-surface-default); } .row[data-selected]:hover { background: var(--om-color-primary-variant); } }
+
+/* ── Leads on the move (L3 — A-26) ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+   A phone's trash: one card per lead — the name 16 bold, the number · stage and the day it was deleted at 14 — Restore its one button, the rest in
+   its ⋮; a held (selected) card wears the primary stroke and fill, as the Quotes card does. */
+.dList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.dCard {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-default);
+  -webkit-user-select: none; user-select: none;
+}
+.dCard[data-selected] { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+.dMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dName { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dActs { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
+.dActs > button { min-height: 44px; }
+.dMenu { display: inline-flex; }
+@media (max-width: 767px) {
+  .note, .banner { font: var(--om-type-body-m); }
+}
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { min-height: min(480px, calc(100dvh - 16px - env(safe-area-inset-bottom, 0px))); max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

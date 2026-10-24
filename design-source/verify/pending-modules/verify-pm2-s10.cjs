@@ -384,7 +384,11 @@ const PAGES = [
       for (const [w, h, touch] of [[1024, 768, false], [768, 1024, true]]) {
         const tab = await (touch ? phoneCtx(w, h) : desk({ viewport: { width: w, height: h } }))
         const tp = await page(tab, `${w}`)
-        await go(tp, '/leads'); await fab(tp)
+        await go(tp, '/leads')
+        /* (responsive audit 2026-10-23, a deliberate change of this rule) a touch tablet's Maison AI button rests out of sight while there is page
+           below and shows at the page's end (maison-fab.module.css, Leads on the move's FAB rule, 2026-10-23) — the finger reaches it there */
+        if (touch) { await tp.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await settle(tp, 900) }
+        await fab(tp)
         await ask(tp, 'studio overview')
         const bb = await sheet(tp).boundingBox()
         ok(!!bb && bb.x >= 0 && bb.x + bb.width <= w && bb.y >= 0 && bb.y + bb.height <= h && await sideways(tp) <= 0, `${w}${touch ? ' touch' : ''}: the sheet and its answer inside the window, no sideways scroll`)

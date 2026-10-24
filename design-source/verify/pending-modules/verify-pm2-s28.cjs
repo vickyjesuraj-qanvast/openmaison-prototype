@@ -1,7 +1,7 @@
 // Pending modules, step S28 · Floor-plan photo to a 3D picture (the owner's "build all of them but one after the other", 2026-10-11; survey
 // key studio:floorplan-isometric-ai — "Upload a floor-plan photo and get a furnished 3D picture" · "The room list read from the plan, editable
 // before drawing" · "Two looks, Dollhouse and Top-down, and a download"). Each item asserted as the rule it builds, never another round's count:
-//  - the doors: Tools › Floorplan to 3D Isometric opens Make a 3D picture (For: Personal, as 1.0's tool was unbound); the planner's New ▾ and
+//  - the doors: /planner?view=iso&photo=1 (⌘K's Make a 3D picture — Tools › Floorplan to 3D Isometric until REG-2800) opens Make a 3D picture (For: Personal); the planner's New ▾ and
 //    the New layout dialog's photo card; ⌘K's Create; a floor plan's ⋮ in Files (a picture named so, or in Floor plans — never any photo); the
 //    project's Floor plan tab ⋮
 //  - the photo straightened and cleaned in the browser by 1.0's rules (the demo photo is turned 7° on a desk: the sheet is found, the tilt
@@ -124,11 +124,9 @@ const TRUTH_MM = 10 / (1.25 * Math.min(1600 / 1585, 1260 / 1450))
     // ── 1 · The doors ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     if (want(1)) {
       console.log('1 · Where Make a 3D picture opens from')
-      await go(p, '/leads')
-      await p.getByRole('button', { name: /^Tools/ }).first().click().catch(() => {}); await settle(p, 500)
-      const tile = p.getByRole('menuitem', { name: 'Floorplan to 3D Isometric', exact: true })
-      ok(await tile.count() === 1 && await tile.getAttribute('data-soon') === null, 'Tools › Floorplan to 3D Isometric is live')
-      await tile.click(); await p.waitForURL(/\/planner/, { timeout: 15000 }).catch(() => {}); await settle(p, 2500)
+      /* (REG-2800, a deliberate change of this rule) Tools › Floorplan to 3D Isometric is 1.0's module on its own page again (verify-fp3d.cjs);
+         ⌘K's Make a 3D picture still opens the planner on it */
+      await go(p, '/planner?view=iso&photo=1', 2500)
       const d = photoDialog(p)
       ok(await d.count() === 1 && /Step 1 of 2/.test(await text(d)), 'it opens on Make a 3D picture — step 1 of 2 (1.0’s tool began with the upload)')
       ok(/Personal — not for a client/.test(await d.getByRole('combobox', { name: 'For' }).innerText()) && /Pick a lead or a project/.test(await text(d)), 'For: Personal by default, and it says a lead or a project keeps the photo in their Files')

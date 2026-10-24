@@ -181,3 +181,11 @@
 @media (max-width: 767px) { .uploadRow { grid-template-columns: minmax(0, 1fr) 96px; } .uploadRow > span:nth-child(1), .uploadRow > span:nth-child(3), .uploadRow > span:nth-child(4) { display: none; } }
 /* (S42 B-21) up to a tablet the item's name wraps rather than cutting — a touch screen has no hover to read the rest (P8) */
 @media (max-width: 1024px) { .uploadRow:not([data-head]) { padding-block: var(--om-spacing-2); } .uploadRow:not([data-head]) > span:nth-child(2) { white-space: normal; overflow-wrap: anywhere; } }
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

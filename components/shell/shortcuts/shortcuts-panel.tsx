@@ -100,7 +100,7 @@ export function ShortcutsPanel({ editor }: { editor: boolean }) {
                    data-flash={flash && flash.id === r.id ? flash.n : undefined}>
                 <Icon name="check" size={16} className={styles.tick} />
                 <span className={styles.label}>{r.label}{r.off ? <span className={styles.off}> · off</span> : null}</span>
-                <Keys spec={r.keys} />
+                <Keys spec={r.keys} always />   {/* (responsive audit 2026-10-23, W1) the row's keys are what it says — drawn on a touch screen too */}
               </div>
             ))}
           </section>

@@ -110,6 +110,11 @@
    that file's hand-rolled search retired (REG-276). 280 is the width every list toolbar uses. */
 .searchWrap { display: inline-flex; flex: 1; min-width: 0; }
 .search { width: 280px; max-width: 100%; }
+/* (responsive audit 2026-10-23, W2-05) The search types at 16 on a phone and a touch tablet, as the listing's does (Leads on the move, P-13 —
+   "every typed box does"): at 14 a phone's browser zooms the page on focus. The box, its 36 and its placeholder's place stay as drawn. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .search input { font: var(--om-type-body-l); }
+}
 
 /* ── ≤767: the history is a list (REG-346) ────────────────────────────────────────────────────────────
    Six columns need 1316px; on a phone the card scrolled sideways and every row read as a fragment. The
@@ -125,17 +130,17 @@
   /* (REG-390) The frozen first column is a treatment for a table that scrolls sideways. Here there is no
      sideways scroll and no columns — and it left a 1px rule standing in the middle of the date line. */
   .row > .pin { position: static; border-right: 0; box-shadow: none; clip-path: none; background: none; }
-  .cell:nth-child(1) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 2; }
+  .cell:nth-child(1) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); order: 2; }   /* (leads on the move, P-13) values at 14 */
   /* (REG-390) "27 Aug '26 · 13 of 14 imported" — the counts read in that order, with the separators the row's
      own columns used to provide. They used to come out as "27 Aug '26of 14 —  13 imported": the total was
      placed before the imported count and the date ran straight into it. */
-  .cell:nth-child(3), .cell:nth-child(4) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); }
+  .cell:nth-child(3), .cell:nth-child(4) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); }
   .cell:nth-child(4) { order: 3; }
   .cell:nth-child(4)::before { content: ' · '; white-space: pre; }
   .cell:nth-child(3) { order: 4; }
   .cell:nth-child(3)::before { content: ' of '; white-space: pre; }
-  .cell:nth-child(3)::after { content: ' imported'; }
-  .cell:nth-child(5) { flex: 1 1 100%; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 4; }
+  .cell:nth-child(3)::after { content: ' imported'; white-space: pre; }   /* (leads on the move, A-27 — a bug fix) its leading space collapsed: "4 of 5imported" */
+  .cell:nth-child(5) { flex: 1 1 100%; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); order: 4; }
   .cell:nth-child(6) { flex: 1 1 100%; order: 5; }
 }
 

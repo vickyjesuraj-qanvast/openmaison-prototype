@@ -2,6 +2,10 @@
    area; the pages sit centred with 32 around them. Preview and the phone hide the panes. */
 /* (REG-542) An app frame: pinned to the viewport, so nothing outside it — a portal, an overlay, a transient layout — can scroll the panes off the top of the window. */
 .editor { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A notched phone held sideways: the app frame is fixed to the screen's edges, so
+   Back and the bar's actions ran under the sensor housing. It pads the side insets (the Visualizer's and the Planner's frames already do);
+   env() is 0 on every other screen. */
+.editor { padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 .body { flex: 1; min-height: 0; display: flex; }
 .left, .right { flex: 0 0 auto; background: var(--om-color-surface-default); display: flex; flex-direction: column; min-height: 0; }
 .left { width: 300px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }

@@ -40,7 +40,8 @@
    is the Move stage window's Contacted log on the Notes tab and its pairs are the same pairs, so they stack
    here too. Side by side, When + Outcome were ~150 each inside the ≤767 pane: too narrow to read and too
    narrow to tap accurately. The view-mode label / value rows keep their two columns (they are text). */
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .fieldPair { flex-direction: column; }
   /* (REG-380) On a phone this editor lives in the bottom sheet, whose body owns the 16px gutters and does the
      scrolling: the fields column stops padding itself and stops being a second scroller inside it. */

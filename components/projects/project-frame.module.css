@@ -26,11 +26,20 @@
    Add milestone dock) rises above it — the dock height it reads is set here, as the portal's bar sets it (REG-1050) — and the page keeps room
    for it under its last card. */
 .siteBar { composes: dockFrame from '../shell/mobile-nav.module.css'; display: none; }
-.siteItem { composes: dockItem from '../shell/mobile-nav.module.css'; max-width: none; }
+.siteItem { composes: dockItem from '../shell/mobile-nav.module.css'; }
+.siteItem.siteItem { max-width: none; }   /* (responsive audit 2026-10-23, W6 — load order) doubled: the dock item's 64 is the same weight — `next dev` and this round's build drew the bar's own, the build before the dock's */
 .siteIcon { composes: dockIcon from '../shell/mobile-nav.module.css'; }
 .siteLabel { composes: dockLabel from '../shell/mobile-nav.module.css'; }
+/* (responsive audit 2026-10-23, W3-11) The lead's frame drops the FAB's band on an empty tab (`.centre:has([data-testid$='-empty'])`, one card
+   that fills the body) — but a project's Overview with nothing waiting says "Nothing waits on you" (`needs-empty`) above a full page of cards,
+   so on a phone with no site bar (Setting up, Completed) the Maison AI button sat over the last card's ↗ at the page's end. The Overview keeps
+   the page's band. */
 @media (max-width: 767px) {
-  .siteBar { display: flex; justify-content: space-around; }
+  .centre.centre[data-tab='overview'] { --fab-clearance: inherit; }
+}
+@media (max-width: 767px) {
+  .siteBar { display: flex; }
+  .siteBar.siteBar { justify-content: space-around; }   /* (W6 — load order) doubled over the dock frame's space-between, as its items' width above */
   :global(html) :global(body):has(.siteBar) { --app-mobile-dock-height: calc(70px + env(safe-area-inset-bottom, 0px)); }
   .body:has(.siteBar) .centre { padding-bottom: calc(var(--fab-clearance, 96px) + var(--app-mobile-dock-height)); }
 }

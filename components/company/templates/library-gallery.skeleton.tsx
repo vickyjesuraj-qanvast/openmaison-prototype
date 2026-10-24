@@ -19,7 +19,7 @@ export function GhostFolderGroup({ count, min, check = false }: { count: number;
       <div className={folderStyles.groupHead}>{check ? <><Bone w={18} h={18} style={{ margin: 3 }} /><Bone w={50} h={14} /></> : <Bone w={64} h={16} className={styles.gLine} />}</div>
       <div className={folderStyles.row} style={min ? ({ '--folder-min': `${min}px`, '--folder-min-narrow': `${min}px` } as CSSProperties) : undefined}>
         {Array.from({ length: Math.min(count, 12) }, (_, i) => (
-          <div key={i} className={`${folderStyles.folder} ${styles.gFolder}`}><span className={styles.gPick}><Bone w={24} h={24} /></span><Bone w={24} h={24} /><span className={styles.gFolderText}><Bone w="60%" h={14} /><Bone w="36%" h={10} /></span></div>
+          <div key={i} className={`${folderStyles.folder} ${styles.gFolder}`}><span className={styles.gPick}><Bone w={24} h={24} /></span><Bone w={24} h={24} /><span className={styles.gFolderText}><Bone w="60%" h={14} className={styles.gFolderName} /><Bone w="36%" h={10} className={styles.gFolderCount} /></span></div>
         ))}
       </div>
     </div>
@@ -78,7 +78,7 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
             <Box cls={styles.gSearch!} />
             {filters ? <Box cls={styles.gIcon!} /> : null}
             {list ? <span className={`${styles.columnsTool} ${styles.gDeskOnly}`}><Box cls={styles.gIcon!} /></span> : null}
-            {rows ? <span className={styles.gNoRows}><Box cls={styles.gView!} /></span> : <Box cls={styles.gView!} />}
+            {rows ? <span className={`${styles.gNoRows} ${styles.gViewSlot}`}><Box cls={styles.gView!} /></span> : <Box cls={styles.gView!} />}
             <Box cls={styles.gIcon!} />
           </div>
         </div>

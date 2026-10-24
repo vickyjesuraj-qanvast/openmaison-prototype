@@ -76,6 +76,10 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
      expiring this week. A chip whose count falls to nothing lets its narrowing go (render-phase adjust). */
   const [quick, setQuick] = useState<QuoteQuick>('')
   const todoCounts = useMemo(() => quoteTodoCounts(quotes, now, canApprove && approval === 'required'), [quotes, now, canApprove, approval])
+  /* (responsive audit 2026-10-23, W6 — W5-33) the to-do pills this tab opened with — its ghost draws them next time (components/leads/detail/tab-ghosts.tsx) */
+  useRememberShape(`${leadTabShape(leadId, 'quotes')}.approval`, todoCounts.approval > 0)
+  useRememberShape(`${leadTabShape(leadId, 'quotes')}.waiting`, todoCounts.waiting > 0)
+  useRememberShape(`${leadTabShape(leadId, 'quotes')}.expiring`, todoCounts.expiring > 0)
   if (quick && todoCounts[quick] === 0) setQuick('')
   /* (pending modules S04) the heads' own order — one sort with Filters' (a head's sort sets Filters' back to Newest first; Filters' takes the head's off) */
   const [headSort, setHeadSort] = useState<QuoteHeadSort>(null)

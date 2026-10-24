@@ -140,4 +140,6 @@
      14/Semi Bold label, the 12px side padding and the 1px stroke stay the mock's. The group already wraps.
      (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same box. */
   .chip { display: inline-flex; align-items: center; min-height: 44px; }
+  /* (Leads on the move, B-23 · P-13) the drop box's sentence — Auto Fill's "A chat export (WhatsApp › Export chat)…" — reads 14 on a finger */
+  .dropHelper { font: var(--om-type-body-m); }
 }

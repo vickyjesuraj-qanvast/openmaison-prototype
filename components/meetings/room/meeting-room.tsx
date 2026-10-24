@@ -50,6 +50,7 @@ import { ChecklistCard, EstimateCard, HeardRows, MoodBoardDialog, ObjectionRows,
 import { EditTextDialog, SaveToLeadDialog, type SavePlan } from './save-dialog'
 import { MeetingRoomGhost, dueNow, useRememberMeetingShape } from './meeting-room-ghost'
 import { WriteUpDialog as WriteUpDialogLazy } from '../write-up-dialog'
+import { MOBILE, TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import styles from './room.module.css'
 
 type PhoneView = 'notes' | 'tips' | 'checklist' | 'estimate' | 'more'
@@ -306,7 +307,6 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
     if (held && brief) out.push({ label: 'Draft the follow-up message', answer: { title: `Follow-up for ${first}`, text: brief.followUp } })
     return out
   }, [planned, live, held, brief, first, data.prep, reading])
-  useMaisonAi(ask)
 
   /* ── the header ── */
   const backHref = from ?? (data.project ? `/projects/${data.project.id}/meetings` : `/leads/${data.lead.id}/meetings`)
@@ -349,6 +349,27 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
     : planned && !due ? <Button variant="secondary" appearance="outlined" onPress={() => { void openSend('invite') }} data-testid="room-invite">{m.invitedAt ? 'Send the invitation again' : 'Send the invitation'}</Button>
     : held && brief && !m.briefSavedAt ? <Button variant="secondary" appearance="outlined" onPress={() => { void openSend('notes') }} data-testid="room-share">Share the notes</Button>
     : null
+  /* (Leads on the move, L4 — P-12 · C-26) On a phone or a tablet the meeting's one move — Start · End · Save to the lead · Share the notes — and its
+     second sit in a sticky foot at 48, never 1,600px up the page; the head keeps the title, the chips and ⋮. The desk keeps them in the head. */
+  const footed = useMediaQuery(TABLET_DOWN)
+  /* (responsive audit 2026-10-23, W2-01) On a phone the Maison AI button rides above the foot — the Quote screen's way (P-01, the house offset
+     REG-302) — and the foot keeps its whole width: the corner it kept for the button left 298 for the two moves, so at 390 the button sat on
+     Start the meeting's right end and at 320 that button ran 15px off the screen. A tablet keeps the corner (its foot has the room). */
+  const phoneFoot = useMediaQuery(MOBILE) && !!(primary || secondary)
+  useMaisonAi(ask, phoneFoot)
+  const footRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = footRef.current
+    if (!phoneFoot || !el) return
+    /* the foot's measured height + 6, the offset's own rule (REG-302; the review banner's way) — 78 for one row of moves, more where they take a
+       row each (320); the snackbar rests above it too */
+    const root = document.documentElement.style
+    const write = () => root.setProperty('--bottom-dock', `${Math.round(el.offsetHeight) + 6}px`)
+    write()
+    const ro = new ResizeObserver(write)
+    ro.observe(el)
+    return () => { ro.disconnect(); root.removeProperty('--bottom-dock') }
+  }, [phoneFoot])
   const menu = data.mayChange ? (
     <span ref={kebabRef}>
       <Tooltip label="More actions" disabled={kebab}><IconButton icon="more_vert" label="More actions" aria-haspopup="menu" aria-expanded={kebab} onClick={() => setKebab((k) => !k)} /></Tooltip>
@@ -374,7 +395,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
       <div className={styles.page} data-testid="meeting-room" data-status={m.status}>
         <PageHeaderL2 backHref={backHref} crumbs={crumbs} title={title}
           chips={<><MetaChip icon="event">{statusChip}</MetaChip><MetaChip icon="schedule">{displayDue(new Date(m.startsAt))}</MetaChip><MetaChip icon="home">{m.whereKind}</MetaChip></>}
-          actions={<>{secondary}{primary}</>} titleActions={menu} />
+          actions={footed ? null : <>{secondary}{primary}</>} titleActions={menu} />
         <div className={styles.content}>
 
         {/* ── what waits, said where it is decided ── */}
@@ -538,6 +559,7 @@ export function MeetingRoom({ data, from }: { data: MeetingRoomData; from?: stri
           <Card title="Brief" testId="brief-missing"><div className={styles.cardBody}><p className={styles.line}>This meeting has no brief yet — write its notes up to make one.</p>{data.mayChange ? <span className={styles.cardAct}><Button onPress={() => setWriteUpOpen(true)}>Write it up</Button></span> : null}</div></Card>
         )}
         </div>
+        {footed && (primary || secondary) ? <div ref={footRef} className={styles.foot} data-testid="room-foot">{secondary}{primary}</div> : null}
       </div>
 
       <ConfirmDialog open={confirmEnd} title="End the meeting?" message="The co-pilot stops and the brief is made from what was said. You can edit it after." confirmLabel="End the meeting" onCancel={() => setConfirmEnd(false)} onConfirm={() => { void end() }} />

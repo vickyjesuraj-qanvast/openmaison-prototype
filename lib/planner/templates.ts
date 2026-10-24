@@ -70,7 +70,7 @@ export const TEMPLATES: FlatTemplate[] = [
     R('c2', 'living', 'Living / Dining', 'living', 0, 150, 560, 420, { windows: [['w', 120, 200]] }),
     R('c2', 'kitchen', 'Kitchen', 'kitchen', 560, 150, 280, 220, { windows: [['n', 80, 120]], open: ['w', 's'] }),
     R('c2', 'bath1', 'Bathroom', 'bathroom', 840, 150, 160, 220, { doors: [['s', 45, 70]], windows: [['e', 70, 60]] }),
-    R('c2', 'foyer', 'Foyer', 'foyer', 560, 370, 440, 200, { doors: [['e', 50, 100]], open: ['w', 'n'] }),
+    R('c2', 'foyer', 'Foyer', 'foyer', 560, 370, 440, 200, { doors: [['e', 50, 100]], open: ['w'] }),   /* (REG-2803) its north side was open too, which opened the bathroom beside the kitchen — the kitchen's own open south side joins the two */
     R('c2', 'bed2', 'Bedroom 2', 'bedroom', 0, 570, 300, 300, { doors: [['n', 200, 90]], windows: [['w', 80, 140], ['s', 80, 140]] }),
     R('c2', 'mbath', 'Master bathroom', 'bathroom', 300, 570, 170, 300, { doors: [['e', 200, 70]] }),
     R('c2', 'master', 'Master bedroom', 'master', 470, 570, 530, 300, { doors: [['n', 130, 90, 'right']], windows: [['s', 180, 180], ['e', 90, 120]] }),
@@ -80,7 +80,7 @@ export const TEMPLATES: FlatTemplate[] = [
     R('c3', 'living', 'Living / Dining', 'living', 0, 160, 620, 440, { windows: [['w', 120, 220]] }),
     R('c3', 'kitchen', 'Kitchen', 'kitchen', 620, 160, 300, 240, { windows: [['n', 90, 120]], open: ['w', 's'] }),
     R('c3', 'bath1', 'Bathroom', 'bathroom', 920, 160, 180, 240, { doors: [['s', 50, 70]], windows: [['e', 80, 60]] }),
-    R('c3', 'foyer', 'Foyer', 'foyer', 620, 400, 480, 200, { doors: [['e', 50, 100]], open: ['w', 'n'] }),
+    R('c3', 'foyer', 'Foyer', 'foyer', 620, 400, 480, 200, { doors: [['e', 50, 100]], open: ['w'] }),   /* (REG-2803) its north side was open too, which opened the bathroom beside the kitchen — the kitchen's own open south side joins the two */
     R('c3', 'bed3', 'Bedroom 3', 'bedroom', 0, 600, 290, 320, { doors: [['n', 190, 90]], windows: [['w', 90, 140], ['s', 80, 140]] }),
     R('c3', 'bed2', 'Bedroom 2', 'bedroom', 290, 600, 290, 320, { doors: [['n', 190, 90]], windows: [['s', 80, 140]] }),
     R('c3', 'mbath', 'Master bathroom', 'bathroom', 580, 600, 170, 320, { doors: [['e', 220, 70]] }),

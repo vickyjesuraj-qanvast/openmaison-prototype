@@ -31,6 +31,9 @@
 
 /* The review band: the quote's banner, inset to the card's own sides */
 .band { composes: banner from '../../quotes/editor/template-bar.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5); }
+/* (responsive audit 2026-10-23, W3-20) the band's own 20 over the composed banner's 24 / 16 held only by the order the build happened to put the
+   two sheets in — a rebuild flipped it (24 at a desk, 16 on a phone). Doubled, so it holds whatever the order. */
+.band.band { padding: var(--om-spacing-2) var(--om-spacing-5); }
 .bandIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
 .bandText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
 .bandActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }

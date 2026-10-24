@@ -403,6 +403,14 @@ export function Stage({ image, alt, compare, preview, highlight, wash = null, ma
   const keyed = keyedNow
   const pct = Math.round(zoom * 100)
   const showMarkers = !compare && !running && !pinOn && markers.length > 0
+  /* (responsive audit 2026-10-23, W5-05) Under a finger a marker's hit area grows to 44 (REG-312) — but never onto a neighbour's own mark:
+     each square box is at most twice its distance to the nearest marker on screen less the mark's 8 (Chebyshev, the photo's size × the
+     zoom), and never under the 32 it had. Read by the touch rule only (stage.module.css `--reach`); a mouse keeps its box. */
+  const reachOf = new Map(markers.map((a) => {
+    let near = Infinity
+    for (const o of markers) if (o !== a) near = Math.min(near, Math.max(Math.abs(clampDot(a.x) - clampDot(o.x)) * fw * zoom, Math.abs(clampDot(a.y) - clampDot(o.y)) * fh * zoom))
+    return [a.id, Math.max(32, Math.min(44, Math.floor(2 * (near - 8))))] as const
+  }))
   /* (verify round 1) Once a finish is picked for the lit surfaces, the region wears it — a wash of the pick's colour over the region's own
      soft mask, two layers deep (about two thirds at its heart) — so the photo previews the choice, never the brand's purple. */
   const rimId = `viz-rim-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
@@ -501,7 +509,7 @@ export function Stage({ image, alt, compare, preview, highlight, wash = null, ma
                   return (
                     <Tooltip key={m.id} label={target ? `Take ${name} off the list` : tip}>
                       <button type="button" className={styles.dot} data-kind={m.kind} data-selected={m.selected || undefined} data-action={m.action ?? undefined} data-target={target || undefined}
-                              style={{ left: `${clampDot(m.x) * 100}%`, top: `${clampDot(m.y) * 100}%`, ['--fill' as string]: m.fill ?? undefined }}
+                              style={{ left: `${clampDot(m.x) * 100}%`, top: `${clampDot(m.y) * 100}%`, ['--fill' as string]: m.fill ?? undefined, ['--reach' as string]: `${reachOf.get(m.id) ?? 32}px` }}
                               aria-label={target ? `Take ${name} off the list` : said} aria-pressed={m.selected} data-testid="viz-marker"
                               onClick={(e) => { e.stopPropagation(); if (mode.kind === 'remove') { if (target) mode.onPick(m.id); return } onDot(m) }}>
                         {m.action === 'remove' ? <Icon name="close" size={12} weight={400} /> : m.action === 'customize' ? <Icon name="palette" size={12} weight={400} /> : m.action === 'replace' ? <Icon name="swap_horiz" size={12} weight={400} /> : null}

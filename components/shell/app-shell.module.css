@@ -3,6 +3,13 @@
   min-height: 100dvh;
   background: var(--om-color-surface-bg);
   padding: var(--om-spacing-2);
+  /* (responsive audit 2026-10-23, W1 — a bug fix) viewport-fit=cover (REG-308) lets the page reach under a notch: a notched phone held sideways
+     (844 × 390 — the tablet layout) drew the rail inside the left 47 and the page's right edge inside the right 47, under the sensor housing
+     and the rounded corner, and the rail's foot on the home indicator. The frame pads by the insets; env() is 0 on every other screen, so
+     nothing else moves (the phone's own chrome pads itself, below). */
+  padding-left: calc(var(--om-spacing-2) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--om-spacing-2) + env(safe-area-inset-right, 0px));
+  padding-bottom: calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
 }

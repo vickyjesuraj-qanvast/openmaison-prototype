@@ -21,6 +21,9 @@
 .barInner { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); height: 64px; max-width: 1320px; margin: 0 auto; padding: 0 48px; box-sizing: border-box; }
 @media (max-width: 1024px) { .barInner { padding: 0 40px; } }
 @media (max-width: 767px) { .barInner { padding: 0 24px; } }
+/* (responsive audit 2026-10-23, W1) a notched phone held sideways: the wordmark and Sign in keep 16 clear of the notch (env() is 0 elsewhere) */
+@media (max-width: 1024px) { .barInner { padding-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)); padding-right: max(40px, calc(env(safe-area-inset-right, 0px) + 16px)); } }
+@media (max-width: 767px) { .barInner { padding-left: max(24px, calc(env(safe-area-inset-left, 0px) + 16px)); padding-right: max(24px, calc(env(safe-area-inset-right, 0px) + 16px)); } }
 
 .logo { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; text-decoration: none; border-radius: var(--om-radius-1); }
 .logo:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 4px; }
@@ -44,6 +47,9 @@
 .signIn { display: inline-flex; align-items: center; height: 40px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1); color: var(--site-ink); font: var(--site-type-button); text-decoration: none; transition: color var(--site-motion-ease); }
 .signIn:hover { color: var(--site-accent); }
 .signIn:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W1 — REG-312's 44 under a finger) The bar's wordmark (a 28 link) and Sign in (40) stand 44 tall on a touch pointer;
+   both are centred in the 64 bar and draw no box, so nothing on the screen moves. */
+@media (hover: none) { .logo, .signIn { min-height: 44px; } }
 .cta {
   display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 var(--om-spacing-4); border: 0; border-radius: var(--om-radius-1);
   background: var(--site-accent); color: var(--om-color-on-primary-default); font: var(--site-type-button); cursor: pointer; transition: background-color var(--site-motion-ease), box-shadow var(--site-motion-ease);
@@ -100,7 +106,7 @@
 .top { position: fixed; right: 32px; bottom: 32px; z-index: 40; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: var(--om-border-1) solid var(--site-hairline-strong); border-radius: var(--om-radius-full); background: var(--site-surface); color: var(--site-ink); box-shadow: var(--site-shadow); cursor: pointer; }
 .top:hover { color: var(--site-accent); }
 .top:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
-@media (max-width: 1024px) { .top { right: 16px; bottom: calc(108px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 1024px) { .top { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(108px + env(safe-area-inset-bottom, 0px)); } }   /* (responsive audit 2026-10-23, W1) off a notched phone's rounded corner, held sideways */
 
 /* ── The first visit's welcome (home only, once a session) ── */
 .intro { display: none; position: fixed; inset: 0; z-index: 100; }

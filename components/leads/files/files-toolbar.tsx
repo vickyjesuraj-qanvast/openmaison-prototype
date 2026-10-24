@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
-import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { Icon } from '@/components/om/icon'
@@ -48,6 +48,8 @@ export type FilesToolbarProps = {
   views?: ReactNode
   /** (pending modules S06) the viewer reads only (Accounting): search, Filters, the columns and the view — nothing that adds or changes a file */
   readOnly?: boolean
+  /** (Leads on the move, L4 — P-11 · C-09) A phone's first action: the camera at once, the photos landing in the open folder. */
+  onPhoto?: () => void
 }
 
 /**
@@ -60,12 +62,65 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, filterCount = 0, onColumns, view, onView, onMenu, bare = false, views, readOnly = false }: FilesToolbarProps) {
+export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, filterCount = 0, onColumns, view, onView, onMenu, bare = false, views, readOnly = false, onPhoto }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
   const folder = trail[trail.length - 1] ?? null
   const folderAnchor = useRef<HTMLElement | null>(null)
+  const moreAnchor = useRef<HTMLSpanElement | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
+  if (sheet) {
+    /* (Leads on the move, L4 — P-11 · C-09 · C-15 · C-16) A phone's Files toolbar is ONE row of three glyphs, so the title owns its line at 320:
+       Take a photo (the filled one — the camera at once, the photos into the open folder) · Search · ⋮. The ⋮ holds the rest, one tap
+       further: Choose files · New folder · Filters · Deleted Files, and inside a folder its own Move · Rename · Delete (one ⋮, never two).
+       Inside a folder the title is the folder's name behind ← (up one level); the crumb's way to the top is the ← and All Files. */
+    const parent = trail[trail.length - 2] ?? null
+    const backTo = parent ? parent.name : 'All Files'
+    return (
+      <div className={styles.bar} data-phone="">
+        {folder ? (
+          <div className={styles.phoneCrumb} data-testid="files-phone-crumb">
+            <Tooltip label={`Back to ${backTo}`}>
+              <IconButton icon="arrow_back" label={`Back to ${backTo}`} variant="bare" size={24} iconSize={24} iconWeight={300} onClick={() => onGo(parent?.id ?? null)} />
+            </Tooltip>
+            <h2 className={styles.title} aria-current="page">{folder.name}</h2>
+          </div>
+        ) : (views ?? <h2 className={styles.title}>All Files</h2>)}
+        <div className={styles.actions}>
+          {bare || readOnly || !onPhoto ? null : (
+            <Tooltip label="Take a photo">
+              <IconButton icon="photo_camera" label="Take a photo" variant="filled" data-kb="create" data-kb-label="Take a photo" onClick={onPhoto} data-testid="files-take-photo" />
+            </Tooltip>
+          )}
+          {bare ? null : <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />}
+          {readOnly && bare ? null : (
+            <span className={styles.menuWrap} ref={moreAnchor}>
+              <Tooltip label="More options" disabled={menu === 'more'}>
+                <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} data-testid="files-phone-more" />
+              </Tooltip>
+              {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
+              <PortalMenu open={menu === 'more'} anchor={moreAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder?.name ?? 'All Files'}>
+                {readOnly ? null : <DropdownItem onSelect={pick(() => onNew('local'))} help="From your phone’s photos or files">Choose files</DropdownItem>}
+                {readOnly ? null : <DropdownItem onSelect={pick(onNewFolder)}>New folder</DropdownItem>}
+                {bare ? null : <DropdownItem onSelect={pick(onFilter)} help={filterCount ? `${filterCount} on` : undefined}>Filters</DropdownItem>}
+                {readOnly ? null : <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Files</DropdownItem>}
+                {folder && !readOnly ? (
+                  <>
+                    <DropdownDivider />
+                    <DropdownLabel>{folder.name}</DropdownLabel>
+                    {/* (fix-A, A-19) a project's own folder keeps its name and place — the rows say why */}
+                    <DropdownItem onSelect={pick(() => onFolderMenu('move'))} disabled={!!folder.system} help={folder.system ?? undefined}>Move folder</DropdownItem>
+                    <DropdownItem onSelect={pick(() => onFolderMenu('rename'))} disabled={!!folder.system} help={folder.system ?? undefined}>Rename folder</DropdownItem>
+                    <DropdownItem tone="danger" onSelect={pick(() => onFolderMenu('delete'))} disabled={!!folder.system} help={folder.system ?? undefined}>Delete folder</DropdownItem>
+                  </>
+                ) : null}
+              </PortalMenu>
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.bar}>

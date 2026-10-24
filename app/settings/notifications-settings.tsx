@@ -5,7 +5,7 @@ import { ProTag } from '@/components/credits/pro-tag'
 import { EVENTS_CARD, EVENTS_PERSONAL, NOTIFICATIONS_HELP } from '@/lib/settings/copy'   // (pending modules S17) the words the ghost reads too
 import { useRef, useState, type SyntheticEvent } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
-import { Dialog } from '@/components/om/dialog'
+import { Dialog, FootStart } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -170,8 +170,8 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
       <Dialog open={!!edit} onClose={() => setEdit(null)} title={edit ? `${EVENTS.find((e) => e.key === edit.event)?.label} · ${edit.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}` : 'Message'} size="modal" width={600}
               subtitle="The fields fill themselves when the message is sent — the preview shows a sample lead."
               footer={<>
-                <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} isDisabled={!draft || (draft.body === house(draft).body && draft.subject === house(draft).subject)} onPress={() => { if (draft) setDraft({ ...draft, ...house(draft) }) }}>Reset to the house draft</Button>
-                <span style={{ flex: 1 }} />
+                {/* (responsive audit 2026-10-23, W4-23) the house FootStart, not a spacer: at 320 the reset ran 71px off the foot's left edge */}
+                <FootStart><Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} isDisabled={!draft || (draft.body === house(draft).body && draft.subject === house(draft).subject)} onPress={() => { if (draft) setDraft({ ...draft, ...house(draft) }) }}>Reset to the house draft</Button></FootStart>
                 <Button variant="secondary" appearance="outlined" onPress={() => setEdit(null)}>Cancel</Button>
                 <Button isDisabled={!draft?.body.trim()} onPress={() => { void saveTemplate() }}>Save</Button>
               </>}>

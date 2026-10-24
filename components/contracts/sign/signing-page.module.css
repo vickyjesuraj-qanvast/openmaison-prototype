@@ -51,6 +51,9 @@
 .accept { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
 .accept[data-disabled] { color: var(--om-color-on-surface-disabled); cursor: default; }
 .quoteLink { composes: link from '../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-2); }   /* (REG-729) the house text link — it underlined on hover */
+/* (responsive audit 2026-10-23, W5-09) Under a finger the link is 44 tall (REG-312's link rule: 12 above and below, paid back), not its 20 line —
+   "← Agreement" is the client's one way back from the quote on /sign/<token>/quote. */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .quoteLink { padding-block: var(--om-spacing-3); margin-block: calc(-1 * var(--om-spacing-3)); } }
 .walk { width: 816px; max-width: 100%; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .walkHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 .walkBar { display: flex; gap: var(--om-spacing-1); }

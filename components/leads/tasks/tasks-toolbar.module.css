@@ -12,14 +12,9 @@
 .filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
 .filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
 
-/* Touch ergonomics (REG-273): the toolbar's controls are the DS 36px height — a fingertip wants 44. The
-   target grows by 4px on every side through a transparent overlay, so Add Task, the filter button (and its
-   count badge) and the kebab are drawn exactly as the mock draws them; the row's 12 gaps still leave 4
-   between neighbouring targets, and the row itself does not reflow. Desktop with a mouse is untouched. */
-@media (max-width: 767px), (hover: none) {
-  .touchTarget { position: relative; }
-  .touchTarget::after { content: ''; position: absolute; inset: -4px; }
-}
+/* Touch ergonomics (REG-273): the toolbar's icon buttons are the mock's 36 squares; on a finger the house IconButton's own centred 44 box
+   carries the target (components/om/icon-button.module.css). (Leads on the move, L4 — C-02) The overlay that stood here, a 4px-inset ::after on
+   `.touchTarget`, kept the house translate(−50%, −50%) and moved every target 22–24px left: Filters' right edge opened More options. */
 
 /* (REG-354) The mobile canvas' toolbar is ONE row — the section title and the glyphs (2b · 2n · 3f · 3i · 3d).
    The 280px search box folds into one of those glyphs (components/om/toolbar-search.tsx) and, when it is asked
@@ -45,7 +40,16 @@
 /* (UX audit 2026-09-30, T5 · T4) The to-do chips beside the scope pill, 8 apart — the galleries' to-do pills (REG-666). They say only their count
    where the bar is narrow (ScopePill `short`), and a phone's row lets them scroll sideways rather than push the tools off the screen. */
 .todos { display: inline-flex; align-items: center; gap: var(--om-spacing-2); margin-left: var(--om-spacing-2); min-width: 0; }
-@media (max-width: 767px) { .todos { overflow-x: auto; scrollbar-width: none; } .todos::-webkit-scrollbar { display: none; } }
+/* (responsive audit 2026-10-23, W2-04) ≤767 the chips take a line of their own under the pill and the tools — as the Quotes tab's to-do pills
+   (quotes-toolbar.module.css .todos) and the listing's "to call today" (toolbar.module.css .todo) sit: squeezed beside the pill into a sideways
+   scroller they showed one chip and a sliver at 390 and only a 14px sliver at 320. The scope box steps aside (its pill and its chips become
+   the row's own items), the tools keep the row's right end, and the chips step aside while the search has the row (REG-375). */
+@media (max-width: 767px) {
+  .scopeWrap:has(> .todos) { display: contents; }
+  .scopeWrap:has(> .todos) ~ * { margin-left: auto; }
+  .todos { order: 3; flex: 1 0 100%; flex-wrap: wrap; margin-left: 0; }
+  .bar:has([data-om-search-open]) .todos { display: none; }
+}
 /* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk, its count-only width below 1025. */
 @media (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */
 

@@ -110,6 +110,35 @@ On ≤1024:
   as the copy.
 - **A tooltip is a pointer's.** A finger's press leaves no bubble and no key hint (`components/om/tooltip.tsx`).
 
+### Leads on the move (REG-2657…2734, 2026-10-23) — what the third module added to the rule
+- **A record with tabs stays one page.** A lead (and a project) on a phone or a tablet is its page — the header, the tab strip, the tab
+  below — never a summary screen whose rows open each tab as a screen of its own. Built and reverted the same day on his word (REG-2734):
+  "a lot of back and forth levels to move around. It was fine for quotes but not for leads and projects." The Quote / Contract screen model
+  is for one document you read, then edit; a record worked across its tabs keeps them in reach.
+- **A moment is a sheet, not a form.** Logging a call is the log sheet (the channel set, now as the time, the outcome as a chip, the
+  call-back as presets); on a New lead the log is also the move. The Move stage window on ≤1024 upright is one step per screen with one
+  Save & move; a refused move stays open at every width with the reason in its foot and nothing typed lost. Won is a checklist; On Hold and
+  Lost one sheet with Undo.
+- **One snackbar at a time on ≤1024.** A new one replaces the one showing; a sheet that opens withdraws a refusal that would sit on it.
+- **The Maison AI button never covers a row's control on a touch tablet** — it shows at the page's end.
+- **A listing card says when we last spoke and what is next.** The Last and Next lines (red when late), the new mark, WhatsApp beside the
+  number; a tablet's table opens on its own default set, remembered per breakpoint (`om.columns.<table>.tablet`).
+- **What the phone already holds fills the form.** A pasted WhatsApp message fills a new lead by rule (`lib/leads/message-fill.ts`); Files
+  opens on Take a photo into the open folder; a task is a card with a ring, and a hold selects.
+
+### The whole-app audit (REG-2810…2898, 2026-10-23 → 24) — what every page now keeps
+- **Six sizes, not three.** A change is checked at 320 · 390 · 768 upright · 1024 sideways (touch) · **844×390 — a phone held sideways** ·
+  1280 with a mouse, and 1440 stays byte-identical. A phone held sideways is a real size: a dialog keeps 8 above and below (not 48), a menu
+  is the bottom sheet, a card or panel is capped to the screen with its own scroll.
+- **A notched phone.** The shell, the rail, the Maison AI button, the snackbar, a Drawer, a Sheet, the editors' surface and the website pad by
+  `env(safe-area-inset-*)` (0 everywhere else); a pinned control never sits in the notch or on the home indicator.
+- **Nothing pinned covers the page's end.** Every list and page ends on the house clearance above the dock, the FAB and a foot.
+- **A phone types at 16** — inputs, textareas and selects (iOS zooms the page under 16).
+- **Load order.** A same-weight override that only wins when it loads last breaks when any CSS changes the build's chunks: write it
+  order-proof (a doubled class, `.x.x`); run `design-source/verify/responsive-all/css-order-scan.cjs` on the production build after CSS work.
+- **The sweep** (`design-source/verify/responsive-all/sweep.cjs`; its rules in its head) is the start of an audit, not
+  the list — open what a person opens at every size.
+
 ## Touch ergonomics (REG-273 — the owner's clarification, 2026-09-01)
 
 "Mirror desktop as-is" means the **design language and every feature** carry to mobile and tablet — NOT that

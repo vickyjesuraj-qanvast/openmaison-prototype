@@ -54,6 +54,19 @@
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
 }
+/* (responsive audit 2026-10-23, W5-07) A touch tablet always shows the row's ⋮ (REG-273), and the table runs past its card at 768 and 1024, so
+   the ⋮ parked at the visible right edge sat over the Theirs figures (768) and the Status chips (1024). As the Quotes and Contracts tablet
+   tables (K4 — P-11): the ⋮ is a FROZEN cell in the trail track (ACTIONS_TRAIL.kebab, 48) — the head draws its empty cell over it, both carry
+   the surface and a 1px left rule, and the mirrored frozen shadow while columns still hide under them. A mouse keeps the desk's parked float. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .card[data-actions] > .head::after { content: ''; position: sticky; right: 0; z-index: 3; grid-column: -2 / -1; grid-row: 1; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }   /* only where rows carry a ⋮ (a reader who may not correct sees none) */
+  .actions { position: sticky; right: 0; z-index: 2; grid-column: -2 / -1; grid-row: 1; justify-self: stretch; align-self: stretch; width: auto; height: auto; transform: none; display: flex; align-items: center; justify-content: center; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .actionsInner { position: static; transform: none; }
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }   /* (REG-389) a bare glyph in a column that always shows it */
+  .card[data-actions] .cell.colStatus { padding-right: var(--om-spacing-6); }   /* the kebab has its own column now — the Status keeps the core's 24 */
+  .card[data-actions][data-overflow]:not([data-at-end]) > .head::after, .card[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}
 /* ≤767 each row is a card (REG-520: `!important` beats the layout hook's inline placement): the item, then yours · theirs · status. */
 @media (max-width: 767px) {
   .head { display: none; }
@@ -66,6 +79,10 @@
   .actions { position: absolute; grid-area: auto; top: var(--om-spacing-2); right: var(--om-spacing-2); width: auto; height: auto; transform: none; }
   .actionsInner { position: static; transform: none; }
   .float { box-shadow: none; background: none; }
+  /* (responsive audit 2026-10-23, W5-08) a card, as the Quotes and Contracts cards: the core's trailing row rule (REG-733) has no place on
+     it — it drew a 1px line across the card's top half, through a long item name — and the ⋮ it always shows is the bare glyph (REG-389) */
+  .row::after { content: none; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
   .card[data-actions] .cell.colStatus { padding-right: 0; }
   .cell { padding: 0; border-top: 0; min-width: 0; }
   .cell.colItem { grid-column: 1 / -1 !important; grid-row: 1 !important; }

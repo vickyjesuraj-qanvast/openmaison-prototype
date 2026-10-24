@@ -66,6 +66,10 @@
 /* ── Responsive (REG-269) ── clamped to the viewport tablet-and-down; at ≤767 the canvas' bottom sheet (REG-353), below. */
 @media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
+  /* (responsive audit 2026-10-23, W6 — W2-12 moved into the house, W2's hand-off) a 390-tall screen (a phone held sideways) left the rail's
+     last groups below the dialog with no way to them: up to 1024 the rail scrolls where it does not fit — every Filters modal (Leads, Tasks,
+     Files, Quotes, Contracts, Projects); the desk's 600 dialog keeps its rail as drawn. */
+  .rail { overflow-y: auto; overscroll-behavior: contain; }
 }
 @media (max-width: 767px) {
   /* (REG-360) The rail gives way to 40% of the screen before its mocked 160, and a long name truncates rather than wrapping into a
@@ -78,6 +82,14 @@
   .sortRow { width: 100%; }
   .dateRow { flex-direction: column; }
 }
+}
+
+/* (Leads on the move, L4 — C-19, module-wide: the listing's, Tasks', Quotes', Contracts' and Projects' Filters) On a finger a Sort radio's row IS
+   its label: the DS radio stretches over the 44 row's whole width and height, so a tap anywhere on "Due date" picks it (its target was the
+   24 glyph and the words). The drawn row is the one the mock draws. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .sortRow { padding-block: 0; }   /* the row's 12/12 goes to the label, which fills the 44 */
+  .sortRow > :first-child { flex: 1; align-self: stretch; min-height: 44px; }
 }
 
 /* Outside the layer, on purpose: these must beat the house dialog's unlayered `.panel` · `.head` · `.foot` (components/om/dialog.module.css)
@@ -93,4 +105,12 @@
      (REG-308) the foot clears the home indicator (viewport-fit=cover), 16 where env() is 0 */
   .panel [data-surface-head] { padding-top: var(--om-spacing-3); padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
   .panel [data-surface-foot] { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* (responsive audit 2026-10-23, W1 — a bug fix) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below left a 294 panel —
+   a 64 head, a 68 foot and two rows of filters. There the panel spends 8 above and below, off a notched phone's home indicator and sides
+   (env() is 0 everywhere else). Outside the layer and doubled, so it holds over a modal's own unlayered overlay. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay.overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel.panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
 }

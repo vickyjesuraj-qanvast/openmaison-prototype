@@ -23,12 +23,16 @@
 .rowLabel { font: var(--om-type-subtitle-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rowSub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row[data-on] .rowSub { color: var(--om-color-on-primary-variant); opacity: .8; }
-.eye { flex-shrink: 0; opacity: .6;  transition: opacity var(--motion-hover);}
+.eye { flex-shrink: 0; opacity: .6; }
+/* (responsive audit 2026-10-23, W6 — load order) doubled: the house icon button's own transition is the same weight, so which faded was the order the
+   build emitted the two sheets (the eye's opacity in `next dev`, the button's hover fill on the production builds) — both now */
+.eye.eye { transition: opacity var(--motion-hover), background-color var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover); }
 .row:hover .eye, .row[data-hidden] .eye, .row[data-on] .eye { opacity: 1; }
 .marker { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1) 28px; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
 .marker::after { content: ''; flex: 1; height: 1px; background: var(--om-color-surface-variant); }
 .pagesNote { padding: var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-1) 28px; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .foot { padding: var(--om-spacing-2) var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .addAnchor { position: relative; display: inline-flex; }
-/* (REG-525) Touch: the eye is always on, and the handle / eye take a 44 box (REG-273). */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .eye { opacity: 1; } .eye, .handle { position: relative; } .eye::after, .handle::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; } }
+/* (REG-525) Touch: the eye is always on, and the handle takes a 44 box (REG-273); the eye is the house IconButton, whose own centred 44 box
+   is the target (Leads on the move, C-02 — no module overlay on an IconButton). */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .eye { opacity: 1; } .handle { position: relative; } .handle::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; } }

@@ -42,6 +42,18 @@
 .seg:nth-child(2n) { background: var(--om-color-on-primary-variant); }
 .seg:nth-child(3n) { background: var(--om-color-primary-variant); }
 
+/* (responsive audit 2026-10-23, W4-05) A tablet held upright: the milestones' two 160 floors asked 710 of a 670 card at 768, so each row's
+   delete stood 16px out past the card. The name and description share what is left instead (≥ 140 each at 768); from ~770 of card the
+   columns read exactly as before. */
+@media (max-width: 1024px) {
+  .milestones { grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 120px 150px 36px; }
+}
+/* (responsive audit 2026-10-23, W4-08) Under a finger the drag handle (a step's, a question's — the definition list composes it) is a 44 box:
+   the drawn grip keeps its 24 × 36 and the box grows into the row's 12 gap, paid back, so the row does not move. */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) {
+  .handle { width: 44px; height: 44px; margin: -4px -10px; }
+}
+
 /* The text editor's card holds the framed rich editor. */
 .textEditor { padding: 0; }
 .textEditor > * { border: 0 !important; }

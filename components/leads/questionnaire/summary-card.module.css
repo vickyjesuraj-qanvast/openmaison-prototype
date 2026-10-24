@@ -45,3 +45,9 @@
 
 /* (REG-609) "Client asked on …" under the legend. */
 .asked { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+
+/* (Leads on the move, L4 — P-13 · C-17) The summary's values read at 14 on a finger (the eyebrow stays a 12 group label); the desk keeps the mock's. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .legend, .asked { font: var(--om-type-body-m); }
+  .legend { height: auto; min-height: 20px; }
+}

@@ -71,7 +71,7 @@
   flex: none;
   display: flex;
   align-items: stretch;
-  height: calc(100dvh - 16px - 56px);
+  height: calc(100dvh - 16px - 56px - env(safe-area-inset-bottom, 0px));   /* (responsive audit 2026-10-23, W6 — W1's hand-off) less the home indicator the shell now pads (W1-13); 0 everywhere else */
 }
 /* Image area: V p100/120, the image contained + centred (1184 = 1424 − 240). With a panel (931:39912): p24/100. */
 .canvas {
@@ -244,3 +244,13 @@
 @media (max-width: 767px) {
   .stripList { padding: var(--om-spacing-2) var(--om-spacing-4); }
 }
+/* (responsive audit 2026-10-23, W2-11) The strip's squares are the 48 this block names under a finger — the house thumb's own 36 (thumb.module.css,
+   which the bundle orders after this file) won at every width, so each file to tap was 36. The desk keeps what it draws. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .stripList .stripItem { width: 48px; height: 48px; }
+}
+
+/* (Leads on the move, L4 — P-11 · C-23) On a finger the picture is the viewer's own (use-pinch-swipe.ts): two fingers zoom it, one pans it or
+   swipes to the next file — so the canvas refuses the browser's own pan and page zoom, and the bar and the header never scale. */
+.canvas[data-gestures] { touch-action: none; }
+.canvas[data-gestures] .image { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

@@ -44,8 +44,13 @@ let pass = 0, fail = 0; const ok = (c, n) => { if (c) { pass++; console.log('  �
   ok(it.length && it.every((x) => x.startsWith('48×48 r4px')), `quote Items: ${it.length} square 48 thumbs (${[...new Set(it)].join(' · ')})`)
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage()
   await ph.goto(`${BASE}/quotes/${Q}?edit=items`, { waitUntil: 'networkidle' }); await ph.waitForTimeout(1200)   // (quotes on the move, a deliberate change of this rule) a phone / touch tablet opens the Quote screen; the Items cards are the Items screen
-  const pc = await ph.evaluate(() => [...document.querySelectorAll('[class*="item-cards-module"][class*="thumb"]')].map((e) => { const r = e.getBoundingClientRect(), ic = e.querySelector('.msr, .mso'); return `${Math.round(r.width)} ${ic ? getComputedStyle(ic).fontSize : 'pic'}` }))
-  ok(pc.length && pc.every((x) => /^40 (20px|pic)$/.test(x)), `phone item cards: ${pc.length} squares 40, icons 20 (${[...new Set(pc)].join(' · ')})`)
+  // (quotes on the move, a deliberate change of this rule — item-cards.module.css `.thumb`: only a line with a picture draws the house square at 40;
+  // the kind is a word on the line, so a quote whose lines carry no picture draws none — the check reads the cards, then every square they draw)
+  const pc = await ph.evaluate(() => ({
+    cards: [...document.querySelectorAll('[class*="item-cards-module"]')].filter((e) => /(^|\s)[^\s]*item-cards-module__[\w-]+__card(\s|$)/.test(e.className)).length,
+    squares: [...document.querySelectorAll('[class*="item-cards-module"][class*="thumb"]')].map((e) => { const r = e.getBoundingClientRect(), ic = e.querySelector('.msr, .mso'); return `${Math.round(r.width)} ${ic ? getComputedStyle(ic).fontSize : (e.querySelector('img') ? 'pic' : 'empty')}` }),
+  }))
+  ok(pc.cards > 0 && pc.squares.every((x) => x === '40 pic'), `phone item cards: ${pc.cards} cards, ${pc.squares.length} squares — 40, a picture's only (${[...new Set(pc.squares)].join(' · ') || 'no line with a picture'})`)
   /* the Quotes tables' first column after the box starts where the listing's does */
   for (const u of ['/quotes', `/leads/${L}/quotes`]) {
     await p.goto(BASE + u, { waitUntil: 'networkidle' }); await p.waitForTimeout(700)

@@ -1,6 +1,9 @@
 /* Tools › Quotes (REG-422): the Quotes tab's frame on the listing page — toolbar and table 24 apart inside the page's 24. */
 .frame { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; padding: var(--om-spacing-6); }
 @media (max-width: 767px) { .frame { padding: var(--om-spacing-4); gap: var(--om-spacing-4); } }
+/* (responsive audit 2026-10-23, W5-02) A phone: the last card scrolls clear of the dock and the Maison AI button (dock + 16 + 48 + 16, the
+   house clearance every listing ends on) — at the page's end Tools › Quotes' and Contracts' last card sat 54 under the dock, its ⋮ under the FAB. */
+@media (max-width: 767px) { .frame { padding-bottom: var(--fab-clearance); } }
 
 /* (REG-495) Arrived from a template's "Used by n quotes": the list is scoped to that template until Show all. */
 .templateChip { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }

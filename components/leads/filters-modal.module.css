@@ -4,7 +4,7 @@
 .overlay { composes: overlay from '../om/filters-modal.module.css'; }
 .panel { composes: panel from '../om/filters-modal.module.css'; }
 .body { composes: body from '../om/filters-modal.module.css'; }
-.rail { composes: rail from '../om/filters-modal.module.css'; }
+.rail { composes: rail from '../om/filters-modal.module.css'; }   /* (responsive audit W2-12) up to 1024 the rail scrolls — now the house rail's own rule */
 .tab { composes: tab from '../om/filters-modal.module.css'; }
 .tabDot { composes: tabDot from '../om/filters-modal.module.css'; }
 .content { composes: content from '../om/filters-modal.module.css'; }
@@ -36,3 +36,9 @@
   .sortRow { height: auto; min-height: 44px; }
   .sortRow > * { min-block-size: 44px; }   /* the DS Radio's own label — inline-flex, centred, so the mark stays put */
 }
+
+/* (Leads on the move, L3 — A-11) The phone's one scrolling sheet: the groups 20 apart on the sheets' 16 gutter, each a title over its chips (the
+   house Chips grow to 44 on touch); the Custom dates stack under their chips. The sheet holds one height whatever is open — its body scrolls. */
+.sheetBody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-4); }
+.sheetGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.sheetDates { display: flex; flex-direction: column; gap: var(--om-spacing-4); }

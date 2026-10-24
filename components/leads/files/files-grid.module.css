@@ -176,3 +176,17 @@
 }
 .tilePlaceName { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 @media (max-width: 1024px) { .tilePlace { top: auto; bottom: 62px; } }
+
+/* (Leads on the move, L4 — P-13 · C-17) The scale on a finger: a file's name reads at 16 (a render's two-line name at 14, never 12); the count
+   and the day stay 14. The desk keeps the mock's 14. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .tileName { font: var(--om-type-subheading-l); }
+  .tileName[data-two] { font: var(--om-type-subheading-m); }
+  .chipCount, .tilePlaceName { font: var(--om-type-subtitle-m); }
+}
+
+/* (L4 — P-13) A phone's tile: the comments' count rides the picture's bottom-right corner, so the name keeps its 16 and its words beside the ⋮. */
+@media (max-width: 767px) {
+  .tile .chip { bottom: calc(54px + var(--om-spacing-2)); right: var(--om-spacing-3); }
+  .tile[data-chip] .nameGroup { margin-right: 0; }
+}

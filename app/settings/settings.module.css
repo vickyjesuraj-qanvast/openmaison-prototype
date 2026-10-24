@@ -39,6 +39,14 @@
 .tradeName { display: inline-flex; align-items: center; gap: var(--om-spacing-1); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: var(--om-radius-1); }
 .tradeName:hover > span { text-decoration: underline; }
 .tradeName:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W4-07) Under a finger the name — the press that renames, moves or notes the entry — was a 20-tall word inside its
+   32 token: it takes the token's left padding and stands 44 (REG-273's link padding, paid back), so it reaches from the token's edge to its ✕;
+   the token keeps its drawn 32 and nothing moves. Trades, Units and the expense categories share it. */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) {
+  .tradeName { padding: 12px 0 12px var(--om-spacing-3); margin: -12px 0 -12px calc(-1 * var(--om-spacing-3)); min-width: 44px; }   /* a three-letter unit ("Lot", "set") still 44 across */
+  /* the 44 boxes (the name's, the ✕'s house one) stand 6 past their 32 token: the lines of tokens part by 12 so two rows' boxes meet, never overlap */
+  .trades { row-gap: var(--om-spacing-3); }
+}
 .trade[data-noted] { border-color: var(--om-color-primary-default); }
 /* (S44P, row 264) the entry a typed name matches lights up while the field says "Already in the list as …" — the menus' selected fill */
 .trade[data-match] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); transition: background var(--motion-toggle), border-color var(--motion-toggle); }
@@ -107,6 +115,12 @@
 .moduleLinks + .moduleLinks { margin-top: 0; }   /* (pending modules S46C · M2) Your profile's line right under the Kept in Company links */
 .settingHeadRow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); }
 .settingHeadRow > .settingHead { flex: 1 1 320px; min-width: 0; }
+/* (responsive audit 2026-10-23, W4-01) A phone: the head's button keeps to the card — "Change in Default Quote PDF › New quotes" ran 60px
+   past a 320 screen (the DS button never wraps); its words wrap onto a second line inside its own outline instead. `[data-size]` outranks the
+   DS's fixed 36 height (0,2,0). */
+@media (max-width: 767px) {
+  .settingHeadRow > button[data-size] { max-width: 100%; height: auto; min-height: 36px; padding-block: var(--om-spacing-2); white-space: normal; text-align: start; }
+}
 /* (one-home N-06) Settings › Studio's Team list and Issuing entities table left with their cards — Company › Members and Profile hold them. */
 .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(240px, 1.6fr) repeat(4, minmax(96px, 1fr)); }
 .reachYes { color: var(--om-color-primary-default); }
@@ -170,9 +184,6 @@
   .sentTo[data-label]::before, .sentAt[data-label]::before, .sentChannel[data-label]::before, .sentStatus[data-label]::before { content: attr(data-label) ' · '; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
   .sentCount { margin-left: 0; flex-basis: 100%; }
 }
-
-/* (gaps build H) the message dialog's foot: Reset on the left, Cancel · Save on the right */
-.footSpacer { flex: 1; }
 
 /* (simplify S-15) A module's cards in named groups — Settings › Finance's Money in · Money out · Commission: the group's caption (the house
    caption, as a card's own sub-captions read — .reasonLabel), then its cards at the panel's own 24 apart. */

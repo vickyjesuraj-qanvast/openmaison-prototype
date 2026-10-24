@@ -11,7 +11,10 @@ import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
-import { displayDateLong, isOverdue, moneySGD, relativeTime } from '@/lib/format'
+import { displayDateLong, isOverdue, moneySGD, phoneLocal, relativeTime } from '@/lib/format'
+import { ScopePill } from '@/components/om/scope-pill'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import type { NextMove } from '@/components/leads/stage-dropdown'
 import { spring } from '@/lib/motion'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -43,7 +46,14 @@ const avatarSlotsFor = (width: number) => (width <= 0 ? FOOT_SLOTS : Math.max(1,
 
 function KanbanCard({
   lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked, canDelete = true, onOpenProject,
+  touch = false, stageOpen = false, onStageClick, nextMove,
 }: {
+  /** (Leads on the move, L3 — P-06 · A-15) A touch tablet: drag gives way to the pan there (REG-379), so the card carries its stage pill and its
+   *  ⋮ leads with the next move — the board moves a lead again, one press further. */
+  touch?: boolean
+  stageOpen?: boolean
+  onStageClick?: (lead: LeadRow, anchor: HTMLElement) => void
+  nextMove?: (lead: LeadRow) => NextMove | null
   lead: LeadRow
   /** (fix-E, A-09) Open project, for a lead with a live project (its Delete is refused in the row). */
   onOpenProject?: (lead: LeadRow) => void
@@ -72,6 +82,8 @@ function KanbanCard({
   const cardEl = useRef<HTMLDivElement>(null)
   const kebabWrap = useRef<HTMLSpanElement>(null)   // (REG-728) the card menu's anchor — it opens through the body portal
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const pillRef = useRef<HTMLButtonElement>(null)   // (leads on the move, A-15) the touch pill — the stage menu's anchor
+  const next = touch && menuOpen && nextMove ? nextMove(lead) : null
   const footEl = useRef<HTMLDivElement>(null)
   const [avatarSlots, setAvatarSlots] = useState(FOOT_SLOTS)
   const firstTask = lead.tasks[0]
@@ -236,7 +248,8 @@ function KanbanCard({
   }, [])
 
   // Everything the foot fits, or the last slot becomes the "+n" box (same rule as the overview FILES card).
-  const shownAssignees = lead.assignees.length <= avatarSlots ? lead.assignees : lead.assignees.slice(0, Math.max(1, avatarSlots - 1))
+  const slots = touch && onStageClick ? Math.max(1, avatarSlots - 4) : avatarSlots   // (leads on the move, A-15) the pill takes the foot's first ~120
+  const shownAssignees = lead.assignees.length <= slots ? lead.assignees : lead.assignees.slice(0, Math.max(1, slots - 1))
   const restAssignees = lead.assignees.length - shownAssignees.length
 
   return (
@@ -278,6 +291,9 @@ function KanbanCard({
                 column body can no longer clip it, and PortalMenu flips on the viewport — the menu-side.ts measure retired here. A press
                 inside it still never lifts the card: its rows are buttons in a role="menu" (onPointerDown above). */}
             <PortalMenu open={menuOpen} anchor={kebabWrap} onClose={closeMenu} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={lead.name}>
+              {/* (leads on the move, P-06 · A-15) a touch tablet's ⋮ leads with the move: Move to {next} (or why not), then the stage menu itself */}
+              {next ? <DropdownItem disabled={!!next.why} title={next.why ?? undefined} onSelect={() => { setMenuOpen(false); next.onPress() }}>{next.label}</DropdownItem> : null}
+              {touch && onStageClick ? <DropdownItem onSelect={() => { setMenuOpen(false); if (pillRef.current) onStageClick(lead, pillRef.current) }}>Move stage…</DropdownItem> : null}
               {lead.project && onOpenProject ? <DropdownItem onSelect={() => { setMenuOpen(false); onOpenProject(lead) }} help={lead.project.number}>Open project</DropdownItem> : null}
               {canDelete ? <DropdownItem tone="danger" disabled={!!lead.project} title={lead.project ? projectHoldsDelete(lead.project.number) : undefined} onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
               {canReturnLead(lead) ? (
@@ -289,7 +305,7 @@ function KanbanCard({
         </span>
       </div>
       <div className={styles.cardMeta}>
-        <span>{hitPhone(lead.phone)}</span><span>·</span>
+        <span>{hitPhone(phoneLocal(lead.phone))}</span><span>·</span>   {/* (leads on the move, A-16 · REG-456) grouped, "9665 2018", as the table and the cards print it */}
         <span>{lead.budgetMinor > 0 ? hit(moneySGD(lead.budgetMinor)) : BLANK}</span><span>·</span>   {/* (UX audit L8) no budget known reads "--" */}
         <span>{hit(lead.source)}</span>
         {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDateLong(new Date(lead.onHoldFollowUp)))}</span></> : null}
@@ -314,6 +330,12 @@ function KanbanCard({
       )}
       <div className={styles.cardDivider} />
       <div className={styles.cardFoot} ref={footEl}>
+        {touch && onStageClick ? (
+          /* (leads on the move, P-06 · A-15) the stage pill, the phone card's: its menu leads with the next move */
+          <span className={styles.footPill} data-testid="kanban-stage-pill">
+            <ScopePill ref={pillRef} label={lead.stage} open={stageOpen} onClick={() => { if (pillRef.current) onStageClick(lead, pillRef.current) }} />
+          </span>
+        ) : null}
         {lead.assignees.length === 0 ? (
           <button type="button" className={styles.assignLink} onClick={(e) => onAssign(lead, e.currentTarget)}>
             <Icon name="person_add" size={20} />
@@ -339,7 +361,12 @@ function KanbanCard({
 
 export function KanbanBoard({
   rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked, canDelete = true, onOpenProject,
+  openStageId = null, onStageClick, nextMove,
 }: {
+  /** (Leads on the move, P-06 · A-15) a touch tablet's stage pill on each card: the open one, its press, the next move for the ⋮ */
+  openStageId?: string | null
+  onStageClick?: (lead: LeadRow, anchor: HTMLElement) => void
+  nextMove?: (lead: LeadRow) => NextMove | null
   rows: LeadRow[]
   /** (fix-E, A-09) */
   onOpenProject?: (lead: LeadRow) => void
@@ -368,6 +395,7 @@ export function KanbanBoard({
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const boardRef = useRef<HTMLDivElement>(null)
+  const touch = useMediaQuery(TOUCH_TABLET)
   const allByStage = new Map<Stage, LeadRow[]>()
   for (const band of BANDS) for (const s of band.stages) allByStage.set(s, [])
   for (const r of rows) allByStage.get(r.stage as Stage)?.push(r)
@@ -418,7 +446,8 @@ export function KanbanBoard({
                         <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef} unseen={unseenIds?.has(lead.id)}
                                     onKebabDelete={onKebabDelete} onKebabReturn={onKebabReturn} onAssign={onAssign}
                                     onDragToStage={onDragToStage} onNameClick={onNameClick} onTaskClick={onTaskClick} pendingDrop={pendingDrop}
-                                    canDrop={canDrop} onDropBlocked={onDropBlocked} canDelete={canDelete} onOpenProject={onOpenProject} />
+                                    canDrop={canDrop} onDropBlocked={onDropBlocked} canDelete={canDelete} onOpenProject={onOpenProject}
+                                    touch={touch} stageOpen={openStageId === lead.id} onStageClick={onStageClick} nextMove={nextMove} />
                       ))}
                     </AnimatePresence>
                     {leads.length === 0 ? (

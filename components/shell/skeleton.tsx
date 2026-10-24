@@ -156,8 +156,42 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
           <Bone w={132} h={36} r="var(--om-radius-1)" />
           <Bone w={36} h={36} r="var(--om-radius-1)" />
           <Bone w={36} h={36} r="var(--om-radius-1)" />
+          {/* (leads on the move, P-05) the "n to call today" pill on its own line under the row */}
+          <span className={styles.toolbarTodo}><Bone w={150} h={36} r="var(--om-radius-1)" /></span>
         </div>
-        <div className={`${styles.tableWrap} ${styles.notMobile}`}>
+        {/* (leads on the move, P-06) a touch tablet's table: Name · Stage · Last contact · Next follow-up · Members on the tablet's floors, Edit and
+            ⋮ frozen at the right (table.tsx TABLET_COLUMNS · TABLET_WIDTHS) */}
+        <div className={`${styles.tableWrap} ${styles.touchTabletOnly}`}>
+          <div className={styles.tableInner}>
+          <div className={styles.headRow}>
+            <span className={`${styles.col} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '196 0 196px' }}><Bone w={18} h={18} className={styles.selSlot} /><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '128 0 128px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '168 0 168px' }}><Bone w={88} h={12} /></span>
+            <span className={styles.col} style={{ flex: '184 0 184px' }}><Bone w={104} h={12} /></span>
+            <span className={styles.col} style={{ flex: '144 0 144px' }}><Bone w={64} h={12} /></span>   {/* (responsive audit 2026-10-23, W2-03) Members 144, as table.tsx TABLET_WIDTHS */}
+            <span className={styles.frozenEnd} />
+          </div>
+          {Array.from({ length: rows }, (_, i) => {
+            const j = i % NAME_W.length
+            return (
+            <div key={i} className={styles.row}>
+              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol} ${styles.selCol}`} style={{ flex: '196 0 196px' }}>
+                <Bone w={18} h={18} className={styles.selSlot} />
+                <Bone w={NAME_W[j] ?? 128} h={14} /><Bone w={72} h={12} />
+              </span>
+              <span className={styles.col} style={{ flex: '128 0 128px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
+              <span className={styles.col} style={{ flex: '168 0 168px' }}><span className={styles.twoBones}><Bone w={120} h={14} /><Bone w={96} h={12} /></span></span>
+              <span className={styles.col} style={{ flex: '184 0 184px' }}><span className={styles.twoBones}><Bone w={140} h={14} /><Bone w={64} h={12} /></span></span>
+              <span className={styles.col} style={{ flex: '144 0 144px' }}>
+                <span className={styles.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>
+              </span>
+              <span className={styles.frozenEnd}><Bone w={64} h={36} r="var(--om-radius-1)" /><Bone w={36} h={36} r="var(--om-radius-1)" /></span>
+            </div>
+            )
+          })}
+          </div>
+        </div>
+        <div className={`${styles.tableWrap} ${styles.notMobile} ${styles.deskTable}`}>
           {/* data-min carries the desktop track width (a media query cannot reach an inline style); ≤1024 the
               tracks hold and the wrap scrolls, exactly as the real table does (REG-269). */}
           <div className={styles.tableInner} data-min="1410">
@@ -198,17 +232,25 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = fals
         {/* ≤767 the listing is the mock's cards (1082:23305 → "Card / Desktop / Leads" 1082:25585, lead-cards.tsx): p16
             gap12 r8 level-1 on the surface/bg canvas — head (name · age), the info line, the task box, a rule, then members
             (avatar + the 24px person_add) and the stage button. The rows hold the real rows' heights (24 · 20 · 38 · 1 · 36)
-            so each card is the real 199 and the crossfade lands card over card. Names cycle the table's eight widths. */}
+            so each card is the real 199 and the crossfade lands card over card. Names cycle the table's eight widths.
+            (Leads on the move, P-05 · A-02 · A-04) the card as it now reads: the three-item info line, Last · Next (two 20 lines, 2 apart),
+            then the task box, the rule, and the foot led by the stage pill with the members after it. */}
         <div className={`${styles.cards} ${styles.mobileOnly}`}>
           {Array.from({ length: cards }, (_, i) => (
             <div key={i} className={styles.card}>
-              <div className={styles.cardHead}><Bone w={NAME_W[i % NAME_W.length] ?? 128} h={16} /><Bone w={40} h={12} /></div>
-              <div className={styles.cardInfo}><Bone w={264} h={14} /></div>   {/* (UX audit L3) the line ends on "· 5d in Met" now */}
+              <div className={styles.cardIdentity}>
+                <div className={styles.cardHead}><Bone w={NAME_W[i % NAME_W.length] ?? 128} h={16} /><Bone w={48} h={14} /></div>
+                <div className={styles.cardInfo}><Bone w={220} h={14} /></div>
+              </div>
+              <div className={styles.cardLines}>
+                <div className={styles.cardInfo}><Bone w={200} h={14} /></div>
+                <div className={styles.cardInfo}><Bone w={150} h={14} /></div>
+              </div>
               <Bone w="100%" h={38} r="var(--om-radius-1)" />
               <Bone w="100%" h={1} r={0} />
-              <div className={styles.cardFoot}>
-                <span className={styles.cardMembers}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="var(--om-radius-1)" /></span>
+              <div className={`${styles.cardFoot} ${styles.cardFootLead}`}>
                 <Bone w={90} h={36} r="var(--om-radius-1)" />
+                <span className={styles.cardMembers}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="var(--om-radius-1)" /></span>
               </div>
             </div>
           ))}

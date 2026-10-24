@@ -63,3 +63,10 @@
   .trigger > * { flex: 1; }
   .boards { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* (responsive audit 2026-10-23, W2-10) the place's map link — the client's one press in the details — takes a 44 box, its line kept (the public
+   Hangout page's place link composes this) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  a.placeLink { position: relative; }
+  a.placeLink::after { content: ''; position: absolute; inset: -12px 0; }   /* REG-344's overlay: the box (and the ghost's bar) unchanged */
+}

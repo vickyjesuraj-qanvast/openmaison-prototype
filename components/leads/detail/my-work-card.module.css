@@ -75,7 +75,9 @@ button.groupLabel:hover .toggleIcon { background: var(--om-color-hover-08p); }  
    chevron never leaves the row — but the meta line ("Follow-up · Mon, 25 Aug · (3d overdue)") was `nowrap`
    under `overflow: hidden`, i.e. cut mid-word with no ellipsis to admit it. At a ~248px row it wraps between
    its own tokens instead: every token stays whole, the row grows the way a wrapped title already does. */
-@media (max-width: 1024px) {
+/* (responsive audit 2026-10-23, W2-02) …and on a desk narrower than the mock's 1440: at 1280 the Overview's card is 254 wide and "Call ·
+   Thu, 22 Oct ’26 · 10:00 AM (2d overdue)" was cut at "(2d overdu" with no ellipsis. A line that fits draws as before; 1440 is untouched. */
+@media (max-width: 1439px) {
   .meta { flex-wrap: wrap; overflow: visible; row-gap: 0; }
 }
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────

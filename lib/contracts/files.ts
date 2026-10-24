@@ -72,6 +72,23 @@ export async function keepContractPicture(w: W, leadId: string, f: PickedPdf, at
   return id
 }
 
+/**
+ * (Leads on the move, Q-03 — his pick 2026-10-23: "a signed quote may be a photo at Quote Sent and Won … kept as the copy, the amount typed, as
+ * the signed contract already is") A checked PHOTO kept as a picture of the lead's in `parentId` (null = the top of Files) under `name` — the
+ * contract photo's own way (`keepContractPicture`), in any folder: its bytes, and its small picture for the tiles. Answers the file's id, or the
+ * rule that refused it.
+ */
+export async function keepPictureIn(w: typeof db, leadId: string, f: PickedPdf, at: Date, parentId: string | null, name?: string): Promise<string | { error: string }> {
+  const problem = checkPickedPicture(f, dataUrlSize); if (problem) return { error: problem }
+  const mime = DATA_URL.exec(f.data)![1]!.toLowerCase()
+  const id = randomUUID()
+  const small = typeof f.thumb === 'string' && PICTURE_URL.test(f.thumb) && f.thumb.length < 800_000 ? f.thumb : f.data.length < 800_000 ? f.data : null
+  await w.insert(leadFiles).values({ id, leadId, kind: 'image', name: pictureNameOf(name ?? f.name, f.data), thumb: imageAddress(id), createdAt: at, parentId, ownerId: await sessionMemberId(), sizeBytes: dataUrlSize(f.data), mime, updatedAt: at })
+  await keepBytes(w, id, f.data)
+  if (small) await keepThumb(w, id, small)
+  return id
+}
+
 /** (pending modules S05) A checked PDF kept as a file of the lead's in `parentId` (null = the top of Files), under `name` (else its own):
     its bytes and the picture of its first page, the way every upload keeps them. Answers the file's id, or the rule that refused it. */
 export async function keepPdfIn(w: typeof db, leadId: string, f: PickedPdf, at: Date, parentId: string | null, name?: string, by?: string): Promise<string | { error: string }>

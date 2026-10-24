@@ -272,3 +272,10 @@
 /* (pending modules S04) the client's open under the Sent to client day — the Contracts list's Sent cell (REG-633); on a phone, in the card's third line */
 .sentCell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .viewed { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W5-37) 768–1024 under a finger the row's title and its client link were their 20 lines. Each
+   press reaches 12 above and below, paid back as margin, so the 64 row and its lines don't move (on a phone the whole card is the press). */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .title, .clientLink { padding-block: 12px; margin-block: -12px; }
+  .title { position: relative; }   /* above the number line it reaches over, so that half of its press is its own too */
+}

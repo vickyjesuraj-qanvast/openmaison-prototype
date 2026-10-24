@@ -72,17 +72,33 @@
 
 /* The banners: an invoice waiting for approval or sent back, the Drafts out of step, money to credit */
 .banners { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; border-radius: var(--om-radius-2); box-shadow: none; padding: var(--om-spacing-2) var(--om-spacing-4); }
+.banner { composes: banner from '../../quotes/editor/template-bar.module.css'; }
+/* (responsive audit 2026-10-23, W6 — load order, W1-26) Doubled: the quote banner's own padding (24 a side) and rule are the same weight, so
+   which a Needs-you row drew was the order the build emitted the two sheets (W1's build drew the 24). Twice the class holds the card's 16, its
+   corners and no rule whatever the order — a request for changes keeps the quote banner's rule, as it always drew (its tone rule outranks). */
+.banner.banner { border-radius: var(--om-radius-2); padding: var(--om-spacing-2) var(--om-spacing-4); }
+.banner.banner:not([data-tone='changes']) { box-shadow: none; }
 .banner[data-tone='changes'], .banner[data-tone='note'] { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); }
 .banner[data-tone='alert'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
 .bannerIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
 .bannerText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
 .bannerActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
 .bannerWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
+/* (responsive audit 2026-10-23, W3-18) A row's words keep a reading width: when its buttons don't fit beside them they take the next line, at
+   the row's end — at 768 Ryan's "says they paid for INV-2026-002" was squeezed to "Ryan says / they paid / for INV- / 2026- / 002" beside
+   See the bank's confirmation · Not received · Confirm. ≤1439, so the desk's rows keep their line exactly as drawn. */
+@media (max-width: 1439px) {
+  /* (responsive audit 2026-10-23, W6 — load order) doubled: the quote banner's `gap` and its words' `flex: 1` are the same weight, and the
+     final build emitted that sheet after this one — the words fell back to 86 wide at 768 (W3-18 undone). Twice the class holds them. */
+  .banner.banner { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+  .bannerText.bannerText { flex: 1 1 260px; }
+  .bannerActions { margin-left: auto; }
+}
 @media (max-width: 767px) {
   .banner { flex-wrap: wrap; }
   /* (fix-D, D-29) the actions start at the left on a phone — the Maison AI button rests at the bottom right and covered Confirm */
   .bannerActions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }   /* (pending modules S07, a bug fix) three steps (proof · Not received · Confirm) wrap instead of cutting Confirm off */
+  .bannerActions.bannerActions { justify-content: flex-start; }   /* (responsive audit 2026-10-23, W6 — load order) doubled: the quote banner's phone flex-end is the same weight */
 }
 
 /* cells */
@@ -93,6 +109,12 @@
 .text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nameLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-heading-h5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W4-18) Under a finger a row's name — an invoice, a PO, a bill, a vendor, a stage on Finance's
+   lists and a project's Money — was its 20 line. Its press reaches 12 above and below (REG-307's touch list), paid back, so no row moves;
+   positioned, it is above the sub line it reaches over. */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) {
+  .nameLink { position: relative; padding-block: 12px; margin-block: -12px; }
+}
 .sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sub[data-tone='alert'] { color: var(--om-color-tertiary-red-default); }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -115,6 +137,12 @@
 .pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
 @media (max-width: 767px) { .pairs { grid-template-columns: minmax(0, 1fr); } }
 .inlineLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-body-s); white-space: nowrap; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W3's hand-off) A PO's sub line in the Costs table is its bills as links ("Bill AF-7781 ·
+   S$1,400.00 · with its file"): a button keeps its words whole, so the line's ellipsis could not reach inside it and the link was cut at the
+   cell's edge, mid-word, below 1440 (the cell is 179 there, the link 223). Below the desk the link ends in its own ellipsis inside the line. */
+@media (max-width: 1439px) {
+  .sub .inlineLink { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+}
 .bannerText .inlineLink { font: inherit; }
 
 /* (Contracts on the move, C4 — P-11 · C-24 · C-14, 2026-10-22) Where a finger reads the tiles (≤1024), every help line in them reads 14 — "S$17,790.01

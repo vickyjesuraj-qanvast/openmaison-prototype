@@ -44,8 +44,9 @@
 }
 @media (hover: none) {
   .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }
-  .float button { position: relative; }
-  .float button::after { content: ''; position: absolute; inset: -4px; }
+  /* (Leads on the move, L4 — C-02) no 4px-inset overlay on the kebab and Open: the house IconButton's centred 44 is the target, the DS button
+     grows by its own height */
+  .float > button[class*='_button_'] { min-height: 44px; }
 }
 @media (hover: none) and (max-width: 1024px) {
   .card { grid-template-columns: var(--tracks, minmax(300px, 1fr) 220px 180px 120px 168px 128px) 150px; }   /* the band the parked actions land on (REG-310) */
@@ -87,4 +88,45 @@
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .cell.colStatus[data-sub] { padding-block: 0; }
+  /* (responsive audit 2026-10-23, W2-07) the lead's name is a 20 line under a finger — 44 tall, the line kept (the extra given back as
+     margin): on a phone's card a near miss opened the meeting instead of the lead */
+  a.leadLink { padding-block: 12px; margin-block: -12px; }
+}
+/* (W2-07) a touch tablet's row: the meeting's name opens it (Open steps out, C-07) — its 20 line takes a 44 box the same way */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  button.title { padding-block: 12px; margin-block: -12px; }
+}
+
+/* ── (Leads on the move, L4 — C-07) A touch tablet (768–1024, no hover): the tablet set's tracks (meetings-table.tsx), 12 inside each cell, and
+   the row's ⋮ as a FROZEN cell at the right — the Quotes table's (P-11); Open steps out (the meeting's name opens it); the 150 band of
+   REG-310 gives way to the 48 column. ── */
+.hActions { display: none; }
+.scoreWord { display: none; }
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .card { grid-template-columns: var(--tracks); }
+  .cell, .head .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .hActions, .actions { display: flex; position: sticky; right: 0; grid-column: -2 / -1; grid-row: 1; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .hActions { z-index: 3; padding: 0; }
+  .actions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
+  .card[data-overflow]:not([data-at-end]) .hActions, .card[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}
+/* (L4 — P-12 · C-11 · C-17) The phone card reads at the scale: the meeting at 16 and the whole card its press; its day, its status, what waits
+   and the deal score (named) at 14 — the 12px lines read at 14. */
+@media (max-width: 767px) {
+  .row { cursor: pointer; }
+  .title { font: var(--om-type-heading-h4); }
+  .sub, .waits, .plus { font: var(--om-type-body-m); }
+  .scoreWord { display: inline; }
+  .cell.colScore { color: var(--om-color-on-surface-secondary); }
+}
+
+/* (REG-708) The ghost's tables (tab-ghosts.tsx): the desk's, or a touch tablet's with its tablet set and the frozen ⋮ */
+.ghostTablet { display: none !important; }
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .ghostDesk { display: none !important; }
+  .ghostTablet { display: block !important; }
 }

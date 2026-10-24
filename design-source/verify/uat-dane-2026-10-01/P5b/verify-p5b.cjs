@@ -338,8 +338,12 @@ const dueCells = (page) => page.evaluate(() => [...document.querySelectorAll('[r
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
     const p = await phone.newPage(); p.setDefaultTimeout(12000)
     await p.goto(`${BASE}/tasks`); await ready(p)
-    const cells = (await dueCells(p)).filter((c) => !c.icon)
-    ok('phone 390 the tasks cards’ due lines wear their day, uncut', cells.length > 3 && cells.every((c) => WD.test(c.text) && !c.cut), JSON.stringify(cells.filter((c) => !WD.test(c.text) || c.cut).slice(0, 3)))
+    /* (leads on the move, a deliberate change of this rule — L4, P-10 · C-05) a phone's task is a card (task-card.tsx), its due a chip at 14 that
+       still wears its day and its hour (5.13): "Today · 10:00 AM", "Tomorrow · …", "Thu 22 Oct · 10:00 AM", "Mon 19 Oct · 10:00 AM · late" — the
+       year only when it is not this one; uncut */
+    const CHIP = /^(Today|Tomorrow|(Sun|Mon|Tue|Wed|Thu|Fri|Sat) \d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)( ’\d\d)?)( · \d{1,2}:\d\d (AM|PM))?( · late)?$/
+    const cells = await p.locator('[data-testid="task-card-due"]').evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => ({ text: [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim(), cut: e.scrollWidth > e.clientWidth + 1 })))   // the words, not the glyph's ligature
+    ok('phone 390 the tasks cards’ due lines wear their day, uncut', cells.length > 3 && cells.every((c) => CHIP.test(c.text) && !c.cut), JSON.stringify(cells.filter((c) => !CHIP.test(c.text) || c.cut).slice(0, 3)))
     ok('phone 390 the page never scrolls sideways', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
     await shot(p, 'phone-tasks')
     await p.locator('[data-notifications-tile]').first().click().catch(async () => { await p.getByRole('button', { name: /Notifications/ }).first().click() })

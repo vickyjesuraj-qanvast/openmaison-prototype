@@ -6,3 +6,10 @@
 /* A green check at the row's end on stages already passed. */
 .done { color: var(--om-color-tertiary-green-default); display: inline-flex; margin-right: -4px; }
 .done > * { display: inline-flex; }
+
+/* (Leads on the move, L3 — P-05 · A-06 · A-07) The next move, first in a finger's stage sheet / menu: one filled 48 button across the row (the lead
+   page's primary); refused, the reason at 14 and its fix as the filled button. A rule under it parts it from the stages. */
+.next { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); margin-bottom: var(--om-spacing-1); }
+.next > button { min-height: 48px; justify-content: center; }
+.nextWhy { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.nextWhy b { font: var(--om-type-subheading-m); }

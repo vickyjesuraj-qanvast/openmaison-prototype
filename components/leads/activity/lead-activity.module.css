@@ -60,7 +60,11 @@
 /* (Projects round 8) The client's pick, filed as a small card under its line: the house square thumbnail (REG-820) at 48 on the detail card's
    white box, the choice and option, the price, the note. */
 .card { display: flex; align-items: flex-start; gap: var(--om-spacing-3); max-width: 420px; margin-top: var(--om-spacing-2); padding: var(--om-spacing-3); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
-.cardThumb { composes: thumb from '../../om/thumb.module.css'; width: 48px; height: 48px; }
+.cardThumb { composes: thumb from '../../om/thumb.module.css'; }
+/* (responsive audit 2026-10-23, W6 — load order) Doubled: the house thumb's own 36 is the same weight, so which size a card drew was the order
+   the build emitted the two sheets in — 48 in `next dev` and on this round's build, 36 on the build before it. Twice the class holds the 48
+   whatever the order. */
+.cardThumb.cardThumb { width: 48px; height: 48px; }
 .cardThumb[data-hex] { background: var(--swatch); }
 .cardText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cardTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
@@ -76,4 +80,39 @@
   .rail { grid-row: span 2; }
   .when { padding-block: var(--om-spacing-3) 0; white-space: normal; }
   .body { grid-column: 2; padding-block: var(--om-spacing-1) var(--om-spacing-3); }
+}
+
+/* ── (Leads on the move, L4 — P-12 · C-12 · C-17) A phone's and a tablet's feed (lead-activity.tsx `feed`): the day as a 14 header over its rows, each
+   row the time (14, secondary) beside the sentence (16) — a row that leads somewhere is the whole 44 press with its chevron, a run of the same
+   thing one line that opens. White cards on the page's ground, 12 inside, rules between the rows. Show older at the end. ── */
+.days { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.day { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.dayHead { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); }
+.dayList, .runList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.dayList { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.dayItem + .dayItem { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.runList { background: var(--om-color-surface-bg); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.dayRow {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; column-gap: var(--om-spacing-3); align-items: start;
+  width: 100%; min-height: 44px; padding: var(--om-spacing-3);
+  border: 0; background: none; text-align: left; color: inherit; text-decoration: none; cursor: pointer;
+  font: var(--om-type-body-l);
+}
+.dayRow[data-static] { cursor: default; }
+.dayRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.dayTime { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding-top: 2px; white-space: nowrap; }
+.dayText { min-width: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.dayChev { color: var(--om-color-on-surface-secondary); }
+.older { align-self: center; min-height: 48px; }
+@media (max-width: 767px) {
+  .dayRow { grid-template-columns: 64px minmax(0, 1fr) auto; }
+}
+
+/* (REG-708) the feed's ghost (tab-ghosts.tsx): the desk's timeline, or by day where the page groups it */
+.ghostDays { display: none; }
+@media (max-width: 1024px) { .ghostDays { display: flex; } .ghostTimeline { display: none; } }
+
+/* (L4 — P-13 · C-17) the chips above the feed read at 14 on a finger (a kind is a value); the desk keeps the house chip's 12 */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .tab [role='radio'] { font: var(--om-type-subheading-m); }
 }

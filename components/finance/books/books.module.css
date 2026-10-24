@@ -40,6 +40,10 @@
 .toneYellow { color: var(--om-color-tertiary-yellow-default); }
 .toneRed { color: var(--om-color-tertiary-red-default); }
 .strong { font: var(--om-type-subheading-m); }
+/* (responsive audit 2026-10-23, W6 — load order, W1-26) On a figure that is both, `.strong`'s `font` shorthand resets `.num`'s tabular digits
+   (Commissions' totals, Reports › Finance): which held was the order the build emitted the two sheets — tabular on the production builds, not
+   in `next dev`. The pair keeps its tabular digits whatever the order. */
+.num.strong { font-variant-numeric: tabular-nums; }
 
 /* (simplify S-12) Commission's grouped table: a member's row (the fold, the name) and their projects stepped in under it */
 .memberCell { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }

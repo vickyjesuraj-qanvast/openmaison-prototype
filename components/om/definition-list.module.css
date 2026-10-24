@@ -10,6 +10,15 @@
 /* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
 @media (max-width: 1024px) { .head, .row { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
 @media (max-width: 767px) { .head, .row { grid-template-columns: minmax(0, 1fr) 56px 56px; } }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W4-17) On the narrowest phones (320 · 360) the two 56 switch columns and the handle left a
+   question 52–92px: it broke one word a line, and at 320 the head's QUESTION ran into REQUIRED with 2px between them. There the name takes
+   its own line and Required · Active sit under it, under their two labels (W4's fix — Price book's line rows on a phone do the same). From
+   375 up the three tracks hold, as drawn. */
+@media (max-width: 360px) {
+  .head, .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .head > :first-child, .row > .lead { grid-column: 1 / -1; }
+  .col { justify-content: flex-start; }
+}
 
 /* (Dane UAT 3.38) Drag to reorder: the rows sit in motion's Reorder group, which draws no box of its own (the table's rows stay its children);
    the handle leads the name cell (the task template's handle, composed) and the head's label lines up with the name. A row being dragged
@@ -18,6 +27,12 @@
 .lead { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
 .handle { composes: handle from '../company/templates/editors/library-editor.module.css'; flex-shrink: 0; }
 .handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* (responsive audit 2026-10-23, W1 — REG-312) The drag handle draws 24 × 36; on a touch pointer it takes the house centred 44 (the drawn handle
+   and the row are unchanged). */
+@media (hover: none) {
+  .handle { position: relative; }
+  .handle::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; }
+}
 .table[data-reorder] .head > :first-child { padding-left: calc(24px + var(--om-spacing-2)); }
 .row[data-dragging] { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
 

@@ -26,7 +26,10 @@ export function AssignPopover({
   assignable = null,
   hint = null,
   suggestion = null,
+  subject,
 }: {
+  /** (Leads on the move, L3 — A-08) ≤767 the sheet names the lead it assigns, as its two siblings from the same card do: "Chloe Tan · 9331 8842". */
+  subject?: string
   /** (REG-612, parity Q-27 · B-35) The member the studio's rules suggest for an unassigned lead — shown while nobody is on it. */
   suggestion?: Suggestion | null
   open: boolean
@@ -114,7 +117,7 @@ export function AssignPopover({
      Clear All / Assign row, off the bottom edge under a scrim instead of floating over the cell it came from. */
   if (sheet) {
     return (
-      <Sheet open={open} onClose={onClose} title="Assign Member" footer={foot} bodyClassName={styles.sheetBody}>
+      <Sheet open={open} onClose={onClose} title="Assign Member" subtitle={subject} footer={foot} bodyClassName={styles.sheetBody}>
         {tip}{rows}
       </Sheet>
     )

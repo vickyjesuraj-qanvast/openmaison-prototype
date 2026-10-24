@@ -56,7 +56,13 @@ export async function fileWonQuote(leadId: string, uploaded: string, at: Date, p
   if (have) return have.id
   /* (pending modules S05 — the card's "Move stage Quote Sent / Won upload keeps only the file's name") the picked PDF itself, its bytes and
      its first page; an older payload with no file keeps the name alone, as before */
-  if (picked) { const { keepPdfIn } = await import('@/lib/contracts/files'); const k = await keepPdfIn(db, leadId, picked, at, null, name); if (typeof k === 'string') return k }
+  if (picked) {
+    /* (Leads on the move, Q-03) …or the photo of the signed paper quote, taken on site — kept as that picture under the same name (its own extension) */
+    const { keepPdfIn, keepPictureIn } = await import('@/lib/contracts/files')
+    const { isPictureData } = await import('@/lib/contracts/picture')
+    const k = isPictureData(picked.data) ? await keepPictureIn(db, leadId, picked, at, null, name) : await keepPdfIn(db, leadId, picked, at, null, name)
+    if (typeof k === 'string') return k
+  }
   const id = randomUUID()
   await db.insert(leadFiles).values({ id, leadId, kind: 'pdf', name, thumb: null, createdAt: at, parentId: null, ownerId: await sessionMemberId(), sizeBytes: 728064, mime: 'application/pdf', updatedAt: at })
   return id

@@ -195,6 +195,9 @@
   .needTitle { font: var(--om-type-subtitle-m); }
   .needLine { font: var(--om-type-body-s); }
   .needAction { display: none; }
+  /* (responsive audit 2026-10-23, W3-17) …the ghost's too: its action is a bone whose own `display: block` won over the line above, so the
+     loader drew the desk's 120 button in every row and its cards ran 96px past a 390 phone (454 wide in 358) */
+  .need > .needAction { display: none; }
   .needChevron { display: inline-flex; }
   .row { padding: var(--om-spacing-3) var(--om-spacing-4); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); }
@@ -235,8 +238,18 @@
 .legal { margin-top: auto; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--om-spacing-1) var(--om-spacing-2); }
 .legalInline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1) var(--om-spacing-2); padding-top: var(--om-spacing-2); }
 .legalDot { font: var(--om-type-body-m); color: var(--om-color-on-surface-disabled); }
+/* (responsive audit 2026-10-23, W3-07) Under a finger on a phone or a tablet: a text link's press grows 15 above and below its line and 2 either
+   side — padding given back as margin, so nothing moves —, so "Receipt", "See invoice INV-…", "All updates" and "Open the original plan" take a
+   press a finger can make while their lines stay where they are; the bar's sections are at least 44 wide (Home was 40) and Sign out 44 tall
+   (it was 36); a row's Open is 44 wide (it was 36). */
 @media (hover: none) and (max-width: 1024px) {
-  .legal .link, .legalInline .link { display: inline-flex; align-items: center; min-height: 44px; }
+  a.link:not(.rowGo) { padding: 15px var(--om-spacing-0-5); margin: -15px calc(-1 * var(--om-spacing-0-5)); }
+  .rowGo { min-width: 44px; justify-content: center; }
+  .navLink { min-width: 44px; justify-content: center; }
+  .textButton { height: auto; min-height: 44px; }
+}
+@media (hover: none) and (max-width: 1024px) {
+  .legal .link, .legalInline .link { display: inline-flex; align-items: center; min-height: 44px; padding: 0; margin: 0; }
 }
 .noticeFoot { flex: 1; display: flex; flex-direction: column; width: 560px; max-width: calc(100% - 2 * var(--om-spacing-4)); margin: 0 auto; padding: var(--om-spacing-8) 0 var(--om-spacing-6); }
 .noticeFoot:empty { display: none; }

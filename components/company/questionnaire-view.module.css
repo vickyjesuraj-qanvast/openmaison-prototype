@@ -6,4 +6,6 @@
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
 .cardTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }   /* (REG-729) the card title: heading-h4 */
 .cardHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 80ch; }
+/* (responsive audit 2026-10-23, W4-03) the Company cards' phone padding, 24 → 16 (REG-729 — Profile's, Plan's): the bank's questions get the 16 back */
+@media (max-width: 767px) { .card { padding: var(--om-spacing-4); } }
 .empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) dashed var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }

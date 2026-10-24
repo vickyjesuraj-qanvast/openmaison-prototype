@@ -9,7 +9,10 @@ import { DatePicker } from '@/components/om/date-picker'
 import { useSnackbar } from '@/components/om/snackbar'
 import { withFrom } from '@/lib/nav'
 import { ExportDialog } from '@/components/leads/export-dialog'
-import { STUDIO_TASK_COLUMN_DEFS, TasksTable, type TaskRowAction } from './tasks-table'
+import { LeadPickerCell, STUDIO_TASK_COLUMN_DEFS, TasksTable, type TaskRowAction } from './tasks-table'
+import { QuickAddTask } from './quick-add'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { AddTaskButton, TasksMoreButton, TasksToolbar, type TasksMenuAction } from './tasks-toolbar'
 import { TasksEmpty } from './tasks-empty'
 import { TabSearchEmpty } from './tab-search-empty'
@@ -38,7 +41,7 @@ import {
 import { downloadTasks } from '@/lib/leads/export'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { PROJECT_TASK_COLUMN_DEFS, TASK_COLUMN_DEFS } from './tasks-table'
 import { setTaskMilestone } from '@/app/projects/schedule-actions'   // (Projects round 2)
 import { recordTaskSentOutside, setTaskOutside, undoTaskOutside } from '@/app/leads/tasks-actions'   // (gaps build, package C — M-03)
@@ -55,7 +58,9 @@ type Anchored = { el: HTMLElement; top: number; left: number } | null
    footprint (+20 margin) — not one size for both. 400×440 gives back the listing's 420/460 (assign-popover.module.css
    .card); the tag picker is 352 and only as tall as its rows, so it no longer floats up to 200px off its cell on a
    short window. */
-const anchorRect = (el: HTMLElement, w: number, h: number) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - h - 20), left: Math.min(r.left, window.innerWidth - w - 20) } }
+/* (responsive audit 2026-10-23, W2-12) …floored at 16, as the listing's clamp is (REG-269): on a 390-tall screen (a phone held sideways) the
+   Assign card's top went to −70 — its head and first members off the top; the card's own cap (assign-popover.module.css) keeps it inside. */
+const anchorRect = (el: HTMLElement, w: number, h: number) => { const r = el.getBoundingClientRect(); return { el, top: Math.max(16, Math.min(r.bottom + 4, window.innerHeight - h - 20)), left: Math.max(16, Math.min(r.left, window.innerWidth - w - 20)) } }
 const assignPos = (el: HTMLElement) => anchorRect(el, 400, 440)
 /** (UX audit 2026-09-30, T11) The bulk bar sits at the viewport's foot: its Assign popover opens ABOVE the pressed action, never over the bar. */
 const bulkPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); const bar = (el.closest('[role="toolbar"]') ?? el).getBoundingClientRect(); return { el, top: Math.max(20, bar.top - 440 - 8), left: Math.max(20, Math.min(r.left, window.innerWidth - 400 - 20)) } }
@@ -149,12 +154,18 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
+  /* (Leads on the move, L4 — P-10 · C-07) a touch tablet opens the table with its own default set, remembered apart (the Quotes tables' way);
+     a finger — a phone or a touch tablet — adds through the quick add and works the selection with a bar of three */
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
+  const compact = phone || touchTablet
   /* (Projects round 2) A lead with a project's milestones: the Milestone column (after Title) and filter; a lead without one is as it was. */
   const milestones = studio ? [] : data.milestones ?? []
-  const columnPrefs = useTableColumns(studio ? 'studio-tasks' : milestones.length ? 'project-tasks' : 'lead-tasks', studio ? STUDIO_TASK_COLUMN_DEFS : milestones.length ? PROJECT_TASK_COLUMN_DEFS : TASK_COLUMN_DEFS, phone)
+  const columnPrefs = useTableColumns(studio ? 'studio-tasks' : milestones.length ? 'project-tasks' : 'lead-tasks', studio ? STUDIO_TASK_COLUMN_DEFS : milestones.length ? PROJECT_TASK_COLUMN_DEFS : TASK_COLUMN_DEFS, phone, touchTablet)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   /* (UX audit 2026-09-30, T4) `?add=1` — a saved log's "Add tasks" (the Notes tab, the Move stage window) lands on the add row */
   const [adding, setAdding] = useState(() => params.get('add') === '1')
+  /* (L4 — P-10) bumped by Create New Task on a phone or a touch tablet: the caret lands in the quick add */
+  const [quickFocus, setQuickFocus] = useState(() => (params.get('add') === '1' ? 1 : 0))
   useRememberShape(leadId ? leadTabShape(leadId, 'tasks') : 'tasks', tasks.length === 0 && !adding)   // (UX audit build) the shape this list opened on — its loading ghost draws the same one next time
   /* (T4) The add row's members: the lead's own until someone changes them (null = the lead's), removable in its Assign popover. */
   const [addMembersPicked, setAddMembers] = useState<string[] | null>(null)
@@ -273,7 +284,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
     } catch { return 'Couldn’t save — please try again' }
   }
 
-  const startAdd = () => { setRenaming(null); setAdding(true) }
+  const startAdd = () => { setRenaming(null); setAdding(true); setQuickFocus((n) => n + 1) }
   const stopAdd = () => { setAdding(false); setAddMembers(null) }
   /* (T4) `?add=1` is read once (the lazy state above); the address drops it so a refresh does not open the row again */
   useEffect(() => {
@@ -339,7 +350,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
   const openDue = (task: TaskRow, anchor: HTMLElement) => { dueAnchor.current = anchor; setDuePick(null); setDueFor((d) => (d?.el === anchor ? null : { taskId: task.id, el: anchor })) }
   const rowMenu = (task: TaskRow, action: TaskRowAction) => {
     if (action === 'complete') void setDone([task.id], true)
-    if (action === 'rename') setRenaming(task.id)
+    if (action === 'rename') { if (phone) { open(task); setFocusName((n) => n + 1) } else setRenaming(task.id) }   /* (L4) a phone renames in the task itself — the name field, selected */
     if (action === 'template') setSaveTemplateFor([task.id])
     if (action === 'duplicate') void run('duplicate the task', () => duplicateTasks([task.id]), 'Task duplicated')
     if (action === 'delete') setDeleting({ ids: [task.id], all: false })
@@ -362,7 +373,16 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
     { label: 'Assign', onClick: (e?: React.MouseEvent<HTMLButtonElement>) => { const el = e?.currentTarget; if (el) setAssign((a) => (a?.taskId === BULK ? null : { taskId: BULK, ...bulkPos(el) })) } },
     { label: 'Mark as completed', onClick: () => { const ids = [...selected]; setSelected(new Set()); void setDone(ids, true) } },
   ]
-  const bulkActions = allTasks
+  /* (Leads on the move, L4 — P-10 · C-04) A phone's bar is three: Mark done · Assign · More… (the rest in a sheet — Save as Template · Duplicate ·
+     Delete), so nothing runs off the screen; the desk and a tablet keep the row of five. */
+  const [bulkMore, setBulkMore] = useState(false)
+  const bulkMoreAnchor = useRef<HTMLElement | null>(null)
+  const bulkPhone = [
+    { label: 'Mark done', onClick: () => { const ids = [...selected]; setSelected(new Set()); void setDone(ids, true) } },
+    bulkFirst[0]!,
+    { label: 'More…', onClick: (e?: React.MouseEvent<HTMLButtonElement>) => { bulkMoreAnchor.current = e?.currentTarget ?? null; setBulkMore(true) } },
+  ]
+  const bulkActions = phone ? bulkPhone : allTasks
     ? [...bulkFirst, { label: 'Delete All', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: allTasks }) }]
     : [...bulkFirst,
         { label: 'Save as Template', onClick: () => setSaveTemplateFor(selectedIds) },
@@ -433,15 +453,32 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
           onAddTags={openTags}
           onRowMenu={rowMenu}
           onEdit={(task) => open(task)}
+          studio={studio}
+          composer={compact ? (
+            /* (Leads on the move, L4 — P-10 · C-06) a phone or a touch tablet adds a task in one docked row: the title, a due preset and who */
+            <QuickAddTask now={now} focusKey={quickFocus}
+              members={addMembers.map((id) => team.find((m) => m.id === id)).filter((m): m is (typeof team)[number] => !!m)}
+              onAssign={openAddAssign}
+              lead={studio ? <LeadPickerCell picker={{ leads: data.leads ?? [], value: addLead, onChange: setAddLead }} /> : undefined}
+              onIdle={stopAdd}
+              onSubmit={(title, dueAt) => { const members = addMembers; let id = ''; void run('add the task', async () => { id = await createTask(addLeadId, title, { assignees: members, dueAt }) }, dueAt ? `Task added · due ${displayDue(dueAt)}` : 'Task added').then((ok) => { if (ok && id) addedHere(id) }) }} />
+          ) : undefined}
         />
       )}
       {/* Always mounted: the bar animates its own exit (T8). */}
       <DetailBulkBar count={selected.size} actions={bulkActions} onClear={() => setSelected(new Set())} />
+      <PortalMenu open={bulkMore && selected.size > 0} anchor={bulkMoreAnchor} onClose={() => setBulkMore(false)} role="menu" width={MENU_WIDTH.standard} sheetTitle={`${selected.size} selected`}>
+        <div data-testid="tasks-bulk-more">
+          {allTasks ? null : <DropdownItem onSelect={() => { setBulkMore(false); setSaveTemplateFor(selectedIds) }}>Save as Template</DropdownItem>}
+          {allTasks ? null : <DropdownItem onSelect={() => { setBulkMore(false); setSelected(new Set()); void run('duplicate the tasks', () => duplicateTasks(selectedIds), `${selectedIds.length === 1 ? '1 task' : `${selectedIds.length} tasks`} duplicated`) }}>Duplicate</DropdownItem>}
+          <DropdownItem tone="danger" onSelect={() => { setBulkMore(false); setDeleting({ ids: selectedIds, all: allTasks }) }}>{allTasks ? 'Delete All' : 'Delete'}</DropdownItem>
+        </div>
+      </PortalMenu>
 
       {openTask && panelView === 'task' ? (
         <TaskPanel
           lead={studio ? (openTask?.lead ?? null) : undefined}
-          task={openTask} team={team} tags={tags} now={now} focusName={focusName}
+          task={openTask} team={team} tags={tags} now={now} focusName={focusName} compact={compact}
           onClose={() => setOpenId(null)}
           onComments={() => setPanelView('comments')}
           onAttach={() => setAttachFor(openTask.id)}

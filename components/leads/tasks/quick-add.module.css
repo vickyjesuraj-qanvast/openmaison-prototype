@@ -1,0 +1,54 @@
+/*
+ * (Leads on the move, L4 — P-10 · C-06 · C-08) The quick add at the foot of a task list on a phone or a touch tablet — never on a desk (the
+ * component only renders there). Docked like the bar it replaces (tasks-table.module.css `.foot`): sticky at the screen's foot (above the
+ * phone's dock on a level-1 page), the white plate and its top rule. One 48 line — the + mark, the field at 16, Add once something is typed —
+ * then, while it is in use, one row of chips that scrolls sideways: the due presets and who. The row's right end stays clear for the Maison AI
+ * button wherever the page has one (its 48 disc at right 16 / 24 and bottom 16 / 24 rests inside this bar, never on Add or a chip, C-08).
+ */
+.quick {
+  position: sticky; bottom: 0; z-index: 4;
+  display: flex; flex-direction: column; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px));   /* (responsive audit 2026-10-23, W6 — W1's hand-off) docked at the screen's very foot: on a notched phone held sideways its plate runs under the home indicator and the field sits above it; 0 everywhere else */
+  background: var(--om-color-surface-default);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-bottom-left-radius: var(--om-radius-2); border-bottom-right-radius: var(--om-radius-2);
+}
+.line { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; }
+.lead { color: var(--om-color-primary-default); flex-shrink: 0; }
+.input {
+  flex: 1; min-width: 0; height: 44px;
+  border: 0; outline: 0; background: none; padding: 0; margin: 0;
+  font: var(--om-type-body-l); color: var(--om-color-on-surface-default);   /* typed at 16 — no zoom on a phone (P-13) */
+}
+.input::placeholder { color: var(--om-color-on-surface-secondary); }
+.add { flex-shrink: 0; min-height: 44px; }
+.opts {
+  display: none; align-items: center; gap: var(--om-spacing-2);
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+}
+.opts::-webkit-scrollbar { display: none; }
+.quick[data-open] .opts { display: flex; }
+.opts > * { flex-shrink: 0; }
+/* the chips read at 14 here — a day is a value (P-13); the house chip's box, stroke and fill as drawn */
+.opts [role='radio'] { font: var(--om-type-subheading-m); }
+/* Who: the house chip's box with the first member's avatar and name, and the chevron that says it opens the Assign sheet */
+.who {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px;
+  padding: 0 var(--om-spacing-2) 0 var(--om-spacing-2);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default); color: var(--om-color-on-surface-default);
+  font: var(--om-type-subheading-m); white-space: nowrap; cursor: pointer;
+}
+.who:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* (C-08) the Maison AI button's rest: 16 in and 16 up on a phone, 24 and 24 on a tablet — the bar keeps that corner empty for it */
+:global(body:has(button[aria-label='Maison AI'])) .quick { padding-right: calc(var(--om-spacing-6) + 48px + var(--om-spacing-2)); }
+@media (max-width: 767px) {
+  .quick { bottom: var(--app-mobile-dock-height); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+  :global(body:has(button[aria-label='Maison AI'])) .quick { padding-right: calc(var(--om-spacing-4) + 48px + var(--om-spacing-2)); }
+}
+
+/* (REG-708) the quick add's ghost (tab-ghosts.tsx): its collapsed row, only where the page docks it — a phone or a touch tablet */
+.ghostQuick { display: none; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .ghostQuick { display: flex; } }

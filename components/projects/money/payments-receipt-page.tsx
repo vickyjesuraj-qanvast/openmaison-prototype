@@ -19,6 +19,7 @@ import type { ReceiptDocData } from '@/lib/projects/payments'
 import { ReceiptPaper } from './payments-receipt'
 import { ReceiptGhost } from './payments-receipt-ghost'
 import styles from '@/components/quotes/preview/quote-preview.module.css'
+import paper from './invoice-paper.module.css'
 
 /**
  * (Projects round 6, F-12) A payment's receipt as a page — the invoice page's frame (the quote preview's bar and stage): the crumb back to the
@@ -41,12 +42,12 @@ export function ReceiptPage({ d, from, print }: { d: ReceiptDocData; from?: stri
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
             <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Money', href: tabHref }]} />
-            <div className={styles.titleRow}>
+            <div className={`${styles.titleRow} ${paper.headWrap}`}>
               <h1 className={styles.title}>{d.paper.payment.number}</h1>
               <span className={styles.chips}>
                 {/* (fix-D, D-41) the Payments table's word and tone for the payment's state: Confirmed green, Reversed plain */}
                 {reversed ? <MetaChip>{PAYMENT_STATUS_LABEL.reversed}</MetaChip> : <MetaChip color={PAYMENT_STATUS_TONE.confirmed}>{PAYMENT_STATUS_LABEL.confirmed}</MetaChip>}
-                <MetaChip>{d.paper.invoice.stageName} · {money2(d.paper.payment.amountMinor)}</MetaChip>
+                <MetaChip className={paper.chipFit}>{d.paper.invoice.stageName} · {money2(d.paper.payment.amountMinor)}</MetaChip>
               </span>
             </div>
           </div>

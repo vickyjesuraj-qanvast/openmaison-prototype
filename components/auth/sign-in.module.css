@@ -3,6 +3,9 @@
    rail's mark and wordmark where the portal draws the studio's. The page's notice is the house's tinted info strip (read-only-note). */
 .brand { display: inline-flex; align-items: center; gap: var(--om-spacing-3); height: 40px; align-self: flex-start; text-decoration: none; border-radius: var(--om-radius-1); }
 .brand:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 4px; }
+/* (responsive audit 2026-10-23, W1 — REG-312) the wordmark's link to the website is 40 tall: 44 under a finger, the 4 given back as margin so the
+   card's column doesn't move (sign-up's head is this class too; its ghost's span wears it as well, so the two stay level) */
+@media (hover: none) { .brand { height: 44px; margin-block: -2px; } }
 .logo { width: 40px; height: 40px; display: block; }
 .wordmark { height: 22px; width: auto; display: block; }
 .notice { composes: note from '../company/read-only-note.module.css'; }

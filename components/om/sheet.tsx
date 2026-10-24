@@ -6,7 +6,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { bottomSheet, overlayFade } from '@/lib/motion'
 import { SurfaceFoot, SurfaceHead } from './surface-parts'
 import { IconButton } from './icon-button'
-import { Tooltip } from './tooltip'
+import { REFUSED_KEY, Tooltip } from './tooltip'
+import { useSnackbarDismiss } from './snackbar'
 import { useOverflow } from './use-overflow'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
@@ -45,24 +46,45 @@ export function useSheetLayout(): boolean {
  * instead: a snackbar raised just before the sheet opened ("Sent to Olivia for signature") landed over the sheet's last rows (Archive ·
  * Delete), the one place a finger was about to press. The snackbar never lands on a sheet; it waits above it, on the scrim.
  */
-export function useSheetFootLift(on: boolean, panel: RefObject<HTMLElement | null>) {
+export function useSheetFootLift(on: boolean, panel: RefObject<HTMLElement | null>, opts?: { query?: string; lowOnly?: number }) {
+  /* (Leads on the move, B-14 — his marks 2026-10-23, a house rule) A sheet opening withdraws the refusal said just before it ("Assign a member
+     first"): that snackbar would rest on the sheet's chips and foot, where the finger is about to press — the sheet is the next thing to do.
+     A snackbar that carries an Undo stays, lifted above the foot as below. (responsive audit 2026-10-23, W6) A centred dialog's lift
+     (`lowOnly`, below) is not a sheet opening: it withdraws nothing. */
+  const dismiss = useSnackbarDismiss()
+  const lowOnly = opts?.lowOnly
+  const query = opts?.query ?? QUERY
+  useEffect(() => { if (on && lowOnly === undefined) dismiss(REFUSED_KEY) }, [on, dismiss, lowOnly])
   useEffect(() => {
-    if (!on || !window.matchMedia(QUERY).matches) return
+    if (!on || !window.matchMedia(query).matches) return
     const root = document.documentElement
     const before = root.style.getPropertyValue('--sheet-foot')
     const footOf = () => panel.current?.querySelector<HTMLElement>('[data-surface-foot]') ?? panel.current ?? null
     const write = () => {
       const foot = footOf()
       if (!foot) return
-      root.style.setProperty('--sheet-foot', `${Math.max(0, Math.round(window.innerHeight - foot.getBoundingClientRect().top))}px`)
+      const r = foot.getBoundingClientRect()
+      const lift = Math.max(0, Math.round(window.innerHeight - r.top))
+      /* (responsive audit 2026-10-23, W6 — W4-27) a centred dialog lifts the snackbar only when its foot reaches down into the snackbar's band
+         (`lowOnly` = the band's height off the screen's foot) — a short dialog's foot is far above it, and lifting there would put the bar over
+         the dialog's words */
+      if (lowOnly !== undefined && window.innerHeight - r.bottom > lowOnly) { if (before) root.style.setProperty('--sheet-foot', before); else root.style.removeProperty('--sheet-foot'); return }
+      root.style.setProperty('--sheet-foot', `${lift}px`)
     }
     write()
     const late = window.setTimeout(write, 450)   // after the sheet's slide (lib/motion bottomSheet)
+    /* (responsive audit 2026-10-23, W6 — a bug fix, W5-34) …and every frame of the slide itself: measured only at the open and at 450, a snackbar
+       raised with the sheet (Add section → "Section created") rested on the rising foot until then. The foot is followed frame by frame for
+       the slide's length (a transform — no ResizeObserver sees it). */
+    let frame = 0
+    const t0 = performance.now()
+    const follow = () => { write(); if (performance.now() - t0 < 700) frame = window.requestAnimationFrame(follow) }
+    frame = window.requestAnimationFrame(follow)
     const ro = new ResizeObserver(write)
     const foot = footOf()
     if (foot) ro.observe(foot)
-    return () => { window.clearTimeout(late); ro.disconnect(); if (before) root.style.setProperty('--sheet-foot', before); else root.style.removeProperty('--sheet-foot') }
-  }, [on, panel])
+    return () => { window.clearTimeout(late); window.cancelAnimationFrame(frame); ro.disconnect(); if (before) root.style.setProperty('--sheet-foot', before); else root.style.removeProperty('--sheet-foot') }
+  }, [on, panel, query, lowOnly])
 }
 
 /**

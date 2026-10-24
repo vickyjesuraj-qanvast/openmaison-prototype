@@ -300,3 +300,50 @@
   .link { min-height: 44px; }
   .reupload { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
 }
+
+/* ── Leads on the move (L3 — P-09 · A-21 · A-22 · A-23, his marks 2026-10-23) ─────────────────────────────────────────────────────────────
+   (A-21) The toast's badge for a sheet: the Files tab's kind glyph in the CSV badge's 40 box. */
+.kindBadge { width: 40px; height: 40px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--om-radius-1); background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
+/* The phone model: step 1's tips fold under one 44 line; a phone's upload status is the column's own row. */
+.tipsToggle {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2);
+  min-height: 44px; width: 100%; border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+}
+.tips[hidden] { display: none; }
+.uploadRow {
+  display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 64px;
+  padding: var(--om-spacing-3) var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+}
+/* (A-22) What matched, folded to one line with its Review. */
+.matchLine { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 48px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.matchText { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.matchText > :first-child { color: var(--om-color-tertiary-green-default); display: inline-flex; }
+/* (A-23) The phone model's preview: one row per lead — its number in the file, the name (16 bold), the number · source · home (14), a red
+   line for a row that won't land or goes to Review, what a cell becomes. */
+.previewList { list-style: none; margin: 0; padding: 0; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.pItem { display: flex; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.pItem:first-child { border-top: 0; }
+.pItem[data-skip] { background: var(--om-color-tertiary-red-variant2); }
+.pNum { flex: 0 0 24px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.pMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pName { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pItem[data-skip] .pName { color: var(--om-color-on-surface-secondary); }
+.pMeta { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pProblem, .pChange { font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+/* (A-23) The routing question counts what lands; the rows that won't, under it. The end says what was skipped and why. */
+.destSkip { display: block; margin-top: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.doneSkip { font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+/* (P-13) The phone model's words at 14: the success card's line and the file's name, the upload toast's status. */
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  .successSub, .fileName, .toastStatus, .dropSub, .autoNote, .adjustNote { font: var(--om-type-body-m); }
+}
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

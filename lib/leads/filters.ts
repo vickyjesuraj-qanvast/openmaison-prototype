@@ -16,13 +16,18 @@ export const QUICK_FILTERS: { key: QuickFilter; label: string; help: string }[] 
  * stages — "Mine", then the Needs attention group (the three quick filters with their counts). One of them, or a stage, scopes the listing;
  * the pill names it ("Overdue follow-ups (4)") and wears the applied dot.
  */
-export type AttentionScope = QuickFilter | 'mine'
-export const ATTENTION_LABEL: Record<AttentionScope, string> = { mine: 'Mine', overdue: 'Overdue follow-ups', unassigned: 'Unassigned', unseen: 'Unseen' }
+export type AttentionScope = QuickFilter | 'mine' | 'today'
+export const ATTENTION_LABEL: Record<AttentionScope, string> = { mine: 'Mine', overdue: 'Overdue follow-ups', unassigned: 'Unassigned', unseen: 'Unseen', today: 'To call today' }
 
 /** (UX audit L3) ONE rule for an overdue lead — the pill's count, its list and the Filters modal's quick filter: an open task due before
  *  today (the red Overdue tag's own rule, `isOverdue`) on a lead still being worked. Parked (On Hold) and Lost leads are left out. */
 export const isOverdueLead = (r: LeadRow, now: number): boolean =>
   r.stage !== 'On Hold' && r.stage !== 'Lost' && r.tasks.some((t) => isOverdue(t.dueAt, now))
+
+/** (leads on the move, P-05 — his marks 2026-10-23) "To call today": an open task due by the end of today — overdue or due today — on a lead
+ *  still being worked (On Hold and Lost left out, as `isOverdueLead`). The phone listing's chip and the pill's To do row on a phone. */
+export const isCallTodayLead = (r: LeadRow, now: number): boolean =>
+  r.stage !== 'On Hold' && r.stage !== 'Lost' && r.tasks.some((t) => !!t.dueAt && startOfDay(t.dueAt) <= startOfDay(new Date(now)))
 
 /** Does the row belong to the attention scope? `unseen` is the caller's (the listing's band: nobody has opened it, here or on the server). */
 export function inAttention(r: LeadRow, key: AttentionScope, ctx: { now: number; viewerId: string; unseen: (r: LeadRow) => boolean }): boolean {
@@ -31,6 +36,7 @@ export function inAttention(r: LeadRow, key: AttentionScope, ctx: { now: number;
     case 'overdue': return isOverdueLead(r, ctx.now)
     case 'unassigned': return r.assignees.length === 0
     case 'unseen': return ctx.unseen(r)
+    case 'today': return isCallTodayLead(r, ctx.now)
   }
 }
 export type LeadFilters = {

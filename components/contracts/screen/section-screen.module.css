@@ -6,6 +6,11 @@
    gutters, 12 inside cards, a 720 column on a tablet held upright, 16 / 14 for what is read, 44 targets. */
 .screen { position: fixed; inset: 0; left: var(--screen-left, 0px); z-index: 40; display: flex; flex-direction: column; background: var(--om-color-surface-bg); outline: none; }
 .screen[data-full] { left: 0; }   /* the Document screen: one thing at a time — the whole width, the list behind it */
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A notched phone held sideways: fixed to the screen's edges, the frame's ← · Done,
+   the tool row's Undo · + and the foot ran under the sensor housing and onto the home indicator. It pads the safe insets — beside the list's
+   pane it starts past the pane's widened edge instead. env() is 0 on every other screen. */
+.screen { padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+[data-shell='split'] .screen:not([data-full]) { left: calc(var(--screen-left, 0px) + env(safe-area-inset-left, 0px)); padding-left: 0; }
 /* (C4, integrating C2's row) inside the frame the tool row pins at the top of the frame's own scroller — its default offset is the desk
    page's header + meta row (`--doc-tools-top`, components/contracts/document/document.module.css), which this screen has none of */
 .screen[data-document-frame] { --doc-tools-top: 0px; }

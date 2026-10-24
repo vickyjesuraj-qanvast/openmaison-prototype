@@ -12,6 +12,8 @@
 .countHead { text-align: right; }
 .count { display: flex; justify-content: flex-end; }
 .countLink { composes: link from '../../components/om/text-link.module.css'; white-space: nowrap; }   /* the house text link (REG-729) */
+/* (responsive audit 2026-10-23, W4-10) "7 leads" stands 44 under a finger — REG-273's link padding, paid back, so the row keeps its height */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .countLink { padding-block: 12px; margin-block: -12px; } }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .movement { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 

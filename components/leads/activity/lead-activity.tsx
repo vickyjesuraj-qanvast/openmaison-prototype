@@ -1,6 +1,11 @@
 'use client'
 
 import { useState, type CSSProperties, type ReactNode } from 'react'
+import { Button } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { feedDays } from './activity-days'
+import type { ActivityEvent } from '@/lib/leads/activity'
 import Link from 'next/link'
 import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'   // (parity P-15)
@@ -9,6 +14,36 @@ import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { displayDateLong, displayTime } from '@/lib/format'
 import type { ActivityGroup, LeadActivityData } from '@/lib/leads/activity'
 import styles from './lead-activity.module.css'
+
+/** (Leads on the move, L4 — C-12) A phone's or a tablet's first screenful of the feed; Show older adds as many again. */
+const PAGE = 20
+const timeOf = (e: ActivityEvent) => displayTime(new Date(e.at))
+
+/** (L4 — P-12 · C-12) One row of the day-grouped feed: the time, the sentence at 16, and — where it leads somewhere — the whole row is the 44
+ *  press with its chevron; the client's pick keeps its small card under the line. */
+function DayRow({ event: e, time }: { event: ActivityEvent; time: string }) {
+  const card = e.card ? (
+    <span className={styles.card} data-testid="activity-card">
+      <span className={styles.cardThumb} data-hex={!e.card.src && e.card.hex ? '' : undefined} style={!e.card.src && e.card.hex ? ({ '--swatch': e.card.hex } as CSSProperties) : undefined} aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {e.card.src ? <img src={e.card.src} alt="" /> : null}
+      </span>
+      <span className={styles.cardText}>
+        <span className={styles.cardTitle}>{e.card.title}</span>
+        {e.card.lines.map((l, i) => <span key={i} className={styles.cardLine}>{l}</span>)}
+      </span>
+    </span>
+  ) : null
+  const body = (
+    <>
+      <span className={styles.dayTime}>{time}</span>
+      <span className={styles.dayText}>{e.text}{card}</span>
+    </>
+  )
+  return e.link ? (
+    <Link href={e.link.href} className={styles.dayRow} data-testid="activity-link">{body}<Icon name="chevron_right" size={24} className={styles.dayChev} /></Link>
+  ) : <div className={styles.dayRow} data-static="">{body}</div>
+}
 
 /** (UX audit 2026-09-30, T10) The chips above the timeline — the house `Chips` (REG-614), one at a time. */
 type Show = 'all' | ActivityGroup
@@ -38,6 +73,13 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
      the twin keeps its own chip (Tasks · Money) */
   const kept = show === 'all' ? data.events.filter((e) => !e.twin) : data.events.filter((e) => e.group === show)
   const events = q ? kept.filter((e) => e.text.toLowerCase().includes(q)) : kept
+  /* (Leads on the move, L4 — P-12 · C-12) On a phone or a tablet the feed reads by day — "Today", "Yesterday", "Fri 23 Oct" over the rows, the time
+     on each — a run of the same thing is one line that opens on a tap ("James uploaded 10 files."), a row that leads somewhere is the whole 44
+     press with its chevron, and the newest 20 come first with Show older after them. The desk keeps the one continuous timeline (REG-245). */
+  const compact = useMediaQuery(TABLET_DOWN)
+  const [limit, setLimit] = useState(PAGE)
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const feed = compact ? feedDays(events, data.now, limit) : null
 
   return (
     <div className={styles.tab} data-testid="activity-feed">
@@ -56,6 +98,36 @@ export function LeadActivity({ data, chips = SHOW, views }: { data: LeadActivity
       {events.length === 0 ? (
         /* a search, or a chip, that keeps nothing — the tabs' shared No-results card ("No activities match this filter."), Clear All back to All */
         <TabSearchEmpty noun="activities" searching={!!q} onClearAll={() => { setQuery(''); setShow('all') }} />
+      ) : feed ? (
+        <div className={styles.days} data-testid="activity-days">
+          {feed.days.map((d) => (
+            <section key={d.key} className={styles.day} aria-label={d.label}>
+              <h3 className={styles.dayHead}>{d.label}</h3>
+              <ul className={styles.dayList} role="list">
+                {d.items.map((it) => it.kind === 'one' ? (
+                  <li key={it.event.id} className={styles.dayItem} data-testid="activity-row"><DayRow event={it.event} time={it.time} /></li>
+                ) : (
+                  <li key={it.key} className={styles.dayItem} data-testid="activity-run">
+                    <button type="button" className={styles.dayRow} aria-expanded={open.has(it.key)} data-testid="activity-run-toggle"
+                            onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(it.key)) n.delete(it.key); else n.add(it.key); return n })}>
+                      <span className={styles.dayTime}>{it.time}</span>
+                      <span className={styles.dayText}>{it.text}</span>
+                      <Icon name={open.has(it.key) ? 'expand_less' : 'expand_more'} size={24} className={styles.dayChev} />
+                    </button>
+                    {open.has(it.key) ? (
+                      <ul className={styles.runList} role="list">
+                        {it.events.map((e) => <li key={e.id} className={styles.dayItem} data-testid="activity-row"><DayRow event={e} time={timeOf(e)} /></li>)}
+                      </ul>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {feed.shown < feed.total ? (
+            <Button variant="secondary" appearance="outlined" className={styles.older} onPress={() => setLimit((n) => n + PAGE)} data-testid="activity-older">Show older</Button>
+          ) : null}
+        </div>
       ) : (
         <div className={styles.list} role="list" aria-label="Activity">
           {events.map((e) => (

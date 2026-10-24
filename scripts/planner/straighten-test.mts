@@ -43,5 +43,20 @@ if (Math.abs(s2.angle - 3) > 0.5) fails.push(`a scan turned 3° read a tilt of $
 const q = straightenCanvas(make, photo as unknown as Can, { clean: false, quarter: 1, edge: 2400 })
 if (q.canvas.width !== photo.height || q.canvas.height !== photo.width || q.angle !== 0) fails.push(`as it was, a quarter turn should only swap the sides (${q.canvas.width}×${q.canvas.height})`)
 writeFileSync(join(out, 'straightened-scan.jpg'), (s2.canvas as unknown as Canvas).toBuffer('image/jpeg', 88))
+/* (REG-2804) a clean page — a plan saved from a PDF: white, its rooms in hairlines (well under 2 % ink) — stays white with its lines dark;
+   both levels read white and the plan came out black */
+const page = createCanvas(1240, 1754), pg = page.getContext('2d')
+pg.fillStyle = '#ffffff'; pg.fillRect(0, 0, page.width, page.height)
+pg.strokeStyle = '#000000'; pg.lineWidth = 2
+pg.strokeRect(170, 250, 920, 880); pg.beginPath(); pg.moveTo(170, 580); pg.lineTo(1090, 580); pg.moveTo(630, 580); pg.lineTo(630, 1130); pg.moveTo(840, 250); pg.lineTo(840, 580); pg.stroke()
+const p3 = straightenCanvas(make, page as unknown as Can, { clean: true, quarter: 0, edge: 2400 })
+const px3 = (p3.canvas as unknown as Canvas).getContext('2d').getImageData(0, 0, p3.canvas.width, p3.canvas.height).data
+let lum = 0, dark = 0
+for (let i = 0; i < px3.length; i += 4) { const l = 0.299 * px3[i]! + 0.587 * px3[i + 1]! + 0.114 * px3[i + 2]!; lum += l; if (l < 128) dark++ }
+const mean = lum / (px3.length / 4)
+console.log(`page · ${p3.canvas.width}×${p3.canvas.height} · mean ${mean.toFixed(0)} · ${dark} dark pixels`)
+if (mean < 230) fails.push(`a clean page came out dark (mean ${mean.toFixed(0)})`)
+if (dark < 1000) fails.push('a clean page lost its lines')
+writeFileSync(join(out, 'straightened-page.jpg'), (p3.canvas as unknown as Canvas).toBuffer('image/jpeg', 88))
 console.log(fails.length ? `FAIL\n  ${fails.join('\n  ')}` : 'pass')
 process.exit(fails.length ? 1 : 0)

@@ -20,7 +20,10 @@ export function LeadsToolbar({
   filterCount = 0,
   view,
   onViewChange,
-  chipMenu, onColumnsClick, bare = false, onViewAll }: {
+  chipMenu, onColumnsClick, bare = false, onViewAll, todo = null }: {
+  /** (Leads on the move, L3 — P-05) A phone's "to call today" chip: the leads with a follow-up due today or late, one press away — the house
+   *  to-do pill (REG-666), on its own line under the row. Absent at every other width. */
+  todo?: { label: string; selected: boolean; onClick: () => void } | null
   chipLabel: string
   onChipClick: () => void
   /** The pill's menu is open — chevron points up. */
@@ -77,6 +80,11 @@ export function LeadsToolbar({
         ) : null}
         </>)}
       </div>
+      {!bare && todo ? (
+        <span className={styles.todo} data-testid="call-today">
+          <ScopePill tone="attention" icon="call" menu={false} label={todo.label} selected={todo.selected} onClick={todo.onClick} />
+        </span>
+      ) : null}
       {bare ? null : (
       <div className={styles.right}>
         {/* (REG-276) The DS SearchBar, as every other list in the app uses (owner 2026-09-01: "make it like its in the DS SearchBar"), drawing

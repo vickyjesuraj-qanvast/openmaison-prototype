@@ -123,9 +123,11 @@ export function cleanPlanImageData(data: RasterRGBA): void {
   const hist = new Uint32Array(256)
   for (let i = 0; i < n; i++) hist[Math.min(255, Math.max(0, Math.round(lumOf(px, i))))]!++
   const percentile = (p: number): number => { const target = p * n; let acc = 0; for (let v = 0; v < 256; v++) { acc += hist[v]!; if (acc >= target) return v } return 255 }
-  const black = percentile(0.02)
+  let black = percentile(0.02)
   let white = percentile(0.92)
-  if (white - black < 60) white = Math.min(255, black + 60)   // a low-contrast photo keeps some contrast
+  /* a low-contrast photo keeps some contrast — and a clean page (a PDF's plan: under 2 % ink, both points read white) takes its span from below:
+     with white already at 255 the span was nothing, every pixel divided by 0 and the plan came out black (REG-2804) */
+  if (white - black < 60) { white = Math.min(255, black + 60); black = Math.min(black, white - 60) }
   const span = white - black
   for (let i = 0; i < n; i++) for (let ch = 0; ch < 3; ch++) { const v = ((px[i * 4 + ch]! - black) * 255) / span; px[i * 4 + ch] = v < 0 ? 0 : v > 255 ? 255 : v }
 }

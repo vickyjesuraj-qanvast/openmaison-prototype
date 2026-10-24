@@ -30,12 +30,13 @@
 @keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .choice[data-fresh]::after { animation-duration: .01ms; } }
 
-.band { composes: banner from '../../quotes/editor/template-bar.module.css'; padding: var(--om-spacing-2) var(--om-spacing-5); }
+.band { composes: banner from '../../quotes/editor/template-bar.module.css'; }
+.band.band { padding: var(--om-spacing-2) var(--om-spacing-5); }   /* (responsive audit 2026-10-23, W6 — load order) doubled, as the Updates band's (W3-20): the quote banner's own 24 a side is the same weight, and this round's build drew it */
 .bandIcon { composes: bannerIcon from '../../quotes/editor/template-bar.module.css'; }
 .bandText { composes: bannerText from '../../quotes/editor/template-bar.module.css'; overflow-wrap: anywhere; }
 .bandActions { composes: bannerActions from '../../quotes/editor/template-bar.module.css'; }
 .bandWait { composes: bannerWait from '../../quotes/editor/template-bar.module.css'; }
-@media (max-width: 767px) { .band { padding: var(--om-spacing-2) var(--om-spacing-4); } }
+@media (max-width: 767px) { .band.band { padding: var(--om-spacing-2) var(--om-spacing-4); } }   /* (W6) doubled with the desk's, so the phone's 16 still follows it */
 
 .body { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-5); min-width: 0; }
 .head { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-width: 0; }

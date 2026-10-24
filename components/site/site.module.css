@@ -10,6 +10,10 @@
 .wide { max-width: 1320px; }
 @media (max-width: 1024px) { .container { padding: 0 40px; } }
 @media (max-width: 767px) { .container { padding: 0 24px; } }
+/* (responsive audit 2026-10-23, W1) A notched phone held sideways (viewport-fit=cover): the 40 gutter sat inside the 47 the notch and the rounded
+   corners take — the text keeps 16 clear of them. env() is 0 everywhere else, so max() keeps the gutters above. */
+@media (max-width: 1024px) { .container { padding-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)); padding-right: max(40px, calc(env(safe-area-inset-right, 0px) + 16px)); } }
+@media (max-width: 767px) { .container { padding-left: max(24px, calc(env(safe-area-inset-left, 0px) + 16px)); padding-right: max(24px, calc(env(safe-area-inset-right, 0px) + 16px)); } }
 
 .section { padding: 96px 0; }
 .major { padding: 160px 0; }

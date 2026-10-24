@@ -26,6 +26,7 @@ import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { renderLinksLine, useLiveRenderLinks } from '@/components/leads/use-render-links'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './return-lead-wizard.module.css'
+import { useSheetLayout } from '@/components/om/sheet'
 
 /*
  * Return Lead wizard (931:48813 step 1 · 931:48882 reason form · 931:48930 filled · 931:49009 terms): the 800-wide l-modal.
@@ -62,9 +63,11 @@ const TIPS_HELP = 'Need help? Contact your BD representative for personalised le
 const TERMS = (button: string) => `Qanvast reserves the right of final decision on the return of leads and return of credits. By clicking “${button}”, you agree to our lead return terms.`
 const COMMENTS_MAX = 500
 
-type Step = 'reason' | 'terms'
+/** (Leads on the move, L3 — A-29) 'late': a lead past Qanvast's window (or its returns used up) opens on one sentence first — what a late return
+ *  becomes — before any of the form; Continue runs it as before. */
+type Step = 'late' | 'reason' | 'terms'
 type Field = 'reason' | 'outreach' | 'attempts' | 'subReasons' | 'wrongField' | 'comments'
-const STEP_INDEX: Record<Step, number> = { reason: 0, terms: 1 }
+const STEP_INDEX: Record<Step, number> = { late: -1, reason: 0, terms: 1 }
 /** Step change: the body slides ±16px in the direction of travel (REG-25; the Move stage wizard's timings — modal in, 0.15 standard out). */
 const stepSlide = {
   initial: (dir: number) => ({ opacity: 0, x: dir * 16 }),
@@ -113,6 +116,9 @@ export function ReturnLeadWizard({
   const [busy, setBusy] = useState(false)
   const [wasOpen, setWasOpen] = useState(false)
   const [allTips, setAllTips] = useState(false)   /* (pending modules S05) Tips › View all */
+  /* (Leads on the move, L3 — A-29) on a phone the tips fold under their title — the fields and the foot meet; open, they read at 14 */
+  const phone = useSheetLayout()
+  const [tipsOpen, setTipsOpen] = useState(false)
   const [policyOpen, setPolicyOpen] = useState(false)   /* (pending modules S05) the info control's policy */
   /** Day-granular "today" for the picker's ring, derived from the host clock (never Date.now() in render). */
   const today = useMemo(() => new Date(now), [now])
@@ -135,9 +141,11 @@ export function ReturnLeadWizard({
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) {
-      setStep('reason'); setReason(''); setOutreach(''); setAttempts(null); setComments(''); setTiles([])
+      /* (A-29) past the window, or the returns used up: the notice first — never for an appeal, which answers Qanvast's reply */
+      const opening = returnWindow(lead.createdAt, returnsCount, now)
+      setStep(!appeal && (opening.state === 'expired' || opening.state === 'capped') ? 'late' : 'reason'); setReason(''); setOutreach(''); setAttempts(null); setComments(''); setTiles([])
       setSubReasons([]); setSearch(''); setProject(''); setWrongField('')
-      setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false); setAllTips(false); setPolicyOpen(false)
+      setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false); setAllTips(false); setPolicyOpen(false); setTipsOpen(false)
       if (appeal) {   // (pending modules S05) the rejected return as it was sent — the appeal adds to it
         /* a return made before the seven reasons (REG-193's "No response from lead") reads as the one that asks what it held */
         const was = reasonByLabel(appeal.reason) ?? (appeal.firstOutreach || appeal.attempts != null ? reasonByLabel('Lead not contactable') : null)
@@ -243,7 +251,22 @@ export function ReturnLeadWizard({
 
               <div className={styles.steps}>
               <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-              {step === 'reason' ? (
+              {step === 'late' ? (
+                /* (Leads on the move, L3 — A-29) Past the window the form waits: what a late return is, in one place, before anything is typed —
+                   Qanvast's rules stay display-only (REG-609); Continue runs the return as before. *(invented copy)* */
+                <motion.div key="late" ref={scrollRef} className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
+                  <div className={styles.late} data-testid="return-late" data-state={win.state}>
+                    <Icon name="info" size={24} className={styles.rulesIcon} />
+                    <span className={styles.lateTitle}>{win.state === 'capped' ? `This lead has been returned ${win.used} times` : `The ${RETURN_RULES.windowDays} days to return this lead are over`}</span>
+                    <p className={styles.lateText}>
+                      {win.state === 'capped'
+                        ? `Qanvast takes a lead back at most ${RETURN_RULES.maxReturns} times. You can still send this return — it goes as a late one, and Qanvast decides.`
+                        : `${lead.name} arrived ${win.days} days ago, and Qanvast takes returns within ${RETURN_RULES.windowDays} days. You can still send it — it goes as a late return, and Qanvast decides.`}
+                    </p>
+                    <Link variant="primary" onPress={() => setPolicyOpen(true)}>Qanvast’s return policy</Link>
+                  </div>
+                </motion.div>
+              ) : step === 'reason' ? (
                 <motion.div key="reason" ref={scrollRef} className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
                   <div className={styles.columns}>
                     <div className={styles.form}>
@@ -372,8 +395,13 @@ export function ReturnLeadWizard({
                     </div>
 
                     {/* tips-section 260: "Tips to improve conversion" · four tips · Link "View all" (coming soon) */}
-                    <aside className={styles.tips} aria-label="Tips to improve conversion">
-                      <span className={styles.tipsTitle}>Tips to improve conversion</span>
+                    <aside className={styles.tips} aria-label="Tips to improve conversion" data-folded={phone && !tipsOpen ? '' : undefined}>
+                      {phone ? (
+                        <button type="button" className={styles.tipsToggle} aria-expanded={tipsOpen} onClick={() => setTipsOpen((o) => !o)} data-testid="return-tips-toggle">
+                          Tips to improve conversion
+                          <Icon name={tipsOpen ? 'keyboard_arrow_up' : 'expand_more'} size={20} />
+                        </button>
+                      ) : <span className={styles.tipsTitle}>Tips to improve conversion</span>}
                       <ul className={styles.tipsList} data-testid="return-tips">
                         {(allTips ? [...TIPS, ...MORE_TIPS] : TIPS).map((t) => <li key={t}>{t}</li>)}
                       </ul>
@@ -400,7 +428,12 @@ export function ReturnLeadWizard({
               {/* Footer 68: Cancel · Submit (reads Next once a reason is chosen) — step 2: Back · Confirm. (REG-725) the house foot:
                   its shadow while the step's body scrolls. */}
               <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
-                {step === 'reason' ? (
+                {step === 'late' ? (
+                  <>
+                    <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
+                    <Button className={styles.wide} onPress={() => goTo('reason')} data-testid="return-late-continue">Return it anyway</Button>
+                  </>
+                ) : step === 'reason' ? (
                   <>
                     <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
                     <Button className={styles.wide} onPress={next}>{reason ? 'Next' : 'Submit'}</Button>

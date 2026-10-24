@@ -24,6 +24,9 @@
    footer past the home indicator, keeping their own 20 / 16 — env() is 0 off-iOS, so nothing moves on the desktop. */
 .drawer .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
 .drawer .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+/* (responsive audit 2026-10-23, W1) …and, on a notched phone held sideways, its content stays off the rounded right corner (the panel's white
+   still runs to the edge). 0 everywhere else. */
+.drawer { padding-right: env(safe-area-inset-right, 0px); }
 
 /* ── Mobile bottom sheet (REG-353) ────────────────────────────────────────────────────────────────────
    The canvas presents the side panel as a bottom sheet at ≤767 (2c Task · 2d Task comments): full width on

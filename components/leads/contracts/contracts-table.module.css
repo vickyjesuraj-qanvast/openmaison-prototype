@@ -227,3 +227,9 @@
 /* The title cell's lines share one block on a phone (the card's name and signs lines); on a tablet and a desk the block draws no box of its
    own, so the title button sits in its cell exactly as the mock lays it (1440 byte-identical). */
 .titleData { display: contents; }
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W5-37) 768–1024 under a finger the row's title and its lead link were their 20 lines. Each
+   press reaches 12 above and below, paid back as margin, so the row and its lines don't move (on a phone the whole card is the press). */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .title, .leadLink { padding-block: 12px; margin-block: -12px; }
+}

@@ -15,7 +15,7 @@
 .pill[data-tone='attention'] { border-color: var(--om-color-primary-default); color: var(--om-color-primary-default); background: var(--om-color-primary-variant); padding-right: var(--om-spacing-4); }
 .pill[data-tone='attention']:hover { background: color-mix(in srgb, var(--om-color-primary-variant), var(--om-color-primary-default) 8%); }
 .pill[data-tone='attention'][data-selected] { background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); padding-right: var(--om-spacing-3); }
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .pill::after { content: ''; position: absolute; inset: -4px; } }   /* (REG-729) the drawn pill keeps 36; an invisible overlay carries the 44 (REG-344) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .pill::after { content: ''; position: absolute; inset: -5px; } }   /* (REG-729) the drawn pill keeps 36; an invisible overlay carries the 44 (REG-344) — (responsive audit 2026-10-23, W6 — a bug fix, W2 · W4-20 · W5-28) −5, not −4: the overlay hangs off the padding box, inside the 1px border, so −4 made 42 */
 /* Where the bar is narrow (tablet and phone) the pill says only its value — the full words stay its accessible name. */
 .short { display: none; white-space: nowrap; }
 @media (max-width: 1024px) {

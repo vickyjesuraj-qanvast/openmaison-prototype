@@ -86,10 +86,21 @@
   .press { align-self: flex-start; flex-wrap: wrap; }
   .person { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4) 0; }
   .tabs { top: calc(var(--app-mobile-bar-height) + 72px); }
-  .byHead, .byRow { grid-template-columns: minmax(0, 1fr) repeat(4, 44px); }
+  /* (responsive audit 2026-10-23, W2-16) the By designer table scrolls sideways in its own frame (REG-430) — squeezed to 44px tracks its
+     heads ran into each other (CONVERTED over FOLLOW-UP) and the names cut to one letter; the desk's tracks, the name from 120 */
+  .byTable { overflow-x: auto; overscroll-behavior-x: contain; }
+  .byHead, .byRow { grid-template-columns: minmax(120px, 1fr) repeat(4, 96px); min-width: max-content; }
   .facts, .facts[data-three] { grid-template-columns: minmax(0, 1fr); }
 }
 
 
 /* (REG-708) a ghost's block of lines in one of the page's own paragraphs — the lines stacked with no gap, as the paragraph wraps */
 .ghostLines { display: flex; flex-direction: column; }
+
+/* (responsive audit 2026-10-23, W2-10) Under a finger a Hangout's name, a chat's lead and the venue are presses on a 20–24 line: each takes a 44
+   target as REG-344 gives a text link — an invisible overlay 12 above and below, the drawn line and its box unchanged (so a ghost's bar in
+   these classes still lands where the link does) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  a.nameLink, a.factLink { position: relative; }
+  a.nameLink::after, a.factLink::after { content: ''; position: absolute; inset: -12px 0; }
+}

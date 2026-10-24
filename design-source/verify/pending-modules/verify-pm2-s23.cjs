@@ -87,13 +87,17 @@ async function measure(b, opts, url, blocks, max = 30, screens = 1) {
     const words = []
     const pageText = new Map()
     for (const el of content.querySelectorAll('*')) for (const k of keyOf(el)) { if (!pageText.has(k)) pageText.set(k, []); pageText.get(k).push(el.textContent.replace(/\s+/g, ' ').trim()) }
+    /* (leads on the move, a deliberate change of this rule — L1 · L4) a page's ghost now holds one shape per width, the stylesheet showing one;
+       what isn't drawn at this width is no ghost of this page — only drawn pieces count */
+    const drawn = (el) => (el.checkVisibility ? el.checkVisibility() : el.getClientRects().length > 0)
     for (const el of ghost.querySelectorAll('[class*="ghost-kit-module__"][class*="__words"]')) {
+      if (!drawn(el)) continue
       const ks = keyOf(el); if (!ks.length) continue
       const t = el.textContent.replace(/\s+/g, ' ').trim()
       if (!ks.some((k) => (pageText.get(k) || []).includes(t))) words.push(`[${ks[0]}] “${t.slice(0, 90)}”`)
     }
     /* a list's table: the ghost kit draws it on its own classes — its head and first row against the page's table core */
-    const top = (root, sel) => { const el = root.querySelector(sel); if (!el) return null; const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY)] }
+    const top = (root, sel) => { const el = [...root.querySelectorAll(sel)].find(drawn); if (!el) return null; const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY)] }
     for (const [k, gs, ps] of [['table.head', '[class*="ghost-kit-module__"][class*="__tHead"]', '[class*="table-core-module__"][class*="__head"]'], ['table.row', '[class*="ghost-kit-module__"][class*="__tRow"]', '[class*="table-core-module__"][class*="__row"]']]) {
       const a = top(ghost, gs), pp = top(content, ps)
       if (a && pp) rows.push({ k, i: 0, dy: pp[1] - a[1], dx: pp[0] - a[0] })

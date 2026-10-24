@@ -33,6 +33,9 @@
 .reportBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
 .photos { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
 .photo { composes: thumb from '../../om/thumb.module.css'; width: 64px; height: 64px; padding: 0; border: 0; cursor: zoom-in; }
+/* (responsive audit 2026-10-23, W3-10) the house thumb's own 36 wins the cascade over the 64 above (its sheet loads after this one), so a
+   report's photo was a 36 press under a finger; on a phone and a touch tablet it takes the 64 drawn here. The desk's 36 is left for Vicky. */
+@media (hover: none) and (max-width: 1024px) { .photo.photo { width: 64px; height: 64px; } }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-s); margin: 0; }
 .facts dt { color: var(--om-color-on-surface-secondary); }
 .facts dd { margin: 0; color: var(--om-color-on-surface-default); min-width: 0; }

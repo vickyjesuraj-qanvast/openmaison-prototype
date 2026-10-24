@@ -1,0 +1,48 @@
+/* (Leads on the move, P-03 · P-04 · P-13 — his marks 2026-10-23, "continue the leads") The log's pieces — the log sheet's body and the Move stage
+   window's Contacted / Met steps on a phone and a tablet held upright (≤1024). Drawn only there (and in the log's centred dialog on a tablet held
+   sideways), so the scale is the phone's: what is read 16, what is secondary 14, every target 44, 12 between a group's label and its chips, 24
+   between groups. Tokens only; the chips, the field, the picker and the photo rows are the house pieces. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.body[data-sheet] { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); }   /* the house sheet's body has no gutter of its own — the sheet's 16 (REG-372) */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.label { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); }
+.group[data-error] > .label { color: var(--om-color-tertiary-red-default); }
+.error { font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+.chips { gap: var(--om-spacing-2); }
+
+/* When — the label over "Now · 4:12 PM", Change at the row's end */
+.when { display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-1); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.when[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.when > .error { flex-basis: 100%; }
+.whenText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.whenText > .label { font: var(--om-type-body-m); }
+.whenValue { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.link { composes: link from '../../om/text-link.module.css'; min-height: 44px; padding: 0 var(--om-spacing-2); display: inline-flex; align-items: center; }
+
+/* a folded group's one line ("+ Set a call back", "From Farah's files") — the house text link, 44 tall */
+.addLink { composes: link from '../../om/text-link.module.css'; align-self: flex-start; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 44px; }
+
+/* the files the log keeps — one 56 row each: the picture or its glyph, the name, remove */
+.files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.file { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-3); }
+.file + .file { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.fileGlyph { width: 40px; height: 40px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+.fileName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the sheet's line above Save — what Save does, or why the lead stays; a refusal in red */
+.line { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.line > :first-child { flex-shrink: 0; margin-top: 0; }
+.line[data-tone='error'] { color: var(--om-color-tertiary-red-default); }
+
+/* the sheet's foot: the line, then the one filled button across the width at 48 */
+.foot { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); width: 100%; }
+.footBtn { width: 100%; }
+
+.notes { width: 100%; }
+
+@media (max-width: 1024px) {
+  .group :global(button[role='radio']), .chips :global(button) { font: var(--om-type-subheading-m); }   /* (P-13) a chip's words at 14 on the move — the house chip's 12 is the desk's; the due presets' too */
+  .notes textarea, .notes input, .body input, .body textarea { font: var(--om-type-body-l); }   /* (P-13) every box types at 16 */
+  .footBtn { min-height: 48px; }
+  .footBtn :global(button), .foot :global(button) { min-height: 48px; }
+}

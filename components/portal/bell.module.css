@@ -7,6 +7,9 @@
 @media (hover: hover) { .bell:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
 .bell:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: 2px; }
 .badge { composes: badge from '../shell/app-rail.module.css'; top: 6px; right: 6px; }
+/* (responsive audit 2026-10-23, W3-20) the bell's own 6 / 6 over the rail badge's 2 / 2 held only by the order the build put the two sheets in —
+   Choices and Files drew the rail's corner, Home and Money the bell's. Doubled, so every page draws the bell's. */
+.badge.badge { top: 6px; right: 6px; }
 
 .panel { composes: panel from '../shell/notifications-panel.module.css'; }
 .scroll { composes: scroll from '../shell/notifications-panel.module.css'; }

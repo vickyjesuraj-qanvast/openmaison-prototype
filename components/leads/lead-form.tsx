@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -26,8 +26,12 @@ import { NAME_MAX, PROJECT_TYPES, ROOMS } from '@/lib/projects/model'
 import styles from './lead-form.module.css'
 import { validateLeadForm, type LeadFormData, type LeadFormErrors } from '@/lib/leads/lead-input'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
-import { CORE_FIELDS, DOCUMENT_ACCEPT, FILL_FIELDS, fieldList, readLeadDocument, unreadWords, type FillField } from '@/lib/leads/document-fill'
+import { CORE_FIELDS, DOCUMENT_ACCEPT, FILL_FIELDS, fieldList, readLeadDocument, unreadWords, type DocumentRead, type FillField } from '@/lib/leads/document-fill'
+import { readLeadMessage } from '@/lib/leads/message-fill'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { IconButton } from '@/components/om/icon-button'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 
 /* The three option lists live in lib/leads/enums.ts since the parity round (REG-607): only 'Contemporary' / 'Collected' / 'New'
    are mock-visible; the rest came from the testers (REG-549) and from 1.0's Singapore lists. */
@@ -56,6 +60,22 @@ const IN_MORE: ReadonlySet<LeadFormField> = new Set<LeadFormField>([
   'email', 'leadAddress', 'budget', 'startDate', 'style', 'keyCollection', 'condition', 'areaSize', 'areaUnit', 'notes', 'nric', 'customerId',
   'client2Name', 'client2Nric', 'client2Phone',   // (pending modules S05)
 ])
+
+/** (Leads on the move, L3 — P-08 · B-21) Edit details on a phone or a tablet is a short list — each row one screen of the form. */
+type FormSection = 'contact' | 'property' | 'budget' | 'people' | 'custom' | 'project'
+const SECTION_LABEL: Record<FormSection, string> = { contact: 'Contact', property: 'Property', budget: 'Budget & source', people: 'People', custom: 'Custom fields', project: 'Project' }
+const SECTION_OF: Record<string, FormSection> = {
+  name: 'contact', phone: 'contact', email: 'contact', leadAddress: 'contact', nric: 'contact', customerId: 'contact', companyName: 'contact', companyUen: 'contact', client2Name: 'contact', client2Nric: 'contact', client2Phone: 'contact',
+  propertyType: 'property', propertyAddress: 'property', district: 'property', style: 'property', keyCollection: 'property', condition: 'property', areaSize: 'property', areaUnit: 'property',
+  source: 'budget', budget: 'budget', startDate: 'budget', notes: 'budget',
+  assignees: 'people', customFields: 'custom', projectName: 'project', projectType: 'project', scope: 'project',
+}
+/** The section a field lives in on the short list (a custom field's own key lands in Custom fields). */
+const sectionOf = (field: string): FormSection => SECTION_OF[field] ?? (field.startsWith('custom') ? 'custom' : 'contact')
+/** The order a submit looks for the first error in — the form's own order. */
+const ERROR_ORDER = ['name', 'phone', 'companyUen', 'email', 'nric', 'client2Name', 'client2Nric', 'client2Phone', 'budget', 'startDate', 'assignees'] as const
+/** (P-08) On a phone's new lead these fold under More details too (the desk shows them under the phone). */
+const PHONE_MORE: ReadonlySet<string> = new Set(['source', 'propertyType', 'propertyAddress', 'district', 'companyName', 'companyUen'])
 
 const emptyForm = (): LeadFormData => ({
   name: '', phone: '', source: '', propertyType: '', propertyAddress: '',
@@ -98,8 +118,10 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
    before `phoneDigits` could ever see the country code. Typing is still capped at 8 by the slice below, so the
    value the field can hold is unchanged. The box SHOWS the digits grouped as they are typed — "9123 4", "9123 4567"
    (REG-456, user feedback 2026-09-16) — while `value` stays the bare digits the rule above produces. */
-export function PhoneField({ value, onChange, error, inputRef, label = 'Lead phone number', required = true }: {
+export function PhoneField({ value, onChange, error, inputRef, label = 'Lead phone number', required = true, autoComplete = 'tel' }: {
   value: string; onChange: (v: string) => void; error?: string; inputRef?: RefObject<HTMLInputElement | null>
+  /** (Leads on the move, A-18) the browser's autofill hint — a phone's own number; "off" where the number is someone else's to type */
+  autoComplete?: string
   /** (REG-927) New project's "Client's phone number" — the same field. */
   label?: string
   /** (pending modules S05) the second client's mobile is optional */
@@ -108,7 +130,7 @@ export function PhoneField({ value, onChange, error, inputRef, label = 'Lead pho
   return (
     <TextField
       label={label} required={required} value={phoneTyped(value)} error={error} inputRef={inputRef}   /* (REG-456) shown "9123 4567", stored "91234567" */
-      type="tel" inputMode="tel" numeric="digits" trailingIcon={null}
+      type="tel" inputMode="tel" numeric="digits" trailingIcon={null} autoComplete={autoComplete}   /* (leads on the move, A-18) the phone's own number pad and autofill */
       leading={<span className={styles.prefix}>+65<span className={styles.divider} /></span>}
       onChange={(v) => onChange(phoneDigits(v).slice(0, 8))}
     />
@@ -157,8 +179,11 @@ function AreaField({
 const openInNewTab = (leadId: string) => { window.open(`/leads/${leadId}`, '_blank', 'noopener') }
 
 export function LeadFormModal({
-  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, customFields = [], customValues, project, trial = false,
+  form, team, onClose, onSubmit, now, sources = SOURCES, assignable = null, selfAssign = null, customFields = [], customValues, project, trial = false, suggest,
 }: {
+  /** (Leads on the move, L3 — P-08) The member the studio's rules suggest for this new lead (REG-612's scorer, `suggestMember`) — the Assign
+   *  field's card, and on a phone a line under it. Absent, no suggestion. */
+  suggest?: (d: LeadFormData) => { id: string; name: string; reason: string } | null
   /** (pending modules S41b-3) The website's no-account trial: the same form for someone with no studio — no Assign member (no team), no
    *  duplicate check (it would read a studio's leads), no Fill from a document or Attach files (nothing to keep a file in until they sign up). */
   trial?: boolean
@@ -212,6 +237,15 @@ export function LeadFormModal({
   const [custom, setCustom] = useState<CustomValues>({})   /* (REG-612) the custom fields' values */
   const [proj, setProj] = useState<ProjectFormValues>({ name: '', projectType: PROJECT_TYPES[0], scope: [] })   /* (parity P-09) */
   const [second, setSecond] = useState(false)   /* (pending modules S05 — testers' L-4) the second client's fields, shown once added (or filled) */
+  /* (Leads on the move, L3 — P-08 · A-17 · A-19 · B-21) ≤1024: a pasted message fills the form, Edit details is a short list; at every width ✕
+     asks before it throws typed words away. */
+  const touch = useMediaQuery(TABLET_DOWN)
+  const [seedKey, setSeedKey] = useState('')
+  const [askDiscard, setAskDiscard] = useState(false)
+  const [section, setSection] = useState<FormSection | null>(null)
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [pasteBusy, setPasteBusy] = useState(false)
   const projectNameRef = useRef<HTMLInputElement | null>(null)
   const fileInput = useRef<HTMLInputElement | null>(null)
   const [mountedAt] = useState(() => Date.now())
@@ -225,8 +259,14 @@ export function LeadFormModal({
       setData(seed)   // (REG-609) a Designer's lead is theirs · (UX audit L11) the host's prefill
       setSecond(!!(seed.client2Name || seed.client2Nric || seed.client2Phone) || form.focus === 'client2Name')   // (pending modules S05)
       setFiles([]); setPicked([]); setFillOpen(false); setDup(null); setFillBusy(null); setFillError(null); setFillNote(null)
-      setCustom(form.mode === 'edit' ? { ...(customValues ?? {}) } : {})
-      if (project) setProj({ name: project.name, projectType: project.projectType ?? PROJECT_TYPES[0], scope: [...project.scope] })   // (parity P-09)
+      const customSeed = form.mode === 'edit' ? { ...(customValues ?? {}) } : {}
+      setCustom(customSeed)
+      const projSeed = project ? { name: project.name, projectType: project.projectType ?? PROJECT_TYPES[0], scope: [...project.scope] } : proj
+      if (project) setProj(projSeed)   // (parity P-09)
+      /* (leads on the move, A-17) what the form opened with — ✕ asks only once something differs */
+      setSeedKey(JSON.stringify({ d: seed, c: customSeed, p: project ? projSeed : null }))
+      setAskDiscard(false); setPasteOpen(false); setPasteText(''); setPasteBusy(false)
+      setSection(form.mode === 'edit' && touch && form.focus ? sectionOf(form.focus) : null)   // (B-21) opened on a field: its section's screen
       setExpanded(form.mode === 'edit' || (form.focus ? (IN_MORE as ReadonlySet<string>).has(form.focus) : false))
       setSubmitted(false)
       setSubmitting(false)
@@ -267,7 +307,14 @@ export function LeadFormModal({
   const panel = useRef<HTMLDivElement>(null)
   /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
   const sheet = useSheetLayout()
-  useEscapeLayer(open, panel, onClose)
+  /* (Leads on the move, L3 — A-17) ✕, Cancel and Esc ask before typed words go: "Discard this lead?" — the import wizard's own care (user
+     2026-08-28). Nothing typed, nothing asked. A save in flight is never cut short. */
+  const dirty = open && seedKey !== '' && (files.length > 0 || JSON.stringify({ d: data, c: custom, p: project ? proj : null }) !== seedKey)
+  const requestClose = () => { if (submittingRef.current) return; if (dirty) setAskDiscard(true); else onClose() }
+  useEscapeLayer(open, panel, requestClose)
+  /** (Leads on the move, P-08) ≤767 a new lead is a name and a mobile, the rest folded under More details; (B-21) ≤1024 Edit is a short list. */
+  const phoneCreate = sheet && form?.mode === 'create' && !trial
+  const touchEdit = touch && form?.mode === 'edit'
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
@@ -287,11 +334,17 @@ export function LeadFormModal({
     const errs = validateLeadForm(data, requireAssignee)
     setSubmitted(true)
     /* (REG-612) A required custom field is a field like any other: the section opens on it and the save waits. */
-    if (customFields.some((f) => validateCustomValue(f, custom[f.id]))) { setExpanded(true); if (!hasErrors(errs)) return }
-    if (project && !proj.name.trim() && !hasErrors(errs)) { projectNameRef.current?.focus(); return }   // (parity P-09)
+    if (customFields.some((f) => validateCustomValue(f, custom[f.id]))) { setExpanded(true); if (touchEdit && !hasErrors(errs)) setSection('custom'); if (!hasErrors(errs)) return }
+    if (project && !proj.name.trim() && !hasErrors(errs)) { if (touchEdit) { setSection('project'); requestAnimationFrame(() => requestAnimationFrame(() => projectNameRef.current?.focus())); return } projectNameRef.current?.focus(); return }   // (parity P-09)
+    if (hasErrors(errs) && touchEdit) {
+      /* (leads on the move, B-21) the short list: the first error's own screen opens, its field focused */
+      const first = ERROR_ORDER.find((k) => (errs as Record<string, unknown>)[k])
+      if (first) { setSection(sectionOf(first)); requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]')?.focus())) }
+      return
+    }
     if (hasErrors(errs)) {
       // A hidden error must become visible, or the button reads as a no-op.
-      if (errs.email || errs.budget || errs.startDate || errs.nric || errs.client2Name || errs.client2Nric || errs.client2Phone) setExpanded(true)
+      if (errs.email || errs.budget || errs.startDate || errs.nric || errs.client2Name || errs.client2Nric || errs.client2Phone || (phoneCreate && errs.companyUen)) setExpanded(true)   // (leads on the move, P-08) a phone folds the UEN too
       const first = errs.name ? nameRef : errs.phone ? phoneRef : errs.assignees ? assigneeRef : errs.email ? emailRef : errs.budget ? budgetRef : null
       if (first === emailRef || first === budgetRef) requestAnimationFrame(() => first.current?.focus())   // the section may be expanding this very tick — focus once it has mounted
       else if (first) first.current?.focus()
@@ -323,14 +376,38 @@ export function LeadFormModal({
      empty (1.0's rule; what was typed is kept and said so), the file is attached (its bytes upload with the lead), Additional info opens when a
      filled field lives there, and the line under the link says what filled and what wasn't found. Nothing read: the dialog stays open and
      says why under the drop zone — no field changes, nothing is attached. */
+  const fillCtx = () => ({ sources, ownEmails: team.map((m) => m.email ?? '').filter(Boolean), ownPhones: team.map((m) => phoneDigits(m.phone ?? '')).filter(Boolean) })
   const fillFromDocument = async (file?: File) => {
     if (!file || fillBusy) return
     setFillBusy(file.name); setFillError(null)
-    const r = await readLeadDocument(file, {
-      sources, ownEmails: team.map((m) => m.email ?? '').filter(Boolean), ownPhones: team.map((m) => phoneDigits(m.phone ?? '')).filter(Boolean),
-    })
+    const r = await readLeadDocument(file, fillCtx())
     setFillBusy(null)
     if (!r.ok) { setFillError(unreadWords(r, file.name)); return }
+    applyFill(r, file.name, file)
+    setFillOpen(false)
+  }
+  /* (Leads on the move, L3 — P-08 · A-19) "Paste the WhatsApp message to fill the rest": a lead arrives as a forwarded message; its words are read
+     by the same rule a document's are (lib/leads/document-fill.ts — one Singapore number, one email, a name signing it, a home named with its
+     size), the empty fields fill and the line says which. The clipboard is read on the press where the browser allows it; otherwise (or with
+     nothing on it) a box opens to paste into. Nothing leaves the browser. */
+  const fillFromText = (text: string) => {
+    const t = text.trim()
+    if (!t) return false
+    const r = readLeadMessage(t, { ...fillCtx(), memberNames: team.map((m) => m.name) })   // a message's own words first (lib/leads/message-fill.ts)
+    if (!r.ok) { setFillNote(r.reason === 'many' ? `The message holds ${r.count ?? 'several'} leads — bring them in with Import leads.` : 'Nothing in the message looks like a client’s details — type them in.'); return true }
+    applyFill(r, 'the message')
+    setPasteOpen(false); setPasteText('')
+    return true
+  }
+  const pasteMessage = async () => {
+    if (pasteBusy) return
+    setPasteBusy(true)
+    let text = ''
+    try { text = (await navigator.clipboard?.readText?.()) ?? '' } catch { text = '' }
+    setPasteBusy(false)
+    if (!fillFromText(text)) setPasteOpen(true)   // nothing to read, or the browser said no: a box to paste into
+  }
+  function applyFill(r: Extract<DocumentRead, { ok: true }>, from: string, file?: File) {
     const now = data as unknown as Record<string, string>
     const filled: FillField[] = [], kept: FillField[] = []
     for (const k of FILL_FIELDS) {
@@ -342,15 +419,16 @@ export function LeadFormModal({
     }
     const missing = CORE_FIELDS.filter((k) => !r.fill[k])
     setData((d) => { const next = { ...d } as unknown as Record<string, string>; for (const k of filled) next[k] = r.fill[k]!; return next as unknown as LeadFormData })
-    setFiles((fs) => (fs.includes(file.name) ? fs : [...fs, file.name]))
-    setPicked((ps) => [...ps.filter((p) => p.name !== file.name), file])
-    if (filled.some((k) => (IN_MORE as ReadonlySet<string>).has(k))) setExpanded(true)
+    if (file) {
+      setFiles((fs) => (fs.includes(file.name) ? fs : [...fs, file.name]))
+      setPicked((ps) => [...ps.filter((p) => p.name !== file.name), file])
+    }
+    if (filled.some((k) => (IN_MORE as ReadonlySet<string>).has(k) || (phoneCreate && PHONE_MORE.has(k)))) setExpanded(true)
     setFillNote([
-      filled.length ? `Filled from ${file.name}: ${fieldList(filled)}.` : `Read ${file.name} — nothing new to fill.`,
+      filled.length ? `Filled from ${from}: ${fieldList(filled)}.` : `Read ${from} — nothing new to fill.`,
       kept.length ? `Kept what you typed for ${fieldList(kept)}.` : null,
       missing.length ? `Not found: ${fieldList(missing)}.` : null,
     ].filter(Boolean).join(' '))
-    setFillOpen(false)
   }
   const dialogs = (
     <>
@@ -360,18 +438,292 @@ export function LeadFormModal({
         <Dropzone title={fillBusy ? <>Reading <b>{fillBusy}</b>…</> : <>Drop in the document or <b>browse</b></>}
                   helper="An enquiry as a PDF, a spreadsheet or a text file — the client’s details it names fill the empty fields, and the file is attached to the lead."
                   onBrowse={() => { if (!fillBusy) docInput.current?.click() }} onPick={(f) => { void fillFromDocument(f) }} label="Choose the document" />
-        <input ref={docInput} type="file" accept={DOCUMENT_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="fill-document-input"
-               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void fillFromDocument(f) }} />
         {fillError ? <span className={styles.fillError} role="alert" data-testid="fill-document-error">{fillError}</span> : null}
       </Dialog>
+      {/* (Leads on the move, L3 — P-08 · A-20) The safe answer is the filled one: Open existing lead. "Create anyway" steps back to the outlined
+          button — the one-thumb default used to make the duplicate. */}
       <Dialog open={!!dup} onClose={() => setDup(null)} title={dup?.matchedOn === 'email' ? 'A lead with this email already exists' : 'A lead with this phone already exists'} width={400} size="form" alert nested portal
-              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { const id = dup?.id; setDup(null); if (id) openInNewTab(id) }}>Open existing lead</Button>
-                       <Button onPress={() => { setDup(null); void persist() }}>Create anyway</Button></>}>
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setDup(null); void persist() }} data-testid="duplicate-create-anyway">Create anyway</Button>
+                       <Button onPress={() => { const id = dup?.id; setDup(null); if (id) openInNewTab(id) }} data-testid="duplicate-open-existing">Open existing lead</Button></>}>
         {dup ? <p className={styles.dupText} data-testid="duplicate-lead"><b>{dup.name}</b> · {phoneTyped(dup.phone)}{dup.email ? ` · ${dup.email}` : ''} · {dup.stage}</p> : null}
         <span className={styles.helper}>Open it to work the existing lead, or create this one anyway.</span>
       </Dialog>
+      {/* (Leads on the move, L3 — A-17) ✕ with typed words: one question, the house confirm over the form */}
+      <ConfirmDialog open={askDiscard} nested
+                     title={form?.mode === 'create' ? 'Discard this lead?' : 'Discard your changes?'}
+                     message={form?.mode === 'create' ? 'What you typed won’t be saved.' : `Your changes to ${form?.mode === 'edit' ? form.lead.name : 'this lead'} won’t be saved.`}
+                     confirmLabel="Discard" cancelLabel="Keep editing"
+                     onCancel={() => setAskDiscard(false)} onConfirm={() => { setAskDiscard(false); onClose() }} />
     </>
   )
+  /* The document input lives outside the Fill dialog now, so a phone's "Fill from a document" row opens the file chooser in one press. */
+  const docPicker = (
+    <input ref={docInput} type="file" accept={DOCUMENT_ACCEPT} hidden aria-hidden tabIndex={-1} data-testid="fill-document-input"
+           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void fillFromDocument(f) }} />
+  )
+
+  /* ── The form's fields, each written once (Leads on the move, L3): the desk composes them as the mock draws (779:24634 · 780:82282); a phone's
+     new lead and a touch screen's Edit details compose the same pieces differently. ── */
+  const nameField = (
+    <div className={styles.fieldWrap} data-field="name">
+      <TextField label="Lead name" required value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef}
+                 autoComplete="name" inputProps={{ autoCapitalize: 'words' }} />   {/* (leads on the move, A-18) */}
+    </div>
+  )
+  const phoneField = (
+    <div className={styles.fieldWrap} data-field="phone">
+      <PhoneField value={data.phone} onChange={set('phone')} error={errors.phone} inputRef={phoneRef} />
+    </div>
+  )
+  const sourceSelect = <TextField label="Lead source" mode="select" value={data.source} options={data.source && !sources.includes(data.source) ? [data.source, ...sources] : sources} onChange={set('source')} />   /* (REG-599) */
+  const typeSelect = <TextField label="Property type" mode="select" value={data.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
+  const sourceRow = (
+    <div className={styles.fieldRow} data-field="source">
+      {sourceSelect}
+      {typeSelect}
+    </div>
+  )
+  /* (pending modules S05 — testers' L-3) An office or a shop: the company the lead works for and its UEN — the lead's name is the
+     contact person; the NRIC / FIN under Additional info steps back. Shown only for a commercial property type. */
+  const companyField = commercial ? (
+    <div className={styles.fieldWrap} data-field="companyName" data-testid="lead-company">
+      <div className={styles.fieldRow}>
+        <TextField label="Company name" value={data.companyName} onChange={set('companyName')} maxLength={120} trailingIcon={null} />
+        <TextField label="UEN" value={data.companyUen} onChange={(v) => set('companyUen')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.companyUen} />   {/* (S42 B-06) */}
+      </div>
+      <span className={styles.helper}>The lead’s name is the contact person at the company.</span>
+    </div>
+  ) : null
+  const addressField = (
+    <div className={styles.fieldWrap} data-field="propertyAddress">
+      <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />
+      <span className={styles.helper}>Client project address.</span>
+    </div>
+  )
+  /* (REG-607, parity Q-12) 1.0's Area / District — Singapore's five regions; it also feeds the members' lead preferences. */
+  const districtField = (
+    <div className={styles.fieldWrap} data-field="district">
+      <TextField label="District" mode="select" value={data.district} options={DISTRICTS} onChange={set('district')} />
+    </div>
+  )
+  const suggestion = form?.mode === 'create' && suggest ? suggest(data) : null
+  /* Assign member (REG-231) — after Property address, per the request. Carries its own data-field. (S41b-3) none in the trial. */
+  const assignField = trial || !form ? null : (
+    <AssigneeField team={assignable ? team.filter((m) => assignable.includes(m.id) || data.assignees.includes(m.id)) : team} value={data.assignees} onChange={set('assignees')}
+                   error={errors.assignees} inputRef={assigneeRef} suggestion={touch ? suggestion : null}   /* (leads on the move, P-08) a finger's form offers the suggested member; the desk keeps the mock's field */
+                   locked={selfAssign && form.mode === 'create' ? 'This lead will be assigned to you. Your manager routes leads to teammates.' : undefined} />   /* (REG-609, parity C-07) 1.0's lock note */
+  )
+  const emailField = <div className={styles.fieldWrap} data-field="email"><TextField label="Lead email" value={data.email} onChange={set('email')} trailingIcon={null}
+                                 type="email" inputMode="email" error={errors.email} inputRef={emailRef} autoComplete={form?.mode === 'create' ? 'email' : 'off'} /></div>
+  const leadAddressField = <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
+  /* (REG-607, parity Q-35) 1.0 keeps the client's IC and the studio's own reference on the lead; every new quote starts with them. */
+  const nricRow = (
+    <div className={styles.fieldRow} data-field="nric">
+      {/* (pending modules S05 — testers' L-3) a company has a UEN, not an NRIC — one already typed stays, never lost */}
+      {commercial && !data.nric ? null : <TextField label="NRIC / FIN" value={data.nric} onChange={(v) => set('nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.nric} />}
+      <TextField label="Customer ID" value={data.customerId} onChange={set('customerId')} maxLength={60} trailingIcon={null} />
+    </div>
+  )
+  /* (pending modules S05 — testers' L-4) A second client — co-owners: every new quote starts with them as its own second
+     client (REG-588's words: "Second client" · "NRIC (second client)"), and Client access offers them as someone from the household. */
+  const secondField = second ? (
+    <div className={styles.fieldWrap} data-field="client2Name" data-testid="lead-second-client">
+      <div className={styles.secondList}>
+        <div className={styles.fieldRow}>
+          <TextField label="Second client" value={data.client2Name} onChange={set('client2Name')} maxLength={120} trailingIcon={null} error={errors.client2Name} />
+          <TextField label="NRIC / FIN (second client)" value={data.client2Nric} onChange={(v) => set('client2Nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.client2Nric} />
+        </div>
+        <PhoneField label="Mobile (second client)" required={false} value={data.client2Phone} onChange={set('client2Phone')} error={errors.client2Phone} autoComplete="off" />
+      </div>
+      <span className={styles.helper}>A co-owner. New quotes name them beside {data.name.trim() ? data.name.trim().split(/\s+/)[0] : 'the client'}.</span>
+      <span className={styles.secondRemove}>
+        <Button appearance="text" onPress={() => { setData((d) => ({ ...d, client2Name: '', client2Nric: '', client2Phone: '' })); setSecond(false) }}>Remove the second client</Button>
+      </span>
+    </div>
+  ) : (
+    <div className={styles.fieldWrap} data-field="client2Name">
+      <span className={styles.secondRemove}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></span>
+    </div>
+  )
+  const budgetRow = (
+    <div className={styles.fieldRow} data-field="budget">
+      <TextField label="Estimated budget (S$)" value={data.budget} numeric="amount"
+                 onChange={set('budget')} trailingIcon={null}
+                 error={errors.budget} inputRef={budgetRef} />
+      <div className={styles.fieldWrap}>
+        <DateField label="Estimated start date" value={data.startDate}
+                   onChange={set('startDate')} today={today} error={errors.startDate} />
+      </div>
+    </div>
+  )
+  const styleRow = (
+    <div className={styles.fieldRow}>
+      <TextField label="Style" mode="select" value={data.style} options={STYLE_OPTIONS} onChange={set('style')} />
+      <TextField label="Key collection" mode="select" value={data.keyCollection} options={KEY_COLLECTION_OPTIONS} onChange={set('keyCollection')} />
+    </div>
+  )
+  const conditionRow = (
+    <div className={styles.fieldRow}>
+      <TextField label="Condition" mode="select" value={data.condition} options={CONDITION_OPTIONS} onChange={set('condition')} />
+      <AreaField value={data.areaSize} unit={data.areaUnit} onChange={set('areaSize')} onUnitChange={set('areaUnit')} />
+    </div>
+  )
+  const notesField = (
+    <div className={styles.fieldWrap} data-field="notes">
+      {/* "Remarks" (user 2026-08-31): the mock types "Notes", which collided with the Notes tab —
+          a different record entirely (lead_notes). The DS TextArea at the mock's 96px
+          (page-checklist › Fields: never a raw input) — lead-form.module.css .notes.
+          The helper used to say these appear on the Notes page; they do not, and never did.
+          (REG-729) The field names itself, as every field in this form: "Remarks" is its label — resting where the
+          placeholder sat while empty, on the border once filled — not a placeholder with a hidden name. */}
+      <TextArea label="Remarks" value={data.notes}
+                onChange={(v: string) => set('notes')(v)} className={styles.notes} />
+      <span className={styles.helper}>Shown under Other info on the lead’s Overview.</span>
+    </div>
+  )
+  const customList = (
+    <div className={styles.customList}>
+      {customFields.map((f) => (
+        <CustomFieldInput key={f.id} def={f} value={custom[f.id]} today={today} error={submitted ? validateCustomValue(f, custom[f.id]) : undefined}
+                          onChange={(v) => setCustom((c) => ({ ...c, [f.id]: v }))} />
+      ))}
+    </div>
+  )
+  const customBlock = customFields.length ? (
+    /* (REG-612, parity Q-25) The studio's own fields, each on the DS field its type asks for. */
+    <div className={styles.fieldWrap} data-field="customFields">
+      <span className={styles.customTitle}>Custom fields</span>
+      {customList}
+    </div>
+  ) : null
+  const filesBlock = form?.mode === 'create' && !trial ? (
+    /* (REG-609, parity C-08) Documents at creation — the Move stage window's Attach row; each file lands in the Files tab with the lead. */
+    <div className={styles.fieldWrap} data-field="files">
+      <SectionRow label="Attach files (optional)" action={<LinkButton icon="attach_file" onClick={() => fileInput.current?.click()}>Attach</LinkButton>} />
+      <input ref={fileInput} type="file" multiple hidden aria-hidden tabIndex={-1}
+             onChange={(e) => { const list = Array.from(e.target.files ?? []); const names = list.map((f) => f.name); e.target.value = ''; if (names.length) { setFiles((fs) => [...fs, ...names.filter((n) => !fs.includes(n))]); setPicked((ps) => [...ps.filter((p) => !names.includes(p.name)), ...list]) } }} />
+      {files.length ? (
+        <div className={styles.tiles} data-testid="attached-files">
+          {files.map((f) => <FileTile key={f} name={f} kind={/\.pdf$/i.test(f) ? 'pdf' : 'image'} onDelete={() => setFiles((fs) => fs.filter((x) => x !== f))} />)}
+        </div>
+      ) : null}
+      <span className={styles.helper}>They appear in the lead’s Files tab.</span>
+    </div>
+  ) : null
+  const moreInner = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--om-spacing-6)', width: '100%' }}>
+      {emailField}
+      {leadAddressField}
+      {nricRow}
+      {secondField}
+      {budgetRow}
+      {styleRow}
+      {conditionRow}
+      {notesField}
+      {customBlock}
+      {filesBlock}
+    </div>
+  )
+  /** The fold: "Additional info" on the desk (780:82282); on a phone's new lead "More details" holds the source, the home and these. */
+  const fold = (label: string, children: ReactNode) => (
+    <div className={styles.section}>
+      <button type="button" className={styles.moreToggle} aria-expanded={expanded}
+              onClick={() => setExpanded((e) => !e)}>
+        {label}
+        <span data-chev><Icon name={expanded ? 'keyboard_arrow_up' : 'expand_more'} size={20} /></span>
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded ? (
+          <motion.div
+            key="more"
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            transition={{ duration: duration.step, ease: ease.standard }}
+            style={{ width: '100%' }}
+          >
+            {children}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  )
+  const projectSection = project ? (
+    /* (parity P-09 · D-08) The project's own section after the lead's block — the Custom fields block's look (a titled group of the
+       house fields): its name (Rename's field, REG-925 — the ⋮ no longer renames), its type and the rooms in its scope (the
+       project details dialog's fields, gaps build A — 7). */
+    <div className={styles.section} data-testid="project-details-section">
+      <div className={styles.fieldWrap} data-field="projectName">
+        {touchEdit ? null : <span className={styles.customTitle}>Project</span>}   {/* (leads on the move, B-21) on its own screen the head names it */}
+        <TextField label="Project name" required value={proj.name} maxLength={NAME_MAX} onChange={(v) => setProj((x) => ({ ...x, name: v }))} trailingIcon={null}
+                   error={projectNameError} inputRef={projectNameRef} />
+      </div>
+      <div className={styles.fieldWrap} data-field="projectType">
+        <TextField label="Project type" required mode="select" value={proj.projectType} options={[...PROJECT_TYPES]} onChange={(v) => setProj((x) => ({ ...x, projectType: v }))} />
+      </div>
+      <div className={styles.customChips} data-field="scope">
+        <span className={styles.customLabel}>Rooms in the scope</span>
+        <Chips multiple label="Rooms in the scope" options={ROOMS} value={proj.scope} onChange={(v) => setProj((x) => ({ ...x, scope: ROOMS.filter((r) => v.includes(r)) }))} testId="scope-chips" />
+      </div>
+    </div>
+  ) : null
+
+  /* (Leads on the move, L3 — P-08 · A-19) The two ways to fill a new lead from what arrived: a pasted message (≤1024) and a document. A phone
+     draws them as two rows under the name and the mobile; a tablet adds the message beside the desk's link; the desk keeps its one link. */
+  const pasteBox = pasteOpen ? (
+    <div className={styles.pasteBox} data-testid="paste-message-box">
+      <TextArea label="Paste the message here" value={pasteText} onChange={(v: string) => setPasteText(v)} className={styles.pasteArea} />
+      <span className={styles.pasteFoot}>
+        <Button variant="secondary" appearance="outlined" onPress={() => { setPasteOpen(false); setPasteText('') }}>Cancel</Button>
+        <Button onPress={() => { fillFromText(pasteText) }} isDisabled={!pasteText.trim()} data-testid="paste-message-fill">Fill the form</Button>
+      </span>
+    </div>
+  ) : null
+  const fillNoteLine = fillNote ? <span className={styles.fillNote} role="status" data-testid="fill-document-note">{fillNote}</span> : null
+  /* eslint-disable-next-line @next/next/no-img-element */
+  const sparkle = <img src="/figma-assets/brief-sparkle.svg" alt="" />
+  const fillRow = form?.mode === 'create' && !trial ? (
+    /* (REG-609, parity Q-28) Fill from a document, 1.0's document read in Auto Fill's sparkle and words — (S42F) it reads the picked
+       file by rule (lib/leads/document-fill.ts), no model and no sample. (S43D, F2-03) */
+    <div className={styles.fillRow}>
+      {touch ? (
+        <span className={styles.fillLinks}>
+          <LinkButton leading={sparkle} onClick={() => { void pasteMessage() }}>Paste a message</LinkButton>
+          <LinkButton leading={sparkle} onClick={() => { setFillError(null); setFillOpen(true) }}>Fill from a document</LinkButton>
+        </span>
+      ) : (
+        <LinkButton leading={sparkle} onClick={() => { setFillError(null); setFillOpen(true) }}>Fill from a document</LinkButton>
+      )}
+      {/* (S42F) what the read filled and what it didn't find — the file's own words, never a sample */}
+      {fillNoteLine}
+      {pasteBox}
+    </div>
+  ) : null
+
+  /* ── Edit details on a touch screen (B-21): the short list, each row one screen ── */
+  const names = team.filter((m) => data.assignees.includes(m.id)).map((m) => m.name)
+  const customFilled = customFields.filter((f) => { const v = custom[f.id]; return Array.isArray(v) ? v.length > 0 : !!(v ?? '').toString().trim() }).length
+  const sections: { key: FormSection; summary: string }[] = touchEdit ? [
+    { key: 'contact', summary: [data.name.trim() || 'No name', data.phone ? phoneTyped(data.phone) : null, data.email || null].filter(Boolean).join(' · ') },
+    { key: 'property', summary: [data.propertyType || null, data.propertyAddress || data.district || null].filter(Boolean).join(' · ') || 'Not set yet' },
+    { key: 'budget', summary: [data.budget ? `S$${data.budget}` : null, data.source || null].filter(Boolean).join(' · ') || 'Not set yet' },
+    { key: 'people', summary: names.length ? names.join(', ') : 'Nobody yet' },
+    ...(customFields.length ? [{ key: 'custom' as const, summary: `${customFilled} of ${customFields.length} filled` }] : []),
+    ...(project ? [{ key: 'project' as const, summary: [proj.name.trim() || 'No name', proj.projectType].filter(Boolean).join(' · ') }] : []),
+  ] : []
+  const sectionErrors = (k: FormSection) => ERROR_ORDER.some((e) => sectionOf(e) === k && (errors as Record<string, unknown>)[e]) || (k === 'custom' && submitted && customFields.some((f) => validateCustomValue(f, custom[f.id]))) || (k === 'project' && !!projectNameError)
+  const sectionBody = (k: FormSection) => (
+    <div className={styles.section} data-testid={`edit-section-${k}`}>
+      {k === 'contact' ? <>{nameField}{phoneField}{emailField}{leadAddressField}{nricRow}{companyField}{secondField}</>
+        : k === 'property' ? <>{typeSelect}{addressField}{districtField}{styleRow}{conditionRow}</>
+        : k === 'budget' ? <>{sourceSelect}{budgetRow}{notesField}</>
+        : k === 'people' ? assignField
+        : k === 'custom' ? <div className={styles.fieldWrap} data-field="customFields">{customList}</div>   /* the screen's head names it */
+        : null}
+    </div>
+  )
+
+  const title = form?.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'
 
   return (
     <>
@@ -384,194 +736,113 @@ export function LeadFormModal({
              or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
           <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
-                      aria-label={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'}>
+                      aria-label={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'}
+                      data-short-list={touchEdit || undefined} data-phone-create={phoneCreate || undefined}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
-            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel */}
-            <SurfaceHead title={form.mode === 'create' ? 'Create New Lead' : project ? 'Edit details' : 'Edit Lead'} onClose={onClose} className={styles.heading} />   {/* (parity P-09) one title grammar on a project */}
+            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel — (leads on the move, B-21) a section's screen
+                leads with the way back to the list and names the section */}
+            {touchEdit && section ? (
+              <SurfaceHead title={section === 'project' ? 'Project' : SECTION_LABEL[section]} eyebrow={title} onClose={requestClose} className={styles.heading}
+                           leading={<IconButton icon="arrow_back" label="Back to the details" size={24} variant="bare" iconSize={24} onClick={() => setSection(null)} data-testid="edit-section-back" />} />
+            ) : (
+              <SurfaceHead title={title} onClose={requestClose} className={styles.heading} />   /* (parity P-09) one title grammar on a project */
+            )}
 
             <div ref={scrollRef} className={styles.body}>
-              <div className={styles.section}>
-                {form.mode === 'create' && !trial ? (
-                  /* (REG-609, parity Q-28) Fill from a document, 1.0's document read in Auto Fill's sparkle and words — (S42F) it reads the picked
-                     file by rule (lib/leads/document-fill.ts), no model and no sample. (S43D, F2-03) */
-                  <div className={styles.fillRow}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => { setFillError(null); setFillOpen(true) }}>Fill from a document</LinkButton>
-                    {/* (S42F) what the read filled and what it didn't find — the file's own words, never a sample */}
-                    {fillNote ? <span className={styles.fillNote} role="status" data-testid="fill-document-note">{fillNote}</span> : null}
+              {touchEdit ? (
+                section ? (
+                  section === 'project' ? projectSection : sectionBody(section)
+                ) : (
+                  /* (Leads on the move, L3 — P-08 · B-21) Edit details as a short list: Contact · Property · Budget & source · People (· Custom fields
+                     · Project), each row what it holds; a row opens its screen. One Save keeps everything. */
+                  <div className={styles.shortList} role="list" aria-label="Details" data-testid="edit-short-list">
+                    {sections.map((r) => (
+                      <button key={r.key} type="button" role="listitem" className={styles.shortRow} data-section={r.key} data-error={sectionErrors(r.key) || undefined}
+                              onClick={() => setSection(r.key)}>
+                        <span className={styles.shortText}>
+                          <span className={styles.shortLabel}>{SECTION_LABEL[r.key]}</span>
+                          <span className={styles.shortSummary}>{sectionErrors(r.key) ? 'Needs a fix' : r.summary}</span>
+                        </span>
+                        <Icon name="chevron_right" size={24} />
+                      </button>
+                    ))}
                   </div>
-                ) : null}
-                <div className={styles.fieldWrap} data-field="name">
-                  <TextField label="Lead name" required value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef} />
-                </div>
-                <div className={styles.fieldWrap} data-field="phone">
-                  <PhoneField value={data.phone} onChange={set('phone')} error={errors.phone} inputRef={phoneRef} />
-                </div>
-                <div className={styles.fieldRow} data-field="source">
-                  <TextField label="Lead source" mode="select" value={data.source} options={data.source && !sources.includes(data.source) ? [data.source, ...sources] : sources} onChange={set('source')} />   {/* (REG-599) */}
-                  <TextField label="Property type" mode="select" value={data.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
-                </div>
-                {/* (pending modules S05 — testers' L-3) An office or a shop: the company the lead works for and its UEN — the lead's name is the
-                    contact person; the NRIC / FIN under Additional info steps back. Shown only for a commercial property type. */}
-                {commercial ? (
-                  <div className={styles.fieldWrap} data-field="companyName" data-testid="lead-company">
-                    <div className={styles.fieldRow}>
-                      <TextField label="Company name" value={data.companyName} onChange={set('companyName')} maxLength={120} trailingIcon={null} />
-                      <TextField label="UEN" value={data.companyUen} onChange={(v) => set('companyUen')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.companyUen} />   {/* (S42 B-06) */}
+                )
+              ) : phoneCreate ? (
+                <>
+                  {/* (Leads on the move, L3 — P-08) A new lead on a phone: the name and the mobile, the two ways to fill the rest from what
+                      arrived, then More details (the source, the home and the rest) and Assign with its suggestion; one Add lead. */}
+                  <div className={styles.section}>
+                    {nameField}
+                    {phoneField}
+                    <div className={styles.fillRows}>
+                      <button type="button" className={styles.fillAction} onClick={() => { void pasteMessage() }} data-testid="paste-message">
+                        {sparkle}<span>Paste the WhatsApp message to fill the rest</span>
+                      </button>
+                      <button type="button" className={styles.fillAction} onClick={() => { setFillError(null); docInput.current?.click() }} data-testid="fill-document">
+                        {sparkle}<span>{fillBusy ? `Reading ${fillBusy}…` : 'Fill from a document'}</span>
+                      </button>
+                      {fillError ? <span className={styles.fillError} role="alert" data-testid="fill-document-error">{fillError}</span> : null}
+                      {fillNoteLine}
+                      {pasteBox}
                     </div>
-                    <span className={styles.helper}>The lead’s name is the contact person at the company.</span>
                   </div>
-                ) : null}
-                <div className={styles.fieldWrap} data-field="propertyAddress">
-                  <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />
-                  <span className={styles.helper}>Client project address.</span>
-                </div>
-                {/* (REG-607, parity Q-12) 1.0's Area / District — Singapore's five regions; it also feeds the members' lead preferences. */}
-                <div className={styles.fieldWrap} data-field="district">
-                  <TextField label="District" mode="select" value={data.district} options={DISTRICTS} onChange={set('district')} />
-                </div>
-                {/* Assign member (REG-231) — after Property address, per the request. Carries its own data-field. (S41b-3) none in the trial. */}
-                {trial ? null : <AssigneeField team={assignable ? team.filter((m) => assignable.includes(m.id) || data.assignees.includes(m.id)) : team} value={data.assignees} onChange={set('assignees')}
-                               error={errors.assignees} inputRef={assigneeRef}
-                               locked={selfAssign && form.mode === 'create' ? 'This lead will be assigned to you. Your manager routes leads to teammates.' : undefined} />}   {/* (REG-609, parity C-07) 1.0's lock note */}
-              </div>
-
-              <div className={styles.section}>
-                <button type="button" className={styles.moreToggle} aria-expanded={expanded}
-                        onClick={() => setExpanded((e) => !e)}>
-                  Additional info
-                  <span data-chev><Icon name={expanded ? 'keyboard_arrow_up' : 'expand_more'} size={20} /></span>
-                </button>
-                <AnimatePresence initial={false}>
-                  {expanded ? (
-                    <motion.div
-                      key="more"
-                      initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                      animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
-                      exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                      transition={{ duration: duration.step, ease: ease.standard }}
-                      style={{ width: '100%' }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--om-spacing-6)', width: '100%' }}>
-                        <div className={styles.fieldWrap} data-field="email"><TextField label="Lead email" value={data.email} onChange={set('email')} trailingIcon={null}
-                                   type="email" inputMode="email" error={errors.email} inputRef={emailRef} /></div>
-                        <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
-                        {/* (REG-607, parity Q-35) 1.0 keeps the client's IC and the studio's own reference on the lead; every new quote starts with them. */}
-                        <div className={styles.fieldRow} data-field="nric">
-                          {/* (pending modules S05 — testers' L-3) a company has a UEN, not an NRIC — one already typed stays, never lost */}
-                          {commercial && !data.nric ? null : <TextField label="NRIC / FIN" value={data.nric} onChange={(v) => set('nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.nric} />}
-                          <TextField label="Customer ID" value={data.customerId} onChange={set('customerId')} maxLength={60} trailingIcon={null} />
-                        </div>
-                        {/* (pending modules S05 — testers' L-4) A second client — co-owners: every new quote starts with them as its own second
-                            client (REG-588's words: "Second client" · "NRIC (second client)"), and Client access offers them as someone from the household. */}
-                        {second ? (
-                          <div className={styles.fieldWrap} data-field="client2Name" data-testid="lead-second-client">
-                            <div className={styles.secondList}>
-                              <div className={styles.fieldRow}>
-                                <TextField label="Second client" value={data.client2Name} onChange={set('client2Name')} maxLength={120} trailingIcon={null} error={errors.client2Name} />
-                                <TextField label="NRIC / FIN (second client)" value={data.client2Nric} onChange={(v) => set('client2Nric')(v.toUpperCase())} maxLength={12} trailingIcon={null} error={errors.client2Nric} />
-                              </div>
-                              <PhoneField label="Mobile (second client)" required={false} value={data.client2Phone} onChange={set('client2Phone')} error={errors.client2Phone} />
-                            </div>
-                            <span className={styles.helper}>A co-owner. New quotes name them beside {data.name.trim() ? data.name.trim().split(/\s+/)[0] : 'the client'}.</span>
-                            <span className={styles.secondRemove}>
-                              <Button appearance="text" onPress={() => { setData((d) => ({ ...d, client2Name: '', client2Nric: '', client2Phone: '' })); setSecond(false) }}>Remove the second client</Button>
-                            </span>
-                          </div>
-                        ) : (
-                          <div className={styles.fieldWrap} data-field="client2Name">
-                            <span className={styles.secondRemove}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></span>
-                          </div>
-                        )}
-                        <div className={styles.fieldRow} data-field="budget">
-                          <TextField label="Estimated budget (S$)" value={data.budget} numeric="amount"
-                                     onChange={set('budget')} trailingIcon={null}
-                                     error={errors.budget} inputRef={budgetRef} />
-                          <div className={styles.fieldWrap}>
-                            <DateField label="Estimated start date" value={data.startDate}
-                                       onChange={set('startDate')} today={today} error={errors.startDate} />
-                          </div>
-                        </div>
-                        <div className={styles.fieldRow}>
-                          <TextField label="Style" mode="select" value={data.style} options={STYLE_OPTIONS} onChange={set('style')} />
-                          <TextField label="Key collection" mode="select" value={data.keyCollection} options={KEY_COLLECTION_OPTIONS} onChange={set('keyCollection')} />
-                        </div>
-                        <div className={styles.fieldRow}>
-                          <TextField label="Condition" mode="select" value={data.condition} options={CONDITION_OPTIONS} onChange={set('condition')} />
-                          <AreaField value={data.areaSize} unit={data.areaUnit} onChange={set('areaSize')} onUnitChange={set('areaUnit')} />
-                        </div>
-                        <div className={styles.fieldWrap} data-field="notes">
-                          {/* "Remarks" (user 2026-08-31): the mock types "Notes", which collided with the Notes tab —
-                              a different record entirely (lead_notes). The DS TextArea at the mock's 96px
-                              (page-checklist › Fields: never a raw input) — lead-form.module.css .notes.
-                              The helper used to say these appear on the Notes page; they do not, and never did.
-                              (REG-729) The field names itself, as every field in this form: "Remarks" is its label — resting where the
-                              placeholder sat while empty, on the border once filled — not a placeholder with a hidden name. */}
-                          <TextArea label="Remarks" value={data.notes}
-                                    onChange={(v: string) => set('notes')(v)} className={styles.notes} />
-                          <span className={styles.helper}>Shown under Other info on the lead’s Overview.</span>
-                        </div>
-                        {customFields.length ? (
-                          /* (REG-612, parity Q-25) The studio's own fields, each on the DS field its type asks for. */
-                          <div className={styles.fieldWrap} data-field="customFields">
-                            <span className={styles.customTitle}>Custom fields</span>
-                            <div className={styles.customList}>
-                              {customFields.map((f) => (
-                                <CustomFieldInput key={f.id} def={f} value={custom[f.id]} today={today} error={submitted ? validateCustomValue(f, custom[f.id]) : undefined}
-                                                  onChange={(v) => setCustom((c) => ({ ...c, [f.id]: v }))} />
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                        {form.mode === 'create' && !trial ? (
-                          /* (REG-609, parity C-08) Documents at creation — the Move stage window's Attach row; each file lands in the Files tab with the lead. */
-                          <div className={styles.fieldWrap} data-field="files">
-                            <SectionRow label="Attach files (optional)" action={<LinkButton icon="attach_file" onClick={() => fileInput.current?.click()}>Attach</LinkButton>} />
-                            <input ref={fileInput} type="file" multiple hidden aria-hidden tabIndex={-1}
-                                   onChange={(e) => { const list = Array.from(e.target.files ?? []); const names = list.map((f) => f.name); e.target.value = ''; if (names.length) { setFiles((fs) => [...fs, ...names.filter((n) => !fs.includes(n))]); setPicked((ps) => [...ps.filter((p) => !names.includes(p.name)), ...list]) } }} />
-                            {files.length ? (
-                              <div className={styles.tiles} data-testid="attached-files">
-                                {files.map((f) => <FileTile key={f} name={f} kind={/\.pdf$/i.test(f) ? 'pdf' : 'image'} onDelete={() => setFiles((fs) => fs.filter((x) => x !== f))} />)}
-                              </div>
-                            ) : null}
-                            <span className={styles.helper}>They appear in the lead’s Files tab.</span>
-                          </div>
-                        ) : null}
-                      </div>
-                    </motion.div>
+                  {fold('More details', (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--om-spacing-6)', width: '100%' }}>
+                      {sourceRow}
+                      {companyField}
+                      {addressField}
+                      {districtField}
+                      {moreInner}
+                    </div>
+                  ))}
+                  {assignField ? (
+                    <div className={styles.section}>
+                      {assignField}
+                      {suggestion && data.assignees.length === 0 && !selfAssign ? (
+                        <span className={styles.suggestLine} data-testid="lead-form-suggestion">
+                          <span>Suggested: <b>{suggestion.name}</b></span>
+                          <Button appearance="text" onPress={() => set('assignees')([suggestion.id])}>Assign {suggestion.name.split(/\s+/)[0]}</Button>
+                        </span>
+                      ) : null}
+                    </div>
                   ) : null}
-                </AnimatePresence>
-              </div>
-              {project ? (
-                /* (parity P-09 · D-08) The project's own section after the lead's block — the Custom fields block's look (a titled group of the
-                   house fields): its name (Rename's field, REG-925 — the ⋮ no longer renames), its type and the rooms in its scope (the
-                   project details dialog's fields, gaps build A — 7). */
-                <div className={styles.section} data-testid="project-details-section">
-                  <div className={styles.fieldWrap} data-field="projectName">
-                    <span className={styles.customTitle}>Project</span>
-                    <TextField label="Project name" required value={proj.name} maxLength={NAME_MAX} onChange={(v) => setProj((x) => ({ ...x, name: v }))} trailingIcon={null}
-                               error={projectNameError} inputRef={projectNameRef} />
+                </>
+              ) : (
+                <>
+                  <div className={styles.section}>
+                    {fillRow}
+                    {nameField}
+                    {phoneField}
+                    {sourceRow}
+                    {companyField}
+                    {addressField}
+                    {districtField}
+                    {assignField}
                   </div>
-                  <div className={styles.fieldWrap} data-field="projectType">
-                    <TextField label="Project type" required mode="select" value={proj.projectType} options={[...PROJECT_TYPES]} onChange={(v) => setProj((x) => ({ ...x, projectType: v }))} />
-                  </div>
-                  <div className={styles.customChips} data-field="scope">
-                    <span className={styles.customLabel}>Rooms in the scope</span>
-                    <Chips multiple label="Rooms in the scope" options={ROOMS} value={proj.scope} onChange={(v) => setProj((x) => ({ ...x, scope: ROOMS.filter((r) => v.includes(r)) }))} testId="scope-chips" />
-                  </div>
-                </div>
-              ) : null}
+                  {fold('Additional info', moreInner)}
+                  {projectSection}
+                </>
+              )}
             </div>
 
             <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
-              <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={submitting}>Cancel</Button>
-              <Button onPress={() => { void submit() }} isDisabled={submitting} data-testid={project ? 'details-save' : undefined}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
+              {phoneCreate ? (
+                /* (P-08) one filled button: Add lead — ✕ in the head is the way out, and it asks before anything typed goes */
+                <Button onPress={() => { void submit() }} isDisabled={submitting} className={styles.addLead} data-testid="add-lead">Add lead</Button>
+              ) : (
+                <>
+                  <Button variant="secondary" appearance="outlined" onPress={requestClose} isDisabled={submitting}>Cancel</Button>
+                  <Button onPress={() => { void submit() }} isDisabled={submitting} data-testid={project ? 'details-save' : undefined}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
+                </>
+              )}
             </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
     {dialogs}
+    {open ? docPicker : null}
     </>
   )
 }

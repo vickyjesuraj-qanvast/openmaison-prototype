@@ -301,6 +301,10 @@ const viewAs = async (page, who) => {
     await page.getByRole('button', { name: 'More options' }).first().click()
     await page.getByRole('menuitem', { name: 'Return Lead' }).click()
     const wiz = page.getByTestId('return-wizard'); await wiz.waitFor()
+    // (leads on the move, a deliberate change of this rule — L3 · A-29, return-lead-wizard.tsx's 'late' step): a lead past Qanvast's 30 days
+    // opens on the late-return notice first; the demo's Gavin See arrived 56 days before the demo day, so the probe goes on as a late return
+    const late = wiz.getByRole('button', { name: 'Return it anyway' })
+    if (await late.count()) { await late.click(); await page.waitForTimeout(400) }
     await wiz.getByLabel('Select a reason').click()
     await page.getByRole('option', { name: 'Lead is junk/spam' }).click(); await page.waitForTimeout(400)
     const label = wiz.getByText(/^Attach images\/screenshots of all your attempts/)

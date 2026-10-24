@@ -30,6 +30,9 @@
 .crumbBack { display: inline-flex; align-items: center; gap: 6px; color: var(--site-muted); text-decoration: none; border-radius: var(--om-radius-1); }
 .crumbBack:hover { color: var(--site-ink); }
 .crumbBack:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W1 — REG-312) the back crumb is a 20-tall link: on a touch pointer it stands 44 tall (it draws no box, so the
+   line reads as before — its 12px of extra height above and below sit inside the crumbs' own row) */
+@media (hover: none) { .crumbBack { min-height: 44px; margin-block: -12px; } }
 .crumbSep { color: var(--site-hairline-strong); }
 .crumbHere { color: var(--site-ink); }
 .moduleHero { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 64px; }
@@ -91,6 +94,12 @@
 .channelValue { display: inline-block; margin-top: 4px; font: var(--site-type-body); color: var(--site-ink); }
 a.channelValue { color: var(--site-accent); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--site-accent-line); border-radius: var(--om-radius-1); }
 a.channelValue:focus-visible { outline: var(--om-border-2) solid var(--site-accent); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W1 — REG-312) Contact's email and WhatsApp links are a 24-tall line: on a touch pointer each takes the house centred
+   44 (the globals' overlay, REG-344) — the line reads as before. */
+@media (hover: none) {
+  a.channelValue { position: relative; }
+  a.channelValue::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max(100%, 44px); height: max(100%, 44px); }
+}
 .reply { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 36px 0 0; font: var(--site-type-body-s); color: var(--site-muted); }
 .formCard { padding: var(--om-spacing-8); border: var(--om-border-1) solid var(--site-hairline); border-radius: var(--om-radius-4); background: var(--site-surface); box-shadow: var(--site-shadow-sm); }
 @media (max-width: 767px) { .formCard { padding: var(--om-spacing-5); } }

@@ -81,12 +81,22 @@
   }
   .iconBtn { position: relative; }
   .iconBtn::after { content: ''; position: absolute; inset: -12px; }   /* 20 → 44 */
-  .actions button { position: relative; }
-  .actions button::after { content: ''; position: absolute; inset: -4px; }   /* 36 → 44 */
+  .actions button { min-height: 44px; }   /* 36 → 44: (Leads on the move, L4 — C-02's rule) a DS button grows by its own height, never an overlay */
   .multi [role^='menuitem'] { min-height: 44px; }   /* the option rows, on any touch screen (the house menu lifts them to 1024) */
 }
 
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the question card's inline glyphs draws at 20px. */
 @media (hover: none) {
   .iconBtn { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* (Leads on the move, L4 — C-25 · C-17) On a finger who answered reads in the answer's line at 14 ("By Studio · 1d ago") and the head's 10px
+   tag steps out; the question and the answer read at 16. The desk keeps the mock's tag and 14. */
+.by { display: none; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .by { display: inline; }
+  .byTag { display: none; }
+  .q, .a { font: var(--om-type-body-l); }
+  .qLabel, .aLabel { font: var(--om-type-subtitle-l); }
+  .when { white-space: normal; }
 }

@@ -1,0 +1,17 @@
+/* (Leads on the move, P-04 · B-09 — his marks 2026-10-23) The Contacted / Met steps' logs on a phone and a tablet held upright: an open log is a
+   card holding the log sheet's fields (components/leads/log/log.module.css); a completed one a summary card with Edit. Drawn only there (≤1024
+   upright); the scale is the phone's — read 16, secondary 14, 44 targets, 12 inside a card, 16 between cards. */
+.log { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.logHead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; }
+.logTitle { flex: 1; min-width: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.logBody { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.error { font: var(--om-type-body-m); color: var(--om-color-tertiary-red-default); }
+
+.summary { display: flex; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.summaryText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.summaryEyebrow { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.summaryHead { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.summaryLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.summaryNotes { margin-top: var(--om-spacing-2); font: var(--om-type-body-l); color: var(--om-color-on-surface-default); white-space: pre-line; overflow-wrap: anywhere; }
+.edit { composes: link from '../../om/text-link.module.css'; flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 44px; }
+.addLog { composes: link from '../../om/text-link.module.css'; align-self: flex-start; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 44px; }

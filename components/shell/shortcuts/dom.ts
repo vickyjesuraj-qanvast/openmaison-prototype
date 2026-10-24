@@ -65,7 +65,10 @@ export function toggle(el: HTMLElement | null): boolean {
 export function wordsOf(el: HTMLElement | null): string {
   if (!el) return ''
   const t = el.matches(PRESSABLE) ? el : el.querySelector<HTMLElement>(PRESSABLE) ?? el
-  const name = el.dataset.kbLabel || t.getAttribute('aria-label') || t.textContent || ''
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W2's hand-off) the words a person reads, without an icon's ligature ("Stage: Met", never
+     "Stage: Metkeyboard_arrow_down") — the icons are aria-hidden spans (components/om/icon.tsx) */
+  const read = () => { const c = t.cloneNode(true) as HTMLElement; c.querySelectorAll('.msr, .mso, [aria-hidden="true"]').forEach((n) => n.remove()); return c.textContent }
+  const name = el.dataset.kbLabel || t.getAttribute('aria-label') || read() || ''
   return name.replace(/\s+/g, ' ').trim().slice(0, 40)
 }
 

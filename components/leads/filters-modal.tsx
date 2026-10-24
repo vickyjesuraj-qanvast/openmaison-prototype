@@ -61,7 +61,9 @@ export function MembersPane({ team, value, onToggle }: { team: readonly Pick<Mem
 }
 
 export function FiltersModal({
-  open, value, team, onClose, onApply, now, sources = SOURCES,}: {
+  open, value, team, onClose, onApply, now, sources = SOURCES, resultCount,}: {
+  /** (Leads on the move, L3 — A-11) How many leads the live filters leave — the phone sheet's Done says it: "Show 9 leads". */
+  resultCount?: number
   /** (REG-599) The sources to offer: the studio's live list plus any retired source still on a lead (the caller computes it). */
   sources?: readonly string[]
   open: boolean
@@ -126,6 +128,54 @@ export function FiltersModal({
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
             <SurfaceHead title="Filters" onClose={onClose} />
+            {sheet ? (
+              /* (Leads on the move, L3 — A-11, the Quotes / Contracts pattern) On a phone: ONE scrolling sheet, every group a row of the house Chips —
+                 Sort by · Property type · Source · Members · Dates — the desk's two panes (a rail of six tabs inside a 390 screen, its height jumping
+                 with the tab) gone. The same draft, applied live (REG-464). The To do scopes live on the pill (Quick filters show here only while one
+                 is on, so it can be let go). */
+              <div ref={scrollRef} className={styles.sheetBody} data-testid="lead-filters-sheet">
+                <section className={styles.sheetGroup} aria-label="Sort by">
+                  <span className={styles.sectionTitle}>Sort by</span>
+                  <Chips label="Sort by" options={[{ value: 'newest', label: 'Newest at the top' }, { value: 'oldest', label: 'Oldest at the top' }]} value={draft.sort}
+                         onChange={(v) => setDraft((d) => ({ ...d, sort: v as LeadFilters['sort'] }))} />
+                </section>
+                {draft.quick.length ? (
+                  <section className={styles.sheetGroup} aria-label="Quick filters">
+                    <span className={styles.sectionTitle}>Quick filters</span>
+                    <Chips multiple label="Quick filters" options={QUICK_FILTERS.map((f) => ({ value: f.key, label: f.label }))} value={draft.quick}
+                           onChange={(v) => setDraft((d) => ({ ...d, quick: v as QuickFilter[] }))} />
+                  </section>
+                ) : null}
+                <section className={styles.sheetGroup} aria-label="Property type">
+                  <span className={styles.sectionTitle}>Property type</span>
+                  <Chips multiple label="Property type" options={PROPERTY_TYPE_GROUPS.flat()} value={draft.propertyTypes}
+                         onChange={(v) => setDraft((d) => ({ ...d, propertyTypes: v }))} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Source">
+                  <span className={styles.sectionTitle}>Source</span>
+                  <Chips multiple label="Source" options={sources} value={draft.sources} onChange={(v) => setDraft((d) => ({ ...d, sources: v }))} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Members">
+                  <MembersPane team={team} value={draft.assignees} onToggle={(id) => toggle('assignees', id)} />
+                </section>
+                <section className={styles.sheetGroup} aria-label="Dates">
+                  <span className={styles.sectionTitle}>Dates</span>
+                  <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.datePreset}
+                         onChange={(k) => setDraft((d) => {
+                           const next = d.datePreset === k ? null : (k as DatePreset)
+                           return { ...d, datePreset: next, ...(next === 'custom' ? {} : { from: '', to: '' }) }
+                         })} />
+                  {custom ? (
+                    <div className={styles.sheetDates}>
+                      <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined}
+                                 onChange={(v) => setDraft((d) => ({ ...d, from: v, datePreset: 'custom' }))} />
+                      <DateField label="To date" value={draft.to} today={today} error={rangeError}
+                                 onChange={(v) => setDraft((d) => ({ ...d, to: v, datePreset: 'custom' }))} />
+                    </div>
+                  ) : null}
+                </section>
+              </div>
+            ) : (
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -229,10 +279,11 @@ export function FiltersModal({
                 )}
               </div>
             </div>
+            )}
             <SurfaceFoot shadow={bodyScrolls}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
-              {/* (REG-464) The draft is already applied — Done only closes. */}
-              <Button onPress={onClose}>Done</Button>
+              {/* (REG-464) The draft is already applied — Done only closes. (Leads on the move, A-11) On a phone it says what the list now holds. */}
+              <Button onPress={onClose} data-testid="filters-done">{sheet && resultCount !== undefined ? `Show ${resultCount} lead${resultCount === 1 ? '' : 's'}` : 'Done'}</Button>
             </SurfaceFoot>
           </motion.div>
         </motion.div>

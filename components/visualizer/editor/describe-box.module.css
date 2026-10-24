@@ -16,6 +16,8 @@
 .mic { position: absolute; right: 3px; bottom: 3px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--om-radius-1); background: none; color: var(--om-color-on-surface-secondary); cursor: pointer; }   /* (REG-729) r4, as every icon button */
 @media (hover: hover) { .mic:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
 .mic:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, found by the closing sweep) the mic is a 36 square under a finger: the house centred 44 */
+@media (hover: none) { .mic::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; } }
 .box[data-listening] .mic { background: var(--om-color-tertiary-red-default); color: var(--om-color-surface-default); animation: listen 1.2s ease-in-out infinite; }
 .box[data-listening] .field { border-color: var(--om-color-tertiary-red-default); box-shadow: inset 0 0 0 1px var(--om-color-tertiary-red-default); }
 @keyframes listen { 50% { box-shadow: 0 0 0 6px rgba(192, 0, 0, 0.18); } }

@@ -17,12 +17,15 @@ import {
   setTaskAssignees, setTaskTags, setTasksDone, undoTasksDone, updateTask,
 } from '@/app/leads/tasks-actions'
 import type { LeadTasksData } from '@/lib/leads/tasks'
+import { useSheetLayout } from '@/components/om/sheet'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './task-panel-host.module.css'
 
 /** tasks-actions that only `revalidatePath('/leads')` (tags, templates) — refresh after them, as the Tasks tab does (use-run.ts). */
 const REFRESH = { refresh: true } as const
 /** The Assign popover's spot under the panel's person_add — the Tasks tab's own footprint (400 × 440, 20 off the edges). */
-const assignPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 440 - 20), left: Math.min(r.left, window.innerWidth - 400 - 20) } }
+/* (responsive audit 2026-10-23, W2-12) floored at 16 (REG-269's clamp): a 390-tall screen put the card's top at −70 */
+const assignPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.max(16, Math.min(r.bottom + 4, window.innerHeight - 440 - 20)), left: Math.max(16, Math.min(r.left, window.innerWidth - 400 - 20)) } }
 
 /**
  * (Dane's UAT 5.05, 2026-10-01) A task pressed on the Overview opens HERE — the Tasks tab's own panel (`TaskPanel` · `CommentsPanel`) with
@@ -42,6 +45,9 @@ export function OverviewTaskPanel({ leadId, data, openId, onClose, onOpenInTasks
   const { run, fail } = useRun()
   const me = team.find((m) => m.isYou) ?? team[0]
   const task = openId ? tasks.find((t) => t.id === openId) ?? null : null
+  /* (Leads on the move, L4 — C-24) a finger's panel opens on the task (name, When with its presets, Who), as the Tasks tab's does */
+  const phone = useSheetLayout()
+  const compact = useMediaQuery(TOUCH_TABLET) || phone
 
   const [view, setView] = useState<'task' | 'comments'>('task')
   const [shownId, setShownId] = useState(openId)
@@ -85,7 +91,7 @@ export function OverviewTaskPanel({ leadId, data, openId, onClose, onOpenInTasks
     <>
       {task && view === 'task' ? (
         <TaskPanel
-          task={task} team={team} tags={tags} now={now}
+          task={task} team={team} tags={tags} now={now} compact={compact}
           onClose={onClose}
           onOpenInTasks={() => onOpenInTasks(task.id)}
           onComments={() => setView('comments')}

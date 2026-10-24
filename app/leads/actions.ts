@@ -478,12 +478,13 @@ export async function updateLead(leadId: string, input: LeadFormInput): Promise<
   revalidateLead(leadId)
 }
 
-export async function addTask(leadId: string, title: string): Promise<void> {
+export async function addTask(leadId: string, title: string, /** (Leads on the move, A-09) the listing's Tasks sheet on a phone sets the due in the same press — epoch ms */ dueAt?: number | null): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
   const now = new Date()
+  const due = typeof dueAt === 'number' && Number.isFinite(dueAt) ? new Date(dueAt) : null
   // Stamped like createTask(): without a creator the same task read as 'System' in Activity and '—' in the drawer.
   await db.insert(leadTasks).values({
-    id: randomUUID(), leadId, title, kind: 'General', createdAt: now, creatorId: await sessionMemberId(), updatedAt: now,
+    id: randomUUID(), leadId, title, kind: 'General', createdAt: now, creatorId: await sessionMemberId(), updatedAt: now, ...(due ? { dueAt: due } : {}),
   })
   revalidateLead(leadId)
 }
@@ -893,6 +894,136 @@ async function stageFieldsRefusal(stage: string, payload: unknown, entering: boo
   if (!isActiveStage(stage as Stage) || !isWizardPayload(payload)) return null
   const asks = await fetchStageAsks()
   return stageRefusal(stage as Stage, validateStage(stage as Stage, payload, { wonContract: asks.wonContract, contactNextStep: entering && stage === 'Contacted' ? asks.contactNextStep : false }))
+}
+
+/* ── (Leads on the move, P-03 — his marks 2026-10-23, "continue the leads") The log sheet: a call, a chat, a site visit or a note in three taps.
+   Two reads and one write: what the sheet needs to know about the lead and the member logging (`fetchLogContext`), and the save
+   (`logLeadContact`) — on a New lead it logs the first contact AND moves the lead to Contacted through the move's own path (`moveStage`, with its
+   owner rule and its checks); a site visit on a Contacted lead is the Met step's meeting log. Anywhere else it is the Notes tab's contact log
+   (`createNote`) with its call-back as a dated Follow-up for the lead's members (REG-608) — the same records the Move stage window and the
+   Notes tab write, nothing new. Who sees leads holds on both (`canOpenLead`). ── */
+
+/** What the log sheet reads as it opens. `assignable` = whom the member may put on the lead (empty with `hint` = may not assign). */
+export type LogContext = {
+  lead: { id: string; name: string; stage: Stage; resumeStage: Stage | null; assignees: { id: string; name: string }[]; project: { id: string; number: string } | null }
+  team: { id: string; name: string; role: string; color: string; isYou: boolean }[]
+  assignable: string[]; hint: string | null; suggestedId: string | null
+  stageMovement: 'linear' | 'flexible'; role: string
+  /** the studio asks for the next call or meeting on the first contact (Settings › Lead management › Lead stages) */
+  asksNextStep: boolean
+}
+
+export async function fetchLogContext(leadId: string): Promise<LogContext | { error: string }> {
+  const { canOpenLead, refusesWorkspace } = await import('@/lib/leads/visibility')
+  const viewer = await fetchViewer()
+  if (await refusesWorkspace(viewer)) return { error: 'Leads aren’t part of your role' }
+  if (!(await canOpenLead(viewer, leadId))) return { error: 'This lead isn’t one you can see' }
+  const { fetchLeadRow } = await import('@/lib/leads/queries')
+  const { fetchStageMovement, fetchLeadStageRules } = await import('@/lib/settings/queries')
+  const { fetchMemberStats } = await import('@/lib/company/members')
+  const { suggestMember } = await import('@/lib/leads/suggest')
+  const { pickable } = await import('@/lib/leads/assign-policy')
+  const [{ row, team }, stageMovement, rules, stats] = await Promise.all([fetchLeadRow(leadId), fetchStageMovement(), fetchLeadStageRules(), fetchMemberStats()])
+  if (!row || row.deletedAt) return { error: 'This lead was deleted' }
+  const hint = assignHint(viewer)
+  const suggestion = row.assignees.length ? null : suggestMember({ propertyType: row.propertyType, budgetMinor: row.budgetMinor, style: row.style, area: row.area }, team, stats)
+  return {
+    lead: { id: row.id, name: row.name, stage: row.stage as Stage, resumeStage: row.resumeStage, assignees: row.assignees.map((m) => ({ id: m.id, name: m.name })), project: row.project ? { id: row.project.id, number: row.project.number } : null },
+    team: pickable(team).map((m) => ({ id: m.id, name: m.name, role: m.role, color: m.color, isYou: m.id === viewer.id })),
+    assignable: hint ? [] : assignableIds(viewer, team), hint, suggestedId: suggestion?.id ?? null,
+    stageMovement, role: viewer.role, asksNextStep: rules.contactNextStep,
+  }
+}
+
+/** One log from the sheet. Dates are the app's input strings ("23/10/2026, 4:12 PM" — never typed, the picker's). `files` = the lead's files the
+    log keeps (uploaded through the Files tab's own upload as they were picked). */
+export type LogSave = {
+  leadId: string
+  kind: 'contact' | 'meeting' | 'note'
+  channel: string | null; when: string; outcome: string; nextStepWhen: string; nextStepMode: string
+  /** a site visit's Where (the Met step's In person · Video call · Showroom) */
+  where: string
+  notes: string
+  fileIds: string[]
+  /** the move the log carries on into — Contacted from New, Met from Contacted; null = a log alone */
+  moveTo: 'Contacted' | 'Met' | null
+  /** an unowned New lead: the member the sheet puts on it before it leaves New (REG-130 · REG-2655) */
+  assignTo: string | null
+}
+export type LogSaved = { moved: 'Contacted' | 'Met' | null; noteId: string | null; reminder: { title: string; dueAt: number } | null; planned: { id: string; at: number } | null }
+
+const MEETING_PLACES = ['In person', 'Video call', 'Showroom'] as const
+
+export async function logLeadContact(input: LogSave): Promise<LogSaved | { error: string }> {
+  const { canOpenLead, refusesWorkspace } = await import('@/lib/leads/visibility')
+  const { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } = await import('@/lib/leads/enums')
+  const { parseInputDateTime } = await import('@/lib/format')
+  const viewer = await fetchViewer()
+  if (await refusesWorkspace(viewer)) return { error: 'Leads aren’t part of your role' }
+  if (!(await canOpenLead(viewer, input.leadId))) return { error: 'This lead isn’t one you can see' }
+  const [lead] = await db.select({ id: leads.id, name: leads.name, stage: leads.stage, deletedAt: leads.deletedAt }).from(leads).where(eq(leads.id, input.leadId)).limit(1)
+  if (!lead || lead.deletedAt) return { error: 'This lead was deleted' }
+  const kind = input.kind === 'meeting' || input.kind === 'note' ? input.kind : 'contact'
+  const notes = String(input.notes ?? '').slice(0, 4000)
+  /* the lead's own live files only — an id from elsewhere is dropped */
+  const ids = [...new Set((input.fileIds ?? []).filter((x) => typeof x === 'string'))].slice(0, 30)
+  const files = ids.length ? await db.select({ id: leadFiles.id, name: leadFiles.name }).from(leadFiles).where(and(eq(leadFiles.leadId, lead.id), inArray(leadFiles.id, ids), isNull(leadFiles.deletedAt))) : []
+  const fileIds = ids.filter((id) => files.some((f) => f.id === id))
+  const nameOf = (id: string) => files.find((f) => f.id === id)?.name ?? 'File'
+  const when = parseInputDateTime(String(input.when ?? ''))
+  const nextAt = input.nextStepWhen ? parseInputDateTime(String(input.nextStepWhen)) : null
+  /* the log's own checks — the window's and the Notes tab's (validateStage · validateDraft): a contact names how, when and how it went; a visit
+     where and when; a note says something or keeps a photo */
+  if (kind === 'contact') {
+    if (!input.channel || !(CONTACT_CHANNELS as readonly string[]).includes(input.channel)) return { error: 'Choose how you contacted them' }
+    if (!when) return { error: 'Choose when it was' }
+    if (!(OUTCOMES as readonly string[]).includes(input.outcome)) return { error: 'Choose how it went' }
+    if (input.nextStepWhen && !nextAt) return { error: 'The call-back’s day didn’t read — pick it again' }
+  } else if (kind === 'meeting') {
+    if (!(MEETING_PLACES as readonly string[]).includes(input.where)) return { error: 'Choose where you met' }
+    if (!when) return { error: 'Choose when it was' }
+  } else if (!notes.trim() && !fileIds.length) return { error: 'Write a note or add a photo' }
+  const mode = input.nextStepMode && (CONTACT_MODES as readonly string[]).includes(input.nextStepMode) ? input.nextStepMode : ''
+  /* the call-back is a task the Lead screen's Next line reads as the person and the act, its day the due's own ("Call Kelvin back — tomorrow ·
+     10:00 AM") — REG-319's sentence put the date in the title as well */
+  const { followUpTitle } = await import('@/components/leads/log/log-plan')
+  const reminder = kind === 'contact' && nextAt ? { title: followUpTitle(input.outcome, mode, lead.name), dueAt: nextAt.getTime() } : null
+
+  /* ── the move the log carries on into: the move's own path, its rules and its checks ── */
+  const moveTo = input.moveTo === 'Contacted' || input.moveTo === 'Met' ? input.moveTo : null
+  if (moveTo) {
+    const from = moveTo === 'Contacted' ? 'New' : 'Contacted'
+    if (lead.stage !== from) return { error: `${titleCaseName(lead.name)} is in ${lead.stage} now — close this and log it again` }
+    if (moveTo === 'Met' && kind !== 'meeting') return { error: 'A site visit moves the lead to Met' }
+    if (moveTo === 'Contacted' && kind !== 'contact') return { error: 'Log how you contacted them first' }
+    if (input.assignTo && moveTo === 'Contacted') {
+      const have = await db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, lead.id))
+      if (!have.length) {
+        try { await assignMembers(lead.id, [input.assignTo]) }
+        catch { return { error: assignHint(viewer) ?? 'You can’t put that member on this lead' } }
+      }
+    }
+    const payload = moveTo === 'Contacted'
+      ? { logs: [{ channel: input.channel, when: input.when, outcome: input.outcome, nextStepWhen: nextAt ? input.nextStepWhen : '', nextStepMode: nextAt ? mode : '', files: fileIds.map(nameOf), fileIds, notes }] }
+      : { logs: [], meetings: [{ where: input.where, when: input.when, files: fileIds.map(nameOf), fileIds, notes }] }
+    const tasks: MoveTask[] = reminder ? [{ title: reminder.title, kind: 'Follow-up', dueAt: new Date(reminder.dueAt).toISOString(), assignLeadMembers: true }] : []
+    const moved = await moveStage({ leadId: lead.id, fromStage: from, toStage: moveTo, payload, tasks })
+    if ('error' in moved) return { error: moved.error }
+    return { moved: moveTo, noteId: null, reminder, planned: moved.planned ?? null }
+  }
+
+  /* ── a log alone: the Notes tab's own records ── */
+  if (kind === 'meeting') return { error: 'A site visit is logged with the move to Met — log it as a contact instead' }
+  const { createNote } = await import('@/app/leads/notes-actions')
+  const { createTask } = await import('@/app/leads/tasks-actions')
+  const noteId = await createNote(lead.id, {
+    kind: kind === 'note' ? 'note' : 'contact', title: '', body: notes,
+    channel: kind === 'note' ? null : input.channel,
+    when: kind === 'note' ? '' : input.when, outcome: kind === 'contact' ? input.outcome : '',
+    nextStepWhen: reminder ? input.nextStepWhen : '', nextStepMode: reminder ? mode : '',
+  }, fileIds)
+  if (reminder) await createTask(lead.id, reminder.title, { kind: 'Follow-up', dueAt: new Date(reminder.dueAt), assignLeadMembers: true })
+  return { moved: null, noteId, reminder, planned: null }
 }
 
 /** The left band marks a lead nobody has opened or clicked yet (user 2026-08-29); the first interaction clears it. */

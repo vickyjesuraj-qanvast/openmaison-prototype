@@ -5,23 +5,19 @@ import { useRouter } from 'next/navigation'
 import { Button, Switch } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
-import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
-import { DropdownItem } from '@/components/leads/dropdown'
 import { Dropzone, FieldError } from '@/components/leads/move-stage/fields'
 import { uploadPicked } from '@/components/leads/files/upload-picture'
 import { PLAN_ACCEPT } from '@/components/projects/floor-plan/plan-picture'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { withFrom } from '@/lib/nav'
 import { planNameOf } from '@/lib/projects/floor-plan-model'
-import { KIND_LABEL } from '@/lib/planner/model'
-import { ROOM_PRESETS } from '@/lib/planner/templates'
-import { PLACE_MAX, addedRoom, roomSummary, roomsForType, scaleOk, sizeAt, startingArea, type PlaceRoom } from '@/lib/planner/photo'
+import { roomSummary, roomsForType, scaleOk, sizeAt, startingArea, type PlaceRoom } from '@/lib/planner/photo'
 import { floorPlanPhotoFolder, readPhotoTarget, readPhotoTargets, startFromFloorPlan, type PhotoOption, type PhotoTarget, type PhotoTargetFacts } from '@/app/planner/photo-actions'
 import { cornersStart, readPlanFile, readPlanUrl, squareByCorners, straightenPlan, type ReadPlan, type Straightened } from './straighten-photo'
 import { CornerEditor } from './corner-editor'
+import { RoomList } from './room-list'
 import { useSnackbar } from '@/components/om/snackbar'
 import { quadUsable, type Quad } from '@/lib/planner/corners'
 import { SizeFields, sizeOf, type Measured } from './size-fields'
@@ -65,8 +61,6 @@ export function PhotoDialog({ open, onClose, target, from = { kind: 'upload' }, 
   const [error, setError] = useState<string | null>(null)
   const [rooms, setRooms] = useState<PlaceRoom[]>([])
   const [roomsOpen, setRoomsOpen] = useState(false)
-  const [addMenu, setAddMenu] = useState(false)
-  const addAnchor = useRef<HTMLSpanElement>(null)
   const [sizeBy, setSizeBy] = useState<'area' | 'length'>('area')
   const [area, setArea] = useState('')
   const [measured, setMeasured] = useState<Measured | null>(null)
@@ -299,20 +293,7 @@ export function PhotoDialog({ open, onClose, target, from = { kind: 'upload' }, 
               <p className={styles.note}>{`Started from ${basis}${facts?.propertyType ? ' — the flat type on record' : ''}. Take away what the plan doesn’t have, add what it does — you place each one on the plan next.`}</p>
               {roomsOpen ? (
                 <>
-                  <ul className={styles.list} aria-label="Rooms to place" data-testid="photo-room-list">
-                    {rooms.map((r, i) => (
-                      <li key={`${r.name}-${i}`} className={styles.row}>
-                        <span className={styles.rowText}><span className={styles.rowName}>{r.name}</span>{KIND_LABEL[r.kind] !== r.name ? <span className={styles.rowSub}>{KIND_LABEL[r.kind]}</span> : null}</span>
-                        <IconButton icon="close" label={`Take ${r.name} off the list`} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setRooms((list) => list.filter((_, j) => j !== i))} />
-                      </li>
-                    ))}
-                  </ul>
-                  {rooms.length < PLACE_MAX ? (
-                    <span ref={addAnchor} className={styles.addWrap}><Button variant="secondary" appearance="outlined" size="sm" iconStart={<Icon name="add" size={18} weight={300} />} iconEnd={<Icon name="arrow_drop_down" size={18} />} onPress={() => setAddMenu((v) => !v)} aria-haspopup="menu" aria-expanded={addMenu} data-testid="photo-room-add">Add a room</Button></span>
-                  ) : null}
-                  <PortalMenu open={addMenu} anchor={addAnchor} onClose={() => setAddMenu(false)} role="menu" width={240} sheetTitle="Add a room">
-                    {ROOM_PRESETS.map((p) => <DropdownItem key={p.kind} onSelect={() => { setAddMenu(false); setRooms((list) => [...list, addedRoom(p.kind, list)]) }}>{p.name}</DropdownItem>)}
-                  </PortalMenu>
+                  <RoomList rooms={rooms} onRooms={setRooms} />   {/* (REG-2800) shared with Floorplan to 3D Isometric */}
                 </>
               ) : null}
             </section>

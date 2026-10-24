@@ -38,6 +38,9 @@
   .items { grid-template-columns: 24px minmax(0, 1fr) 36px; row-gap: var(--om-spacing-2); }
   .items > .head:nth-child(n + 3) { display: none; }
   .row > :nth-child(3), .row > :nth-child(4), .row > :nth-child(5) { grid-column: 2; }
+  /* (responsive audit 2026-10-23, W4-22) each row starts on its own line: the head keeps two cells here, so the first row's number slid into the
+     head's empty third cell and its name landed in the 24px number column — a 34px sliver of a field at 390 */
+  .row > :first-child { grid-column: 1; }
   .previewRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-1); }
 }
 

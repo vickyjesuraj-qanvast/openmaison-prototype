@@ -39,6 +39,14 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'nextFollowUp', label: 'Next follow-up', visible: false, pinned: false },   /* (REG-608) the earliest dated open task, off until switched on */
 ]
 
+/** (Leads on the move, L3 — P-06 · A-12, his marks 2026-10-23) A touch tablet's first screen: Name · Stage · Last contact · Next follow-up ·
+ *  Members — who to call and when — the rest one switch away in Column settings, remembered for the tablet apart (`om.columns.leads.tablet`). */
+const TABLET_SET: readonly ColumnKey[] = ['name', 'stage', 'lastContact', 'nextFollowUp', 'assignees']
+export const TABLET_COLUMNS: ColumnConfig[] = [
+  ...TABLET_SET.map((k) => ({ ...DEFAULT_COLUMNS.find((c) => c.key === k)!, visible: true })),
+  ...DEFAULT_COLUMNS.filter((c) => !TABLET_SET.includes(c.key)).map((c) => ({ ...c, visible: false })),
+]
+
 const WIDTHS: Record<ColumnKey, number> = {
   name: 240, stage: 146, inStage: 180, tasks: 321, assignees: 160,
   source: 132, budget: 138, propertyType: 158, created: 115, address: 240, lastContact: 200, district: 120, nextFollowUp: 240,   /* (Dane UAT 5.13) the widest "Wed, 28 May ’26 · 10:00 PM" uncut — was 200 */
@@ -62,7 +70,15 @@ const EMPTY_SELECTION = new Set<string>()
 /** (REG-733) The mouse's actions band: 16 inset + Edit 64 + 12 + kebab 36 + 12 clear − the last cell's own 24 padding. */
 const ACTIONS_BAND = 116
 
-const colStyle = (key: ColumnKey, dragged: number | undefined) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
+/** (Leads on the move, P-06) A touch tablet's floors — 12 inside each cell (table.module.css), so Name · Stage · Last contact stand on a 768 frame's
+ *  first screen beside the frozen Edit and ⋮, and all five on a 1024 one. */
+/*  (responsive audit 2026-10-23, W2-03) Members 144: two avatars, the +n box and the Assign glyph are 120 inside the cell's 12 + 12 — at 128 a lead
+ *  with three members had its Assign cut ("D +1" and half the glyph). The tablet ghost's Members column says the same (components/shell/skeleton.tsx). */
+const TABLET_WIDTHS: Record<ColumnKey, number> = {
+  name: 196, stage: 128, inStage: 150, tasks: 260, assignees: 144,
+  source: 120, budget: 120, propertyType: 140, created: 108, address: 200, lastContact: 168, district: 112, nextFollowUp: 184,
+}
+const colStyle = (key: ColumnKey, dragged: number | undefined, widths: Record<ColumnKey, number> = WIDTHS) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${widths[key]} 0 ${widths[key]}px` })
 
 /** (REG-608) The earliest dated open task — the listing's tasks are already ordered by due date, nulls last. */
 const nextDue = (row: LeadRow) => row.tasks.find((t) => t.dueAt) ?? null
@@ -139,7 +155,10 @@ export function LeadsTable({
   sort: heldSort,
   onSortChange,
   canDelete = true,
+  touchTablet = false,
 }: {
+  /** (Leads on the move, L3 — P-06 · A-12 · A-13) A touch tablet: its own floors, Edit and ⋮ frozen at the right edge of every row. */
+  touchTablet?: boolean
   /** Row whose stage menu is open — its stage cell shows the 2px primary outline (780:86452). */
   openStageId?: string | null
   rows: LeadRow[]
@@ -193,7 +212,8 @@ export function LeadsTable({
   const visible = columns.filter((c) => c.visible)
   const D = useColumnDrag(visible.map((c) => ({ key: c.key, pinned: c.pinned, locked: c.key === 'name' })), (keys) => onReorder?.(keys))   /* drag a head to reorder (REG-462) */
   const dragged = useColumnWidths('leads')   // REG-427
-  const widthOf = (key: ColumnKey) => dragged[key] ?? WIDTHS[key]
+  const widths = touchTablet ? TABLET_WIDTHS : WIDTHS
+  const widthOf = (key: ColumnKey) => dragged[key] ?? widths[key]
   const minWidth = visible.reduce((w, c) => w + widthOf(c.key), 0)
   /* (REG-310) On a touch tablet the hover actions are an in-flow last cell (table.module.css, `hover: none`), 134 wide:
      the table's floor grows by that band so every row — and the head's spacer — has room for it, and the column scale
@@ -215,7 +235,7 @@ export function LeadsTable({
     role: 'cell',
     className: col.pinned ? `${base} ${styles.pin}` : base,
     /* (REG-614) The drag's transform rides every cell, head and body, so the whole column travels — the Items grid's rule (REG-572). */
-    style: { ...(col.pinned ? { ...colStyle(col.key, dragged[col.key]), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key, dragged[col.key])), ...D.style(col.key) },
+    style: { ...(col.pinned ? { ...colStyle(col.key, dragged[col.key], widths), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key, dragged[col.key], widths)), ...D.style(col.key) },
     'data-pin-edge': col.pinned && col.key === pinEdge ? true : undefined,
   })
   /* Fluid columns grow pro rata, so sticky offsets scale by (rendered width ÷ floor). DOM write only.
@@ -228,7 +248,12 @@ export function LeadsTable({
   useEffect(() => {
     const el = tableEl.current
     if (!el) return
-    const apply = (w: number) => el.style.setProperty('--col-scale', String(Math.max(1, (w - band) / minWidth)))
+    const apply = (w: number) => {
+      el.style.setProperty('--col-scale', String(Math.max(1, (w - band) / minWidth)))
+      /* (leads on the move, P-06) a touch tablet's frozen ⋮ casts its shadow only while more table lies to its left */
+      const box = el.parentElement
+      if (touchTablet && box) requestAnimationFrame(() => box.toggleAttribute('data-at-end', box.scrollLeft + box.clientWidth >= box.scrollWidth - 2))
+    }
     if (typeof ResizeObserver === 'undefined') { apply(el.clientWidth); return }
     // The first notification carries the initial size and is delivered before paint, so the scale is never a frame late.
     const ro = new ResizeObserver(([entry]) => {
@@ -237,7 +262,7 @@ export function LeadsTable({
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [minWidth, band])
+  }, [minWidth, band, touchTablet])
   const sorted = useMemo(() => {
     if (!sort) return rows
     const out = [...rows].sort((a, b) => {
@@ -434,8 +459,8 @@ export function LeadsTable({
 
   return (
     <div className={styles.card}>
-      <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-        <div ref={tableEl} className={styles.table} role="table" data-drag-root="" aria-label="Leads" data-kb-list="lead" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
+      <div className={styles.scroller} data-scroll-box onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); if (touchTablet) el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) }}>
+        <div ref={tableEl} className={styles.table} role="table" data-drag-root="" aria-label="Leads" data-kb-list="lead" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined} data-tablet={touchTablet || undefined}
              style={{ minWidth: minWidth + band }}>
           <div className={styles.headRow} role="row">
             {visible.map((col, i) => (

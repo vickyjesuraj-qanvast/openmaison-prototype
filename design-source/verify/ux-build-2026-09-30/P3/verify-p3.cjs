@@ -16,7 +16,7 @@ const ROOT = path.resolve(__dirname, '../../../..')
 const IMG = [path.join(ROOT, 'public/uat-files/kitchen-moodboard.jpg'), path.join(ROOT, 'public/uat-files/sophia-living-room.jpg'), path.join(ROOT, 'public/uat-files/fluted-panel.jpg')]
 const PDF = path.join(ROOT, 'public/uat-files/sophia-floor-plan.pdf')
 
-const sql = (q) => execFileSync('sqlite3', [DB, q], { encoding: 'utf8' }).trim()
+const sql = (q) => execFileSync('sqlite3', ['-cmd', '.timeout 30000', DB, q], { encoding: 'utf8' }).trim()   // waits for the server's lock (the harness's rule for every sqlite3 call — its patch reaches only the string form; the lead page reads a little more since Leads on the move L1)
 const one = (q) => sql(q).split('\n')[0] ?? ''
 let pass = 0, fail = 0
 const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } else { fail++; console.log('  ✗', name) } }

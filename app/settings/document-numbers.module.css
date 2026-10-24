@@ -31,3 +31,12 @@
   }
   .entity { grid-template-areas: 'name name name' 'prefix follow follow' 'example example example'; }
 }
+/* (responsive audit 2026-10-23, W4-02) A phone: three fields across left each ~70px — the labels read "Pre…" · "Nex…" and "The year" broke onto two
+   lines. Two across, in the order they are typed: Prefix · Next number, then Digits · The year, then the example on its own line. */
+@media (max-width: 767px) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: 'name name' 'prefix next' 'digits year' 'example example';
+  }
+  .entity { grid-template-areas: 'name name' 'prefix follow' 'example example'; }
+}

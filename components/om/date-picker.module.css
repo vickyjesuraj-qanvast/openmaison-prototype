@@ -68,6 +68,15 @@
   }
   .day::after { width: max(100%, 40px); height: max(100%, 40px); }   /* 7 across a 375 screen: 40 is the most that fits without overlap */
 }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W5-35) …but in the anchored card (a touch tablet; a phone has the sheet below) the days stand
+   32 apart and the pager 28: each 40 / 44 box reached over its neighbour's drawn edge, and a later sibling's box wins — a tap on the right of
+   "9" picked the 10th, on Today's right edge it turned the month back. There each day keeps its own cell (32, edge to edge) and each pager
+   button its own 28 of the row (44 tall); the month / year switch, a 24 line, stands 44 (paid back as margin). The sheet keeps its 44s. */
+@media (hover: none) {
+  .panel .day::after { width: 100%; height: 100%; }
+  .panel .pageBtn::after { width: calc(100% + 4px); }
+  .panel .monthBtn { min-height: 44px; margin-block: -10px; }
+}
 
 /* Year switch (Material "year" view; not in the mock — invented, REG-91). */
 .years { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 8px; padding: 0 16px 8px; align-content: start; }
@@ -133,4 +142,18 @@
 }
 @media (max-width: 359px) {
   .sheetPanel { --cell: 40px; }
+}
+
+/* (Leads on the move, L4 — C-20, the house picker in its phone sheet) Every control a finger needs is 44: the month / year switch, Today and the
+   pager, the years, the hour · minute · AM/PM selects and Done (they drew 24–34). The day cells are B-24's above; a desk's anchored card is
+   untouched. */
+@media (max-width: 767px) {
+  .sheetPanel .head { height: auto; padding-top: var(--om-spacing-1); padding-bottom: var(--om-spacing-1); }
+  .sheetPanel .monthBtn { min-height: 44px; }
+  .sheetPanel .pager { gap: 0; margin-right: 0; }
+  .sheetPanel .pageBtn { width: 44px; height: 44px; }
+  .sheetPanel .year { height: 44px; }
+  .sheetPanel .timeRow { height: auto; min-height: 64px; }
+  .sheetPanel .timeSelect, .sheetPanel .done { height: 44px; }
+  .sheetPanel .done { padding: 0 var(--om-spacing-3); }
 }

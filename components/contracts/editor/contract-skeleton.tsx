@@ -72,7 +72,14 @@ export function ContractSkeleton({ kind = 'editor', pdf = false, signed = false 
       </div>
       {kind === 'editor' ? (
         <div className={`${g.page} ${g.touch}`} data-shape={edit === null || signed ? 'read' : edit === '1' ? 'list' : edit} data-testid="contract-ghost-touch">
-          {edit === null || signed ? <ReadGhost pdf={pdf} signed={signed} /> : edit === '1' ? <ListGhost /> : <SectionGhost k={edit} pdf={pdf} />}
+          {edit === null || signed ? <ReadGhost pdf={pdf} signed={signed} /> : edit === 'document' ? <SectionGhost k={edit} pdf={pdf} /> : (
+            /* (responsive audit 2026-10-23, W5-13) a landscape tablet: the 300 list pane and the open section (Details while none is
+               picked), as the page; the Document screen stays whole */
+            <div className={g.split} data-open={edit === '1' ? 'list' : 'section'} style={{ '--list-pane': '300px' } as React.CSSProperties}>
+              <div className={g.splitPane}><ListGhost /></div>
+              <div className={g.splitMain}><SectionGhost k={edit === '1' ? 'details' : edit} pdf={pdf} /></div>
+            </div>
+          )}
         </div>
       ) : kind === 'preview' ? (
         <div className={`${g.page} ${g.touch}`} data-shape={paperAsked ? 'paper' : 'page'} data-testid="contract-ghost-touch"><PreviewGhost pdf={pdf} paper={paperAsked} /></div>

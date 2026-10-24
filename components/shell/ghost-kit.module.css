@@ -117,6 +117,10 @@
      the ghost's 36 title row made it 12 taller (Client portal's header) */
   .headTitle { min-height: 24px; }
   .headTitle > * { max-height: 24px; }   /* the title's bone in the title's 24 line (its 28 overrode it in the wrapped row) */
+  /* (responsive audit 2026-10-23, W1 — REG-708) The page's title never shrinks under its words, so where its actions don't fit beside it they
+     take the next line; the ghost's title shrank to nothing instead, and at 320 Your profile's and Company › Profile's title bone ran under
+     Discard. The bone keeps its width, so the actions wrap where the page's do (a header whose actions fit is unchanged). */
+  .headTitle { min-width: auto; }
   .headActions { flex-wrap: wrap; }
   /* the header owns the block's lift on a phone unless a tab strip follows it (page-header.module.css ≤767, REG-369) */
   .head:not(:has(+ .tabs)) { box-shadow: var(--om-elevation-level-1); }

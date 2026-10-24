@@ -5,10 +5,8 @@
 .menuWrap { composes: menuWrap from '../om/tab-toolbar.module.css'; }
 .chev { composes: chev from '../om/tab-toolbar.module.css'; }
 .todo { display: inline-flex; }
-@media (hover: none) {
-  .menuWrap > button, .menuWrap > span > button { position: relative; }
-  .menuWrap > button::after, .menuWrap > span > button::after { content: ''; position: absolute; inset: -4px; }
-}
+/* (Leads on the move, L4 — C-02) on a finger the house IconButton's own centred 44 box is the target and a DS button keeps its own box: the
+   4px-inset overlays that stood here kept the house translate(−50%, −50%) and moved New Meeting 24px left, over Briefs' right half */
 /* (REG-354) one row on a phone: the title and the glyphs */
 @media (max-width: 767px) {
   .bar { flex-wrap: nowrap; height: 36px; }

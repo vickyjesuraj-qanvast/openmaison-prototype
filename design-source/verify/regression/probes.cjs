@@ -48,6 +48,36 @@ for (const s of ['s03', 's11', 's29', 's42b', 's44g', 's44r', 's46d']) add(`pm2-
 add('pm-f', 'parity-map-build/verify-pm-f.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
 add('pm2-s05', 'pending-modules/verify-pm2-s05.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads (S05) — the stage rule REG-2655 touches
 add('rl-fixes', 'responsive-leads/verify-rl-fixes.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads on the move: the two blockers fixed ahead of the proposal
+add('rl-l3', 'responsive-leads/verify-rl-l3.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Leads on the move, L3: the listing and the ways a lead arrives
 for (const r of [1, 5, 6]) add(`pj-r${r}`, `projects/verify-pj-r${r}.cjs`, { args: ['$DB', '$L/shots'] })   // the project Overview / Money that C4's Documents card and To collect line touch
 add('pj-gap-f2', 'projects/verify-pj-gap-f2.cjs', { args: ['$DB', '$L/shots'] })
+// Leads on the move, L4 (2026-10-23): the lead's tabs on a phone and a tablet — Tasks module-wide, Files camera-first, the viewer, Notes upright,
+// Meetings · Questionnaire · Activity read first, the C-02 lint rule.
+add('rl-l4', 'responsive-leads/verify-rl-l4.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// Leads on the move, L2 (2026-10-23, wave 2): the log sheet, the Move stage window one step per screen, Q-02 · Q-03, one snackbar at a time.
+add('rl-l2', 'responsive-leads/verify-rl-l2.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+add('ke', 'lead-project-parity/KE/verify-ke.cjs', { args: ['$DB', '$L/shots'] })   // the lead ↔ project parity (the lead page's pieces the project reuses; the project's Tasks are the lead's)
+add('pm2-s23', 'pending-modules/verify-pm2-s23.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Meetings (the lead tab, the project, Meeting Copilot) — Leads on the move reaches its tab screens
+add('pm2-s42e', 'pending-modules/verify-pm2-s42e.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // the S42 fixes: a held meeting's stage offer, a project's member
+add('pm2-s42g', 'pending-modules/verify-pm2-s42g.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // the S42 fixes: the lead's stage moves and windows
+add('pm2-s43b', 'pending-modules/verify-pm2-s43b.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // honest reads: Auto Fill from the file, the stage refusal
+add('pm2-s17', 'pending-modules/verify-pm2-s17.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // the ghosts stand where the page lands at 390 touch and 1440 (Settings, Company, the libraries — the folder card's touch type, Leads on the move L4)
+// Tools › Floorplan to 3D Isometric (REG-2800…2804, 2026-10-23): its own page again — the tool, its sample, its doors; writes nothing
+add('fp3d', 'floorplan-3d/verify-fp3d.cjs', { args: ['$L/shots'] })
+// The whole-app responsiveness audit (2026-10-23 → 24, overnight): each lane's probe.
+add('rwd-w5', 'responsive-all/verify-rwd-w5.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The whole-app responsiveness audit, lane W1 (2026-10-23 → 24): the house pieces, the shell and the public / account pages — its probe, and the
+// account and website probes its files reach (Your profile, Join, sign-in, sign-up, the website).
+add('rwd-w1', 'responsive-all/verify-rwd-w1.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+for (const s of ['s01', 's09', 's30', 's31', 's35']) add(`pm2-${s}`, `pending-modules/verify-pm2-${s}.cjs`, { args: ['$DB', '$L/shots', '$BASE'] })
+// The whole-app responsiveness audit (2026-10-23), lane W4 — Company · Settings · Finance · Reports · the template editors; read-only
+add('rwd-w4', 'responsive-all/verify-rwd-w4.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The whole-app responsiveness audit, lane W2 (2026-10-23, his "overall responsiveness audit … based on your recommendations"): Leads and the
+// day's work on a phone held sideways, a meeting's phone foot, /tasks' chips, the presses under a finger, a Hangout's By designer table
+add('rwd-w2', 'responsive-all/verify-rwd-w2.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+add('pm2-s27', 'pending-modules/verify-pm2-s27.cjs', { args: ['$DB', '$L/shots', '$BASE'] })   // Hangouts + the public profiles (S27) — W2 reaches its pages (components/hangouts); it was not listed
+// The whole-app responsiveness audit (2026-10-23), lane W3 — Projects · the client portal · the client's money links
+add('rwd-w3', 'responsive-all/verify-rwd-w3.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
+// The whole-app responsiveness audit (2026-10-23), lane W6 — the closing lane: the hand-offs, the load order, the desk
+add('rwd-w6', 'responsive-all/verify-rwd-w6.cjs', { args: ['$DB', '$L/shots', '$BASE'] })
 module.exports = P

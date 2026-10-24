@@ -25,6 +25,15 @@
 /* (parity map, CP-127) the address row's Copy and Open: two bare 36 icon buttons before its Change, on the row's centre */
 .rowTools { display: inline-flex; flex-shrink: 0; align-self: center; gap: var(--om-spacing-1); margin: calc(-1 * var(--om-spacing-2)) 0; }
 .rowEnd { flex: none; display: inline-flex; align-items: center; }
+/* (responsive audit 2026-10-23, W4-04) A phone: a checklist row's Copy · Open · Change or its one button take a second line under its words —
+   beside them they left the sentence a ~90px column at 320 (the address broke every few letters, "keeps / working / after a / change"). The
+   words keep the row's width after the icon (20 + 8); the buttons start under them. */
+@media (max-width: 767px) {
+  .row[data-stack] { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+  .row[data-stack] > .label { flex: 1 1 calc(100% - 28px); }
+  .row[data-stack] > .label + .rowTools, .row[data-stack] > .label + .rowAction { margin-left: 28px; }
+  .row[data-stack] .rowAction { align-self: flex-start; }
+}
 
 /* the inline warning while the portal is paused (REG-898: what should change a decision sits where it is made) */
 .paused { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex-wrap: wrap; padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-yellow-variant1); color: var(--om-color-on-tertiary-yellow-variant); }
@@ -49,6 +58,8 @@
 .client { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .clientName { composes: name from '../../leads/detail/stages-card.module.css'; border: 0; padding: 0; background: none; text-align: left; cursor: pointer; }
 .clientName:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+/* (responsive audit 2026-10-23, W4-09) the name that opens a client's access stands 44 under a finger — REG-273's padding, paid back */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .clientName { padding-block: 12px; margin-block: -12px; } }
 .sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m { color: var(--om-color-on-surface-secondary); }

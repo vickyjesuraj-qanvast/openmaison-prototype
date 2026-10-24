@@ -69,6 +69,9 @@
 @media (max-width: 359px) {
   .foot:has(> .footStart) { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
   .foot > .footStart { flex-shrink: 0; max-width: 100%; }
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W4's hand-off) …but a wide start ("Reset to the house draft") kept Cancel beside it and sent
+     Save alone to the next line — the pair parted. Below 360 the start takes its own line and Cancel · Save stay together under it. */
+  .foot > .footStart { flex-basis: 100%; }
 }
 
 /* (REG-725) A confirm's message: 14/20 in the text's ink, as the Lead Details deletes (902:27738) — the 12/16 grey of 779:24663 read
@@ -145,4 +148,15 @@
     padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4);
   }
   .dialog[data-phone-full] .body:not([data-flush]) { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+}
+
+/* (responsive audit 2026-10-23, W1 — a bug fix) A phone held sideways (844 × 390, PHONE_SIDEWAYS in lib/breakpoint.ts): the centred card kept the
+   tablet's margins — 24 above and below, the tall xl and the fluid xxl windows 48 — so a 390 screen left a form two fields of body between its
+   64 head and 68 foot. There the card spends 8 above and below; its sides keep their margins. On a notched phone (viewport-fit=cover, REG-308)
+   the card also stays out of the notch and off the home indicator — env() is 0 everywhere else, so nothing else moves. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  .dialog { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 48px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
+  .dialog[data-height='xl'] { height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+  .dialog[data-fluid] { height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
 }

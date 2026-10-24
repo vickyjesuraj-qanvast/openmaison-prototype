@@ -1,0 +1,69 @@
+/* (REG-2800) Tools › Floorplan to 3D Isometric — no mock. The landing is the AI Visualizer's welcome (welcome.module.css, imported as it is,
+   REG-735); the stages sit in Quote X-Ray's cards (REG-529); the plan's well, its line and its rescues are Make a 3D picture's (S28); the
+   prototype's note is the demo checkout's (S19). Composed, never copied — every value a token. */
+.content { composes: content from '../xray/xray-workspace.module.css'; }
+.content:focus { outline: none; }   /* it takes the keyboard's place when a stage changes; the stage's own controls show focus */
+.card { composes: card from '../xray/xray-workspace.module.css'; }
+.eyebrow { composes: eyebrow from '../xray/xray-workspace.module.css'; }
+.columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr); gap: var(--om-spacing-6); align-items: start; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.buttons { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); }
+
+/* the plan and the view: S28's well */
+.plan { composes: plan from '../planner/photo/photo-dialog.module.css'; }
+.well { composes: well from '../planner/photo/photo-dialog.module.css'; }
+.picture { composes: picture from '../planner/photo/photo-dialog.module.css'; }
+.render { display: block; max-width: 100%; max-height: 600px; object-fit: contain; border-radius: var(--om-radius-1); }
+.controls { composes: controls from '../planner/photo/photo-dialog.module.css'; }
+.actions { composes: actions from '../planner/photo/photo-dialog.module.css'; }
+.line { composes: line from '../planner/photo/photo-dialog.module.css'; }
+.note { composes: note from '../planner/photo/photo-dialog.module.css'; }
+.error { composes: error from '../planner/photo/photo-dialog.module.css'; }
+.chips { composes: chips from '../planner/photo/photo-dialog.module.css'; align-items: center; }
+.prototype { composes: demo from '../credits/credit-dialogs.module.css'; }
+.prototype > :first-child { flex-shrink: 0; margin-top: 1px; }
+
+/* the two looks: the house ChoiceCard with its picture (REG-2802) */
+.looks { display: grid; grid-template-columns: repeat(2, minmax(0, 240px)); gap: var(--om-spacing-3); }   /* a look is a choice, not the view: no wider than 240 when the card is (a tablet's one column) */
+
+/* the landing's What you'll get: 1.0's two example pictures */
+.get { gap: var(--om-spacing-3); }
+.examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.example { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.example img, .exampleShot { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); margin-bottom: var(--om-spacing-1); }
+.exampleName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.exampleLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* a sample is a plan, not a room photo: shown whole on the well's grey (the welcome's crop would cut its walls off) */
+.sample.sample img { object-fit: contain; background: var(--om-color-surface-bg); }   /* doubled: it ties with the welcome's own `.sample img` (cover), and the bundle's order would decide */
+.sampleShot { display: block; width: 132px; height: 88px; flex-shrink: 0; }   /* the welcome's sample picture's box, for the ghost */
+
+/* a studio's own plan on the prototype: the samples as rows in the We found card */
+.sampleList { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.sampleItem {
+  display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 64px; padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3);
+  border: 0; background: var(--om-color-surface-default); font: inherit; color: inherit; text-align: left; cursor: pointer; transition: background-color var(--motion-hover);
+}
+.sampleItem + .sampleItem { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.sampleItem:hover { background: var(--om-color-hover-04p); }
+.sampleItem:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.sampleItem img { width: 72px; height: 48px; flex-shrink: 0; object-fit: contain; background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); }
+.sampleItemName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+/* ≤1024 one column: the plan (or the view) first, then what to do with it */
+@media (max-width: 1024px) {
+  .columns { grid-template-columns: minmax(0, 1fr); }
+  .buttons > button { min-height: 48px; }   /* the stage's buttons are its foot: 48 under a thumb */
+}
+/* a phone held sideways (PHONE_SIDEWAYS): the plan and the view fit the screen's height, its controls under them one scroll away */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  /* doubled: .well and .picture compose S28's (420 · 320 there), and the bundle's stylesheet order decides a tie — the Leads closing run's build
+     put S28's last and the plan stood 420 tall on a 390 screen */
+  .well.well { min-height: 0; max-height: 72dvh; }
+  .picture.picture, .render.render { max-height: calc(72dvh - var(--om-spacing-4)); }
+}
+@media (max-width: 767px) {
+  .sampleShot { width: 100%; height: 96px; }
+  .looks { gap: var(--om-spacing-2); }
+  .render { max-height: 60dvh; }
+}

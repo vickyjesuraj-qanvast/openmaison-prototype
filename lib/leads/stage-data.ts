@@ -143,7 +143,9 @@ export function validateStage(stage: Stage, d: WizardData, asks: StageAsks = {})
         if (l.nextStepWhen && !parseInputDateTime(l.nextStepWhen)) e[k('nextStepWhen')] = MSG.dateTime
         /* (pending modules S05) …unless the studio asks for it (1.0's "Follow-up required") — never for a client who said they're not interested */
         else if (asks.contactNextStep && !l.nextStepWhen && l.outcome && l.outcome !== 'Not interested') e[k('nextStepWhen')] = MSG.required
-        if (l.files.length === 0) e[k('files')] = MSG.attach
+        /* (Leads on the move, Q-02 — his pick 2026-10-23: "optional in both places, with Take a photo offered first"; reverses REG-543's
+           mandatory screenshot here) The log is what matters — channel, when, outcome. A screenshot or a photo is optional, as it always was
+           on the Notes tab's contact log: one log, one rule, at every width (the window's Attach row says "(optional)"). */
       })
       break
     }

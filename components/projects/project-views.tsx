@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Chips } from '@/components/om/chips'
@@ -33,13 +33,31 @@ export function ProjectViews({ slug, note }: { slug: string; /** a grey line aft
   /* the sibling views are fetched while this one is read, as the strip's tabs are (om/tabs `prefetch`) — a press swaps a page already in hand */
   const siblings = views.filter((v) => v.slug !== slug).map((v) => href(v.slug)).join('|')
   useEffect(() => { for (const h of siblings.split('|')) if (h) router.prefetch(h) }, [siblings, router])
+  /* (responsive audit 2026-10-23, W3-01) on a short row (a phone) the rail scrolls — the view you are on is brought to the middle of it,
+     instead of hiding past its edge (at 320 Tickets, Messages, Floor plan and Designs opened with their own chip out of sight); again when
+     the row's width settles (the tools beside it land, the phone turns). A rail with room (a desk) never moves. */
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const rail = root.current?.querySelector<HTMLElement>('[role="group"]')
+    if (!rail) return
+    const centre = () => {
+      const chip = rail.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
+      if (!chip || rail.scrollWidth <= rail.clientWidth + 1) return
+      const c = chip.getBoundingClientRect(), r = rail.getBoundingClientRect()
+      rail.scrollTo({ left: rail.scrollLeft + (c.left + c.width / 2) - (r.left + r.width / 2), behavior: 'instant' })
+    }
+    centre()
+    const ro = new ResizeObserver(centre); ro.observe(rail)
+    if (rail.firstElementChild) ro.observe(rail.firstElementChild)   // the chips' own width (their face loads after the first paint)
+    return () => ro.disconnect()
+  }, [picked])
   const options = views.map((v) => {
     const n = UNCOUNTED_VIEWS.includes(v.slug) ? 0 : counts[v.slug] ?? 0
     return { value: v.slug, label: n > 0 ? `${v.label} · ${n}` : v.label }
   })
   if (views.length < 2) return null   // (parity map, PR-022) a group of one view (Accounting's Files) needs no switch
   return (
-    <div className={styles.views} data-testid="project-views">
+    <div ref={root} className={styles.views} data-testid="project-views">
       <ChipRail label={`${group.label} views`} className={styles.rail}>
         <Chips label={`${group.label} views`} options={options} value={picked} testId="project-view-chips"
                onChange={(v) => { if (v === picked) return; setPicked(v); router.push(href(v)) }} />

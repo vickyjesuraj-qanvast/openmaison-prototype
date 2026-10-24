@@ -19,7 +19,7 @@ export type ListingState<K extends string = string> = { stage: Stage | null; att
 /** What reads an address: `URLSearchParams`, or Next's read-only one from `useSearchParams()`. */
 type Params = { get: (k: string) => string | null; getAll: (k: string) => string[] }
 
-const ATTENTION: readonly AttentionScope[] = ['mine', 'overdue', 'unassigned', 'unseen']
+const ATTENTION: readonly AttentionScope[] = ['mine', 'overdue', 'unassigned', 'unseen', 'today']   // (leads on the move, P-05) the phone's "to call today" chip keeps its scope in the address
 const DATE_PRESETS: readonly DatePreset[] = ['today', '7d', '30d', 'month', 'custom']
 /** "Quote Sent" → "quote-sent": a stage as the address spells it. */
 export const stageSlug = (s: Stage) => s.toLowerCase().replace(/\s+/g, '-')

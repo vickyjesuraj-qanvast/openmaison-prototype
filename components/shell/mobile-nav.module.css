@@ -87,6 +87,14 @@
 .dockBadge { composes: badge from './app-rail.module.css'; top: -2px; right: -2px; }
 .moreDot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-tertiary-red-default); box-shadow: 0 0 0 2px var(--om-color-surface-default); pointer-events: none; }
 .rowCount { composes: badge from './app-rail.module.css'; position: static; flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
+/* (responsive audit 2026-10-23, W1 — a bug fix) A composed class and the class it composes weigh the same, so whichever stylesheet the bundler
+   emits last wins (REG-727's lesson): app-rail's `.badge` came after this sheet and its `position: absolute; top: 2px; right: 2px` beat the
+   overrides above — the More sheet's Tasks and Company counts left their rows and stacked on the sheet's top-right corner, half off the screen,
+   and the bar's and the dock's counts sat 2–4px from where these rules put them. Each override now names its host, so it outweighs `.badge`
+   in any order. */
+.barIcon > .barBadge { top: 4px; right: 4px; }
+.dockIcon > .dockBadge { top: -2px; right: -2px; }
+.sheetItem > .rowCount { position: static; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
 /* (UX audit V6) a row that isn't built yet: the Company panel's "Soon" tag */
 .soon { composes: soon from '../company/company-popover.module.css'; }
 .avatarBtn {
@@ -99,6 +107,14 @@
 /* (pending modules S01) the member's own avatar (components/om/avatar) fills the framed 36 — their photo, or their tinted initial */
 .avatarBtn > span { width: 100%; height: 100%; border-radius: 0; }
 .avatarBtn::after { content: ''; position: absolute; inset: -4px; }
+/* (responsive audit 2026-10-23, W1 — a bug fix) Two slips the phone bar drew on every level-1 page: the button's `overflow: hidden` clipped its
+   own ::after, so the 44 touch box above was the 36 square; and the avatar's `data-size='36'` rule (0,2,0) outweighed `.avatarBtn > span` (0,1,1),
+   so a 36 avatar sat in the 34 inside the 1px frame, cut 2px at its right and foot and off its centre. The frame now clips nothing — the
+   avatar rounds its own corners on the frame's r8 (the stroke's inner curve is r7: under half a pixel apart at the corner, nothing a screen
+   draws) — and the avatar fills the 34 with its initial centred; the touch box is the house centred 44. */
+.avatarBtn { overflow: visible; }
+.avatarBtn > span[data-size] { width: 100%; height: 100%; border-radius: var(--om-radius-2); }
+.avatarBtn::after { inset: auto; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
 
 /* Dock items: a 36px icon box (r8) over a subtitle/xs label, 2 apart; the active route tints the box primary/variant
    and turns the glyph and label primary (the Leads column in the mock). */

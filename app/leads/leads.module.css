@@ -20,7 +20,7 @@
 
 /* Kanban view (779:19733): the body is bound to the viewport, the page never scrolls; the board fills the body
    down to the 24px container padding and each column scrolls its own cards under a fixed column header. */
-.body[data-view='kanban'] { height: calc(100dvh - 16px); }
+.body[data-view='kanban'] { height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }   /* (responsive audit 2026-10-23, W6 — W1's hand-off) the shell pads a notched phone's home indicator now (W1-13): less that, or the page scrolls by it; 0 everywhere else */
 .body[data-view='kanban'] .content { min-height: 0; overflow: hidden; padding-bottom: var(--om-spacing-6); }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────

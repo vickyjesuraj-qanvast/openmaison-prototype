@@ -142,6 +142,11 @@
      finger never fires, so copying a Qanvast lead's number was impossible on a phone or a tablet. */
   .copyBtn { opacity: 1; }
 }
+/* (responsive audit 2026-10-23, W2-09) …and its 14px glyph takes a finger's 44, paid back with margin so the phone line keeps its measure — the
+   listing's copy glyph does the same (components/leads/table.module.css .copyBtn) */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .copyBtn { min-width: 44px; min-height: 44px; margin: -15px; align-items: center; justify-content: center; }
+}
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    The head's controls are the two smallest things on the page: every column's sort button (a 12px caption +

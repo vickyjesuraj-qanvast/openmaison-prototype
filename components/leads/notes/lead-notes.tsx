@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Link } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { useMediaQuery } from '@/lib/breakpoint'
+
+/** (Leads on the move, L4 — C-14) A tablet held upright — the phone's Notes (Q-01's model for every lead screen). */
+const TABLET_UPRIGHT = '(min-width: 768px) and (max-width: 1024px) and (orientation: portrait)'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
@@ -32,7 +36,11 @@ import { PaneHeader, PaneToolbar } from './pane-toolbar'
 import { NotesToolbar } from './notes-toolbar'
 import { AttachmentsColumn } from './attachments-column'
 import { DeleteNoteDialog } from './delete-dialog'
+import { LogSheet, type LogAskIn } from '@/components/leads/log/log-sheet'   // (Leads on the move, L2 — P-03 · C-21)
 import styles from './lead-notes.module.css'
+
+/** (Leads on the move, L2 — P-03) Read at the press: a phone, or a tablet held upright — where New › Contact Log is the log sheet. */
+const logOnTheMove = () => typeof window !== 'undefined' && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia(TABLET_UPRIGHT).matches)
 
 /**
  * Lead Details › Notes (931-44865): the tab's state — the 1244×844 card (list column 360 + pane 884, spec 01), selection,
@@ -117,7 +125,10 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
   /* (REG-380, canvas 3e) ≤767 a CONTACT LOG opens as a bottom sheet, not the master-detail push: the pane put its
      Cancel / Save far below the fold. Notes keep the push (they autosave and have no footer). False at ≥768 by
      construction — the primitive's own query is (max-width: 767px) — so the desktop pane is untouched. */
-  const sheetLayout = useSheetLayout()
+  /* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone: the list, the note and the log in sheets, the composer */
+  const phoneNow = useSheetLayout()
+  const upright = useMediaQuery(TABLET_UPRIGHT)
+  const sheetLayout = phoneNow || upright
   /* (REG-294, user 2026-09-02: "when i start typing within search bar ... it moves to note editor automatically")
      Whether the editor about to mount may take the caret. The editor is keyed on the item, so a new selection
      REMOUNTS it and its first field's autoFocus fires. That is right when the user chose the item (clicked a row,
@@ -210,12 +221,22 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
     setMayFocusEditor(true)   // New ▾ exists to start typing (REG-294)
   }, [])
 
+  /* (Leads on the move, L2 — P-03 · C-21, his marks 2026-10-23) On a phone and a tablet held upright, New › Contact Log is THE LOG SHEET — the
+     Lead screen's own: the channel and now set, the outcomes as chips, the call-back's presets, Take a photo — and on a New lead its save moves
+     the lead to Contacted through the move's own path. A note keeps the docked composer; an existing log keeps its own sheet with Edit; the desk
+     and a tablet held sideways keep the pane's contact log as it was. */
+  const [logAsk, setLogAsk] = useState<LogAskIn | null>(null)
+  const newItem = (kind: NoteKind) => {
+    if (kind === 'contact' && logOnTheMove()) { setLogAsk((a) => ({ channel: 'Call', n: (a?.n ?? 0) + 1 })); return }
+    startDraft(kind)
+  }
+
   // Create quick links › Note lands here with ?new=note|contact (one draft, then the param is dropped — as lead-quotes.tsx);
   // on this tab the quick link raises `om:notes:new` with { kind }.
   useCreateIntent<NoteKind>({
     event: CREATE_EVENTS.notes,
     landing: { href: `${base}/notes`, values: ['note', 'contact'] },
-    onIntent: (value, detail) => { const kind = value ?? (detail as { kind?: NoteKind } | undefined)?.kind; startDraft(kind === 'contact' ? 'contact' : 'note') },
+    onIntent: (value, detail) => { const kind = value ?? (detail as { kind?: NoteKind } | undefined)?.kind; newItem(kind === 'contact' ? 'contact' : 'note') },
   })
 
   /* ── per-item handlers ── */
@@ -478,19 +499,10 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
   const noteInSheet = sheetLayout && selectedId !== null && selectedId !== DRAFT_ID && selected?.kind === 'note' && mobilePane
   const noteSheetId = noteInSheet ? selectedId : null
 
-  /* (REG-381) The docked composer shares the phone's bottom-right corner with the Maison AI FAB, so it
-     publishes its presence and measured height the way the bulk bar does (REG-358) and the FAB steps over it. */
+  /* (REG-381) The docked composer shares the phone's bottom-right corner with the Maison AI FAB. It used to publish its height so the FAB
+     stepped OVER it — which put the button on the list's last visible card, over its ⋮ (Leads on the move, L4 — C-08). The composer's tool
+     row now keeps that corner clear and the button rests in it (lead-notes.module.css), as the Tasks quick add does. */
   const composerRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = composerRef.current
-    if (composerDraft === null || !el) return
-    document.documentElement.style.setProperty('--app-note-composer-height', `${Math.round(el.getBoundingClientRect().height)}px`)
-    document.body.setAttribute('data-om-note-composer', '')
-    return () => {
-      document.body.removeAttribute('data-om-note-composer')
-      document.documentElement.style.removeProperty('--app-note-composer-height')
-    }
-  }, [composerDraft, selectedId])
 
   return (
     /* data-pane drives the ≤767 master-detail push (REG-269): the list is the screen until an item is
@@ -502,7 +514,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
       <NotesToolbar
         query={query} onQuery={setQuery} views={views}
         /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
-        onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
+        onNew={(kind) => { flushLeft(DRAFT_ID); newItem(kind) }}
       />
       <div className={styles.card} data-pane={(mobilePane && !logInSheet && !noteInSheet) || undefined} data-composer={(composerDraft !== null) || undefined}>
       <div className={styles.list}>
@@ -514,7 +526,7 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           selectedId={selectedId} onSelect={select}
           onItemMenu={itemMenu}
           filter={filter} onFilter={setFilter}
-          onNew={startDraft}   /* (REG-546) */
+          onNew={newItem}   /* (REG-546) · (Leads on the move, L2) a contact log on the move is the log sheet */
           noun={noun}   /* (parity P-12) */
         />
       </div>
@@ -661,8 +673,8 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           ) : undefined}
           footer={
             <>
-              <Button variant="secondary" appearance="outlined" onPress={() => { clearEdit(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Cancel</Button>
-              <Button onPress={() => { void save(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Save</Button>
+              <Button variant="secondary" appearance="outlined" className={styles.footBtn} onPress={() => { clearEdit(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Cancel</Button>
+              <Button className={styles.footBtn} onPress={() => { void save(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Save</Button>
             </>
           }
         >
@@ -707,10 +719,10 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
                   first row in the list, and with the sheet still open that was the existing log appearing in
                   place of the one just abandoned. Cancelling an EDIT of a saved log keeps the sheet, in view
                   mode, which is where cancelling an edit should leave you. */}
-              <Button variant="secondary" appearance="outlined"
+              <Button variant="secondary" appearance="outlined" className={styles.footBtn}
                       onPress={() => { cancel(contactId); if (contactId === DRAFT_ID) setMobilePane(false) }}
                       isDisabled={savingId === contactId}>Cancel</Button>
-              <Button onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save</Button>
+              <Button className={styles.footBtn} onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save</Button>
             </>
           ) : undefined}
         >
@@ -774,6 +786,8 @@ export function LeadNotes({ leadId, data, stage = null, base: baseIn, noun = 'le
           void run('delete', () => deleteNote(d.id), d.kind === 'contact' ? 'Contact log deleted' : 'Note deleted')
         }}
       />
+      {/* (Leads on the move, L2 — P-03) the log sheet, on a phone and a tablet held upright; the list re-reads once the log lands */}
+      <LogSheet leadId={leadId} ask={logAsk} onClose={() => setLogAsk(null)} onSaved={() => router.refresh()} />
     </div>
   )
 }

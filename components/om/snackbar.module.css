@@ -11,6 +11,16 @@
   gap: 8px;
   pointer-events: none;
 }
+/* (responsive audit 2026-10-23, W1) A notched phone held sideways (viewport-fit=cover, REG-308): the frame pads the rail off the notch
+   (components/shell/app-shell.module.css), so the bar moves with it and stays off the home indicator. env() is 0 everywhere else; a
+   phone's own rule below keeps its gutters. */
+.host { left: calc(var(--rail-w, 52px) + 32px + env(safe-area-inset-left, 0px)); bottom: calc(24px + var(--bottom-dock, 0px) + env(safe-area-inset-bottom, 0px)); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W4-27) 768–1024: a centred dialog whose foot reaches the bar's band writes `--sheet-foot` (Dialog,
+   components/om/sheet.tsx `lowOnly`) and the bar rests 16 above that foot, whichever is higher — as above a phone's sheet (B-19). Nothing writes
+   it at these widths otherwise, so the bar keeps its corner. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .host { bottom: max(calc(24px + var(--bottom-dock, 0px) + env(safe-area-inset-bottom, 0px)), calc(var(--sheet-foot, 0px) + 16px)); }
+}
 .bar {
   pointer-events: auto;
   display: inline-flex;

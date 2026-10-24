@@ -129,11 +129,6 @@
     "row-fade": {},
     "icon-button-overlay": {
       "components/leads/contracts/contracts-empty.module.css": 1,
-      "components/leads/questionnaire/ask-client-dialog.module.css": 1,
-      "components/leads/questionnaire/lead-questionnaire.module.css": 1,
-      "components/leads/questionnaire/question-card.module.css": 1,
-      "components/meetings/meetings-table.module.css": 1,
-      "components/meetings/meetings-toolbar.module.css": 1,
       "components/qanvast/qanvast-leads.module.css": 1
     },
     "copied-table": {}

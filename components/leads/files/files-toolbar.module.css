@@ -58,8 +58,21 @@
   .crumbRow { min-height: 44px; }
 }
 
+/* (Leads on the move, L4 — P-11 · C-15 · C-16) A phone's one row (files-toolbar.tsx `sheet`): the title, or ← and the folder's name, then three
+   glyphs — Take a photo · Search · ⋮ — so the title keeps its line at 320 and a folder never splits the row in two. The ⋮ wears the Filters
+   count as the Filters button did. */
+.bar[data-phone] { flex-wrap: nowrap; height: auto; min-height: 44px; }
+.bar[data-phone] .actions { flex: 0 0 auto; flex-wrap: nowrap; gap: var(--om-spacing-2); }
+.bar[data-phone]:has([data-om-search-open]) .phoneCrumb { display: none; }
+.phoneCrumb { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
+.phoneCrumb .title { font: var(--om-type-heading-h4); }
+
 /* (REG-384) The folded search shares the row at 768–1024 exactly as it does at ≤767 (om/toolbar-search.module.css). */
 @media (min-width: 768px) and (max-width: 1024px) {
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
+
+/* (REG-708) the phone toolbar's own glyph in the ghost (tab-ghosts.tsx): Take a photo, only where the page draws it */
+.ghostPhone { display: none !important; }
+@media (max-width: 767px) { .ghostPhone { display: inline-flex !important; } .ghostDesk { display: none !important; } }

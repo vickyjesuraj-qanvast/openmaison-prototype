@@ -35,6 +35,9 @@ export type LeadRow = Lead & {
   project: { id: string; number: string; /** (pending modules S05) the project's type — the export's Project type */ type?: string | null } | null
   /** (pending modules S05 — the export's Quote status, dropped by a package as "no lead-side value") the lead's latest live quote: its number and status. */
   latestQuote?: { number: string; status: string } | null
+  /** (leads on the move, P-05 · A-28) For an On Hold or Lost lead: why it was parked, as the dialog recorded it ("Others: …" kept as typed), and the
+   *  studio it went with (Lost) — the phone card's "Lost 51 days ago · Went with another ID". Null for an active lead. */
+  parked?: { reason: string | null; competitor: string | null } | null
 }
 export type LastContact = { at: Date; channel: string | null; outcome: string | null; /** (S42E, E-11) the held meeting it is, when it is one — the lead's brief offers to log it */ meetingId?: string }
 /** (fix-E, E-01 · E-09) A lead in Deleted Leads and the project that keeps it from being deleted forever: a live one (delete the project
@@ -140,11 +143,16 @@ export async function fetchContactedLeadIds(ids: string[]): Promise<Set<string>>
 function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts, xrays, projs, quoteRows = [], held = [] }: RowParts): LeadRow[] {
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
+  const parkedWhy = new Map<string, { stage: string; reason: string | null; competitor: string | null }>()   // (leads on the move, A-28) the latest park's words
   const logsByLead = new Map<string, typeof logs>()
   for (const log of logs) {
     if (log.toStage === 'On Hold' && log.payload && typeof log.payload === 'object') {
       const f = (log.payload as { followUpAt?: string }).followUpAt
       if (f) holdFollowUps.set(log.leadId, f)
+    }
+    if ((log.toStage === 'On Hold' || log.toStage === 'Lost') && log.payload && typeof log.payload === 'object') {
+      const p = log.payload as { reason?: unknown; competitor?: unknown }
+      parkedWhy.set(log.leadId, { stage: log.toStage, reason: typeof p.reason === 'string' && p.reason.trim() ? p.reason.trim() : null, competitor: typeof p.competitor === 'string' && p.competitor.trim() ? p.competitor.trim() : null })
     }
     const list = logsByLead.get(log.leadId)
     if (list) list.push(log); else logsByLead.set(log.leadId, [log])
@@ -177,6 +185,7 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts,
       stageSince: logsByLead.get(l.id)?.filter((g) => g.toStage === l.stage).at(-1)?.createdAt ?? l.createdAt,   // (UX audit L3) logs are oldest first
       project: ((p) => (p ? { id: p.id, number: p.number, type: p.type ?? null } : null))(projs.find((p) => p.leadId === l.id)),   // (fix-E, A-01 · A-09)
       latestQuote: ((q) => (q ? { number: q.number, status: q.status } : null))(quoteRows.find((q) => q.leadId === l.id)),   // (pending modules S05)
+      parked: ((w) => (w && w.stage === l.stage ? { reason: w.reason, competitor: w.competitor } : null))(parkedWhy.get(l.id)),   // (leads on the move, A-28)
     }
   })
 }

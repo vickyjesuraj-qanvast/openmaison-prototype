@@ -13,6 +13,9 @@ import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import { FootStart, SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { LeadTask } from '@/lib/db/schema'
+import { Chips } from '@/components/om/chips'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import { DUE_PRESETS, presetDue, type DuePreset } from '@/lib/leads/quick-due'
 import styles from './tasks-popover.module.css'
 
 export type TasksPos = { top: number; left: number; seq: number }
@@ -112,8 +115,9 @@ export function TasksPopover({
   /** The task box / Add task link that opened it — a press there toggles instead of close-then-reopen (REG-136). */
   anchor?: HTMLElement | null
   onClose: () => void
-  /** Each mutation resolves true on success, false on failure (caller shows the snackbar). */
-  onAddTask: (lead: LeadRow, title: string) => Promise<boolean>
+  /** Each mutation resolves true on success, false on failure (caller shows the snackbar). (Leads on the move, A-09) `dueAt`: a finger's
+   *  composer sets the due in the same press — a preset or a picked day; null when none was chosen. */
+  onAddTask: (lead: LeadRow, title: string, dueAt?: Date | null) => Promise<boolean>
   onCompleteTask: (lead: LeadRow, task: LeadTask) => Promise<boolean>
   onSetDue: (lead: LeadRow, task: LeadTask, due: Date) => Promise<boolean>
   onOpenTask: (task: LeadTask) => void
@@ -127,12 +131,20 @@ export function TasksPopover({
   const [completing, setCompleting] = useState<Set<string>>(new Set())
   const [wasOpen, setWasOpen] = useState(false)
   const savingRef = useRef(false)
+  /* (Leads on the move, L3 — P-05 · A-09) A finger's composer takes the due in the same press: Tomorrow 10:00 AM · In 3 days · Next week · Pick a
+     day (the house Chips; the picked one again lets go). A mouse keeps the mock's one field. */
+  const touch = useMediaQuery(TOUCH_TABLET)
+  const finger = sheet || touch
+  const [preset, setPreset] = useState<DuePreset | 'pick' | null>(null)
+  const [due, setDue] = useState<Date | null>(null)
+  const [dayOpen, setDayOpen] = useState(false)
+  const pickRef = useRef<HTMLDivElement>(null)
 
   if (open !== wasOpen) {
     setWasOpen(open)
     // A lead with no tasks shows "+ Add task" in the cell, so opening the popover IS the add intent — start composing
     // instead of making the user press Add Task again inside it (user 2026-08-31). With tasks, the list comes first.
-    if (open) { setAdding(lead !== null && lead.tasks.length === 0); setDraft(''); setSaving(false); setCompleting(new Set()) }
+    if (open) { setAdding(lead !== null && lead.tasks.length === 0); setDraft(''); setSaving(false); setCompleting(new Set()); setPreset(null); setDue(null); setDayOpen(false) }
   }
 
   useEffect(() => {
@@ -167,12 +179,26 @@ export function TasksPopover({
     if (!lead || !draft.trim() || savingRef.current) return
     savingRef.current = true
     setSaving(true)
-    const ok = await onAddTask(lead, draft.trim())
+    const ok = await onAddTask(lead, draft.trim(), finger ? due : null)
     setSaving(false)
     savingRef.current = false
     // Failure keeps the draft in place for a retry.
-    if (ok) { setAdding(false); setDraft('') }
+    if (ok) { setAdding(false); setDraft(''); setPreset(null); setDue(null) }
   }
+  const pickPreset = (v: string) => {
+    if (v === preset) { setPreset(null); setDue(null); setDayOpen(false); return }   // the picked chip again lets go
+    if (v === 'pick') { setPreset('pick'); setDayOpen(true); return }
+    setPreset(v as DuePreset); setDue(presetDue(v as DuePreset, now)); setDayOpen(false)
+  }
+  /* (A-09) the due chips under the field — a finger's composer only */
+  const dueRow = finger ? (
+    <div className={styles.dueRow} ref={pickRef} data-testid="task-due-presets">
+      <Chips label="Due" options={[...DUE_PRESETS.map((p) => ({ value: p.key, label: p.label })), { value: 'pick', label: 'Pick a day' }]} value={preset} onChange={pickPreset} />
+      {due ? <span className={styles.dueLine} data-testid="task-due-line">Due {displayDue(due)}</span> : null}
+      <DatePicker open={dayOpen} anchorRef={pickRef} value={preset === 'pick' ? due : null} today={new Date(now)} label="Due date"
+                  onSelect={(d) => { setDue(d); setPreset('pick'); setDayOpen(false) }} onClose={() => { setDayOpen(false); if (preset === 'pick' && !due) setPreset(null) }} />
+    </div>
+  ) : null
 
   const complete = async (task: LeadTask) => {
     if (!lead || completing.has(task.id)) return
@@ -211,10 +237,11 @@ export function TasksPopover({
         {inner}
         {adding ? (
           <div className={styles.addArea}
-               onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
+               onKeyDown={(e) => { if (e.key === 'Enter' && !saving && (e.target as HTMLElement).tagName === 'INPUT') { e.preventDefault(); void save() } }}>
             <TextField label="Describe your task" required value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
+            {dueRow}
             <div className={styles.addBtns}>
-              <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
+              <Button variant="secondary" onPress={() => { setAdding(false); setDraft(''); setPreset(null); setDue(null) }} isDisabled={saving}>Cancel</Button>
               <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>
             </div>
           </div>
@@ -240,11 +267,12 @@ export function TasksPopover({
           {inner}
           {adding ? (
             <div className={styles.addArea}
-                 onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
+                 onKeyDown={(e) => { if (e.key === 'Enter' && !saving && (e.target as HTMLElement).tagName === 'INPUT') { e.preventDefault(); void save() } }}>
               {/* The composer always opens focused — it only exists because the user asked to write something. */}
               <TextField label="Describe your task" required value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
+              {dueRow}
               <div className={styles.addBtns}>
-                <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
+                <Button variant="secondary" onPress={() => { setAdding(false); setDraft(''); setPreset(null); setDue(null) }} isDisabled={saving}>Cancel</Button>
                 <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>
               </div>
             </div>

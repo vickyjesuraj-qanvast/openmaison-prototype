@@ -176,6 +176,7 @@
 .gNew { width: var(--g-new, 86px); }   /* (UX audit S12) a plain New button names its thing: --g-new */
 .gSearch { width: 280px; }
 .gView { width: 72px; }
+.gViewSlot { display: inline-flex; }   /* the rows-mode wrapper takes its box's height — an inline span's line box drew the desk's ghost bar 5px tall (Contracts templates at 1440) */
 .gLine { vertical-align: middle; }
 .gThumb.gThumb { background: var(--om-color-surface-variant); }
 .gFolder.gFolder { background: var(--om-color-surface-bg); }
@@ -190,6 +191,10 @@
 }
 .gPick { display: none; }
 @media (hover: none) and (max-width: 1024px) { .gPick { display: inline-flex; flex-shrink: 0; } }
+/* (Leads on the move, L4 — C-17) On a phone the folder card stands as a column and its name (16/24) and count (14/20) sit under the folder
+   glyph inside one button (folder-card.module.css), 72 tall; the ghost's glyph sits a gap above its two bars, so the bars' block takes 40 —
+   the card is the page's 128 and the cards below a gallery's folders land where the page's do. A touch tablet's folder is the 56 row: no change. */
+@media (max-width: 767px) { .gFolderName { margin: 4px 0; } .gFolderCount { margin: 2px 0; } }
 
 /* (audit 2026-09-26) a ghost card's second foot line (Materials: quoted as · edited by) */
 .gFoot2 { display: block; margin: 4px 0; }   /* 4 + 12 + 4 = the 20px line the real foot takes */

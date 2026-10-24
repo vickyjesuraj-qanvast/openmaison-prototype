@@ -10,6 +10,7 @@
   position: sticky; top: var(--om-spacing-2);
   align-self: flex-start;
   height: calc(100dvh - 16px);
+  height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px));   /* (responsive audit 2026-10-23, W1) off a notched phone's home indicator, held sideways (the frame pads by it, app-shell.module.css); 0 elsewhere */
   width: 52px; flex-shrink: 0;
   z-index: 70;
 }
@@ -208,6 +209,12 @@ button.avatarRow:focus-visible .avatar { outline: var(--om-border-2) solid var(-
   .wrap .panel .item,
   .wrap .panel .searchTile,
   .wrap .panel .logoTile { width: 44px; margin-inline: -4px; }
+}
+/* (responsive audit 2026-10-23, W1 — a bug fix) The studio block (View as, Your profile, Sign out) is the collapsed rail's last control and drew
+   36 wide under a finger — the items above it grow to 44, it didn't. Collapsed (a touch tablet, where the rail never expands — REG-330) it takes
+   the same 44 the items take, the extra given back as margin and the avatar held in place by the padding, so the drawn row is unchanged. */
+@media (hover: none) and (max-width: 1024px) {
+  .wrap .panel button.avatarRow { width: 44px; margin-inline: -4px; padding-inline: 4px; }
 }
 
 /* (REG-466) The overdue count on the Tasks glyph: the toolbar's filter badge (16px pill), top-right of the 24px icon, in both rail states.

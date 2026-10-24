@@ -87,3 +87,38 @@
 .caption { height: 58px; align-items: flex-start; }
 .tileText { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
 .tileTime { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* (Leads on the move, L4 — C-10, a bug fix at every width) The day under the name keeps clear of the ⋮: the caption's text column takes what is
+   left and the day ellipsises inside it (the tile's right 40 is the kebab's). */
+.tileText { flex: 1; }
+.tileTime { overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .tileName { font: var(--om-type-subheading-l); }   /* (P-13) a file's name at 16 on a finger */
+  .tileTime { font: var(--om-type-body-m); }          /* its day at 14 */
+}
+/* ≤767 the attachments are list rows — the attach-files modal's row (REG-393): a 48 thumbnail · the name over its day · the ⋮ — not 150 tiles
+   two-up with their words cut. */
+@media (max-width: 767px) {
+  .column { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+  .tile { width: 100%; height: auto; min-height: 64px; flex-direction: row; align-items: center; padding: var(--om-spacing-2); }
+  .tileMain { flex-direction: row; align-items: center; gap: var(--om-spacing-3); min-height: 48px; }
+  .tileImg, .tileBox { width: 48px; height: 48px; border-radius: var(--om-radius-1); }
+  .caption { height: auto; flex: 1; min-width: 0; padding: 0 44px 0 0; align-items: center; }
+  .kindIcon { display: none; }
+  .tileMenuWrap { right: var(--om-spacing-1); bottom: auto; top: 50%; transform: translateY(-50%); }
+}
+
+/* (L4 — C-10) On a finger's tablet the tile's day reads at 14 in full ("30 Aug ’26"): the kind's glyph steps out of the caption (the picture
+   says what it is), giving its 28 to the words. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .kindIcon { display: none; }
+}
+/* (L4 — C-10) …and on a finger the caption keeps clear of the ⋮'s whole 44 box (it reserved the 24 glyph's 40), so the day ends before it. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .caption { padding-right: calc(44px + var(--om-spacing-1)); }
+}
+
+/* (L4) …in a phone's sheet the rows sit on the sheet's own 16 gutter (the column's 16 doubled it) */
+@media (max-width: 767px) {
+  .column { padding-left: 0; padding-right: 0; }
+}

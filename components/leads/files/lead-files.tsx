@@ -32,6 +32,7 @@ import { TrashDialog } from './trash-dialog'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { FolderEmpty } from '@/components/om/folders/folder-empty'
 import { Button } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
 import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
 import { useFileUpload } from './use-file-upload'   // (pending modules S05) the lead's one upload
@@ -42,7 +43,7 @@ import { PhotoDialog } from '@/components/planner/photo/photo-dialog'   // (pend
 import { looksLikeFloorPlan } from '@/lib/planner/photo'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { FILE_COLUMN_DEFS } from './files-table'
 import styles from './lead-files.module.css'
 
@@ -157,7 +158,8 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
-  const columnPrefs = useTableColumns('lead-files', FILE_COLUMN_DEFS, phone)
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone   /* (Leads on the move, L4 — C-07) the tablet's own default set, remembered apart */
+  const columnPrefs = useTableColumns('lead-files', FILE_COLUMN_DEFS, phone, touchTablet)
   const [trash, setTrash] = useState<Shown<string[]> | null>(null)
   const [move, setMove] = useState<Shown<string[]> | null>(null)
   const [deletedOpen, setDeletedOpen] = useState(false)
@@ -180,6 +182,11 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
 
   const pickFiles = () => picker.current?.click()
   const onPicked = (list: File[]) => { if (!readOnly) upload(list, currentId) }
+  /* (Leads on the move, L4 — P-11 · C-09) Take a photo: the phone's camera at once (`capture="environment"`, pictures only), the photo into the
+     open folder; the snackbar says where it went and offers the next one — a site visit is several photos in a row. */
+  const camera = useRef<HTMLInputElement | null>(null)
+  const takePhoto = () => camera.current?.click()
+  const onPhotos = (list: File[]) => { if (!readOnly && list.length) upload(list, currentId, { where: folder?.name ?? 'All Files', again: takePhoto }) }
   /* (T2) Files dragged onto the tab: the grid / list shows where they will land and a drop uploads them all. Only a drag that carries files
      counts — a tile or a column head being dragged inside the page does not. */
   const [dropping, setDropping] = useState(false)
@@ -190,7 +197,8 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
     onDrop: (e: React.DragEvent) => { if (readOnly || !carriesFiles(e)) return; e.preventDefault(); setDropping(false); onPicked([...e.dataTransfer.files]) },
   }
   // Parity with the other tabs' window events (om:tasks:add / om:quotes:new): a future quick link raises `om:files:upload` here.
-  useCreateIntent({ event: CREATE_EVENTS.files, onIntent: () => { if (!readOnly) pickFiles() } })
+  /* (Leads on the move, L4 — P-11) on a phone the tab's first way in is the camera — a Create from the lead's screen opens it there too */
+  useCreateIntent({ event: CREATE_EVENTS.files, onIntent: () => { if (!readOnly) { if (phone) takePhoto(); else pickFiles() } } })
 
   /* ── actions ── */
   /* (S42 audit C-03, call C·4) a money paper among the picked: the rule says why at the press, before a dialog opens (the server holds it too) */
@@ -271,18 +279,25 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}   /* (T9) Type · Owner · Updated */
         view={view} onView={setView}
         onMenu={() => setDeletedOpen(true)} readOnly={readOnly}
+        onPhoto={readOnly ? undefined : takePhoto}
       />
       {files.length === 0 ? (
-        <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} readOnly={readOnly} />
+        <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} readOnly={readOnly} onPhoto={takePhoto} />
       ) : searching && visible.length === 0 ? (
         /* (T9) a search or a filter that finds nothing — the tabs' shared No-results card, with the way back */
         <TabSearchEmpty noun="files" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_FILE_FILTERS) }} />
       ) : folder && !searching && visible.length === 0 ? (
         /* (REG-664) An empty folder says so (it showed nothing at all). */
         readOnly ? <FolderEmpty help="The project’s team adds its files here." /> : (
+        phone ? (
+          /* (Leads on the move, L4 — P-11) a phone's empty folder: the camera, its photos landing here *(invented copy: the help line)* */
+          <FolderEmpty help="Take photos into this folder, or choose files from ⋮.">
+            <Button variant="primary" appearance="outlined" iconStart={<Icon name="photo_camera" size={20} />} onPress={takePhoto} data-testid="folder-empty-photo">Take a photo</Button>
+          </FolderEmpty>
+        ) : (
         <FolderEmpty help="Upload files here with New File, or move files in from their ⋯ menu.">
           <Button variant="primary" appearance="outlined" onPress={pickFiles}>Upload Files</Button>
-        </FolderEmpty>)
+        </FolderEmpty>))
       ) : view === 'grid' ? (
         // An open folder with nothing inside shows the grid with no groups (no empty-folder mock).
         <FilesGrid
@@ -303,6 +318,11 @@ export function LeadFiles({ leadId, data, base, views }: { leadId: string; data:
       <input
         ref={picker} type="file" hidden multiple data-testid="files-picker"
         onChange={(e) => { onPicked([...(e.target.files ?? [])]); e.target.value = '' }}
+      />
+      {/* (L4 — P-11) the camera's own picker: pictures only, the back camera first */}
+      <input
+        ref={camera} type="file" hidden accept="image/*" capture="environment" data-testid="files-camera"
+        onChange={(e) => { onPhotos([...(e.target.files ?? [])]); e.target.value = '' }}
       />
       <DetailBulkBar
         count={selected.size}

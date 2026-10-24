@@ -12,7 +12,7 @@ import { displayDate, moneySGD } from '@/lib/format'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { LeadFile, Member } from '@/lib/db/schema'
 import { AutoFillNote, ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
-import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT, zeroMilestones } from '@/lib/leads/stage-data'
+import { amountMinor, attachLabel, DEFAULT_MILESTONES, defaultMilestones, SYSTEM_CONTRACT, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
@@ -20,12 +20,27 @@ import { pickable } from '@/lib/leads/assign-policy'
 import { isPdfRefusal, readPickedPdf } from '@/components/contracts/read-pdf'
 import { PhotoOrFile, useTouchPick } from '@/components/contracts/photo-or-file'
 import { readPickedContractFile } from '@/components/contracts/read-picture'
-import { isPictureData } from '@/lib/contracts/picture'
+import { isPictureData, NOT_A_CONTRACT_FILE } from '@/lib/contracts/picture'
 import photoStyles from '@/components/contracts/photo-or-file.module.css'
 import { NOT_A_PDF } from '@/lib/contracts/pdf'
+import { useMoveScreen } from './screen-context'
+import { AddLogLine, contactSummary, LogSummary, meetingSummary, MoveContactLog, MoveMeetingLog } from './move-fields'
+import { WonChecklist } from './won-checklist'
 
-/** (pending modules S05) A quote's PDF refusal in a quote's words — the contracts' says a contract is kept as one. */
-const quotePdfError = (e: string) => (e === NOT_A_PDF ? 'Choose a PDF — the quote is kept as one' : e)
+/** (pending modules S05) A quote's PDF refusal in a quote's words — the contracts' says a contract is kept as one. (Leads on the move, Q-03) A
+    finger's pick may be a photo too: its refusal names both. */
+const quotePdfError = (e: string) => (e === NOT_A_PDF ? 'Choose a PDF — the quote is kept as one' : e === NOT_A_CONTRACT_FILE ? 'Choose a PDF or a photo of the quote' : e)
+
+/** (Leads on the move, P-04) What a log step needs when the window is one step per screen. */
+export type MoveStep = { openedAt: number; first: string; onPickFile: (i: number, file: File) => void; uploadingAt: (i: number) => boolean; onAddLog?: () => void }
+
+/** (Leads on the move, Q-03 — his pick 2026-10-23) A photo of a quote taken on a phone is kept under the lead's name, as the signed contract's
+    photo is ("Contract_OliviaM_signed.jpg"): "Quote_OliviaM.jpg" at Quote Sent, "Quote_OliviaM_signed.jpg" at Won. */
+function quotePhotoName(leadName: string, signed: boolean): string {
+  const words = leadName.split(/\s+/).map((w) => w.replace(/[^A-Za-z]/g, '')).filter(Boolean)
+  const tag = words.length ? `${words[0]}${words.length > 1 ? (words[words.length - 1] ?? '').slice(0, 1) : ''}` : 'Client'
+  return `Quote_${tag}${signed ? '_signed' : ''}.jpg`
+}
 
 // OUTCOMES / SCHEDULE / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186, REG-319).
 
@@ -56,6 +71,32 @@ export function NewPanel({
   assignable?: string[] | null
   /** validateStage's `assignees` message after a Save with nobody ticked. */
   error?: string }) {
+  const screen = useMoveScreen()
+  /* (Leads on the move, P-04 · B-02 — his marks 2026-10-23) one step per screen: a member row IS its label — the whole 64 row ticks, where only
+     the 44 checkbox at its right edge did (a tap on "Dane" left him unticked); the box is the row's mark, the row the control */
+  if (screen) {
+    return (
+      <div className={styles.stack12} data-testid="move-new-members">
+        <SectionRow label="Members" />
+        {pickable(team, data.assignees).map((m) => {
+          const on = data.assignees.includes(m.id)
+          const off = !editable || (assignable !== null && !assignable.includes(m.id))
+          return (
+            <button key={m.id} type="button" role="checkbox" aria-checked={on} aria-disabled={off || undefined} className={`${styles.memberRow} ${styles.memberPress}`}
+                    onClick={off ? undefined : () => update?.({ assignees: on ? data.assignees.filter((id) => id !== m.id) : [...data.assignees, m.id] })}>
+              <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
+              <span className={styles.memberText}>
+                <span className={styles.memberName}>{m.name}</span>
+                <span className={styles.memberRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
+              </span>
+              <span className={styles.memberMark} data-on={on || undefined} aria-hidden><Icon name={on ? 'check_box' : 'check_box_outline_blank'} size={24} weight={300} fill={on} /></span>
+            </button>
+          )
+        })}
+        <FieldError message={error} />
+      </div>
+    )
+  }
   return (
     <>
       <p className={styles.panelTitle}>New</p>
@@ -186,9 +227,10 @@ function LogCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). (UX audit 2026-09-30, L2 · T3) The row is mandatory,
-            so it carries the required mark, and it names what proves this contact — photos from a visit, screenshots of a call or a message. */}
-        <SectionRow label={attachLabel(log.channel)} required
+        {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). (UX audit 2026-09-30, L2 · T3) It names what proves this contact —
+            photos from a visit, screenshots of a call or a message. (Leads on the move, Q-02 — his pick 2026-10-23, at every width) optional, as
+            the Notes tab's contact log always was: the row loses its required mark and says "(optional)", like the meeting documents' row. */}
+        <SectionRow label={`${attachLabel(log.channel)} (optional)`}
                     action={<LinkButton icon="attach_file" onClick={() => onAttach?.()}>Attach</LinkButton>} />
         <AttachedTiles names={log.files} ids={log.fileIds} fileOf={fileOf} onRemove={(j) => onChange({ files: dropAt(log.files, j) ?? [], fileIds: dropAt(log.fileIds, j) })} />
         <FieldError message={err('files')} />
@@ -198,7 +240,7 @@ function LogCard({
 }
 
 export function ContactedPanel({
-  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, askNextStep = false, onAttach, fileOf, fillNote,
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, askNextStep = false, onAttach, fileOf, fillNote, move,
 }: {
   /** (S43B · F1-01) what Auto Fill read for log `i` */
   fillNote?: (i: number) => string | null
@@ -214,9 +256,26 @@ export function ContactedPanel({
   onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
   onDeleteLog?: (i: number) => void
   errors: StageErrors; today: Date
+  /** (Leads on the move, P-04) one step per screen: the log sheet's fields, a picked photo uploaded at once, "Add another log" under the last */
+  move?: MoveStep
 }) {
   const setLog = (i: number, patch: Partial<ContactLog>) =>
     update({ logs: data.logs.map((l, j) => (j === i ? { ...l, ...patch } : l)) })
+  const screen = useMoveScreen()
+  if (screen && move) {
+    const count = data.logs.length
+    return (
+      <>
+        {data.logs.map((log, i) => lockedLog?.(i)
+          ? <LogSummary key={i} index={i} count={count} {...contactSummary(log)} notes={log.notes} onEdit={onEditLog ? () => onEditLog(i) : undefined} />
+          : <MoveContactLog key={i} index={i} count={count} log={log} onChange={(p) => setLog(i, p)} errors={errors} note={fillNote?.(i) ?? null}
+                            onAutoFill={() => onAutoFill(i)} onDelete={onDeleteLog && count > 1 ? () => onDeleteLog(i) : undefined}
+                            openedAt={move.openedAt} fileOf={fileOf} onPickFile={(f) => move.onPickFile(i, f)} uploading={move.uploadingAt(i)}
+                            onLibrary={() => onAttach?.(i)} first={move.first} askNextStep={askNextStep && !lockedLog?.(i)} />)}
+        {move.onAddLog ? <AddLogLine onAdd={move.onAddLog} /> : null}
+      </>
+    )
+  }
   return (
     <>
       {data.logs.map((log, i) => (
@@ -273,7 +332,7 @@ function MeetingCard({
 }
 
 export function MetPanel({
-  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, onAttach, fileOf, fillNote,
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today, onAttach, fileOf, fillNote, move,
 }: {
   /** (S43B · F1-01) what Auto Fill read for meeting log `i` */
   fillNote?: (i: number) => string | null
@@ -284,9 +343,26 @@ export function MetPanel({
   onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
   onDeleteLog?: (i: number) => void
   errors: StageErrors; today: Date
+  /** (Leads on the move, P-04) one step per screen */
+  move?: MoveStep
 }) {
   const setLog = (i: number, patch: Partial<MeetingLog>) =>
     update({ meetings: data.meetings.map((m, j) => (j === i ? { ...m, ...patch } : m)) })
+  const screen = useMoveScreen()
+  if (screen && move) {
+    const count = data.meetings.length
+    return (
+      <>
+        {data.meetings.map((m, i) => lockedLog?.(i)
+          ? <LogSummary key={i} index={i} count={count} {...meetingSummary(m)} notes={m.notes} onEdit={onEditLog ? () => onEditLog(i) : undefined} />
+          : <MoveMeetingLog key={i} index={i} count={count} log={m} onChange={(p) => setLog(i, p)} errors={errors} note={fillNote?.(i) ?? null}
+                            onAutoFill={() => onAutoFill(i)} onDelete={onDeleteLog && count > 1 ? () => onDeleteLog(i) : undefined}
+                            openedAt={move.openedAt} fileOf={fileOf} onPickFile={(f) => move.onPickFile(i, f)} uploading={move.uploadingAt(i)}
+                            onLibrary={() => onAttach?.(i)} first={move.first} />)}
+        {move.onAddLog ? <AddLogLine onAdd={move.onAddLog} /> : null}
+      </>
+    )
+  }
   return (
     <>
       {data.meetings.map((m, i) => (
@@ -370,8 +446,10 @@ function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreat
 }
 
 export function AttachTabs({
-  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty, viewHref, touchPick, uploadedPicture = null,
+  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty, viewHref, touchPick, uploadedPicture = null, photoHelp,
 }: {
+  /** (Leads on the move, Q-03) Take a photo's line, where the paper is a quote */
+  photoHelp?: string
   /** (Contracts on the move, C4 — P-12 · C-27, Q-04 as picked) On touch the Upload tab is two rows — Take a photo · Choose a file (a PDF or a
       picture) — in the drop box's place; given by the Won step's contract alone (a quote's upload stays a PDF). The desk keeps the box. */
   touchPick?: { ids: { photo: string; file: string }; label: string }
@@ -430,7 +508,7 @@ export function AttachTabs({
             {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row. (Contracts on the move, C4 — P-12 ·
                 C-27) On touch the box is two rows — Take a photo (the camera at once) · Choose a file (a PDF or a picture) — shown until a file
                 is kept; the kept file's row then stands alone, and its Remove brings the two rows back. */}
-            {rows && touchPick ? (uploaded ? null : <PhotoOrFile ids={touchPick.ids} label={touchPick.label} uploading={uploading} onPick={onUpload} />)
+            {rows && touchPick ? (uploaded ? null : <PhotoOrFile ids={touchPick.ids} label={touchPick.label} uploading={uploading} onPick={onUpload} photoHelp={photoHelp} />)
               : <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" accept=".pdf,application/pdf" uploading={uploading} onPick={onUpload} />}
             {uploaded ? (
               <div className={styles.quoteRow} data-selected="true" data-file-row="true" data-picture={uploadedPicture ? '' : undefined}>
@@ -459,8 +537,10 @@ export function AttachTabs({
 }
 
 export function QuoteSentPanel({
-  data, update, errors, docs, onCreateQuote, rule = null, onAttach, fileOf,
+  data, update, errors, docs, onCreateQuote, rule = null, onAttach, fileOf, leadName = '',
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors
+  /** (Leads on the move, Q-03) the lead's name — a photo of the quote is kept under it */
+  leadName?: string
   /** (pending modules S05) the step's meeting documents and render: the lead's files, kept with the step */
   onAttach?: (what: 'meeting' | 'render') => void
   fileOf?: FileOf
@@ -480,10 +560,14 @@ export function QuoteSentPanel({
      own name on the row, its bytes kept in Files › Quotes & BOQ when the step saves; a file that isn't a PDF, or is over 8 MB, is refused
      under the box */
   const [pickError, setPickError] = useState<string | null>(null)
+  /* (Leads on the move, Q-03 — his pick 2026-10-23: "a signed quote may be a photo at Quote Sent and Won … kept as the copy, the amount typed, as
+     the signed contract already is") on touch the Upload tab is Take a photo · Choose a file (a PDF or a picture), the Won step's contract's
+     own rows (C4); a photo is kept as the quote's copy in Files › Quotes & BOQ. A desk's drop stays a PDF. */
+  const touchPick = useTouchPick()
   const pickQuote = (f?: File) => {
     setPickError(null)
     if (!f) return
-    const read = readPickedPdf(f)
+    const read = touchPick ? readPickedContractFile(f, quotePhotoName(leadName, false)) : readPickedPdf(f)
     upload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setPickError(quotePdfError(r.error)); return } update({ quoteUploaded: r.name, quoteFile: r }); setJustUploaded(true) }) })
   }
   /* (UX audit 2026-09-30, Q1) The picked quote's approval, said as soon as it is picked — Save refuses it with the same line. */
@@ -500,6 +584,9 @@ export function QuoteSentPanel({
           onRemoveUpload={() => { setPickError(null); update({ quoteUploaded: null, quoteFile: null }) }}
           quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
           viewHref={(q) => `/quotes/${q.id}/preview`}   /* (pending modules S05) */
+          touchPick={{ ids: { photo: 'quote-take-photo', file: 'quote-choose-file' }, label: 'Attach the quote' }}   /* (Leads on the move, Q-03) */
+          photoHelp="The quote, with your camera"
+          uploadedPicture={data.quoteFile && isPictureData(data.quoteFile.data) ? data.quoteFile.thumb ?? data.quoteFile.data : null}
         />
         <FieldError message={pickError ?? errors.quote ?? picked?.hold ?? undefined} />
       </div>
@@ -527,6 +614,8 @@ export function QuoteSentPanel({
 /** The signed contract is named after the client: the mock's "Contract_OliviaM_signed.pdf" (780:92744) is the lead it
  *  was drawn for, Olivia Martinez — so the file name spells out *this* lead instead of hers on all 36. Falls back to
  *  the mock's own name for a lead with no usable name. */
+const PROJECT_TYPES = ['Whole-home renovation', 'Partial renovation', 'Commercial fit-out']
+
 function signedContractName(leadName: string): string {
   const words = leadName.split(/\s+/).map((w) => w.replace(/[^A-Za-z]/g, '')).filter(Boolean)
   const first = words[0] ?? ''
@@ -535,13 +624,16 @@ function signedContractName(leadName: string): string {
 }
 
 export function WonPanel({
-  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract, contractOptional = false,
+  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract, contractOptional = false, memberNames = [],
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string
   /** (pending modules S05) the studio wins a lead on its signed quote alone (Settings › Lead management › Lead stages) */
   contractOptional?: boolean
   /** (REG-340) The lead's quotes and contracts, read when the window opened; null until they land. */
   docs: StageDocuments | null
-  onCreateQuote: () => void; onCreateContract: () => void }) {
+  onCreateQuote: () => void; onCreateContract: () => void
+  /** (Leads on the move, P-04) the lead's members — the checklist's closing line names who carries on with the project */
+  memberNames?: string[] }) {
+  const screen = useMoveScreen()
   const quotes = docs ? wonQuoteRows(docs) : null   // (fix-A, A-15) the signed ones, then the ones not signed yet — saying so
   const contracts = docs ? signedContractRows(docs) : null
   const pickedQuote = data.wonQuoteTab === 'system' ? quotes?.find((q) => q.name === data.wonQuote) ?? null : null
@@ -571,13 +663,18 @@ export function WonPanel({
     contractUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setContractPickError(r.error); return } const name = isPictureData(r.data) ? r.name : contractName; update({ wonContractUploaded: name, wonContractFile: { ...r, name } }) }) })
   }
   const [justUploaded, setJustUploaded] = useState(false)
-  /* (pending modules S05) the signed quote's PDF itself — its own name on the row, kept with its bytes in the lead's Files with the project */
+  /* (Leads on the move, B-12 — his marks 2026-10-23; reverses REG-149's zeroing for an upload, on a phone and a tablet held upright) an uploaded
+     signed quote starts the split at the studio's usual 10 · 30 · 30 · 30 — the % boxes typed one by one from 0% and the refused Save were the
+     phone's whole Won step; change it where the signed paper says otherwise. The desk keeps REG-149's 0% until he says. */
+  const uploadSplit = () => (screen ? defaultMilestones() : zeroMilestones())
+  /* (pending modules S05) the signed quote's PDF itself — its own name on the row, kept with its bytes in the lead's Files with the project.
+     (Leads on the move, Q-03 — his pick 2026-10-23) on touch a photo of the signed paper too, kept as the quote's copy (C4's contract rows). */
   const [quotePickError, setQuotePickError] = useState<string | null>(null)
   const pickSignedQuote = (f?: File) => {
     setQuotePickError(null)
     if (!f) return
-    const read = readPickedPdf(f)
-    quoteUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setQuotePickError(quotePdfError(r.error)); return } update({ wonQuoteUploaded: r.name, wonQuoteFile: r, milestones: zeroMilestones() }); setJustUploaded(true) }) })
+    const read = touchPick ? readPickedContractFile(f, quotePhotoName(leadName, true)) : readPickedPdf(f)
+    quoteUpload.start(() => { void read.then((r) => { if (isPdfRefusal(r)) { setQuotePickError(quotePdfError(r.error)); return } update({ wonQuoteUploaded: r.name, wonQuoteFile: r, milestones: uploadSplit() }); setJustUploaded(true) }) })
   }
   const uploadedQuote = data.wonQuoteTab === 'upload'
   // The split is computed on the signed quote's amount: the selected system quote's own total, or the amount typed for an
@@ -587,43 +684,121 @@ export function WonPanel({
   const totalPct = data.milestones.reduce((s, m) => s + (m.pct || 0), 0)
   const setPct = (i: number, pct: number) =>
     update({ milestones: data.milestones.map((m, j) => (j === i ? { ...m, pct } : m)) })
+  const quoteTabs = (
+    <AttachTabs
+      tab={data.wonQuoteTab}
+      onTab={(t) => update({ wonQuoteTab: t, milestones: t === 'system' ? defaultMilestones() : data.wonQuoteUploaded ? uploadSplit() : data.milestones })}
+      selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n, milestones: defaultMilestones() })}
+      uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
+      onUpload={pickSignedQuote}   // (pending modules S05) the picked file itself
+      onRemoveUpload={() => { setQuotePickError(null); update({ wonQuoteUploaded: null, wonQuoteFile: null, wonQuoteAmount: '', milestones: defaultMilestones() }) }}
+      quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
+      viewHref={(q) => `/quotes/${q.id}/preview`}   /* (pending modules S05) */
+      touchPick={{ ids: { photo: 'won-quote-photo', file: 'won-quote-file' }, label: 'Attach the client’s signed quote' }}   /* (Leads on the move, Q-03) */
+      photoHelp="The signed quote, with your camera"
+      uploadedPicture={data.wonQuoteFile && isPictureData(data.wonQuoteFile.data) ? data.wonQuoteFile.thumb ?? data.wonQuoteFile.data : null}
+    />
+  )
+  const quoteError = quotePickError ?? errors.wonQuote ?? pickedQuote?.hold ?? undefined
+  const quoteAmount = uploadedQuote && data.wonQuoteUploaded ? (
+    <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" numeric="amount" autoFocus={justUploaded}
+               onChange={(v) => update({ wonQuoteAmount: v })} error={errors.wonQuoteAmount} />
+  ) : null
+  const contractTabs = (
+    <AttachTabs
+      tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
+      selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
+      uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
+      onUpload={pickContract}
+      touchPick={{ ids: { photo: 'won-take-photo', file: 'won-choose-file' }, label: 'Attach the client’s signed contract' }}   /* (C4 — P-12) */
+      uploadedPicture={data.wonContractFile && isPictureData(data.wonContractFile.data) ? data.wonContractFile.thumb ?? data.wonContractFile.data : null}
+      onRemoveUpload={() => { setContractPickError(null); update({ wonContractUploaded: null, wonContractFile: null }) }}
+      quotes={contracts} empty={<SystemEmpty noun="contracts" onCreate={onCreateContract} />}
+      viewHref={(c) => `/contracts/${c.id}/preview`}   /* (pending modules S05) */
+    />
+  )
+  const contractError = contractPickError ?? errors.wonContract
+  const splitLine = pickedQuote?.meta[0] ? `Payments follow ${pickedQuote.meta[0]}’s payment schedule.` : 'Payments follow the signed quote’s payment schedule.'
+  const splitEditor = (
+    <div className={styles.msCard}>
+      {data.milestones.map((m, i) => {
+        const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
+        return (
+          <div key={m.name} className={styles.msRow}>
+            <span className={styles.msIndex}>{i + 1}</span>
+            <span className={styles.msText}>
+              <span className={styles.msName}>{m.name}</span>
+              <span className={styles.msMeta}>{m.meta}</span>
+            </span>
+            <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>
+              <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`} aria-invalid={errors.milestones ? true : undefined}
+                     onChange={(e) => setPct(i, Math.max(0, Math.min(100, Number(e.target.value.replace(/\D/g, '')) || 0)))} />
+              <span>%</span>
+            </span>
+            <span className={styles.msAmt}>{moneySGD(amtMinor)}</span>
+          </div>
+        )
+      })}
+      <div className={`${styles.msRow} ${styles.msTotal}`}>
+        <span className={styles.msIndex} />
+        <span className={styles.msTotalLabel}>Total</span>
+        <span className={styles.msAmt}>{moneySGD(basisMinor)}</span>
+      </div>
+    </div>
+  )
+
+  if (screen) {
+    /* (Leads on the move, P-04 · B-11 · B-12) Won as a checklist — each settled row one line, the first still to do open */
+    const usual = data.milestones.length === DEFAULT_MILESTONES.length && data.milestones.every((m, i) => m.pct === DEFAULT_MILESTONES[i]!.pct)
+    const pcts = data.milestones.map((m) => m.pct || 0).join(' · ')
+    const amount = amountMinor(data.wonQuoteAmount)
+    const quoteDone = uploadedQuote ? !!data.wonQuoteUploaded && amount > 0 : !!pickedQuote && !pickedQuote.hold
+    const contractRow = contracts?.find((c) => c.name === data.wonContract) ?? null
+    const contractDone = data.wonContractTab === 'upload' ? !!data.wonContractUploaded : !!contractRow
+    const firstOf = (n: string) => n.trim().split(/\s+/)[0] ?? n
+    const names = memberNames.map(firstOf)
+    const pickLine = 'Take a photo · Choose a file · From the system'
+    return (
+      <WonChecklist
+        rows={[
+          { key: 'quote', title: 'Signed quote', done: quoteDone, error: quoteError ?? errors.wonQuoteAmount ?? null,
+            summary: uploadedQuote ? (data.wonQuoteUploaded ? `${data.wonQuoteUploaded} · ${amount ? moneySGD(amount) : 'type the amount'}` : pickLine)
+              : pickedQuote ? pickedQuote.meta.join(' · ') : quotes === null ? 'Reading the lead’s quotes…' : pickLine,
+            body: <>{quoteTabs}{quoteAmount}</> },
+          { key: 'contract', title: 'Signed contract', optional: contractOptional, done: contractDone, error: contractError ?? null,
+            summary: data.wonContractTab === 'upload' ? (data.wonContractUploaded ?? pickLine)
+              : contractRow ? [contractRow.name, ...contractRow.meta].join(' · ') : contracts === null ? 'Reading the lead’s contracts…' : pickLine,
+            body: contractTabs },
+          { key: 'payments', title: 'Payments', done: !uploadedQuote || totalPct === 100, error: errors.milestones ?? null,
+            summary: !uploadedQuote ? splitLine : usual ? '10 · 30 · 30 · 30 — the studio’s usual' : totalPct === 100 ? pcts : `${pcts} · ${totalPct} of 100% assigned`,
+            body: uploadedQuote ? (
+              <>
+                <p className={styles.splitLine}>It starts at the studio’s usual split — change it where the signed quote says otherwise.</p>
+                {splitEditor}
+                {usual ? null : <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Back to the usual split</LinkButton>}
+              </>
+            ) : null },
+        ]}
+        type={{ value: data.projectType, options: PROJECT_TYPES, onChange: (v) => update({ projectType: v }), error: errors.projectType ?? null }}
+        closing={names.length ? `Creates ${firstOf(leadName)}’s project — ${names.join(' · ')} ${names.length === 1 ? 'carries' : 'carry'} on with it.` : `Creates ${firstOf(leadName)}’s project.`}
+      />
+    )
+  }
   return (
     <>
       <div className={styles.stack12}>
         <SectionRow label="Attach client signed quote" />
         {/* The split follows the signed quote's source (user 2026-08-29): a system quote carries the recorded
             10/30/30/30; an uploaded one carries nothing we can trust, so every milestone drops to 0%. */}
-        <AttachTabs
-          tab={data.wonQuoteTab}
-          onTab={(t) => update({ wonQuoteTab: t, milestones: t === 'system' ? defaultMilestones() : data.wonQuoteUploaded ? zeroMilestones() : data.milestones })}
-          selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n, milestones: defaultMilestones() })}
-          uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
-          onUpload={pickSignedQuote}   // (pending modules S05) the picked file itself
-          onRemoveUpload={() => { setQuotePickError(null); update({ wonQuoteUploaded: null, wonQuoteFile: null, wonQuoteAmount: '', milestones: defaultMilestones() }) }}
-          quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
-          viewHref={(q) => `/quotes/${q.id}/preview`}   /* (pending modules S05) */
-        />
-        <FieldError message={quotePickError ?? errors.wonQuote ?? pickedQuote?.hold ?? undefined} />
+        {quoteTabs}
+        <FieldError message={quoteError} />
       </div>
-      {uploadedQuote && data.wonQuoteUploaded ? (
-        <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" numeric="amount" autoFocus={justUploaded}
-                   onChange={(v) => update({ wonQuoteAmount: v })} error={errors.wonQuoteAmount} />
-      ) : null}
+      {quoteAmount}
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label={contractOptional ? 'Attach client signed contract (optional)' : 'Attach client signed contract'} />
-        <AttachTabs
-          tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
-          selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
-          uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
-          onUpload={pickContract}
-          touchPick={{ ids: { photo: 'won-take-photo', file: 'won-choose-file' }, label: 'Attach the client’s signed contract' }}   /* (C4 — P-12) */
-          uploadedPicture={data.wonContractFile && isPictureData(data.wonContractFile.data) ? data.wonContractFile.thumb ?? data.wonContractFile.data : null}
-          onRemoveUpload={() => { setContractPickError(null); update({ wonContractUploaded: null, wonContractFile: null }) }}
-          quotes={contracts} empty={<SystemEmpty noun="contracts" onCreate={onCreateContract} />}
-          viewHref={(c) => `/contracts/${c.id}/preview`}   /* (pending modules S05) */
-        />
-        <FieldError message={contractPickError ?? errors.wonContract} />
+        {contractTabs}
+        <FieldError message={contractError} />
       </div>
       <Divider />
       {/* (simplify Q-17, the owner's pick 2026-10-09 — revises mock 780:92744 / REG-149 for a system quote) the split is editable only where the
@@ -639,42 +814,18 @@ export function WonPanel({
                           <Tag color="green" appearance="outlined">{`${totalPct}%`}</Tag>
                         </span>
                       } />
-          <div className={styles.msCard}>
-            {data.milestones.map((m, i) => {
-              const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
-              return (
-                <div key={m.name} className={styles.msRow}>
-                  <span className={styles.msIndex}>{i + 1}</span>
-                  <span className={styles.msText}>
-                    <span className={styles.msName}>{m.name}</span>
-                    <span className={styles.msMeta}>{m.meta}</span>
-                  </span>
-                  <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>
-                    <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`} aria-invalid={errors.milestones ? true : undefined}
-                           onChange={(e) => setPct(i, Math.max(0, Math.min(100, Number(e.target.value.replace(/\D/g, '')) || 0)))} />
-                    <span>%</span>
-                  </span>
-                  <span className={styles.msAmt}>{moneySGD(amtMinor)}</span>
-                </div>
-              )
-            })}
-            <div className={`${styles.msRow} ${styles.msTotal}`}>
-              <span className={styles.msIndex} />
-              <span className={styles.msTotalLabel}>Total</span>
-              <span className={styles.msAmt}>{moneySGD(basisMinor)}</span>
-            </div>
-          </div>
+          {splitEditor}
           <FieldError message={errors.milestones} />
         </div>
       ) : (
         <div className={styles.stack12} data-testid="won-split-line">
           <SectionRow label="Payment milestone" />
-          <span className={styles.splitLine}>{pickedQuote?.meta[0] ? `Payments follow ${pickedQuote.meta[0]}’s payment schedule.` : 'Payments follow the signed quote’s payment schedule.'}</span>
+          <span className={styles.splitLine}>{splitLine}</span>
         </div>
       )}
       <Divider />
       <TextField label="Project type" value={data.projectType} mode="select"
-                 options={['Whole-home renovation', 'Partial renovation', 'Commercial fit-out']}
+                 options={PROJECT_TYPES}
                  onChange={(v) => update({ projectType: v })} error={errors.projectType} />
     </>
   )

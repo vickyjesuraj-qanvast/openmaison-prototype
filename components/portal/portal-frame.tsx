@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
@@ -47,6 +47,23 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
   const [moreOpen, setMoreOpen] = useState(false)
   const mobile = useMediaQuery(MOBILE)
   if (moreOpen && !mobile) setMoreOpen(false)   // the sheet only exists on a phone, as the studio's More (render-phase adjust)
+  /* (responsive audit 2026-10-23, W3-12) at 768–1024 the sections scroll in their own row (fix-F, F-02) — the one the client is on is brought
+     to its middle, instead of sitting past the edge ("Mess…" on a phone held sideways, About and Files out of sight upright); again when the
+     row's width settles. A row with room (a desk) never moves. */
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const centre = () => {
+      const here = nav.querySelector<HTMLElement>('[aria-current="page"]')
+      if (!here || nav.scrollWidth <= nav.clientWidth + 1) return
+      const c = here.getBoundingClientRect(), r = nav.getBoundingClientRect()
+      nav.scrollTo({ left: nav.scrollLeft + (c.left + c.width / 2) - (r.left + r.width / 2), behavior: 'instant' })
+    }
+    centre()
+    const ro = new ResizeObserver(centre); ro.observe(nav)
+    return () => ro.disconnect()
+  }, [tab])
   const waiting = (key: string) => needs.filter((n) => NEED_SECTION[n.kind] === key).length
   const moreWaiting = more.reduce((n, t) => n + waiting(t.key), 0)
   const inMore = more.some((t) => t.key === tab)
@@ -78,7 +95,7 @@ export function PortalFrame({ look, slug, tab, visitor, paused = false, needs = 
             <span className={styles.brandText}><span className={styles.studio}>{look.studio}</span><span className={styles.welcome} data-testid="portal-welcome">{look.welcome}</span></span>
           ) : <span className={styles.studio}>{look.studio}</span>}
         </span>
-        <nav className={styles.nav} aria-label="Sections" data-testid="portal-nav">
+        <nav ref={navRef} className={styles.nav} aria-label="Sections" data-testid="portal-nav">
           {tabs.map((t) => (
             <Link key={t.key} href={portalTabHref(slug, t)} className={styles.navLink} data-key={t.key} aria-current={t.key === tab ? 'page' : undefined}>{t.label}</Link>
           ))}

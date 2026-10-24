@@ -146,3 +146,23 @@
 /* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
    own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
 .cell.colSel + .cell, .hCell.colSel + .hCell { padding-left: var(--om-spacing-3); }
+
+/* ── (Leads on the move, L4 — C-07) A touch tablet (768–1024, no hover): the tablet set's tracks (files-table.tsx), 12 inside each cell, and the
+   row's ⋮ as a FROZEN cell at the right — the Quotes table's (P-11): the trail track (48) holds it, the head draws its empty cell over the column,
+   both carry the row's fill and a 1px left rule and the mirrored frozen shadow while columns still hide under them. The band the last cell kept
+   for a floating kebab (84 of padding) gives way. ── */
+.hActions { display: none; }
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .card { grid-template-columns: var(--tracks); }
+  .cell, .head .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .cell.colSel, .head .colSel { padding-left: var(--om-spacing-4); padding-right: 0; }
+  .cell.colAttached { padding-right: var(--om-spacing-3); }
+  .hActions, .actions { display: flex; position: sticky; right: 0; grid-column: -2 / -1; grid-row: 1; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .hActions { z-index: 3; padding: 0; }
+  .actions { top: auto; width: auto; height: auto; justify-self: stretch; align-self: stretch; align-items: center; justify-content: center; opacity: 1; pointer-events: auto; transform: none; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .row[data-selected] .actions { background: var(--om-color-primary-variant); }
+  .actionsInner { position: static; transform: none; }
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
+  .card[data-overflow]:not([data-at-end]) .hActions, .card[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}

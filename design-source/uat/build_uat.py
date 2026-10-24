@@ -40,7 +40,7 @@ CHAPTERS = {
     23: ('Messages', 'The team’s own conversations beside the clients’: the studio’s room, two people, a named group and its people, a lead’s Team conversation, and a designer’s view.'),
     24: ('Plan it in 3D', 'Wall elevations with the usual heights for the carpenter, a layout’s 3D picture and its turning clip, and a client’s floor-plan photo made into a 3D picture.'),
     25: ('Outside the studio', 'Market Insights, the studio’s Qanvast lead credits and reviews, and the privacy link at the foot of the client portal.'),
-    26: ('Quotes on the move', 'A quote on a phone and a tablet: it opens as the document, Edit is one section at a time, Items and payments are cards, the paper is a viewer, the lists and Create Quote as cards and rows, the client’s page with Confirm in reach.'),    27: ('Contracts on the move', 'A contract on a phone and a tablet: it opens as the document, Edit is a short list with Details as one form, the paper full screen with one row of tools, a signature field placed by clause, the client reads first and signs in one hand, the lists and templates as cards and rows, a photo of the signed paper on the Won step.'),
+    26: ('Quotes on the move', 'A quote on a phone and a tablet: it opens as the document, Edit is one section at a time, Items and payments are cards, the paper is a viewer, the lists and Create Quote as cards and rows, the client’s page with Confirm in reach.'),    27: ('Contracts on the move', 'A contract on a phone and a tablet: it opens as the document, Edit is a short list with Details as one form, the paper full screen with one row of tools, a signature field placed by clause, the client reads first and signs in one hand, the lists and templates as cards and rows, a photo of the signed paper on the Won step.'),    28: ('Leads on the move', 'A lead on a phone and a tablet: the listing says who to call now, a lead keeps its page and tab strip, a call is logged in the log sheet, the Move stage window one step at a time, Won as a checklist, On Hold and Lost as one sheet, the tabs’ contents as cards.'),
 }
 RESULTS = ['✅ Works', '🟡 Works, but…', '❌ Doesn’t work', '🔍 Couldn’t find it', '⏭️ Skipped']
 STATUSES = ['New', 'Fixing', 'Fixed – please re-test', 'Won’t change', 'Talk to Dane']
@@ -65,7 +65,7 @@ CENTER = Alignment(horizontal='center', vertical='top', wrap_text=True)
 
 # ── data ──────────────────────────────────────────────────────────────────────────────────────────
 steps = []
-for n in range(1, 28):
+for n in range(1, 29):
     p = os.path.join(HERE, f'ch{n}.json')
     if not os.path.exists(p):
         print(f'!! missing ch{n}.json'); continue
@@ -247,7 +247,7 @@ def block(top, label, key_col, keys, key_label):
         c = S.cell(row=tot, column=cc, value=f'=SUM({L_}{hdr + 2}:{L_}{tot - 1})'); c.font = f(bold=True); c.alignment = Alignment(horizontal='center')
         c.border = Border(top=Side(style='thin', color=INK))
     return tot + 2
-nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 28)], 'Chapter')
+nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 29)], 'Chapter')
 used_modules = [m for m in MODULES if any(r.get('module') == m for r in steps)]
 block(nxt, 'By module', mod_c, [(m, m) for m in used_modules], 'Module')
 S.column_dimensions['A'].width = 26; S.column_dimensions['B'].width = 8
@@ -341,7 +341,7 @@ pair('Client pages', 'Where the client confirms a quote or signs a contract, you
      'Chapter 22’s meeting links open the same way, in a private window.', 30)
 pair('Client portal', 'Chapters 19–21 and 25: open the portal’s address in a private window (Chrome: ⌘⇧N, Windows: Ctrl+Shift+N) and sign in with the client’s mobile number — '
      'any six digits pass as the code. Keep your own window for the studio; a preview from the studio would replace the client’s sign-in in the same window.', 44)
-pair('Your phone', 'Chapters 12, 26 and 27: when npm run dev starts, Terminal shows a “Network” address (like http://192.168.1.5:3000). Open it on a phone on the same Wi-Fi.', 30)
+pair('Your phone', 'Chapters 12, 26, 27 and 28: when npm run dev starts, Terminal shows a “Network” address (like http://192.168.1.5:3000). Open it on a phone on the same Wi-Fi.', 30)
 pair('Sample files', 'Steps that need a file name it — open http://localhost:3000/uat-files/ plus the file name to download it.', 18)
 pair('Not in 2.0 on purpose', 'Journey mode (2.0 moves leads stage by stage) and Archive (2.0 uses Delete with a Deleted list). '
      'Their buttons answer “Coming soon in OpenMaison 2.0” — that is expected, not a bug.', 44)
@@ -362,6 +362,6 @@ if files:
 wb.move_sheet('UAT · Lists', offset=len(wb.sheetnames))
 wb.save(OUT)
 print(f'saved {OUT}')
-print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 28)))
+print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 29)))
 print(f'checklist rows: {len(checklist)} · built-like without a step (Team check): {len(gap_rows)}')
 

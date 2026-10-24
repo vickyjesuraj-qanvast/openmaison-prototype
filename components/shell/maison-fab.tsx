@@ -31,45 +31,72 @@ export function MaisonFab({ onPress, raised = false, className, quietTop = false
   )
 }
 
+/** (Leads on the move — the landing's FAB rule, 2026-10-23) A touch tablet: 768–1024 with a finger (REG-307's query, above the phone's own). */
+const TOUCH_TABLET_ONLY = '(hover: none) and (min-width: 768px) and (max-width: 1024px)'
+/** Every width the rules below can apply at — the desk (≥1025) keeps the mock's button. */
+const NARROW = '(max-width: 1024px)'
+
 /**
- * (wave E, E4 — the owner's call on the FAB, gallery-3) On a phone (≤767) the button slides away while the page scrolls down — the cards'
- * corner chips and the last lines it sat on come clear — and comes back the moment the page scrolls up, or when it stops at its end (where
- * the page's own bottom clearance keeps it off the content). Every page that has it: it is one component. The flag is a data attribute
- * written from the scroll listener (no render); the stylesheet slides it, and reduced motion swaps the slide for an instant change. A
- * button that holds keyboard focus never leaves (`:focus-within`).
+ * Where the button rests, one rule (written as `data-tucked`; the stylesheet slides it away, reduced motion swaps the slide for an instant change;
+ * a button that holds keyboard focus never leaves, `:focus-within`):
+ *  · (wave E, E4 — the owner's call on the FAB, gallery-3) On a phone (≤767) it slides away while the page scrolls down — the cards' corner chips
+ *    and the last lines it sat on come clear — and comes back the moment the page scrolls up, or when it stops at its end (where the page's own
+ *    bottom clearance keeps it off the content). `quietTop` (S42 A-12): it starts tucked at the top.
+ *  · (Leads on the move — the landing's FAB rule, 2026-10-23) **At its end only** on a touch tablet (768–1024): it rests out of sight while there
+ *    is page below and shows once the page sits at its end, or does not scroll at all. A tablet's table rows carry a frozen ⋮ exactly under the
+ *    button's corner (the Leads, Quotes and Contracts tablet tables). The page's height is watched, so a list that grows or shrinks under it
+ *    moves it with the page.
+ *  · A mouse at 768–1024 keeps the desk's button.
  */
 function useTuckOnScroll(wrap: RefObject<HTMLDivElement | null>, quietTop: boolean) {
   useEffect(() => {
     const el = wrap.current
     if (!el) return
-    const mql = window.matchMedia(MOBILE)
+    const phone = window.matchMedia(MOBILE), tablet = window.matchMedia(TOUCH_TABLET_ONLY), narrow = window.matchMedia(NARROW)
+    const atEndOnly = () => tablet.matches
     /** Below this movement a resting finger's jitter is not a scroll. */
     const DEADZONE = 6
     let last = window.scrollY
     let frame = 0
+    let on = false
     const show = () => el.removeAttribute('data-tucked')
     const tuck = () => el.setAttribute('data-tucked', '')
     const apply = () => {
       frame = 0
       const y = window.scrollY
       const max = document.documentElement.scrollHeight - window.innerHeight
+      if (atEndOnly()) { last = y; if (y >= max - 2) show(); else tuck(); return }
+      if (!phone.matches) { last = y; show(); return }
       /* stopped at the end (a rubber-band past it counts as there): back; at the top: back — but for a quiet-top page, which keeps it tucked */
       if (y >= max - 2 && y > 0) { last = y; show(); return }
       if (y <= 0) { last = y; if (quietTop) tuck(); else show(); return }
       const delta = y - last
       if (Math.abs(delta) < DEADZONE) return
       last = y
-      if (delta > 0) el.setAttribute('data-tucked', '')
+      if (delta > 0) tuck()
       else show()
     }
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(apply) }
-    const enable = () => { last = window.scrollY; if (quietTop && last <= 0) tuck(); window.addEventListener('scroll', onScroll, { passive: true }) }
-    const disable = () => { window.removeEventListener('scroll', onScroll); if (frame) cancelAnimationFrame(frame); frame = 0; show() }
-    /* ≤767 only, following a rotation across the breakpoint — a tablet that turns into phone width picks it up, one that turns out gets
+    const later = () => { if (!frame) frame = requestAnimationFrame(apply) }
+    const ro = new ResizeObserver(later)
+    const enable = () => {
+      if (on) return
+      on = true; last = window.scrollY
+      if (quietTop && last <= 0 && phone.matches) tuck()
+      apply()
+      window.addEventListener('scroll', later, { passive: true }); window.addEventListener('resize', later)
+      ro.observe(document.body)
+    }
+    const disable = () => {
+      if (!on) return
+      on = false
+      window.removeEventListener('scroll', later); window.removeEventListener('resize', later); ro.disconnect()
+      if (frame) cancelAnimationFrame(frame); frame = 0; show()
+    }
+    /* ≤1024 only, following a rotation across the breakpoints — a tablet that turns into phone width picks the phone's rule up, the desk gets
        its button back */
-    if (mql.matches) enable()
-    const onChange = (e: MediaQueryListEvent) => (e.matches ? enable() : disable())
-    mql.addEventListener('change', onChange)
-    return () => { mql.removeEventListener('change', onChange); disable() }
+    const sync = () => (narrow.matches ? (enable(), later()) : disable())
+    sync()
+    narrow.addEventListener('change', sync); phone.addEventListener('change', later); tablet.addEventListener('change', later)
+    return () => { narrow.removeEventListener('change', sync); phone.removeEventListener('change', later); tablet.removeEventListener('change', later); disable() }
   }, [wrap, quietTop])
 }

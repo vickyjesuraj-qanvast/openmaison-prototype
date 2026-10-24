@@ -78,9 +78,9 @@ export function AddTaskButton({ onAdd, header = false }: { onAdd: (kind: 'new' |
       ) : header ? (
         <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="Add Task" onPress={() => setOpen((o) => !o)}>Add Task</Button>
       ) : (
-        /* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */
+        /* (Leads on the move, L4 — C-02) no overlay of ours: the DS button keeps its own box, the icon buttons the house 44 */
         <Button
-          variant="primary" appearance="outlined" className={styles.touchTarget}
+          variant="primary" appearance="outlined"
           iconEnd={<span className={styles.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
           aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="Add Task"
           onPress={() => setOpen((o) => !o)}
@@ -105,7 +105,7 @@ export function TasksMoreButton({ onMenu, group }: { onMenu: (action: TasksMenuA
   return (
     <span className={styles.menuWrap}>
       <Tooltip label="More options" disabled={open}>
-        <IconButton icon="more_vert" label="More options" className={styles.touchTarget} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
+        <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
       </Tooltip>
       <Dropdown open={open} onClose={() => setOpen(false)} align="right" sheetTitle="All Tasks">
         <DropdownItem onSelect={pick(() => onMenu('saveAll'))}>Save all as Template</DropdownItem>
@@ -176,9 +176,10 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
           ) : null}
           {todos?.length ? (
             <span className={styles.todos} data-testid="task-todos">
+              {/* (responsive audit W2-04) a phone's chips have a line of their own and say only their glyph and count, as they did beside the pill */}
               {todos.map((t) => (
-                <Tooltip key={t.key} label={t.label} disabled={!compact}>
-                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} compact={compact} selected={t.selected} onClick={t.onClick} />
+                <Tooltip key={t.key} label={t.label} disabled={!(compact || sheet)}>
+                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} compact={compact || sheet} selected={t.selected} onClick={t.onClick} />
                 </Tooltip>
               ))}
             </span>
@@ -191,7 +192,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters" shortcut="filters">
-            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
+            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'}
                         onClick={onFilter} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
@@ -199,7 +200,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
         {onColumns ? (
           /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
           <Tooltip label="Column settings">
-            <IconButton icon="tune" label="Column settings" onClick={onColumns} className={styles.touchTarget} />
+            <IconButton icon="tune" label="Column settings" onClick={onColumns} />
           </Tooltip>
         ) : null}
         </>)}

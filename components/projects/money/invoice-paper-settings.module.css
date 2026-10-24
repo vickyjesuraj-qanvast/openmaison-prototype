@@ -8,7 +8,7 @@
 .preview { display: none; flex-direction: column; gap: var(--om-spacing-2); position: sticky; top: calc(var(--om-spacing-2) + 68px + var(--om-spacing-6)); min-width: 0; }
 .previewLabel { composes: previewLabel from '../../company/profile-view.module.css'; }
 .previewPage { composes: previewPage from '../../company/profile-view.module.css'; }
-.previewPage { padding: var(--om-spacing-3); }
+.previewPage.previewPage { padding: var(--om-spacing-3); }   /* (responsive audit 2026-10-23, W6 — load order) doubled: the brand kit's well (24) is the same weight, and this round's build drew it */
 .zoom { width: 816px; zoom: 0.41; pointer-events: none; user-select: none; }
 .previewRow { display: flex; }
 .previewOpen { align-self: flex-start; margin-left: calc(-1 * var(--om-spacing-3)); }

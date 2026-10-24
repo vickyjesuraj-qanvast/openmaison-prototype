@@ -1,11 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { MOBILE } from '@/lib/breakpoint'
 import { useSnackbar } from '@/components/om/snackbar'
 import { refusalOf, useRun } from '@/components/leads/tasks/use-run'
 import { fileGlyph, fileKindOf, mimeFor } from '@/lib/leads/file-model'
 import { uploadPicked } from './upload-picture'
 import { UploadToast, type UploadRow } from './upload-toast'
+
+/** (Leads on the move, L4 — P-11 · C-09) A run of photos from the camera: where they land (the snackbar names it) and the camera again. */
+export type PhotoRun = { where: string; again: () => void }
 
 /** (T2) A toast row with the file behind it, so Retry sends the same file to the same folder. */
 type Upload = UploadRow & { file: File; parentId: string | null }
@@ -42,11 +46,15 @@ export function useFileUpload(leadId: string, o: { view?: () => void } = {}) {
     setRow(row.key, ok ? 'done' : 'failed')
     return ok ? true : { reason: r && 'error' in r ? refusalOf(r.error) : null }
   }
-  const landed = (n: number) => {
+  const landed = (n: number, photos?: PhotoRun) => {
+    /* (L4 — P-11) photos from the camera say where they are and offer the next one — several in a row, into the same folder */
+    if (photos) { snackbar({ message: `${n === 1 ? 'Photo' : `${n} photos`} saved to ${photos.where}`, actionLabel: 'Take another', onAction: photos.again }); return }
     const message = n === 1 ? 'File uploaded' : `${n} files uploaded`
     snackbar(view.current ? { message, actionLabel: 'View', onAction: () => view.current?.() } : { message })
   }
-  const upload = (list: File[], parentId: string | null) => {
+  /** (L4 — C-09) On a phone the toast steps away once every file has landed — the snackbar says it — instead of covering the grid until closed. */
+  const settle = () => { if (window.matchMedia(MOBILE).matches) { setToast(null); releaseThumbs() } }
+  const upload = (list: File[], parentId: string | null, photos?: PhotoRun) => {
     if (!list.length) return
     const at = Date.now()
     const rows: Upload[] = list.map((file, i) => {
@@ -64,7 +72,7 @@ export function useFileUpload(leadId: string, o: { view?: () => void } = {}) {
       for (const row of rows) { const r = await send(row); if (r === true) n++; else reasons.push(r.reason) }
       const failed = rows.length - n
       /* one line for the whole pick — the rows say which; a failure names what failed, and why when one rule refused it (gaps build E) */
-      if (!failed) landed(n)
+      if (!failed) { landed(n, photos); settle() }
       else fail(rows.length === 1 ? `upload ${rows[0]!.name}` : `upload ${failed} of ${rows.length} files`, failed === 1 ? reasons[0] ?? null : null)
     })()
   }

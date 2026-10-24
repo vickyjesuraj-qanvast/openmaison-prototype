@@ -54,7 +54,8 @@
    gutters and do their own scrolling. Filling the height there left a note's two lines followed by 200px of
    white before its attachments. It sizes to its content instead; the desktop pane, which needs the fill to keep
    its footer at the foot, is untouched. */
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .editor { height: auto; }
   .fields { padding: 0; overflow: visible; }
 }

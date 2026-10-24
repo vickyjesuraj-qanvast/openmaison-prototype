@@ -9,20 +9,21 @@ import { AnimatePresence } from 'motion/react'
 import { GHOST_MIN_MS, PageReveal } from '@/components/shell/page-reveal'
 import { ListingGhost } from '@/components/leads/listing-ghost'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
-import { Tooltip } from '@/components/om/tooltip'
+import { REFUSED_KEY, Tooltip } from '@/components/om/tooltip'
+import { STAGE_MOVE_KEY } from '@/components/leads/move-stage/screen-context'   // (Leads on the move, B-15)
 import { PageHeader } from '@/components/shell/page-header'
 import { useSnackbar } from '@/components/om/snackbar'
 import { IconButton } from '@/components/om/icon-button'
 import { Icon } from '@/components/om/icon'
 import { Button } from '@/components/ds'
 import { LeadsToolbar } from '@/components/leads/toolbar'
-import { LeadsTable, DEFAULT_COLUMNS, isSortableColumn, type ColumnConfig, type LeadSort } from '@/components/leads/table'
+import { LeadsTable, DEFAULT_COLUMNS, TABLET_COLUMNS, isSortableColumn, type ColumnConfig, type LeadSort } from '@/components/leads/table'
 import { readListing, writeListing } from '@/lib/leads/listing-url'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'   // (pending modules S05) a landing's property type, read against the list   // (parity P-18)
 import { assignableIds, assignHint, runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import { LeadCards } from '@/components/leads/lead-cards'
 import { useShortcut } from '@/lib/keys/store'
-import { MOBILE, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TABLET_DOWN, TOUCH_TABLET, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/leads/dropdown'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { BulkBar } from '@/components/leads/bulk-bar'
@@ -38,7 +39,7 @@ import { clearColumnWidths } from '@/lib/table-widths'
 import { useMaisonAi } from '@/lib/maison-ai'
 import { useListingMaison } from '@/components/leads/use-listing-maison'
 import { LeadsEmptyState } from '@/components/leads/empty-state'
-import { StageDropdown } from '@/components/leads/stage-dropdown'
+import { StageDropdown, type NextMove } from '@/components/leads/stage-dropdown'
 import { StageFilterDropdown } from '@/components/leads/stage-filter-dropdown'
 import { FiltersModal } from '@/components/leads/filters-modal'
 import { SearchEmpty } from '@/components/leads/search-empty'
@@ -59,7 +60,7 @@ import { displayDate, displayDateLong, displayDue, isSgPhone, money, phoneDispla
 import { filterByQuery, phoneNeedles } from '@/lib/search'
 import { type Stage } from '@/lib/leads/enums'
 import { isMarketing, runsLeadSetup } from '@/lib/settings/roles'   // (S44O — call C6)
-import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
+import { blockedReason, detailHref, isActiveStage, isCompletedFor, journeyIdx, nextStageOf, resumeStageOf, stageIntent } from '@/lib/leads/stage-policy'
 import { liveReasonNames, type LeadReasons, type StageMovement } from '@/lib/settings/types'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
@@ -83,7 +84,7 @@ const clampPos = (el: HTMLElement, w: number, h: number) => {
   const r = el.getBoundingClientRect()
   return { top: clampAxis(r.bottom + 4, h, usableViewportHeight()), left: clampAxis(r.left, w, window.innerWidth) }
 }
-const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 400, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); const h = window.matchMedia(TOUCH_TABLET).matches ? 500 : 400; return { top: clampAxis(r.bottom, h, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452) — (leads on the move, P-05) a finger's menu leads with the next move and the rows' reasons: 500 tall
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
 /** (REG-610) The Assign popover opened from the bulk bar — one anchored state, this id instead of a lead's. */
 const BULK = '__bulk__'
@@ -150,7 +151,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const mobile = useMediaQuery(MOBILE)
   const setView = (v: ListingView) => { setChosenView(v); rememberView(v) }
   useRememberShape('leads', rows.length === 0)   // (UX audit build) the shape the listing opened on — its loading ghost draws the same one next time
-  const columns = useColumnPrefs<ColumnConfig>('leads', DEFAULT_COLUMNS)   // per user, in the browser (REG-454)
+  const deskColumns = useColumnPrefs<ColumnConfig>('leads', DEFAULT_COLUMNS)   // per user, in the browser (REG-454)
+  /* (Leads on the move, L3 — P-06 · A-12) A touch tablet opens the table on its own set — Name · Stage · Last contact · Next follow-up · Members —
+     remembered apart (`om.columns.leads.tablet`, the table core's tablet default, REG-2564's way): a column shown on the desk stays shown there. */
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !mobile
+  const tabletColumns = useColumnPrefs<ColumnConfig>('leads.tablet', TABLET_COLUMNS)
+  const columnsKey = touchTablet ? 'leads.tablet' : 'leads'
+  const columns = touchTablet ? tabletColumns : deskColumns
+  /* (Leads on the move, P-08) ≤1024 a new lead opens on its own page, ready to call — the desk keeps the snackbar and the listing */
+  const openAfterCreate = useMediaQuery(TABLET_DOWN)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
@@ -158,6 +167,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /* (parity P-25, B-16) The bulk bar's Export opens the statement on the selection ("Selected leads"); ⋮ › Export all as… on none. */
   const [exportPicked, setExportPicked] = useState<LeadRow[] | null>(null)
   const [assign, setAssign] = useState<Anchored>(null)
+  /* (Leads on the move, L3 — A-06) The stage sheet's fix: Assign, then the move the person asked for — the Move stage window opens once the
+     member is on the lead (its owner rule met, REG-130), never a second trip back to the pill. */
+  const [assignThen, setAssignThen] = useState<{ leadId: string; stage: Stage } | null>(null)
   /* (UX audit L5) The leads the BULK Assign popover acts on when it was opened for an import's new leads, not the selection. */
   const [bulkIds, setBulkIds] = useState<string[] | null>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
@@ -223,7 +235,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const r = await quickMoveStage({ leadId: lead.id, fromStage: lead.stage, toStage: stage })
     if ('error' in r) { setPendingDrop(null); snackbar({ message: couldnt('move the lead', refusalOf(r.error)) }); return }   // (fix-E, A-01) the server's rule, said
     const { logId } = r
-    snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, lead.stage)) } })
+    snackbar({ message: `Moved to ${stage}`, key: STAGE_MOVE_KEY, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, lead.stage)) } })   // (Leads on the move, B-15)
   })
   /** (fix-E, E-09) Delete Forever / Empty Trash: what went — and, named, what stayed and why, with the way to its project. Deleted Leads
       purges the rest instead of refusing the whole trash for one lead. */
@@ -249,10 +261,27 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       /* (UX audit 2026-09-30, L10) no reason pre-chosen — the required field asks for one (the Overview's rule too) */
       case 'hold': setHoldReason(''); setHoldFrom(null); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
       case 'lost': setLostReason(''); setLost(lead.id); return
-      case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
+      case 'blocked': setPendingDrop(null); snackbar({ message: intent.message, key: REFUSED_KEY }); return   // (Leads on the move, B-14) a sheet opening next withdraws it
       case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage, step: intent.step }); return
       case 'wizard': setWizard({ leadId: lead.id, target: intent.stage }); return
       case 'quick': void quickMove(lead, intent.stage); return
+    }
+  }
+
+  /** (Leads on the move, L3 — P-05 · Q-05 · A-06 · A-07) A card's stage sheet leads with the lead's next move — the lead page's primary: Move to
+      {next}, Resume at {stage} for a parked lead; refused, the rule's sentence and, for the owner rule, Assign as the fix. Won has none. */
+  const nextMoveFor = (row: LeadRow, anchor: HTMLElement | null): NextMove | null => {
+    if (row.stage === 'Won') return null
+    const target: Stage | null = isActiveStage(row.stage) ? nextStageOf(row) : resumeStageOf(row)
+    if (!target) return null
+    const label = isActiveStage(row.stage) ? `Move to ${target}` : `Resume at ${target}`
+    const go = () => { setStageMenu(null); requestStageChange(row, target) }
+    const intent = stageIntent(row, target, stageMovement, viewer.role)
+    if (intent.kind !== 'blocked') return { label, onPress: go }
+    const owner = intent.message === 'Assign a member first' && !assignHintText
+    return {
+      label, onPress: go, why: intent.message,
+      fix: owner ? { label: 'Assign', onPress: () => { setStageMenu(null); setTasksFor(null); setAssignThen({ leadId: row.id, stage: target }); setAssign({ id: row.id, ...anchorRect(anchor ?? document.body) }) } } : null,
     }
   }
 
@@ -279,7 +308,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     : attention ? effectiveRows.filter((r) => inAttention(r, attention, scopeCtx))
     : effectiveRows), [effectiveRows, stageScope, attention, scopeCtx])
   const attentionCounts = useMemo(() => {
-    const c: Record<AttentionScope, number> = { mine: 0, overdue: 0, unassigned: 0, unseen: 0 }
+    const c: Record<AttentionScope, number> = { mine: 0, overdue: 0, unassigned: 0, unseen: 0, today: 0 }
     for (const r of effectiveRows) for (const k of Object.keys(c) as AttentionScope[]) if (inAttention(r, k, scopeCtx)) c[k]++
     return c
   }, [effectiveRows, scopeCtx])
@@ -395,11 +424,16 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       return
     }
     const leadId = assign.id
+    const then = assignThen?.leadId === leadId ? assignThen : null
+    setAssignThen(null)
     setOptimisticAssignees((o) => ({ ...o, [leadId]: memberIds }))
     setAssign(null)
     try {
       await assignMembers(leadId, memberIds)
       snackbar({ message: 'Members updated' })
+      /* (A-06) the move the stage sheet was asked for, now that the lead has its member */
+      const lead = rows.find((r) => r.id === leadId)
+      if (then && lead && memberIds.length > 0) requestStageChange({ ...lead, assignees: team.filter((m) => memberIds.includes(m.id)) }, then.stage)
     } catch {
       // Back to the server's assignees — the optimistic set must not outlive a failed action.
       setOptimisticAssignees((o) => { const n = { ...o }; delete n[leadId]; return n })
@@ -519,10 +553,16 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               chipOpen={stageMenuOpen}
               chipScoped={stageScope !== null || attention !== null}   // (REG-295) a stage scope is a filter — say so; (UX audit L3) so is an attention scope
               onViewAll={() => { setStageScope(null); setAttention(null) }}   /* (Dane's UAT 1.05) back to All Leads in one press — search and Filters stay */
+              /* (Leads on the move, L3 — P-05) a phone's "n to call today": the follow-ups due today or late, one press from the list */
+              todo={mobile && rows.length > 0 && (attentionCounts.today > 0 || attention === 'today') ? {
+                label: `${attentionCounts.today} to call today`, selected: attention === 'today',
+                onClick: () => { setNowTick(Date.now()); if (attention === 'today') setAttention(null); else { setAttention('today'); setStageScope(null) } },
+              } : null}
               chipMenu={
                 <StageFilterDropdown open={stageMenuOpen} onClose={() => setStageMenuOpen(false)}
                                      counts={stageCounts} value={stageScope}
                                      onSelect={(s) => { setStageScope(s); setAttention(null) }} onManage={() => router.push(`${withFrom('/settings?section=leads', here())}#lead-stages`)}   /* (pending modules S05) Manage Stages › Settings › Lead management › Lead stages */
+                                     phone={mobile}   /* (leads on the move, P-05) To call today leads the phone's To do group */
                                      attention={{ counts: attentionCounts, value: attention, onSelect: (k) => { setAttention(k); setStageScope(null) } }} />
               }
               query={query}
@@ -546,6 +586,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 now={nowTick}
                 query={query}
                 openStageId={stageMenu?.id ?? null}
+                unseenIds={unseenIds} onSeen={markSeen}   /* (leads on the move, A-01) the new mark, cleared on the first press */
                 onOpen={openLead}   /* (parity P-18) */
                 onStageClick={(row, anchor) => setStageMenu((m) => (m?.id === row.id ? null : { id: row.id, el: anchor, ...stagePos(anchor) }))}   /* toggles on its own cell (REG-153 / REG-332) */
                 onTaskClick={openTasks}
@@ -573,18 +614,23 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 canDrop={(lead, stage) => !blockedReason(lead, stage, stageMovement, viewer.role) && !isCompletedFor(lead, stage)}
                 onDropBlocked={(lead, stage) => {
                   // Backward drops are simply not allowed (user 2026-08-29): the card springs back with the reason.
-                  if (isCompletedFor(lead, stage)) { snackbar({ message: `${stage} is already completed — stages don’t move back` }); return }
-                  snackbar({ message: blockedReason(lead, stage, stageMovement, viewer.role) ?? '' })
+                  if (isCompletedFor(lead, stage)) { snackbar({ message: `${stage} is already completed — stages don’t move back`, key: REFUSED_KEY }); return }
+                  snackbar({ message: blockedReason(lead, stage, stageMovement, viewer.role) ?? '', key: REFUSED_KEY })
                 }}
                 onNameClick={openLead}   /* (parity P-18) */
                 onTaskClick={openTasks}
+                /* (leads on the move, P-06 · A-15) a touch tablet's card carries the stage pill and ⋮ › Move to {next} — drag gives way to the pan there */
+                openStageId={stageMenu?.id ?? null}
+                onStageClick={(row, anchor) => setStageMenu((m) => (m?.id === row.id ? null : { id: row.id, el: anchor, ...stagePos(anchor) }))}
+                nextMove={(row) => nextMoveFor(row, null)}
               />
             ) : (
               <LeadsTable
                 canDelete={canDelete}
                 rows={filtered}
                 columns={columns}
-                onReorder={(keys) => saveColumnPrefs('leads', reorderColumns(columns, keys))}
+                onReorder={(keys) => saveColumnPrefs(columnsKey, reorderColumns(columns, keys))}
+                touchTablet={touchTablet}   /* (leads on the move, P-06) the tablet's tracks, Edit and ⋮ frozen at the right */
                 unseenIds={unseenIds}
                 onRowSeen={markSeen}
                 onNameClick={openLead}   /* (parity P-18) */
@@ -633,6 +679,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         }}
         current={rows.find((r) => r.id === stageMenu?.id)?.stage as Stage | undefined ?? null}
         subject={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? `${row.name} · ${phoneLocal(row.phone)}` : undefined })()}
+        next={(() => { const row = effectiveRows.find((r) => r.id === stageMenu?.id); return row ? nextMoveFor(row, stageMenu?.el ?? null) : null })()}   /* (leads on the move, P-05 · Q-05) */
         doneThrough={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? journeyIdx(row) : -1 })()}
         onSelect={(stage) => {
           const leadId = stageMenu!.id
@@ -674,7 +721,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         }}
       />
       {wizard ? (() => {
-        const lead = rows.find((r) => r.id === wizard.leadId)
+        const lead = effectiveRows.find((r) => r.id === wizard.leadId)   /* (leads on the move, A-06) with the member just assigned, before the refresh lands */
         if (!lead) return null
         return (
           <MoveStageWizard
@@ -684,29 +731,33 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             targetStage={wizard.target}
             mode={stageMovement}
             onClose={() => { setWizard(null); setPendingDrop(null) }}
-            onUpdate={({ stage, data }) => {
-              setWizard(null); setPendingDrop(null)
-              void run('update the details', async () => {
-                if (stage === 'New') { await assignMembers(lead.id, data.assignees); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+            /* (Leads on the move, P-04 — "a refusal stays in the foot and nothing typed is lost") the window waits for the server; a refusal
+               is answered back to it and said in its foot, the step as typed; only a landed save closes it (and settles a kanban drop) */
+            onUpdate={async ({ stage, data }) => {
+              try {
+                if (stage === 'New') { await assignMembers(lead.id, data.assignees); setWizard(null); setPendingDrop(null); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
                 else {
                   const r = await updateStageDetails({ leadId: lead.id, stage, data })
-                  snackbar({ message: 'error' in r ? couldnt('update the details', refusalOf(r.error)) : `${stage} details updated` })   // (S43B · F1-07) the server's own check
+                  if ('error' in r) return couldnt('update the details', refusalOf(r.error))   // (S43B · F1-07) the server's own check
+                  setWizard(null); setPendingDrop(null); snackbar({ message: `${stage} details updated` })
                 }
-              })
+                return null
+              } catch (e) { return couldnt('update the details', refusalOf(e)) }
             }}
-            onSave={({ toStage, data, tasks }) => {
-              setWizard(null)
-              void run('move the lead', async () => {
+            onSave={async ({ toStage, data, tasks }) => {
+              try {
                 const moved = await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
-                if ('error' in moved) { setPendingDrop(null); snackbar({ message: couldnt('move the lead', refusalOf(moved.error)) }); return }   // (fix-E, A-01)
+                if ('error' in moved) return couldnt('move the lead', refusalOf(moved.error))   // (fix-E, A-01)
+                setWizard(null)
                 const { projectId, projectNumber } = moved
                 if (toStage === 'Won') {
                   // (REG-911) View opens the project Won made. (REG-1052) One sentence with New project's: the project's own number.
                   if (projectId) router.push(withFrom(`/projects/${projectId}?created=1`, here())); else snackbar({ message: projectNumber ? `Project ${projectNumber} created` : 'Project created' })   /* (simplify Q-16) Won opens the new project, which says "Project P-… created" (`?created=1`) · (fix-A, A-27) Back returns to the listing as it was */
                 } else {
-                  snackbar({ message: moved.planned ? `Moved to ${toStage} · a meeting is planned for ${displayDue(new Date(moved.planned.at))}` : `Moved to ${toStage}` })   // (pending modules S23) the in-person next step planned it
+                  snackbar({ message: moved.planned ? `Moved to ${toStage} · a meeting is planned for ${displayDue(new Date(moved.planned.at))}` : `Moved to ${toStage}`, key: STAGE_MOVE_KEY })   // (pending modules S23) the in-person next step planned it
                 }
-              })
+                return null
+              } catch (e) { return couldnt('move the lead', refusalOf(e)) }
             }}
           />
         )
@@ -752,9 +803,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             if ('error' in moved) { setPendingDrop(null); snackbar({ message: couldnt('move the lead', refusalOf(moved.error)) }); return }   // (fix-E, A-01)
             const { logId } = moved
             /* (REG-607, parity Q-33) Undo lives as long as the snackbar, as a quick move's does. */
-            snackbar({ message: 'Moved to On Hold', actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, from)) } })
+            snackbar({ message: 'Moved to On Hold', key: STAGE_MOVE_KEY, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, from)) } })
           })
         }}
+        leadName={rows.find((r) => r.id === onHold)?.name}   /* (Leads on the move, P-04) */
       />
       <LostDialog
         open={!!lost}
@@ -777,9 +829,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             const moved = await moveStage({ leadId: lead.id, fromStage: from, toStage: 'Lost', payload: { reason: d.otherReason ? `Others: ${d.otherReason}` : lostReason, ...(d.competitor ? { competitor: d.competitor } : {}), ...(d.restartAt ? { restartAt: d.restartAt } : {}) }, tasks: [] })
             if ('error' in moved) { setPendingDrop(null); snackbar({ message: couldnt('move the lead', refusalOf(moved.error)) }); return }   // (fix-E, A-01)
             const { logId } = moved
-            snackbar({ message: 'Moved to Lost', actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, from)) } })
+            snackbar({ message: 'Moved to Lost', key: STAGE_MOVE_KEY, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoMove(lead.id, logId, from)) } })
           })
         }}
+        leadName={rows.find((r) => r.id === lost)?.name}   /* (Leads on the move, P-04) */
       />
       <AssignPopover
         open={!!assign}
@@ -788,23 +841,24 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         anchor={assign?.el}
         assignable={assignHintText ? [] : assignable} hint={assignHintText}
         suggestion={(() => { const r = assign && assign.id !== BULK ? rows.find((x) => x.id === assign.id) : null; return r && r.assignees.length === 0 ? suggestMember({ propertyType: r.propertyType, budgetMinor: r.budgetMinor, style: r.style, area: r.area }, team, memberStats) : null })()}   /* (REG-612) */
-        onClose={() => { setAssign(null); setBulkIds(null) }}
+        onClose={() => { setAssign(null); setBulkIds(null); setAssignThen(null) }}
         onApply={applyAssign}
+        subject={(() => { if (!assign) return undefined; if (assign.id === BULK) { const n = (bulkIds ?? [...liveSelected]).length; return `${n} lead${n === 1 ? '' : 's'}` } const r = rows.find((x) => x.id === assign.id); return r ? `${r.name} · ${phoneLocal(r.phone)}` : undefined })()}   /* (leads on the move, A-08) */
         requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
         position={assign}
       />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }}
                             columns={columns.map((c) => ({ ...c, locked: c.key === 'name' }))}
-                            onSave={(next) => saveColumnPrefs('leads', next)}
-                            onReset={() => { clearColumnWidths('leads'); resetColumnPrefs('leads'); return DEFAULT_COLUMNS.map((c) => ({ ...c, locked: c.key === 'name' })) }} />
+                            onSave={(next) => saveColumnPrefs(columnsKey, next)}   /* (leads on the move, P-06) a touch tablet keeps its own set */
+                            onReset={() => { clearColumnWidths('leads'); resetColumnPrefs(columnsKey); return (touchTablet ? TABLET_COLUMNS : DEFAULT_COLUMNS).map((c) => ({ ...c, locked: c.key === 'name' })) }} />
       <TasksPopover
         lead={effectiveRows.find((r) => r.id === tasksFor?.id) ?? null}
         pos={tasksFor}
         anchor={tasksFor?.el}
         now={nowTick}
         onClose={() => setTasksFor(null)}
-        onAddTask={async (lead, title) => {
-          try { await addTask(lead.id, title); return true }
+        onAddTask={async (lead, title, dueAt) => {
+          try { await addTask(lead.id, title, dueAt ? dueAt.getTime() : null); return true }   /* (leads on the move, A-09) a finger's due preset */
           catch { snackbar({ message: 'Couldn’t add the task — please try again' }); return false }
         }}
         onCompleteTask={async (_lead, task) => {
@@ -838,6 +892,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 const up = await uploadPicked(id, f).catch(() => null)
                 if (!up || 'error' in up) snackbar({ message: couldnt(`upload ${f.name}`, up && 'error' in up ? up.error : null) })
               }
+              /* (Leads on the move, L3 — P-08) ≤1024 the new lead opens on its own page, ready to call; Back returns to the listing as it was */
+              if (openAfterCreate) router.push(withFrom(`/leads/${id}`, here()))
             } else if (leadId) {
               await updateLead(leadId, { ...data, customValues: extras?.customValues })
               snackbar({ message: 'Successfully Updated' })
@@ -893,7 +949,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           })
         }}
       />
-      <FiltersModal open={filtersOpen} value={filters} team={team} now={nowTick} sources={sources} onClose={() => setFiltersOpen(false)} onApply={setFilters} />
+      <FiltersModal open={filtersOpen} value={filters} team={team} now={nowTick} sources={sources} onClose={() => setFiltersOpen(false)} onApply={setFilters}
+                    resultCount={filtered.length} />   {/* (leads on the move, A-11) the phone sheet's Done says what the live filters leave */}
       <ReviewSheet
         open={reviewOpen}
         rows={review}

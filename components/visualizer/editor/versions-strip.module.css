@@ -38,6 +38,9 @@ button.badge[data-notes] { position: relative; }
 button.badge[data-notes]:hover, button.badge[data-notes][aria-pressed='true'] { background: var(--om-color-primary-variant); }
 button.badge[data-notes]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
 .mark { display: inline-flex; }
+/* (responsive audit 2026-10-23, W6 — a bug fix, found by the closing sweep) the client's notes are a button of their own on the tile's corner
+   (UX audit V1) — a 29 × 20 badge under a finger: a centred 44 box (the badge drawn as it is; the marks beside it show the version, as the tile) */
+@media (hover: none) { .mark[data-notes] { position: relative; } .mark[data-notes]::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max(100%, 44px); height: 44px; } }
 .badge, .fav, .more { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 5px; border-radius: var(--om-radius-full); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); box-shadow: var(--om-elevation-level-1); }
 .fav { color: var(--om-color-tertiary-red-default); }
 .more { font-weight: 600; }

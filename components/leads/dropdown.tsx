@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from '@/components/om/surface'
 import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
-import { TABLET_DOWN } from '@/lib/breakpoint'
+import { PHONE_SIDEWAYS, TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Keys } from '@/components/om/keys'
 import { ariaKeys } from '@/lib/keys/spec'
 import { keysOf } from '@/lib/keys/registry'
@@ -42,7 +42,11 @@ export function Dropdown({
   sheetSubtitle?: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const sheet = useSheetLayout()
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W5-31) A phone held sideways is a phone too, as PortalMenu has held since the audit of
+     2026-09-26 (phone-12): anchored under a trigger low on a 390-tall screen, the menu opened below the screen's bottom (the Visualizer's and
+     the Planner's New ▾ — every row off-screen; the Contract screen's quote row cut at "No quote"). There it is the phone's bottom sheet. */
+  const sideways = useMediaQuery(PHONE_SIDEWAYS)
+  const sheet = useSheetLayout() || sideways
   useMenuKeyboard(open, ref, onClose)   // (REG-286) keyboard reach — see the note above
   /* (REG-347) A menu opened low on a phone ran past the viewport and its last items were drawn under the fixed
      dock — the ≤767 cap in menus.module.css was a constant that could not know where the anchor sat. The menu

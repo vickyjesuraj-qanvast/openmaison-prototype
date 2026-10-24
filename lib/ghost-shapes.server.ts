@@ -20,9 +20,11 @@ import { standingOf } from '@/lib/meetings/model'
 import { qanvastAccountIsStandIn } from '@/lib/qanvast-account/service'   // (S42E, E-07)
 import { commissionAsksShape } from '@/lib/finance/sections'   // (S43D, F2-01)
 import { fetchLeadRows } from '@/lib/leads/queries'   // (S44Z) the lead header's seed
-import { fetchStageMovement } from '@/lib/settings/queries'
+import { fetchQuoteApproval, fetchStageMovement, isApprover } from '@/lib/settings/queries'
 import { headHasPrimary } from '@/lib/leads/stage-policy'
 import { railBadges } from '@/lib/leads/tasks'   // (pending modules S46C · M3) read once per request — the shell already asked for it
+import { quoteTodoCounts, type QuoteListRow } from '@/lib/leads/quote-filters'   // (responsive audit W6, W5-33) the Quotes to-do pills' seed
+import { sentToClientDates } from '@/lib/quotes/sent-to-client'
 
 /**
  * (UX audit build · REG-817) Which pages open on their FIRST RUN right now — told to the ghosts by the app shell, so even a browser's first
@@ -142,6 +144,9 @@ export async function fetchFirstRunShapes(): Promise<Record<string, boolean>> {
     /* (pending modules S46B) Tools › Meeting Copilot for a browser that hasn't seen it: its first run and the to-do chips it opens with (Briefs to
        save · Notes to write up) — `fetchStudioMeetings`' rows and lead-meetings.tsx's counts, under the keys the page remembers (S42 C-19) */
     ...(await studioMeetingsSeed(sees).catch(() => ({}))),
+    /* (responsive audit 2026-10-23, W6 — W5-33) Tools › Quotes' and each lead's Quotes tab's to-do pills, for a loader that streams before the page:
+       the page's own counts (`quoteTodoCounts`), under the keys the page remembers — the ghost draws the line they take */
+    ...(await quoteTodosSeed(sees, viewer).catch(() => ({}))),
     /* (S45B · H-UHD-2) Finance › Vendors shows its *Contractors* chip while an active vendor works on site — the ghost draws the same four */
     'fin.contractors': await db.select({ n: sql<number>`count(*)` }).from(vendors)
       .where(and(eq(vendors.isContractor, true), eq(vendors.isActive, true), isNull(vendors.mergedInto)))
@@ -165,6 +170,25 @@ async function studioMeetingsSeed(sees: (leadId: string | null) => boolean): Pro
   const now = Date.now()
   const waits = rows.map((r) => standingOf(r, now).waits)
   return { meetings: rows.length === 0, 'meetings.save': waits.includes('save'), 'meetings.write': waits.includes('write') }
+}
+
+/** (responsive audit 2026-10-23, W6 — W5-33) Whether the Quotes list (`tools.quotes`) and each lead's Quotes tab (`lead.<id>.quotes`) open with
+    each to-do pill — Waiting for my approval · Waiting on client · Expiring this week — by the list's own rules (lib/leads/quote-filters.ts
+    `quoteTodoCounts`, the sent-to-client dates as fetchStudioQuotes reads them, the approvals only for an approver while the studio asks). */
+async function quoteTodosSeed(sees: (leadId: string | null) => boolean, viewer: { id: string; role: string }): Promise<Record<string, boolean>> {
+  const rows = (await db.select({ quote: quotes }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
+    .where(and(isNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt), eq(quotes.kind, 'quote')))).map((r) => r.quote).filter((q) => sees(q.leadId))
+  const sent = await sentToClientDates(rows)
+  const list: QuoteListRow[] = rows.map((q) => ({ ...q, sentToClientAt: sent.get(q.id) ?? null }))
+  const approves = (await fetchQuoteApproval()) === 'required' && (await isApprover(viewer.id, viewer.role))
+  const now = Date.now()
+  const out: Record<string, boolean> = {}
+  const put = (key: string, qs: QuoteListRow[]) => { const c = quoteTodoCounts(qs, now, approves); out[`${key}.approval`] = c.approval > 0; out[`${key}.waiting`] = c.waiting > 0; out[`${key}.expiring`] = c.expiring > 0 }
+  put('tools.quotes', list)
+  const byLead = new Map<string, QuoteListRow[]>()
+  for (const q of list) { const a = byLead.get(q.leadId) ?? []; a.push(q); byLead.set(q.leadId, a) }
+  for (const [leadId, qs] of byLead) put(`lead.${leadId}.quotes`, qs)
+  return out
 }
 
 async function marketplaceShape(): Promise<Record<string, boolean>> {

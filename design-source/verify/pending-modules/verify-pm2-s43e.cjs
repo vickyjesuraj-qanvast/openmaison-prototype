@@ -28,7 +28,7 @@ fs.mkdirSync(dir, { recursive: true })
 const BASE = baseArg || process.env.BASE || 'http://localhost:3170'
 const ONLY = (process.env.ONLY || '').split(',').filter(Boolean)
 const want = (n) => !ONLY.length || ONLY.includes(String(n))
-const ROOT = path.resolve(__dirname, '..', '..', '..')
+const ROOT = fs.existsSync(path.join(process.cwd(), 'design-source/verify')) ? process.cwd() : path.resolve(__dirname, '..', '..', '..')   // the repo — the regression runs a copy from its lane, cwd = the repo
 const UAT = path.join(ROOT, 'public', 'uat-files')
 const esc = (q) => q.replace(/["$`\\]/g, (c) => `\\${c}`)
 const sql = (q) => execSync(`sqlite3 -cmd ".timeout 30000" "${DB}" "${esc(q)}"`, { maxBuffer: 1 << 28 }).toString().trim()

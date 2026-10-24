@@ -9,6 +9,11 @@
 }
 .layer[data-pane] { right: auto; width: var(--list-pane, 360px); box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }   /* (Contracts on the move, P-02) a host may name its pane's width — the contract's is 300, the quote's stays 360 */
 .layer[inert] { visibility: hidden; }   /* under a section screen on a phone: out of reach, its scroll kept for ← */
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A notched phone held sideways: the layer is fixed to the screen's edges, so its
+   bar's Close and the rows started 14 in, under the sensor housing. It pads the safe insets — a pane widens by the left one, so its rows keep
+   their 360 / 300. env() is 0 on every other screen. */
+.layer { padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.layer[data-pane] { width: calc(var(--list-pane, 360px) + env(safe-area-inset-left, 0px)); padding-right: 0; }
 .rows {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   display: flex; flex-direction: column; gap: var(--om-spacing-2);

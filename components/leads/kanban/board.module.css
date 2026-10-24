@@ -226,3 +226,10 @@
 @media (hover: none) and (max-width: 1024px) {
   .card { touch-action: auto; }
 }
+
+/* (Leads on the move, L3 — P-06 · A-14 · A-15) A touch tablet's card: the stage pill leads the foot (the phone card's), 8 before the members;
+   the date and the info line read 14 there. */
+.footPill { display: inline-flex; flex-shrink: 0; margin-right: var(--om-spacing-2); }
+@media (hover: none) and (max-width: 1024px) {
+  .cardAgo, .cardMeta { font: var(--om-type-body-m); }
+}

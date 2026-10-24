@@ -124,3 +124,22 @@
 .ghostCheck { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-height: 24px; font: var(--om-type-body-m); }
 .ghostNotes { display: block; }
 .ghostBold { font: var(--om-type-subtitle-m); }
+
+/* (Leads on the move, L4 — P-12 · C-26) A phone's and a tablet's foot (meeting-room.tsx `footed`): the meeting's one move filled and its second
+   outlined, side by side at 48, sticky at the screen's foot on the white plate with its top rule — the head's buttons, moved where a thumb is.
+   The Maison AI button's corner stays clear of them (C-08). */
+.foot {
+  position: sticky; bottom: var(--app-mobile-dock-height, 0px); z-index: 5;
+  display: flex; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4) calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.foot > * { flex: 1; min-height: 48px; }
+@media (min-width: 768px) { .foot { bottom: 0; padding-left: var(--om-spacing-6); padding-right: var(--om-spacing-6); } }
+/* (responsive audit 2026-10-23, W2-01) A phone: the Maison AI button rides above the foot (meeting-room.tsx `phoneFoot`, the Quote screen's
+   offset), so the foot keeps its whole width; the two moves share it in halves and, where both labels can't stand side by side (320), each
+   takes the row — the move on the second, under the thumb. A tablet keeps the corner the button rests in (C-08). */
+@media (max-width: 767px) {
+  .foot { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .foot > * { flex: 1 1 0; min-width: max-content; }
+}
+@media (min-width: 768px) { :global(body:has(button[aria-label='Maison AI'])) .foot { padding-right: calc(var(--om-spacing-6) + 48px + var(--om-spacing-3)); } }

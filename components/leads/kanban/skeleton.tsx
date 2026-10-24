@@ -58,7 +58,8 @@ export function KanbanSkeleton() {
                         <Bone w={240} h={12} />   {/* (UX audit L3) the meta line runs on to "· 9d in New" */}
                         <Bone w="100%" h={36} r="var(--om-radius-1)" />
                         <span className={styles.divider} />
-                        <span className={shell.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>
+                        {/* (leads on the move, P-06 · A-15) a touch tablet's foot leads with the stage pill */}
+                        <span className={styles.foot}><span className={styles.touchPill}><Bone w={96} h={36} r="var(--om-radius-1)" /></span><span className={shell.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span></span>
                       </div>
                     ))}
                   </div>

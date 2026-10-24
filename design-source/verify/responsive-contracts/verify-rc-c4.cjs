@@ -390,12 +390,10 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
     ok(await m.getByTestId('won-photo-thumb').isVisible() && !(await takePhoto.isVisible().catch(() => false)), 'the photo shows as the kept file, its picture beside its name')
     ok(/Contract_\w+_signed\.jpg/.test((await m.locator('[data-file-row]').last().innerText()).replace(/\s+/g, '')), 'named "Contract_…_signed.jpg"')
     await shot(m, '17-m390-won-photo')
-    // the signed quote from the system, the project type, then Save & Convert
-    const quoteRow = m.getByText('Whole-home renovation', { exact: true }).first()
-    await tapEl(m, quoteRow); await settle(m, 600)
-    const pt = m.getByRole('button', { name: /Project type/ }).or(m.getByLabel(/Project type/)).first()
-    if (await pt.count()) { await tapEl(m, pt); await settle(m, 700); const opt = m.getByRole('option').first(); if (await opt.count()) { await opt.tap(); await settle(m, 500) } }
-    await tapEl(m, m.getByRole('button', { name: /Save & Convert/ })); await settle(m, 5000)
+    /* (leads on the move, a deliberate change of this rule — Leads L2, P-04) on a phone Won is a checklist: the signed quote from the system is
+       already picked (its row settled), the project type a chip with the default set, and the one filled button is "Create project" */
+    ok(await m.getByTestId('won-row-quote').getAttribute('data-done') !== null, 'the signed quote from the system is picked — its row settled')
+    await tapEl(m, m.getByTestId('move-step-primary')); await settle(m, 5000)
     const won = json(`select c.status, c.file_name, c.file_id, c.signed_file_id, f.kind, l.stage from contracts c join leads l on l.id = c.lead_id left join lead_files f on f.id = c.file_id where c.lead_id = '${HARPREET.lead}' and c.deleted_at is null order by c.created_at desc limit 1`)[0]
     ok(won && won.status === 'Signed' && /_signed\.jpg$/.test(won.file_name) && won.file_id === won.signed_file_id && won.kind === 'image' && won.stage === 'Won', `Save & Convert: the contract Signed with the photo as its signed copy, the lead Won (${won ? `${won.status} · ${won.file_name} · ${won.kind} · ${won.stage}` : 'no contract — ' + (await m.locator('[role="dialog"]').last().innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)})`)
     await shot(m, '18-m390-won-saved')

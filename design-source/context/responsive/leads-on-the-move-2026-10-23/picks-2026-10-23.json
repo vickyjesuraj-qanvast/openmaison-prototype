@@ -1,0 +1,4 @@
+{"marked": "2026-10-23T03:50Z (09:20 IST) — then \"continue the leads\" after the merge with Dane",
+ "proposals": {"P-01": "build", "P-02": "build", "P-03": "build", "P-04": "build", "P-05": "build", "P-06": "build", "P-07": "build", "P-08": "build", "P-09": "build", "P-10": "build", "P-11": "build", "P-12": "build", "P-13": "build"},
+ "fixes": {"A-02": "build", "A-11": "build", "A-21": "build", "A-27": "build", "A-29": "build", "B-14": "build", "B-15": "build", "C-02": "build", "C-03": "build", "C-08": "build", "C-10": "build"},
+ "questions": {"Q-01": "phone", "Q-02": "optional", "Q-03": "photo", "Q-04": "drop", "Q-05": "pill", "Q-06": "prompt", "Q-07": "move", "Q-08": "projects"}}

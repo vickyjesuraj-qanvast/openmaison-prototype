@@ -139,7 +139,7 @@ async function measure(b, opts, url, blocks, max = 30) {
 
     /* ── 4. the seams: each named in the registry, each file on disk ── */
     const seams = await p.locator('[data-testid^="bench-seam-"]').evaluateAll((as) => as.map((a) => ({ id: a.getAttribute('data-testid'), t: a.innerText })))
-    ok(seams.length === 8, 'eight seams where a model plugs in', seams.map((s) => s.id))
+    ok(seams.length === 9, 'nine seams where a model plugs in (REG-2800 added floorplan-3d)', seams.map((s) => s.id))
     for (const s of seams) {
       const m = /Swap\s+(.+?)\s+—\s+(\S+\.tsx?)/.exec(s.t)
       ok(!!m && fs.existsSync(path.join(REPO, m[2])), `${s.id.replace('bench-seam-', '')}: its swap names a file that exists`, m && m[2])

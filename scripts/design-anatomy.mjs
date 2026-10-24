@@ -49,6 +49,7 @@ ROUTES.push('/company/reports/health')   // (pending modules S39) Reports › St
 ROUTES.push('/company/reports/leads?report=sales')   // (pending modules S45A) Reports › Leads › Sales — its seven tables
 ROUTES.push('/marketplace', '/marketplace?view=deals', '/marketplace/mkb-4101')   // (pending modules S24) the Marketplace, its Deals, a brand's page
 ROUTES.push('/market-insights', '/market-insights/mi-demo-budget-benchmark')   // (pending modules S25) Market Insights, an article
+ROUTES.push('/floorplan-3d')   // (REG-2800) Tools › Floorplan to 3D Isometric
 ROUTES.push('/dashboard')   // (pending modules S22) the Dashboard
 ROUTES.push('/qanvast-ops/hangouts', ...['plan', 'meetings'].map((v) => `/qanvast-ops/hangouts/hge-qh-2026-marina?view=${v}`), '/qanvast-ops/hangouts/hge-qh-2026-suntec?view=results', '/company/members/germaine/profile')   // (pending modules S27) Qanvast Ops › Hangouts — the list, a Hangout's Plan · Chats · How it went — and a member's Public profile
 /* Tables drawn to a different mock on purpose, until the owner rules on them (design-source/context/consistency/). */

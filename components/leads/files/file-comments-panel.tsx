@@ -24,7 +24,7 @@ import styles from './file-comments-panel.module.css'
  * the Tasks comments panel, components/leads/tasks/comments-panel.tsx (902:28619). Spec: design-source/context/lead-files/03-viewer-panels.txt.
  */
 export function FileCommentsPanel({
-  comments, me, now, onAdd, onEdit, onDelete, onClose, readOnly = false,
+  comments, me, now, onAdd, onEdit, onDelete, onClose, readOnly = false, fileName,
 }: {
   comments: FileViewData['comments']
   me: Member
@@ -35,6 +35,8 @@ export function FileCommentsPanel({
   /** (pending modules S06) the viewer reads only (Accounting): the thread, with no composer and no comment menu */
   readOnly?: boolean
   onClose: () => void
+  /** (Leads on the move, L4 — C-23) A phone's full-screen thread names the file it is about, under "Comments". */
+  fileName?: string
 }) {
   const [menuFor, setMenuFor] = useState<string | null>(null)
   /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab. */
@@ -56,7 +58,7 @@ export function FileCommentsPanel({
       {/* Panel head (931:39921) 64, H g16 p20/24, bottom rule: "Comments" 20/Bold + close 24 secondary.
           (REG-725) the house head and foot (components/om/dialog.tsx): the rule inside the 64, the outlined bare close; the composer
           rides in the house foot — its top rule always, its shadow only while the thread scrolls. */}
-      <SurfaceHead title="Comments" onClose={onClose} className={styles.head} />
+      <SurfaceHead title="Comments" subtitle={fileName} onClose={onClose} className={styles.head} />
 
       <div ref={scrollRef} className={styles.body}>
         {count === 0 ? (

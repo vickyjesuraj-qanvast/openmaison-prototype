@@ -76,6 +76,11 @@
   outline: none;
   --editor-sticky: 0px; --items-head-top: 0px;
 }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A notched phone held sideways: fixed to the screen's edges, the section's bar,
+   its rows' ⋮ and its foot ran under the sensor housing and onto the home indicator. It pads the safe insets — beside the list's pane it
+   starts past the pane's widened edge instead. env() is 0 on every other screen. */
+.screen { padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+[data-shell='split'] .screen { left: calc(var(--screen-left, 0px) + env(safe-area-inset-left, 0px)); padding-left: 0; }
 .screenBar { flex-shrink: 0; }
 .screenBody { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom, 0px); --items-head-top: 0px; }   /* the body scrolls itself: the Items section's sticky cards, head bar and pinned foot take their top from here (K2) */
 /* (P-08) inside a screen every text box types at 16 (body-l), so iOS never zooms the page on focus */

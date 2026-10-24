@@ -8,7 +8,9 @@
 .ghost {
   position: absolute; inset: 0; z-index: 5;
   display: flex;
-  overflow: hidden;   /* (REG-708) the ghost keeps its own height (below) and is cut at the page's */
+  overflow: clip;   /* (REG-708) the ghost keeps its own height (below) and is cut at the page's — (responsive audit 2026-10-23, W6 — a bug fix,
+                       W5-32) `clip`, not `hidden`: `hidden` made the layer a scroll container, so a ghost's sticky foot (the Quote / Contract
+                       screens' Edit · primary, ≤1024) never stuck and drew at the ghost's end, below the fold, then popped in with the page */
   opacity: 1;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

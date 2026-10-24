@@ -26,7 +26,7 @@ const T: Case[] = [
   ['chats', ['messages']], ['inbox', ['messages']], ['operations', ['company-finance']], ['finance operations', ['company-finance']], ['pipeline', ['finance-profitability']],
   ['commissions', ['finance-commissions']], ['vendors', ['finance-vendors']], ['quote digitizer', ['create-upload-quote']], ['digitizer', ['create-upload-quote']],
   ['digitize', ['create-upload-quote']], ['upload a quote', ['create-upload-quote']], ['xray', ['xray']], ['x-ray', ['xray']], ['visualiser', ['visualizer']],
-  ['isometric', ['create-picture', 'planner']], ['3-d space planner', ['planner']], ['3-d', ['planner']], ['homeowner portal', ['company-portal']], ['homeowner', ['company-portal']],
+  ['isometric', ['floorplan-3d', 'create-picture', 'planner']], ['floorplan to 3d', ['floorplan-3d']], ['dollhouse', ['floorplan-3d']], ['3-d space planner', ['planner']], ['3-d', ['planner']], ['homeowner portal', ['company-portal']], ['homeowner', ['company-portal']],
   ['qanvast leads', ['qanvast']], ['reviews & rankings', ['qanvast-reviews']], ['reviews and rankings', ['qanvast-reviews']], ['contractors', ['projects-contractors']],
   ['accounts setup', ['settings-studio']], ['accounts', ['settings-studio']], ['settings', ['profile']], ['my settings', ['profile']], ['personal settings', ['profile']],
   ['usage', ['co-usage']], ['usage & credits', ['co-usage']], ['usage and credits', ['co-usage']], ['preferences', ['open-to-leads']], ['lead preferences', ['open-to-leads']],

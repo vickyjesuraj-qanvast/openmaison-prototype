@@ -35,7 +35,7 @@ export function PublicDocPage({ invoice, receipt, print }: { invoice?: PublicInv
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
             <span className={styles.crumb}>{studio}</span>
-            <div className={styles.titleRow}>
+            <div className={`${styles.titleRow} ${paper.headWrap}`}>
               <h1 className={styles.title}><span className={paper.nowrap}>{invoice ? `Invoice ${invoice.label}` : `Receipt ${receipt?.paper.payment.number ?? ''}`}</span></h1>
               <span className={styles.chips}>{chip}</span>
             </div>
@@ -62,7 +62,7 @@ export function PublicDocGhost() {
         <div className={styles.bar}>
           <div className={styles.titleBlock}>
             <Line w={140} lh={16} h={10} />
-            <div className={styles.titleRow}><Line w={220} lh={32} h={20} /><span className={styles.chips}><Slot kind="chip" w={72} /></span></div>
+            <div className={`${styles.titleRow} ${paper.headWrap}`}><Line w={220} lh={32} h={20} /><span className={styles.chips}><Slot kind="chip" w={72} /></span></div>
           </div>
           <div className={styles.actions}><Slot kind="btn" w={150} /></div>
         </div>

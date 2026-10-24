@@ -19,3 +19,7 @@
   .card { padding: var(--om-spacing-6) var(--om-spacing-4); }
   .buttons { flex-wrap: wrap; }
 }
+
+/* (Leads on the move, L4 — P-11) A phone's three ways in, one under another at 48: Take a photo (filled) · Choose files · Create Folder. */
+.phoneButtons { display: flex; flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); width: 100%; max-width: 320px; }
+.phoneButtons > * { min-height: 48px; }

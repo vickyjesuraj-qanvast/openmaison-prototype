@@ -16,6 +16,7 @@ import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Tooltip } from '@/components/om/tooltip'
 import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 
 type Pick = 'existing' | 'new'
 /** Rows of the merge / detail table, in mock order. */
@@ -64,6 +65,10 @@ export function ReviewSheet({
   const [busy, setBusy] = useState(false)
   const [wasOpen, setWasOpen] = useState(false)
   const busyRef = useRef(false)
+  /* (Leads on the move, L3 — P-09 · A-24) ≤1024 the merge shows only what differs (and the field it matched on), the rest under "n the same ·
+     Show all" — one differing phone was 8.7 screens of Existing / New / Merged rows. The desk keeps the mock's full table. */
+  const touch = useMediaQuery(TABLET_DOWN)
+  const [showAll, setShowAll] = useState(false)
 
   if (open !== wasOpen) {
     setWasOpen(open)
@@ -96,6 +101,9 @@ export function ReviewSheet({
   const activeSource = source !== null && sources.some(([s]) => s === source) ? source : null
   const visible = rows.filter((r) => (!activeSource || (r.data['Lead Source'] || 'Others') === activeSource) && (!effectiveDupOnly || r.row.status === 'duplicate'))
   const selected = visible.find((r) => r.row.id === selectedId) ?? visible[0] ?? null
+  /* every lead opens on what differs (render-phase adjust: the shown lead changed) */
+  const [seenMerge, setSeenMerge] = useState<string | null>(null)
+  if ((selected?.row.id ?? null) !== seenMerge) { setSeenMerge(selected?.row.id ?? null); setShowAll(false) }
   // The queue-duplicate comparison's two column headings, lifted out of the head row so the ≤767 stacked
   // layout can repeat them inside the cells (REG-269) — same copy, one source.
   const twin = selected?.twin ?? null
@@ -118,6 +126,7 @@ export function ReviewSheet({
     const l = r.existing
     if (!l) return ''
     if (f.leadKey === 'budgetMinor') return l.budgetMinor ? Math.round(l.budgetMinor / 100).toLocaleString('en-SG') : ''
+    if (f.leadKey === 'phone') return l.phone ? phoneLocal(l.phone) : ''   // (leads on the move, A-16 · REG-456) both sides grouped — "9123 4567" beside "91234567" read as two numbers
     const v: unknown = l[f.leadKey]
     if (v instanceof Date) return displayDate(v)
     if (typeof v === 'number') return v ? String(v) : ''
@@ -176,7 +185,7 @@ export function ReviewSheet({
                           <span className={styles.cardAgo}>{relativeTime(r.receivedAt, new Date(now))}</span>
                         </div>
                         <span className={styles.cardMeta}>
-                          {[r.data['Lead Phone Number'], r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}
+                          {[r.data['Lead Phone Number'] ? phoneLocal(r.data['Lead Phone Number']) : '', r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}   {/* (leads on the move, A-16 · REG-456) the number grouped, as everywhere */}
                         </span>
                       </div>
                       {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : r.twin ? `${r.twin.data['Lead Name'] || 'a row'} (${r.twin.sameFile ? 'in this file' : 'in the queue'})` : 'another lead in this file'}</span> : null}
@@ -222,7 +231,7 @@ export function ReviewSheet({
                         {/* (REG-397) The stacked table at ≤767 hides the head row, so each value cell repeats its
                             own heading — the twin table's `.stackLabel` move. Without them the merge read as two
                             unlabelled copies of the same name with a third below: nothing said which was which. */}
-                        {FIELDS.map((f) => {
+                        {FIELDS.filter((f) => showAll || !touch || matchedLabel(selected) === f.label || (!!newValue(selected, f) && newValue(selected, f) !== existingValue(selected, f))).map((f) => {
                           const ex = existingValue(selected, f)
                           const nw = newValue(selected, f)
                           const matched = matchedLabel(selected) === f.label
@@ -273,6 +282,17 @@ export function ReviewSheet({
                           )
                         })}
                       </div>
+                      {(() => {
+                        /* (A-24) what is the same, folded under one press */
+                        if (!touch) return null
+                        const same = FIELDS.filter((f) => !(matchedLabel(selected) === f.label || (!!newValue(selected, f) && newValue(selected, f) !== existingValue(selected, f)))).length
+                        if (!same) return null
+                        return (
+                          <Button appearance="text" onPress={() => setShowAll((v) => !v)} data-testid="merge-show-all">
+                            {showAll ? 'Show only what differs' : `${same} the same · Show all ${FIELDS.length}`}
+                          </Button>
+                        )
+                      })()}
                     </div>
                     {/* (REG-725) the house foot, kept in the detail pane: the note on its left, the three answers on its right */}
                     <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>

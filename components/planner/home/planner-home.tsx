@@ -37,8 +37,8 @@ const LEAD_FIXED = 'A lead’s layout stays with its lead — it goes to the pro
  * search, the list view, rename · duplicate · delete with Undo and Deleted Layouts. New ▾ From a flat template… · For a project… · Blank.
  * Opened from a project it still shows the studio's every layout (1.0's F-267 hid them).
  * (parity map 2026-10-10) New ▾ › From an example… (TD-073, 1.0's "Made with Space Planner" — the empty first run shows them too); the
- * studio's templates are cards of their own Kind and sit under New layout's My templates (TD-076); `?view=iso` — Tools › Floorplan to 3D
- * Isometric — opens every layout in the isometric view (TD-098).
+ * studio's templates are cards of their own Kind and sit under New layout's My templates (TD-076); `?view=iso` — opens every layout in the isometric
+ * view (TD-098; Tools › Floorplan to 3D Isometric landed here until it had its own page again, REG-2800).
  */
 export function PlannerHome({ data }: { data: HomeData }) {
   const router = useRouter()
@@ -51,13 +51,13 @@ export function PlannerHome({ data }: { data: HomeData }) {
   /* the dialog keeps the door it was opened by while it closes (render-phase adjust) */
   const [dialogMode, setDialogMode] = useState<'flats' | 'examples'>('flats')
   if (newFor && (newFor.mode ?? 'flats') !== dialogMode) setDialogMode(newFor.mode ?? 'flats')
-  /* (parity map, TD-098) Tools › Floorplan to 3D Isometric lands here with ?view=iso: every layout it opens, it opens in the isometric view */
+  /* (parity map, TD-098) ?view=iso (⌘K's Make a 3D picture): every layout it opens, it opens in the isometric view */
   const iso = params.get('view') === 'iso'
   const editorHref = (id: string) => withFrom(`/planner/${id}${iso ? '?view=iso' : ''}`, here)
   const [busy, setBusy] = useState(false)
   const [projectPick, setProjectPick] = useState(false)
   /* (pending modules S28 — card studio:floorplan-isometric-ai) Make a 3D picture: from New ▾, the New layout dialog's photo card, Maison AI,
-     and Tools › Floorplan to 3D Isometric (?photo=1 opens it on arrival — 1.0's tool started on its upload) */
+     and ⌘K's Make a 3D picture (?photo=1 opens it on arrival) */
   const [photo, setPhoto] = useState<{ target: PhotoTarget | null } | null>(null)
   /* (pending modules S10 — card held:maison-ai, "the … Planner homes' words-only suggestions · make each act") The newest project's layout
      opens New layout for it (the house dialog, filled); "Which layouts has the client opened?" is asked and answered from the share links;
@@ -83,7 +83,7 @@ export function PlannerHome({ data }: { data: HomeData }) {
     router.replace(`${pathname}${rest.toString() ? `?${rest}` : ''}`, { scroll: false })
     if (d) snackbar({ message: `${d.name} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the layout', () => restoreLayouts([d.id])).then((ok) => { if (ok) router.refresh() }) } })
   }, [deletedId])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
-  /* (pending modules S28) Tools › Floorplan to 3D Isometric, ⌘K's Make a 3D picture: ?photo=1 opens Make a 3D picture once (the address loses it) */
+  /* (pending modules S28) ⌘K's Make a 3D picture: ?photo=1 opens Make a 3D picture once (the address loses it) */
   const startPhoto = params.get('photo') === '1'
   useEffect(() => {
     if (!startPhoto) return

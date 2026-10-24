@@ -32,3 +32,10 @@
 }
 /* (REG-273 · REG-307) The head's close — this panel's only control besides the From link — is the house IconButton, which carries its
    own 44 target on a touch pointer (REG-725); the 64 head keeps its rhythm. */
+
+/* (Leads on the move, L4 — C-23 · C-17) A phone's Information sheet: the rows on the sheet's 16 gutter, label 14 secondary, value 16 — as tall
+   as its lines, the page under it still there. */
+.sheetBlock { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-6); }
+.sheetBlock .row { min-height: 24px; }
+.sheetBlock .label { width: 104px; }
+.sheetBlock .value { font: var(--om-type-body-l); }

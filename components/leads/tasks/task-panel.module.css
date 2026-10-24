@@ -79,11 +79,31 @@
    4 over each other — the drawer's own arithmetic, so nothing here has to compensate. Desktop with a mouse matches neither arm. */
 @media (max-width: 767px), (hover: none) {
   .link { min-height: 44px; padding-block: 12px; margin-block: -12px; }
-  .touchTarget { position: relative; }
-  .touchTarget::after { content: ''; position: absolute; inset: -4px; }
+}
+/* (Leads on the move, L4 — C-02) person_add's overlay (`.touchTarget::after { inset: -4px }`) is gone: on a finger the house IconButton carries
+   its own centred 44 box, and the overlay kept the house translate(−50%, −50%), moving the target 22px up and left (the lint's
+   `icon-button-overlay` now finds it on a class handed to an IconButton too). */
+
+/* ── (Leads on the move, L4 — P-10 · C-24 · C-17) the touch order (task-panel.tsx `compact`) ── */
+.forLine { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.when { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.madeBy { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .fields[data-compact] { gap: var(--om-spacing-6); }
+  .fields[data-compact] .nameArea textarea { font: var(--om-type-body-l); }   /* the task's name reads (and types) at 16 */
+  .fields[data-compact] .when [role='radio'] { font: var(--om-type-subheading-m); }   /* a day is a value: 14 (P-13) */
+  .fields[data-compact] .sectionTitle { font: var(--om-type-subheading-m); }
+}
+@media (max-width: 767px) {
+  .fullWidth { min-height: 48px; }   /* the sheet's foot: Mark as Completed at 48 (P-13) */
 }
 .leadLink { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none; }   /* (REG-729) 14/20/600 from the token, as it drew */
 .leadLink:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* (responsive audit 2026-10-23, W2-15) under a finger the lead's name (a 17 line in the panel's head and its For row) takes a 44 box, its line kept */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  a.leadLink { position: relative; }
+  a.leadLink::after { content: ''; position: absolute; inset: -14px 0; }   /* a 17 line + 14 + 14 = 45, REG-344's overlay: the line unchanged */
+}
 
 /* (UX audit 2026-09-30, T8) The head's comment icon carries the thread's count — a small primary badge on its top-right corner (the rail badge's
    geometry, in the primary tone: a count, not an alarm). */

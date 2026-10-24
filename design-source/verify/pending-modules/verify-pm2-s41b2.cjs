@@ -182,7 +182,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       ['/tools/quote-digitizer', '/quotes'],
       ['/tools/quote-xray', '/quote-x-ray'],
       ['/tools/ai-visualizer', '/visualizer'],
-      ['/tools/floorplan-3d-isometric', '/planner?view=iso&photo=1'],
+      ['/tools/floorplan-3d-isometric', '/floorplan-3d'],   // (REG-2800) its own page again
       ['/tools/market-insights', '/market-insights'],
       [`/tools/market-insights/${ARTICLE}`, `/market-insights/mi-${ARTICLE}`],
       ['/tools/compliance-navigator', '/compliance'],
@@ -195,7 +195,7 @@ const rel = (u) => { const x = new URL(u); return x.pathname + x.search + x.hash
       ['/tools/homeowner-portal', '/company/portal'],
       ['/tools/auto-furnish-sandbox', '/visualizer'], ['/tools/detect-sandbox', '/visualizer'], ['/tools/relight-sandbox', '/visualizer'],
       ['/tools/style-transfer-sandbox', '/visualizer'], ['/tools/visualizer-sandbox', '/visualizer'],
-      ['/tools/floorplan-3d-sandbox', '/planner?view=iso&photo=1'], ['/tools/quote-template-sandbox', '/company/templates/quotes'],
+      ['/tools/floorplan-3d-sandbox', '/floorplan-3d'], ['/tools/quote-template-sandbox', '/company/templates/quotes'],
       [`/my/${SLUG}/preview/project`, '/company/portal'],
       /* the client's portal links with 1.0's tab */
       [`/my/projects/${BEN}?tab=floor-plan`, `/my/${SLUG}/floor-plan`],

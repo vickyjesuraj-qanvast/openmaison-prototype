@@ -49,3 +49,23 @@
 .footLine { display: flex; justify-content: space-between; align-items: center; }
 .footActs { display: flex; gap: var(--om-spacing-3); }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-3); }
+
+/* (responsive audit 2026-10-23, W5-13) A landscape tablet holds the section list as the left pane (the quote's 360, the contract's 300 —
+   `--list-pane`, section-list.module.css) with the open section beside it, General info / Details while none is picked: the ghost draws
+   the same two, as the page does. Elsewhere the address shows one of them — the list (`?edit=1`) or the section. */
+.split { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.splitPane, .splitMain { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.split[data-open='list'] > .splitMain, .split[data-open='section'] > .splitPane { display: none; }
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .split { flex-direction: row; }
+  .split[data-open] > .splitPane, .split[data-open] > .splitMain { display: flex; }
+  .split[data-open] > .splitPane { flex: 0 0 var(--list-pane, 360px); box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant); }
+}
+/* (responsive audit 2026-10-23, W5-14) The Quote screen's and the Contract screen's ghost is the screen's own height, its body cut at the foot,
+   so the foot (Edit · the primary) stands on the first screen as the page's sticky one does — in the reveal too, where PageReveal's ghost
+   layer clips (its overflow keeps a sticky child from sticking) and a taller ghost left the foot below the fold. */
+@media (max-width: 1024px) {
+  .page.touch[data-shape='read'] { height: 100dvh; min-height: 0; overflow: hidden; }
+  .page.touch[data-shape='read'] > .screenBody { flex: 1 1 0; min-height: 0; overflow: hidden; }
+  .page.touch[data-shape='read'] > .foot { flex-shrink: 0; }
+}

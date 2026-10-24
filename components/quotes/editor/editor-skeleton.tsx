@@ -52,7 +52,14 @@ export function EditorSkeleton() {
         </div>
       </div>
       <div className={`${styles.page} ${styles.touch}`} data-shape={shape}>
-        {shape === 'read' ? <ReadGhost /> : shape === 'list' ? <ListGhost /> : <SectionGhost k={edit ?? 'general'} />}
+        {shape === 'read' ? <ReadGhost /> : (
+          /* (responsive audit 2026-10-23, W5-13) a landscape tablet draws the list pane and the open section side by side (General info
+             while none is picked) — the page's split; elsewhere the address shows one of the two (editor-skeleton.module.css `.split`) */
+          <div className={styles.split} data-open={shape}>
+            <div className={styles.splitPane}><ListGhost /></div>
+            <div className={styles.splitMain}><SectionGhost k={shape === 'section' ? edit ?? 'general' : 'general'} /></div>
+          </div>
+        )}
       </div>
     </GhostSheet>
   )

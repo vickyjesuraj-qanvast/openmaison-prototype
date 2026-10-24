@@ -56,6 +56,14 @@
 .milestoneBtn { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: left; }
 .milestoneBtn > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .milestoneBtn[data-none] { color: var(--om-color-on-surface-secondary); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W3's hand-off) A project's task row: its milestone (it opens the Schedule there) was a 20 line
+   under a finger — a tap just off it opened the task instead. REG-344's invisible overlay, 12 above and below inside the 64 cell, as the For
+   column's lead link (W2-08); the button, the row and the ghost's bar keep their boxes. A phone's card lines stand 4 apart (W2-06), so not
+   there. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .milestoneBtn { position: relative; }
+  .milestoneBtn::after { content: ''; position: absolute; inset: -12px 0; }
+}
 .milestoneBtn:hover > span, .milestoneBtn:focus-visible > span { color: var(--om-color-primary-default); }
 
 /* ---- Rows 1244×48 ---- */
@@ -302,10 +310,9 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
      cell's height lands in the caret instead of missing a 20px line. */
   .editInput { min-height: 44px; }
 
-  /* Row actions: the DS Edit button and the om kebab are 36 — 4px of overlay each takes them to 44 without
-     redrawing the mock's white pill, and the 12 gap still leaves 4 between the two targets. */
-  .rowEdit, .rowKebab { position: relative; }
-  .rowEdit::after, .rowKebab::after { content: ''; position: absolute; inset: -4px; }
+  /* Row actions: the om kebab carries the house IconButton's own centred 44 box; (Leads on the move, L4 — C-02) the 4px-inset overlay that sat
+     on it (and on Edit) kept the house translate(−50%, −50%) and moved the kebab's target 22px up and left — a touch tablet's row now shows
+     the ⋮ alone, in its frozen column, and a phone's tasks are cards (task-card.tsx). */
 }
 
 /* (REG-375) The add row's ✕ / ✓ are om icon buttons at 24, and two 44px targets 4 apart would overlap by 16 —
@@ -323,6 +330,12 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
    the name itself is the target, not just its glyph line. `.titleRest` already opens the task either way. */
 @media (hover: none) {
   .titleBtn { min-height: 44px; }
+}
+/* (responsive audit 2026-10-23, W2-08) /tasks on a touch tablet: the For column's lead (a 20 line, or the project's two) is a press of its own —
+   44 tall at least, its line kept (the extra given back as margin) */
+@media (hover: none) and (max-width: 1024px) {
+  a.leadLink { position: relative; }
+  a.leadLink::after { content: ''; position: absolute; inset: -12px 0; }   /* REG-344's overlay: the drawn line and its box unchanged */
 }
 
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
@@ -429,4 +442,67 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
   .leadTwo { flex-direction: row; gap: var(--om-spacing-1); }
   .leadSub { font: var(--om-type-subheading-m); }
   .leadSub::before { content: '· '; }
+}
+
+/* ── (Leads on the move, L4 — P-10 · C-03 · C-05 · C-07) ─────────────────────────────────────────────────────────────────────────────────
+   The due cell's two sets of words: the desk's "Mon, 26 Oct ’26 · 10:00 AM" and, on a finger's tablet, the card's short ones — the span the
+   width does not want takes no box, so the desk's cell is the pixel it was. */
+.dueShort { display: none; }
+.hActions { display: none; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .dueLong { display: none; }
+  .dueShort { display: inline; }
+}
+/* ≤767 the tasks are cards (task-card.tsx): the list, then the quick add docked at its foot. Room at the end for the Maison AI button's band
+   when no quick add carries it (a read-only list), so the last card's ⋮ is never under it (C-08). */
+.phoneList { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.phoneList > .foot { border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* A touch tablet (C-07): the tablet set's floors (tasks-table.tsx TABLET_TRACK — a dragged width still wins), 12 inside each cell, the due day's
+   short words, and the row's ⋮ as a FROZEN cell at the right — the Quotes table's (P-11): the head draws its empty cell over the column, both
+   carry the row's fill and a 1px left rule, Edit steps out (the title opens), and the 150 band of REG-310 gives way to the 48 column. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .colTitle { flex: var(--cw-title, 1 0 200px); }
+  .colMember { flex: var(--cw-assignees, 0 0 104px); }
+  .colCreator { flex: var(--cw-creator, 0 0 140px); }
+  .colDue { flex: var(--cw-due, 0 0 176px); }
+  .colStatus { flex: var(--cw-status, 0 0 116px); }
+  .colTags { flex: var(--cw-tags, 0 0 160px); }
+  .colLead { flex: var(--cw-lead, 0 0 160px); }
+  .colMilestone { flex: var(--cw-milestone, 0 0 160px); }
+  .cell, .head .hCell { padding-left: var(--om-spacing-3); padding-right: var(--om-spacing-3); }
+  .cell.colDue { padding: var(--om-spacing-3); }
+  .cell.colSel, .head .colSel { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .head::after, .row::after { content: none; }
+  .table { min-width: calc(var(--table-min, 1242px) + 48px); }
+  .hActions { display: block; order: 100; flex: 0 0 48px; position: sticky; right: 0; z-index: 3; padding: 0; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .actions {
+    position: sticky; right: 0; top: auto; order: 100; flex: 0 0 48px; z-index: 2;
+    width: auto; height: auto; align-self: stretch; display: flex; align-items: center; justify-content: center;
+    opacity: 1; pointer-events: auto; transform: none;
+    background: var(--om-color-surface-default);
+    border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .row[data-selected] .actions { background: var(--om-color-primary-variant); }
+  .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }   /* Edit steps out: the title opens, and so does the row */
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
+  .scroller[data-overflow]:not([data-at-end]) .hActions, .scroller[data-overflow]:not([data-at-end]) .actions { box-shadow: var(--om-shadow-frozen-column-mirrored); }
+}
+
+/* (Leads on the move, L4 — REG-708) The ghost's three forms of a task list (components/leads/detail/tab-ghosts.tsx): the desk's table, a touch
+   tablet's table with its tablet set, a phone's cards (task-card.module.css `.ghostList`) — each only where the page draws it. */
+.ghostTablet { display: none !important; }
+@media (max-width: 767px) { .ghostDesk { display: none !important; } }
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .ghostDesk { display: none !important; }
+  .ghostTablet { display: block !important; }
+}
+
+/* (L4 — C-07) A touch tablet's title keeps its words: the attachments' count steps out of the row (the task's panel lists them; the comments'
+   count stays — it opens the thread), and Members holds two avatars and its person_add. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .chip:not([data-action]):not([aria-label='Matched in the description']) { display: none; }
+  .colMember { flex: var(--cw-assignees, 0 0 112px); }
 }

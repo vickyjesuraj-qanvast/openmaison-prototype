@@ -18,6 +18,7 @@ import { displayDate, displayDue, formatInputDateTime, parseInputDateTime } from
 import type { Member, Tag } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
 import { TagPicker } from './tag-picker'
+import { DuePresetChips } from './due-presets'
 import { OutsideBadge, OutsideSection } from './outside-person'   // (gaps build, package C — M-03)
 import { outsideOf } from '@/lib/leads/outside'
 import { taskLinkOf } from '@/lib/leads/task-links'   // (parity map, TD-019)
@@ -38,7 +39,7 @@ export type TaskPanelMenuAction = 'template' | 'delete'
 export function TaskPanel({
   task, tags, onClose, onComments, onAttach, onMenu, onChange, onAssign, onTags, onManageTags, onToggleDone, onDetach,
   open = true, now, onCreateTag, lead, focusName = 0,
-  onOpenInTasks, milestones, outside,
+  onOpenInTasks, milestones, outside, compact = false,
 }: {
   task: TaskRow
   /** The studio's members (the assign popover is the host's; the panel shows task.assignees). */
@@ -70,6 +71,10 @@ export function TaskPanel({
   milestones?: { options: { id: string; title: string }[]; onPick: (milestoneId: string | null) => void }
   /** (gaps build, package C — M-03) Someone outside the studio on it: add, edit, take off, send on WhatsApp — the host's dialog and actions. */
   outside?: { onAdd: () => void; onEdit: () => void; onSend: () => void; onRemove: () => void }
+  /** (Leads on the move, L4 — P-10 · C-24) A phone or a touch tablet: the panel opens on the task — its name at 16, When with the due presets
+      (one date, no second line), Who — then the description, the outside person, tags and attachments; who made it and when is one line at
+      the end. The desk keeps the mock's order (902:27363). */
+  compact?: boolean
 }) {
   // Day-granular "today" for the Material picker: the host's `now`, else one lazy read at mount (no Date.now() in render).
   const [mountedAt] = useState(() => new Date())
@@ -152,9 +157,8 @@ export function TaskPanel({
     </Button>
   )
 
-  return (
-    <Drawer open={open} title="Task" actions={actions} footer={footer} onClose={onClose}>
-      {/* KV block: Creator · Created on */}
+  /* ── the panel's blocks, shared by the desk's order and the touch order (L4 — C-24) ── */
+  const kv = (
       <dl className={styles.kv}>
         {lead !== undefined ? (
           <>
@@ -175,29 +179,21 @@ export function TaskPanel({
         <dt className={styles.key}>Created on</dt>
         <dd className={styles.value}>{displayDate(task.createdAt)}</dd>
       </dl>
-
-      {/* Fields: Task name (Text Area 64) · Due date (DateTimeField, picker only — REG-119; a time since Dane UAT 5.05) · Description (Text Area 112).
-          (REG-729) The DS TextArea with its own label — rests inside while empty, floats to the top border on focus or a value — where a
-          local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
-      <div className={styles.fields}>
-        <div ref={nameBox}><TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} /></div>
-        <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} helper={dueShown ? displayDue(dueShown) : undefined} />
-        {milestones ? (
+  )
+  const nameField = <div ref={nameBox}><TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} /></div>
+  const milestoneField = milestones ? (
           /* (fix-A, A-17) the house select: "In no milestone" first, then the project's milestones in their order */
           <div data-testid="panel-milestone">
             <TextField label="Milestone" mode="select" value={milestones.options.find((m) => m.id === task.milestoneId)?.title ?? NO_MILESTONE}
                        options={[NO_MILESTONE, ...milestones.options.map((m) => m.title)]}
                        onChange={(v) => { const id = milestones.options.find((m) => m.title === v)?.id ?? null; if (id !== (task.milestoneId ?? null)) milestones.onPick(id) }} />
           </div>
-        ) : null}
-        <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />
-        {/* (parity map, TD-019) a task that leads somewhere — the ask to add someone opens Members' Add member, filled */}
-        {(() => { const to = taskLinkOf({ title: task.title, leadId: task.leadId ?? null, description: task.description ?? null }); return to ? <NextLink href={to.href} className={styles.leadLink} data-testid="task-link">{to.label}</NextLink> : null })()}
-      </div>
-
-      <DrawerRule />
-
-      {/* Members (mock: Assignees): Avatar 36 per member + Icon Buttons Primary/36/Outlined person_add */}
+        ) : null
+  const descriptionField = <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />
+  /* (parity map, TD-019) a task that leads somewhere — the ask to add someone opens Members' Add member, filled */
+  const taskLink = (() => { const to = taskLinkOf({ title: task.title, leadId: task.leadId ?? null, description: task.description ?? null }); return to ? <NextLink href={to.href} className={styles.leadLink} data-testid="task-link">{to.label}</NextLink> : null })()
+  /* Members (mock: Assignees): Avatar 36 per member + Icon Buttons Primary/36/Outlined person_add */
+  const membersBlock = (
       <section className={styles.section} aria-label="Members">
         <h3 className={styles.sectionTitle}>Members</h3>
         <div className={styles.avatarRow}>
@@ -207,24 +203,23 @@ export function TaskPanel({
           ))}
           {/* (gaps build, package C — M-03) the outside person stands with the members, their section below says who */}
           {outsideOf(task) ? <OutsideBadge o={outsideOf(task)!} size={36} /> : null}
-          {/* touchTarget: the 36px button takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
+          {/* (Leads on the move, L4 — C-02) on a finger the house IconButton's own centred 44 box is the target — the overlay that sat here
+              moved it 22px up and left */}
           <Tooltip label="Assign members">
             <IconButton icon="person_add" label="Assign members" size={36} variant="primary" aria-haspopup="dialog"
-                        className={styles.touchTarget} onClick={(e) => onAssign(e.currentTarget)} />
+                        onClick={(e) => onAssign(e.currentTarget)} />
           </Tooltip>
         </div>
       </section>
-
-      {outside ? (
+  )
+  const outsideBlock = outside ? (
         <>
           <DrawerRule />
           <OutsideSection o={outsideOf(task)} onAdd={outside.onAdd} onEdit={outside.onEdit} onSend={outside.onSend} onRemove={outside.onRemove} />
         </>
-      ) : null}
-
-      <DrawerRule />
-
-      {/* Tags: head ("Tags" fills · "+ Add Tag" link) · chips box when set (frame 190) · the Add Tag dropdown under the head (frame 65) */}
+      ) : null
+  /* Tags: head ("Tags" fills · "+ Add Tag" link) · chips box when set (frame 190) · the Add Tag dropdown under the head (frame 65) */
+  const tagsBlock = (
       <section className={styles.section} aria-label="Tags">
         <div className={styles.head}>
           <h3 className={styles.sectionTitle}>Tags</h3>
@@ -244,10 +239,9 @@ export function TaskPanel({
           </div>
         ) : null}
       </section>
-
-      <DrawerRule />
-
-      {/* Attachments: FileTile tiles (frame 59 / 190; tile size from 781:58405 — the spec is silent, REG-151) + Buttons Secondary/36/Outlined "Attach Files" */}
+  )
+  /* Attachments: FileTile tiles (frame 59 / 190; tile size from 781:58405 — the spec is silent, REG-151) + Buttons Secondary/36/Outlined "Attach Files" */
+  const attachmentsBlock = (
       <section className={styles.section} aria-label="Attachments">
         <h3 className={styles.sectionTitle}>Attachments</h3>
         {task.attachments.length ? (
@@ -261,6 +255,65 @@ export function TaskPanel({
           Attach Files
         </Button>
       </section>
+  )
+
+  if (compact) {
+    /* (Leads on the move, L4 — C-24) the touch order: the task first — name, When with its presets, Who — then the rest; who made it last */
+    return (
+      <Drawer open={open} title="Task" actions={actions} footer={footer} onClose={onClose}>
+        {lead !== undefined ? (
+          <p className={styles.forLine} data-testid="panel-for">{lead ? <NextLink href={withFrom(lead.project ? `/projects/${lead.project.id}/tasks` : `/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.project ? `${lead.name} · ${lead.project.number}` : lead.name}</NextLink> : 'Studio task'}</p>
+        ) : null}
+        <div className={styles.fields} data-compact="">
+          {nameField}
+          <div className={styles.when} data-testid="panel-when">
+            <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} />
+            <DuePresetChips value={dueShown} now={today.getTime()} label="Due date presets" testId="panel-due-presets"
+                            onChange={(d) => { if (d) changeDue(formatInputDateTime(d)); else if (task.dueAt) void onChange({ dueAt: null }) }} />
+          </div>
+          {membersBlock}
+          {descriptionField}
+          {milestoneField}
+          {taskLink}
+        </div>
+        {outsideBlock}
+        <DrawerRule />
+        {tagsBlock}
+        <DrawerRule />
+        {attachmentsBlock}
+        <p className={styles.madeBy} data-testid="panel-made-by">{task.creator ? `Created by ${task.creator.name} · ${displayDate(task.createdAt)}` : `Created ${displayDate(task.createdAt)}`}</p>
+      </Drawer>
+    )
+  }
+  return (
+    <Drawer open={open} title="Task" actions={actions} footer={footer} onClose={onClose}>
+      {/* KV block: Creator · Created on */}
+      {kv}
+
+      {/* Fields: Task name (Text Area 64) · Due date (DateTimeField, picker only — REG-119; a time since Dane UAT 5.05) · Description (Text Area 112).
+          (REG-729) The DS TextArea with its own label — rests inside while empty, floats to the top border on focus or a value — where a
+          local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
+      <div className={styles.fields}>
+        {nameField}
+        <DateTimeField label="Due date" today={today} value={dueValue} onChange={changeDue} helper={dueShown ? displayDue(dueShown) : undefined} />
+        {milestoneField}
+        {descriptionField}
+        {taskLink}
+      </div>
+
+      <DrawerRule />
+
+      {membersBlock}
+
+      {outsideBlock}
+
+      <DrawerRule />
+
+      {tagsBlock}
+
+      <DrawerRule />
+
+      {attachmentsBlock}
     </Drawer>
   )
 }

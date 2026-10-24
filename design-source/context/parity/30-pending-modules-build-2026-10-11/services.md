@@ -364,6 +364,19 @@ connected); Maison AI, writing help, the X-Ray, the bill reader and the planner 
 - **Replaces 1.0's:** src/lib/rate-limit.ts checkRateLimit · checkDurableRateLimit
 - **Note:** The names are Vercel KV’s (Upstash: UPSTASH_REDIS_REST_URL · UPSTASH_REDIS_REST_TOKEN) — 1.0 had none for this. Sign-in’s, sign-up’s and the website’s forms count in lib/auth/limit.ts takeTry: move them onto the same store.
 
+### `floorplan-3d` — A floor plan drawn in 3D (Floorplan to 3D Isometric)
+*Tools › Floorplan to 3D Isometric · a real service, behind a slot · slot `floorplan-3d`* (REG-2800, 2026-10-23)
+
+- **Today (the stand-in):** A studio’s own plan is straightened and cleaned in the browser for real; its rooms aren’t read and it isn’t drawn — the page says so and offers the sample plans that have views made ahead with 1.0’s model and prompts (public/floorplan-3d/samples/: the HDB 4-Room in Dollhouse, two takes; scripts/floorplan-3d/sample-inputs.mts makes what to send for the others).
+- **In:** readRooms({ scan }) — the straightened plan as a data URL · render({ scan, rooms, look: dollhouse | top }) — rooms as the studio confirmed them, or null.
+- **Out:** PlaceRoom[] | null · { image (a URL or a data URL), fidelity: { matched, total } | null }
+- **When it fails:** A throw: the page says 1.0’s “The 3D render didn’t come through. This is usually temporary — try again.” with Try again; a fidelity short of the plan shows 1.0’s soft note under the render.
+- **Swap:** `setFloorplanRenderer({ name, readRooms, render })` — `lib/floorplan-3d/service.ts`
+- **1.0's env:** `OPENROUTER_API_KEY`
+- **A studio sees it:** Floorplan to 3D Isometric (“This is the prototype, so your own plan isn’t read or drawn in 3D…”)
+- **Replaces 1.0's:** src/app/(main)/tools/floorplan-3d-isometric/page.tsx · src/lib/render/floorplan-pipeline.ts (detectInventory · generateWithGate · LOCKED_ISO_PROMPT · PHOTO_TOPDOWN_PROMPT) · floorplan-inventory.ts · src/app/api/render/floorplan-3d-sandbox/route.ts · docs/features/floorplan-3d/spec.md
+- **Note:** 1.0’s models: google/gemini-3-flash-preview reads the rooms, google/gemini-3.1-flash-image draws (about US$0.07 a render, US$0.15 with the retry); 1.0 charged no AI credits and 2.0 keeps that. The browser’s half (deskew, paper finder, clean, crop) is 2.0’s own already (lib/planner/straighten*.ts, REG-1929); the page sends the straightened plan.
+
 ### `ai-ask` — Maison AI’s answers
 *Maison AI · by rule where 1.0 asked a model*
 

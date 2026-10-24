@@ -39,8 +39,7 @@
    ellipsis and the 12px gap are unchanged. The dialog's own footer buttons and close belong to the
    shared shell (components/leads/move-stage/dialogs.tsx). A mouse never sees this rule. */
 @media (hover: none) {
-  .portal button { position: relative; }
-  .portal button::after { content: ''; position: absolute; inset: -4px; }
+  .portal button { min-height: 44px; }   /* (Leads on the move, L4 — C-02's rule) a DS button grows by its own height, never an overlay */
 }
 
 /* (UX audit 2026-09-30, T12) What the ask covers: a caption and one ticked row per unanswered question (the DS Checkbox with its label), the
@@ -52,3 +51,14 @@
 
 /* (parity map, CP-110) what the send will also do (invite the client), or why it can't go — one plain line under the portal box */
 .note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* (Leads on the move, L4 — C-13) On a finger each question is a full-width 44 row that IS its tick: the ticks line up at the left edge (the house
+   touch rule centred each label and pulled it 10px out — the ticks stood ragged), the words at 16 beside them, the rows touching. */
+@media (hover: none) {
+  .questionList { gap: 0; }
+  .questionList .question { display: flex; width: 100%; min-block-size: 44px; margin: 0; justify-content: flex-start; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-l); }
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .questionsHead { font: var(--om-type-subheading-m); }
+  .portalUrl, .note { font: var(--om-type-body-m); }
+}

@@ -13,6 +13,8 @@ import { Avatar } from '@/components/om/avatar'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDue } from '@/lib/format'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import { useSheetLayout } from '@/components/om/sheet'
 import { standingOf, tierOf } from '@/lib/meetings/model'
 import type { MeetingRow, TeamMember } from '@/lib/meetings/queries'
 import styles from './meetings-table.module.css'
@@ -27,15 +29,19 @@ export type MeetingRowAction = 'open' | 'start' | 'edit' | 'invite' | 'write' | 
  * (REG-377). No mock draws it — the Contracts tab's twin (components/leads/contracts/contracts-table.tsx). *(invented copy: the column names
  * and the rows' second lines)*
  */
+/* (Leads on the move, L4 — C-07) `tabletHidden`: a touch tablet opens with Meeting · When · Status (and the Lead on Meeting Copilot) and the ⋮ frozen
+   at the right; Where, People and Deal score wait in Column settings, remembered per breakpoint */
 export const MEETING_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Meeting', track: 'minmax(300px, 1fr)', locked: true },
   { key: 'lead', label: 'Lead', track: '180px' },
   { key: 'when', label: 'When', track: '220px' },
-  { key: 'where', label: 'Where', track: '180px' },
-  { key: 'people', label: 'People', track: '120px' },
+  { key: 'where', label: 'Where', track: '180px', tabletHidden: true },
+  { key: 'people', label: 'People', track: '120px', tabletHidden: true },
   { key: 'status', label: 'Status', track: '168px' },
-  { key: 'score', label: 'Deal score', track: '128px' },
+  { key: 'score', label: 'Deal score', track: '128px', tabletHidden: true },
 ]
+/** (L4, C-07) A touch tablet's tracks: the meeting from 200, its day at 200 — Meeting · When · Status and the ⋮ fit a 570 frame. */
+const TABLET_TRACKS: Record<string, string> = { title: 'minmax(200px, 1fr)', lead: '150px', when: '200px', where: '150px', people: '104px', status: '160px', score: '112px' }
 export const meetingColumnDefs = (withLead: boolean) => MEETING_COLUMN_DEFS.filter((d) => d.key !== 'lead' || withLead)
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, when: styles.colWhen, where: styles.colWhere, people: styles.colPeople, status: styles.colStatus, score: styles.colScore }
 
@@ -73,7 +79,12 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
 }) {
   const [menu, setMenu] = useState<string | null>(null)
   const widths = useColumnWidths('meetings')
-  const tracks = gridTemplateFor(columns, widths, undefined, ACTIONS_TRAIL.pair)
+  /* (Leads on the move, L4 — C-07 · C-11) ≤767 the meetings are cards the whole of which opens the meeting; a touch tablet keeps the table with its
+     tablet set and the ⋮ as a frozen cell at the right (Open steps out — the meeting's name opens it). The server renders the desk. */
+  const phone = useSheetLayout()
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
+  const shown = touchTablet ? columns.map((c) => ({ ...c, track: TABLET_TRACKS[c.key] ?? c.track })) : columns
+  const tracks = gridTemplateFor(shown, widths, undefined, touchTablet ? ACTIONS_TRAIL.kebab : ACTIONS_TRAIL.pair)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)
@@ -84,7 +95,8 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
   const cell = (k: string) => `${styles.cell} ${COL_CLASS[k] ?? ''} ${L.pinned(k) ? styles.pin : ''}`
   return (
     <div ref={frame} className={styles.card} role="table" aria-label="Meetings" data-drag-root="" data-kb-list="meeting" data-cols="meetings" data-overflow={overflowing || undefined} data-lead={has('lead') || undefined}
-         style={{ '--tracks': tracks } as React.CSSProperties} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)} data-testid="meetings-table">
+         style={{ '--tracks': tracks } as React.CSSProperties} data-testid="meetings-table"
+         onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) }}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
@@ -92,6 +104,8 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
             <ColumnResizer table="meetings" column={c.key} label={c.label} min={c.key === 'title' ? 160 : 80} />
           </div>
         ))}
+        {/* (L4, C-07) the ⋮ column's head on a touch tablet — frozen right with the rows' cell */}
+        {touchTablet ? <div className={`${styles.hCell} ${styles.hActions}`} role="columnheader" aria-label="Actions" data-col="actions" data-testid="meetings-actions-head" /> : null}
       </div>
       {rows.map((r) => {
         const s = standingOf(r, now)
@@ -101,7 +115,7 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
         const open = menu === r.id
         const noDelete = r.fromLog ? 'a Met log — edit it in the Move stage window' : canDelete(r)
         return (
-          <MeetingRowView key={r.id} r={r} open={open} onToggle={() => setMenu((m) => (m === r.id ? null : r.id))} onClose={() => setMenu(null)}
+          <MeetingRowView key={r.id} r={r} open={open} onToggle={() => setMenu((m) => (m === r.id ? null : r.id))} onClose={() => setMenu(null)} phone={phone} onOpen={() => onOpen(r)}
             pick={(a) => { setMenu(null); onAction(r, a) }} mayChange={mayChange} noDelete={noDelete} planned={s.word === 'Upcoming'} due={s.word === 'To write up'}>
             <div className={cell('title')} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
               <span className={styles.titleStack}>
@@ -133,7 +147,8 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
               </span>
             </div>
             <div className={cell('score')} role="cell" data-col="score" data-pin-edge={L.edge('score') || undefined} style={L.style('score')}>
-              {r.score !== null && r.score > 0 ? <span className={styles.oneLine} data-testid="meeting-score">{r.score} · {tierOf(r.score)}</span> : <span className={styles.muted}>--</span>}
+              {/* (L4, C-11) a phone card names the figure it shows — "Deal score 57 · Cool" — where the column's head says it on a desk */}
+              {r.score !== null && r.score > 0 ? <span className={styles.oneLine} data-testid="meeting-score"><span className={styles.scoreWord}>Deal score </span>{r.score} · {tierOf(r.score)}</span> : <span className={styles.muted}>--</span>}
             </div>
           </MeetingRowView>
         )
@@ -142,14 +157,20 @@ export function MeetingsTable({ rows, team, columns, onReorder, onOpen, onAction
   )
 }
 
-function MeetingRowView({ r, open, onToggle, onClose, pick, mayChange, noDelete, planned, due, children }: {
+function MeetingRowView({ r, open, onToggle, onClose, pick, mayChange, noDelete, planned, due, children, phone = false, onOpen }: {
   r: MeetingRow; open: boolean; onToggle: () => void; onClose: () => void; pick: (a: MeetingRowAction) => void
   mayChange: boolean; noDelete: string | null; planned: boolean; due: boolean; children: React.ReactNode
+  /** (Leads on the move, L4 — C-11) a phone's card: a press anywhere that is not a control opens the meeting */
+  phone?: boolean; onOpen?: () => void
 }) {
   const kebab = useRef<HTMLSpanElement>(null)
   const live = r.status === 'live'
+  const press = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, a, input, [role="menu"], [role="dialog"]')) return
+    onOpen?.()
+  }
   return (
-    <div className={styles.row} role="row" data-kb-row data-kb-id={r.id} data-testid="meeting-row" data-status={r.status}>
+    <div className={styles.row} role="row" data-kb-row data-kb-id={r.id} data-testid="meeting-row" data-status={r.status} onClick={phone ? press : undefined}>
       {children}
       <span className={styles.actions} data-open={open || undefined}>
         <span className={styles.actionsInner}>

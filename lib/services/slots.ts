@@ -19,9 +19,12 @@ export type ServiceKey = 'delivery' | 'sign-in' | 'studios' | 'payments' | 'pdf'
   /* (pending modules S41b-5) Qanvast's own API for the studio's account: its lead credits, contracts and statement, its reviews (and the replies
      to them), its rank and what homeowners told Qanvast (lib/qanvast-account/service.ts) — 1.0 read them live through its proxy api/qanvast/[...path] */
   | 'qanvast-account'
+  /* (REG-2800) the image model behind Tools › Floorplan to 3D Isometric: a floor plan's rooms read, and its Dollhouse or Top-down view drawn
+     (lib/floorplan-3d/service.ts) — 1.0's floorplan-pipeline through OpenRouter */
+  | 'floorplan-3d'
 /* (pending modules S37) `qanvast` — Qanvast's own API for the studio's listing: an application sent for review, withdrawn, and the answer read
    off its webhook (lib/qanvast-listing/service.ts) */
-export const SLOT_KEYS: readonly ServiceKey[] = ['delivery', 'sign-in', 'studios', 'payments', 'pdf', 'storage', 'calendar', 'transcription', 'feeds', 'accounting', 'qanvast', 'bot-check', 'limit-store', 'trial', 'qanvast-account']
+export const SLOT_KEYS: readonly ServiceKey[] = ['delivery', 'sign-in', 'studios', 'payments', 'pdf', 'storage', 'calendar', 'transcription', 'feeds', 'accounting', 'qanvast', 'bot-check', 'limit-store', 'trial', 'qanvast-account', 'floorplan-3d']
 
 /** Whatever plugs in names itself — Sent messages, the ops report and the logs say which adapter answered. */
 export type Named = { name: string }

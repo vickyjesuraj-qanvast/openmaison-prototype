@@ -37,23 +37,7 @@
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-/* Progress: the Recreate dialog's reading step, as a card — glyph, title, bar, the four steps. */
-.progress { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-3); padding: var(--om-spacing-8) var(--om-spacing-6); }
-.progressGlyph { width: 56px; height: 56px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); display: inline-flex; align-items: center; justify-content: center; }
-.progressTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
-.progressHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.bar { width: min(520px, 100%); height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; margin-top: var(--om-spacing-2); }
-.barFill { display: block; height: 100%; background: var(--om-color-primary-default); border-radius: var(--om-radius-full); transition: width var(--motion-toggle); }
-.steps { margin: var(--om-spacing-2) 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-2); align-items: flex-start; }
-.step { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.step[data-state='now'] { color: var(--om-color-on-surface-default); }
-.step[data-state='done'] .stepGlyph { color: var(--om-color-tertiary-green-default); }
-.step[data-state='now'] .stepGlyph { color: var(--om-color-primary-default); }
-.stepGlyph { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
-.dot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+/* Progress: the house's ProgressCard (components/om/progress-card.tsx, REG-2801), moved from here. */
 /* Recent comparisons: a 360 card of rows — the Deleted sheets' link row with a chevron and a bare delete. */
 .recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (REG-729) no letter-spacing on an uppercase caption */

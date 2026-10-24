@@ -76,7 +76,8 @@
      editor here exactly as it does on a phone. */
   .body { flex-direction: column; }
 }
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .card { min-height: calc(100dvh - var(--app-mobile-bar-height) - 120px); border-radius: 0; box-shadow: none; }
   .list { flex: 1 1 auto; width: 100%; }
   .card[data-pane] .list { display: none; }
@@ -107,7 +108,8 @@
    stay visible while one is written. Title + body scroll in a capped box (the canvas draws ~2 lines before the
    tools), then the tool bar — the two list commands and attach — with Save on the right. Off at ≥768. */
 .composer { display: none; }
-@media (max-width: 767px) {
+/* (Leads on the move, L4 — C-14 · Q-01) a tablet held upright follows the phone */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .card { flex-direction: column; }
   .card[data-composer] .composer {
     display: flex; flex-direction: column; flex-shrink: 0;
@@ -144,4 +146,31 @@
     border: 0; background: none; padding: 0; cursor: pointer;
     color: var(--om-color-on-surface-default);
   }
+}
+
+/* (Leads on the move, L4 — C-14) A tablet held upright reads Notes as the phone does (the list, a note or a log in a sheet, the docked
+   composer) — not a 280 list beside a 268 pane. It has no dock under the composer, so the composer docks at the foot itself; and the Maison
+   AI button rests in the composer bar's right corner (24 in, 24 up), so the bar keeps that corner clear of Save (C-08). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .list { flex: 1 1 auto; width: 100%; }
+  .card[data-composer] .composer { bottom: 0; }
+  :global(body:has(button[aria-label='Maison AI'])) .composerBar { padding-right: calc(var(--om-spacing-6) + 48px + var(--om-spacing-2)); }
+}
+/* (Leads on the move, L4 — C-22 · P-13) The docked composer types at 16 and its Title is a 44 line — the body is a contenteditable the iOS
+   rule (REG-306) never reached; the desk's pane is unchanged. */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .composerFields :global(input) { font: var(--om-type-subheading-l); min-height: 44px; }
+  .composerFields :global([role='textbox']) { font: var(--om-type-body-l); min-height: 44px; }
+}
+
+/* (Leads on the move, L4 — C-08) A phone: the Maison AI button rests in the composer's tool row (16 in, 16 up — the row is 64 tall at least so
+   the 48 disc sits inside it), never over the list's cards; Save stands left of it. */
+@media (max-width: 767px) {
+  .composerBar { min-height: 64px; }
+  :global(body:has(button[aria-label='Maison AI'])) .composerBar { padding-right: calc(var(--om-spacing-4) + 48px + var(--om-spacing-2)); }
+}
+
+/* (L4 — P-13 · C-18) the note's and the log's sheets: Cancel · Save at 48 (the sheet's own foot) */
+@media (max-width: 767px), (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .footBtn { min-height: 48px; }
 }

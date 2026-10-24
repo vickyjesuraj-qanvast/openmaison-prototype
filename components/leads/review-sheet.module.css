@@ -245,3 +245,21 @@
   .radioBtn { position: relative; }
   .radioBtn::after { content: ''; position: absolute; inset: -12px; }
 }
+
+/* ── Leads on the move (L3 — P-09 · A-14 · A-24 · A-25) ─────────────────────────────────────────────────────────────────────────────────────
+   The queue's card reads as the listing's card on a phone and a touch tablet: the name 16 bold, the line under it and the time at 14. A tablet held
+   upright keeps the merge table's two frozen edges with a real window between them (the New column sat under the frozen Merged one at 768). */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .cardName { font: var(--om-type-heading-h4); }
+  .cardMeta, .cardAgo, .matchBox, .note, .altNote { font: var(--om-type-body-m); }
+}
+/* (A-24) While a lead's detail is the screen, the queue's toolbar (the source chips, the switch, Approve All Clean) steps away — the merge keeps
+   the room. Back to queue brings it back. */
+@media (max-width: 1024px) {
+  .panel:has(.body[data-pane='detail']) .toolbar { display: none; }
+}
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .cLabel { width: 96px; }
+  .cCol { flex: 1 1 176px; min-width: 176px; }
+  .cMerged { flex: 1 1 160px; min-width: 160px; }
+}

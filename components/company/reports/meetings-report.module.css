@@ -34,6 +34,8 @@
 .pin { composes: pin from '../../leads/insights/insights-view.module.css'; }
 /* the lead's name opens its Meetings tab — the studio lists' lead link (the Contracts table's), cut by its column */
 .leadLink { composes: leadLink from '../../leads/contracts/contracts-table.module.css'; min-width: 0; }
+/* (responsive audit 2026-10-23, W4-13) a row's lead stands 44 under a finger — REG-273's link padding, paid back */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) { .leadLink { display: inline-block; max-width: 100%; vertical-align: bottom; padding-block: 12px; margin-block: -12px; } }
 
 /* the page's sections after the first stand apart by the Company pages' section gap */
 .block { margin-top: var(--om-spacing-8); }

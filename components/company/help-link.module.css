@@ -2,3 +2,7 @@
    did. The house link sits in a cascade layer and the global `a { color: inherit }` reset does not, so on an anchor its ink is said again here. */
 .link { composes: link from '../om/text-link.module.css'; font: inherit; color: var(--om-color-primary-default); }
 .link:hover { color: var(--om-color-primary-hover); }
+/* (responsive audit 2026-10-23, W4-06) a link standing on its own (`standalone` — Finance's *Reports ›*) takes a 44 box under a finger, paid back */
+@media (max-width: 767px), (hover: none) and (max-width: 1199px) {
+  .alone { display: inline-flex; align-items: center; min-height: 44px; margin-block: -12px; }
+}

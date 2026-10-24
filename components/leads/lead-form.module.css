@@ -116,3 +116,59 @@
 .customChips { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .customLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .chipError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
+
+/* ── Leads on the move (L3 — P-08 · A-17 · A-18 · A-19 · A-20 · B-21, his marks 2026-10-23) ─────────────────────────────────────────────────
+   Every typed box types at 16 on a phone and a touch tablet (A-18; it was 14 everywhere but iOS), and the helper lines read 14. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .panel input:not([type='checkbox']):not([type='radio']), .panel textarea { font: var(--om-type-body-l); }
+  .helper, .fillNote, .fillError { font: var(--om-type-body-m); }
+}
+/* A tablet's fill links: "Paste a message" beside "Fill from a document", at the row's end as the desk's one link. */
+.fillLinks { display: inline-flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; justify-content: flex-end; }
+/* A phone's new lead: the two ways to fill the rest, as two 48 rows under the name and the mobile — the sparkle and the words, primary. */
+.fillRows { display: flex; flex-direction: column; gap: var(--om-spacing-2); width: 100%; }
+.fillAction {
+  display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 48px;
+  padding: var(--om-spacing-2) var(--om-spacing-3);
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-default); cursor: pointer; text-align: left;
+  font: var(--om-type-subheading-m); color: var(--om-color-primary-default);
+  transition: background-color var(--motion-hover);
+}
+.fillAction:hover { background: var(--om-color-hover-04p); }
+.fillAction img { width: 17px; height: 17px; flex-shrink: 0; }
+/* The box to paste into, when the clipboard can't be read on the press. */
+.pasteBox { display: flex; flex-direction: column; gap: var(--om-spacing-3); width: 100%; align-self: stretch; }
+.pasteArea textarea { min-block-size: 120px; }
+.pasteFoot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); }
+/* The suggested member under Assign on a phone: the name, then Assign {first} as a text button. */
+.suggestLine { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); margin-top: calc(-1 * var(--om-spacing-3)); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* The phone's one filled button runs the foot's width, 48 tall. */
+.addLead.addLead { flex: 1 1 auto; min-height: 48px; justify-content: center; }
+/* (B-21) Edit details on a touch screen: the short list — one 64 row per section, its name over what it holds (14), a chevron; a row whose
+   fields refused the save says so in red. */
+.shortList { display: flex; flex-direction: column; padding: var(--om-spacing-2) 0; }
+.shortRow {
+  display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 64px;
+  padding: var(--om-spacing-3) var(--om-spacing-6);
+  border: 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); background: none; cursor: pointer; text-align: left;
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover);
+}
+.shortRow:last-child { border-bottom: 0; }
+.shortRow:hover { background: var(--om-color-hover-04p); }
+.shortText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.shortLabel { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.shortSummary { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shortRow[data-error] .shortSummary { color: var(--om-color-tertiary-red-default); }
+@media (max-width: 767px) {
+  .shortRow { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+}
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

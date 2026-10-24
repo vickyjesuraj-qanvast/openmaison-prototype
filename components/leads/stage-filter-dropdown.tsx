@@ -8,6 +8,8 @@ import styles from './menus.module.css'
 
 /** (UX audit L3) The to-do group, in the morning's order — (parity P-20, Q-07) "To do" on both listings now. */
 const TO_DO: AttentionScope[] = ['overdue', 'unassigned', 'unseen']
+/** (Leads on the move, L3 — P-05) A phone's group leads with "To call today" — the chip under the toolbar is the same scope. */
+const TO_DO_PHONE: AttentionScope[] = ['today', 'overdue', 'unassigned', 'unseen']
 
 /** The "All Leads (99)" pill menu — 1:1 from Dropdown Menu / Leads (780:93630, 200×433).
  *  (REG-728) On the house pieces: its rows are `DropdownItem` radios with the count as their meta (the current one in the Selected
@@ -20,8 +22,10 @@ const TO_DO: AttentionScope[] = ['overdue', 'unassigned', 'unseen']
  *  name for the group, "To do" (the Projects menu's; its item keeps "Needs attention"); the phone sheet names the dimension, "Lead status"
  *  ("Project status" there). The pill counts the rows the list shows (workspace.tsx). */
 export function StageFilterDropdown({
-  open, onClose, counts, value, onSelect, onManage, attention,
+  open, onClose, counts, value, onSelect, onManage, attention, phone = false,
 }: {
+  /** (Leads on the move, P-05) the phone's sheet: To call today first in the To do group */
+  phone?: boolean
   open: boolean
   onClose: () => void
   counts: Record<string, number> & { all: number }
@@ -52,7 +56,7 @@ export function StageFilterDropdown({
         <>
           <DropdownDivider />
           <DropdownLabel>To do</DropdownLabel>
-          {TO_DO.map(scopeItem)}
+          {(phone ? TO_DO_PHONE : TO_DO).map(scopeItem)}
         </>
       ) : null}
       <DropdownDivider />

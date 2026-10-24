@@ -81,6 +81,10 @@ export function QuotesWorkspace({ data, newTemplateId, templateId, todo }: { dat
      falls to nothing lets its narrowing go (render-phase adjust). */
   const [quick, setQuick] = useState<QuoteQuick>(() => (todo === 'approval' || todo === 'waiting' || todo === 'expiring' ? todo : ''))
   const todoCounts = useMemo(() => quoteTodoCounts(quotes, now, data.canApprove && approval === 'required'), [quotes, now, data.canApprove, approval])
+  /* (responsive audit 2026-10-23, W6 — W5-33) the to-do pills this list opened with — its ghost draws them next time (components/leads/detail/tab-ghosts.tsx) */
+  useRememberShape('tools.quotes.approval', todoCounts.approval > 0)
+  useRememberShape('tools.quotes.waiting', todoCounts.waiting > 0)
+  useRememberShape('tools.quotes.expiring', todoCounts.expiring > 0)
   if (quick && todoCounts[quick] === 0) setQuick('')
   /* (pending modules S04) the heads' own order — one sort with Filters' */
   const [headSort, setHeadSort] = useState<QuoteHeadSort>(null)

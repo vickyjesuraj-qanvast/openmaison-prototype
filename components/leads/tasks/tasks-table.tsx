@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
 import { DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -8,7 +8,11 @@ import { SelectTrigger } from '@/components/om/select-trigger'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
 import { useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
-import { useMediaQuery } from '@/lib/breakpoint'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
+import { useSheetLayout } from '@/components/om/sheet'
+import { TaskCard } from './task-card'
+import cardStyles from './task-card.module.css'
+import { dueChip } from './task-card-words'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
@@ -82,6 +86,11 @@ export type TasksTableProps = {
   /** (pending modules S05) The head's own order (Due date · Status), held by the orchestrator — one sort with Filters'. */
   sort?: TaskHeadSort
   onSort?: (key: TaskSortKey) => void
+  /** (Leads on the move, L4 — P-10 · C-06) A phone's or a touch tablet's add: the quick add, docked where the "Add Task" bar stands — the
+      inline add row (frame 194) stays the desk's. */
+  composer?: ReactNode
+  /** The rail's Tasks page: a phone card names whose task it is. */
+  studio?: boolean
 }
 export type TaskGroup = { key: string; label: string; href?: string | null }
 export type MilestonePicker = { options: { id: string; title: string }[]; onPick: (task: TaskRow, milestoneId: string | null) => void }
@@ -92,16 +101,21 @@ export type MilestonePicker = { options: { id: string; title: string }[]; onPick
 export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: '320', locked: true },   /* floor 320 (was the mock's 420, owner 2026-09-17: Tags must show below 1440) */
   { key: 'assignees', label: 'Members', track: '160' },   /* REG-290 */
-  { key: 'creator', label: 'Creator', track: '160' },
+  /* (Leads on the move, L4 — P-10 · C-07) `tabletHidden`: a touch tablet opens with Title · Members · Due date · Status and the ⋮ frozen at the
+     right (the Quotes / Contracts tables' way); Creator and Tags wait in Column settings, remembered per breakpoint */
+  { key: 'creator', label: 'Creator', track: '160', tabletHidden: true },
   { key: 'due', label: 'Due date', track: '240' },   /* (Dane UAT 5.13 · 5.05) the mock's 137 held "17 Jul ’26"; the widest "Wed, 28 May ’26 · 10:00 PM" needs 234 — the table grows, never cuts (REG-430) */
   { key: 'status', label: 'Status', track: '118' },
-  { key: 'tags', label: 'Tags', track: '191' },
+  { key: 'tags', label: 'Tags', track: '191', tabletHidden: true },
 ]
 /** The rail's Tasks page (REG-466): the same columns with the task's Lead after Title — free, not pinned (owner's call).
     (parity P-27, Q-10) The head reads "For": the column holds leads, projects and the studio's own (the key stays `lead`, saved settings). */
-export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'For', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
+export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'For', track: '200' }, ...TASK_COLUMN_DEFS.slice(1).map((d) => (d.key === 'status' ? { ...d, tabletHidden: true } : d))]   /* (L4, C-07) a tablet's rail page: Title · For · Members · Due date — the ring says done */
 /** (Projects round 2) A project's tasks (a lead that has one): the milestone each sits in, after Title. */
 export const PROJECT_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'milestone', label: 'Milestone', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
+/** (Leads on the move, L4 — C-07) A touch tablet's floors: Title from 200, the due day in its short words ("Mon 26 Oct · 10:00 AM"), the names
+    and the tag chips narrower — Title · Members · Due date · Status and the frozen ⋮ fit a 736 frame's first screen. A dragged width wins. */
+const TABLET_TRACK: Record<string, number> = { title: 200, lead: 160, milestone: 160, assignees: 104, creator: 140, due: 176, status: 116, tags: 160 }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, milestone: styles.colMilestone, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
 /* (REG-468) Only Due date and Status order a task list; Title, Lead, Members and Creator lost their glyph. */
 const SORTABLE: Record<string, boolean> = { title: false, lead: false, milestone: false, assignees: false, creator: false, due: true, status: true, tags: false }
@@ -118,8 +132,13 @@ export function TasksTable({
   adding, onAddSubmit, addKey, onAddCancel, addMembers, onAddAssign,
   renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker, pulse = null, milestonePicker, groupOf, sort = null, onSort,
+  composer, studio = false,
 }: TasksTableProps) {
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  /* (Leads on the move, L4 — P-10 · C-03 · C-05 · C-07) ≤767 the tasks are cards (task-card.tsx: whole names, the due chip, a hold selects);
+     a touch tablet keeps the table with its tablet set, the due day's short words and the ⋮ frozen at the right. The server renders the desk. */
+  const phone = useSheetLayout()
+  const touchTablet = useMediaQuery(TOUCH_TABLET) && !phone
 
   /* (Dane UAT 11.02) The quote editor's attention after an add (REG-573, items-section.tsx `attention`): once the new row exists — a frame or
      two after the save's refresh — it is centred when it sits off the screen or under the docked Add Task bar, and pulses once
@@ -176,16 +195,44 @@ export function TasksTable({
   const colVars = flexVars(colWidths)   // REG-427: `--cw-<key>` per dragged column, read by tasks-table.module.css
   /* The rows' floor (REG-430, the listing's inline min-width): the mock's 1244 = 56 + Title 422 + 160 + 160 + 137 + 118 + 191,
      each column at its dragged width instead where the user changed it — the card scrolls sideways past that, never squeezes. */
-  const floor = 56 + columns.reduce((sum, c) => sum + (colWidths[c.key] ?? Number(c.track)), 0)
+  const floor = 56 + columns.reduce((sum, c) => sum + (colWidths[c.key] ?? (touchTablet ? TABLET_TRACK[c.key] ?? Number(c.track) : Number(c.track))), 0)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow, { leading: 56, flex: true })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
+  if (phone) {
+    /* (L4 — P-10) the phone's cards: one list, the group headers of the rail page between them, the quick add at the foot */
+    const selectMode = selected.size > 0
+    const milestoneOf = (t: TaskRow) => (milestonePicker && t.milestoneId ? milestonePicker.options.find((m) => m.id === t.milestoneId)?.title ?? null : null)
+    return (
+      <div className={styles.phoneList} ref={tableEl} data-kb-list="task" data-testid="task-cards" data-select-mode={selectMode || undefined}>
+        <div className={cardStyles.list} role="list" aria-label="Tasks">
+          {tasks.map((task, idx) => {
+            const head = groupOf && (idx === 0 || groupOf(tasks[idx - 1]!).key !== groupOf(task).key) ? { ...groupOf(task), n: tasks.filter((t) => groupOf(t).key === groupOf(task).key).length } : null
+            return (
+              <TaskRowFrag key={task.id} head={head}>
+                <TaskCard task={task} now={now} unseen={unseen.has(task.id)} fresh={flash === task.id} selected={selected.has(task.id)} selectMode={selectMode}
+                  descriptionMatch={descriptionMatches?.has(task.id) ?? false} studio={studio} milestone={milestoneOf(task)}
+                  menuOpen={menuRow === task.id} onMenuToggle={() => setMenuRow((m) => (m === task.id ? null : task.id))} onMenuClose={() => setMenuRow(null)}
+                  onToggleSelect={() => toggleOne(task.id, idx, false)} onOpen={(t) => onOpen(t, tableEl.current ?? document.body)} onOpenComments={onOpenComments}
+                  onToggleDone={onToggleDone} onAssign={onAssign} onRowMenu={onRowMenu} />
+              </TaskRowFrag>
+            )
+          })}
+        </div>
+        {composer ?? (
+          <div className={styles.foot}>
+            <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>Add Task</Link>
+          </div>
+        )}
+      </div>
+    )
+  }
   return (
-    <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-kb-list="task" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-kb-list="task" data-cols="lead-tasks" data-touch-tablet={touchTablet || undefined} style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
     <div ref={frame} className={styles.scroller} data-overflow={overflowing || undefined}
-         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+         onScroll={(e) => { const el = e.currentTarget; el.toggleAttribute('data-scrolled', el.scrollLeft > 0); el.toggleAttribute('data-at-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) }}>
     <div className={styles.table} ref={tableEl}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div ref={headRow} className={styles.head} role="row">
@@ -211,9 +258,11 @@ export function TasksTable({
           </div>
           )
         })}
+        {/* (L4, C-07) the ⋮ column's head on a touch tablet — frozen right with the rows' cell, so the column reads as one */}
+        {touchTablet ? <div className={`${styles.hCell} ${styles.hActions}`} role="columnheader" aria-label="Actions" data-col="actions" data-testid="tasks-actions-head" /> : null}
       </div>
 
-      {adding ? (
+      {adding && !composer ? (
         <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} members={addMembers} onAssign={onAddAssign} milestones={!!milestonePicker} />
       ) : null}
 
@@ -244,12 +293,14 @@ export function TasksTable({
     </div>
 
       {/* Bottom bar 902:26450 — Link text Primary leading icon add "Add Task". Sticks to the viewport bottom while
-          the card runs past it; `data-floating` adds the lift only while it is actually docked. */}
+          the card runs past it; `data-floating` adds the lift only while it is actually docked. (L4 — P-10) A touch tablet docks the quick add there. */}
+      {composer ?? (
       <div className={styles.foot} data-floating={floating || undefined}>
         <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>
           Add Task
         </Link>
       </div>
+      )}
       <div className={styles.footEnd} ref={cardEnd} aria-hidden />
     </div>
   )
@@ -361,7 +412,7 @@ export type LeadPicker = { leads: TaskLead[]; value: string | null; onChange: (i
 /** The add row's Lead cell on the rail's Tasks page (REG-466): "Studio" until a lead is picked; the menu lists the live leads.
  *  (REG-729) The house compact select at its cell size (28), the chevron turning while open; (REG-728) its list through the portal,
  *  so the table's sideways scroller can't clip it, at the standard 200 (the trigger hugs its value, too narrow to set the width). */
-function LeadPickerCell({ picker }: { picker: LeadPicker }) {
+export function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const current = picker.value ? picker.leads.find((l) => l.id === picker.value) : null
@@ -643,7 +694,9 @@ function TaskRowView({
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
                   aria-label={`Due ${displayDue(task.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
                   onClick={(e) => onDue(task, e.currentTarget)}>
-            {displayDue(task.dueAt)}
+            {/* (L4, C-07) a touch tablet's Due cell says the day in its short words ("Mon 26 Oct · 10:00 AM", "Today · 10:00 AM") — the desk's as it was */}
+            <span className={styles.dueLong}>{displayDue(task.dueAt)}</span>
+            <span className={styles.dueShort}>{dueChip(task.dueAt, task.done, now)?.text}</span>
           </button>
         ) : (
           <Tooltip label="Set due date">

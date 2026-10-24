@@ -22,7 +22,7 @@ export function useTouchPick(): boolean {
  * glyph tile, the title at 16, its meaning at 14, a chevron); each row is the press and opens its own hidden picker. `uploading` holds both rows
  * and says so in the first. Read-only scopes draw nothing, as the Dropzone.
  */
-export function PhotoOrFile({ onPick, ids, uploading = false, photoHelp = 'The signed paper, with your camera', fileHelp = 'A PDF or a picture', label }: {
+export function PhotoOrFile({ onPick, ids, uploading = false, photoHelp = 'The signed paper, with your camera', fileHelp = 'A PDF or a picture', label, fileAccept = CONTRACT_FILE_ACCEPT, many = false }: {
   onPick: (file?: File) => void
   /** The two rows' test ids (the probe's handles). */
   ids: { photo: string; file: string }
@@ -31,13 +31,17 @@ export function PhotoOrFile({ onPick, ids, uploading = false, photoHelp = 'The s
   fileHelp?: string
   /** What the two rows upload, for a screen reader (the group's name). */
   label: string
+  /** (Leads on the move, P-03) what Choose a file takes — a contract's PDF or picture by default; a log's screenshot, PDF or chat export */
+  fileAccept?: string
+  /** (Leads on the move, P-03) Choose a file takes several at once — `onPick` hears each */
+  many?: boolean
 }) {
   const ro = useReadOnly()
   const photo = useRef<HTMLInputElement>(null)
   const file = useRef<HTMLInputElement>(null)
   if (ro) return null
   const take = (which: 'photo' | 'file') => () => { if (!uploading) (which === 'photo' ? photo : file).current?.click() }   // the ref is read on the press, never in render
-  const picked = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPick(f) }
+  const picked = (e: React.ChangeEvent<HTMLInputElement>) => { const list = [...(e.target.files ?? [])]; e.target.value = ''; for (const f of many ? list : list.slice(0, 1)) onPick(f) }
   return (
     <div className={styles.list} role="group" aria-label={label} aria-busy={uploading || undefined} data-photo-or-file="">
       <div className={styles.phoneRow}>
@@ -54,7 +58,7 @@ export function PhotoOrFile({ onPick, ids, uploading = false, photoHelp = 'The s
           <span className={styles.rowText}><span className={styles.rowTitle}>Choose a file</span><span className={styles.rowDesc}>{fileHelp}</span></span>
           <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>
         </button>
-        <input ref={file} type="file" accept={CONTRACT_FILE_ACCEPT} className={styles.input} tabIndex={-1} aria-hidden onChange={picked} data-testid={`${ids.file}-input`} />
+        <input ref={file} type="file" accept={fileAccept} multiple={many || undefined} className={styles.input} tabIndex={-1} aria-hidden onChange={picked} data-testid={`${ids.file}-input`} />
       </div>
     </div>
   )

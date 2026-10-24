@@ -4,6 +4,13 @@
 /* (REG-670) Doubled on purpose, as the Items table's Add Item menu does: this box also wears leads/menus.module.css `.menu` (200 wide, a
    scrolling max-height) at the same weight, and after a client-side navigation the browser can load that sheet second — the panel
    then opened 200 wide with its rows cut ("reports to …"). Twice the class outranks it whatever the order. */
+/* (responsive audit 2026-10-23, W6 — a bug fix, W5-36) The panel is 728 tall: on a phone held sideways (390) — or any window under ~760 — it ran
+   past the screen's foot with no scroll of its own, Materials and every row under it out of reach. Where the screen is that short it is capped
+   to the screen (8 above and below, the rail popover's edge) and scrolls inside, as the AI credits and View as popovers fit. A taller screen
+   (the desk's 1024) never matches. */
+@media (max-height: 760px) {
+  .popover.popover { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; }
+}
 .title { display: block; height: 24px; margin-bottom: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .group { display: flex; flex-direction: column; }

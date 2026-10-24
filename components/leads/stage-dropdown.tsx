@@ -1,7 +1,9 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
+import { Button } from '@/components/ds'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { anchoredSurface } from '@/lib/motion'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { REFUSED_KEY, Tooltip } from '@/components/om/tooltip'
@@ -28,9 +30,15 @@ const isTouchPointer = () => typeof window !== 'undefined' && window.matchMedia(
  * arrows / Home / End over the stages that can be chosen, Tab back to the trigger; Esc consumed in the capture phase, as Dropdown
  * does). Its own placement stays: it hangs from the cell or the pill it belongs to and follows it while the page scrolls (DESIGN.md).
  */
+/** (Leads on the move, L3 — P-05 · Q-05 · A-06 · A-07) The lead's next move, first in the sheet: "Move to Contacted" (or "Resume at New" for a parked
+ *  lead) as the one filled row; refused, the reason in its place and — where there is one — the fix as the filled button ("Assign"). */
+export type NextMove = { label: string; onPress: () => void; why?: string | null; fix?: { label: string; onPress: () => void } | null }
+
 export function StageDropdown({
-  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1, subject,
+  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1, subject, next = null,
 }: {
+  /** (Leads on the move, P-05) A finger's sheet or menu (a phone, a touch tablet) leads with the next move; a mouse keeps the mock's menu. */
+  next?: NextMove | null
   open: boolean
   onClose: () => void
   onSelect: (stage: Stage) => void
@@ -46,6 +54,10 @@ export function StageDropdown({
 }) {
   const snackbar = useSnackbar()
   const sheet = useSheetLayout()
+  /* (Leads on the move, P-05 · A-06) a finger's menu: the next move first, and a locked row says why IN the row (REG-656's rule) — a tap never
+     had to be spent to learn it. A mouse keeps the mock's rows and the tooltip, byte for byte. */
+  const touch = useMediaQuery(TOUCH_TABLET)
+  const finger = sheet || touch
   /* A locked stage is a disabled DropdownItem (aria-disabled — it takes no press, and the arrows pass it by); the Tooltip explains the
      lock, and on touch, where no tooltip fires, a tap on the row answers with the same sentence in the snackbar (REG-273). The row's
      press lands on this box (`display: contents`), since the disabled item itself runs nothing. */
@@ -54,9 +66,9 @@ export function StageDropdown({
     const isCurrent = s === current
     const done = !isCurrent && (STAGES as readonly string[]).indexOf(s) <= doneThrough && (STAGES as readonly string[]).includes(s)
     return (
-      <span key={s} className={ddStyles.row} onClick={why ? () => { if (isTouchPointer()) snackbar({ message: why, key: REFUSED_KEY }) } : undefined}>   {/* (S43E W1-01) the house Tooltip says it on touch too — one keyed snackbar */}
-        <Tooltip label={why ?? ''} side="right" disabled={!why}>
-          <DropdownItem disabled={!!why} selected={isCurrent} meta={isCurrent ? 'current' : undefined} onSelect={() => onSelect(s)}>
+      <span key={s} className={ddStyles.row} onClick={why && !finger ? () => { if (isTouchPointer()) snackbar({ message: why, key: REFUSED_KEY }) } : undefined}>   {/* (S43E W1-01) the house Tooltip says it on touch too — one keyed snackbar; (leads on the move, A-06) a finger's row prints it instead */}
+        <Tooltip label={why ?? ''} side="right" disabled={!why || finger}>
+          <DropdownItem disabled={!!why} title={finger && why ? why : undefined} selected={isCurrent} meta={isCurrent ? 'current' : undefined} onSelect={() => onSelect(s)}>
             <span className={ddStyles.itemText}>{s}</span>
             {done ? <span className={ddStyles.done} aria-hidden><Icon name="check_circle" size={20} fill /></span> : null}
           </DropdownItem>
@@ -80,8 +92,24 @@ export function StageDropdown({
     return () => { document.removeEventListener('keydown', onKey, true); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose, sheet])
 
+  /* (Leads on the move, P-05 · A-07) The next move as the sheet's first row — the lead page's own primary (Move to {next} · Resume at {stage});
+     refused, the reason and its fix ("Assign a member first" · Assign), so a finger never meets a dead end. */
+  const nextBlock = finger && next ? (
+    <div className={ddStyles.next} data-testid="stage-next" data-blocked={next.why ? '' : undefined}>
+      {next.why ? (
+        <>
+          <span className={ddStyles.nextWhy}><b>{next.label}</b> — {next.why.charAt(0).toLowerCase()}{next.why.slice(1)}</span>
+          {next.fix ? <Button onPress={next.fix.onPress} data-testid="stage-next-fix">{next.fix.label}</Button> : null}
+        </>
+      ) : (
+        <Button onPress={next.onPress} data-testid="stage-next-move">{next.label}</Button>
+      )}
+    </div>
+  ) : null
+
   const groups = (
     <>
+      {nextBlock}
       <DropdownLabel tone="green" dot>Active</DropdownLabel>
       {STAGES.map(item)}
       <DropdownDivider />
@@ -106,7 +134,7 @@ export function StageDropdown({
       {open && position ? (
         <motion.div ref={ref} className={styles.menu} role="menu"
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
-                    style={{ position: 'fixed', top: position.top, left: position.left, transformOrigin: 'top left', width: MENU_WIDTH.standard }}>
+                    style={{ position: 'fixed', top: position.top, left: position.left, transformOrigin: 'top left', width: MENU_WIDTH.standard, '--menu-top': `${position.top}px` } as CSSProperties}>   {/* (responsive audit W2-12) the sideways phone's cap reads the placed top (menus.module.css) */}
           {groups}
         </motion.div>
       ) : null}

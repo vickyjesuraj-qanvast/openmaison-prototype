@@ -16,7 +16,7 @@
 .exampleArt svg { width: 100%; height: 100%; padding: var(--om-spacing-2); }
 .exampleName { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
 @media (max-width: 767px) { .examples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-/* (parity map, TD-098) opened from Tools › Floorplan to 3D Isometric: one quiet line above the gallery */
+/* (parity map, TD-098) opened with ?view=iso: one quiet line above the gallery */
 .isoNote { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-surface-default); }
 .isoText { flex: 1; min-width: 200px; font: var(--om-type-body-s); }
 .isoLink { min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subtitle-s); color: var(--om-color-primary-default); }

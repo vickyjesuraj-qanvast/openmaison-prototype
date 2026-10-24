@@ -72,6 +72,10 @@ export function Dialog({
   const phone = useSheetLayout()
   const asSheet = phone && !alert && !phoneFull && (size === 'form' || size === 'modal')
   useSheetFootLift(open && footer !== undefined && (asSheet || (phone && phoneFull)), panel)   // (quotes on the move, B-19) a sheet's foot lifts the snackbar
+  /* (responsive audit 2026-10-23, W6 — a bug fix, W4-27) 768–1024 a centred dialog tall enough to reach the snackbar's band (24 above the
+     screen's foot, 48 tall) had its foot's buttons under an Undo (Edit PO after an approval): the snackbar rests 16 above that foot while the
+     dialog is open — only then; a desk keeps the mock's corner. */
+  useSheetFootLift(open && footer !== undefined && !phone, panel, { query: '(min-width: 768px) and (max-width: 1024px)', lowOnly: 72 })
   const node = (
     <AnimatePresence>
       {open ? (

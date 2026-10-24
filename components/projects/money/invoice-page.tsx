@@ -103,11 +103,11 @@ export function InvoicePage({ d, from, print }: { d: InvoiceDocData; from?: stri
         <header className={styles.bar}>
           <div className={styles.titleBlock}>
             <Crumbs className={styles.crumb} items={[projectsCrumb, { label: d.project.name, href: `/projects/${d.project.id}` }, { label: 'Money', href: tabHref }]} />
-            <div className={styles.titleRow}>
+            <div className={`${styles.titleRow} ${paper.headWrap}`}>
               <h1 className={styles.title}><span className={paper.nowrap}>{i.label ?? `${i.stageName} invoice`}</span></h1>
               <span className={styles.chips}>
                 <MetaChip color={tone}>{INVOICE_STATE_LABEL[i.state]}</MetaChip>
-                <MetaChip>{i.stageName} · {money2(i.amountMinor)}</MetaChip>
+                <MetaChip className={paper.chipFit}>{i.stageName} · {money2(i.amountMinor)}</MetaChip>
               </span>
             </div>
           </div>

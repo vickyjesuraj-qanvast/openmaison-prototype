@@ -3,8 +3,11 @@
 .editor { --pl-rail: 320px; --pl-insp: 300px; position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); background: var(--om-color-surface-bg); }
 .body { flex: 1; min-height: 0; display: flex; }
 .rail { flex: 0 0 var(--pl-rail); width: var(--pl-rail); min-height: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
-.tabs3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.tabs4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* (responsive audit 2026-10-23, W6 — load order) Doubled: the Visualizer rail's `.tabs` (five columns) is the same weight, so the rail drew
+   three even tabs or three tabs in five slots by the order the build emitted the two sheets — three in `next dev` and on this round's build,
+   five on the build before it. Twice the class holds the three whatever the order. */
+.tabs3.tabs3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tabs4.tabs4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .stage { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .inspector { flex: 0 0 var(--pl-insp); width: var(--pl-insp); min-height: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
 

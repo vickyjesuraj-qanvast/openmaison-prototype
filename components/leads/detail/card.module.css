@@ -63,6 +63,12 @@
      these widths — they stack instead of overflowing it (audit: card.module.css:45). */
   .emptyActions { flex-wrap: wrap; }
 }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W3's hand-off) …and below the desk mock's 1440: a narrow card at 1280 (a project's Money,
+   205 wide) ran "From the signed quote · 19 lines" under its ↗ ("19 li↗es"). The same wrap — only when the two no longer fit — up to 1439;
+   1440 is untouched. */
+@media (max-width: 1439px) {
+  .headText { flex-wrap: wrap; }
+}
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    The arrow is a 16px glyph in a 24px control — the smallest target on the Overview, and the ONLY thing that
    says where the card leads is its Tooltip, which never fires for a touch pointer. So below 768 the card's
@@ -81,4 +87,10 @@
   .open::after { content: ''; position: absolute; inset: 0; }
   .link { position: relative; z-index: 1; }
   .link::after { content: ''; position: absolute; inset: -14px -8px; }
+}
+
+/* (Leads on the move — the landing's hand-off from L4: the meeting brief's "Edit") A card head's link is the one press in the head: on a phone and a
+   touch tablet it reads at 14 wherever the card is (the house card — the meeting brief's Edit, Ask Client, All clients), its 44 box as above */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .link { font: var(--om-type-subheading-m); }
 }

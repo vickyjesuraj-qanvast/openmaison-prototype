@@ -32,6 +32,11 @@
 .muteAreaHead.muteAreaHead { margin: 0; padding-inline: 0; }
 .muteRow { composes: autoRow from '../contracts/editor/contract-editor.module.css'; padding-left: 0; padding-right: 0; cursor: pointer; }
 .muteRow[data-off] { cursor: default; }
+/* (responsive audit 2026-10-23, W1 — a bug fix) A composed class and the class it composes weigh the same, so these rows' own padding held only
+   while the bundler emitted the contract editor's sheet first (REG-727's lesson — this round's rebuild reordered other pages' sheets). Doubled,
+   as the head above: the rows keep the padding they draw today in any order. */
+.consentRow.consentRow { padding: var(--om-spacing-3) 0 0; }
+.muteRow.muteRow { padding-left: 0; padding-right: 0; }
 .muteIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); align-self: flex-start; margin-top: 2px; }
 .muteText { composes: autoText from '../contracts/editor/contract-editor.module.css'; }
 .muteLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }

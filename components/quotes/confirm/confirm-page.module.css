@@ -19,7 +19,7 @@
 .fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 32px; color: var(--om-color-on-surface-secondary); }
 .fileName { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fileLink { composes: link from '../../om/text-link.module.css'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (REG-729) the house text link — it was body-m, underlined on hover */
-@media (hover: none) { .optionalRow { min-height: 44px; } .fileRow { min-height: 44px; } }
+@media (hover: none) { .optionalRow { min-height: 44px; } .fileRow { min-height: 44px; } .fileLink { padding-block: var(--om-spacing-3); margin-block: calc(-1 * var(--om-spacing-3)); } }   /* (responsive audit 2026-10-23, W5-10) the file's link takes the row's 44, not its 20 line (REG-312's link rule, paid back) */
 /* (UX audit Q6) A phone reads the lines as cards (reading-cards.tsx); "View as printed" opens the A4 in the viewer. Above the phone model only the
    print shows. The CSS decides from the first paint — the page's media query answers only once it has hydrated.
    (Quotes on the move, K4 — P-12 · A-15) The PHONE MODEL is a phone, and a tablet held upright (768–1024 portrait): client-layout.ts carries the
@@ -82,6 +82,12 @@
   .bar[data-state='not-ready'] .barState, .bar[data-state='view'] .barState { color: var(--om-color-on-surface-secondary); }
   .barState[data-tone='declined'] { color: var(--om-color-tertiary-red-default); }
 }
+/* (responsive audit 2026-10-23, W5-01) The open bar's two presses share one line while they fit; when a label is too long for the width (a
+   variation order's "Approve the changes" beside "Ask for a change" needs ~440 — wider than any phone) the primary takes its own line above
+   Ask, each full width, instead of running past the screen. Side by side nothing moves: Ask keeps its own width, the primary the rest. */
+.barPair { flex-wrap: wrap-reverse; }
+.barPair > button { flex: 1 1 auto; }
+.barPair > button:last-child { flex: 1000 1 auto; }
 /* the floor (REG-306's 320): the bar's two buttons stack — the one primary on top, full width — instead of running past the screen */
 @media (max-width: 359px) {
   .barRow { flex-direction: column-reverse; align-items: stretch; }

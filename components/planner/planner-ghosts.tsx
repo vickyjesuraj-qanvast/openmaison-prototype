@@ -17,7 +17,7 @@ import { ISO_NOTE, ISO_PHOTO_LINK, ISO_USUAL_LINK } from '@/lib/planner/copy'
  * rows, the grey stage; ≤1024 the stage and the dock), the client's viewer and the paper.
  */
 
-export function PlannerHomeGhost({ iso = false }: { /** (parity map, TD-098) opened from Tools › Floorplan to 3D Isometric: its line above the gallery */ iso?: boolean } = {}) {
+export function PlannerHomeGhost({ iso = false }: { /** (parity map, TD-098) opened with ?view=iso: its line above the gallery */ iso?: boolean } = {}) {
   return (
     <GhostSheet label="Loading layouts" l1>
       <div className={styles.gHead}><Bone w={190} h={28} /></div>

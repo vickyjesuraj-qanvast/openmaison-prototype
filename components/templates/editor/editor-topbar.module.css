@@ -28,6 +28,14 @@
 .zoomLabel { transition: background-color var(--motion-hover); }
 @media (hover: hover) { .zoomLabel:hover { background: var(--om-color-hover-08p); } }
 .zoomLabel:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (responsive audit 2026-10-23, W4-14) Under a finger the template's name (an input, 32 tall) and the zoom figure (36) stand 44, paid back with a
+   negative margin, so the bar keeps its height and nothing beside them moves. The name's extra is a transparent border, so its drawn 32 (the
+   focused fill, the ring) stays where it was. */
+@media (hover: none) {
+  .name { border-top: 6px solid transparent; border-bottom: 6px solid transparent; background-clip: padding-box; margin-top: -6px; margin-bottom: -6px; }
+  .name:focus-visible { outline-offset: -6px; }
+  .zoomLabel { height: 44px; margin-top: -4px; margin-bottom: -4px; }
+}
 .rule { width: 1px; height: 24px; background: var(--om-color-surface-variant); }
 .pages { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 1319px) { .bar { height: auto; min-height: 56px; padding-top: var(--om-spacing-1); padding-bottom: var(--om-spacing-1); } .titleBlock { flex-wrap: wrap; row-gap: 2px; } .name { flex-basis: 100%; max-width: none; } .chips { overflow: visible; flex-wrap: wrap; } }

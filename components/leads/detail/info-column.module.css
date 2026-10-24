@@ -145,6 +145,12 @@
      the 20px height becomes a floor; the arrow keeps its place beside the label. */
   .link { height: auto; min-height: 20px; white-space: normal; text-align: left; }
 }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W3's hand-off) …but a member's name beside its avatar and its ⋮ gets 64 of those 120, and
+   `anywhere` broke a name inside itself ("Germain / e"). On a tablet the name keeps its line and ends in an ellipsis; the ⋮'s menu names the
+   member in full. The phone's full-width column keeps its wrap. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .assigneeName { overflow-wrap: break-word; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 /* (REG-269) Mobile: the row stacks — the column goes full-width above the centre, hugs its sections instead of
    filling the row's height, drops to the 16px content padding, and its right rule becomes a bottom rule.
    The sections keep their own collapse behaviour and remembered defaults. */
@@ -215,7 +221,11 @@
 
   .sectionHead { height: auto; min-height: 44px; gap: var(--om-spacing-4); }
   .headLink { position: relative; }
-  .headLink::after { content: ''; position: absolute; inset: -12px -4px; }
+  .headLink::after { content: ''; position: absolute; inset: -14px -4px; }   /* (responsive audit 2026-10-23, W2-14) −12 gave a 17 line 41; −14 makes 45 */
+  /* (responsive audit 2026-10-23, W6 — a bug fix, found by the closing sweep) a project's Signed quote · Contract links (Project info) were 17
+     lines under a finger: the head link's box, 45 */
+  .docLink { position: relative; }
+  .docLink::after { content: ''; position: absolute; inset: -14px -4px; }
 
   /* "Assign Member ›" is a text link on a 20px line — it takes a 44px box of its own (the row grows with it). */
   .link { min-height: 44px; }

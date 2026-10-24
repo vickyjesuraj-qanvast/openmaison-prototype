@@ -7,6 +7,8 @@ import { motion, useReducedMotion } from 'motion/react'
 import { spring } from '@/lib/motion'
 import { Button } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
+import { Chips } from '@/components/om/chips'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadQuestionsData } from '@/lib/leads/questions'
@@ -70,6 +72,15 @@ export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQu
   }, [fresh])
 
   const summary = summarise(questions)
+  /* (Leads on the move, L4 — P-12 · C-25) Read first on a phone or a tablet: "4 to answer · 7 answered" over the list, and two chips — To answer ·
+     Answered — that keep one kind of card (the open ones first, as the desk orders them); the summary card stays last for who answered and
+     when the client was asked. The desk keeps the mock's column + the 480 summary. */
+  const compact = useMediaQuery(TABLET_DOWN)
+  const openCount = questions.filter((q) => !q.answeredBy).length
+  const answeredCount = questions.length - openCount
+  const [show, setShow] = useState<'open' | 'answered'>(() => (questions.some((q) => !q.answeredBy) ? 'open' : 'answered'))
+  if (show === 'open' && openCount === 0 && answeredCount > 0 && !landing) setShow('answered')   // the last one answered — its card is in Answered now
+  const listed = compact ? questions.filter((q) => (show === 'open' ? !q.answeredBy || q.id === answering : !!q.answeredBy && q.id !== answering) || q.id === landing) : questions
 
   /* ── actions ── */
   const saveAnswer = async (id: string, value: string | string[]) => {
@@ -116,8 +127,15 @@ export function LeadQuestionnaire({ data, noun = 'lead', views }: { data: LeadQu
         <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} noun={noun} />
       ) : (
         <div className={styles.layout}>
+          {compact ? (
+            <div className={styles.readFirst} data-testid="questionnaire-read-first">
+              <p className={styles.counts}>{openCount ? `${openCount} to answer · ${answeredCount} answered` : `All ${answeredCount} answered`}</p>
+              <Chips label="Show" value={show} onChange={(v) => setShow(v === 'answered' ? 'answered' : 'open')} testId="questionnaire-show"
+                     options={[{ value: 'open', label: `To answer · ${openCount}`, disabled: openCount === 0 }, { value: 'answered', label: `Answered · ${answeredCount}`, disabled: answeredCount === 0 }]} />
+            </div>
+          ) : null}
           <div className={styles.questions}>
-            {questions.map((q) => (
+            {listed.map((q) => (
               <motion.div key={q.id} className={styles.item} data-question-id={q.id} data-fresh={fresh === q.id || undefined}
                           layout={reduced ? false : 'position'} transition={spring.settle}>
               <QuestionCard

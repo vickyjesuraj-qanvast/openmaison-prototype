@@ -228,3 +228,28 @@
 .subList { display: flex; flex-direction: column; }
 .subRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 40px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; border-radius: var(--om-radius-1); }
 .subRow:hover { background: var(--om-color-hover-04p); }
+
+/* ── Leads on the move (L3 — A-29) ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   A lead past Qanvast's window: one notice before the form — the glyph, the sentence at 16 / 14, the policy link. On a phone the tips fold under
+   their title (a 44 row) and read at 14 when open. */
+.late { display: flex; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-6); max-width: 560px; }
+.lateTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.lateText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.tipsToggle {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2);
+  min-height: 44px; width: 100%; border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+}
+.tips[data-folded] > :not(.tipsToggle) { display: none; }
+@media (max-width: 767px) {
+  .tipsList, .tipsHelp { font: var(--om-type-body-m); }
+  .late { padding: var(--om-spacing-4); }
+}
+
+/* (responsive audit 2026-10-23, W6 — a bug fix, W1's hand-off) A phone held sideways (844 × 390, PHONE_SIDEWAYS): the 48 above and below
+   left a 294 panel — a head, a foot and two lines of body. There it spends 8 above and below, as the house Dialog does (W1-10), off a notched
+   phone's home indicator (env() is 0 everywhere else); its sides keep their margins. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding: var(--om-spacing-2) env(safe-area-inset-right, 0px) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); }
+  .panel { max-height: calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)); }
+}

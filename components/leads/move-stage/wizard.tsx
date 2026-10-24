@@ -8,7 +8,13 @@ import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { REFUSED_KEY, Tooltip } from '@/components/om/tooltip'
-import { useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar, useSnackbarDismiss } from '@/components/om/snackbar'
+import { useSheetFootLift } from '@/components/om/sheet'
+import { IconButton } from '@/components/om/icon-button'
+import { ScreenBar } from '@/components/quotes/screen/screen-bar'
+import { couldnt } from '@/components/leads/tasks/use-run'
+import { useOnTheMove } from '@/components/leads/log/use-move-layout'
+import { MoveScreen } from './screen-context'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
 import { STAGES, type Stage, reminderTaskTitle } from '@/lib/leads/enums'
@@ -24,11 +30,11 @@ import { fetchQuoteSendRule, fetchStageAsks } from '@/app/leads/actions'
 import { fetchHeldMeetingForMet } from '@/app/meetings/actions'   // (S42G)
 import type { LeadFile, Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
-import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel, approvedQuoteRows, signedContractRows, signedQuoteRows, wonQuoteRows, type SendRule } from './panels'
+import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel, approvedQuoteRows, signedContractRows, signedQuoteRows, wonQuoteRows, type MoveStep, type SendRule } from './panels'
 import { AutoFillDialog, SuggestedTasksDialog } from './dialogs'
 import { LinkButton } from './fields'
 import { defaultMilestones, emptyLog, emptyMeeting, emptyWizardData, validateStage, SYSTEM_CONTRACT, SYSTEM_QUOTE, type ContactLog, type MeetingLog, type StageAsks, type StageErrors, type WizardData } from './types'
-import { parseInputDateTime } from '@/lib/format'
+import { formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import styles from './wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -64,9 +70,12 @@ export function MoveStageWizard({
   onClose: () => void
   /** `quoteNumber` (REG-340): the signed system quote's "OM-nnnnn" on a Won move, for the "Project created" snackbar; null for an upload. */
   /** (REG-608) `tasks`: plain titles are General and undated; the Contacted reminder rides as a dated Follow-up for the lead's members. */
-  onSave: (payload: { toStage: Stage; data: WizardData; tasks: MoveTask[]; quoteNumber: string | null }) => void
-  /** Saving edits to a stage the lead has already completed — no move. */
-  onUpdate: (payload: { stage: Stage; data: WizardData }) => void
+  /** (Leads on the move, P-04 — "a refusal stays in the foot and nothing typed is lost (the window never closes on a refused move)") The host
+      answers the server's refusal as a sentence: the window keeps everything typed and says it in its foot; a host that closes the window
+      itself on success answers nothing. */
+  onSave: (payload: { toStage: Stage; data: WizardData; tasks: MoveTask[]; quoteNumber: string | null }) => void | Promise<string | null | void>
+  /** Saving edits to a stage the lead has already completed — no move. The same answer as `onSave`. */
+  onUpdate: (payload: { stage: Stage; data: WizardData }) => void | Promise<string | null | void>
   /** (REG-340) The From System empty states' "Create Quote ›" / "Create Contract ›". Default: the lead's tab with `?new=1`;
    *  the Overview passes its own so the Qanvast origin rides along. */
   onCreateQuote?: () => void
@@ -81,19 +90,32 @@ export function MoveStageWizard({
      server snapshot is always the desktop answer, so nothing changes for a mouse. */
   const snackbar = useSnackbar()
   const touch = useMediaQuery(MOBILE)
+  /* (Leads on the move, P-04 — his marks 2026-10-23, "continue the leads") On a phone and a tablet held upright the window is ONE STEP PER SCREEN:
+     a 56 bar "Move to Met" over "Farah Ahmad · step 3 of 5", no rail, only that step's fields, one filled Save & move at 48 in the foot. A
+     tablet held sideways and the desk keep the centred window with its rail, as they were. */
+  const screen = useOnTheMove()
+  const dismissSnack = useSnackbarDismiss()
+  useEffect(() => { if (screen) dismissSnack(REFUSED_KEY) }, [screen, dismissSnack])   // (B-14) the refusal said before it never rests on the step
   // R3: Esc closes the window when it is the topmost surface (an inner dialog / menu / picker owns Esc while open); focus
   // moves in on open and returns to the opener on close (components/om/surface.ts).
   const panelRef = useRef<HTMLDivElement>(null)
   const railRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(true, panelRef, onClose)
   useDialogFocus(true, panelRef)
+  useSheetFootLift(screen, panelRef)   // (on the move) a snackbar raised from the step rests above its foot, never on Save & move
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
+  /* (on the move, P-03's rule) a log being written now opens at now — Change picks another moment; read once, as the window opens */
+  const [openedAt] = useState(() => Date.now())
+  const nowStamp = formatInputDateTime(new Date(openedAt))
   // On Hold / Lost leads resume from the stage they left; a lead with no history starts before New.
   const fromIdx = STAGES.indexOf((STAGES as readonly string[]).includes(lead.stage) ? lead.stage as (typeof STAGES)[number] : lead.resumeStage as (typeof STAGES)[number])
   const [active, setActive] = useState<Stage>(targetStage)
   /* (UX audit 2026-09-30) A hand-off fills the step being ENTERED; a completed stage opens as it was recorded. */
   const entering = STAGES.indexOf(targetStage as (typeof STAGES)[number]) > fromIdx
-  const [data, setData] = useState<WizardData>(() => {
+  /* (on the move) a log whose only value is the opening moment is still a blank one — a hand-off's log or a held meeting takes its place */
+  const unstamped = <L extends { when: string }>(l: L | undefined): L | undefined => (l && l.when === nowStamp ? { ...l, when: '' } : l)
+  const unstampedRef = useRef(unstamped)   // the opening moment never changes — read by the held meeting's late arrival below
+  const initialData = (): WizardData => {
     const base: WizardData = {
       ...emptyWizardData(lead.assignees.map((m) => m.id)),
       ...lead.stageData,                              // what earlier saves recorded, so completed stages open filled in
@@ -110,6 +132,14 @@ export function MoveStageWizard({
     const log = pick?.log
     if (!log || targetStage !== 'Contacted' || !entering) return base
     return { ...base, logs: base.logs.length === 1 && isBlankLog(base.logs[0]) ? [log] : [...base.logs.map((l) => ({ ...l, collapsed: true })), log] }
+  }
+  const [data, setData] = useState<WizardData>(() => {
+    const d = initialData()
+    if (!screen || !entering) return d
+    /* (on the move) the step being entered opens its fresh logs at now */
+    if (targetStage === 'Contacted') return { ...d, logs: d.logs.map((l) => (l.when ? l : { ...l, when: nowStamp })) }
+    if (targetStage === 'Met') return { ...d, meetings: d.meetings.map((m) => (m.when || m.meetingId ? m : { ...m, when: nowStamp })) }
+    return d
   })
   const [dir, setDir] = useState(1)
   /* (REG-340) The From System lists are the lead's own quotes and contracts, read once when the window opens (the listing
@@ -141,7 +171,7 @@ export function MoveStageWizard({
       void fetchHeldMeetingForMet(lead.id).then((met) => {
         if (!live || !met) return
         setData((cur) => cur.meetings.some((x) => x.meetingId === met.meetingId) ? cur
-          : { ...cur, meetings: cur.meetings.length === 1 && isBlankMeeting(cur.meetings[0]) ? [met] : [...cur.meetings.map((x) => ({ ...x, collapsed: true })), met] })
+          : { ...cur, meetings: cur.meetings.length === 1 && isBlankMeeting(unstampedRef.current(cur.meetings[0])) ? [met] : [...cur.meetings.map((x) => ({ ...x, collapsed: true })), met] })
       }, () => {})
     }
     void Promise.all([fetchStageDocuments(lead.id), fetchQuoteSendRule().catch(() => null), fetchStageAsks().catch(() => ({}))]).then(
@@ -216,7 +246,23 @@ export function MoveStageWizard({
     rail.scrollLeft += itemBox.left - railBox.left - (railBox.width - itemBox.width) / 2   // centred; the browser clamps the range
   }, [active])
 
-  const update = (patch: Partial<WizardData>) => setData((d) => ({ ...d, ...patch }))
+  /* (Leads on the move, P-04 — "a refusal stays in the foot and nothing typed is lost") the move in flight, and the server's refusal said in the
+     foot — the window keeps everything typed; the next change clears it. At every width (the desk's window closed before the server answered). */
+  const [pending, setPending] = useState(false)
+  const [refusal, setRefusal] = useState<string | null>(null)
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  const commit = (run: () => void | Promise<string | null | void>) => {
+    setRefusal(null)
+    const r = run()
+    if (!r || typeof (r as Promise<unknown>).then !== 'function') return
+    setPending(true)
+    void (r as Promise<string | null | void>).then(
+      (msg) => { if (alive.current && typeof msg === 'string' && msg) setRefusal(msg) },
+      () => { if (alive.current) setRefusal('Couldn’t move the lead — please try again') },
+    ).finally(() => { if (alive.current) setPending(false) })
+  }
+  const update = (patch: Partial<WizardData>) => { setData((d) => ({ ...d, ...patch })); setRefusal(null) }
   /* (UX audit 2026-09-30, Q1) A system quote the studio's approval still holds back can't be marked sent — the step says why. */
   const quoteHoldOf = (d: WizardData): string | null => {
     if (d.quoteTab !== 'system' || !docs) return null
@@ -295,6 +341,27 @@ export function MoveStageWizard({
     : t.kind === 'quoteMeeting' ? data.quoteMeetingFiles ?? [] : data.quoteRenderFiles ?? [])
   /** The modal's upload — the Files tab's own (bytes kept); the new file joins the library so its tile can draw it. */
   const uploadForAttach = (file?: File) => (file ? uploadPicked(lead.id, file).then((r) => { if (r && !('error' in r)) setLibrary((l) => [r, ...l.filter((x) => x.id !== r.id)]); return r }) : undefined)
+  /* (Leads on the move, P-03 · Q-02) Take a photo · Choose a file on a log: the picked file goes up at once through the same upload and joins the
+     log; a refusal says why; the log's rows read "Uploading…" while it travels */
+  const [uploadingAt, setUploadingAt] = useState<Record<string, number>>({})
+  const pickFileFor = (kind: 'log' | 'meeting', index: number, file: File) => {
+    const key = `${kind}.${index}`
+    const step = (n: number) => setUploadingAt((u) => ({ ...u, [key]: Math.max(0, (u[key] ?? 0) + n) }))
+    step(1)
+    void uploadPicked(lead.id, file).then((r) => {
+      if (r && !('error' in r)) { setLibrary((l) => [r, ...l.filter((x) => x.id !== r.id)]); attachTo({ kind, index }, [r]) }
+      else snackbar({ message: couldnt(`upload ${file.name}`, r && 'error' in r ? r.error : null) })
+    }, () => snackbar({ message: couldnt(`upload ${file.name}`, null) })).finally(() => step(-1))
+  }
+  /** Add Log — the new log opens for capture, the others keep their lock (user 2026-08-29); on the move it opens at now. */
+  const addLog = () => {
+    if (!logKey) return
+    unlock(`${logKey}.${logKey === 'logs' ? data.logs.length : data.meetings.length}`)
+    const when = screen ? formatInputDateTime(new Date()) : ''
+    setData((d) => logKey === 'logs'
+      ? { ...d, logs: [...d.logs.map((l) => ({ ...l, collapsed: true })), { ...emptyLog(), when }] }
+      : { ...d, meetings: [...d.meetings.map((x) => ({ ...x, collapsed: true })), { ...emptyMeeting(), when }] })
+  }
 
   /* (S43B · F1-01 — his "fix all the pending things" 2026-10-15, as recommended; REG-319's scripted fill retired) Auto Fill READS the picked
      file by rule (lib/leads/contact-fill.ts): what it plainly says lands only where the log is still empty (what was entered is kept, and said
@@ -311,17 +378,19 @@ export function MoveStageWizard({
     const filled: (keyof ContactFill)[] = [], kept: (keyof ContactFill)[] = []
     if (read.ok) {
       const cur = (meeting ? data.meetings[target] : data.logs[target]) as Record<string, unknown> | undefined
+      /* (on the move) a log's opening moment is the window's default, not what was entered — the file's own moment takes its place */
+      const blank = (k: string, v: unknown) => !String(v ?? '').trim() || (screen && k === 'when' && v === nowStamp)
       for (const k of FILL_ORDER) {
         const v = read.fill[k]
         if (!v || !cur || !(k in cur)) continue
-        const had = String(cur[k] ?? '').trim()
+        const had = blank(k, cur[k]) ? '' : String(cur[k] ?? '').trim()
         if (!had) filled.push(k)
         else if (had !== v) kept.push(k)
       }
       const patch = Object.fromEntries(filled.map((k) => [k, read.fill[k]!]))
       setData((d) => meeting
-        ? { ...d, meetings: d.meetings.map((m, i) => (i === target ? { ...m, ...Object.fromEntries(Object.entries(patch).filter(([k]) => !String((m as Record<string, unknown>)[k] ?? '').trim())) } : m)) }
-        : { ...d, logs: d.logs.map((l, i) => (i === target ? { ...l, ...Object.fromEntries(Object.entries(patch).filter(([k]) => !String((l as Record<string, unknown>)[k] ?? '').trim())) } : l)) })
+        ? { ...d, meetings: d.meetings.map((m, i) => (i === target ? { ...m, ...Object.fromEntries(Object.entries(patch).filter(([k]) => blank(k, (m as Record<string, unknown>)[k]))) } : m)) }
+        : { ...d, logs: d.logs.map((l, i) => (i === target ? { ...l, ...Object.fromEntries(Object.entries(patch).filter(([k]) => blank(k, (l as Record<string, unknown>)[k]))) } : l)) })
     }
     setFillNotes((n) => ({ ...n, [`${meeting ? 'meetings' : 'logs'}.${target}`]: fillWords({ file: file.name, kind, read, filled, kept }) }))
     setAutoFillFor(null)
@@ -347,7 +416,8 @@ export function MoveStageWizard({
       }
       return
     }
-    if (editing) { onUpdate({ stage: active, data }); return }
+    if (pending) return
+    if (editing) { commit(() => onUpdate({ stage: active, data })); return }
     if (active === 'Contacted') {
       // Journey (user 2026-08-29): fields (manual or Auto Fill) → Save → Suggested tasks → Save there completes the stage.
       // Logs append oldest → newest (Add Log), so the operative commitment is the last one with a next step —
@@ -361,10 +431,10 @@ export function MoveStageWizard({
       setSuggestOpen(true)
       return
     }
-    onSave({ toStage: active, data, tasks: [], quoteNumber: signedQuoteNumber() })
+    commit(() => onSave({ toStage: active, data, tasks: [], quoteNumber: signedQuoteNumber() }))
   }
   /* (REG-608) The auto-added reminder is a dated Follow-up for the lead's members (1.0's follow-up task); the suggestions stay plain. */
-  const finishWithTasks = (titles: string[]) => { setSuggestOpen(false); onSave({ toStage: active, data, tasks: titles.map((t): MoveTask => (autoAddedTask && t === autoAddedTask ? { title: t, kind: 'Follow-up', dueAt: autoAddedDue, assignLeadMembers: true } : t)), quoteNumber: null }) }
+  const finishWithTasks = (titles: string[]) => { setSuggestOpen(false); commit(() => onSave({ toStage: active, data, tasks: titles.map((t): MoveTask => (autoAddedTask && t === autoAddedTask ? { title: t, kind: 'Follow-up', dueAt: autoAddedDue, assignLeadMembers: true } : t)), quoteNumber: null })) }
   /** The number of the system quote a Won move selected — an uploaded quote has none the window could know. */
   const signedQuoteNumber = () =>
     active === 'Won' && data.wonQuoteTab === 'system'
@@ -380,32 +450,95 @@ export function MoveStageWizard({
     <div className={styles.titleRow}>
       <p className={styles.panelTitle}>{panelTitle}</p>
       {logKey ? (
-        <LinkButton icon="add"
-                    onClick={() => {
-                      // The new log opens for capture; existing logs keep their own lock (user 2026-08-29).
-                      unlock(`${logKey}.${logKey === 'logs' ? data.logs.length : data.meetings.length}`)
-                      setData((d) => logKey === 'logs'
-                        ? { ...d, logs: [...d.logs.map((l) => ({ ...l, collapsed: true })), emptyLog()] }
-                        : { ...d, meetings: [...d.meetings.map((x) => ({ ...x, collapsed: true })), emptyMeeting()] })
-                    }}>
+        <LinkButton icon="add" onClick={addLog}>
           Add Log
         </LinkButton>
       ) : editLink}
     </div>
   )
+  /* (Leads on the move, P-04) what a log step needs one step per screen: the opening moment, the client's first name, the picked file's upload */
+  const first = lead.name.trim().split(/\s+/)[0] ?? lead.name
+  const moveStep = (kind: 'log' | 'meeting'): MoveStep | undefined => (screen
+    ? { openedAt, first, onPickFile: (i, f) => pickFileFor(kind, i, f), uploadingAt: (i) => (uploadingAt[`${kind}.${i}`] ?? 0) > 0, onAddLog: addLog }
+    : undefined)
   const panel = () => {
     switch (active) {
       case 'New': return <NewPanel team={team} data={data} update={update} editable={newOpen} error={errors.assignees} assignable={assignable} />
       case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} fillNote={(i) => fillNotes[`logs.${i}`] ?? null} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog}
                                                 onAttach={(i) => setAttachFor({ kind: 'log', index: i })} fileOf={fileOf}
-                                                askNextStep={!!stageAsks.contactNextStep && STAGES.indexOf('Contacted') > fromIdx} />   // (pending modules S05) the studio's asks
+                                                askNextStep={!!stageAsks.contactNextStep && STAGES.indexOf('Contacted') > fromIdx} move={moveStep('log')} />   // (pending modules S05) the studio's asks
       case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} fillNote={(i) => fillNotes[`meetings.${i}`] ?? null} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog}
-                                    onAttach={(i) => setAttachFor({ kind: 'meeting', index: i })} fileOf={fileOf} />
+                                    onAttach={(i) => setAttachFor({ kind: 'meeting', index: i })} fileOf={fileOf} move={moveStep('meeting')} />
       case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} rule={rule} onCreateQuote={createQuote}
-                                                onAttach={(w) => setAttachFor({ kind: w === 'meeting' ? 'quoteMeeting' : 'quoteRender' })} fileOf={fileOf} />
-      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} docs={docs} onCreateQuote={createQuote} onCreateContract={createContract} contractOptional={stageAsks.wonContract === false} />   // (pending modules S05)
+                                                onAttach={(w) => setAttachFor({ kind: w === 'meeting' ? 'quoteMeeting' : 'quoteRender' })} fileOf={fileOf} leadName={lead.name} />
+      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} docs={docs} onCreateQuote={createQuote} onCreateContract={createContract} contractOptional={stageAsks.wonContract === false}   // (pending modules S05)
+                                    memberNames={lead.assignees.map((m) => m.name)} />
       default: return null
     }
+  }
+
+  /* the window's nested surfaces — Auto Fill, the lead's files, Suggested tasks — the same at every width */
+  const nested = (
+    <>
+      <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillFor(null)} onUpload={handleAutoFillUpload} kind={active === 'Met' ? 'meeting' : 'contact'} />
+      {/* (pending modules S05) the steps' Attach rows: the lead's own files, the Files tab's upload */}
+      <AttachFilesModal open={!!attachFor} files={library} attached={attachedOf(attachFor)} onClose={() => setAttachFor(null)}
+                        onAttach={(ids) => { const t = attachFor; setAttachFor(null); if (t) attachTo(t, ids.map((id) => fileOf(id)).filter((f): f is LeadFile => !!f)) }}
+                        onUploadPicked={uploadForAttach} />
+      <SuggestedTasksDialog
+        open={suggestOpen}
+        /* (UX audit 2026-09-30, L10 — supersedes REG-148's Cancel) ✕ / Esc go back to the log, nothing moved; the footer's
+           "Move without tasks" says what it does — the stage details are valid, the move completes with no tasks. */
+        onClose={() => setSuggestOpen(false)}
+        onSkip={() => finishWithTasks([])} skipLabel="Move without tasks"
+        onSave={() => finishWithTasks([autoAddedTask, ...Array.from(pickedTasks)].filter(Boolean))}
+        autoAdded={autoAddedTask}
+        suggestions={[SUGGESTED]}
+        picked={pickedTasks}
+        onToggle={(s) => setPickedTasks((p) => { const n = new Set(p); if (n.has(s)) n.delete(s); else n.add(s); return n })}
+      />
+    </>
+  )
+  const invalidLine = editing ? 'Unable to save. Please fill in the required fields.' : 'Unable to move. Please fill in the required fields.'
+
+  if (screen) {
+    /* (Leads on the move, P-04 · B-09 · B-23) One step per screen: the bar says the move and the step, the body only that step's fields, the
+       foot one filled button at 48 — Save & move · Create project (Won) · Save changes (a completed step being edited) · Close (read only). */
+    const stepN = activeIdx + 1
+    const barTitle = editing ? (active === 'New' ? 'Members' : `${active} details`) : `Move to ${active}`
+    const footLabel = editing ? (newOpen ? 'Assign' : 'Save changes') : active === 'Won' ? 'Create project' : 'Save & move'
+    const footMessage = refusal ?? (showErrors && Object.keys(errors).length ? invalidLine : null)
+    return (
+      <AnimatePresence>
+        <motion.div key="ov" className={styles.overlay} data-move="screen" variants={overlayFade} initial="initial" animate="animate" exit="exit">
+          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.modal}`} data-move="screen" variants={modalPanel} initial="initial" animate="animate" exit="exit"
+                      role="dialog" aria-modal="true" aria-label="Move stage" tabIndex={-1} data-testid="move-step-screen">
+            <ScreenBar className={styles.stepBar} title={barTitle} subtitle={`${lead.name} · step ${stepN} of ${STAGES.length}`} testId="move-step-bar"
+                       leading={<Tooltip label="Close"><IconButton icon="arrow_back" label="Close the move" variant="bare" iconSize={24} iconWeight={300} onClick={onClose} data-kb="back" data-testid="move-step-close" /></Tooltip>}
+                       trailing={stageLocked && active !== 'New' ? <LinkButton icon="edit" onClick={() => unlock('stage')}>Edit</LinkButton> : undefined} />
+            <div ref={scrollRef} className={styles.stepBody}>
+              <div className={styles.stepColumn}>
+                <MoveScreen.Provider value>
+                  <ReadOnlyScope readOnly={stageLocked}>{panel()}</ReadOnlyScope>
+                </MoveScreen.Provider>
+              </div>
+            </div>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.stepFoot}>
+              {footMessage ? (
+                <motion.p className={styles.stepError} role="alert" data-testid="move-step-refusal"
+                          initial={{ x: 0 }} animate={{ x: [0, -4, 4, -4, 0], transition: { duration: duration.sheet } }}>
+                  <Icon name="error" size={20} />{footMessage}
+                </motion.p>
+              ) : null}
+              {!anyOpen
+                ? <Button variant="secondary" appearance="outlined" className={styles.stepBtn} onPress={onClose} data-testid="move-step-primary">Close</Button>
+                : <Button className={styles.stepBtn} onPress={save} isDisabled={pending} data-testid="move-step-primary">{pending ? 'Saving…' : footLabel}</Button>}
+            </SurfaceFoot>
+          </motion.div>
+          {nested}
+        </motion.div>
+      </AnimatePresence>
+    )
   }
 
   return (
@@ -469,14 +602,15 @@ export function MoveStageWizard({
             </div>
           </div>
           <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
-            {showErrors && Object.keys(errors).length ? (
+            {refusal || (showErrors && Object.keys(errors).length) ? (
               <FootStart>
                 <motion.span className={styles.footError}
                              initial={{ x: 0 }}
                              animate={{ x: [0, -4, 4, -4, 0], transition: { duration: duration.sheet } }}   /* the 280ms shake — no dedicated shake token in lib/motion yet */
+                             data-testid="move-refusal"
                 >
                   <Icon name="error" size={16} />
-                  {editing ? 'Unable to save. Please fill in the required fields.' : 'Unable to move. Please fill in the required fields.'}
+                  {refusal ?? invalidLine}
                 </motion.span>
               </FootStart>
             ) : null}
@@ -484,7 +618,7 @@ export function MoveStageWizard({
             <div className={styles.footBtns}>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               {!anyOpen ? null : (
-                <Button onPress={save}>
+                <Button onPress={save} isDisabled={pending}>
                   {editing ? 'Save changes' : active === 'Won' ? 'Save & Convert to Project' : 'Save'}
                 </Button>
               )}
@@ -492,23 +626,7 @@ export function MoveStageWizard({
           </SurfaceFoot>
         </motion.div>
 
-        <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillFor(null)} onUpload={handleAutoFillUpload} kind={active === 'Met' ? 'meeting' : 'contact'} />
-        {/* (pending modules S05) the steps' Attach rows: the lead's own files, the Files tab's upload */}
-        <AttachFilesModal open={!!attachFor} files={library} attached={attachedOf(attachFor)} onClose={() => setAttachFor(null)}
-                          onAttach={(ids) => { const t = attachFor; setAttachFor(null); if (t) attachTo(t, ids.map((id) => fileOf(id)).filter((f): f is LeadFile => !!f)) }}
-                          onUploadPicked={uploadForAttach} />
-        <SuggestedTasksDialog
-          open={suggestOpen}
-          /* (UX audit 2026-09-30, L10 — supersedes REG-148's Cancel) ✕ / Esc go back to the log, nothing moved; the footer's
-             "Move without tasks" says what it does — the stage details are valid, the move completes with no tasks. */
-          onClose={() => setSuggestOpen(false)}
-          onSkip={() => finishWithTasks([])} skipLabel="Move without tasks"
-          onSave={() => finishWithTasks([autoAddedTask, ...Array.from(pickedTasks)].filter(Boolean))}
-          autoAdded={autoAddedTask}
-          suggestions={[SUGGESTED]}
-          picked={pickedTasks}
-          onToggle={(s) => setPickedTasks((p) => { const n = new Set(p); if (n.has(s)) n.delete(s); else n.add(s); return n })}
-        />
+        {nested}
       </motion.div>
     </AnimatePresence>
   )

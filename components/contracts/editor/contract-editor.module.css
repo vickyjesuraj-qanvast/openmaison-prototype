@@ -12,6 +12,9 @@
 .titleInput:hover { background: var(--om-color-hover-04p); }
 .titleInput:focus { border-color: var(--om-color-primary-default); background: var(--om-color-surface-default); }
 .titleInput::placeholder { color: var(--om-color-on-surface-disabled); }
+/* (responsive audit 2026-10-23, W6 — a bug fix, W4-29) Under a finger the name field (a contract's, and the Tasks · T&Cs · Payments · Schedules
+   editors' through title-input.tsx) was a 36 box: it stands 44, the 8 given back as margin, so the header does not move. */
+@media (hover: none) { .titleInput { height: 44px; margin-block: -4px; } }
 /* (Dane UAT 3.18) TitleInput (title-input.tsx): the input above in a label with a pencil at rest after it, in all five editors. The
    label takes the input's place on the row; the pencil (20, secondary) follows the words where the box sizes to them, else the box's end,
    and steps aside while the title is typed or can't be changed. */

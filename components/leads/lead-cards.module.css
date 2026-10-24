@@ -5,6 +5,7 @@
 .list { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 
 .card {
+  position: relative;   /* (leads on the move, A-01) the unseen band's box */
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-2);
   box-shadow: var(--om-elevation-level-1);
@@ -21,10 +22,16 @@
   display: flex; align-items: center; gap: var(--om-spacing-2);
   width: 100%; border: 0; background: none; cursor: pointer; text-align: left;
   color: var(--om-color-on-surface-default);
-  padding: 10px 0; margin: -10px 0;   /* 24 drawn, 44 tappable */
+  /* 24 drawn, 44 tappable — (leads on the move, A-05) the box grows UP into the card's padding, never down into the number's box (the two
+     shared 18px and a tap just under the name dialled) */
+  padding: 20px 0 0; margin: -20px 0 0;
 }
-.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-heading-h4); }
-.meta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (leads on the move, A-01) the name and its New tag share the row's free width; the name ellipsises first */
+.nameRow { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+.name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-heading-h4); }
+.nameRow > :not(.name) { flex-shrink: 0; }
+/* (leads on the move, P-13) the lead's age is a value: 14, never the canvas's 12 */
+.meta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
 /* Info line: phone · budget · source — body/m secondary, wraps at the dots. */
 .info { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
@@ -33,10 +40,22 @@
 /* (UX audit L11) The number dials: the DS link ink, its line's type, a 44px tap box paid back with margin (REG-273) so nothing moves. */
 .tel {
   color: var(--om-color-primary-default); text-decoration: none;
-  display: inline-block; padding: 12px 0; margin: -12px 0;
+  /* (leads on the move, A-05) 20 drawn, 44 tappable — grown DOWN (into the Last line, which takes no press), never up into the name's box */
+  display: inline-block; padding: 2px 0 22px; margin: -2px 0 -22px;
 }
 .tel:active { color: var(--om-color-on-primary-variant); }
-.info > .telWrap { overflow: visible; }   /* the line's clip would cut the tap box back to 20 */
+.info > .telWrap { overflow: visible; display: inline-flex; align-items: flex-start; }   /* the line's clip would cut the tap box back to 20 */
+/* (leads on the move, A-05) WhatsApp beside the number: the identity block's 16 glyph, 8 after the digits, its own 44 box grown down and to the
+   right as the number's is (paid back with margin, so the line keeps the canvas's measure) */
+.wa {
+  display: inline-flex; justify-content: center; align-items: flex-start;
+  width: 44px; height: 44px; padding-top: 4px;
+  margin: -2px -14px -22px -6px;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);
+}
+.wa img { display: block; }
+.wa:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 
 /* Task box (1082:25625): border ccc, r4, p8, the title truncating before the tags. */
 .taskBox {
@@ -65,7 +84,8 @@
 
 .rule { width: 100%; height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }
 
-/* Foot: members left, the stage button right. */
+/* Foot: (leads on the move, A-02 — the canvas drew members left, the stage right) the stage pill leads and the members follow it: the Maison AI
+   button floats over the foot's right end on a phone, and it took the pill's taps there; the right end now holds no control. */
 .foot { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .members { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .plusBox {
@@ -78,3 +98,18 @@
 }
 /* Stage (1082:25603): h36, pl16 pr12, gap 8, subheading/m, chevron 20 secondary — (REG-729) the house ScopePill (lead-cards.tsx
    StagePill), the anatomy this copy was of; its touch box is the pill's. */
+
+/* ── Leads on the move (L3 — P-05, his marks 2026-10-23) ─────────────────────────────────────────────────────────────────────────────
+   (A-01) A new lead nobody has opened yet: the tablet row's 4px primary band on the card's left edge (its corners the card's), cleared on the
+   first press as the table's is. */
+.band {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: var(--om-radius-2) 0 0 var(--om-radius-2);
+  background: var(--om-color-primary-default);
+}
+/* (A-03 · A-28) Last · Next (or Lost): a label column and the words, 14 each, one line each; Next turns red once it is late. */
+.lines { margin: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.line { display: flex; align-items: baseline; gap: var(--om-spacing-2); min-width: 0; font: var(--om-type-body-m); }
+.lineLabel { flex: 0 0 auto; min-width: 36px; color: var(--om-color-on-surface-secondary); }
+.lineText { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--om-color-on-surface-default); }
+.line[data-late] .lineText { color: var(--om-color-tertiary-red-default); }

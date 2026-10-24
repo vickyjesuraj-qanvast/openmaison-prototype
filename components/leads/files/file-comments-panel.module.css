@@ -82,3 +82,9 @@
   .editRow { height: auto; min-height: 44px; }
   .editRow button { min-height: 44px; }
 }
+
+/* (Leads on the move, L4 — P-13 · C-17) The scale on a finger: the count and a comment's time at 14, a comment at 16; the desk keeps the mock's. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .count, .time { font: var(--om-type-body-m); }
+  .commentBody { font: var(--om-type-body-l); }
+}

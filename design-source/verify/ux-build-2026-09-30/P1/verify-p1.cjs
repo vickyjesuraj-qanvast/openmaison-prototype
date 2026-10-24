@@ -180,7 +180,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.waitForTimeout(2500)
   ok(await wizard().isVisible() && /Moving to Contacted/.test(await wizard().innerText()), 'L2: the window opens at Contacted')
   ok(await wizard().getByRole('radio', { name: 'Call' }).getAttribute('aria-checked') === 'true', 'L2: the log comes filled in (Contacted via Call)')
-  ok(/Attach screenshots of your call attempts\*/.test(await wizard().innerText()), 'L2: the attach row carries its required mark')
+  /* (leads on the move, a deliberate change of this rule — Q-02, his pick 2026-10-23, at every width) the screenshot is optional: the row says so */
+  ok(/Attach screenshots of your call attempts \(optional\)/.test(await wizard().innerText()) && !/Attach screenshots of your call attempts\*/.test(await wizard().innerText()), 'L2 · Q-02: the attach row says "(optional)", no required mark')
   ok(await wizard().getByText('file-thumb-1.png').count() >= 1, 'L2: the log\'s photo came with it')
   await shot('l2-move-contacted-filled')
   await wizard().getByRole('button', { name: 'Save', exact: true }).click(); await p.waitForTimeout(700)
@@ -205,7 +206,8 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   const err = wizard().locator('[role="alert"]').first()
   const box = await err.boundingBox(); const wbox = await wizard().boundingBox()
   ok(!!box && !!wbox && box.y >= wbox.y && box.y + box.height <= wbox.y + wbox.height, 'L2: Save scrolls the first error into view inside the window')
-  ok(await wizard().getByText('Attach at least one file').isVisible(), 'L2: the attach row shows its error')
+  /* (leads on the move, a deliberate change of this rule — Q-02) no screenshot error: the log's own fields are what it asks for */
+  ok(await wizard().getByText('Attach at least one file').count() === 0 && await wizard().locator('[role="alert"]').count() >= 1, 'L2 · Q-02: the errors are the log’s own fields — no screenshot error')
   await shot('l2-contacted-errors')
   // the case the audit met: every field filled but the screenshot — the one error sits below the fold, and Save brings it into view
   await wizard().getByRole('radio', { name: 'Call' }).click()
@@ -216,10 +218,11 @@ const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓', name) } el
   await p.locator('[data-om-menu]').getByText('Connected', { exact: true }).click(); await p.waitForTimeout(300)
   await wizard().locator('[class*="panel"]').evaluateAll((els) => els.forEach((el) => { el.scrollTop = 0 }))
   await wizard().getByRole('button', { name: 'Save', exact: true }).click(); await p.waitForTimeout(1200)
+  /* (leads on the move, a deliberate change of this rule — Q-02) a filled log with no screenshot is complete: Save goes on to Suggested tasks */
   const only = wizard().locator('[role="alert"]')
-  const ob = await only.first().boundingBox(); const wb2 = await wizard().boundingBox()
-  ok(await only.count() === 1 && /Attach at least one file/.test(await only.first().innerText()) && !!ob && !!wb2 && ob.y >= wb2.y && ob.y + ob.height <= wb2.y + wb2.height - 60, 'L2: a filled log missing its screenshot — Save scrolls the attach error into view, above the foot')
+  ok(await only.count() === 0 && await p.locator('[role="dialog"]').filter({ hasText: 'Suggested tasks' }).isVisible(), 'L2 · Q-02: a filled log with no screenshot is complete — Save goes on to Suggested tasks')
   await shot('l2-attach-error-in-view')
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300)
   await p.keyboard.press('Escape'); await p.waitForTimeout(300)
 
   // T3 · Met's meeting logs in All Notes & Logs, read-only; saving a log on a non-New lead offers Add tasks

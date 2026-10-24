@@ -51,6 +51,10 @@
 @media (max-width: 1024px) {
   .row { grid-template-columns: 180px minmax(0, 1fr) 140px; }
 }
+/* (responsive audit 2026-10-23, W3-06) a project's block opens it — under a finger on a tablet it is the phone's 44, not the desk's 36 */
+@media (hover: none) and (max-width: 1024px) {
+  .slot, .block { height: 44px; }
+}
 @media (max-width: 767px) {
   .card { box-shadow: none; background: transparent; overflow: visible; gap: var(--om-spacing-3); }
   .row { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--om-spacing-3); padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
@@ -58,4 +62,14 @@
   .bar { grid-column: 1 / -1; grid-row: 2; }
   .slot, .block { height: 44px; }
   .capRow { grid-template-columns: minmax(0, 1fr) 120px; }
+  /* (responsive audit 2026-10-23, W3-06) the caption's tools wrap on their own line — at 320 the window pill, By contractor · By site and
+     Vendors ran 64px off the screen; and a card's name keeps 160: its state (the chip, the count, Put on a site) stays beside it while both
+     fit and takes the next line, at the card's end, when they don't — at 320 "AquaFlow Plumbing" was down to "Aq…" beside "1 of 2 · Ryan's
+     site runs late". The bar of slots stays the card's last line (a flex row in the DOM's who · bar · state, ordered who · state · bar). */
+  .captionActions { flex-wrap: wrap; justify-content: flex-end; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--om-spacing-4); }
+  .row > .who { order: 0; flex: 1 1 160px; }
+  .row > .state { order: 1; flex: 0 1 auto; margin-left: auto; }
+  .row > .bar { order: 2; flex: 1 1 100%; }
+  .count { text-align: right; }
 }

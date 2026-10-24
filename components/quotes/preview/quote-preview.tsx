@@ -421,7 +421,7 @@ export function QuotePreview({ data, from, print, send: sendCtx, readOnly = fals
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name="download" size={20} />} onPress={() => printPaper()}>Download PDF</Button>
           {readOnly || (compare && !kept) ? null /* (S44F) comparing the current version: the bar's Stop comparing is the way back */ : fixed ? <Button onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Current version</Button>
             /* (sweep S1) this press sends nothing — no link, no WhatsApp — it records that the quote went out; the editor's Send ▾ sends */
-            : <span className={header.anchor}><SendButton kind={quoteSend.kind} canSend={quoteSend.canSend && !busy} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={quote.kind === 'variation'} /></span>}
+            : <span className={header.anchor}><SendButton kind={quoteSend.kind} canSend={quoteSend.canSend && !busy} hint={quoteSend.hint} status={status} onSend={quoteSend.send} variation={quote.kind === 'variation'} align="right" /></span>}   {/* (responsive audit 2026-10-23, W5-12) the bar's last control: its 320 menu opens leftwards — from the button's left it ran 205px past a 1280 screen (and 205 past 1440) */}
         </div>
       </header>
       {overlays}

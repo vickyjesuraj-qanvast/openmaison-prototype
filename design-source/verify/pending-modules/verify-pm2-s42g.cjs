@@ -73,7 +73,10 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
   const snackAction = (p, name) => p.locator('[data-om-snackbar]').getByRole('button', { name }).last()
   const menuItem = (p, name) => p.locator('[role="menu"] [role="menuitem"], [role="menu"] button, [role="dialog"] [role="menuitem"]').filter({ hasText: name }).first()
   const win = (p) => p.getByRole('dialog', { name: 'Move stage' })
-  const winStep = async (p) => (await win(p).locator('[role="tablist"][aria-label="Stages"] [role="tab"][aria-selected="true"]').innerText().catch(() => '')).replace(/\s+/g, ' ').trim()
+  /* (leads on the move, a deliberate change of this rule — Leads L2, P-04) on a phone the window is one step per screen with no rail: the step is
+     the bar's title ("Move to Contacted") */
+  const winStep = async (p) => ((await win(p).locator('[role="tablist"][aria-label="Stages"] [role="tab"][aria-selected="true"]').innerText().catch(() => ''))
+    || (await p.getByTestId('move-step-bar').locator('h1').innerText().catch(() => ''))).replace(/\s+/g, ' ').trim()
   /** the meeting page's offer: its step, whether it resumes, its words and its press */
   const offerOf = async (p) => {
     const o = p.getByTestId('room-step-offer')
@@ -132,7 +135,9 @@ const heldOn = (leadId) => sql(`select id from meetings where lead_id = '${leadI
       await shot(p, '03-writeup-snackbar-1440')
       await snackAction(p, 'Move to Contacted').click()
       await p.waitForURL(new RegExp(`/leads/${OLIVIA}\\b`), { timeout: 10000 }).catch(() => {}); await settle(p, 2200)
-      ok(await win(p).isVisible() && /Contacted$/.test(await winStep(p)) && !(await refused(p)), '…the press opens Olivia’s window at Contacted (she has no member yet — the window’s New step asks for one)', await winStep(p))
+      /* (REG-2655, a deliberate change of this rule — Leads on the move, B-01) every forward move asks the owner rule first: Olivia has no
+         member yet, so the press lands on her lead with "Assign a member first" and its Assign — the window no longer opens to lose a typed log */
+      ok(!(await win(p).isVisible()) && /Assign a member first/.test(await snackText(p)) && await snackAction(p, 'Assign').count() === 1, '…the press lands on Olivia with the owner rule first — "Assign a member first" with its Assign (she has no member yet)', await snackText(p))
       await p.keyboard.press('Escape'); await settle(p, 500)
       ok(sql(`select stage from leads where id = '${OLIVIA}'`) === 'New', '…nothing moves without the window’s Save')
       const om = heldOn(OLIVIA)

@@ -31,6 +31,8 @@
 .sees:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
 .sees[aria-pressed='true'] { color: var(--om-color-primary-default); }
 .seesCount { color: var(--om-color-on-tertiary-blue-variant); }
+/* (responsive audit 2026-10-23, W3-05) the who-sees line opens the client's pane — under a finger it is a 44 row, not its 24 line */
+@media (hover: none) and (max-width: 1024px) { .sees { min-height: 44px; } }
 
 /* ── The list that is also the timeline ── */
 .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); align-items: start; }
@@ -181,6 +183,8 @@
 .statusSeg { min-width: 0; }
 .statusSeg > * { display: flex; width: 100%; max-width: 100%; box-sizing: border-box; }
 .statusSeg button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (responsive audit 2026-10-23, W3-09) under a finger on a tablet the four statuses are 44 tall, not the DS item's 36 (the phone's rule is below) */
+@media (hover: none) and (max-width: 1024px) { .statusSeg.statusSeg [data-size] button { height: auto; min-height: 44px; } }
 .switchLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .switchHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .switchMore { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-1) 0 var(--om-spacing-3); }
@@ -260,6 +264,10 @@
   .startAside { border-left: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .pair { grid-template-columns: 1fr; }
   .statusSeg button { padding-inline: var(--om-spacing-1); }   /* (B-42) "Not started" whole in a quarter of 358 */
+  /* (responsive audit 2026-10-23, W3-09) …which never applied: the DS item's own padding rule is stronger (`[data-size=md] ._item`), so at 320
+     "Not started" and "In progress" were cut at both ends ("ot starte"). Raised over the DS rule; a word that still doesn't fit takes a
+     second line inside the item, which is the 44 a finger needs */
+  .statusSeg.statusSeg [data-size] button { padding-inline: var(--om-spacing-1); height: auto; min-height: 44px; white-space: normal; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .fill, .progressFill, .row[data-fresh] > * { animation: none; }
@@ -298,6 +306,15 @@
 .row:hover .grip, .grip:focus-visible, .row[data-lifting] .grip { opacity: 1; }
 .grip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); }
 @media (hover: none) { .grip { opacity: 1; } }
+/* (responsive audit 2026-10-23, W3-05) Under a finger the grip is a 44 box — it was its 20 × 32 glyph box; the glyph keeps its size, the name
+   steps 16 right to make room — and a bar takes presses 12 above and below its drawn 20 (a long press lifts it, a tap opens it): the bar lets
+   its hit area out (`overflow: visible`) and its fill keeps the bar's corners itself. */
+@media (hover: none) and (max-width: 1024px) {
+  .grip { width: 44px; height: 44px; margin-left: calc(-1 * var(--om-spacing-4)); margin-right: calc(-1 * var(--om-spacing-3)); }
+  .bar { overflow: visible; }
+  .bar::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; bottom: -12px; }
+  .fill { border-radius: inherit; }
+}
 .row[data-lifting] { position: relative; z-index: 5; box-shadow: var(--om-elevation-level-3); transform: translateY(var(--lift-dy, 0px)); cursor: grabbing; }
 .row[data-drop='before'] > .nameCell, .row[data-drop='before'] > .track, .row[data-drop='before'] > .actCell { box-shadow: inset 0 2px 0 var(--om-color-primary-default); }
 .row[data-drop='after'] > .nameCell, .row[data-drop='after'] > .track, .row[data-drop='after'] > .actCell { box-shadow: inset 0 -2px 0 var(--om-color-primary-default); }

@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useSheetLayout } from '@/components/om/sheet'
 import styles from './files-empty.module.css'
 
 /**
@@ -10,7 +11,30 @@ import styles from './files-empty.module.css'
  * /figma-assets/empty-files.svg), texts 931:40352, buttons 931:40355 (Create Folder 931:40356 · Upload Files 931:40357).
  * Copied from components/leads/contracts/contracts-empty.tsx with the Files copy and leading-icon buttons.
  */
-export function FilesEmpty({ onCreateFolder, onUpload, readOnly = false }: { onCreateFolder: () => void; onUpload: () => void; /** (pending modules S06) Accounting reads only — the card says whose files they are, with no buttons */ readOnly?: boolean }) {
+export function FilesEmpty({ onCreateFolder, onUpload, readOnly = false, onPhoto }: { onCreateFolder: () => void; onUpload: () => void; /** (pending modules S06) Accounting reads only — the card says whose files they are, with no buttons */ readOnly?: boolean
+  /** (Leads on the move, L4 — P-11) A phone's first way in: the camera — on site, Files is photos. */
+  onPhoto?: () => void }) {
+  const phone = useSheetLayout()
+  if (phone && onPhoto && !readOnly) {
+    /* (L4 — P-11 · C-09) a phone: Take a photo is the filled one, then Choose files and Create Folder *(invented copy: the help line)* */
+    return (
+      <div className={styles.card} data-testid="files-empty">
+        <div className={styles.inner}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figma-assets/empty-files.svg" width={180} height={154} alt="" className={styles.art} />
+          <div className={styles.texts}>
+            <p className={styles.title}>Add your first files</p>
+            <p className={styles.body}>Take photos on site, or choose files from your phone.</p>
+          </div>
+          <div className={styles.phoneButtons}>
+            <Button iconStart={<Icon name="photo_camera" size={20} />} onPress={onPhoto} data-kb="create" data-kb-label="Take a photo" data-testid="files-empty-photo">Take a photo</Button>
+            <Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload" size={20} />} onPress={onUpload}>Choose files</Button>
+            <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={onCreateFolder}>Create Folder</Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={styles.card} data-testid="files-empty">
       <div className={styles.inner}>

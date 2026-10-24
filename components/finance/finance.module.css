@@ -21,6 +21,14 @@
 .poLine[data-ms] { grid-template-columns: minmax(0, 1fr) 136px 72px 88px 128px 104px 80px; }
 .lineTools { display: inline-flex; align-items: center; justify-content: flex-end; }
 .lineFrom { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); grid-column: 1 / -1; margin-top: calc(-1 * var(--om-spacing-1)); }
+/* (responsive audit 2026-10-23, W4-25) A tablet, a phone held sideways: the dialog is the window less 48, and the desk's six fixed tracks left
+   "What it is" — the line's own words — 0–56px at 768 (the Trade field drew over it). On ≤1024 the words take their own line and the trade
+   leads the figures under them; the phone's stack below still wins at ≤767. */
+@media (max-width: 1024px) {
+  .poLine { grid-template-columns: minmax(0, 1fr) 72px 88px 128px 104px 40px; }
+  .poLine[data-ms] { grid-template-columns: minmax(0, 1fr) 72px 88px 128px 104px 80px; }
+  .poLine > :first-child { grid-column: 1 / -1; }
+}
 @media (max-width: 767px) {
   .poLine { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 40px; }
   .poLine[data-ms] { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 80px; }

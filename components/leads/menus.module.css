@@ -54,6 +54,13 @@
 .count { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .link { color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
 
+/* (responsive audit 2026-10-23, W2-12) A phone held sideways (lib/breakpoint.ts PHONE_SIDEWAYS): the base cap above assumes the anchor sits
+   within 220 of the top, so on a 390-tall screen /tasks' scope menu, opened 224 down, ran 4px off the bottom and the stage menus stopped at 170.
+   There the cap measures from the menu's own top as the phone's does (`--menu-top` — the Dropdown measures it, the stage menu passes its
+   placed top), 8 short of the edge, and the list scrolls inside. No other width reads this. */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .menu { max-height: calc(100dvh - var(--menu-top, 16px) - 8px); }
+}
 /* Responsive (REG-269): an anchored Dropdown is absolutely positioned against its trigger and cannot see the
    viewport, so ≤767 it clamps its own width and lets a long menu scroll rather than run off the screen.
    (The portalled PortalMenu / DatePicker clamp their x in JS; this covers the in-flow menus.) */
