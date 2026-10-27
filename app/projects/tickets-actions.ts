@@ -10,7 +10,7 @@ import { runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import { notify } from '@/lib/notifications/emit'
 import { studioRunnerIds } from '@/lib/notifications/queries'
 import { logProjectEvent, type ProjectEventKind } from '@/lib/projects/events'
-import { CHANGE_RULE, mayChangeProject } from '@/lib/projects/policy'
+import { CHANGE_RULE, mayChangeProject, mayTakeTicket } from '@/lib/projects/policy'
 import { keepThreadPhotos } from '@/lib/projects/thread-photos'
 import { fetchTicketCategories, fetchTicketThread, issueTicketNumber } from '@/lib/projects/tickets'
 import { tellClient } from '@/lib/portal/client-messages-send'
@@ -30,6 +30,14 @@ import { workspaceRefusal } from '@/lib/settings/desk'   // (S45C) the workspace
  */
 type Refusal = { error: string }
 const isRefusal = (x: unknown): x is Refusal => !!x && typeof x === 'object' && 'error' in x
+/** (Dane's Tickets review, 2026-10-26 — Vicky's call) the member a ticket goes to: active, and able to work on its project (`mayTakeTicket`). */
+async function assigneeOf(memberId: string, team: string[]): Promise<{ id: string; name: string } | Refusal> {
+  const all = await db.select({ id: members.id, name: members.name, role: members.role, active: members.isActive, managerId: members.managerId }).from(members)
+  const m = all.find((x) => x.id === memberId)
+  if (!m || !m.active) return { error: 'That member isn’t in the studio any more' }
+  const reports = all.filter((x) => x.managerId === m.id).map((x) => x.id)
+  return mayTakeTicket({ id: m.id, role: m.role, reports }, team) ? { id: m.id, name: m.name } : { error: `${m.name} can’t work on this project — add them to its team first` }   // (invented copy)
+}
 const GONE = 'This ticket isn’t there any more'
 const PROJECT_GONE = 'This project isn’t there any more'
 const CLOSED_RULE = 'Reopen the ticket to answer on it'
@@ -72,8 +80,8 @@ export async function createTicket(projectId: string, input: { category: string;
   const cats = liveCategories(await fetchTicketCategories())
   const category = cats.find((x) => x === input?.category) ?? null
   if (!category) return { error: 'Pick a category' }
-  const assignee = input?.assigneeId ? (await db.select({ id: members.id, active: members.isActive, name: members.name }).from(members).where(eq(members.id, input.assigneeId)).limit(1))[0] : null
-  if (input?.assigneeId && (!assignee || !assignee.active)) return { error: 'That member isn’t in the studio any more' }
+  const assignee = input?.assigneeId ? await assigneeOf(input.assigneeId, c.team) : null
+  if (assignee && isRefusal(assignee)) return assignee
   const photos = await keepThreadPhotos(c.p.leadId, 'Tickets', c.me.name, input?.photos, { max: PHOTOS_MAX, dataMax: PHOTO_DATA_MAX }); if (isRefusal(photos)) return photos
   const now = new Date()
   const id = randomUUID()
@@ -146,8 +154,8 @@ export async function assignTicket(ticketId: string, input: { memberId: string |
   { const no = await workspaceRefusal(); if (no) return no }   // (S45C) the workspace's role rule — before anything is read
   const c = await forTicket(ticketId); if (isRefusal(c)) return c
   const id = input?.memberId ?? null
-  const m = id ? (await db.select({ id: members.id, name: members.name, active: members.isActive }).from(members).where(eq(members.id, id)).limit(1))[0] : null
-  if (id && (!m || !m.active)) return { error: 'That member isn’t in the studio any more' }
+  const m = id ? await assigneeOf(id, c.team) : null
+  if (m && isRefusal(m)) return m
   if ((c.t.assigneeId ?? null) === id) return { ok: true, was: c.t.assigneeId }
   const now = new Date()
   await line(c.t.id, c, { event: 'assigned', body: m?.name ?? '', internal: true })

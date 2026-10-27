@@ -32,8 +32,9 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
 /** (pending modules S46C · M3) The Tasks page's approvals line as a ghost — the strip, its glyph, the sentence in the page's own class and the door. */
 function ApprovalsGhost({ count }: { count: number }) {
   return (
-    <div className={`${note.note} ${approvalsLine.line}`}>
+    <div className={`${note.note} ${approvalsLine.line} ${approvalsLine.ghostLine}`}>
       <Bone w={20} h={20} r={4} /><Words className={approvalsLine.text}>{approvalsWords(count)}</Words><GhostTextButton label={APPROVALS_DOOR} className={approvalsLine.door} />
+      <span className={approvalsLine.ghostChev}><Bone w={20} h={20} r={4} /></span>
     </div>
   )
 }
@@ -41,7 +42,7 @@ function ApprovalsGhost({ count }: { count: number }) {
 /** `approvals` — (pending modules S46C · M3) the page's own count when the reveal draws it; the loader draws what this browser saw last, else
     what the shell's seed knows now (lib/ghost-shapes.server.ts `tasks.approvals`). */
 export function TasksListGhost({ approvals }: { approvals?: number } = {}) {
-  /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
+  /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24, p16 on a phone) */
   const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
   const sources = opensPath(useSignedInRole(), '/projects')   // (S43E W6-02) Marketing's page has no Leads · Projects
   const seeded = useSeedFlag(APPROVALS_SHAPE, false)

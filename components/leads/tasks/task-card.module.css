@@ -14,7 +14,13 @@
   border-radius: var(--om-radius-2);
   cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;   /* a hold selects; the browser's callout must not */
 }
-.card[data-unseen] { box-shadow: inset 4px 0 0 var(--om-color-primary-default); }
+/* (Dane's Tasks review, 2026-10-27) the Leads card's unseen band (lead-cards.module.css .band): a 4px strip on the card's left edge with the card's
+   corners, laid over the 1px border — the inset shadow sat inside the border and curved in at the corners */
+.card[data-unseen]::before {
+  content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; pointer-events: none;
+  border-radius: var(--om-radius-2) 0 0 var(--om-radius-2);
+  background: var(--om-color-primary-default);
+}
 .card[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); }
 .card[data-fresh]::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
 @keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }

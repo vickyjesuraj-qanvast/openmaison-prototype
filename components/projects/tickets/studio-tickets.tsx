@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
-import { Chips } from '@/components/om/chips'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -13,7 +12,6 @@ import { useSheetLayout } from '@/components/om/sheet'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { PickOneDialog, type PickOption } from '@/components/company/templates/pick-one-dialog'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { createTicket, readTicket } from '@/app/projects/tickets-actions'
 import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
@@ -21,7 +19,8 @@ import { withFrom } from '@/lib/nav'
 import { filterByQuery } from '@/lib/search'
 import type { StudioTicketsData, TicketLine, TicketProject, TicketRow, TicketTeamMember } from '@/lib/projects/tickets'
 import { TicketCard, TicketDrawer } from './ticket-parts'
-import { scopeChips, scopeOf, type TicketScope } from './project-tickets'
+import { mayTakeTicket } from '@/lib/projects/policy'
+import { TicketScopeControl, scopeOf, type TicketScope } from './project-tickets'
 import { NewTicketDialog, type NewTicketInput } from './ticket-dialogs'
 import { STUDIO_TICKETS_SHAPE, StudioTicketsGhost } from './studio-tickets-ghost'
 import { TicketsFiltersModal, type TicketPerson } from './tickets-filters-modal'
@@ -51,6 +50,9 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
   const [scope, setScope] = useState<TicketScope>('open')
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<Open | null>(null)
+  /* (Dane's Tickets review) the last ticket opened stays mounted after a close, so the drawer slides out instead of vanishing */
+  const [shown, setShown] = useState<Open | null>(null)
+  if (open && open !== shown) setShown(open)
   const load = useCallback(async (id: string) => {
     const r = await readTicket(id).catch(() => null)
     if (!r || 'error' in r) { snackbar({ message: 'This ticket isn’t there any more' }); setOpen(null); return }
@@ -74,19 +76,18 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
   const list = filterByQuery(inScope, query, (t) => ({ fields: [t.number, t.subject, t.body, t.category, t.projectName, t.projectNumber, t.client, t.assignee?.name ?? ''] }))
   const here = withFrom('/tickets', from)
 
-  /* (S46B, M1) New ticket: which project, then the project tab's own compose for it */
+  /* (S46B, M1) New ticket — (Dane's Tickets review, 2026-10-26) one form: the project is its first field, the project tab's compose below it */
   const raise = data.raise
   const sheet = useSheetLayout()
-  const [picking, setPicking] = useState(false)
   /* the project the compose is for — kept while the dialog closes, so its words never empty mid-way */
   const [composeFor, setComposeFor] = useState<TicketProject | null>(null)
   const [composing, setComposing] = useState(false)
-  const compose = (at: TicketProject) => { setComposeFor(at); setComposing(true) }
-  const loadProjects = useCallback(async (): Promise<PickOption[]> => (raise?.projects ?? []).map((x) => ({ id: x.id, label: x.name, sub: x.number, blocked: x.blocked ?? undefined })), [raise])
+  /* the projects this member may raise on, named "Name · P-number" in the form's select */
+  const raisable = (raise?.projects ?? []).filter((x) => !x.blocked)
+  const projectLabel = (x: TicketProject) => `${x.name} · ${x.number}`
   const startNew = (projectId?: string | null) => {
     if (!raise) { snackbar({ message: 'There’s no project you can raise a ticket on' }); return }   // (invented copy)
-    const at = projectId ? raise.projects.find((x) => x.id === projectId && !x.blocked) : null
-    if (at) compose(at); else setPicking(true)
+    setComposeFor((projectId ? raisable.find((x) => x.id === projectId) : null) ?? null); setComposing(true)
   }
   const newParam = params.get('new') === '1' ? params.get('project') ?? '' : null
   useEffect(() => {
@@ -96,8 +97,9 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
     const q = next.toString(); router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
   }, [newParam])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   /* the compose's Looked after by: the project's team first, then the studio — the tab's own order (`teamFor`) */
-  const composeTeam: TicketTeamMember[] = composeFor && raise
-    ? raise.members.map((m) => ({ ...m, onTeam: composeFor.teamIds.includes(m.id) })).sort((a, b) => Number(b.onTeam) - Number(a.onTeam) || a.name.localeCompare(b.name))
+  /* (Dane's Tickets review — Vicky's call) only who may work on the picked project — before a pick, Owners and Admins */
+  const composeTeam: TicketTeamMember[] = raise
+    ? raise.members.filter((m) => mayTakeTicket(m, composeFor?.teamIds ?? [])).map((m) => ({ ...m, onTeam: !!composeFor?.teamIds.includes(m.id) })).sort((a, b) => Number(b.onTeam) - Number(a.onTeam) || a.name.localeCompare(b.name))
     : []
   const add = async (i: NewTicketInput) => {
     const at = composeFor
@@ -127,7 +129,7 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
           {data.tickets.length ? (
             <div className={styles.tab}>
               <div className={styles.bar}>
-                <span className={styles.chips}><Chips label="Show" options={scopeChips(data.tickets)} value={scope} onChange={(v) => pickScope(v as TicketScope)} testId="ticket-scope" /></span>
+                <span className={styles.chips}><TicketScopeControl tickets={data.tickets} scope={scope} onPick={pickScope} /></span>
                 <span className={styles.actions}>
                   <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search number, subject, project…" label="Search tickets" />
                   <span className={styles.filterWrap}>
@@ -156,14 +158,13 @@ export function StudioTickets({ data, from }: { data: StudioTicketsData; from?: 
         </div>
         <TicketsFiltersModal open={filtering} people={people} value={filters} onApply={applyFilters} onClose={() => setFiltering(false)} />
         {raise ? (<>
-          <PickOneDialog open={picking} onClose={() => setPicking(false)} title="Which project is this ticket for?" label="Project" load={loadProjects} confirmLabel="Continue"
-                         onPick={(id) => { const at = raise.projects.find((x) => x.id === id); if (!at || at.blocked) return; setPicking(false); compose(at) }} empty="No projects yet" />
-          <NewTicketDialog open={composing && !!composeFor} categories={raise.categories} team={composeTeam} client={composeFor?.client ?? ''} onClose={() => setComposing(false)} onSave={add} />
+          <NewTicketDialog open={composing} categories={raise.categories} team={composeTeam} client={composeFor?.client ?? ''} onClose={() => setComposing(false)} onSave={add}
+                           project={{ options: raisable.map(projectLabel), value: composeFor ? projectLabel(composeFor) : '', onChange: (l) => setComposeFor(raisable.find((x) => projectLabel(x) === l) ?? null) }} />
         </>) : null}
-        {open ? (
-          <TicketDrawer ticket={open.ticket} lines={open.lines} team={open.team} mayChange={open.mayChange} me={data.me} now={data.now} showProject
-                        onOpenProject={() => router.push(withFrom(`/projects/${open.ticket.projectId}/tickets?open=${encodeURIComponent(open.ticket.id)}`, here))}
-                        onClose={() => setOpen(null)} onChanged={() => { void load(open.ticket.id); router.refresh() }} />
+        {shown ? (
+          <TicketDrawer open={!!open} ticket={shown.ticket} lines={shown.lines} team={shown.team} mayChange={shown.mayChange} me={data.me} now={data.now} showProject
+                        onOpenProject={() => router.push(withFrom(`/projects/${shown.ticket.projectId}/tickets?open=${encodeURIComponent(shown.ticket.id)}`, here))}
+                        onClose={() => setOpen(null)} onChanged={() => { void load(shown.ticket.id); router.refresh() }} />
         ) : null}
       </div>
     </PageReveal>

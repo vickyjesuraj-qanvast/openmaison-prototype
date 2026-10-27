@@ -51,7 +51,7 @@ export function TicketsGhost({ first = false, title }: { first?: boolean; /** (s
   return (
     <div className={styles.tab} aria-hidden>
       <div className={styles.bar}>{title ?? <Words as="h2" className={styles.title}>Tickets</Words>}<span className={styles.actions}><Slot kind="icon" /><Slot kind="btnFold" w={132} /></span></div>
-      <div className={chipRow.chips}>{[84, 156, 64].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</div>
+      <div className={`${chipRow.chips} ${styles.ghostChips}`}>{[64, 84, 156].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</div><span className={styles.ghostPill}><Slot kind="pill" /></span>
       <div className={styles.list}>
         {[260, 200, 240].map((w, i) => (
           <div key={i} className={styles.card}>

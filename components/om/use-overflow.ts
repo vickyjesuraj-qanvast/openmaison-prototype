@@ -14,7 +14,10 @@ import { useCallback, useRef, useState } from 'react'
  * unmount as ref(null) instead and ignores that cleanup, so the null path stops the watch once the DOM has
  * settled — unless a newer element already took it over (popLayout mounts the next step before the last leaves).
  */
-export function useOverflow(): readonly [(el: HTMLElement | null) => void | (() => void), boolean] {
+export function useOverflow({ untilEnd = false }: {
+  /** (Dane's Tickets review, 2026-10-26 — opt-in) only while something is still below: scrolled to the end, the flag drops. */
+  untilEnd?: boolean
+} = {}): readonly [(el: HTMLElement | null) => void | (() => void), boolean] {
   const [overflows, setOverflows] = useState(false)
   const watch = useRef<{ el: HTMLElement; stop: () => void } | null>(null)
   const ref = useCallback((el: HTMLElement | null) => {
@@ -26,18 +29,19 @@ export function useOverflow(): readonly [(el: HTMLElement | null) => void | (() 
       return
     }
     watch.current?.stop()
-    const measure = () => setOverflows(el.scrollHeight - el.clientHeight > 1)   // 1px: rounding never counts as a scroll
+    const measure = () => setOverflows(el.scrollHeight - el.clientHeight - (untilEnd ? el.scrollTop : 0) > 1)   // 1px: rounding never counts as a scroll
     const ro = new ResizeObserver(measure)
     const observe = () => { ro.disconnect(); ro.observe(el); for (const child of el.children) ro.observe(child) }
     const mo = new MutationObserver(() => { observe(); measure() })
     observe()   // observe() delivers the initial size on its own — the first measure needs no extra call
     mo.observe(el, { childList: true })
-    const stop = () => { ro.disconnect(); mo.disconnect() }
+    if (untilEnd) el.addEventListener('scroll', measure, { passive: true })
+    const stop = () => { ro.disconnect(); mo.disconnect(); el.removeEventListener('scroll', measure) }
     watch.current = { el, stop }
     return () => {
       stop()
       if (watch.current?.el === el) { watch.current = null; setOverflows(false) }
     }
-  }, [])
+  }, [untilEnd])
   return [ref, overflows] as const
 }

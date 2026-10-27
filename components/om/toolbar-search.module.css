@@ -23,3 +23,13 @@
   .wrap[data-open] { display: flex; flex: 1 1 0; min-width: 0; }
   .field { width: 100%; }
 }
+
+/* (Dane's Tasks review, 2026-10-27 — moved here from the Leads listing's toolbar, components/leads/toolbar.module.css, so every page's search
+   is the same box) On a phone and a touch tablet the box is made for a finger: it stands 44 tall (the DS md SearchBar is 36; doubled — the DS
+   sets the md height at the same weight, REG-307), it types at 16 so iOS never zooms into it (Leads on the move, P-13), and its clear (20
+   drawn) takes a finger's 44, paid back with margin so the box keeps its measure (A-10). The glyph, the stroke and the corners are the DS's. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .wrap.wrap [data-size='md'] { height: 44px; }
+  .wrap input { font: var(--om-type-body-l); }
+  .wrap [aria-label='Clear search'] { min-width: 44px; min-height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
+}

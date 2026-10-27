@@ -53,7 +53,7 @@ export function TasksTabGhost({ studio = false, rows = 5, title, sources = true 
   return (
     <>
       {studio ? (
-        <div className={tasksBar.bar}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={148} />{sources ? <Slot kind="btn" w={211} desk /> : null}<span className={tasksBar.todos}>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
+        <div className={tasksBar.bar}><span className={tasksBar.scopeWrap}><Slot kind="btn" w={148} />{sources ? <Slot kind="btn" w={211} desk className={tasksBar.sourceGhost} /> : null}<span className={tasksBar.todos} data-spelled>{TODO_W.map((w, i) => <Slot key={i} kind="btn" w={w} className={tasksBar.todoGhost} />)}</span></span><span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /></span></div>
       ) : <Bar bar={tasksBar.bar} title={tasksBar.title} words="All Tasks" head={title}><Slot kind="btnFold" w={119} /><Slot kind="search" /><Slot kind="icon" /><Slot kind="icon" desk /><Slot kind="icon" /></Bar>}
       <GhostTable className={tasksTable.ghostDesk} head={56} row={48} rows={rows} foot={53} cols={[
         { basis: 56, head: null, cell: { slot: 'check' } },

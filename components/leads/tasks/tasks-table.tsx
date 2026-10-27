@@ -412,7 +412,9 @@ export type LeadPicker = { leads: TaskLead[]; value: string | null; onChange: (i
 /** The add row's Lead cell on the rail's Tasks page (REG-466): "Studio" until a lead is picked; the menu lists the live leads.
  *  (REG-729) The house compact select at its cell size (28), the chevron turning while open; (REG-728) its list through the portal,
  *  so the table's sideways scroller can't clip it, at the standard 200 (the trigger hugs its value, too narrow to set the width). */
-export function LeadPickerCell({ picker }: { picker: LeadPicker }) {
+export function LeadPickerCell({ picker, size = 's' }: { picker: LeadPicker
+  /** s = the table cell's 28; m = the phone's quick add (quick-add.module.css grows it to its chips' 44) */
+  size?: 's' | 'm' }) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLSpanElement>(null)
   const current = picker.value ? picker.leads.find((l) => l.id === picker.value) : null
@@ -425,7 +427,7 @@ export function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   )
   return (
     <span className={styles.menuWrap} ref={anchor} data-testid="task-add-lead">
-      <SelectTrigger size="s" label="Lead for the new task" value={current?.name ?? 'Studio'} open={open} onClick={() => setOpen((o) => !o)} />
+      <SelectTrigger size={size} label="Lead for the new task" value={current?.name ?? 'Studio'} open={open} onClick={() => setOpen((o) => !o)} />
       <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={projectsOnly.length ? MENU_WIDTH.wide : MENU_WIDTH.standard} role="menu" sheetTitle={projectsOnly.length ? 'Lead or project' : 'Lead'}>
         <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>Studio (no lead)</DropdownItem>
         {projectsOnly.length && leadsOnly.length ? <DropdownLabel>Leads</DropdownLabel> : null}

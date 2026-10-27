@@ -24,7 +24,7 @@ export { SurfaceHead, SurfaceFoot, FootStart, surfaceClasses } from './surface-p
  */
 export function Dialog({
   open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
-  eyebrow, leading, actions, height, minHeight, portal = false, fluid = false, flush = false, closeOnScrim = true, phoneFull = false,
+  eyebrow, leading, actions, height, minHeight, portal = false, fluid = false, flush = false, closeOnScrim = true, phoneFull = false, footShadowUntilEnd = false,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
   /** A footer is optional: a modal drawn without one (the templates library, 1238:33258) ends on its body. */
@@ -60,12 +60,14 @@ export function Dialog({
   /** (REG-727) ≤767 the whole screen, not a bottom sheet — the xl lists (the Deleted / Archived sheets) as the canvas draws them
    *  (1l · 3a · 3h): a table has no room in 88dvh with a grabber. */
   phoneFull?: boolean
+  /** (Dane's Tickets review, 2026-10-26 — opt-in, the New ticket form) the foot's shadow leaves once the body is scrolled to its end. */
+  footShadowUntilEnd?: boolean
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
-  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
+  const [scrollRef, bodyScrolls] = useOverflow({ untilEnd: footShadowUntilEnd })   // the footer's shadow follows the body's scroll (REG-322)
   /* (REG-353) ≤767 the canvas draws the form / modal sizes as bottom sheets (1e Create New Lead, 1g Filters,
      2i…2m, 3e, 3g): they rise off the bottom edge instead of scaling in the middle, and wear the grabber.
      The compact / standard alerts stay centred cards (canvas 2e Delete Task). */

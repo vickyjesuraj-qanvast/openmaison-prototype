@@ -456,6 +456,9 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
 /* ≤767 the tasks are cards (task-card.tsx): the list, then the quick add docked at its foot. Room at the end for the Maison AI button's band
    when no quick add carries it (a read-only list), so the last card's ⋮ is never under it (C-08). */
 .phoneList { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+/* (Dane's Tasks review, 2026-10-27) with a short list the phone's list fills the page's height, so its docked quick add (quick-add.module.css,
+   `margin-top: auto`) rests at the page's foot above the dock — never half-way down the screen under the last card */
+.phoneList:has(> [data-testid='task-quick-add']) { flex: 1 0 auto; margin-bottom: calc(-1 * var(--quick-pull, var(--om-spacing-6))); }   /* a lead's / project's tab: its 24 gap after the list (zero-size hosts) — the bar reaches the tab's foot; the rail's page keeps it (lead-tasks.module.css) */
 .phoneList > .foot { border-radius: var(--om-radius-2); border: var(--om-border-1) solid var(--om-color-surface-variant); }
 /* A touch tablet (C-07): the tablet set's floors (tasks-table.tsx TABLET_TRACK — a dragged width still wins), 12 inside each cell, the due day's
    short words, and the row's ⋮ as a FROZEN cell at the right — the Quotes table's (P-11): the head draws its empty cell over the column, both

@@ -459,7 +459,7 @@ export function LeadTasks({ leadId, data, header, base: baseProp, views, notice 
             <QuickAddTask now={now} focusKey={quickFocus}
               members={addMembers.map((id) => team.find((m) => m.id === id)).filter((m): m is (typeof team)[number] => !!m)}
               onAssign={openAddAssign}
-              lead={studio ? <LeadPickerCell picker={{ leads: data.leads ?? [], value: addLead, onChange: setAddLead }} /> : undefined}
+              lead={studio ? <LeadPickerCell size="m" picker={{ leads: data.leads ?? [], value: addLead, onChange: setAddLead }} /> : undefined}
               onIdle={stopAdd}
               onSubmit={(title, dueAt) => { const members = addMembers; let id = ''; void run('add the task', async () => { id = await createTask(addLeadId, title, { assignees: members, dueAt }) }, dueAt ? `Task added · due ${displayDue(dueAt)}` : 'Task added').then((ok) => { if (ok && id) addedHere(id) }) }} />
           ) : undefined}

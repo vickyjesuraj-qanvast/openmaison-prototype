@@ -1,9 +1,12 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Chips } from '@/components/om/chips'
+import { ScopePill } from '@/components/om/scope-pill'
+import { useSheetLayout } from '@/components/om/sheet'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { EmptyState } from '@/components/om/empty-state'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -16,15 +19,40 @@ import type { ProjectTicketsData, TicketRow } from '@/lib/projects/tickets'
 import { NewTicketDialog, type NewTicketInput } from './ticket-dialogs'
 import { TicketCard, TicketDrawer } from './ticket-parts'
 import { TicketsFiltersModal } from './tickets-filters-modal'
+import { mayTakeTicket } from '@/lib/projects/policy'
 import styles from './tickets.module.css'
 
 export type TicketScope = 'open' | 'done' | 'all'
 export const scopeOf = (t: TicketRow, s: TicketScope) => (s === 'all' ? true : s === 'open' ? isLive(t.status) : !isLive(t.status))
-export const scopeChips = (list: TicketRow[]) => [
-  { value: 'open', label: `Open (${list.filter((t) => isLive(t.status)).length})` },
-  { value: 'done', label: `Resolved and closed (${list.filter((t) => !isLive(t.status)).length})` },
-  { value: 'all', label: `All (${list.length})` },
+const scopeCounts = (list: TicketRow[]): { value: TicketScope; name: string; count: number }[] => [
+  { value: 'all', name: 'All', count: list.length },
+  { value: 'open', name: 'Open', count: list.filter((t) => isLive(t.status)).length },
+  { value: 'done', name: 'Resolved and closed', count: list.filter((t) => !isLive(t.status)).length },
 ]
+export const scopeChips = (list: TicketRow[]) => scopeCounts(list).map((o) => ({ value: o.value, label: `${o.name} (${o.count})` }))
+
+/**
+ * (Dane's Tickets review, 2026-10-26) The scope control, written once for the rail's Tickets and a project's tab: the chips on a tablet and
+ * the desk; ≤767 the Leads listing's scope pill ("Open (3) ▾") over the house Dropdown — a bottom sheet there — with the applied dot off Open.
+ */
+export function TicketScopeControl({ tickets, scope, onPick }: { tickets: TicketRow[]; scope: TicketScope; onPick: (s: TicketScope) => void }) {
+  const phone = useSheetLayout()
+  const [open, setOpen] = useState(false)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  if (!phone) return <Chips label="Show" options={scopeChips(tickets)} value={scope} onChange={(v) => onPick(v as TicketScope)} testId="ticket-scope" />
+  const options = scopeCounts(tickets)
+  const current = options.find((o) => o.value === scope) ?? options[0]
+  return (
+    <span className={styles.scopeMenu} data-testid="ticket-scope">
+      <ScopePill ref={pillRef} label={current ? `${current.name} (${current.count})` : 'All'} onClick={() => setOpen((o) => !o)} open={open} scoped={scope !== 'open'} />
+      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} sheetTitle="Ticket status">
+        {options.map((o) => (
+          <DropdownItem key={o.value} role="menuitemradio" checked={o.value === scope} meta={String(o.count)} onSelect={() => { onPick(o.value); setOpen(false) }}>{o.name}</DropdownItem>
+        ))}
+      </Dropdown>
+    </span>
+  )
+}
 
 /**
  * (gaps build H — H-Q2 · H-Q9) A project's Tickets tab: the house tab toolbar (Tickets · New ticket), Open / Resolved and closed / All, a card
@@ -66,6 +94,12 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
   const pickScope = (s: TicketScope) => { setScope(s); if (s !== 'all' && filters.status.length) setFilters((f) => ({ ...f, status: [] })) }
   const list = data.tickets.filter((t) => scopeOf(t, scope) && keepsTicket(t, filters))
   const open = openId ? data.tickets.find((t) => t.id === openId) ?? null : null
+  /* (Dane's Tickets review — Vicky's call) Assigned to offers only who may work on the project */
+  const onTeamIds = data.team.filter((m) => m.onTeam).map((m) => m.id)
+  const takers = data.team.filter((m) => mayTakeTicket(m, onTeamIds))
+  /* (Dane's Tickets review) the last ticket opened stays mounted after a close, so the drawer slides out instead of vanishing */
+  const [shown, setShown] = useState<TicketRow | null>(null)
+  if (open && open !== shown) setShown(open)
   const add = async (i: NewTicketInput) => {
     try {
       const r = await createTicket(data.project.id, i)
@@ -93,7 +127,7 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
       </div>
       {data.tickets.length ? (
         <>
-          <Chips label="Show" options={scopeChips(data.tickets)} value={scope} onChange={(v) => pickScope(v as TicketScope)} testId="ticket-scope" />
+          <TicketScopeControl tickets={data.tickets} scope={scope} onPick={pickScope} />
           {list.length ? (
             <div className={styles.list} data-testid="ticket-list">
               {list.map((t) => <TicketCard key={t.id} t={t} now={data.now} onOpen={() => setOpenId(t.id)} />)}
@@ -109,12 +143,12 @@ export function ProjectTickets({ data, views }: { data: ProjectTicketsData; /** 
                     help={`When ${first} reports a problem on their page — a leak, a scratch, a door that sticks — it lands here with their photos, and you answer it here. You can add one for them too.`}
                     primary={data.mayChange ? { label: 'New ticket', icon: 'add', onPress: () => setAdding(true) } : null} />
       )}
-      {open ? (
-        <TicketDrawer ticket={open} lines={data.threads[open.id] ?? []} team={data.team} mayChange={data.mayChange} me={data.me} now={data.now}
+      {shown ? (
+        <TicketDrawer open={!!open} ticket={shown} lines={data.threads[shown.id] ?? []} team={data.team} mayChange={data.mayChange} me={data.me} now={data.now}
                       onClose={() => setOpenId(null)} onChanged={() => router.refresh()} />
       ) : null}
       <TicketsFiltersModal open={filtering} people={data.team.map((m) => ({ id: m.id, name: m.name, color: m.color, role: m.role }))} value={filters} onApply={applyFilters} onClose={() => setFiltering(false)} />
-      <NewTicketDialog open={adding} categories={data.categories} team={data.team} client={data.project.client} onClose={() => setAdding(false)} onSave={add} />
+      <NewTicketDialog open={adding} categories={data.categories} team={takers} client={data.project.client} onClose={() => setAdding(false)} onSave={add} />
     </div>
   )
 }

@@ -9,4 +9,9 @@
 .popovers[data-raised] { z-index: 110; }
 
 /* (REG-466) On the rail's Tasks page the tab's block is the page body under the L1 header — Tools › Quotes' frame: 24 all round, flex 1. */
-.tab[data-studio] { flex: 1; min-width: 0; padding: var(--om-spacing-6); }
+.tab[data-studio] { flex: 1; min-width: 0; padding: var(--om-spacing-6); --quick-gutter: var(--om-spacing-6); --quick-pull: calc(2 * var(--om-spacing-6) - var(--app-mobile-dock-height, 0px)); }   /* the phone's quick add runs out of this gutter (quick-add.module.css); its list ends where the dock starts, so at the page's end the docked bar never sits on the last card (tasks-table.module.css `.phoneList`) */
+/* (Dane's Tasks review, 2026-10-27) a phone: 16 in, on the page header's line, as Tickets and every other L1 page (leads.module.css `.body`) — 24 left
+   the toolbar and the cards 8 inside the title. The quick add's gutter and pull follow (the tab's 24 gap stays in the pull). */
+@media (max-width: 767px) {
+  .tab[data-studio] { padding: var(--om-spacing-4); --quick-gutter: var(--om-spacing-4); --quick-pull: calc(var(--om-spacing-6) + var(--om-spacing-4) - var(--app-mobile-dock-height, 0px)); }
+}

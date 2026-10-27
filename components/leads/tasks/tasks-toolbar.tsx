@@ -12,6 +12,7 @@ import { ScopePill } from '@/components/om/scope-pill'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import { TASK_SCOPE_LABEL, TASK_SOURCE_LABEL, type TaskScope, type TaskSource } from '@/lib/leads/task-filters'
 import { DropdownDivider } from '@/components/leads/dropdown'
 import { SegmentedButton, SegmentedButtonItem } from '@/components/ds'
@@ -126,6 +127,10 @@ export function TasksMoreButton({ onMenu, group }: { onMenu: (action: TasksMenuA
 export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, todos, searchPlaceholder, inHeader = false, bare = false, source, views }: TasksToolbarProps) {
   const [scopeOpen, setScopeOpen] = useState(false)
   const sheet = useSheetLayout()
+  /* (Dane's Tasks review, 2026-10-27) a finger can't hover a chip to read its tooltip: on a phone and a touch tablet the to-do chips say their
+     words ("Overdue · 9") and sit in one row that swipes sideways when they don't all fit */
+  const touchTablet = useMediaQuery(TOUCH_TABLET)
+  const spelled = sheet || touchTablet
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
   /* (pending modules S46C · H4) Four to-do chips (Upcoming joined Overdue · Due today · Unassigned) don't always fit beside the scope, the Leads ·
      Projects switch and the search — an expanded rail, a 1280 screen: then every chip says only its glyph and count (its words stay its name
@@ -150,13 +155,38 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
     return () => ro.disconnect()
   }, [todoKey])
 
+  /* (Dane's Tasks review, 2026-10-27) the Leads listing's "View all" (Dane's UAT 1.05): while the pill holds a narrower scope, one press back to
+     All Tasks — the scope only; search, Filters and the to-do chips stay. Where the row has no room for it beside the pill and the tools (a long
+     scope at 320) it folds away, as on Leads — the pill's sheet opens on All Tasks, its first row. Measured, never guessed. */
+  const viewAll = !!scope && !bare && scope.value !== 'all'
+  const barRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  const viewAllRef = useRef<HTMLSpanElement>(null)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const [folded, setFolded] = useState(false)
+  useEffect(() => {
+    const bar = barRef.current, pill = pillRef.current, btn = viewAllRef.current, actions = actionsRef.current
+    if (!viewAll || !bar || !pill || !btn || !actions) return
+    const ro = new ResizeObserver(() => {
+      /* the pill at its full words — a pill already squeezed to "Studi…" reads narrower than it needs (its label's hidden overflow added back) */
+      const cut = Math.max(0, ...[...pill.querySelectorAll('*')].filter((el) => getComputedStyle(el).textOverflow === 'ellipsis').map((el) => el.scrollWidth - el.clientWidth))
+      const tools = getComputedStyle(actions).display === 'none' ? 0 : actions.offsetWidth + 16   // the row's 16 gap before the tools
+      setFolded(bar.clientWidth < pill.offsetWidth + cut + 8 + btn.offsetWidth + tools)   // View all sits 8 after the pill
+    })
+    ro.observe(bar); ro.observe(pill); ro.observe(btn); ro.observe(actions)
+    return () => ro.disconnect()
+  }, [viewAll])
+
   return (
-    <div className={styles.bar}>
+    <div className={styles.bar} ref={barRef}>
       {scope && !bare ? (
         /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count.
            (REG-729) The house scope pill (components/om/scope-pill), as the listing's: the applied dot off "All Tasks" (REG-295), the 4% hover. */
         <span className={styles.scopeWrap} ref={wrapRef}>
-          <ScopePill label={`${TASK_SCOPE_LABEL[scope.value]} (${scope.count})`} open={scopeOpen} scoped={scope.value !== 'all'} onClick={() => setScopeOpen((o) => !o)} />
+          {/* (Dane's Tasks review, 2026-10-27) the pill and its menu in their own box: where the chips take a line of their own the scope box
+              steps aside (`display: contents`) and the menu lost its anchor — on a touch tablet it opened ~4,000px down the page */}
+          <span className={styles.pillWrap}>
+          <ScopePill ref={pillRef} label={`${TASK_SCOPE_LABEL[scope.value]} (${scope.count})`} open={scopeOpen} scoped={scope.value !== 'all'} onClick={() => setScopeOpen((o) => !o)} />
           <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" sheetTitle="Show">
             {(Object.keys(TASK_SCOPE_LABEL) as TaskScope[]).map((k) => (
               <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>
@@ -166,6 +196,14 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
               <DropdownItem key={`src-${k}`} role="menuitemradio" checked={source.value === k} onSelect={pick(() => source.onChange(k))}>{k === 'all' ? 'Leads and projects' : TASK_SOURCE_LABEL[k]}</DropdownItem>
             ))}</> : null}
           </Dropdown>
+          </span>
+          {viewAll ? (
+            <span ref={viewAllRef} className={styles.viewAll} data-folded={folded || undefined} inert={folded || undefined} aria-hidden={folded || undefined}>
+              <Button appearance="text" onPress={() => scope.onChange('all')} data-testid="view-all-tasks">View all</Button>
+            </span>
+          ) : null}
+          {/* (Dane's Tasks review, 2026-10-27) a rule between View all and the switch — the bulk bar's 1×24 */}
+          {viewAll && source && !sheet ? <span className={styles.viewAllRule} data-folded={folded || undefined} aria-hidden /> : null}
           {/* (gaps build, package C — 16) whose tasks: All · Leads · Projects */}
           {source && !sheet ? (
             <span className={styles.source} data-testid="task-source">
@@ -175,18 +213,18 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
             </span>
           ) : null}
           {todos?.length ? (
-            <span className={styles.todos} data-testid="task-todos">
+            <span className={styles.todos} data-testid="task-todos" data-spelled={spelled || undefined}>
               {/* (responsive audit W2-04) a phone's chips have a line of their own and say only their glyph and count, as they did beside the pill */}
               {todos.map((t) => (
-                <Tooltip key={t.key} label={t.label} disabled={!(compact || sheet)}>
-                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} compact={compact || sheet} selected={t.selected} onClick={t.onClick} />
+                <Tooltip key={t.key} label={t.label} disabled={spelled || !compact}>
+                  <ScopePill tone="attention" icon={t.icon} menu={false} label={t.label} short={spelled ? undefined : t.short} compact={!spelled && compact} selected={t.selected} onClick={t.onClick} />
                 </Tooltip>
               ))}
             </span>
           ) : null}
         </span>
       ) : (views ?? <h2 className={styles.title}>All Tasks</h2>)}
-      <div className={styles.actions}>
+      <div className={styles.actions} ref={actionsRef}>
         {bare ? null : (<>
         {inHeader ? null : <AddTaskButton onAdd={onAdd} />}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />

@@ -20,7 +20,7 @@ type Group = 'priority' | 'status' | 'owners'
 const TABS: { key: Group; label: string }[] = [
   { key: 'priority', label: 'Priority' },
   { key: 'status', label: 'Status' },
-  { key: 'owners', label: 'Looks after' },
+  { key: 'owners', label: 'Assigned to' },
 ]
 export type TicketPerson = { id: string; name: string; color: string; role?: string }
 
@@ -54,7 +54,7 @@ export function TicketsFiltersModal({ open, people, value, onApply, onClose }: {
   const dots = activeTicketGroups(draft)
   useLiveApply(open, draft, value, true, onApply, sameTicketFilters)   // (REG-464)
   const toggleOwner = (id: string) => setDraft((d) => ({ ...d, owners: d.owners.includes(id) ? d.owners.filter((x) => x !== id) : [...d.owners, id] }))
-  const rows: TicketPerson[] = [...people, { id: NOBODY, name: 'Nobody yet', color: 'var(--om-color-on-surface-border)', role: 'Not taken on' }]
+  const rows: TicketPerson[] = [...people, { id: NOBODY, name: 'Unassigned', color: 'var(--om-color-on-surface-border)', role: 'Not taken on' }]
   return (
     <AnimatePresence>
       {open ? (
@@ -89,7 +89,7 @@ export function TicketsFiltersModal({ open, people, value, onApply, onClose }: {
                   </>
                 ) : (
                   <>
-                    <span className={styles.sectionTitle}>Looks after</span>
+                    <span className={styles.sectionTitle}>Assigned to</span>
                     <div className={styles.list} data-testid="tickets-filter-owners">
                       {rows.map((m) => (
                         <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggleOwner(m.id)}

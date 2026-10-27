@@ -33,7 +33,7 @@ export function StudioTicketsGhost({ raise: told }: { raise?: boolean } = {}) {
         ) : (
           <div className={styles.tab}>
             <div className={styles.bar}>
-              <span className={chipRow.chips}>{[84, 176, 64].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</span>
+              <span className={styles.chips}><span className={`${chipRow.chips} ${styles.ghostChips}`}>{[64, 84, 176].map((w, i) => <Bone key={i} w={w} h={32} r="var(--om-radius-full)" />)}</span><span className={styles.ghostPill}><Slot kind="pill" /></span></span>
               <span className={styles.actions}><Slot kind="search" /><Slot kind="icon" /></span>   {/* (parity map, UC-047) Filters after the search */}
             </div>
             <div className={styles.list}>
