@@ -433,7 +433,9 @@ const TO_ANSWER = `select count(*) from project_tickets t join projects p on p.i
     await shot(q, 'm1-scope-390')
     await q.keyboard.press('Escape'); await settle(q, 500)
     await q.getByRole('button', { name: 'Search tickets' }).click(); await settle(q, 500)
-    const qbox = await q.getByRole('searchbox', { name: 'Search tickets' }).boundingBox().catch(() => null)
+    /* (Dane's Tickets review, merged 2026-10-28 — the closing run) the search's box, not its input: the input starts after the box's glyph (52 at 390,
+       as on Tasks, whose open search is the reference) — the box itself takes the row from the page's 16 */
+    const qbox = await q.getByRole('searchbox', { name: 'Search tickets' }).locator('xpath=..').boundingBox().catch(() => null)
     ok(!(await qscope.isVisible()) && !!qbox && qbox.x <= 24 && await sideways(q) <= 0, '390: the open search has the row from the left edge — the pill steps aside', JSON.stringify(qbox))   // (Dane's Tickets review, merged 2026-10-28)
     await shot(q, 'm1-search-390')
     await q.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : undefined)); await settle(q, 500)   // an empty box folds once it loses focus

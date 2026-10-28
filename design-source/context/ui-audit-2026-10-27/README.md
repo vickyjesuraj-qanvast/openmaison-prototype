@@ -64,3 +64,15 @@ and the closing regression's 20 fixes (REG-3353…3372).
   pre-existing (dane-p5b's chain, repair R179 — restated); **nothing lost**. Run 2: 153 of 156 green, the rest settled by targeted re-runs after the last fixes; **run 3 on the final source (05:48 → 07:08): 156 of 156 green** (`build/regression/run3-summary.txt`).
 - **For Vicky:** `build/calls-for-vicky.md` (C-01…C-130; C-01…10 left unbuilt because they would change figures or data). **For the
   developers:** `build/changes-for-developers.md` + `build/guard-before.json`.
+
+## Dane's merge, the Team workload fix and their regression (2026-10-28)
+
+- **Dane's Tasks and Tickets reviews** merged on Vicky's word (`80221c1e`, REG-3373…3408, record `build/merge-dane-2026-10-28/`).
+- **Team workload** — the worded load figure ran past the card; the rows are a subgrid of the list's columns now (`41b6ffb9`, REG-3409).
+- **`.gitignore`'s unanchored `build/`** had hidden every record folder named build, this build's included; anchored to `/build/` and the
+  four folders committed (`c31a5ced`).
+- **Run 4 on the merged code:** 148 of 156 green; of the 8, six timed out while the Mac slept (`ERR_NETWORK_IO_SUSPENDED`), pm2-s46b
+  measured the Issues search's input instead of its box (restated — the open search takes the row from 16, as Tasks'), dash-d1 below.
+  **Re-run on the rebuilt code (with the Team workload fix), kept awake:** 14 of 15 green, every Dashboard probe included.
+- **dash-d1 at 390 touch, after a meeting's time:** Your day's ghost stands 24 taller than the page — a finished meeting drops its
+  Directions line and the ghost can't know it. Green before the meeting (run 3); from the Dashboard redesign, not this build. Open.
