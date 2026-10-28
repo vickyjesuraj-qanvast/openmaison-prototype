@@ -79,3 +79,29 @@ each waits for Vicky's approval before it merges. Branch `uat-dane-2026-10-01`.
 - **The foot shadow at the end of a scroll, app-wide.** Change 6 drops the footer shadow once the body is scrolled to its end, for the
   ticket drawer and the New ticket form only (changes 6 and 10). If Vicky wants it everywhere, it is REG-322's rule to amend: make `untilEnd` the default in `useOverflow` and drop
   the opt-in.
+
+## Merged into main — 2026-10-28 (Vicky's word: "merge and pull them across")
+
+Your review is in `main` and `uat-dane-2026-10-01` (merge `80221c1e`; register REG-3393…3407). It met the calm UI build, which renamed
+**Tickets to Issues on screen** (routes, slugs, testids and code names unchanged — `/tickets` stays). Your behaviour and layout were
+kept, with the build's words on your strings. Full record: `design-source/context/ui-audit-2026-10-27/build/merge-dane-2026-10-28/M2.md`.
+Pull `uat-dane-2026-10-01`.
+
+| # | What happened |
+|---|---|
+| 1 | Kept, adapted — your layout and order; the words read All · Open · **Closed** (the build's word) |
+| 2 | Kept |
+| 3 | Kept, adapted — the pill reads "Open · 3 ▾", the sheet "**Issue status**" |
+| 4 | Kept |
+| 5 | Kept |
+| 6 | Kept — the opt-ins default off |
+| 7 | Kept, adapted — "**New issue**" / "Add issue"; Project is the form's first field |
+| 8 | Kept |
+| 9 | Kept — "Assigned to" / "Unassigned" replaced the build's own "Handled by" / "Nobody yet" everywhere in Issues, the bell's rows included |
+| 10 | Kept |
+| 11 | Kept |
+| 12 | Kept — "…can work on this **issue**" |
+| 13 | Kept — the picker and the server |
+
+Your note "the open search covers the scope pill on a phone" is fixed the way your Tasks change 2 does it. Your probe notes were done:
+`verify-pm2-s46b.cjs` M1 walks the one form now; `verify-pm-g.cjs` reads testids; `verify-pm2-s44o.cjs` needed nothing.

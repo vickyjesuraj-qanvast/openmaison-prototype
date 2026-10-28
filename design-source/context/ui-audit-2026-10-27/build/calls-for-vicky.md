@@ -12,6 +12,28 @@ The register rows are REG-3075…3333 (`reg-map.json`).
 
 ---
 
+## Decisions — 2026-10-28 (every call closed)
+
+**Every call below stands as built and is closed**, except the nine in *Next build* — those are the only open work, kept as one list.
+
+**Closed by decision (kept as they are):** C-01 two named profit bases (moving one would change the Payments figure) · C-02 rolling
+ranges for activity reports, calendar periods for Finance · C-03 stored units stay; Settings › Units owns how they read · C-05 the demo's
+phone-photo names are how a client's photos arrive · C-06 a lead's On Hold keeps its required day (REG-453), a project may stall without
+one · C-09 "Mid-Project" stays stored, shown "Mid-project" · C-10 an empty portal section shows its own empty state. C-50 was done in
+the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's word.
+
+**Next build** (stopped 2026-10-28 for the week's usage limit — nothing half-done is in the tree; each is a small, separate job):
+1. C-04 — a restore moves the date inside the demo's signed contracts (`lib/db/demo-day.ts` `EMBEDDED`).
+2. C-07 — a repair brings the demo's Default Quote design to the Letter style's words ("Quotation", no "Fax:").
+3. C-08 — X-Ray deletes softly: `quote_comparisons.deleted_at`, Undo, a Deleted comparisons sheet, restore / delete forever.
+4. C-122 — "My Items" / "My Sections" → "Items" / "Sections" in every sentence (⌘K keeps the old words; ~114 probe lines).
+5. C-52 — the signing pages' own words say "contract" (a document's title stays).
+6. C-88 — issuing entities say "Stop offering", as sources and reasons do.
+7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
+8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).
+9. dash-d1 — the Dashboard's Your day ghost after a meeting's time (seed whether a meeting still has its Directions line).
+The brief for these is kept at `.claude/calm-build/close/brief.md` on Vicky's machine; after each, the probes of its area and `npm run design:lint`.
+
 ## Left unbuilt because it would change figures or data
 
 - **C-01 · One basis for profit (5-07).** Profitability now reads "Expected profit · On signed contracts, with GST" and "Expected margin".

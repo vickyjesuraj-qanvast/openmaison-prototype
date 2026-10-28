@@ -141,3 +141,34 @@ so each waits for Vicky's approval before it merges. Branch `uat-dane-2026-10-01
   "Open (5) ▾" and hides part of it — a side effect of Tickets review change 3 (the phone's scope dropdown). The fix would be Tasks'
   change 2: the pill steps aside while the search is open (`.bar:has([data-om-search-open]) .chips { display: none }` at ≤767 in
   `components/projects/tickets/tickets.module.css`). Dane chose to keep this review to Tasks.
+
+## Merged into main — 2026-10-28 (Vicky's word: "merge and pull them across")
+
+Your review is in `main` and `uat-dane-2026-10-01` (merge `80221c1e`; register REG-3373…3392). It met the calm UI build — Vicky's
+whole-app pass for one vocabulary and less noise (`design-source/context/ui-audit-2026-10-27/`). Your behaviour and layout were kept,
+the build's words were put on your strings, and where the build had already moved or removed what you changed, the build's structure
+stands. Full record: `design-source/context/ui-audit-2026-10-27/build/merge-dane-2026-10-28/M1.md`. Pull `uat-dane-2026-10-01`.
+
+| # | What happened |
+|---|---|
+| 1 | **Superseded** — the All · Leads · Projects switch now lives inside the scope pill's menu at every width; nothing beside the pill to space |
+| 2 | Kept |
+| 3 | Kept — the house search is 44 / 16 on touch app-wide |
+| 4 | Kept — and it made the calm build's own "a phone's chips keep their words" (1-27) real; the house pill had been hiding them |
+| 5 | Kept |
+| 6 | Superseded by your own 14 |
+| 7 | Kept the size; the pill reads **"General"** (the build's word for a task with no lead), not "Studio" |
+| 8 | Kept |
+| 9 | Kept |
+| 10 | Kept, adapted — the pill also holds whose tasks now, so View all resets the scope and the Leads / Projects choice together (Vicky may ask for scope only) |
+| 11 | **Superseded** — nothing stands after View all to divide from (see 1) |
+| 12 | Kept for View all; the rule / switch parts went with 11 |
+| 13 | Kept — still worth a re-try on your phone |
+| 14 | Kept — and arriving with `?add=1` (the Dashboard's add, a log's Add tasks) now opens the sheet |
+| 15 | Kept |
+| 16 | Kept |
+| 17 | Kept — re-check on your phone |
+| 18 | Kept |
+| 19 | **Superseded** — the build gave approvals one home (the Dashboard); the strip is gone from /tasks and its ghost. Your edits to `approvals-line.*` are in the tree, unused |
+
+Words you'll see that differ from your notes: "issue" for ticket on screen, "General" for Studio, sentence case on menu group titles.
