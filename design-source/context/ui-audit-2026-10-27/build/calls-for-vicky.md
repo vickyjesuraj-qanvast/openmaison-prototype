@@ -28,7 +28,7 @@ the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's wor
 3. C-08 — X-Ray deletes softly: `quote_comparisons.deleted_at`, Undo, a Deleted comparisons sheet, restore / delete forever.
 4. C-122 — "My Items" / "My Sections" → "Items" / "Sections" in every sentence (⌘K keeps the old words; ~114 probe lines).
 5. C-52 — the signing pages' own words say "contract" (a document's title stays).
-6. C-88 — issuing entities say "Stop offering", as sources and reasons do.
+6. ~~C-88~~ — **done 2026-10-28 (REG-3410).**
 7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
 8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).
 9. dash-d1 — the Dashboard's Your day ghost after a meeting's time (seed whether a meeting still has its Directions line).

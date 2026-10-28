@@ -29,7 +29,7 @@ export async function reconcileEntities(before: IssuingEntity[], after: IssuingE
   for (const [i, e] of before.entries()) {
     if (i === 0) continue
     const now = next.get(e.id)
-    if (!now && (usage[e.name] ?? 0) > 0) return `${e.name} is on ${usage[e.name]} ${usage[e.name] === 1 ? 'quote, contract or money record' : 'quotes, contracts and money records'} — retire it instead`
+    if (!now && (usage[e.name] ?? 0) > 0) return `${e.name} is on ${usage[e.name]} ${usage[e.name] === 1 ? 'quote, contract or money record' : 'quotes, contracts and money records'} — stop offering it instead`
   }
   for (const [i, e] of before.entries()) {
     const now = next.get(e.id)

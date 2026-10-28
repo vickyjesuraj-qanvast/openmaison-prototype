@@ -133,7 +133,7 @@ const STUDIO0 = sql(`select value from settings where key='studio'`)
     /* (S42 B-12) the Lead stages card says it again in its own head — Manage Stages lands there (#lead-stages), past the module's line */
     ok('the Lead stages card says it too', (await page.getByTestId('lead-stages').getByTestId('read-only-line').count()) === 1)
     ok('the stage movement choices are shown, disabled', await page.getByRole('radio', { name: /^One stage at a time/ }).isDisabled())   // (the calm UI build 2026-10-27, a deliberate change) W-240: Linear → One stage at a time
-    ok('nothing to add or remove', (await page.getByLabel('Add a source').count()) === 0 && (await page.getByRole('button', { name: /^(Remove|Retire) / }).count()) === 0)
+    ok('nothing to add or remove', (await page.getByLabel('Add a source').count()) === 0 && (await page.getByRole('button', { name: /^(Remove|Retire|Stop offering)\b/ }).count()) === 0)
     ok('the demo’s simulate button is not offered', (await page.getByRole('button', { name: /Simulate an enquiry|^Try it$/ }).count()) === 0)   // (the calm UI build 2026-10-27, a deliberate change) W-377
     await shot('06-read-only-leads')
     await page.goto(`${BASE}/settings?section=quotes`); await page.getByTestId('settings-quotes').waitFor(); await ready(page)

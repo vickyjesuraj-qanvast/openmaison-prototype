@@ -88,11 +88,11 @@ const chip = (page, testid, name) => page.getByTestId(testid).filter({ has: page
     sql(`update quotes set issuing_entity='Acme Build Pte Ltd' where id='${q}'`)
     await page.reload(); await page.getByTestId('entities').waitFor(); await ready(page)
     const ent = page.getByTestId('entity').nth(1)
-    ok('in use: Retire, not remove', (await ent.getByRole('button', { name: 'Retire' }).count()) === 1 && (await ent.getByRole('button', { name: 'Remove this entity' }).count()) === 0)
+    ok('in use: Stop offering, not remove', (await ent.getByRole('button', { name: 'Stop offering' }).count()) === 1 && (await ent.getByRole('button', { name: 'Remove this entity' }).count()) === 0)   // (the close-out 2026-10-28, a deliberate change) C-88: "Stop offering", as sources and reasons say
     await ent.getByLabel('Entity name').fill('Acme Builders Pte Ltd')
     await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     ok('the quote follows the rename', sql(`select issuing_entity from quotes where id='${q}'`) === 'Acme Builders Pte Ltd')
-    await page.getByTestId('entity').nth(1).getByRole('button', { name: 'Retire' }).click()
+    await page.getByTestId('entity').nth(1).getByRole('button', { name: 'Stop offering' }).click()   // (the close-out 2026-10-28, a deliberate change) C-88: "Stop offering", as sources and reasons say
     await page.getByRole('button', { name: 'Save', exact: true }).click(); await snack(page, 'Company details saved')   // (the calm UI build 2026-10-27, a deliberate change) one Save (5-18)
     ok('retired on the record', sql(`select json_extract(value, '$.details.entities[1].retired') from settings where key='brand'`) === '1')
     await shot('05-entity-retired')

@@ -232,8 +232,8 @@ export function ProfileView({ brand, from, canRun = true, usage = {}, about, reg
                 <div className={styles.entityHead}>
                   {i === 0 ? <span className={styles.entityName}>{details.name || 'The studio'} <span className={styles.cardHelp}>· the studio itself</span></span>
                     : <div className={styles.entityNameField}><TextField label="Entity name" value={e.name} onChange={(v) => setEntity(i, { name: v })} /></div>}
-                  {i > 0 && e.retired ? <span className={styles.entityState} data-testid="entity-retired"><MetaChip>Retired</MetaChip><Button appearance="text" onPress={() => setEntity(i, { retired: false })}>Bring back</Button></span> : null}
-                  {i > 0 && !e.retired && usesOf(e) > 0 ? <Tooltip label={`On ${usesOf(e)} ${usesOf(e) === 1 ? 'quote or contract' : 'quotes and contracts'} — it keeps printing there; retired, it is no longer offered`}><span><Button appearance="text" onPress={() => setEntity(i, { retired: true })}>Retire</Button></span></Tooltip> : null}
+                  {i > 0 && e.retired ? <span className={styles.entityState} data-testid="entity-retired"><MetaChip>Not offered</MetaChip><Button appearance="text" onPress={() => setEntity(i, { retired: false })}>Restore</Button></span> : null}
+                  {i > 0 && !e.retired && usesOf(e) > 0 ? <Tooltip label={`On ${usesOf(e)} ${usesOf(e) === 1 ? 'quote or contract' : 'quotes and contracts'} — it keeps printing there; new quotes stop offering it`}><span><Button appearance="text" onPress={() => setEntity(i, { retired: true })}>Stop offering</Button></span></Tooltip> : null}
                   {i > 0 && !e.retired && usesOf(e) === 0 ? <Tooltip label="Remove this entity"><IconButton icon="delete" label="Remove this entity" size={36} variant="bare" iconSize={20} onClick={() => setDetails((d) => ({ ...d, entities: entities.filter((_, j) => j !== i) }))} /></Tooltip> : null}
                 </div>
                 <div className={styles.details}>
