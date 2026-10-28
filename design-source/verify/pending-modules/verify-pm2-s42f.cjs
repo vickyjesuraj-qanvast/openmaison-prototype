@@ -240,7 +240,7 @@ const SHEET = path.join(REPO, 'public/uat-files/homematch-lead-sheet.pdf')
       ok(/Read it through, then sign at the end/.test(await text(step)) && await signNeed.count() === 1, 'out for signature, its quote confirmed: the step reads “Read it through, then sign”, and What needs you asks the client to sign')
       sql(`update quotes set status = 'Draft', version = 2 where id = '${Q_SERENA}'`)
       await go(c, '/my/demo-studio', 1400)
-      ok(await step.getAttribute('data-state') === 'later' && /Not ready yet — your designer is updating the quote this agreement signs/.test(await text(step)) && !(await step.locator('a[href*="/sign/"]').count()), 'its quote being revised: the step waits, in the signing link’s words, with no link')
+      ok(await step.getAttribute('data-state') === 'later' && /Not ready yet — your designer is updating the quote this contract signs/.test(await text(step)) && !(await step.locator('a[href*="/sign/"]').count()), 'its quote being revised: the step waits, in the signing link’s words, with no link')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
       ok(await signNeed.count() === 0, '…and What needs you no longer asks the client to sign')
       await shot(c, 's42f-portal-agreement-waits-1440', true)
       sql(`update quotes set status = 'Confirmed', version = 1 where id = '${Q_SERENA}'; update contracts set sign_expires_at = ${now - 60} where id = '${C_PROBE}'`)

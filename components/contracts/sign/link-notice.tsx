@@ -21,7 +21,7 @@ export function LinkNotice({ state, studio, set = false, contact = null }: { sta
       <span className={styles.uploadedGlyph}><Icon name={state === 'inactive' ? 'lock' : state === 'expired' ? 'schedule' : 'hourglass_top'} size={32} /></span>
       <h1 className={styles.noticeTitle}>{state === 'inactive' ? 'This link is no longer active' : state === 'expired' ? 'This link has expired' : 'Not ready yet'}</h1>
       <p className={styles.uploadedHelp}>{state === 'inactive' ? `Please ask ${studio} for an updated link.` : state === 'expired' ? `Signing links stay open for a short while. Please ask ${studio} to send you a new one.`
-        : state === 'quote-updating' ? `${studio} is updating the quote ${set ? 'these documents sign' : 'this agreement signs'}. It’ll be back here once it’s ready — this same link.`
+        : state === 'quote-updating' ? `${studio} is updating the quote ${set ? 'these documents sign' : 'this contract signs'}. It’ll be back here once it’s ready — this same link.`
         : `${studio} hasn’t sent this for signing yet. You’ll get the link on WhatsApp when it’s ready.`}</p>
       {to && contact && (state === 'inactive' || state === 'expired') ? (
         <span className={styles.noticeAction}><NoticeMessage studio={studio} phone={contact.phone} /></span>

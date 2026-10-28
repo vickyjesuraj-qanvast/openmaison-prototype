@@ -67,7 +67,7 @@ export function QuoteLayer({ open, onClose, token, number, issuer }: { open: boo
   return createPortal(
     <div ref={panel} className={ph.layer} role="dialog" aria-modal="true" aria-label={`Quote ${number}`} tabIndex={-1} data-testid="sign-quote-layer">
       <SurfaceHead className={ph.layerBar} title={`Quote ${number}`} subtitle={issuer}
-                   leading={<Tooltip label="Back to the agreement"><IconButton icon="arrow_back" label="Back to the agreement" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={onClose} data-testid="sign-quote-layer-back" /></Tooltip>} />
+                   leading={<Tooltip label="Back to the contract"><IconButton icon="arrow_back" label="Back to the contract" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={onClose} data-testid="sign-quote-layer-back" /></Tooltip>} />
       <div className={ph.layerBody}>
         {quote ? (
           <>

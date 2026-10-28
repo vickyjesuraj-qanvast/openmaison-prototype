@@ -12,7 +12,7 @@
 //  - A-24 · Q-06: Save a copy opens the share sheet with this page's address where `navigator.share` exists; without it the link is copied
 //    and the page says it stays at this link with the record.
 //  - A-16 · A-17: As cards opens the quote IN PLACE (a layer: the total card, the reading cards, never an A4 at 390; View as printed → the
-//    viewer); the phone's Back closes it without a reload; /sign/<token>/quote reads as cards with "← Agreement".
+//    viewer); the phone's Back closes it without a reload; /sign/<token>/quote reads as cards with "← Contract".   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
 //  - the bundle at 390: the hero lists the documents; "Document 1 of 2 · Read to the end" → Next document (the next at its own top) →
 //    Accept and sign on the last → the sheet with each document's tick → the code → one signature covers both (both Signed).
 //  - A-25: a dead link (expired, never made, the quote page of an expired) carries "Message {studio}", 48 tall on a phone.
@@ -107,7 +107,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     await go(m, `/sign/${SENT}`)
     await shot(m, '01-m390-sign-top')
     ok((await sideways(m)) <= 0, `no sideways scroll at 390 (${await sideways(m)})`)
-    ok(await m.locator('aside[aria-label="Sign this agreement"]').count() === 0, 'the desk’s card never mounts on a phone (A-18)')
+    ok(await m.locator('aside[aria-label="Sign this contract"]').count() === 0, 'the desk’s card never mounts on a phone (A-18)')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     const hero = m.getByTestId('sign-hero')
     ok(await hero.isVisible(), 'a hero under the letterhead bar')
     const hb = await box(hero), topBar = await box(m.locator('header').first())
@@ -234,7 +234,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     await shot(m, '08-m390-sheet-draw')
     const signBtn = signD.getByTestId('sign-sheet-sign')
     const sgb = await box(signBtn)
-    ok(sgb.h >= 48 && await signBtn.isEnabled(), `Sign agreement, 48 tall (${Math.round(sgb.h)})`)
+    ok(sgb.h >= 48 && await signBtn.isEnabled(), `Sign contract, 48 tall (${Math.round(sgb.h)})`)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await tap(m, sgb.cx, sgb.cy); await m.getByTestId('signed-card').waitFor({ state: 'visible', timeout: 20000 }); await settle(m, 1800)
     ok(sql(`select status || '|' || signature_kind from contracts where id='probe-c3-sent'`) === 'Signed|draw', 'the contract is Signed with the drawing on the record')
     ok(await m.getByRole('dialog', { name: 'Sign as yourself' }).count() === 0, 'the sheet closes on Sign')
@@ -281,7 +281,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     await go(m3, `/sign/${SENT}/quote`)
     ok(await m3.getByTestId('sign-quote-total').isVisible() && (await m3.getByTestId('reading-card').count()) > 0 && await m3.locator('[data-page]').locator('visible=true').count() === 0, '/sign/<token>/quote reads as the total card and the cards, never a zoomed A4 (A-16)')
     const back = m3.getByTestId('sign-quote-back')
-    ok(await back.locator('[class*="backShort"]').isVisible() && await back.locator('[class*="backLong"]').isHidden() && (await back.getAttribute('href')) === `/sign/${SENT}`, 'the bar’s link reads "← Agreement" and goes to the agreement (A-17)')
+    ok(await back.locator('[class*="backShort"]').isVisible() && await back.locator('[class*="backLong"]').isHidden() && (await back.getAttribute('href')) === `/sign/${SENT}`, 'the bar’s link reads "← Contract" and goes to the agreement (A-17)')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok((await sideways(m3)) <= 0, 'no sideways scroll on the quote page')
     await shot(m3, '11-m390-quote-page')
     /* the bundle */
@@ -346,7 +346,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     await shot(t, '20-t768-sheet-accept')
     await t.keyboard.press('Escape'); await settle(t, 500)
     await go(t, `/sign/${AISHA}`)
-    ok(await t.getByTestId('sign-hero').isVisible() && await t.getByTestId('sign-next').isVisible() && await t.locator('aside[aria-label="Sign this agreement"]').count() === 0, '768 upright: the phone model — the hero and the bar, no desk card (Q-01)')
+    ok(await t.getByTestId('sign-hero').isVisible() && await t.getByTestId('sign-next').isVisible() && await t.locator('aside[aria-label="Sign this contract"]').count() === 0, '768 upright: the phone model — the hero and the bar, no desk card (Q-01)')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok((await sideways(t)) <= 0, 'no sideways scroll at 768')
     await t.getByTestId('signing-record-row').tap(); await settle(t, 900)
     const trec = t.getByRole('dialog', { name: 'Signing record' })
@@ -371,7 +371,7 @@ const SENT = 'probec3sent0000000001', EXPIRED = 'probec3expired00000001', BUNDLE
     const D = await b.newContext({ viewport: { width: 1440, height: 1024 } }); const dp = await page(D, 'desk')
     sql(`update contracts set status='Sent to Client', signed_at=null, signed_by=null, signed_body=null, document_hash=null, signature_kind=null, signature_data=null where id='probe-c3-sent'`)
     await go(dp, `/sign/${SENT}`)
-    const card = dp.locator('aside[aria-label="Sign this agreement"]')
+    const card = dp.locator('aside[aria-label="Sign this contract"]')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok(await card.isVisible() && (await box(card)).w === 360 && await dp.getByTestId('sign-hero').isVisible() === false && await dp.getByTestId('sign-next').isVisible() === false, 'the 360 card beside the paper; no hero, no bar')
     ok(await dp.getByRole('button', { name: 'Send code' }).isDisabled() && /view the quote/.test(await dp.getByTestId('view-quote').innerText()), 'Send code waits for the gates; the quote link as it was')
     await toEnd(dp)

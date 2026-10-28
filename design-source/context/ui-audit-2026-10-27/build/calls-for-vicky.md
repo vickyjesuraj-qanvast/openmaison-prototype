@@ -27,7 +27,7 @@ the landing (REG-3336). The floor-plan sample renders are dropped on Vicky's wor
 2. C-07 — a repair brings the demo's Default Quote design to the Letter style's words ("Quotation", no "Fax:").
 3. C-08 — X-Ray deletes softly: `quote_comparisons.deleted_at`, Undo, a Deleted comparisons sheet, restore / delete forever.
 4. C-122 — "My Items" / "My Sections" → "Items" / "Sections" in every sentence (⌘K keeps the old words; ~114 probe lines).
-5. C-52 — the signing pages' own words say "contract" (a document's title stays).
+5. ~~C-52~~ — **done 2026-10-28 (REG-3411).**
 6. ~~C-88~~ — **done 2026-10-28 (REG-3410).**
 7. C-43 — a lead's and a project's Activity: the type chips become one "Show: All ▾" pill.
 8. C-123 — the contract header's editable title; the library editors' meta row; a `TextField hideLabel` for table cells (judge each).

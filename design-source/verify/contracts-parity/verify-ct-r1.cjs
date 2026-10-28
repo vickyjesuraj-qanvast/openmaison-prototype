@@ -147,7 +147,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     await sp.getByLabel('Your full name').fill('Olivia Martinez'); await sp.getByLabel('NRIC / FIN (optional)').fill('S1234567A')
     sql(`update contracts set body = body || '<p>Added while you read.</p>' where id='${OLIVIA}'`)
-    await sp.getByRole('button', { name: 'Sign agreement' }).click()
+    await sp.getByRole('button', { name: 'Sign contract' }).click()   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await snack(sp, 'updated while you were reading')
     ok('refused: still Sent to Client', sql(`select status from contracts where id='${OLIVIA}'`) === 'Sent to Client')
     await ready(sp)
@@ -156,7 +156,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await caseTrust(sp); await sp.getByRole('button', { name: 'Send code' }).click()
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click()
     await sp.getByLabel('Your full name').fill('Olivia Martinez'); await sp.getByLabel('NRIC / FIN (optional)').fill('S1234567A')
-    await sp.getByRole('button', { name: 'Sign agreement' }).click()
+    await sp.getByRole('button', { name: 'Sign contract' }).click()   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await sp.getByRole('heading', { name: 'Signed' }).waitFor(); await sp.waitForTimeout(800)
     const r = sql(`select status || '|' || signed_by || '|' || signed_nric || '|' || (document_hash is not null) || '|' || (signed_body like '%Added while you read.%') from contracts where id='${OLIVIA}'`)
     ok('signed, the NRIC masked, the text kept', r === 'Signed|Olivia Martinez|•••••567A|1|1', r)

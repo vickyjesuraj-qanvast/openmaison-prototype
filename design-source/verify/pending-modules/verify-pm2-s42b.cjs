@@ -119,14 +119,14 @@ const URBAN = path.join(REPO, 'public/uat-files/urban-nest-competitor-quote.pdf'
     await cp.getByLabel('Your full name').fill('Olivia Martinez')
     /* the studio starts version 2 now — the quote goes back to Draft while the client is on the last step */
     sql(`update quotes set status = 'Draft', version = 2, client_sent_at = null, sent_at = null where id = '${Q_OLIVIA}'`)
-    await cp.getByRole('button', { name: 'Sign agreement' }).click(); await settle(cp, 2500)
+    await cp.getByRole('button', { name: 'Sign contract' }).click(); await settle(cp, 2500)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok(sql(`select status from contracts where id = '${C_OLIVIA}'`) === 'Sent to Client' && sql(`select status from quotes where id = '${Q_OLIVIA}'`) === 'Draft', 'a signature sent while the quote is revised is refused — nothing is signed, the draft never becomes the signed quote')
-    ok(await cp.locator('[data-testid="link-notice"][data-state="quote-updating"]').count() === 1 && /updating the quote this agreement signs/.test(await text(cp.getByTestId('link-notice'))), 'the page now says “Not ready yet — … is updating the quote this agreement signs”')
+    ok(await cp.locator('[data-testid="link-notice"][data-state="quote-updating"]').count() === 1 && /updating the quote this contract signs/.test(await text(cp.getByTestId('link-notice'))), 'the page now says “Not ready yet — … is updating the quote this contract signs”')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await shot(cp, 'b01-sign-waits-1440')
     await go(cp, `/sign/${TOKEN}/quote`)
     ok(await cp.locator('[data-testid="link-notice"][data-state="quote-updating"]').count() === 1 && await cp.locator('[data-testid="sign-quote-view"] [class*="stage"]').count() === 0, '/sign/<token>/quote shows the notice, never the draft')
     const card = await (await C.request.get(`${BASE}/sign/${TOKEN}`, { headers: { 'user-agent': 'WhatsApp/2.23.20.0 A' } })).text()
-    ok(/updating the quote this agreement signs/.test(card), 'the link’s chat card says it too')
+    ok(/updating the quote this contract signs/.test(card), 'the link’s chat card says it too')   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     /* a set's page waits the same */
     sql(`insert or replace into contract_bundles (id, lead_id, recipient_name, recipient_phone, created_at, sent_at, sign_expires_at) values ('${BUNDLE}', '${OLIVIA}', 'Olivia Martinez', '91234567', strftime('%s','now'), strftime('%s','now'), strftime('%s','now') + 7*86400)`)
     sql(`update contracts set bundle_id = '${BUNDLE}', bundle_position = 0 where id = '${C_OLIVIA}'`)

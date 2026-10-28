@@ -148,11 +148,11 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
       const r = await signContractOnline(data.token, name.trim(), nricKept, data.fingerprint, { kind: how, drawing: how === 'draw' ? drawing : null, acceptedAt: acceptedAt ? { [contract.id]: acceptedAt } : undefined, caseTrustAt, code, ...deviceInfo() })
       if ('changed' in r) {
         /* (REG-631, parity Q-06) The studio changed the document while it was open: read the new text before signing. */
-        snackbar({ message: 'This agreement was updated while you were reading — please read it again before signing' })
+        snackbar({ message: 'This contract was updated while you were reading — please read it again before signing' })
         setReadEnd(!needsScroll); setAcceptedAt(null); setStep('review'); setSheet(false); router.refresh(); return
       }
       if ('refused' in r) {
-        if (r.refused === 'accept') { snackbar({ message: 'Tick that you accept the agreement first' }); setStep('review'); return }
+        if (r.refused === 'accept') { snackbar({ message: 'Tick that you accept the contract first' }); setStep('review'); return }
         if (r.refused === 'casetrust') { snackbar({ message: CASETRUST_RULE }); setStep('review'); return }   // (gaps build D, item 6)
         if (r.refused === 'code') { snackbar({ message: SIGN_CODE_WRONG }); setCode(''); setStep('code'); return }   // (S42 B-03) the provider's check
         if (r.refused === 'expired') { snackbar({ message: 'This link has expired — please ask for a new one' }) }   // (pending modules S03) it ran out while open
@@ -220,7 +220,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
           ) : null}
         </div>
         {!onPhone ? (
-        <aside className={`${styles.card} ${ph.deskCard}`} aria-label="Sign this agreement" data-step={step}>
+        <aside className={`${styles.card} ${ph.deskCard}`} aria-label="Sign this contract" data-step={step}>
           {letter ? (
             <>
               <span className={styles.eyebrow}>{contract.title}</span>
@@ -241,15 +241,15 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
           ) : (
             <>
               <span className={styles.eyebrow}>{contract.title}</span>
-              <h2 className={styles.cardTitle}>{step === 'review' ? 'Sign this agreement' : step === 'code' ? 'Enter the code' : 'Sign as yourself'}</h2>
+              <h2 className={styles.cardTitle}>{step === 'review' ? 'Sign this contract' : step === 'code' ? 'Enter the code' : 'Sign as yourself'}</h2>
               {step === 'review' ? (
                 <>
-                  <p className={styles.cardText}>Hi {recipient.split(' ')[0]}, please read the agreement. {codeDemo ? 'When you’re ready, a one-time code confirms it’s you.' : <>When you’re ready, we’ll send a one-time code to <strong>{masked}</strong> to confirm it’s you.</>}</p>
+                  <p className={styles.cardText}>Hi {recipient.split(' ')[0]}, please read the contract. {codeDemo ? 'When you’re ready, a one-time code confirms it’s you.' : <>When you’re ready, we’ll send a one-time code to <strong>{masked}</strong> to confirm it’s you.</>}</p>
                   {data.deposit && !data.deposit.paid ? <p className={styles.fine} data-testid="deposit-ahead">{depositAhead(data.deposit)}</p> : null}   {/* (S44R, C7) what follows the signature, said before it */}
                   {/* (REG-633, parity Q-20) the quote it signs, read-only in a new tab */}
                   {quote && !quote.gone ? <a className={styles.quoteLink} href={`/sign/${data.token}/quote`} target="_blank" rel="noopener" data-testid="view-quote"><Icon name="request_quote" size={20} />It signs quote {quote.number} — view the quote</a> : null}
                   {needsScroll ? (
-                    <p className={styles.gate} data-done={readEnd || undefined} data-testid="gate-scroll"><Icon name={readEnd ? 'check_circle' : 'arrow_downward'} size={20} />{readEnd ? 'You’ve read to the end' : 'Read to the end of the agreement to continue'}</p>
+                    <p className={styles.gate} data-done={readEnd || undefined} data-testid="gate-scroll"><Icon name={readEnd ? 'check_circle' : 'arrow_downward'} size={20} />{readEnd ? 'You’ve read to the end' : 'Read to the end of the contract to continue'}</p>
                   ) : null}
                   {needsAccept ? (
                     <label className={styles.accept} data-testid="gate-accept" data-disabled={!readEnd || undefined}>
@@ -274,7 +274,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
               ) : null}
               {step === 'sign' ? (
                 <>
-                  <p className={styles.cardText}>Type your full name, or draw your signature. It goes on the agreement where you sign.</p>
+                  <p className={styles.cardText}>Type your full name, or draw your signature. It goes on the contract where you sign.</p>
                   <Chips label="How you sign" options={[{ value: 'type', label: 'Type' }, { value: 'draw', label: 'Draw' }]} value={how} onChange={(v) => setHow(v === 'draw' ? 'draw' : 'type')} testId="sign-how" />
                   <TextField label="Your full name" required value={name} onChange={setName} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && how === 'type') { e.preventDefault(); void sign() } }} />
                   {how === 'type' ? (name.trim() ? <span className={styles.preview}>{name.trim()}</span> : null) : <SignaturePad value={drawing} onChange={setDrawing} hint="Draw your signature here" height={120} />}
@@ -283,7 +283,7 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
                              helper={nric.trim() && nricOk ? `Kept as ${maskNric(nric)} — only the last four characters are stored` : 'Only the last four characters are kept, masked: •••••567A'}
                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void sign() } }} />
                   <p className={styles.fine} data-testid="agreement-sentence">{agreement} Signed on {displayDateLong(new Date(data.now))}.</p>
-                  <Button isDisabled={!name.trim() || busy || !nricOk || (how === 'draw' && !drawing)} onPress={() => { void sign() }}>{busy ? 'Signing…' : 'Sign agreement'}</Button>
+                  <Button isDisabled={!name.trim() || busy || !nricOk || (how === 'draw' && !drawing)} onPress={() => { void sign() }}>{busy ? 'Signing…' : 'Sign contract'}</Button>
                 </>
               ) : null}
             </>
@@ -299,13 +299,13 @@ export function SigningPage({ data, caseTrust = false, codeDemo = false }: { dat
       </div>
       {/* (C3 — P-06) the signing sheet and (A-16) the quote in place: mounted on the phone model only */}
       {onPhone && !letter ? (
-        <SignSheet open={sheet && !done} onClose={() => setSheet(false)} step={step === 'done' ? 'sign' : step} noun="the agreement"
+        <SignSheet open={sheet && !done} onClose={() => setSheet(false)} step={step === 'done' ? 'sign' : step} noun="the contract"
                    ticks={needsAccept ? [{ id: contract.id, label: acceptLabel, at: acceptedAt }] : []} onTick={(_id, at) => setAcceptedAt(at)}
                    caseTrust={needsCaseTrust ? { studio: issuer, at: caseTrustAt, onTick: setCaseTrustAt } : null}
                    onContinue={() => { void sendCode() }} continueBusy={codeBusy}
                    codeDemo={codeDemo} masked={masked} code={code} onCode={(c) => { setCode(c); if (c.length === 6) setStep('sign') }} onVerify={() => { if (code.length === 6) setStep('sign') }} onSendAgain={() => { void sendCode(true) }} codeBusy={codeBusy}
                    name={name} onName={setName} how={how} onHow={setHow} drawing={drawing} onDrawing={setDrawing} nric={nric} onNric={setNric} nricOk={nricOk}
-                   consent={`${agreement} Signed on ${displayDateLong(new Date(data.now))}.`} signLabel="Sign agreement" onSign={() => { void sign() }} busy={busy}
+                   consent={`${agreement} Signed on ${displayDateLong(new Date(data.now))}.`} signLabel="Sign contract" onSign={() => { void sign() }} busy={busy}
                    canSign={!!name.trim() && nricOk && (how === 'type' || !!drawing)} />
       ) : null}
       {onPhone && quote && !quote.gone ? <QuoteLayer open={quoteOpen} onClose={closeQuote} token={data.token} number={quote.number} issuer={issuer} /> : null}

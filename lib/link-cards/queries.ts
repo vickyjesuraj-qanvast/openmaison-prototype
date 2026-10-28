@@ -41,14 +41,14 @@ async function signCard(id: string): Promise<LinkCard> {
   const d = await fetchSigning(id)   // (pending modules S03) `id` is the link's token
   if (!d) { const bundle = await bundleIdForToken(id); return bundle ? bundleCard(bundle) : closedCard(await studioBrand()) }   // a set 1.0 sent under one token
   const b = brandOf(d.brand, d.letterhead.name, d.letterhead.logo ?? d.brand.logo)
-  const title = clip(d.contract.title || 'Your agreement', 70)
+  const title = clip(d.contract.title || 'Your contract', 70)
   const pageTitle = `Sign · ${title} · ${b.studio}`
   if (d.state === 'inactive' || d.state === 'expired') return closedCard(b, pageTitle)   // (pending modules S03) an expired link no longer opens
-  if (d.state === 'not-sent') return notReadyCard(b, pageTitle, 'agreement')
-  if (d.state === 'quote-updating') return notReadyCard(b, pageTitle, 'agreement', 'its-quote')   // (S42 B-01)
+  if (d.state === 'not-sent') return notReadyCard(b, pageTitle, 'contract')
+  if (d.state === 'quote-updating') return notReadyCard(b, pageTitle, 'contract', 'its-quote')   // (S42 B-01)
   const client = titleCaseName(d.lead.name)
-  if (d.state === 'signed') return { ...b, open: true, eyebrow: 'Signed agreement', title, line: `Signed by ${d.contract.signedBy || client}`, pageTitle, headline: `${title} · ${b.studio}`, description: `${title} is signed. Open it to see the signed copy.` }
-  return { ...b, open: true, eyebrow: 'Agreement to sign', title, line: `For ${client}`, pageTitle, headline: `${title} · ${b.studio}`, description: `${b.studio} has sent you ${title} — read it and sign online.` }
+  if (d.state === 'signed') return { ...b, open: true, eyebrow: 'Signed contract', title, line: `Signed by ${d.contract.signedBy || client}`, pageTitle, headline: `${title} · ${b.studio}`, description: `${title} is signed. Open it to see the signed copy.` }
+  return { ...b, open: true, eyebrow: 'Contract to sign', title, line: `For ${client}`, pageTitle, headline: `${title} · ${b.studio}`, description: `${b.studio} has sent you ${title} — read it and sign online.` }
 }
 
 async function bundleCard(id: string): Promise<LinkCard> {

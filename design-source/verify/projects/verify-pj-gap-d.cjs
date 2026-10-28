@@ -290,7 +290,7 @@ const STUB = `(() => { window.__wa = []; const o = window.open.bind(window); win
     await shot(g, 'casetrust-1440')
     await sendCode.click(); await settle(g, 500)
     await g.getByLabel('One-time code').fill('123456'); await g.getByRole('button', { name: 'Verify' }).click(); await settle(g, 500)
-    await g.getByRole('button', { name: 'Sign agreement' }).click(); await settle(g, 2200)
+    await g.getByRole('button', { name: 'Sign contract' }).click(); await settle(g, 2200)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok(sql(`select casetrust_at is not null and status='Signed' from contracts where id='${OLIVIA_C}'`) === '1', 'signed with the tick kept on the contract')
     ok(/CaseTrust disclosure/.test(await g.locator('[data-testid="signing-record"]').innerText()), 'the signing record shows it')
     await G.close()

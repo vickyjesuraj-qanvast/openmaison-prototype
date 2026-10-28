@@ -309,7 +309,7 @@ const DAY = 86_400_000
       if (await g.locator('[data-testid="gate-casetrust-tick"]').count()) await g.locator('[data-testid="gate-casetrust-tick"]').click()
       await g.getByRole('button', { name: 'Send code' }).first().click().catch(() => {}); await settle(g, 500)
       await g.getByLabel('One-time code').fill('123456').catch(() => {}); await g.getByRole('button', { name: 'Verify' }).click().catch(() => {}); await settle(g, 500)
-      await g.getByRole('button', { name: 'Sign agreement' }).click().catch(() => {}); await settle(g, 2400)
+      await g.getByRole('button', { name: 'Sign contract' }).click().catch(() => {}); await settle(g, 2400)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
       const signed = sql(`select status from contracts where id='${oliviaC}'`) === 'Signed'
       ok(signed, 'the agreement is signed online')
       if (signed) ok(Number(sql(`select count(*) from notification_outbox where lead_id='${olivia}' and event='client_signed'`)) > 0, 'client_signed goes to the client')

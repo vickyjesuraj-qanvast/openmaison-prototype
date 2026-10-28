@@ -121,7 +121,7 @@ const titleOf = (html) => { const m = /<title>([^<]*)<\/title>/.exec(html); retu
     sql(`update quotes set status = 'Approved' where id = (select from_quote_id from contracts where id = '${C_DRAFT}')`)
     sql(`update contracts set status = 'Sent to Client', sent_at = ${T0}, viewed_at = null where id = '${C_DRAFT}'`)
     const openHtml = await (await A.request.get(`${BASE}/sign/${C_DRAFT}`)).text()
-    ok(/Agreement to sign/i.test(openHtml) || /read it and sign online/.test(meta(openHtml, 'og:description') ?? ''), 'a contract out for signature: “read it and sign online”')
+    ok(/Contract to sign/i.test(openHtml) || /read it and sign online/.test(meta(openHtml, 'og:description') ?? ''), 'a contract out for signature: “read it and sign online”')   // (the close-out 2026-10-28, a deliberate change) C-52: "Contract to sign"
     ok(sql(`select quote(viewed_at) from contracts where id = '${C_DRAFT}'`) === 'NULL', 'the contract: the chat’s fetch leaves it unviewed')
     await H.request.get(`${BASE}/sign/${C_DRAFT}`)
     ok(sql(`select quote(viewed_at) from contracts where id = '${C_DRAFT}'`) !== 'NULL', '…the client opening it stamps Viewed')

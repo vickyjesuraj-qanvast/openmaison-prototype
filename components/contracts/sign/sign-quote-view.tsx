@@ -15,11 +15,11 @@ import ph from './sign-phone.module.css'
 
 /**
  * (REG-633, contracts parity Q-20) The quote an agreement signs, as the client view prints it — the confirmation page's document
- * (REG-587) without its card: the letterhead bar, "Back to the agreement", the quote fitted to the page. Nothing here changes anything.
+ * (REG-587) without its card: the letterhead bar, "Back to the contract", the quote fitted to the page. Nothing here changes anything.
  *
  * (Contracts on the move, C3 — A-16 · A-17) On the phone model (a phone, a tablet held upright — the confirmation page's `QuoteStage`) the
  * quote reads as the total card and the reading cards, "View as printed" opening the house paper viewer — never an A4 zoomed to 4px type;
- * a tablet held sideways and the desk keep the paper at 1:1. The bar's link reads "← Agreement" on a phone. On a phone the signing page
+ * a tablet held sideways and the desk keep the paper at 1:1. The bar's link reads "← Contract" on a phone. On a phone the signing page
  * itself opens the quote in place (quote-layer.tsx); this page is the direct link's and the desk's.
  */
 export function SignQuoteView({ token, issuer, logo, data, state, phone = null }: { /** (pending modules S03) the agreement's link token */ token: string; issuer: string; logo: string | null; /** (pending modules S04) the quote as the print reads it */ data: ClientQuote | null; state: LinkState
@@ -37,7 +37,7 @@ export function SignQuoteView({ token, issuer, logo, data, state, phone = null }
           {logo ? <img className={styles.logo} src={logo} alt="" /> : null}
           <span className={styles.studio}>{issuer}</span>
         </span>
-        <Link href={`/sign/${token}`} className={styles.quoteLink} data-testid="sign-quote-back"><Icon name="arrow_back" size={20} /><span className={ph.backLong}>Back to the agreement</span><span className={ph.backShort}>Agreement</span></Link>
+        <Link href={`/sign/${token}`} className={styles.quoteLink} data-testid="sign-quote-back"><Icon name="arrow_back" size={20} /><span className={ph.backLong}>Back to the contract</span><span className={ph.backShort}>Contract</span></Link>
       </header>
       {data && (state === 'open' || state === 'signed') ? (
         <div className={`${styles.body} ${ph.quoteBody}`}>

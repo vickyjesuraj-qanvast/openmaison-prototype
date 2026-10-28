@@ -57,7 +57,7 @@ const caseTrust = async (pg) => {
     ok('Send code waits for the reading', await send.isDisabled() && /Read to the end/.test(await sp.getByTestId('gate-scroll').innerText()))
     await sp.screenshot({ path: `${S}/shots-ct3/02-gates-before.png` })
     await sp.getByTestId('paper-end').scrollIntoViewIfNeeded(); await sp.waitForTimeout(600)
-    ok('read to the end', /read to the end/i.test(await sp.getByTestId('gate-scroll').innerText()) && !/Read to the end of the agreement/.test(await sp.getByTestId('gate-scroll').innerText()))
+    ok('read to the end', /read to the end/i.test(await sp.getByTestId('gate-scroll').innerText()) && !/Read to the end of the contract/.test(await sp.getByTestId('gate-scroll').innerText()))   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     ok('still waits for the tick', await send.isDisabled())
     await tick(sp); await sp.waitForTimeout(300); await caseTrust(sp)
     ok('the tick opens Send code', await send.isEnabled())
@@ -72,7 +72,7 @@ const caseTrust = async (pg) => {
     await sp.mouse.move(b.x + 20, b.y + 60); await sp.mouse.down(); for (let i = 1; i <= 12; i++) await sp.mouse.move(b.x + 20 + i * 18, b.y + 60 + (i % 2 ? 20 : -20)); await sp.mouse.up()
     ok('the agreement sentence names the agreement and its quote', /agree to the .* and quotation OM-10001/.test(await sp.getByTestId('agreement-sentence').innerText()))
     await sp.screenshot({ path: `${S}/shots-ct3/05-draw.png` })
-    await sp.getByRole('button', { name: 'Sign agreement' }).click()
+    await sp.getByRole('button', { name: 'Sign contract' }).click()   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await sp.getByRole('heading', { name: 'Signed' }).waitFor(); await sp.waitForTimeout(1500)
     const r = sql(`select signature_kind || '|' || (length(signature_data) > 20) || '|' || (accepted_at is not null) || '|' || verification_method || '|' || ifnull(signer_phone,'-') || '|' || ifnull(signer_user_agent,'-') || '|' || (signer_timezone is not null) from contracts where id='${NEW}'`)
     ok('the record: drawn, accepted, code to the masked phone, the device', /^draw\|1\|1\|(phone_code|demo_code)\|\+65 •••• \d{4}\|\w+ on \w+\|1$/.test(r), r)   // (S42 B-03, a deliberate change of this rule) the stand-in's code is recorded as demo_code

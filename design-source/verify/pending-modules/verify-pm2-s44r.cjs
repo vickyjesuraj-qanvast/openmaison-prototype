@@ -239,7 +239,7 @@ const restore = (d) => {
     await sp.getByRole('button', { name: 'Send code' }).first().click(); await settle(sp, 600)
     await sp.getByLabel('One-time code').fill('123456'); await sp.getByRole('button', { name: 'Verify' }).click(); await settle(sp, 400)
     await sp.getByLabel('Your full name').fill('Serena Koh')
-    await sp.getByRole('button', { name: 'Sign agreement' }).click()
+    await sp.getByRole('button', { name: 'Sign contract' }).click()   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
     await sp.getByRole('heading', { name: 'Signed' }).waitFor({ timeout: 15000 }); await settle(sp, 2500)
     const pay = sp.getByTestId('deposit-pay')
     ok(await pay.count() === 1 && /Pay the deposit/.test(await pay.innerText()) && /Deposit of (quotation|quote) OM-10007: S\$8,870\.48/.test(await pay.innerText()) /* (the calm UI build 2026-10-27, a deliberate change) W-331: "quote" */, 'signed: the page ends on “Pay the deposit” — the stage, the quote, the amount')

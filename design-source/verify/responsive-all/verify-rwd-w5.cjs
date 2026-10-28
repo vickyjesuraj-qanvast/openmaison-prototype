@@ -14,7 +14,7 @@
 //    36; on a short phone (320×640, the stage's `low` fit) the Maison AI button steps out of the photo's corner, and at 390×844 it is there.
 //  - W5-07 · W5-08 the X-Ray reading: on a touch tablet (768 · 1024) the row's ⋮ is a frozen trail cell — it never lies over the Theirs
 //    figure or the Status chip, and a tap opens its menu; on a phone the card has no stray rule across it and its ⋮ is a bare glyph.
-//  - W5-09 · W5-10 the client's two small links (← Agreement on /sign/<token>/quote, a file on /confirm) take a 44 target under a finger.
+//  - W5-09 · W5-10 the client's two small links (← Contract on /sign/<token>/quote, a file on /confirm) take a 44 target under a finger.   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
 //  - W5-12 the Preview's Send ▾ at 1280 and 1440 (a mouse): the menu opens inside the screen, no sideways scroll.
 //  - the floor: no sideways scroll at 320 and at 844×390 on every W5 route; no page errors.
 // Run against `next start` on a scratch copy of the demo DB — never local.db. Everything it writes is put back in `finally`.
@@ -313,7 +313,7 @@ const SENT = 'rwdw5sent000000000001'
       await go(p, `/sign/${SENT}/quote`, 1600)
       const back = p.locator('a, button').filter({ hasText: /Agreement/ }).first()
       const bb = await box(back)
-      ok(bb.h >= 44 && await lands(p, back, bb.cx, bb.cy - 20) && await lands(p, back, bb.cx, bb.cy + 20), `/sign/<token>/quote: "← Agreement" is a 44 target (${Math.round(bb.h)})`)
+      ok(bb.h >= 44 && await lands(p, back, bb.cx, bb.cy - 20) && await lands(p, back, bb.cx, bb.cy + 20), `/sign/<token>/quote: "← Contract" is a 44 target (${Math.round(bb.h)})`)   // (the close-out 2026-10-28, a deliberate change) C-52: "contract" on the signing pages
       if (SIGNEDQ) {
         await go(p, `/confirm/${SIGNEDQ}`, 1600)
         await toEnd(p); await settle(p, 600)

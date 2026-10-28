@@ -20,7 +20,7 @@ export function SignHero({ title, quote, onQuote, children, fine = null, docs = 
   /** a set's documents */ docs?: { id: string; title: string; read: boolean; on: boolean }[] | null
 }) {
   return (
-    <section className={ph.hero} aria-label="This agreement" data-testid="sign-hero">
+    <section className={ph.hero} aria-label="This contract" data-testid="sign-hero">
       <h2 className={ph.heroTitle}>{title}</h2>
       {docs ? (
         <ol className={ph.heroDocs} data-testid="sign-hero-docs">

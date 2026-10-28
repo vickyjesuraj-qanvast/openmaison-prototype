@@ -19,7 +19,7 @@ const paper = (
  */
 export function SignGhost() {
   return (
-    <GhostSheet label="Loading the agreement">
+    <GhostSheet label="Loading the contract">
       <div className={cs.page} data-kind="sign">
         <div className={cs.signTop}><Bone w={177} h={28} /><Bone w={107} h={28} r={14} /></div>
         <div className={`${cs.stage} ${ph.ghostStage}`}>
